@@ -34,16 +34,6 @@ jobs:
             label: macos-arm64
             exe: acb-large-print-macos-arm64
             shell: bash
-          # Linux x64
-          - os: ubuntu-latest
-            label: linux-x64
-            exe: acb-large-print-linux-x64
-            shell: bash
-          # Linux ARM64
-          - os: ubuntu-24.04-arm
-            label: linux-arm64
-            exe: acb-large-print-linux-arm64
-            shell: bash
 
     name: Build ${{ matrix.label }}
     runs-on: ${{ matrix.os }}
@@ -59,28 +49,12 @@ jobs:
         with:
           python-version: "3.12"
 
-      # Linux needs system GTK libs for wxPython
-      - name: Install system dependencies (Linux)
-        if: runner.os == 'Linux'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev \
-            libnotify-dev libsdl2-dev freeglut3-dev || true
-
-      - name: Install core Python dependencies
+      - name: Install Python dependencies
         working-directory: word-addon
         run: |
           python -m pip install --upgrade pip
-          pip install python-docx>=1.1.0 mammoth>=1.8.0
+          pip install python-docx>=1.1.0 mammoth>=1.8.0 wxPython>=4.2.0
           pip install pyinstaller>=6.0
-
-      # wxPython wheels may not exist for all platform/Python combos.
-      # The CLI still works without it; only the GUI requires wxPython.
-      - name: Install wxPython (best-effort)
-        working-directory: word-addon
-        continue-on-error: true
-        run: |
-          pip install wxPython>=4.2.0
 
       - name: Build executable
         working-directory: word-addon

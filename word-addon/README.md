@@ -24,8 +24,6 @@ Download the latest release for your platform from the
 | Windows x64 | `acb-large-print-win-x64.exe` | Most common target |
 | Windows ARM64 | `acb-large-print-win-arm64.exe` | Surface Pro X, Copilot+ PCs |
 | macOS Apple Silicon | `acb-large-print-macos-arm64` | M1/M2/M3/M4 Macs |
-| Linux x64 | `acb-large-print-linux-x64` | Ubuntu 22.04+, Fedora 38+ |
-| Linux ARM64 | `acb-large-print-linux-arm64` | Raspberry Pi 5, AWS Graviton |
 
 On macOS and Linux, make the file executable after downloading:
 
@@ -209,9 +207,9 @@ git push origin v1.0.0
 
 This runs the workflow at `.github/workflows/build.yml` which:
 
-1. Builds on 6 runners simultaneously (Windows x64/ARM64, macOS x64/ARM64, Linux x64/ARM64)
+1. Builds on 3 runners simultaneously (Windows x64, Windows ARM64, macOS ARM64)
 2. Uploads each executable as a GitHub Actions artifact
-3. Creates a combined download with all 6 binaries
+3. Creates a combined download with all 3 binaries
 4. Creates a GitHub Release with all executables attached (tag pushes only)
 
 You can also trigger the workflow manually from the Actions tab and optionally upload to a release.
@@ -223,10 +221,6 @@ You can also trigger the workflow manually from the Actions tab and optionally u
 | `windows-latest` | Windows | x64 | `acb-large-print-win-x64.exe` |
 | `windows-11-arm` | Windows | ARM64 | `acb-large-print-win-arm64.exe` |
 | `macos-latest` | macOS | ARM64 | `acb-large-print-macos-arm64` |
-| `ubuntu-latest` | Linux | x64 | `acb-large-print-linux-x64` |
-| `ubuntu-24.04-arm` | Linux | ARM64 | `acb-large-print-linux-arm64` |
-
-wxPython wheels are not available on all platforms. When wxPython cannot be installed, the build produces a CLI-only executable (all commands work except `gui`).
 
 ### Windows installer (optional)
 
@@ -240,10 +234,7 @@ The installer is fully accessible: standard Windows controls, descriptive labels
 
 ### Platform notes
 
-- **wxPython availability**: Pre-built wheels exist for Windows x64, macOS ARM64, and some Linux x64 configurations. On platforms without wheels, the build produces a CLI-only executable. The GUI requires wxPython.
-- **macOS Intel**: No free GitHub Actions runner available. Build locally with `python build.py` on an Intel Mac if needed.
-- **macOS Apple Silicon**: The executable may need to be allowed in System Settings, Privacy and Security after first download (Apple Gatekeeper).
-- **Linux**: GTK3 development libraries are required for wxPython. The CI workflow installs them automatically.
+- **macOS**: The executable may need to be allowed in System Settings, Privacy and Security after first download (Apple Gatekeeper).
 - **PyInstaller cannot cross-compile**: Each platform must be built natively. The GitHub Actions workflow handles this automatically.
 
 ## ACB Large Print rules (summary)
