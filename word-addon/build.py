@@ -72,7 +72,6 @@ def _build_one(
         "--name", stem,
         "--onefile",
         "--noconfirm",
-        "--clean",
         "--distpath", str(DIST),
         "--workpath", str(BUILD / "pyinstaller"),
         "--specpath", str(BUILD),
