@@ -23,29 +23,33 @@ jobs:
           - os: windows-latest
             label: win-x64
             exe: acb-large-print-win-x64.exe
+            shell: pwsh
           # Windows ARM64
           - os: windows-11-arm
             label: win-arm64
             exe: acb-large-print-win-arm64.exe
-          # macOS Intel
-          - os: macos-13
-            label: macos-x64
-            exe: acb-large-print-macos-x64
-          # macOS Apple Silicon
+            shell: pwsh
+          # macOS Apple Silicon (M-series)
           - os: macos-latest
             label: macos-arm64
             exe: acb-large-print-macos-arm64
+            shell: bash
           # Linux x64
           - os: ubuntu-latest
             label: linux-x64
             exe: acb-large-print-linux-x64
+            shell: bash
           # Linux ARM64
           - os: ubuntu-24.04-arm
             label: linux-arm64
             exe: acb-large-print-linux-arm64
+            shell: bash
 
     name: Build ${{ matrix.label }}
     runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: ${{ matrix.shell }}
 
     steps:
       - uses: actions/checkout@v4
@@ -53,40 +57,48 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.13"
+          python-version: "3.12"
 
-      # wxPython wheels are not available for all platforms on PyPI.
-      # Linux needs system GTK libs; macOS/Windows have pre-built wheels.
+      # Linux needs system GTK libs for wxPython
       - name: Install system dependencies (Linux)
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.0-dev \
-            libnotify-dev libsdl2-dev freeglut3-dev
+          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev \
+            libnotify-dev libsdl2-dev freeglut3-dev || true
 
-      - name: Install Python dependencies
+      - name: Install core Python dependencies
         working-directory: word-addon
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install mammoth>=1.8.0
+          pip install python-docx>=1.1.0 mammoth>=1.8.0
           pip install pyinstaller>=6.0
 
-      # wxPython ARM64 Linux may need building from source
-      - name: Install wxPython (platform-specific)
+      # wxPython wheels may not exist for all platform/Python combos.
+      # The CLI still works without it; only the GUI requires wxPython.
+      - name: Install wxPython (best-effort)
         working-directory: word-addon
+        continue-on-error: true
         run: |
-          pip install wxPython>=4.2.0 || echo "wxPython wheel not available for this platform -- GUI will not be included"
+          pip install wxPython>=4.2.0
 
       - name: Build executable
         working-directory: word-addon
         run: python build.py
 
-      - name: Verify executable exists
+      - name: Verify executable exists (Unix)
+        if: runner.os != 'Windows'
         working-directory: word-addon
         run: |
           ls -la dist/
-          test -f "dist/${{ matrix.exe }}" || (echo "Expected ${{ matrix.exe }} not found" && exit 1)
+          test -f "dist/${{ matrix.exe }}"
+
+      - name: Verify executable exists (Windows)
+        if: runner.os == 'Windows'
+        working-directory: word-addon
+        run: |
+          Get-ChildItem dist/
+          if (-not (Test-Path "dist/${{ matrix.exe }}")) { throw "Expected ${{ matrix.exe }} not found" }
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4

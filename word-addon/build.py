@@ -94,7 +94,6 @@ def build_exe(*, os_label: str | None = None, arch_label: str | None = None) -> 
     hidden = [
         "acb_large_print",
         "acb_large_print.cli",
-        "acb_large_print.gui",
         "acb_large_print.auditor",
         "acb_large_print.fixer",
         "acb_large_print.exporter",
@@ -104,10 +103,21 @@ def build_exe(*, os_label: str | None = None, arch_label: str | None = None) -> 
         "mammoth",
         "mammoth.transforms",
         "mammoth.writers",
-        "wx",
-        "wx.adv",
         "docx",
     ]
+
+    # Only include wxPython/GUI if wx is actually installed
+    try:
+        import wx  # noqa: F401
+        hidden.extend([
+            "acb_large_print.gui",
+            "wx",
+            "wx.adv",
+        ])
+        print("wxPython detected -- GUI will be included")
+    except ImportError:
+        print("wxPython not installed -- building CLI-only executable")
+
     for mod in hidden:
         cmd.extend(["--hidden-import", mod])
 

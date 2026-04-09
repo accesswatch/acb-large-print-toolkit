@@ -335,7 +335,16 @@ def _cmd_export(args: argparse.Namespace) -> int:
 
 def _cmd_gui(_args: argparse.Namespace) -> int:
     """Launch the graphical interface."""
-    from .gui import launch_gui
+    try:
+        from .gui import launch_gui
+    except ImportError:
+        print(
+            "Error: wxPython is not installed. The GUI requires wxPython.\n"
+            "Install it with: pip install wxPython>=4.2.0\n"
+            "Use CLI commands instead: acb-large-print --help",
+            file=sys.stderr,
+        )
+        return 1
     launch_gui()
     return 0
 
@@ -346,8 +355,17 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     if args.command is None:
-        # No command given -- launch GUI by default
-        from .gui import launch_gui
+        # No command given -- launch GUI by default if wxPython available
+        try:
+            from .gui import launch_gui
+        except ImportError:
+            parser.print_help()
+            print(
+                "\nNote: GUI unavailable (wxPython not installed). "
+                "Use a subcommand above.",
+                file=sys.stderr,
+            )
+            return 1
         launch_gui()
         return 0
 
