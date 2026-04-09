@@ -22,12 +22,10 @@ jobs:
           # Windows x64 (also runs on ARM64 via emulation)
           - os: windows-latest
             label: win-x64
-            exe: acb-large-print-win-x64.exe
             shell: pwsh
           # macOS Apple Silicon (M-series)
           - os: macos-latest
             label: macos-arm64
-            exe: acb-large-print-macos-arm64
             shell: bash
 
     name: Build ${{ matrix.label }}
@@ -51,29 +49,25 @@ jobs:
           pip install python-docx>=1.1.0 mammoth>=1.8.0 wxPython>=4.2.0
           pip install pyinstaller>=6.0
 
-      - name: Build executable
+      - name: Build executables
         working-directory: word-addon
         run: python build.py
 
-      - name: Verify executable exists (Unix)
+      - name: List built executables (Unix)
         if: runner.os != 'Windows'
         working-directory: word-addon
-        run: |
-          ls -la dist/
-          test -f "dist/${{ matrix.exe }}"
+        run: ls -la dist/
 
-      - name: Verify executable exists (Windows)
+      - name: List built executables (Windows)
         if: runner.os == 'Windows'
         working-directory: word-addon
-        run: |
-          Get-ChildItem dist/
-          if (-not (Test-Path "dist/${{ matrix.exe }}")) { throw "Expected ${{ matrix.exe }} not found" }
+        run: Get-ChildItem dist/
 
-      - name: Upload artifact
+      - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.label }}
-          path: word-addon/dist/${{ matrix.exe }}
+          path: word-addon/dist/
           retention-days: 30
 
   # -- Aggregate all platform builds into one download --

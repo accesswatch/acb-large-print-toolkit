@@ -46,23 +46,25 @@ def _detect_platform() -> tuple[str, str]:
     return os_label, arch_label
 
 
-def _exe_name(os_label: str, arch_label: str) -> str:
-    """Build the output executable filename."""
-    ext = ".exe" if os_label == "win" else ""
-    return f"acb-large-print-{os_label}-{arch_label}{ext}"
+def _exe_name(os_label: str, arch_label: str, variant: str = "") -> str:
+    """Build the output executable filename.
 
-
-def build_exe(*, os_label: str | None = None, arch_label: str | None = None) -> Path:
-    """Build the one-file executable with PyInstaller.
-
-    Returns the path to the built executable.
+    variant: "" for GUI, "-cli" for CLI-only.
     """
-    if os_label is None or arch_label is None:
-        os_label, arch_label = _detect_platform()
+    ext = ".exe" if os_label == "win" else ""
+    return f"acb-large-print{variant}-{os_label}-{arch_label}{ext}"
 
-    entry_point = SRC / "acb_large_print" / "__main__.py"
-    name = _exe_name(os_label, arch_label)
-    # Strip extension for PyInstaller --name (it adds it automatically)
+
+def _build_one(
+    *,
+    entry_point: Path,
+    name: str,
+    os_label: str,
+    arch_label: str,
+    hidden: list[str],
+    console: bool = True,
+) -> Path:
+    """Run PyInstaller for a single executable. Returns output path."""
     stem = name.rsplit(".", 1)[0] if os_label == "win" else name
 
     cmd = [
@@ -77,10 +79,10 @@ def build_exe(*, os_label: str | None = None, arch_label: str | None = None) -> 
         "--paths", str(SRC),
     ]
 
-    # Console mode -- needed for CLI; wxPython still works in console mode
-    # On macOS, --windowed conflicts with --onefile console apps
-    if os_label == "win":
+    if os_label == "win" and console:
         cmd.append("--console")
+    if os_label == "win" and not console:
+        cmd.append("--windowed")
 
     # Windows-specific: version info and icon
     if os_label == "win":
@@ -90,8 +92,39 @@ def build_exe(*, os_label: str | None = None, arch_label: str | None = None) -> 
         if ICON.exists():
             cmd.extend(["--icon", str(ICON)])
 
-    # Hidden imports that PyInstaller misses
-    hidden = [
+    for mod in hidden:
+        cmd.extend(["--hidden-import", mod])
+
+    cmd.append(str(entry_point))
+
+    print(f"\nBuilding: {name}")
+    print(f"Entry:    {entry_point.name}")
+    print(f"Command:  {' '.join(cmd)}")
+    print()
+    subprocess.run(cmd, check=True)
+
+    exe_path = DIST / name
+    if exe_path.exists():
+        size_mb = exe_path.stat().st_size / (1024 * 1024)
+        print(f"Built: {exe_path} ({size_mb:.1f} MB)")
+    else:
+        print(f"Warning: Expected output not found at {exe_path}")
+    return exe_path
+
+
+def build_exe(*, os_label: str | None = None, arch_label: str | None = None) -> list[Path]:
+    """Build both CLI and GUI executables with PyInstaller.
+
+    Returns list of paths to built executables.
+    """
+    if os_label is None or arch_label is None:
+        os_label, arch_label = _detect_platform()
+
+    print(f"Platform: {os_label}-{arch_label}")
+    print(f"Python:   {sys.version}")
+
+    # -- Shared hidden imports (CLI) --
+    cli_hidden = [
         "acb_large_print",
         "acb_large_print.cli",
         "acb_large_print.auditor",
@@ -106,37 +139,58 @@ def build_exe(*, os_label: str | None = None, arch_label: str | None = None) -> 
         "docx",
     ]
 
-    # Only include wxPython/GUI if wx is actually installed
+    # -- GUI hidden imports (superset of CLI) --
+    has_wx = False
     try:
         import wx  # noqa: F401
-        hidden.extend([
+        has_wx = True
+    except ImportError:
+        pass
+
+    gui_hidden = list(cli_hidden)
+    if has_wx:
+        gui_hidden.extend([
             "acb_large_print.gui",
             "wx",
             "wx.adv",
         ])
-        print("wxPython detected -- GUI will be included")
-    except ImportError:
-        print("wxPython not installed -- building CLI-only executable")
 
-    for mod in hidden:
-        cmd.extend(["--hidden-import", mod])
+    results: list[Path] = []
 
-    cmd.append(str(entry_point))
+    # 1. CLI executable (console mode, no wxPython dependency)
+    cli_entry = SRC / "acb_large_print" / "cli_main.py"
+    cli_name = _exe_name(os_label, arch_label, "-cli")
+    results.append(_build_one(
+        entry_point=cli_entry,
+        name=cli_name,
+        os_label=os_label,
+        arch_label=arch_label,
+        hidden=cli_hidden,
+        console=True,
+    ))
 
-    print(f"Building: {name}")
-    print(f"Platform: {os_label}-{arch_label}")
-    print(f"Python:   {sys.version}")
-    print(f"Command:  {' '.join(cmd)}")
-    print()
-    subprocess.run(cmd, check=True)
-
-    exe_path = DIST / name
-    if exe_path.exists():
-        size_mb = exe_path.stat().st_size / (1024 * 1024)
-        print(f"\nBuild complete: {exe_path} ({size_mb:.1f} MB)")
+    # 2. GUI executable (windowed mode, includes wxPython)
+    if has_wx:
+        gui_entry = SRC / "acb_large_print" / "__main__.py"
+        gui_name = _exe_name(os_label, arch_label)
+        results.append(_build_one(
+            entry_point=gui_entry,
+            name=gui_name,
+            os_label=os_label,
+            arch_label=arch_label,
+            hidden=gui_hidden,
+            console=False,
+        ))
     else:
-        print(f"\nWarning: Expected output not found at {exe_path}")
-    return exe_path
+        print("\nwxPython not installed -- skipping GUI build")
+
+    print(f"\n{'='*50}")
+    print(f"Build complete: {len(results)} executable(s)")
+    for p in results:
+        if p.exists():
+            print(f"  {p.name} ({p.stat().st_size / (1024*1024):.1f} MB)")
+
+    return results
 
 
 def generate_version_info() -> None:

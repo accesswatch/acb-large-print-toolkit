@@ -12,6 +12,7 @@ build/
 word-addon/dist/
 word-addon/build/
 word-addon/installer/version_info.txt
+dist/
 
 # Virtual environments
 .venv/

@@ -349,12 +349,20 @@ def _cmd_gui(_args: argparse.Namespace) -> int:
     return 0
 
 
-def main(argv: list[str] | None = None) -> int:
-    """CLI entry point. Returns exit code."""
+def main(argv: list[str] | None = None, *, force_cli: bool = False) -> int:
+    """CLI entry point. Returns exit code.
+
+    Args:
+        argv: Command line arguments (None = sys.argv).
+        force_cli: If True, never launch the GUI (print help instead).
+    """
     parser = _build_parser()
     args = parser.parse_args(argv)
 
     if args.command is None:
+        if force_cli:
+            parser.print_help()
+            return 0
         # No command given -- launch GUI by default if wxPython available
         try:
             from .gui import launch_gui
