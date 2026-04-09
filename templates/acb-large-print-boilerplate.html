@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document Title -- ACB Large Print</title>
+    <!-- ACB Large Print CSS -- link externally or embed via the agent's CSS Embed Mode -->
+    <link rel="stylesheet" href="acb-large-print.css" />
+  </head>
+  <body>
+    <!-- ==============================================
+       ACB Large Print HTML Boilerplate
+       American Council of the Blind, revised 5-6-25
+       Supplemented with WCAG 2.2 AA digital rules
+
+       This file demonstrates correct semantic structure
+       for every element covered by the ACB spec.
+       ============================================== -->
+
+    <!-- === Document Title / Main Heading === -->
+    <!-- ACB: 22pt bold, flush left -->
+    <h1>Document Title</h1>
+
+    <p>
+      Opening paragraph demonstrating ACB body text: Arial, 18pt (1.5rem on
+      screen), flush left, ragged right, 1.5 line-height for digital (WCAG
+      1.4.12). No justified text, no hyphenation.
+    </p>
+
+    <!-- === Table of Contents with Leader Dots === -->
+    <!-- ACB: leader dots connect entry to page number -->
+    <nav aria-label="Table of contents">
+      <h2>Table of Contents</h2>
+      <div class="acb-toc-entry">
+        <span class="acb-toc-title">Section One: Introduction</span>
+        <span class="acb-toc-page">1</span>
+      </div>
+      <div class="acb-toc-entry">
+        <span class="acb-toc-title">Section Two: Details</span>
+        <span class="acb-toc-page">3</span>
+      </div>
+      <div class="acb-toc-entry">
+        <span class="acb-toc-title">Section Three: Conclusion</span>
+        <span class="acb-toc-page">5</span>
+      </div>
+    </nav>
+
+    <!-- === Section with Heading and Subheading === -->
+    <!-- ACB: h2 = 22pt bold; h3 = 20pt bold -->
+    <h2>Section One: Introduction</h2>
+
+    <p>
+      Body paragraph. ACB requires block-style paragraphs with one blank line
+      between them. The CSS handles this via margin-bottom: 2em (also satisfies
+      WCAG 1.4.12 paragraph spacing).
+    </p>
+
+    <h3>Subheading Example</h3>
+
+    <p>
+      Text following a subheading. One blank line separates the subheading from
+      the body text.
+    </p>
+
+    <!-- === Unordered List === -->
+    <!-- ACB: large solid dark bullets, no blank lines between items, hanging indent -->
+    <h3>Bullet List</h3>
+    <ul>
+      <li>
+        First bullet item -- text wraps with a hanging indent so it aligns below
+        the first word, not the bullet
+      </li>
+      <li>Second bullet item</li>
+      <li>
+        Third bullet item with
+        <span class="acb-emphasis">emphasized text</span> using underline
+        (distinct from links)
+      </li>
+    </ul>
+
+    <!-- === Ordered List === -->
+    <!-- ACB: numbers must match body text size (18pt) -->
+    <h3>Numbered List</h3>
+    <ol>
+      <li>First numbered item</li>
+      <li>Second numbered item</li>
+      <li>Third numbered item</li>
+    </ol>
+
+    <!-- === Emphasis === -->
+    <!-- ACB: underline only (no italic, no bold for emphasis)
+       Web: underline styled distinctly from links (thicker, offset) -->
+    <h2>Section Two: Details</h2>
+
+    <p>
+      This paragraph contains
+      <span class="acb-emphasis">emphasized text</span> using the ACB underline
+      convention. Notice it looks different from
+      <a href="#notes">this hyperlink</a> -- the emphasis underline is thicker
+      and offset.
+    </p>
+
+    <!-- === Data Table === -->
+    <!-- WCAG: use th with scope, provide caption -->
+    <h3>Data Table Example</h3>
+    <table>
+      <caption>
+        Quarterly Results by Region
+      </caption>
+      <thead>
+        <tr>
+          <th scope="col">Region</th>
+          <th scope="col">Q1</th>
+          <th scope="col">Q2</th>
+          <th scope="col">Q3</th>
+          <th scope="col">Q4</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <th scope="row">North</th>
+          <td>100</td>
+          <td>120</td>
+          <td>115</td>
+          <td>130</td>
+        </tr>
+        <tr>
+          <th scope="row">South</th>
+          <td>90</td>
+          <td>95</td>
+          <td>100</td>
+          <td>110</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- === Figure with Caption === -->
+    <!-- ACB: caption pictures with meaningful descriptive text -->
+    <h2>Section Three: Conclusion</h2>
+
+    <figure>
+      <img
+        src="chart-example.png"
+        alt="Bar chart showing quarterly growth from Q1 (100 units) to Q4 (130 units) in the North region, and Q1 (90 units) to Q4 (110 units) in the South region"
+        width="600"
+        height="400"
+        loading="lazy"
+      />
+      <figcaption>
+        Figure 1: Quarterly growth comparison between North and South regions,
+        2025.
+      </figcaption>
+    </figure>
+
+    <p>
+      Closing paragraph with a reference to an endnote.<sup
+        ><a href="#note-1">[1]</a></sup
+      >
+    </p>
+
+    <!-- === Format Indicators === -->
+    <!-- ACB: asterisks, dashes, and similar characters as visual format indicators -->
+    <p>* * *</p>
+
+    <!-- === Endnotes === -->
+    <!-- ACB: notes and citations at the end of the article -->
+    <section id="notes" class="acb-endnotes" aria-label="Endnotes">
+      <h2>Notes</h2>
+      <p id="note-1">
+        [1] Example endnote citation. ACB requires all notes and citations
+        placed at the end of the article, never inline.
+      </p>
+    </section>
+
+    <!-- === Page Number (for paged/print contexts) === -->
+    <!-- ACB: 18pt Arial bold, lower outer corner -- handled by CSS @page in print -->
+    <div class="acb-page-number" aria-hidden="true">1</div>
+  </body>
+</html>

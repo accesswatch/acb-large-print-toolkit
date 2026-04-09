@@ -1,0 +1,1445 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>April 8, 2026 BITS Board Meeting Agenda -- ACB Large Print</title>
+    <style>
+      /* ==========================================================================
+   ACB Large Print Guidelines -- Starter CSS
+   American Council of the Blind, revised 5-6-25
+   Supplemented with WCAG 2.2 AA digital rules
+   ========================================================================== */
+
+      /* --- Base reset & document --- */
+      html {
+        font-size: 100%;
+      }
+
+      body {
+        font-family: Arial, sans-serif;
+        font-size: 1.5rem;
+        font-weight: 400;
+        color: #1a1a1a;
+        background-color: #ffffff;
+        text-align: left;
+        line-height: 1.5;
+        letter-spacing: 0.12em;
+        word-spacing: 0.16em;
+        margin: 0;
+        padding: 1rem 1rem;
+        max-width: 70ch;
+        -webkit-hyphens: none;
+        hyphens: none;
+        columns: 1;
+      }
+
+      /* --- Headings --- */
+      h1,
+      h2 {
+        font-family: Arial, sans-serif;
+        font-size: 1.833rem;
+        font-weight: 700;
+        line-height: 1.5;
+        text-align: left;
+        text-transform: none;
+        margin-top: 1.5em;
+        margin-bottom: 1em;
+      }
+
+      h3,
+      h4,
+      h5,
+      h6 {
+        font-family: Arial, sans-serif;
+        font-size: 1.667rem;
+        font-weight: 700;
+        line-height: 1.5;
+        text-align: left;
+        text-transform: none;
+        margin-top: 1.5em;
+        margin-bottom: 1em;
+      }
+
+      /* --- Paragraphs --- */
+      p {
+        margin-top: 0;
+        margin-bottom: 2em;
+      }
+
+      /* --- Emphasis --- */
+      em,
+      .acb-emphasis {
+        font-style: normal;
+        text-decoration: underline;
+        text-decoration-thickness: 2px;
+        text-underline-offset: 3px;
+        text-decoration-color: currentColor;
+      }
+
+      /* ACB: underline for emphasis via <u> element (Markdown-to-HTML conversion) */
+      u {
+        text-decoration: underline;
+        text-decoration-thickness: 2px;
+        text-underline-offset: 3px;
+        text-decoration-color: currentColor;
+      }
+
+      /* --- Links --- */
+      a {
+        color: #0055cc;
+        text-decoration: underline;
+        text-decoration-thickness: 1px;
+      }
+
+      a:hover,
+      a:focus {
+        text-decoration-thickness: 2px;
+        outline: 2px solid currentColor;
+        outline-offset: 2px;
+      }
+
+      /* --- Lists --- */
+      ul {
+        list-style-type: disc;
+        padding-left: 1.5em;
+        margin-top: 0;
+        margin-bottom: 2em;
+      }
+
+      ul li {
+        margin-bottom: 0;
+        padding-left: 0.5em;
+        font-size: inherit;
+      }
+
+      ul li::marker {
+        color: #1a1a1a;
+        font-size: 1.2em;
+      }
+
+      ol {
+        list-style-type: decimal;
+        padding-left: 1.5em;
+        margin-top: 0;
+        margin-bottom: 2em;
+      }
+
+      ol li {
+        margin-bottom: 0;
+        padding-left: 0.5em;
+        font-size: inherit;
+      }
+
+      /* --- TOC Leader Dots --- */
+      .acb-toc-entry {
+        display: flex;
+        align-items: baseline;
+      }
+
+      .acb-toc-entry .acb-toc-title {
+        flex: 1;
+        overflow: hidden;
+      }
+
+      .acb-toc-entry .acb-toc-title::after {
+        content: " . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . ";
+        letter-spacing: 0.25em;
+        color: #666;
+      }
+
+      .acb-toc-entry .acb-toc-page {
+        flex-shrink: 0;
+        padding-left: 0.5em;
+        font-weight: 700;
+      }
+
+      /* --- Page Numbers --- */
+      .acb-page-number {
+        font-family: Arial, sans-serif;
+        font-size: 1.5rem;
+        font-weight: 700;
+        text-align: right;
+      }
+
+      /* --- Images & Captions --- */
+      figure {
+        margin: 1.5em 0;
+      }
+
+      figcaption {
+        font-family: Arial, sans-serif;
+        font-size: 1.5rem;
+        margin-top: 0.5em;
+      }
+
+      img {
+        max-width: 100%;
+        height: auto;
+      }
+
+      /* --- Tables --- */
+      table {
+        border-collapse: collapse;
+        width: 100%;
+        font-size: inherit;
+      }
+
+      th,
+      td {
+        text-align: left;
+        padding: 0.5em 0.75em;
+        border: 1px solid #666;
+      }
+
+      th {
+        font-weight: 700;
+      }
+
+      caption {
+        font-family: Arial, sans-serif;
+        font-size: 1.5rem;
+        font-weight: 700;
+        text-align: left;
+        margin-bottom: 0.5em;
+      }
+
+      /* --- Notes & Citations --- */
+      .acb-endnotes {
+        margin-top: 3em;
+        border-top: 2px solid #1a1a1a;
+        padding-top: 1em;
+      }
+
+      /* --- Widows & Orphans --- */
+      p,
+      li {
+        orphans: 3;
+        widows: 3;
+      }
+
+      /* --- Print Media Overrides --- */
+      @media print {
+        body {
+          line-height: 1.15;
+          color: #000000;
+          background-color: #faf8f0;
+          max-width: none;
+          padding: 0;
+        }
+
+        @page {
+          margin: 1in;
+          @bottom-right {
+            content: counter(page);
+            font-family: Arial, sans-serif;
+            font-size: 18pt;
+            font-weight: 700;
+          }
+        }
+
+        @page :left {
+          margin-left: 1.5in;
+        }
+
+        @page :right {
+          margin-right: 1in;
+        }
+
+        a {
+          color: #000000;
+          text-decoration: underline;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <h1>April BITS Board Meeting</h1>
+
+    <p>April 8, 2026 - 8:00 PM ET</p>
+
+    <h2>Welcome to the April 2026 BITS Board Meeting</h2>
+
+    <p>Welcome to our April board meeting!</p>
+
+    <h2>Agenda</h2>
+
+    <ol>
+      <li>Call to Order -- Jeff Bishop</li>
+      <li>Roll call -- Secretary Robin Frost</li>
+      <li>Adoption of March 4 Board meeting minutes - Secretary Robin Frost</li>
+      <li>
+        Adoption of proposed agenda and Approval of Consent Agenda - Jeff Bishop
+      </li>
+      <li>Treasurer's Report -- Diane Scalzi</li>
+      <li>President's Report -- Jeff Bishop</li>
+      <li>Committee reports (vital information only)</li>
+      <li>
+        Old Business
+        <ol>
+          <li>Summer Auction Donation -- Jeff Bishop and Board</li>
+        </ol>
+      </li>
+      <li>
+        New Business
+        <ol>
+          <li>Changing Email Providers -- Jeff Bishop</li>
+          <li>Budgeting for new committees -- Jeff Bishop</li>
+          <li>
+            Changes and Responsibilities by committee chairs -- Jeff Bishop
+          </li>
+        </ol>
+      </li>
+      <li>Member Comments and Questions</li>
+      <li>Date and time of next Board meeting -- May 6, 2026</li>
+      <li>Adjourn</li>
+    </ol>
+
+    <h2>President's Report</h2>
+
+    <h3>April Board Meeting</h3>
+
+    <p>Jeff Bishop, President -- BITS</p>
+
+    <p>
+      Before anything else, I would like us to pause for a moment and reflect on
+      who we are and why we are here.
+    </p>
+
+    <p>We are here for people.</p>
+
+    <p>
+      At the heart of BITS is not simply technology, programs, committees, or
+      systems. At the heart of BITS are people -- people with hopes, needs,
+      ideas, challenges, talents, and dreams. We are blessed with a tremendous
+      amount of knowledge, experience, compassion, and ability within this
+      organization. With that comes both opportunity and responsibility.
+    </p>
+
+    <p>
+      As we continue to grow, we must center our programs and services even more
+      intentionally around what it means to be welcoming, to help members
+      flourish, and to honor the small but meaningful things in life that matter
+      most to people when we are made aware of them. This is about making sure
+      that no one is left out, that people feel valued and respected, and that
+      we do not lose sight of the simple human needs that can sometimes be
+      overlooked.
+    </p>
+
+    <p>
+      There is a group within BITS actively working in this area, and I expect
+      we will have more to share in the coming weeks. I believe this work is
+      important, timely, and deeply aligned with who we strive to be as an
+      organization.
+    </p>
+
+    <p>I would also like to talk about leadership.</p>
+
+    <p>
+      This message is directed first to myself, then to our Board of Directors,
+      and also to our committee chairs, co-chairs, and committee members. Over
+      the next couple of weeks, I will be reaching out to schedule conversations
+      with each committee chair and co-chair, as well as with our officers.
+      These conversations will be important, and I hope each of you will take
+      some time to reflect before we meet.
+    </p>
+
+    <p>
+      In many recent conversations, I have noticed something that deserves our
+      attention: some of the quieter and smaller voices in our organization are
+      not being heard and valued as fully as they should be. For that, I take
+      responsibility, and I am committed to putting a plan in place to address
+      it. I cannot do that alone. I need your help, your honesty, and your
+      partnership to make that effort meaningful and successful.
+    </p>
+
+    <p>
+      There is no "I" in team, and BITS is at its best when we remember that we
+      are not just an organization -- we are a family working toward the same
+      shared goal: helping our membership flourish and doing what is best for
+      the people we serve.
+    </p>
+
+    <p>
+      As you prepare for our conversations, I would ask each of you to reflect
+      on two questions.
+    </p>
+
+    <p>
+      First: If you had three wishes for BITS, what would they be? These wishes
+      might relate to the organization itself, to communication, to recognition,
+      to your role, to leadership -- including my own leadership -- or to
+      anything else that is personally on your mind. I encourage you to write
+      these down and give yourself time to think. Do not rush. These
+      conversations are meant to be thoughtful, respectful, and safe spaces for
+      constructive reflection.
+    </p>
+
+    <p>
+      Second: What are two or three things about the organization that you would
+      most like to see done differently?
+    </p>
+
+    <p>
+      In both cases, I ask that we approach these reflections constructively.
+      Feelings and emotions are welcome, because they are real and they matter.
+      At the same time, we must be careful to speak in ways that build up rather
+      than tear down. The goal is not criticism for its own sake, but insight
+      that helps us become stronger, more thoughtful, and more effective
+      together.
+    </p>
+
+    <p>
+      I will be reaching out to each of you to schedule 30 to 60 minutes to
+      talk, so please stay tuned for more information.
+    </p>
+
+    <p>
+      There is one more leadership point I want to raise, and that is the
+      importance of making sure that our plates are not overflowing. I will be
+      taking a careful look at current responsibilities across leadership and
+      service areas, and it is possible that we may make some modest adjustments
+      in how certain responsibilities are distributed. I do not say that to
+      create concern. I say it because I want each of you to be as successful as
+      possible in the areas where you are strongest and most energized.
+    </p>
+
+    <p>This connects directly to shared responsibility.</p>
+
+    <p>
+      Each of us has an area of focus, and each of us plays a role in shaping
+      the experience of our members. Shared responsibility means that we work
+      together, communicate openly, and support one another when demands become
+      too heavy or when a different approach is needed. It means reaching across
+      the dance floor, holding hands when needed, and making sure that each
+      person has the support, encouragement, and flexibility they need to
+      thrive.
+    </p>
+
+    <p>
+      Your voices are not optional in this process. They are essential. They are
+      important, and they are vital to the future success of BITS.
+    </p>
+
+    <p>
+      Speaking of voices, let us also not forget leaders that we must not worry
+      about the small stuff. Remember, things will happen and we can always
+      improve, so be kind in your interactions.
+    </p>
+
+    <p>
+      I want to emphasize that we are all busy and that comes with grace as
+      well. It is for this reason I want to remind everyone that if you wish to
+      hold a committee meeting, or any meeting of the minds, and you wish to use
+      your personal Zoom meeting room then I am fine with this and the
+      organization should support this. Meetings of committees that wish to
+      continue to utilize BITS sponsored Zoom rooms are also fine. Be kind and
+      let people be flexible. The only thing I would suggest is that
+      presentations, board meetings, office hours and larger types of meeting
+      places need to be in a BITS sponsored room please.
+    </p>
+
+    <p>Now I would like to speak about innovation.</p>
+
+    <p>
+      We have been working hard across many areas -- programs, mentoring,
+      fundraising, education, and organizational development. That work matters,
+      and I am proud of it. But in the midst of doing so much, we must also be
+      careful not to lose sight of simplicity.
+    </p>
+
+    <p>
+      Sometimes, in our efforts to build, grow, and serve, we can make things
+      more complex than they need to be for new members, for long-time members,
+      and even for leaders within the organization. Because of that, you will
+      begin to see a significant effort around simplification: making it easier
+      to join BITS, easier to renew, easier to engage with courses, easier to
+      understand our calendar of activities, easier to access information, and
+      easier to connect with the programs and services we offer.
+    </p>
+
+    <p>
+      We are always trying to make wise choices with the resources we have. We
+      cannot do everything at once, even though we often try very hard. So I
+      would simply ask that as we continue this work, you lead with grace. Offer
+      ideas. Share constructive feedback. Assume good intentions. And know that
+      when decisions are made, they are often made with real complexity in mind.
+    </p>
+
+    <p>
+      One of the highlights of my week came when a member reached out regarding
+      the Android experience of BITS Connect and offered several thoughtful ways
+      we might work around previously announced issues. That kind of
+      communication is exactly what strengthens an organization. I will not name
+      that individual here, but I do want to offer a public thank you. It was
+      encouraging to see someone lead not only by identifying concern, but by
+      bringing forward possible solutions. That spirit of engagement and care is
+      deeply appreciated.
+    </p>
+
+    <p>In closing, I return to where I began: people matter most.</p>
+
+    <p>
+      Caring, leadership, shared responsibility, innovation, and constructive
+      communication are not separate ideas. Together, they form the foundation
+      of a stronger BITS. In the coming month, you will hear more about some
+      meaningful changes and important efforts now underway. But beneath all of
+      it is a simple truth: our emphasis on people is at the heart of our
+      thinking.
+    </p>
+
+    <p>
+      To our leaders, I look forward to our conversations with openness,
+      respect, and a genuine desire to learn from you. I want to better
+      understand how I can support each of you -- not only in your roles within
+      BITS, but also as people whose lives, perspectives, and well-being matter.
+    </p>
+
+    <p>
+      Thank you for your leadership, your care, and your continued commitment to
+      this organization and the people we serve.
+    </p>
+
+    <p>Respectfully submitted,</p>
+    <p>Jeff Bishop, President</p>
+    <p>Blind Information Technology Solutions</p>
+
+    <h2>Committee Chair Reports</h2>
+
+    <h3>Organizational Effectiveness Liaison Team Report</h3>
+
+    <p>Date: April 8, 2026.</p>
+
+    <p>
+      As Organizational Effectiveness Liaisons, our role is to observe patterns
+      in communication, collaboration, and leadership dynamics across the
+      organization, and to support conditions that enable all members to
+      contribute effectively.
+    </p>
+
+    <h4>Observations</h4>
+
+    <p>
+      Across multiple committees and interactions, we are observing patterns
+      that may be impacting overall organizational effectiveness:
+    </p>
+
+    <ul>
+      <li>
+        Communication is sometimes experienced as directive or corrective in
+        group settings
+      </li>
+      <li>
+        Some members appear hesitant to contribute or raise concerns openly
+      </li>
+      <li>
+        Decision-making authority is not always clearly defined, leading to
+        overlap and tension
+      </li>
+      <li>
+        At times, individuals may work around one another rather than through
+        shared processes in order to avoid conflict
+      </li>
+      <li>
+        In some instances, interactions have been experienced as discouraging or
+        diminishing, particularly in public or group contexts
+      </li>
+    </ul>
+
+    <h4>Impact</h4>
+
+    <p>These patterns may be affecting several key areas:</p>
+
+    <ul>
+      <li>Psychological safety within teams</li>
+      <li>Willingness to participate and share perspectives</li>
+      <li>Clarity of roles and responsibilities</li>
+      <li>Collaboration and coordination across committees</li>
+    </ul>
+
+    <h4>Strengths</h4>
+
+    <p>
+      We also observe strong commitment, initiative, and a shared desire among
+      members to support the organization's mission. These strengths provide a
+      solid foundation for continued growth and improvement.
+    </p>
+
+    <h4>Recommendations</h4>
+
+    <p>To support greater alignment and effectiveness, we suggest:</p>
+
+    <ul>
+      <li>
+        Clarifying roles, responsibilities, and decision-making boundaries
+        across committees
+      </li>
+      <li>
+        Establishing shared guidelines for communication, particularly in group
+        settings
+      </li>
+      <li>
+        Encouraging space for all voices to be heard without interruption or
+        immediate correction
+      </li>
+      <li>
+        Supporting feedback processes that emphasize respect, learning, and
+        constructive engagement
+      </li>
+      <li>
+        Reinforcing shared accountability for how communication occurs, in
+        addition to the outcomes of decisions
+      </li>
+    </ul>
+
+    <p>
+      This report is offered in support of strengthening collaboration, clarity,
+      and overall organizational effectiveness.
+    </p>
+
+    <p>Respectfully submitted,</p>
+    <p>BITS Liaison team</p>
+    <p>Karen Hughes, and Debbie Hazelton</p>
+
+    <h3>Fundraising Committee</h3>
+
+    <h4>Current Projects</h4>
+
+    <h5>Blind Girl Designs</h5>
+
+    <p>
+      Our new BITS logo is now featured across all merchandise options --
+      including apparel and cozy blankets. To date, 10 members have already
+      placed orders, thank you for getting us off to a strong start.
+    </p>
+
+    <p>
+      We encourage Board and Committee members to lead by example by updating
+      their wardrobe with the new BITS logo. For all members, this is a great
+      opportunity to refresh your current items with the updated colors or make
+      your first purchase to proudly represent BITS.
+    </p>
+
+    <p>
+      And remember -- if you are attending the 2026 ACB Convention in St. Louis
+      and are spotted wearing BITS merchandise, you just might receive a special
+      surprise.
+    </p>
+
+    <p>
+      Shop the collection at
+      <a
+        href="https://blind-girl-designs.myshopify.com/collections/bits-blind-information-technology-solutions"
+        >the Blind Girl Designs BITS merchandise shop</a
+      >.
+    </p>
+
+    <h5>City Pop Fundraiser</h5>
+
+    <p>
+      We are pleased to report continued success with our City Pop fundraiser.
+      To date:
+    </p>
+
+    <ul>
+      <li>Approved Sales: $1,237.50</li>
+      <li>Amount Raised: $618.76</li>
+    </ul>
+
+    <p>
+      Thank you to everyone who has supported this effort. With over 70
+      delicious flavors, including sweet, savory, and specialty mixes, there is
+      something for everyone. Plus, the resealable bags help keep everything
+      fresh for continued enjoyment.
+    </p>
+
+    <p>
+      Place your order at
+      <a href="https://citypopfundraising.com/53808908"
+        >the City Pop Fundraiser order page</a
+      >.
+    </p>
+
+    <h4>New Project</h4>
+
+    <h5>RaiseRight</h5>
+
+    <p>
+      The committee is currently assessing the RaiseRight program to ensure a
+      smooth and accessible experience before launching it to membership. This
+      initiative will provide opportunities to support BITS through everyday
+      activities such as purchasing gift cards, shopping online, dining out, and
+      even planning travel.
+    </p>
+
+    <p>
+      We appreciate your patience as we work to make this process simple,
+      engaging, and beneficial for all members.
+    </p>
+
+    <h5>Additional Projects</h5>
+
+    <p>
+      Work continues identifying suitable backpacks and power banks, with a
+      focus on durability, functionality, and ease of distribution. More details
+      will be shared as options are finalized.
+    </p>
+
+    <h5>Convention Activity</h5>
+
+    <p>
+      We are planning an exciting auction for the reception at the 2026 ACB
+      Convention. Additional details will be shared soon.
+    </p>
+
+    <p>
+      We are also inviting Committee Chairs to collaborate and contribute one
+      item as a group for the auction. Please notify me by the end of this month
+      so that item can be included in our May planning meeting.
+    </p>
+
+    <p>
+      Our next committee meeting for the month of April will take place next
+      week.
+    </p>
+
+    <p>Respectfully submitted,</p>
+    <p>Ann, Chair</p>
+
+    <h3>Presentations Committee</h3>
+
+    <p>Submitted April 8, 2026</p>
+
+    <h4>March 2026 Presentations</h4>
+
+    <p>The following presentations were held during March 2026:</p>
+
+    <ul>
+      <li>Mar 24 - Get Going With Thunderbird Email</li>
+      <li>Wed Mar 25 - Apple Bytes</li>
+      <li>Tue Mar 31 - Emergency Preparedness with Lisa Salinger</li>
+    </ul>
+
+    <p>
+      Mac Bytes was not held during March, because Brad was away attending the
+      CSUN Conference.
+    </p>
+
+    <h4>April 2026 Presentations</h4>
+
+    <p>The following presentations are scheduled during April 2026:</p>
+
+    <ul>
+      <li>
+        Tue April 7 - Inside the BrailleNote Evolve Experience: From KeySoft
+        Simplicity to Full Windows Power
+      </li>
+      <li>Tue April 14 - Mac Bytes</li>
+      <li>Wed April 15 - Braille Across Devices</li>
+      <li>Wed April 22 - Apple Bytes</li>
+    </ul>
+
+    <p>Please note:</p>
+
+    <ol>
+      <li>
+        All BITS presentations are recorded, and once edited are available to
+        BITS members in good standing in the Media section of the
+        <a href="https://bits-acb.org/">BITS website</a>.
+      </li>
+      <li>
+        In order to receive announcements and Zoom links for all BITS
+        presentations, please be sure you are subscribed to one or all of the
+        following email group lists:
+        <ul>
+          <li>
+            <a href="mailto:events@bits.groups.io">BITS Events email list</a>
+          </li>
+          <li>
+            <a href="mailto:bits-announce@groups.io"
+              >BITS Announcements email list</a
+            >
+          </li>
+          <li>
+            <a href="mailto:acb-conversation@acblist.org"
+              >ACB Conversation email list</a
+            >
+          </li>
+        </ul>
+      </li>
+    </ol>
+
+    <p>Report Submitted by:</p>
+    <p>Brad Snyder, Presentations Committee Chair</p>
+    <p><a href="mailto:Brad.Snyder@bits-acb.org">Email Brad Snyder</a></p>
+
+    <h3>Convention Committee</h3>
+
+    <p>Submitted April 8, 2026</p>
+
+    <p>
+      The BITS Convention Planning Committee continues planning for the 2026 ACB
+      Convention scheduled for July 13 through July 31, with the in-person
+      portion of the convention being held July 24 through July 31, in St.
+      Louis, Missouri.
+    </p>
+
+    <p>
+      BITS is planning to hold 6 presentations during the Virtual portion of the
+      convention, Thursday July 16 through Saturday July 18.
+    </p>
+
+    <p>
+      Below is a listing of the planned presentations, with dates, times,
+      titles, and descriptions.
+    </p>
+
+    <p>Note: All times are Central.</p>
+
+    <h4>Thursday July 16</h4>
+
+    <h5>
+      10:00 AM -- Smart Living Stronger Access Appliances Community and Advocacy
+    </h5>
+
+    <p>
+      Be part of a conversation about appliances and accessibility, and why
+      inclusive design must extend into every part of daily life. Our
+      presentation will highlight the launch of the Appliance Portal, efforts to
+      connect with the community through YouTube, and the importance of bringing
+      greater awareness to vendors, advocates, and consumers alike. By sharing
+      experiences, building visibility, and speaking with a stronger collective
+      voice, we can help drive meaningful progress in accessibility and
+      advocacy.
+    </p>
+
+    <h5>1:00 PM -- Capturing The World Through Photography With Confidence</h5>
+
+    <p>
+      Many of us carry smartphones or wearable devices with built-in cameras,
+      but if you are blind or visually impaired, using them may feel unfamiliar
+      or even intimidating. This session is designed for smart device beginners
+      or intermediate users and will start with the basics of how to take photos
+      using accessible features. We will explore simple techniques to help you
+      understand what is in your pictures using description tools and apps. By
+      the end, you will feel more confident capturing and sharing moments in
+      ways that work for you.
+    </p>
+
+    <h4>Friday July 17</h4>
+
+    <h5>10:00 AM -- What is new with the Monarch</h5>
+
+    <p>
+      Come learn about the Monarch multi-line Braille display from the American
+      Printing House for the Blind. Discover all about tactile graphics, Monarch
+      apps, and the Monarch RISE project.
+    </p>
+
+    <h5>
+      1:00 PM -- Microsoft Narrator: A Tool For Making The Transition From Low
+      Vision To No Vision
+    </h5>
+
+    <p>
+      If using screen magnification and a mouse with your Windows PC is no
+      longer working effectively for you due to ongoing vision loss, there is an
+      available alternative. Microsoft Narrator, a free screen reader built into
+      the Windows operating system, can enable you to read the contents
+      displayed on your computer screen, as well as hear the text in documents,
+      email, and webpages, as well as any other content on your screen. In this
+      presentation, we will show you how to put this powerful tool to work for
+      you, and help you maintain your independence, as your vision continues to
+      transition from low vision to no vision.
+    </p>
+
+    <h4>Saturday July 18</h4>
+
+    <h5>10:00 AM -- Trends in AI and making it accessible</h5>
+
+    <p>
+      Blind Information Technology Solutions, along with a panel of experts,
+      will explore the latest trends in AI from a blind and low vision
+      perspective. The session will highlight how tools like ChatGPT, Copilot,
+      Gemini, Claude, and Accessibility Agents are expanding access, creativity,
+      and innovation. Attendees will learn how blind and low vision people are
+      not only using these technologies, but also helping shape what comes next.
+      It will be a practical and engaging look at how accessible AI is changing
+      the world around us.
+    </p>
+
+    <h5>1:00 PM -- Accessible blogging with Substack</h5>
+
+    <p>
+      Substack is an accessible web-based platform designed to allow you to
+      unleash your imagination for creative writing. In this presentation, we
+      will explore this exciting platform, and hear from 3 users, who will share
+      their experiences using Substack as a creative way to reach a wide
+      audience.
+    </p>
+
+    <h4>BITS Reception</h4>
+
+    <p>
+      The 3rd Annual BITS Reception is planned for Wednesday July 29, from 5:00
+      to 7:00 PM at the Convention hotel.
+    </p>
+
+    <p>
+      Tickets for the reception will be $20, and will include a drink coupon.
+    </p>
+
+    <p>Tickets will be available in advance during conference registration.</p>
+
+    <p>We will have a cash bar again this year.</p>
+
+    <p>
+      Several fund raising events are planned to take place during this year's
+      reception.
+    </p>
+
+    <p>The raffle will return, and we are planning an auction as well.</p>
+
+    <p>We are also considering some kind of technology based trivia event.</p>
+
+    <p>
+      Stay tuned for more information as plans for the reception are evolving.
+    </p>
+
+    <h4>On-Site Training in St. Louis</h4>
+
+    <p>
+      We are planning to hold a training event similar to what we did last year
+      in Dallas.
+    </p>
+
+    <p>
+      This year's training will focus on both Google Suite and Microsoft Office
+      training.
+    </p>
+
+    <p>
+      Training sessions will take place in the afternoons, Monday July 27
+      through Thursday July 30.
+    </p>
+
+    <p>
+      Each session will be held over 2 days, and each training will be offered
+      twice, in order to better serve our members and the ACB community.
+    </p>
+
+    <p>
+      Registration will be required on the Conference registration form for
+      those attending in St. Louis.
+    </p>
+
+    <p>
+      We expect to provide an opportunity for those unable to be in St. Louis to
+      participate in the training as was done last year.
+    </p>
+
+    <p>
+      Plans are still in development, and more details will be announced soon.
+    </p>
+
+    <h4>Exhibit Hall</h4>
+
+    <p>BITS will once again have a table in the exhibit hall.</p>
+
+    <p>
+      The table will be staffed by the IT Admin team, as was the case last year.
+    </p>
+
+    <p>More details will be announced soon.</p>
+
+    <p>Report Submitted by:</p>
+    <p>Brad Snyder, Convention Planning Committee Chair</p>
+    <p><a href="mailto:Brad.Snyder@bits-acb.org">Email Brad Snyder</a></p>
+
+    <h3>Education Committee</h3>
+
+    <p>Report of the Education committee April 2026</p>
+
+    <p>
+      Hello board members and BITS membership. The Education committee has been
+      busy beginning the work of designing the long term education courses many
+      have been asking about. With all but one of our sub committees filled,
+      they have begun holding meetings and are organizing the tasks they have
+      identified for constructing practical and impactful classes. Basics with
+      BITS has resumed, now on our own Zoom accounts and with a new registration
+      system designed to capture the metrics we can leverage to add weight to
+      all applications we make when seeking future grants. This is truly an
+      important addition to the work we do and has been absent from our data
+      until recent. In both of the Basics with BITS classes, we are registering
+      an average of 60 people and having 55 of those come into the Zoom room to
+      listen to our presentations. Very proud of the group and the work being
+      done there.
+    </p>
+
+    <p>
+      Our Braille and screen reader groups have compiled and prioritized work
+      needed to create classes and documentation for all of our members and for
+      the public to make them aware of all BITS can offer. Our Low vision group
+      has designed and will release a survey form to understand the needs of
+      this population and how we can best serve them, so keep an eye on your
+      emails and tech lists for this. And not at all least, is the Mentor
+      committee. Marci and her crew have formed the first set of mentor and
+      mentee pairings and should be announced soon, I do not want to take the
+      spotlight off of her for the announcement.
+    </p>
+
+    <p>
+      It has taken time to get our legs under us as we completely restructured
+      the way this committee works and how we can serve each of you with the
+      quality education you want, and deserve. Our committee takes our work
+      seriously and while it can feel like the going is slow, this is not the
+      case, and stay tuned for 2 courses coming in the next month on both the
+      BlindShell and Android phones! And David Kingsbury and his group are
+      working on an exciting, and long awaited course, but we will hold off on
+      that announcement for the moment.
+    </p>
+
+    <p>Submitted</p>
+    <p>Tyson Ernst, Chair, BITS Education</p>
+
+    <h3>Membership Committee</h3>
+
+    <p>BITS Membership Committee Report</p>
+
+    <p>April, 2026</p>
+
+    <p>
+      As of March 30, 2026, the date on which I submitted the BITS 2026 AMMS
+      roster certification, our membership count stands at 876.
+    </p>
+
+    <p>The breakdown is as follows:</p>
+
+    <ul>
+      <li>2025 expirations (no longer certified): 168</li>
+      <li>2026 expirations: 339</li>
+      <li>2027 expirations: 39</li>
+      <li>2028 expirations: 1</li>
+      <li>BITS life members: 497</li>
+      <li>Total: 876</li>
+    </ul>
+
+    <p>
+      Three new members have joined since the March 15th certification cut-off,
+      so they will be certified, together with any additional members we might
+      gain, prior to the 2026 ACB convention record date once AMMS is opened up
+      again in early May.
+    </p>
+
+    <p>Some interesting facts to note about this year's certified roster:</p>
+
+    <ol>
+      <li>
+        Our 2025 AMMS roster submission listed 780 members, so we are 96 ahead
+        of the total for last year's certification.
+      </li>
+      <li>
+        Our 2025 AMMS roster submission listed 47 ACB life members. We had
+        reached a high of 58, but with non-renewals and the passing of Robert
+        Rogers on March 18th, this year's submission lists 53 ACB life members.
+        Rob was a long-time BITS member going back to the late eighties or early
+        nineties.
+      </li>
+      <li>
+        The total of BITS life members now comprises 56.74% of the total BITS
+        membership.
+      </li>
+      <li>
+        With this year's submission, BITS has achieved 100% membership
+        participation in completing the gender, ethnicity, and vision status
+        fields. While BITS is not particularly concerned about that data, ACB
+        is, and we are an ACB affiliate.
+      </li>
+    </ol>
+
+    <p>
+      Lastly, to circle back to what I mentioned in last month's membership
+      report, based on the data in this report, (and of course that data changes
+      constantly), a focused membership renewal solicitation campaign need only
+      involve the 339 members whose memberships lapse as of February 15, 2027.
+      My plan would be to send out an email to all BITS members stating that
+      they should not renew their memberships unless they specifically receive a
+      renewal solicitation email, though, of course, they should feel free to
+      inquire about their membership termination date.
+    </p>
+
+    <p>Respectfully submitted:</p>
+    <p>John McCann, Chair: BITS Membership Committee</p>
+
+    <h3>BITS IT Committee Report</h3>
+
+    <p>Date: Monday, April 6, 2026</p>
+
+    <h4>Member Feedback and Engagement</h4>
+
+    <p>
+      The IT Committee would like to begin by expressing our sincere
+      appreciation to all members who have taken the time to submit feedback
+      through the BITS website feedback form. Your input is essential in helping
+      us improve our technology, services, and overall member experience.
+    </p>
+
+    <p>
+      To ensure we can respond effectively and efficiently, we kindly ask
+      members to keep the following in mind when submitting feedback:
+    </p>
+
+    <ul>
+      <li>
+        This is the place to provide your feedback honestly and anonymously.
+      </li>
+      <li>
+        Include Contact Information: If you are seeking a response, please
+        provide an email address and/or phone number so we can follow up
+        directly.
+      </li>
+      <li>
+        Provide Clear and Detailed Information: When reporting an issue or
+        sharing feedback, please be as specific as possible. For example:
+        <ul>
+          <li>Describe how you navigated to the page</li>
+          <li>Identify where on the page the issue occurred</li>
+          <li>Explain what you expected versus what actually happened</li>
+        </ul>
+      </li>
+    </ul>
+
+    <p>
+      Clear, detailed feedback allows our team to investigate and resolve issues
+      more efficiently.
+    </p>
+
+    <h4>Opportunities to Get Involved Right Now</h4>
+
+    <p>
+      We currently have several important and time-sensitive opportunities where
+      member participation can make a meaningful impact:
+    </p>
+
+    <h5>BITS Connect</h5>
+
+    <p>
+      The IT Committee continues to support initiatives that enhance
+      accessibility, communication, and engagement across the BITS community.
+    </p>
+
+    <p>
+      One major initiative currently in development is BITS Connect, a new
+      iPhone application built specifically for the BITS community with
+      accessibility as its foundation.
+    </p>
+
+    <p>Summary of Key Capabilities:</p>
+
+    <ul>
+      <li>
+        Accessibility-first design, fully optimized for VoiceOver, large text,
+        and high-contrast use
+      </li>
+      <li>
+        Centralized access to announcements, with optional summaries and
+        customizable notifications
+      </li>
+      <li>
+        Integrated media library for streaming, downloading, and resuming audio
+        and video content
+      </li>
+      <li>
+        Comprehensive event calendar with one-tap Zoom access and live activity
+        reminders
+      </li>
+      <li>
+        Community features, including a searchable contact directory and easy
+        access to email groups and resources
+      </li>
+      <li>
+        Personalization options, such as themes, display settings, and
+        notification preferences
+      </li>
+      <li>Save-for-later functionality for announcements, media, and events</li>
+      <li>
+        Membership tools, including status tracking, renewal, and donation
+        management
+      </li>
+      <li>
+        Built-in feedback tools, making it easier than ever for members to
+        submit suggestions or report issues
+      </li>
+    </ul>
+
+    <p>
+      BITS Connect is being developed in phases, with upcoming opportunities for
+      member beta testing and continued enhancements based on community
+      feedback.
+    </p>
+
+    <p>
+      To participate:
+      <a href="mailto:support@bits-acb.org">Email BITS Support</a>
+    </p>
+
+    <h5>Low Vision User Opportunity</h5>
+
+    <p>
+      We are seeking 20 to 40 low vision users to participate in an opportunity
+      with one of our partners.
+    </p>
+
+    <p>
+      To participate:
+      <a href="mailto:support@bits-acb.org">Email BITS Support</a>
+    </p>
+
+    <h5>New Outlook Bug Bash</h5>
+
+    <p>
+      We are organizing a New Outlook Bug Bash to ensure the product meets the
+      needs of blind and low vision users before broader rollout.
+    </p>
+
+    <ul>
+      <li>Participation will include Empower staff and additional members</li>
+      <li>Particularly seeking individuals who are blind or have low vision</li>
+    </ul>
+
+    <p>
+      To participate:
+      <a href="mailto:support@bits-acb.org">Email BITS Support</a>
+    </p>
+
+    <h5>BITS Whisperer -- Beta Testers Needed</h5>
+
+    <p>
+      We are seeking beta testers for BITS Whisperer, a new transcription and
+      AI-powered application.
+    </p>
+
+    <p>Highlights include:</p>
+
+    <ul>
+      <li>Multi-engine transcription (on-device and cloud)</li>
+      <li>AI-powered summaries, translations, and meeting tools</li>
+      <li>Speaker identification and editing</li>
+      <li>Advanced audio processing and cleanup</li>
+      <li>Batch processing and automation features</li>
+      <li>Multiple export formats (Word, HTML, SRT, JSON, and more)</li>
+      <li>Real-time microphone transcription</li>
+      <li>Fully accessible, screen reader-friendly design</li>
+      <li>Privacy-focused with secure local storage</li>
+    </ul>
+
+    <p>
+      To participate:
+      <a href="mailto:support@bits-acb.org">Email BITS Support</a>
+    </p>
+
+    <h5>Zoom Host Training for New Hosts</h5>
+
+    <p>We are seeking members interested in hosting BITS events.</p>
+
+    <p>Requirements:</p>
+
+    <ul>
+      <li>Ability to attend multiple training sessions</li>
+      <li>Comfortable using a personal computer</li>
+      <li>Zoom installed prior to training</li>
+    </ul>
+
+    <p>
+      Participants who complete training will become apprentice hosts working
+      alongside experienced hosts.
+    </p>
+
+    <p>
+      To participate:
+      <a href="mailto:support@bits-acb.org">Email BITS Support</a>
+    </p>
+
+    <h4>Closing</h4>
+
+    <p>
+      The IT Committee remains committed to advancing accessible technology,
+      improving user experience, and expanding opportunities for member
+      engagement.
+    </p>
+
+    <p>
+      We encourage all members to stay involved, provide feedback, and
+      participate in current initiatives. Your continued involvement plays a
+      critical role in shaping the future of BITS.
+    </p>
+
+    <p>Respectfully submitted,</p>
+    <p>BITS IT Committee</p>
+
+    <h3>Email Management Team April 2026 Report</h3>
+
+    <p>
+      The Email Management Team is listening to our BITS Family. We heard you at
+      Office Hours. We hear your requests when you email asking for improvements
+      and new features to enhance the member experience. We are working with
+      other teams and committees to make it happen. Email Management does not
+      just cross that "bridge" to meet our members where they are. We bring
+      along a few friends to make the BITS experience welcoming, respectful,
+      inclusive, as well as a growing, empathetic community.
+    </p>
+
+    <h4>BITS Bytes</h4>
+
+    <p>
+      Issue seventy-four of our weekly summary will post on Friday April 10,
+      2026. Keep watching our weekly summary for the latest updates on all
+      things BITS. From Chat to Classes, from Presentations to Perks, once a
+      week we conveniently put everything in one place for our BITS Family.
+    </p>
+
+    <p>
+      We have committed to posting as close to 4:00 p.m. eastern each Friday as
+      possible. This makes it a bit more difficult for our leaders who live on
+      the West Coast. However, we do accept announcements 24/7 at
+      <a href="mailto:mervin.keck@bits-acb.org"
+        >Mervin Keck, Email Management</a
+      >
+      and we actively seek updates beginning each Wednesday. This makes it
+      easier for our members who are seeking news before heading into BITS Chat
+      on Friday evening.
+    </p>
+
+    <p>
+      If you have an announcement that you would like to be considered for BITS
+      Bytes, please consult our advertising guidelines and contact
+      <a href="mailto:mervin.keck@bits-acb.org">Mervin Keck, Email Management</a
+      >.
+    </p>
+
+    <p>
+      Both the email and the advertising guidelines are available on the BITS
+      web site in the handbook. Or by sending a blank message from any of the
+      bits.groups.io mailing lists. For example,
+      <a href="mailto:technology+guidelines@bits.groups.io"
+        >BITS Technology Guidelines email command</a
+      >.
+    </p>
+
+    <p>
+      We will be sending along an email to ACB Leadership in the next few weeks
+      inviting leaders of other affiliates to submit announcements to BITS
+      Bytes. This has been clearly defined in our guidelines. However, we have
+      had few leaders take advantage of the opportunity.
+    </p>
+
+    <h4>Leadership Profiles</h4>
+
+    <p>
+      This ongoing project continues to develop. We are still gathering data
+      from Officers and other leaders as we move forward.
+    </p>
+
+    <h4>Facilitators</h4>
+
+    <p>Here are our facilitators:</p>
+
+    <ul>
+      <li>
+        Development - Facilitators: Darrell Hillacker, Jason Castonguay, Michael
+        Doise, and Taylor Arndt
+      </li>
+      <li>Technology - Facilitators: David Edick, Mervin Keck</li>
+      <li>Social - Facilitator: Herbie Allen</li>
+      <li>BITS - Facilitators: Email Management Team</li>
+      <li>Access - Facilitators: Nicki Keck, Jason Castonguay, Mervin Keck</li>
+      <li>Ask - Facilitator: Bellinda Collins</li>
+      <li>AI - Facilitator: Michael Doise</li>
+    </ul>
+
+    <h4>Looking Ahead</h4>
+
+    <p>
+      Email Management is under the umbrella of the Interpersonal Communications
+      committee.
+    </p>
+
+    <p>
+      Communications is working with other teams to complete a number of goals,
+      including:
+    </p>
+
+    <ul>
+      <li>
+        A solution for distributing employment notices to our BITS community.
+      </li>
+      <li>
+        Further refinement of hosting guidelines. This is not an attempt to
+        stray into Chat Management's area. Chat Management and Email Management
+        work collaboratively with Publications to refine guidelines. The IT,
+        Infrastructure, Team works alongside to advise on managing BITS assets.
+      </li>
+    </ul>
+
+    <p>
+      If you have any questions please do not hesitate to reach out to
+      <a href="mailto:mervin.keck@bits-acb.org">Mervin Keck, Email Management</a
+      >.
+    </p>
+
+    <p>
+      I would like to thank President Jeff Bishop, Co-Chair, Jason Castonguay,
+      David Edick, Social Media Manager, Robin Frost, and Nicki Keck for their
+      excellent and essential work on our Team.
+    </p>
+
+    <p>
+      If anyone would like to contact me privately in regard to issues related
+      to Email Management, or if you have a question and wish to email me off
+      list, my email is:
+      <a href="mailto:Mervin.keck@bits-acb.org">Mervin Keck, Email Management</a
+      >.
+    </p>
+
+    <p>Respectfully submitted</p>
+    <p>Mervin Keck, Email Management Team, Chair</p>
+
+    <h3>Publications Committee</h3>
+
+    <p>
+      The Publications Committee welcomes spring with new and fresh ideas. The
+      committee met in March for its regular monthly meeting.
+    </p>
+
+    <p>
+      As of today, our Mastodon presence has grown to 333 followers. Our new
+      Facebook page has been launched and is already proving to be successful.
+      All are invited to join. Upcoming events and announcements will be shared
+      there, as well as on Mastodon and BITS Bytes.
+    </p>
+
+    <p>
+      The spring newsletter is currently in progress and is scheduled for
+      release in May. All articles are due by May 15, which will allow our
+      editor, Jason, sufficient time to compile and finalize the newsletter.
+    </p>
+
+    <p>
+      Since our last meeting, we have added a new branch within Publications and
+      Communications: the Marketing component, which will be led by Michael
+      Babcock. More details will be shared as this develops.
+    </p>
+
+    <p>Publications continue to collaborate with other committees as needed.</p>
+
+    <p>
+      I would like to take a moment to thank the members of this committee for
+      their outstanding work. The level of commitment and dedication they bring
+      to their roles is greatly appreciated, does not go unnoticed, and truly
+      makes a difference.
+    </p>
+
+    <p>Thank you.</p>
+    <p>Rosanna Beaudrie, Publications Chair</p>
+  </body>
+</html>
