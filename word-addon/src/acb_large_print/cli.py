@@ -20,15 +20,31 @@ def _build_parser() -> argparse.ArgumentParser:
         epilog=(
             "Examples:\n"
             "  acb-large-print audit report.docx\n"
+            "  acb-large-print audit report.docx -f json -o report.json\n"
             "  acb-large-print fix  report.docx -o report-fixed.docx\n"
-            "  acb-large-print template ACB-Template.dotx\n"
-            "  acb-large-print batch audit *.docx --format json\n"
+            "  acb-large-print fix  report.docx -o fixed.docx -b\n"
+            "  acb-large-print template -t 'Meeting Minutes'\n"
+            "  acb-large-print batch audit *.docx -f json\n"
+            "  acb-large-print export report.docx --cms\n"
+            "\n"
+            "Exit codes:\n"
+            "  0  Success\n"
+            "  1  Error (file not found, invalid arguments)\n"
+            "  2  Audit completed with findings (document is non-compliant)\n"
         ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument(
-        "--version", action="version",
+        "--version", "-V", action="version",
         version=f"{__app_name__} {__version__}",
+    )
+    parser.add_argument(
+        "--quiet", "-q", action="store_true",
+        help="Suppress informational messages; only output results",
+    )
+    parser.add_argument(
+        "--verbose", "-v", action="store_true",
+        help="Show detailed processing information",
     )
 
     sub = parser.add_subparsers(dest="command", required=False)
@@ -41,7 +57,7 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     audit_p.add_argument("file", type=Path, help="Path to .docx file to audit")
     audit_p.add_argument(
-        "--format", choices=["text", "json"], default="text",
+        "--format", "-f", choices=["text", "json"], default="text",
         help="Output format (default: text)",
     )
     audit_p.add_argument(
@@ -61,7 +77,7 @@ def _build_parser() -> argparse.ArgumentParser:
         help="Output file path (default: overwrites input)",
     )
     fix_p.add_argument(
-        "--bound", action="store_true",
+        "--bound", "-b", action="store_true",
         help="Add binding margin (0.5 inch extra on left)",
     )
 
@@ -77,19 +93,19 @@ def _build_parser() -> argparse.ArgumentParser:
         help="Output template path (default: ACB-Large-Print.dotx)",
     )
     tmpl_p.add_argument(
-        "--bound", action="store_true",
+        "--bound", "-b", action="store_true",
         help="Configure binding margins",
     )
     tmpl_p.add_argument(
-        "--no-sample", action="store_true",
+        "--no-sample", "-n", action="store_true",
         help="Create empty template without sample content",
     )
     tmpl_p.add_argument(
-        "--title", type=str, default="",
+        "--title", "-t", type=str, default="",
         help="Set the document title property",
     )
     tmpl_p.add_argument(
-        "--install", action="store_true",
+        "--install", "-i", action="store_true",
         help="Also install the template to Word's Templates folder",
     )
 
@@ -108,15 +124,15 @@ def _build_parser() -> argparse.ArgumentParser:
         help="Paths to .docx files (supports glob patterns)",
     )
     batch_p.add_argument(
-        "--format", choices=["text", "json"], default="text",
+        "--format", "-f", choices=["text", "json"], default="text",
         help="Output format for audit reports",
     )
     batch_p.add_argument(
-        "--output-dir", type=Path, default=None,
+        "--output-dir", "-d", type=Path, default=None,
         help="Directory for fixed files (batch fix)",
     )
     batch_p.add_argument(
-        "--bound", action="store_true",
+        "--bound", "-b", action="store_true",
         help="Add binding margin (batch fix)",
     )
 
@@ -136,11 +152,11 @@ def _build_parser() -> argparse.ArgumentParser:
         help="Output HTML file path (default: same name, .html extension)",
     )
     export_p.add_argument(
-        "--cms", action="store_true",
+        "--cms", "-c", action="store_true",
         help="Generate a CMS fragment with embedded CSS instead of standalone",
     )
     export_p.add_argument(
-        "--title", type=str, default="",
+        "--title", "-t", type=str, default="",
         help="Document title for the HTML output",
     )
     export_p.add_argument(
