@@ -111,6 +111,7 @@ def generate_json_report(result: AuditResult) -> str:
             }
             for f in result.findings
         ],
+        "exitCode": 0 if result.passed else 2,
     }
     return json.dumps(data, indent=2, ensure_ascii=False)
 

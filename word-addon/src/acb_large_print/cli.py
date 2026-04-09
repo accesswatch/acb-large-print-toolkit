@@ -3,10 +3,28 @@
 from __future__ import annotations
 
 import argparse
+import logging
 import sys
 from pathlib import Path
 
 from . import __app_name__, __version__
+
+log = logging.getLogger("acb_large_print")
+
+
+def _configure_logging(args: argparse.Namespace) -> None:
+    """Set up logging based on --quiet / --verbose flags."""
+    if getattr(args, "quiet", False):
+        level = logging.WARNING
+    elif getattr(args, "verbose", False):
+        level = logging.DEBUG
+    else:
+        level = logging.INFO
+    logging.basicConfig(
+        level=level,
+        format="%(message)s",
+        stream=sys.stderr,
+    )
 
 
 def _build_parser() -> argparse.ArgumentParser:
@@ -25,6 +43,7 @@ def _build_parser() -> argparse.ArgumentParser:
             "  acb-large-print fix  report.docx -o fixed.docx -b\n"
             "  acb-large-print template -t 'Meeting Minutes'\n"
             "  acb-large-print batch audit *.docx -f json\n"
+            "  acb-large-print batch fix docs/ -r -d fixed/\n"
             "  acb-large-print export report.docx --cms\n"
             "\n"
             "Exit codes:\n"
@@ -135,6 +154,10 @@ def _build_parser() -> argparse.ArgumentParser:
         "--bound", "-b", action="store_true",
         help="Add binding margin (batch fix)",
     )
+    batch_p.add_argument(
+        "--recursive", "-r", action="store_true",
+        help="Search subdirectories for .docx files",
+    )
 
     # ---- export ----
     export_p = sub.add_parser(
@@ -183,7 +206,9 @@ def _cmd_audit(args: argparse.Namespace) -> int:
         print(f"Error: File not found: {args.file}", file=sys.stderr)
         return 1
 
+    log.debug("Auditing: %s", args.file)
     result = audit_document(args.file)
+    log.debug("Score: %d/100 (%s), %d findings", result.score, result.grade, len(result.findings))
 
     if args.format == "json":
         report = generate_json_report(result)
@@ -193,7 +218,7 @@ def _cmd_audit(args: argparse.Namespace) -> int:
     if args.output:
         args.output.parent.mkdir(parents=True, exist_ok=True)
         args.output.write_text(report, encoding="utf-8")
-        print(f"Report saved to: {args.output}")
+        log.info("Report saved to: %s", args.output)
     else:
         print(report)
 
@@ -231,12 +256,12 @@ def _cmd_template(args: argparse.Namespace) -> int:
         include_sample=not args.no_sample,
         title=args.title,
     )
-    print(f"Template created: {output}")
+    log.info("Template created: %s", output)
 
     if args.install:
         dest = install_template(output)
-        print(f"Template installed to: {dest}")
-        print("It will appear in Word under File, New, Personal templates.")
+        log.info("Template installed to: %s", dest)
+        log.info("It will appear in Word under File, New, Personal templates.")
 
     return 0
 
@@ -247,11 +272,19 @@ def _cmd_batch(args: argparse.Namespace) -> int:
     from .fixer import fix_document
     from .reporter import generate_fix_summary, generate_json_report, generate_text_report
 
-    # Expand glob patterns
+    # Expand glob patterns and optional recursive search
     files: list[Path] = []
     for pattern in args.files:
-        if "*" in str(pattern) or "?" in str(pattern):
-            files.extend(pattern.parent.glob(pattern.name))
+        p = Path(str(pattern))
+        if p.is_dir():
+            # Directory given: find .docx files
+            glob_method = p.rglob if args.recursive else p.glob
+            files.extend(glob_method("*.docx"))
+        elif "*" in str(pattern) or "?" in str(pattern):
+            if args.recursive:
+                files.extend(pattern.parent.rglob(pattern.name))
+            else:
+                files.extend(pattern.parent.glob(pattern.name))
         else:
             files.append(pattern)
 
@@ -263,12 +296,12 @@ def _cmd_batch(args: argparse.Namespace) -> int:
     total_processed = 0
     total_issues = 0
 
-    for file_path in files:
+    for file_path in sorted(files):
         if not file_path.exists():
-            print(f"Skipping (not found): {file_path}", file=sys.stderr)
+            log.warning("Skipping (not found): %s", file_path)
             continue
         if file_path.suffix.lower() != ".docx":
-            print(f"Skipping (not .docx): {file_path}", file=sys.stderr)
+            log.warning("Skipping (not .docx): %s", file_path)
             continue
 
         total_processed += 1
@@ -304,11 +337,9 @@ def _cmd_batch(args: argparse.Namespace) -> int:
                 exit_code = 2
 
     # Batch summary
-    print(f"Batch complete: {total_processed} files processed", end="")
-    if args.action == "audit":
-        print(f", {total_issues} total findings")
-    else:
-        print()
+    log.info("Batch complete: %d files processed%s",
+             total_processed,
+             f", {total_issues} total findings" if args.action == "audit" else "")
 
     return exit_code
 
@@ -333,18 +364,18 @@ def _cmd_export(args: argparse.Namespace) -> int:
 
     if args.cms:
         path, warnings = export_cms_fragment(args.file, out, title=title)
-        print(f"CMS fragment saved: {path}")
+        log.info("CMS fragment saved: %s", path)
     else:
         html_path, css_path, warnings = export_standalone_html(
             args.file, out, title=title, css_path=args.css,
         )
-        print(f"HTML saved: {html_path}")
-        print(f"CSS saved:  {css_path}")
+        log.info("HTML saved: %s", html_path)
+        log.info("CSS saved:  %s", css_path)
 
     if warnings:
-        print(f"\nConversion warnings ({len(warnings)}):")
+        log.warning("Conversion warnings (%d):", len(warnings))
         for w in warnings:
-            print(f"  - {w}")
+            log.warning("  - %s", w)
 
     return 0
 
@@ -374,6 +405,7 @@ def main(argv: list[str] | None = None, *, force_cli: bool = False) -> int:
     """
     parser = _build_parser()
     args = parser.parse_args(argv)
+    _configure_logging(args)
 
     if args.command is None:
         if force_cli:
