@@ -21,9 +21,8 @@ Download the latest release for your platform from the
 
 | Platform | Filename | Notes |
 |---|---|---|
-| Windows x64 | `acb-large-print-win-x64.exe` | Most common target |
-| Windows ARM64 | `acb-large-print-win-arm64.exe` | Surface Pro X, Copilot+ PCs |
-| macOS Apple Silicon | `acb-large-print-macos-arm64` | M1/M2/M3/M4 Macs |
+| Windows | `acb-large-print-win-x64.exe` | x64 binary, also runs on ARM64 via emulation |
+| macOS | `acb-large-print-macos-arm64` | Apple Silicon (M1/M2/M3/M4) |
 
 On macOS and Linux, make the file executable after downloading:
 
@@ -207,10 +206,10 @@ git push origin v1.0.0
 
 This runs the workflow at `.github/workflows/build.yml` which:
 
-1. Builds on 3 runners simultaneously (Windows x64, Windows ARM64, macOS ARM64)
+1. Builds on 2 runners simultaneously (Windows x64, macOS ARM64)
 2. Uploads each executable as a GitHub Actions artifact
-3. Creates a combined download with all 3 binaries
-4. Creates a GitHub Release with all executables attached (tag pushes only)
+3. Creates a combined download with both binaries
+4. Creates a GitHub Release with executables attached (tag pushes only)
 
 You can also trigger the workflow manually from the Actions tab and optionally upload to a release.
 
@@ -219,7 +218,6 @@ You can also trigger the workflow manually from the Actions tab and optionally u
 | Runner | OS | Arch | Executable output |
 |---|---|---|---|
 | `windows-latest` | Windows | x64 | `acb-large-print-win-x64.exe` |
-| `windows-11-arm` | Windows | ARM64 | `acb-large-print-win-arm64.exe` |
 | `macos-latest` | macOS | ARM64 | `acb-large-print-macos-arm64` |
 
 ### Windows installer (optional)

@@ -19,15 +19,10 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # Windows x64 -- most common target
+          # Windows x64 (also runs on ARM64 via emulation)
           - os: windows-latest
             label: win-x64
             exe: acb-large-print-win-x64.exe
-            shell: pwsh
-          # Windows ARM64
-          - os: windows-11-arm
-            label: win-arm64
-            exe: acb-large-print-win-arm64.exe
             shell: pwsh
           # macOS Apple Silicon (M-series)
           - os: macos-latest
