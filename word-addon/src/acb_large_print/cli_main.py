@@ -6,7 +6,7 @@ import sys
 
 
 def main() -> None:
-    from .cli import main as cli_main
+    from acb_large_print.cli import main as cli_main
     sys.exit(cli_main(force_cli=True))
 
 
