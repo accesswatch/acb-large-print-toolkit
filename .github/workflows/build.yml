@@ -63,6 +63,21 @@ jobs:
         working-directory: word-addon
         run: Get-ChildItem dist/
 
+      # Package macOS executables into a .dmg disk image
+      - name: Create DMG (macOS)
+        if: runner.os == 'macOS'
+        working-directory: word-addon
+        run: |
+          DMG_DIR=$(mktemp -d)
+          cp dist/acb-large-print-cli-macos-arm64 "$DMG_DIR/"
+          cp dist/acb-large-print-macos-arm64 "$DMG_DIR/"
+          chmod +x "$DMG_DIR/"acb-large-print*
+          hdiutil create -volname "ACB Large Print Tool" \
+            -srcfolder "$DMG_DIR" \
+            -ov -format UDZO \
+            dist/acb-large-print-macos-arm64.dmg
+          ls -la dist/*.dmg
+
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
