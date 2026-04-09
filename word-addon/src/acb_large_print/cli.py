@@ -167,6 +167,10 @@ def _build_parser() -> argparse.ArgumentParser:
         "--recursive", "-r", action="store_true",
         help="Search subdirectories for .docx files",
     )
+    batch_p.add_argument(
+        "--dry-run", "-n", action="store_true",
+        help="Show what would change without modifying any files (batch fix)",
+    )
 
     # ---- export ----
     export_p = sub.add_parser(
@@ -364,6 +368,17 @@ def _cmd_batch(args: argparse.Namespace) -> int:
                 exit_code = 2
 
         elif args.action == "fix":
+            if args.dry_run:
+                result = audit_document(file_path)
+                fixable = [f for f in result.findings if f.auto_fixable]
+                manual = [f for f in result.findings if not f.auto_fixable]
+                print(f"File: {file_path}")
+                print(f"  Auto-fixable: {len(fixable)}, Manual: {len(manual)}")
+                total_issues += len(result.findings)
+                if not result.passed:
+                    exit_code = 2
+                continue
+
             out = None
             if args.output_dir:
                 args.output_dir.mkdir(parents=True, exist_ok=True)
