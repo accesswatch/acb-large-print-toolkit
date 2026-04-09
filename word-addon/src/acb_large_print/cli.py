@@ -4,12 +4,16 @@ from __future__ import annotations
 
 import argparse
 import logging
+import os
 import sys
 from pathlib import Path
 
 from . import __app_name__, __version__
 
 log = logging.getLogger("acb_large_print")
+
+# Respect NO_COLOR convention (https://no-color.org)
+NO_COLOR = bool(os.environ.get("NO_COLOR"))
 
 
 def _configure_logging(args: argparse.Namespace) -> None:
@@ -41,6 +45,7 @@ def _build_parser() -> argparse.ArgumentParser:
             "  acb-large-print audit report.docx -f json -o report.json\n"
             "  acb-large-print fix  report.docx -o report-fixed.docx\n"
             "  acb-large-print fix  report.docx -o fixed.docx -b\n"
+            "  acb-large-print fix  report.docx --dry-run\n"
             "  acb-large-print template -t 'Meeting Minutes'\n"
             "  acb-large-print batch audit *.docx -f json\n"
             "  acb-large-print batch fix docs/ -r -d fixed/\n"
@@ -98,6 +103,10 @@ def _build_parser() -> argparse.ArgumentParser:
     fix_p.add_argument(
         "--bound", "-b", action="store_true",
         help="Add binding margin (0.5 inch extra on left)",
+    )
+    fix_p.add_argument(
+        "--dry-run", "-n", action="store_true",
+        help="Show what would change without modifying any files",
     )
 
     # ---- template ----
@@ -194,6 +203,17 @@ def _build_parser() -> argparse.ArgumentParser:
         description="Open the ACB Large Print Tool in GUI mode.",
     )
 
+    # ---- completions ----
+    comp_p = sub.add_parser(
+        "completions",
+        help="Generate shell completion scripts",
+        description="Print a completion script for your shell.",
+    )
+    comp_p.add_argument(
+        "shell", choices=["bash", "zsh", "powershell", "fish"],
+        help="Target shell",
+    )
+
     return parser
 
 
@@ -227,12 +247,33 @@ def _cmd_audit(args: argparse.Namespace) -> int:
 
 def _cmd_fix(args: argparse.Namespace) -> int:
     """Execute the fix command."""
+    from .auditor import audit_document
     from .fixer import fix_document
     from .reporter import generate_fix_summary
 
     if not args.file.exists():
         print(f"Error: File not found: {args.file}", file=sys.stderr)
         return 1
+
+    if args.dry_run:
+        # Dry-run: audit only, report what would be fixed
+        log.info("Dry run -- no files will be modified")
+        result = audit_document(args.file)
+        fixable = [f for f in result.findings if f.auto_fixable]
+        manual = [f for f in result.findings if not f.auto_fixable]
+        print(f"File: {args.file}")
+        print(f"Score: {result.score}/100 (Grade {result.grade})")
+        print(f"Auto-fixable issues: {len(fixable)}")
+        print(f"Manual-review issues: {len(manual)}")
+        if fixable:
+            print("\nWould fix:")
+            for i, f in enumerate(fixable, 1):
+                print(f"  {i}. [{f.severity.value}] {f.rule_id}: {f.message}")
+        if manual:
+            print("\nRequires manual review:")
+            for i, f in enumerate(manual, 1):
+                print(f"  {i}. [{f.severity.value}] {f.rule_id}: {f.message}")
+        return 0 if result.passed else 2
 
     output_path, total_fixes, post_audit = fix_document(
         args.file,
@@ -292,11 +333,12 @@ def _cmd_batch(args: argparse.Namespace) -> int:
         print("Error: No matching .docx files found.", file=sys.stderr)
         return 1
 
+    total_files = len(files)
     exit_code = 0
     total_processed = 0
     total_issues = 0
 
-    for file_path in sorted(files):
+    for idx, file_path in enumerate(sorted(files), 1):
         if not file_path.exists():
             log.warning("Skipping (not found): %s", file_path)
             continue
@@ -305,6 +347,7 @@ def _cmd_batch(args: argparse.Namespace) -> int:
             continue
 
         total_processed += 1
+        log.info("Processing %d/%d: %s", idx, total_files, file_path.name)
 
         if args.action == "audit":
             result = audit_document(file_path)
@@ -396,6 +439,71 @@ def _cmd_gui(_args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_completions(args: argparse.Namespace) -> int:
+    """Generate shell completion script."""
+    prog = "acb-large-print"
+    commands = "audit fix template batch export gui completions"
+    prog_under = prog.replace("-", "_")
+
+    if args.shell == "bash":
+        script = (
+            f"# bash completion for {prog}\n"
+            f"_{prog_under}_completions() {{\n"
+            '    local cur="${COMP_WORDS[COMP_CWORD]}"\n'
+            '    local prev="${COMP_WORDS[COMP_CWORD-1]}"\n'
+            '    case "$prev" in\n'
+            f'        {prog}) COMPREPLY=($(compgen -W "{commands} --help --version --quiet --verbose" -- "$cur")) ;;\n'
+            '        audit)  COMPREPLY=($(compgen -W "--format --output --help" -- "$cur") $(compgen -f -X \'!*.docx\' -- "$cur")) ;;\n'
+            '        fix)    COMPREPLY=($(compgen -W "--output --bound --dry-run --help" -- "$cur") $(compgen -f -X \'!*.docx\' -- "$cur")) ;;\n'
+            '        batch)  COMPREPLY=($(compgen -W "audit fix" -- "$cur")) ;;\n'
+            '        export) COMPREPLY=($(compgen -W "--output --cms --title --css --help" -- "$cur") $(compgen -f -X \'!*.docx\' -- "$cur")) ;;\n'
+            '        --format|-f) COMPREPLY=($(compgen -W "text json" -- "$cur")) ;;\n'
+            '        *) COMPREPLY=($(compgen -f -- "$cur")) ;;\n'
+            "    esac\n"
+            "}}\n"
+            f"complete -o default -F _{prog_under}_completions {prog}"
+        )
+        print(script)
+
+    elif args.shell == "zsh":
+        script = (
+            f"#compdef {prog}\n"
+            "_arguments \\\n"
+            f"    '1:command:({commands})' \\\n"
+            "    '--help[Show help]' \\\n"
+            "    '--version[Show version]' \\\n"
+            "    '--quiet[Suppress info messages]' \\\n"
+            "    '--verbose[Show debug output]' \\\n"
+            '    \'*:file:_files -g "*.docx"\''
+        )
+        print(script)
+
+    elif args.shell == "fish":
+        lines = []
+        for cmd in commands.split():
+            lines.append(f"complete -c {prog} -n '__fish_use_subcommand' -a {cmd}")
+        lines.append(f"complete -c {prog} -s h -l help -d 'Show help'")
+        lines.append(f"complete -c {prog} -s V -l version -d 'Show version'")
+        lines.append(f"complete -c {prog} -s q -l quiet -d 'Suppress info'")
+        lines.append(f"complete -c {prog} -s v -l verbose -d 'Debug output'")
+        print("\n".join(lines))
+
+    elif args.shell == "powershell":
+        cmds_quoted = ", ".join(f"'{c}'" for c in commands.split())
+        script = (
+            f"Register-ArgumentCompleter -CommandName {prog} -ScriptBlock {{\n"
+            "    param($wordToComplete, $commandAst, $cursorPosition)\n"
+            f"    $commands = @({cmds_quoted})\n"
+            "    $flags = @('--help', '--version', '--quiet', '--verbose')\n"
+            '    ($commands + $flags) | Where-Object { $_ -like "$wordToComplete*" } |\n'
+            "        ForEach-Object { [System.Management.Automation.CompletionResult]::new($_, $_, 'ParameterValue', $_) }\n"
+            "}"
+        )
+        print(script)
+
+    return 0
+
+
 def main(argv: list[str] | None = None, *, force_cli: bool = False) -> int:
     """CLI entry point. Returns exit code.
 
@@ -432,6 +540,7 @@ def main(argv: list[str] | None = None, *, force_cli: bool = False) -> int:
         "batch": _cmd_batch,
         "export": _cmd_export,
         "gui": _cmd_gui,
+        "completions": _cmd_completions,
     }
 
     handler = dispatch.get(args.command)
