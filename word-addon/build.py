@@ -1,8 +1,8 @@
-"""Cross-platform build script for PyInstaller one-file executables.
+"""Cross-platform build script for PyInstaller one-directory executables.
 
 Detects the current OS and architecture, then builds a self-contained
-executable named:
-    acb-large-print-{os}-{arch}[.exe]
+directory named:
+    acb-large-print-{os}-{arch}/
 
 Supported targets (must be built natively -- PyInstaller cannot
 cross-compile):
@@ -21,6 +21,7 @@ Usage:
 from __future__ import annotations
 
 import platform
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -70,7 +71,7 @@ def _build_one(
     cmd = [
         sys.executable, "-m", "PyInstaller",
         "--name", stem,
-        "--onefile",
+        "--onedir",
         "--noconfirm",
         "--distpath", str(DIST),
         "--workpath", str(BUILD / "pyinstaller"),
@@ -102,19 +103,36 @@ def _build_one(
     print()
     subprocess.run(cmd, check=True)
 
-    exe_path = DIST / name
+    # --onedir produces DIST/<stem>/<stem>[.exe]
+    out_dir = DIST / stem
+    exe_path = out_dir / name
     if exe_path.exists():
-        size_mb = exe_path.stat().st_size / (1024 * 1024)
-        print(f"Built: {exe_path} ({size_mb:.1f} MB)")
+        total = sum(f.stat().st_size for f in out_dir.rglob("*") if f.is_file())
+        size_mb = total / (1024 * 1024)
+        print(f"Built: {out_dir} ({size_mb:.1f} MB total)")
     else:
         print(f"Warning: Expected output not found at {exe_path}")
-    return exe_path
+    return out_dir
+
+
+def _zip_dir(directory: Path) -> Path:
+    """Create a .zip archive of a --onedir output folder.
+
+    Returns path to the .zip file (placed alongside the folder in DIST).
+    """
+    zip_path = directory.with_suffix(".zip")
+    print(f"Packaging: {zip_path.name}")
+    # shutil.make_archive wants the base name without .zip
+    shutil.make_archive(str(directory), "zip", root_dir=str(DIST), base_dir=directory.name)
+    size_mb = zip_path.stat().st_size / (1024 * 1024)
+    print(f"Packaged: {zip_path.name} ({size_mb:.1f} MB)")
+    return zip_path
 
 
 def build_exe(*, os_label: str | None = None, arch_label: str | None = None) -> list[Path]:
     """Build both CLI and GUI executables with PyInstaller.
 
-    Returns list of paths to built executables.
+    Returns list of paths to built output directories.
     """
     if os_label is None or arch_label is None:
         os_label, arch_label = _detect_platform()
@@ -183,11 +201,21 @@ def build_exe(*, os_label: str | None = None, arch_label: str | None = None) -> 
     else:
         print("\nwxPython not installed -- skipping GUI build")
 
-    print(f"\n{'='*50}")
-    print(f"Build complete: {len(results)} executable(s)")
+    # Package each output directory as a portable .zip
+    zips: list[Path] = []
     for p in results:
-        if p.exists():
-            print(f"  {p.name} ({p.stat().st_size / (1024*1024):.1f} MB)")
+        if p.is_dir():
+            zips.append(_zip_dir(p))
+
+    print(f"\n{'='*50}")
+    print(f"Build complete: {len(results)} build(s)")
+    for p in results:
+        if p.is_dir():
+            total = sum(f.stat().st_size for f in p.rglob('*') if f.is_file())
+            print(f"  {p.name}/ ({total / (1024*1024):.1f} MB)")
+    for z in zips:
+        if z.exists():
+            print(f"  {z.name} ({z.stat().st_size / (1024*1024):.1f} MB)")
 
     return results
 

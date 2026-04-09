@@ -11,7 +11,7 @@ on:
         default: false
 
 permissions:
-  contents: write           # needed to create releases
+  contents: write # needed to create releases
 
 jobs:
   build:

@@ -6,7 +6,8 @@
 #define MyAppVersion "1.0.0"
 #define MyAppPublisher "BITS - Blind Information Technology Specialists"
 #define MyAppURL "https://www.bitsonline.org"
-#define MyAppExeName "acb-large-print.exe"
+#define MyAppExeName "acb-large-print-win-x64.exe"
+#define MyCliExeName "acb-large-print-cli-win-x64.exe"
 
 [Setup]
 AppId={{E7F2A4B1-3C5D-4E6F-8A9B-0C1D2E3F4A5B}
@@ -60,8 +61,10 @@ Name: "template"; Description: "Install ACB Large Print Word template to Microso
 Name: "docs"; Description: "Documentation and ACB Guidelines quick reference"; Types: full
 
 [Files]
-; Main executable
-Source: "..\dist\acb-large-print.exe"; DestDir: "{app}"; Flags: ignoreversion; Components: main
+; Main application (--onedir output: exe + supporting DLLs/pyds)
+Source: "..\dist\acb-large-print-win-x64\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs; Components: main
+; CLI application (--onedir output: needs its own _internal folder)
+Source: "..\dist\acb-large-print-cli-win-x64\*"; DestDir: "{app}\cli"; Flags: ignoreversion recursesubdirs createallsubdirs; Components: main
 
 ; Template file -- installed to both app folder and Word Templates
 Source: "..\dist\ACB-Large-Print.dotx"; DestDir: "{app}"; Flags: ignoreversion; Components: template
@@ -74,7 +77,7 @@ Source: "..\LICENSE.txt"; DestDir: "{app}\docs"; Flags: ignoreversion; Component
 [Icons]
 ; Start menu shortcuts
 Name: "{group}\ACB Large Print Tool"; Filename: "{app}\{#MyAppExeName}"; Comment: "Launch ACB Large Print Tool graphical interface"
-Name: "{group}\ACB Large Print Tool (Command Line)"; Filename: "{cmd}"; Parameters: "/k ""{app}\{#MyAppExeName}"" --help"; Comment: "Open a command prompt with ACB Large Print Tool help"
+Name: "{group}\ACB Large Print Tool (Command Line)"; Filename: "{cmd}"; Parameters: "/k ""{app}\cli\{#MyCliExeName}"" --help"; Comment: "Open a command prompt with ACB Large Print Tool help"
 Name: "{group}\Uninstall ACB Large Print Tool"; Filename: "{uninstallexe}"; Comment: "Remove ACB Large Print Tool from your computer"
 
 ; Desktop shortcut (optional)
@@ -86,7 +89,7 @@ Name: "addtopath"; Description: "Add to system PATH for command-line use from an
 
 [Registry]
 ; Add to PATH if requested
-Root: HKCU; Subkey: "Environment"; ValueType: expandsz; ValueName: "Path"; ValueData: "{olddata};{app}"; Tasks: addtopath; Check: NeedsAddPath(ExpandConstant('{app}'))
+Root: HKCU; Subkey: "Environment"; ValueType: expandsz; ValueName: "Path"; ValueData: "{olddata};{app}\cli"; Tasks: addtopath; Check: NeedsAddPath(ExpandConstant('{app}\cli'))
 
 [Run]
 ; Option to launch after install
@@ -116,7 +119,7 @@ var
 begin
   if CurUninstallStep = usPostUninstall then
   begin
-    AppDir := ExpandConstant('{app}');
+    AppDir := ExpandConstant('{app}\cli');
     if RegQueryStringValue(HKEY_CURRENT_USER, 'Environment', 'Path', Path) then
     begin
       P := Pos(';' + AppDir, Path);
