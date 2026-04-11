@@ -224,11 +224,10 @@ function renderFindingsTable(findings: Finding[]): void {
 
         // Auto-fixable cell
         const fixTd = document.createElement("td");
-        if (finding.autoFixable) {
-            fixTd.innerHTML = '<span class="fixable-yes">Auto</span>';
-        } else {
-            fixTd.innerHTML = '<span class="fixable-no">Manual</span>';
-        }
+        const fixBadge = document.createElement("span");
+        fixBadge.className = finding.autoFixable ? "fixable-yes" : "fixable-no";
+        fixBadge.textContent = finding.autoFixable ? "Auto" : "Manual";
+        fixTd.appendChild(fixBadge);
         row.appendChild(fixTd);
 
         tbody.appendChild(row);

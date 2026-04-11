@@ -6,7 +6,7 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - FLASK_ENV=production
+      - FLASK_DEBUG=0
       # Set FEEDBACK_PASSWORD to enable /feedback/review?key=<password>
       # - FEEDBACK_PASSWORD=change-me-in-production
     volumes:

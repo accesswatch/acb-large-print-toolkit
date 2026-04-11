@@ -22,7 +22,14 @@ def create_app(config: dict | None = None) -> Flask:
 
     # Defaults
     app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024  # 16 MB
-    app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", os.urandom(32).hex())
+    secret = os.environ.get("SECRET_KEY", "")
+    if not secret:
+        secret = os.urandom(32).hex()
+        app.logger.warning(
+            "SECRET_KEY not set -- using random key. "
+            "Sessions and CSRF tokens will not survive restarts."
+        )
+    app.config["SECRET_KEY"] = secret
 
     if config:
         app.config.update(config)

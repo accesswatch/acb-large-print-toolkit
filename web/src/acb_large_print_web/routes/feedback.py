@@ -112,4 +112,7 @@ def feedback_review():
         log.exception("Failed to load feedback")
         rows = []
 
-    return render_template("feedback_review.html", entries=rows)
+    response = render_template("feedback_review.html", entries=rows)
+    resp = current_app.make_response(response)
+    resp.headers["Cache-Control"] = "no-store"
+    return resp
