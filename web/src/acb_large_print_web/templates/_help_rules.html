@@ -1,0 +1,24 @@
+{# Partial: severity-grouped rule checkboxes for audit and fix forms.
+   Expects `rules_by_severity` from context_processor and `field_prefix` variable. #}
+{% set prefix = field_prefix | default("rule") %}
+{% for severity in ["Critical", "High", "Medium", "Low"] %}
+{% set rules = rules_by_severity[severity] %}
+{% if rules %}
+<details class="rule-group">
+  <summary>
+    <span class="severity-badge severity-{{ severity | lower }}">{{ severity }}</span>
+    {{ severity }} -- {{ rules | length }} rule{{ "s" if rules | length != 1 else "" }}
+  </summary>
+  <ul class="rule-list">{% for rule in rules %}
+    <li>
+      <label>
+        <input type="checkbox" name="{{ prefix }}" value="{{ rule.rule_id }}" checked>
+        <strong>{{ rule.rule_id }}</strong> -- {{ rule.description }}
+        {% if not rule.auto_fixable %}<span class="manual-tag">(manual fix required)</span>{% endif %}
+      </label>
+      <span class="rule-ref">{{ rule.acb_reference }}</span>
+    </li>{% endfor %}
+  </ul>
+</details>
+{% endif %}
+{% endfor %}

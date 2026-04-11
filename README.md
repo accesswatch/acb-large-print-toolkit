@@ -1,12 +1,24 @@
 # ACB Large Print Toolkit
 
-A VS Code agent toolkit for formatting documents to comply with the American Council of the Blind (ACB) Large Print Guidelines (revised May 6, 2025), supplemented with WCAG 2.2 AA digital accessibility rules.
+A VS Code agent toolkit, desktop application, and web application for formatting documents to comply with the American Council of the Blind (ACB) Large Print Guidelines (revised May 6, 2025), supplemented with WCAG 2.2 AA digital accessibility rules.
+
+## Five ways to use it
+
+| Interface | Who it is for | Install required? |
+|-----------|---------------|-------------------|
+| **Web app** | Anyone with a browser -- chapter officers, newsletter editors, conference attendees | No -- just open the URL |
+| **Desktop GUI** | Users who prefer a native desktop wizard with file dialogs | Yes -- download a single executable |
+| **CLI** | Developers and scripters who want batch processing | Yes -- `pip install` or download executable |
+| **VS Code agent** | Developers using VS Code with Copilot Chat | Yes -- copy agent files to VS Code config |
+| **Word Add-in** | Users who want ACB tools in the Word ribbon | Yes -- sideload the Office Add-in |
 
 ## What this toolkit does
 
-- Audits HTML, CSS, and Markdown files against ACB Large Print rules
+- Audits Word documents (.docx), HTML, CSS, and Markdown files against ACB Large Print rules
+- Auto-fixes compliance issues (fonts, spacing, emphasis, headings, margins)
+- Generates ACB-compliant Word templates (.dotx) with pre-configured styles
+- Exports Word documents to accessible HTML (standalone or CMS-ready fragments)
 - Converts Markdown to ACB-compliant HTML with proper document structure
-- Generates ACB-compliant CSS stylesheets and HTML boilerplate
 - Produces PowerShell scripts for configuring Word document styles
 - Detects and uses external tools (markdownlint, Pandoc) when available
 
@@ -39,15 +51,57 @@ lp/
     acb-large-print-boilerplate.html     Semantic HTML skeleton
   docs/
     acb-large-print-toolkit.md           Detailed file inventory and history
+    announcement.md                      Press release / announcement
+    prd-flask-web-app.md                 Web app product requirements document
+    deployment.md                        Step-by-step server deployment guide
   samples/
     *.md                                 Example Markdown source files
     *.html                               Converted HTML output files
     *-cms-embed.html                     CMS embed snippets (class-scoped)
   reference/
     ACB Large Print Guidelines, revised 5-6-25.docx   Source specification
+  web/                                   Flask web application
+    src/acb_large_print_web/             Application package
+    tests/                               Test suite (28 tests)
+    Dockerfile                           Production container image
+    docker-compose.yml                   Compose file for deployment
+  word-addon/                            Desktop CLI + GUI (Python)
+    src/acb_large_print/                 Core library (canonical source of truth)
+  word-addin/                            Office.js Word Add-in (TypeScript)
+    src/                                 TypeScript port of audit/fix/template
 ```
 
 ## Quick start
+
+### Use the web app (no install)
+
+Open the web app in any browser. Upload a .docx file and choose an operation:
+
+| Page | What it does |
+|------|-------------|
+| **Audit** | Check a document against ACB Large Print rules (Full, Quick, or Custom mode) |
+| **Fix** | Auto-fix compliance issues and download the corrected document |
+| **Template** | Generate an ACB-compliant Word template (.dotx) |
+| **Export** | Convert a .docx to accessible HTML (standalone or CMS fragment) |
+| **Guidelines** | Browse the full ACB specification and WCAG 2.2 supplement |
+
+### Run the web app locally
+
+```bash
+cd web
+pip install -e ".[dev]"
+pip install -e "../word-addon"
+flask --app acb_large_print_web.app:create_app run --debug
+```
+
+### Deploy with Docker
+
+```bash
+cd web
+docker compose up --build
+```
+
+See [docs/deployment.md](docs/deployment.md) for full production deployment (Ubuntu VPS, Caddy, TLS).
 
 ### Install to VS Code (User-level)
 
@@ -278,6 +332,14 @@ When tools are not installed, the agent performs equivalent checks manually.
 
 This toolkit implements the ACB Large Print Guidelines, a public specification from the American Council of the Blind. The toolkit code and configuration files are provided for organizational use.
 
+## Web Application
+
+The `web/` directory contains a Flask web application that provides browser-based access to all core operations. No installation or account required. Runs in Docker for production deployment. See [web/README.md](web/README.md) for full documentation.
+
 ## Word Addon Tool
 
 The `word-addon/` directory contains a standalone desktop application (CLI and GUI) that audits, fixes, and exports Microsoft Word documents for ACB compliance. It builds as one-file executables for 6 platforms via PyInstaller and GitHub Actions. See [word-addon/README.md](word-addon/README.md) for full documentation.
+
+## Word Add-in
+
+The `word-addin/` directory contains an Office.js Web Add-in that integrates ACB Large Print audit, fix, and template tools directly into the Microsoft Word ribbon. TypeScript port of the Python core. Deployed to GitHub Pages automatically on push.

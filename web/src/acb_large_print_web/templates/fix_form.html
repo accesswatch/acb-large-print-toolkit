@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% block title %}Fix a Document{% endblock %}
+{% block heading %}Fix a Document{% endblock %}
+
+{% block content %}
+<details class="help-accordion">
+  <summary>What does the fix do?</summary>
+  <p>The fixer automatically corrects ACB Large Print compliance issues in your Word document. It changes fonts to Arial, adjusts sizes to 18pt/22pt/20pt, removes italic formatting, converts bold emphasis to underline, sets flush-left alignment, corrects line spacing, fixes margins, enables widow/orphan control, disables hyphenation, and sets the document language. You download a fixed copy -- your original file is not modified.</p>
+</details>
+
+{% if error %}
+<div class="error-box" role="alert">
+  <p><strong>Error:</strong> {{ error }}</p>
+</div>
+{% endif %}
+
+<form method="post" enctype="multipart/form-data" novalidate>
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <div class="form-group">
+    <label for="document">Upload a Word document</label>
+    <input type="file" id="document" name="document" accept=".docx"
+           aria-describedby="file-help"
+           {% if error %}aria-invalid="true"{% endif %}>
+    <p id="file-help" class="help-text">Accepted format: <code>.docx</code> (Microsoft Word). Maximum size: 16 MB.</p>
+  </div>
+
+  <fieldset>
+    <legend>Fix Mode</legend>
+
+    <div class="radio-group">
+      <label>
+        <input type="radio" name="mode" value="full" checked>
+        <strong>Full Fix</strong> -- apply all auto-fixable rules. Brings the document to maximum compliance.
+      </label>
+
+      <label>
+        <input type="radio" name="mode" value="essentials">
+        <strong>Essentials Fix</strong> -- report focuses on Critical and High severity issues only.
+      </label>
+
+      <label>
+        <input type="radio" name="mode" value="custom">
+        <strong>Custom Fix</strong> -- choose which rule categories to focus on in the report.
+      </label>
+    </div>
+  </fieldset>
+
+  <div id="custom-rules" class="custom-rules-panel">
+    <fieldset>
+      <legend>Select Rules to Focus On</legend>
+      {% set field_prefix = "rule" %}
+      {% include "_help_rules.html" %}
+    </fieldset>
+  </div>
+
+  <fieldset>
+    <legend>Additional Options</legend>
+    <label>
+      <input type="checkbox" name="bound">
+      Add binding margin (extra 0.5 inch on left side for bound documents)
+    </label>
+  </fieldset>
+
+  <details class="help-accordion">
+    <summary>How does the fix work?</summary>
+    <p>The tool always applies all available auto-fixes to your document to ensure maximum compliance. The mode you select above controls which rules are highlighted in the results report:</p>
+    <ul>
+      <li><strong>Full Fix</strong> shows all rule results.</li>
+      <li><strong>Essentials Fix</strong> shows only Critical and High severity results.</li>
+      <li><strong>Custom Fix</strong> shows only the rules you select.</li>
+    </ul>
+    <p>Regardless of mode, your downloaded document will have all auto-fixable issues corrected. Some issues (like heading hierarchy and document title) require manual attention.</p>
+  </details>
+
+  <button type="submit" class="btn-primary">Fix Document</button>
+</form>
+{% endblock %}

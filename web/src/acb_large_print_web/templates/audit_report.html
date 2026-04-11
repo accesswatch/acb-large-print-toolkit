@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block title %}Audit Report{% endblock %}
+{% block heading %}Audit Report{% endblock %}
+
+{% block content %}
+<section aria-labelledby="score-heading">
+  <h2 id="score-heading">Compliance Score</h2>
+  <p class="score-display">
+    <span class="score-number grade-{{ result.grade | lower }}">{{ result.score }}/100</span>
+    <span class="score-grade">Grade: {{ result.grade }}</span>
+  </p>
+  <p>{{ result.findings | length }} finding{{ "s" if result.findings | length != 1 else "" }} detected
+    {% if mode_label %} ({{ mode_label }}){% endif %}.</p>
+</section>
+
+{% if result.findings %}
+<section aria-labelledby="findings-heading">
+  <h2 id="findings-heading">Findings</h2>
+
+  <table class="findings-table">
+    <caption>Accessibility findings sorted by severity</caption>
+    <thead>
+      <tr>
+        <th scope="col">Severity</th>
+        <th scope="col">Rule</th>
+        <th scope="col">Description</th>
+        <th scope="col">Location</th>
+        <th scope="col">Guideline</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for f in result.findings %}
+      <tr>
+        <td><span class="severity-badge severity-{{ f.severity.value | lower }}">{{ f.severity.value }}</span></td>
+        <td>{{ f.rule_id }}</td>
+        <td>{{ f.message }}</td>
+        <td>{{ f.location or "Document-wide" }}</td>
+        <td>{{ f.acb_reference }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% else %}
+<section>
+  <h2>No Issues Found</h2>
+  <p>This document fully complies with the checked rules. Well done.</p>
+</section>
+{% endif %}
+
+<section aria-labelledby="next-heading">
+  <h2 id="next-heading">What's Next?</h2>
+  {% if result.findings %}
+  <p>Your document has issues that can be fixed automatically. <a href="{{ url_for('fix.fix_form') }}" class="btn-primary">Fix This Document</a></p>
+  {% endif %}
+  <ul>
+    <li><a href="{{ url_for('audit.audit_form') }}">Audit another document</a></li>
+    <li><a href="{{ url_for('guidelines.guidelines_page') }}">Read the full ACB guidelines</a></li>
+  </ul>
+</section>
+{% endblock %}

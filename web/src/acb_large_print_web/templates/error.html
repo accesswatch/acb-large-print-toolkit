@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+{% block heading %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="error-box" role="alert">
+  <p>{{ message }}</p>
+</div>
+<p><a href="{{ url_for('main.index') }}">Return to the home page</a></p>
+{% endblock %}

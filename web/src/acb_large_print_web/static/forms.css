@@ -1,0 +1,456 @@
+/* ==========================================================================
+   ACB Large Print Web App -- Form & Layout Supplement
+   Extends acb-large-print.css with UI-specific styles.
+   ========================================================================== */
+
+/* --- Skip Link --- */
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 100;
+  padding: 0.5em 1em;
+  background: #1a1a1a;
+  color: #ffffff;
+}
+
+.skip-link:focus {
+  left: 0;
+}
+
+/* --- Navigation --- */
+nav[aria-label="Main navigation"] {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 1rem;
+  border-bottom: 2px solid #1a1a1a;
+  padding-bottom: 0.75rem;
+  margin-bottom: 2rem;
+}
+
+.nav-brand {
+  font-size: 1.333rem;
+  font-weight: 700;
+  text-decoration: none;
+  color: #1a1a1a;
+}
+
+.nav-brand:hover,
+.nav-brand:focus {
+  text-decoration: underline;
+}
+
+.nav-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.5rem;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.nav-list a {
+  padding: 0.25em 0;
+}
+
+.nav-list a[aria-current="page"] {
+  font-weight: 700;
+  border-bottom: 3px solid currentColor;
+}
+
+/* --- Cards (landing page) --- */
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.card {
+  border: 2px solid #1a1a1a;
+  padding: 1.25rem;
+  border-radius: 0.25rem;
+}
+
+.card h3 {
+  margin-top: 0;
+  font-size: 1.333rem;
+}
+
+.card p {
+  margin-bottom: 0;
+}
+
+/* --- Forms --- */
+.form-group {
+  margin-bottom: 1.5rem;
+}
+
+label {
+  display: block;
+  margin-bottom: 0.25rem;
+}
+
+input[type="text"],
+input[type="file"] {
+  display: block;
+  font-family: Arial, sans-serif;
+  font-size: 1.125rem;
+  padding: 0.5em 0.75em;
+  border: 2px solid #1a1a1a;
+  border-radius: 0.25rem;
+  width: 100%;
+  max-width: 40rem;
+  background: #ffffff;
+}
+
+input[type="file"] {
+  padding: 0.75em;
+}
+
+input[type="text"]:focus,
+input[type="file"]:focus {
+  outline: 3px solid #0055cc;
+  outline-offset: 2px;
+}
+
+.help-text {
+  font-size: 1rem;
+  color: #444;
+  margin-top: 0.25rem;
+  margin-bottom: 0;
+}
+
+/* --- Radio & Checkbox Groups --- */
+fieldset {
+  border: 2px solid #ccc;
+  padding: 1rem 1.25rem;
+  margin: 1.5rem 0;
+  border-radius: 0.25rem;
+}
+
+legend {
+  font-weight: 700;
+  font-size: 1.125rem;
+  padding: 0 0.5em;
+}
+
+.radio-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.radio-group label,
+fieldset > label {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  cursor: pointer;
+}
+
+input[type="radio"],
+input[type="checkbox"] {
+  flex-shrink: 0;
+  width: 1.25rem;
+  height: 1.25rem;
+  margin-top: 0.2em;
+  accent-color: #0055cc;
+}
+
+/* --- Custom Rules Panel --- */
+.custom-rules-panel {
+  margin-top: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.rule-list {
+  list-style: none;
+  padding: 0;
+  margin: 0.5rem 0 0 0;
+}
+
+.rule-list li {
+  padding: 0.5em 0;
+  border-bottom: 1px solid #eee;
+}
+
+.rule-list li:last-child {
+  border-bottom: none;
+}
+
+.rule-ref {
+  display: block;
+  font-size: 0.875rem;
+  color: #555;
+  margin-left: 1.75rem;
+}
+
+.manual-tag {
+  font-size: 0.875rem;
+  color: #8b0000;
+}
+
+/* --- Details / Accordions --- */
+details {
+  margin: 1rem 0;
+  border: 1px solid #ccc;
+  border-radius: 0.25rem;
+}
+
+details > summary {
+  padding: 0.75em 1em;
+  font-weight: 700;
+  cursor: pointer;
+  list-style: revert;
+}
+
+details > summary:focus {
+  outline: 3px solid #0055cc;
+  outline-offset: -2px;
+}
+
+details[open] > summary {
+  border-bottom: 1px solid #ccc;
+}
+
+details > :not(summary) {
+  padding: 0 1em;
+}
+
+details.help-accordion {
+  background: #f8f8f8;
+}
+
+details.guideline-accordion {
+  background: #fafafa;
+}
+
+details.rule-group {
+  border: 1px solid #ddd;
+  margin: 0.5rem 0;
+}
+
+/* --- Severity Badges --- */
+.severity-badge {
+  display: inline-block;
+  font-size: 0.875rem;
+  font-weight: 700;
+  padding: 0.15em 0.5em;
+  border-radius: 0.2rem;
+  white-space: nowrap;
+}
+
+.severity-critical {
+  background: #8b0000;
+  color: #ffffff;
+}
+
+.severity-high {
+  background: #cc5500;
+  color: #ffffff;
+}
+
+.severity-medium {
+  background: #b8860b;
+  color: #000000;
+}
+
+.severity-low {
+  background: #2e6b2e;
+  color: #ffffff;
+}
+
+/* --- Buttons --- */
+.btn-primary {
+  display: inline-block;
+  font-family: Arial, sans-serif;
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #ffffff;
+  background: #0055cc;
+  border: 2px solid #0055cc;
+  padding: 0.75em 1.5em;
+  border-radius: 0.25rem;
+  cursor: pointer;
+  text-decoration: none;
+  min-width: 44px;
+  min-height: 44px;
+}
+
+.btn-primary:hover,
+.btn-primary:focus {
+  background: #003d99;
+  border-color: #003d99;
+  outline: 3px solid #003d99;
+  outline-offset: 2px;
+}
+
+/* --- Scores --- */
+.score-display {
+  display: flex;
+  align-items: baseline;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.score-number {
+  font-size: 2rem;
+  font-weight: 700;
+}
+
+.score-grade {
+  font-size: 1.333rem;
+  font-weight: 700;
+}
+
+.grade-a { color: #2e6b2e; }
+.grade-b { color: #2e6b2e; }
+.grade-c { color: #b8860b; }
+.grade-d { color: #cc5500; }
+.grade-f { color: #8b0000; }
+
+.score-comparison {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  margin: 1.5rem 0;
+}
+
+.score-box {
+  border: 2px solid #1a1a1a;
+  padding: 1rem 1.5rem;
+  border-radius: 0.25rem;
+  text-align: center;
+}
+
+.score-box h3 {
+  margin: 0 0 0.25rem 0;
+  font-size: 1.125rem;
+}
+
+.score-arrow {
+  font-size: 2rem;
+  font-weight: 700;
+}
+
+/* --- Error Box --- */
+.error-box {
+  border: 2px solid #8b0000;
+  background: #fff0f0;
+  padding: 1rem 1.25rem;
+  border-radius: 0.25rem;
+  margin-bottom: 1.5rem;
+}
+
+.error-box p {
+  margin: 0;
+}
+
+/* --- Flash Messages --- */
+[class^="flash-"] {
+  padding: 1rem 1.25rem;
+  border-radius: 0.25rem;
+  margin-bottom: 1.5rem;
+  border: 2px solid;
+}
+
+[class^="flash-"] p {
+  margin: 0;
+}
+
+.flash-error {
+  border-color: #8b0000;
+  background: #fff0f0;
+  color: #1a1a1a;
+}
+
+.flash-success {
+  border-color: #2e6b2e;
+  background: #f0fff0;
+  color: #1a1a1a;
+}
+
+.flash-warning {
+  border-color: #b8860b;
+  background: #fff8e0;
+  color: #1a1a1a;
+}
+
+.flash-info,
+.flash-message {
+  border-color: #0055cc;
+  background: #f0f5ff;
+  color: #1a1a1a;
+}
+
+/* --- Textarea --- */
+.form-textarea {
+  display: block;
+  font-family: Arial, sans-serif;
+  font-size: 1.125rem;
+  padding: 0.5em 0.75em;
+  border: 2px solid #1a1a1a;
+  border-radius: 0.25rem;
+  width: 100%;
+  max-width: 40rem;
+  background: #ffffff;
+}
+
+.form-textarea:focus {
+  outline: 3px solid #0055cc;
+  outline-offset: 2px;
+}
+
+/* --- Tables (findings) --- */
+.findings-table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 1rem 0;
+}
+
+.findings-table th,
+.findings-table td {
+  text-align: left;
+  padding: 0.5em 0.75em;
+  border: 1px solid #666;
+  font-size: 1rem;
+}
+
+.findings-table th {
+  background: #f0f0f0;
+  font-weight: 700;
+}
+
+/* --- Footer --- */
+footer {
+  border-top: 2px solid #1a1a1a;
+  margin-top: 3rem;
+  padding-top: 1rem;
+}
+
+footer p {
+  font-size: 1rem;
+  color: #444;
+}
+
+/* --- Responsive --- */
+@media (max-width: 40em) {
+  nav[aria-label="Main navigation"] {
+    flex-direction: column;
+  }
+
+  .card-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .score-comparison {
+    flex-direction: column;
+  }
+
+  .score-arrow {
+    transform: rotate(90deg);
+  }
+}

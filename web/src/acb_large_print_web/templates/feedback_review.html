@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block title %}Feedback Review -- ACB Large Print Tool{% endblock %}
+{% block heading %}Feedback Review{% endblock %}
+
+{% block content %}
+<p>{{ entries | length }} feedback {{ "entry" if entries | length == 1 else "entries" }} recorded.</p>
+
+{% if entries %}
+<table class="findings-table">
+  <caption>User feedback, newest first</caption>
+  <thead>
+    <tr>
+      <th scope="col">No.</th>
+      <th scope="col">Date</th>
+      <th scope="col">Rating</th>
+      <th scope="col">Task</th>
+      <th scope="col">Message</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for entry in entries %}
+    <tr>
+      <td>{{ entry.id }}</td>
+      <td>{{ entry.timestamp[:10] }}</td>
+      <td>{{ entry.rating | capitalize }}</td>
+      <td>{{ entry.task or "---" }}</td>
+      <td>{{ entry.message }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p>No feedback has been submitted yet.</p>
+{% endif %}
+{% endblock %}

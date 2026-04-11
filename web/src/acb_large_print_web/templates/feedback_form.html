@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+
+{% block title %}Feedback -- ACB Large Print Tool{% endblock %}
+{% block heading %}Share Your Feedback{% endblock %}
+
+{% block content %}
+<p>Help us improve the ACB Large Print Tool. Your feedback is anonymous and goes directly to the development team.</p>
+
+{% if error %}
+<div class="error-box" role="alert">
+  <p>{{ error }}</p>
+</div>
+{% endif %}
+
+<form method="post" action="{{ url_for('feedback.feedback_submit') }}" novalidate>
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <fieldset>
+    <legend>Overall Experience</legend>
+    <div class="radio-group">
+      <label>
+        <input type="radio" name="rating" value="excellent"{% if rating == 'excellent' %} checked{% endif %}>
+        Excellent -- the tool worked perfectly
+      </label>
+      <label>
+        <input type="radio" name="rating" value="good"{% if rating == 'good' %} checked{% endif %}>
+        Good -- minor issues but got the job done
+      </label>
+      <label>
+        <input type="radio" name="rating" value="fair"{% if rating == 'fair' %} checked{% endif %}>
+        Fair -- some problems that slowed me down
+      </label>
+      <label>
+        <input type="radio" name="rating" value="poor"{% if rating == 'poor' %} checked{% endif %}>
+        Poor -- could not accomplish what I needed
+      </label>
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>What were you trying to do?</legend>
+    <div class="radio-group">
+      <label>
+        <input type="radio" name="task" value="audit"{% if task == 'audit' %} checked{% endif %}>
+        Audit a document
+      </label>
+      <label>
+        <input type="radio" name="task" value="fix"{% if task == 'fix' %} checked{% endif %}>
+        Fix a document
+      </label>
+      <label>
+        <input type="radio" name="task" value="template"{% if task == 'template' %} checked{% endif %}>
+        Create a template
+      </label>
+      <label>
+        <input type="radio" name="task" value="export"{% if task == 'export' %} checked{% endif %}>
+        Export to HTML
+      </label>
+      <label>
+        <input type="radio" name="task" value="guidelines"{% if task == 'guidelines' %} checked{% endif %}>
+        Read the guidelines
+      </label>
+      <label>
+        <input type="radio" name="task" value="other"{% if task == 'other' %} checked{% endif %}>
+        Something else
+      </label>
+    </div>
+  </fieldset>
+
+  <div class="form-group">
+    <label for="message">Your feedback</label>
+    <textarea id="message" name="message" rows="6" class="form-textarea" maxlength="5000" required>{{ message if message else '' }}</textarea>
+    <p class="help-text">Describe what worked, what did not, or what you would like to see improved. Maximum 5,000 characters.</p>
+  </div>
+
+  <button type="submit" class="btn-primary">Submit Feedback</button>
+</form>
+{% endblock %}

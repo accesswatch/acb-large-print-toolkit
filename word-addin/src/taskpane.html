@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ACB Large Print Tool</title>
+    <link rel="stylesheet" href="taskpane.css">
+</head>
+<body>
+    <!--
+        WCAG 2.2 AA compliance notes:
+        - All interactive elements are native HTML (button, details/summary)
+        - Color contrast meets 4.5:1 minimum (7:1 for small text)
+        - Focus indicators are visible (2.4.7) with 2px outline offset
+        - Focus appearance meets 2.4.11 (not fully obscured)
+        - No auto-playing content, no time limits
+        - Status messages use aria-live regions (4.1.3)
+        - All text resizes up to 200% without loss (1.4.4)
+        - Content reflows at 320px (1.4.10)
+        - Touch targets are at least 24x24 CSS px (2.5.8)
+        - No dragging required (2.5.7)
+    -->
+    <main id="main-content" role="main" aria-label="ACB Large Print audit results">
+        <h1 id="app-title">ACB Large Print Tool</h1>
+
+        <!-- Action buttons -->
+        <div class="actions" role="group" aria-label="Document actions">
+            <button id="btn-audit" type="button" class="btn btn-primary">
+                Audit Document
+            </button>
+            <button id="btn-fix" type="button" class="btn btn-secondary">
+                Fix All Issues
+            </button>
+            <button id="btn-template" type="button" class="btn btn-secondary">
+                Apply Template
+            </button>
+        </div>
+
+        <!-- Status announcements for screen readers -->
+        <div id="status" class="status" role="status" aria-live="polite" aria-atomic="true"></div>
+
+        <!-- Progress indicator -->
+        <div id="progress" class="progress" hidden>
+            <div class="progress-bar" role="progressbar" aria-label="Audit progress" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+                <div class="progress-fill" id="progress-fill"></div>
+            </div>
+            <p id="progress-text" class="progress-text">Scanning document...</p>
+        </div>
+
+        <!-- Score card -->
+        <section id="score-section" class="score-section" hidden aria-label="Compliance score">
+            <h2 id="score-heading">Compliance Score</h2>
+            <div class="score-card">
+                <span id="score-grade" class="score-grade" aria-label="Grade"></span>
+                <span id="score-value" class="score-value" aria-label="Score"></span>
+            </div>
+            <p id="score-summary" class="score-summary"></p>
+        </section>
+
+        <!-- Findings list -->
+        <section id="findings-section" class="findings-section" hidden aria-label="Audit findings">
+            <h2 id="findings-heading">Findings</h2>
+
+            <!-- Filter controls -->
+            <fieldset class="filter-controls">
+                <legend>Filter by severity</legend>
+                <label class="filter-label">
+                    <input type="checkbox" class="filter-checkbox" data-severity="Critical" checked>
+                    Critical
+                </label>
+                <label class="filter-label">
+                    <input type="checkbox" class="filter-checkbox" data-severity="High" checked>
+                    High
+                </label>
+                <label class="filter-label">
+                    <input type="checkbox" class="filter-checkbox" data-severity="Medium" checked>
+                    Medium
+                </label>
+                <label class="filter-label">
+                    <input type="checkbox" class="filter-checkbox" data-severity="Low" checked>
+                    Low
+                </label>
+            </fieldset>
+
+            <!-- Findings table - semantic table with proper headers -->
+            <div class="findings-list" role="region" aria-label="Findings details" tabindex="0">
+                <table id="findings-table" class="findings-table">
+                    <caption class="sr-only">ACB compliance findings sorted by severity</caption>
+                    <thead>
+                        <tr>
+                            <th scope="col">Severity</th>
+                            <th scope="col">Rule</th>
+                            <th scope="col">Message</th>
+                            <th scope="col">Location</th>
+                            <th scope="col">Fix</th>
+                        </tr>
+                    </thead>
+                    <tbody id="findings-body">
+                        <!-- Populated by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Count summary -->
+            <p id="findings-count" class="findings-count" aria-live="polite"></p>
+        </section>
+
+        <!-- Fix results -->
+        <section id="fix-section" class="fix-section" hidden aria-label="Fix results">
+            <h2>Fix Results</h2>
+            <p id="fix-summary" class="fix-summary"></p>
+            <ul id="fix-details" class="fix-details"></ul>
+        </section>
+
+        <!-- Template results -->
+        <section id="template-section" class="template-section" hidden aria-label="Template results">
+            <h2>Template Applied</h2>
+            <ul id="template-details" class="template-details"></ul>
+        </section>
+    </main>
+
+    <script src="taskpane.js"></script>
+</body>
+</html>

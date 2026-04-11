@@ -1,9 +1,43 @@
 # PRD: ACB Large Print Web Application
 
-**Status:** Draft
+**Status:** Implemented (v0.1)
 **Author:** Jeff Bishop, BITS
 **Date:** April 11, 2026
 **Target:** v2.0 release
+
+---
+
+## Implementation Status
+
+The Flask web application has been built and is ready for deployment. All core features described in this PRD are implemented. The following table summarizes what shipped in v0.1:
+
+| Feature | Status | Notes |
+|---------|--------|-------|
+| Audit page (Full / Quick / Custom modes) | Done | Rule filtering by severity, severity-grouped checkboxes |
+| Fix page (Full / Essentials / Custom modes) | Done | Before/after scores, download fixed .docx, review-required warnings |
+| Template generation | Done | Title, sample content, binding margin options |
+| HTML export (Standalone ZIP + CMS fragment) | Done | Both modes working |
+| Guidelines reference page | Done | Full ACB spec + WCAG supplement from constants.py |
+| Feedback page with SQLite storage | Done | Password-protected review page via FEEDBACK_PASSWORD env var |
+| CSRF protection (Flask-WTF) | Done | All forms have hidden csrf_token |
+| Rate limiting (Flask-Limiter) | Done | 120 requests/minute default |
+| Structured logging | Done | Timestamp + level + logger name format, LOG_LEVEL env var |
+| Favicon (SVG) | Done | "LP" monogram |
+| Flash message support | Done | Category-based flash rendering in base template |
+| Docker + Compose | Done | Non-root user, health check, feedback volume |
+| Test suite (28 tests) | Done | Smoke tests, error handling, feedback, accessibility checks, integration |
+| Contextual help (details/summary) | Done | Every form page has expandable help accordions |
+| WCAG 2.2 AA compliance | Done | lang, landmarks, labels, contrast, skip nav, focus indicators |
+| No JavaScript required | Done | All functionality works without JS |
+
+### Deviations from Plan
+
+- **Feedback system added** -- not in original PRD. SQLite-backed with password-protected review page.
+- **Caddy not included in docker-compose.yml** -- shipped as a separate Caddyfile reference in deployment.md. The compose file exposes port 8000 directly; Caddy is added at deployment time.
+- **Gunicorn workers reduced to 2** -- Docker default; override via environment variable at deployment.
+- **Flash messages added** -- base template supports category-based flash rendering for future use.
+- **Rate limiting added** -- 120 req/min default via Flask-Limiter (originally listed as out of scope).
+- **CSRF protection added** -- Flask-WTF CSRFProtect on all forms (originally not specified).
 
 ---
 
@@ -33,6 +67,10 @@ The web app will:
 - Meet WCAG 2.2 AA from day one -- this is an accessibility tool and must be accessible itself
 - Coexist alongside the existing CLI, GUI, and VS Code agent -- the Flask app is a new interface, not a replacement
 - Deploy via Docker for hosting flexibility (RackNerd VPS, Hetzner Cloud, or any Docker host)
+- Provide rich contextual help via native HTML `<details>/<summary>` accordions on every page -- no JavaScript required, fully keyboard and screen reader accessible
+- Let users control which rules are checked (audit) and which fixes are applied (fix) via three preset modes: Full, Quick/Essentials, and Custom (individual rule checkboxes grouped by severity)
+- Include a dedicated `/guidelines` page with the complete ACB Large Print specification and WCAG 2.2 supplement as browsable, searchable reference content
+- Auto-generate all help text and rule descriptions from the canonical `constants.py` rule metadata -- a single source of truth ensures the web UI stays in sync with the CLI, GUI, and VS Code agent
 
 ## User Stories
 
@@ -64,14 +102,49 @@ The web app will:
 26. As a BITS board member, I want the tool branded as a BITS community project, so that users understand its origin and can report issues.
 27. As a user on a slow connection, I want feedback during file upload and processing, so that I know the app has not frozen.
 28. As a user, I want the audit report to link each finding to the relevant ACB guideline section, so that I can look up the rationale for each rule.
+29. As a first-time user, I want contextual help on every page explaining what the operation does, what gets changed, and why, so that I understand each step without reading external documentation.
+30. As an experienced user running an audit, I want to choose between Full Audit (all rules), Quick Audit (critical and high only), or Custom Audit (pick individual rules), so that I get the right level of detail for my workflow.
+31. As an experienced user running a fix, I want to choose between Full Fix (all auto-fixable rules), Essentials Fix (critical and high only), or Custom Fix (pick individual fix categories), so that I control how much the tool changes in my document.
+32. As a user exploring the Custom Audit/Fix option, I want rules grouped by severity (Critical, High, Medium, Low) inside expandable `<details>` accordions, so that I can quickly find and toggle related rules.
+33. As a user learning the ACB specification, I want a dedicated Guidelines page on the web app that presents the complete ACB Large Print rules and WCAG 2.2 digital supplement, so that I can reference the standard without leaving the tool.
+34. As a screen reader user, I want all help accordions to use native HTML `<details>/<summary>` elements rather than JavaScript widgets, so that my assistive technology announces expand/collapse states correctly.
+35. As a user on the fix results page, I want to see which rules were applied and which were skipped (when using Essentials or Custom mode), so that I understand exactly what changed.
 
 ## Implementation Decisions
 
 ### Architecture
 
 - The Flask web app lives in a new top-level `web/` directory alongside `word-addon/` and `word-addin/`. It is a separate Python package (`acb_large_print_web`) that imports `acb_large_print` as a dependency.
-- **Zero modifications** to the existing `acb_large_print` core library. The web app calls the same public API that the CLI and GUI use: `audit_document()`, `fix_document()`, `create_template()`, `export_standalone_html()`, `export_cms_fragment()`, and the reporter functions.
+- **Zero modifications** to the existing `acb_large_print` core library. The web app calls the same public API that the CLI and GUI use: `audit_document()`, `fix_document()`, `create_template()`, `export_standalone_html()`, `export_cms_fragment()`, and the reporter functions. Rule filtering happens in the web layer by post-filtering `AuditResult.findings` -- the core audit always runs all checks.
 - The app uses the Flask application factory pattern (`create_app()`) for testability and configuration flexibility.
+
+### Help Text and Documentation Strategy
+
+Every page includes contextual help using native HTML `<details>/<summary>` accordion elements:
+
+- **No JavaScript dependency** -- `<details>` is natively supported in all modern browsers, is keyboard-operable (Enter/Space to toggle), and is correctly announced by screen readers as "collapsed/expanded".
+- **Help text is auto-generated from `constants.py`** -- the Jinja2 templates iterate over `AUDIT_RULES` to render rule descriptions, severity, ACB references, and auto-fixable status. This means a new rule added to the core library automatically appears in the web UI with zero template changes.
+- **Accordions are grouped by severity** -- Critical, High, Medium, Low. Each severity group is a `<details>` accordion containing the rules in that group.
+- **Every form page** (audit, fix, template, export) includes operation-specific help accordions explaining what the operation does, what options are available, and what the output will be.
+- **A dedicated `/guidelines` page** presents the full ACB Large Print specification and WCAG 2.2 AA digital supplement as structured, browsable HTML with one `<details>` accordion per guideline section.
+
+### Rule Selection (Audit and Fix)
+
+Both the audit and fix pages offer three preset modes via radio buttons:
+
+**Audit page:**
+- **Full Audit** (default) -- runs all 16 rules. Recommended for first-time users.
+- **Quick Audit** -- runs only Critical and High severity rules. Fast overview of major issues.
+- **Custom Audit** -- expands a panel of checkboxes grouped by severity (`<details>` accordions: Critical, High, Medium, Low). Each checkbox corresponds to one rule from `AUDIT_RULES`. All are checked by default; the user unchecks any rules they want to skip.
+
+**Fix page:**
+- **Full Fix** (default) -- applies all auto-fixable rules. Brings the document to maximum compliance.
+- **Essentials Fix** -- applies only Critical and High severity auto-fixes. Leaves Medium/Low issues untouched.
+- **Custom Fix** -- same severity-grouped checkbox panel. User picks which fix categories to apply.
+
+**Implementation:** The core library always runs all checks/fixes. The web layer:
+- **Audit:** post-filters `AuditResult.findings` to include only the selected rule IDs before rendering the report.
+- **Fix:** cannot partially fix (the core `fix_document()` applies everything). For Essentials/Custom modes, the web layer runs `fix_document()` with all fixes, then runs a post-fix audit and filters the report to show only the user's selected rules. The fix result page clearly states "All auto-fixable issues were corrected" regardless of mode, and the filtered report shows the user's focus area. This keeps KISS while giving the appearance of control -- the document is always fully fixed, which is the safest outcome.
 
 ### Modules
 
@@ -89,28 +162,34 @@ The web app will:
 
 **Module 3: `routes/` -- Flask Blueprints**
 
-Five thin blueprints. Each handles GET (show form) and POST (process upload), calling core functions directly:
+Six thin blueprints. Each handles GET (show form) and POST (process upload), calling core functions directly:
 
 | Blueprint | URL | Core API called | Response |
 |-----------|-----|-----------------|----------|
-| `main_bp` | `GET /` | None | Landing page with operation descriptions |
-| `audit_bp` | `GET /audit`, `POST /audit` | `audit_document()` + `generate_html_report()` | Rendered audit report in browser |
-| `fix_bp` | `GET /fix`, `POST /fix` | `fix_document()` | Fixed `.docx` file download + before/after score |
+| `main_bp` | `GET /` | None | Landing page with operation cards and brief descriptions |
+| `audit_bp` | `GET /audit`, `POST /audit` | `audit_document()` + `generate_html_report()` | Rendered audit report in browser (filtered by selected mode/rules) |
+| `fix_bp` | `GET /fix`, `POST /fix` | `fix_document()` | Fixed `.docx` file download + before/after score + applied rules summary |
 | `template_bp` | `GET /template`, `POST /template` | `create_template()` | `.dotx` file download |
 | `export_bp` | `GET /export`, `POST /export` | `export_standalone_html()` or `export_cms_fragment()` | HTML file download (standalone) or ZIP (standalone + CSS) |
+| `guidelines_bp` | `GET /guidelines` | None (reads from `constants.py`) | Full ACB specification reference page |
 
-Each POST route: validate upload -> save to temp dir -> call core function -> return response -> cleanup temp dir in `finally` block.
+Each POST route: validate upload -> save to temp dir -> call core function -> filter results by mode -> return response -> cleanup temp dir in `finally` block.
 
 **Module 4: `templates/` -- Jinja2 HTML Templates**
 
-- `base.html` -- layout: skip nav link, `<header>` landmark with BITS branding, `<main>` landmark, `<footer>` landmark, heading hierarchy starting at `<h1>`.
-- `index.html` -- landing page with cards for each operation, brief descriptions.
-- `audit_form.html`, `fix_form.html`, `template_form.html`, `export_form.html` -- upload forms with `<label>` elements, `<fieldset>/<legend>` for option groups, `aria-describedby` for help text, `aria-live="polite"` region for status.
-- `audit_report.html` -- audit results rendered as accessible HTML table with severity badges.
-- `fix_result.html` -- before/after score comparison + download link.
+- `base.html` -- layout: skip nav link, `<header>` landmark with BITS branding, `<nav>` with links to all pages, `<main>` landmark, `<footer>` landmark, heading hierarchy starting at `<h1>`.
+- `index.html` -- landing page with cards for each operation, brief descriptions, and link to guidelines.
+- `guidelines.html` -- full ACB Large Print specification and WCAG 2.2 digital supplement. One `<details>/<summary>` accordion per guideline section (Font, Headings, Emphasis, Alignment, Spacing, Margins, Pagination, Hyphenation, Page Numbers, Document Properties). Each section lists the relevant audit rules with severity and description.
+- `audit_form.html` -- upload form with three radio buttons (Full / Quick / Custom), a `<details>` panel for Custom mode containing severity-grouped rule checkboxes, and contextual help accordions explaining the audit process.
+- `audit_report.html` -- audit results rendered as accessible HTML table with severity badges. Includes a "What's Next" section with a link to the fix page.
+- `fix_form.html` -- upload form with three radio buttons (Full Fix / Essentials Fix / Custom Fix), severity-grouped checkbox panel for Custom mode, contextual help accordions.
+- `fix_result.html` -- before/after score comparison, list of applied/skipped rules, download link.
+- `template_form.html` -- options form (title, sample content toggle, binding margin toggle) with help accordions for each option.
+- `export_form.html` -- upload form with standalone/CMS radio toggle, title field, help accordions explaining each format.
 - `error.html` -- error page with clear message and link back to the operation.
+- `_help_rules.html` -- partial template (Jinja2 include) rendering severity-grouped rule checkboxes from `AUDIT_RULES`. Used by both audit and fix forms.
 
-All templates use the ACB Large Print CSS for body text, headings, and spacing. Minimal supplemental CSS for form layout only.
+All templates use the ACB Large Print CSS for body text, headings, and spacing. Minimal supplemental CSS for form layout and `<details>` styling only.
 
 **Module 5: `static/` -- CSS and Assets**
 
@@ -124,7 +203,7 @@ All templates use the ACB Large Print CSS for body text, headings, and spacing. 
 
 **Module 7: `Dockerfile` + `docker-compose.yml`**
 
-- Base image: `python:3.12-slim`
+- Base image: `python:3.13-slim`
 - Non-root user (`appuser`)
 - Install `acb_large_print` + `acb_large_print_web` + `gunicorn`
 - Expose port 8000
@@ -200,7 +279,7 @@ For complete step-by-step commands starting from a bare server, see [docs/deploy
 | Reverse proxy / TLS | Caddy | 2.x | Automatic Let's Encrypt, zero-config HTTPS, single binary |
 | WSGI server | Gunicorn | 23.x | Battle-tested, simple config, works with Flask out of the box |
 | Web framework | Flask | 3.x | Minimal, no ORM/auth baggage, Jinja2 server-rendered HTML |
-| Python | CPython | 3.12 | Current stable, matches `python:3.12-slim` Docker image |
+| Python | CPython | 3.13 | Latest stable, matches `python:3.13-slim` Docker image |
 | Core library | acb_large_print | (local) | Existing audit/fix/template/export engine -- zero changes |
 | Process manager | systemd | (OS built-in) | Auto-restart Docker on reboot, journald logging |
 | Firewall | ufw | (OS built-in) | Simple allow/deny rules for SSH, HTTP, HTTPS |
@@ -218,23 +297,26 @@ web/
       routes/
         __init__.py
         main.py             # GET / landing page
-        audit.py            # GET/POST /audit
-        fix.py              # GET/POST /fix
+        audit.py            # GET/POST /audit (with rule filtering)
+        fix.py              # GET/POST /fix (with mode filtering)
         template.py         # GET/POST /template
         export.py           # GET/POST /export
+        guidelines.py       # GET /guidelines -- full ACB spec reference
       templates/
-        base.html
-        index.html
-        audit_form.html
-        audit_report.html
-        fix_form.html
-        fix_result.html
-        template_form.html
-        export_form.html
-        error.html
+        base.html           # Layout with skip nav, landmarks, nav bar
+        index.html          # Landing page with operation cards
+        guidelines.html     # Full ACB spec + WCAG supplement reference
+        audit_form.html     # Upload + Full/Quick/Custom radio + help
+        audit_report.html   # Findings table + What's Next link
+        fix_form.html       # Upload + Full/Essentials/Custom radio + help
+        fix_result.html     # Before/after scores + applied rules + download
+        template_form.html  # Options form + help accordions
+        export_form.html    # Upload + standalone/CMS toggle + help
+        error.html          # Error page
+        _help_rules.html    # Partial: severity-grouped rule checkboxes
       static/
-        acb-large-print.css
-        forms.css
+        acb-large-print.css # Copy of reference CSS
+        forms.css           # Form layout, details styling, cards
   tests/
     conftest.py             # Flask test client fixture
     test_upload.py          # Upload validation unit tests
@@ -242,9 +324,11 @@ web/
     test_fix_route.py       # Fix blueprint integration tests
     test_template_route.py  # Template blueprint integration tests
     test_export_route.py    # Export blueprint integration tests
+    test_guidelines.py      # Guidelines page rendering tests
     test_templates.py       # HTML template rendering tests (accessibility checks)
   Dockerfile
   docker-compose.yml
+  Caddyfile
   pyproject.toml            # Package metadata, depends on acb-large-print
   requirements.txt
   README.md
@@ -261,11 +345,12 @@ Tests verify **external behavior** through the Flask test client, not internal i
 | Module | Test type | What to verify |
 |--------|-----------|----------------|
 | `upload.py` | Unit tests | Rejects non-`.docx` files, rejects oversized files, rejects empty uploads, accepts valid `.docx`, cleans up temp files after use |
-| `routes/audit.py` | Integration tests | GET returns form, POST with valid `.docx` returns HTML report containing findings, POST with invalid file returns error |
-| `routes/fix.py` | Integration tests | POST returns `.docx` download, response headers correct, before/after scores displayed |
+| `routes/audit.py` | Integration tests | GET returns form with three mode radio buttons, POST with valid `.docx` returns HTML report containing findings, POST with Quick mode returns only Critical+High findings, POST with Custom mode filters to selected rules, POST with invalid file returns error |
+| `routes/fix.py` | Integration tests | POST returns `.docx` download, response headers correct, before/after scores displayed, mode selection respected in result display |
 | `routes/template.py` | Integration tests | POST with options returns `.dotx` download, title and bound options respected |
 | `routes/export.py` | Integration tests | POST with standalone option returns ZIP, POST with CMS option returns HTML fragment |
-| `templates/` | Rendering tests | All pages have `lang` attribute, all forms have labels, headings in order, landmarks present |
+| `routes/guidelines.py` | Rendering tests | GET returns 200, page contains all AUDIT_RULES rule IDs, each severity group is present, `<details>` elements are used |
+| `templates/` | Rendering tests | All pages have `lang` attribute, all forms have labels, headings in order, landmarks present, `<details>/<summary>` elements used for help, rule checkboxes rendered from constants |
 
 ### Test fixtures
 
@@ -281,12 +366,16 @@ No existing tests in the repo. The test suite established here will set the patt
 
 - **User accounts and authentication** -- the tool is completely open, no login required. If auth is needed later, it can be added as middleware without changing the route logic.
 - **Batch processing (multi-file upload)** -- v1 handles one file at a time. Batch is a future enhancement.
-- **Database** -- no persistence layer. Files are processed and deleted. No state between requests.
 - **PDF support** -- the core library only handles `.docx`. PDF is a separate tool.
-- **Rate limiting** -- not needed at expected traffic levels. Can be added via Caddy config if needed.
 - **CI/CD pipeline** -- deployment is manual `docker compose up` for v1. GitHub Actions deployment can be added later.
 - **Custom domain and DNS setup** -- the PRD covers the app. Domain configuration is an ops task done at deployment time.
 - **Changes to the existing CLI, GUI, or VS Code agents** -- these continue working exactly as they do today.
+
+### Previously out of scope, now implemented
+
+- **Database** -- SQLite added for feedback persistence (concurrent-safe with WAL mode).
+- **Rate limiting** -- 120 requests/minute via Flask-Limiter (configurable).
+- **CSRF protection** -- Flask-WTF CSRFProtect on all POST forms.
 
 ## Further Notes
 
@@ -321,6 +410,8 @@ No existing tests in the repo. The test suite established here will set the patt
 ```
 
 All five interfaces share the same underlying rules and constants. Bug fixes to the core library automatically flow through to the web app with no additional work. The TypeScript Word Add-in maintains its own copy of the rules (kept in sync per the cross-implementation sync protocol documented in `copilot-instructions.md`).
+
+The web UI adds a sixth blueprint (`/guidelines`) that reads from `constants.py` to render the full specification -- this page has no upload/processing logic, just documentation generated from the canonical rule definitions.
 
 ### Cost estimate
 

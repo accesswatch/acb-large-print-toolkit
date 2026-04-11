@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+
+{% block title %}Export to HTML{% endblock %}
+{% block heading %}Export to HTML{% endblock %}
+
+{% block content %}
+<details class="help-accordion">
+  <summary>What does export do?</summary>
+  <p>Export converts your Word document to accessible HTML with ACB-compliant CSS styling. The output is ready to publish on a website. Choose between two formats depending on your publishing workflow.</p>
+</details>
+
+{% if error %}
+<div class="error-box" role="alert">
+  <p><strong>Error:</strong> {{ error }}</p>
+</div>
+{% endif %}
+
+<form method="post" enctype="multipart/form-data" novalidate>
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <div class="form-group">
+    <label for="document">Upload a Word document</label>
+    <input type="file" id="document" name="document" accept=".docx"
+           aria-describedby="file-help"
+           {% if error %}aria-invalid="true"{% endif %}>
+    <p id="file-help" class="help-text">Accepted format: <code>.docx</code> (Microsoft Word). Maximum size: 16 MB.</p>
+  </div>
+
+  <div class="form-group">
+    <label for="title">Document title (optional)</label>
+    <input type="text" id="title" name="title" value=""
+           aria-describedby="title-help">
+    <p id="title-help" class="help-text">Sets the HTML page title. Leave blank to use the document's built-in title.</p>
+  </div>
+
+  <fieldset>
+    <legend>Export Format</legend>
+
+    <div class="radio-group">
+      <label>
+        <input type="radio" name="mode" value="standalone" checked>
+        <strong>Standalone HTML</strong> -- complete HTML page with linked CSS. Downloads as a ZIP file.
+      </label>
+
+      <label>
+        <input type="radio" name="mode" value="cms">
+        <strong>CMS Fragment</strong> -- HTML snippet with embedded CSS for pasting into WordPress, Drupal, or any CMS editor.
+      </label>
+    </div>
+  </fieldset>
+
+  <details class="help-accordion">
+    <summary>Which format should I choose?</summary>
+    <dl>
+      <dt><strong>Standalone HTML</strong></dt>
+      <dd>Choose this if you are publishing the page as its own web page, or hosting it on a static site. You get a complete HTML file plus the ACB CSS file, bundled in a ZIP. Upload both files to your web server.</dd>
+
+      <dt><strong>CMS Fragment</strong></dt>
+      <dd>Choose this if you are pasting content into a CMS like WordPress or Drupal. The fragment includes CSS scoped to a <code>.acb-lp</code> wrapper class so it does not conflict with your site's theme. Paste the HTML into your CMS's "Custom HTML" or "Code" block.</dd>
+    </dl>
+  </details>
+
+  <button type="submit" class="btn-primary">Export</button>
+</form>
+{% endblock %}

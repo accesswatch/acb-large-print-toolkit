@@ -1,0 +1,200 @@
+{% extends "base.html" %}
+
+{% block title %}ACB Large Print Guidelines Reference{% endblock %}
+{% block heading %}ACB Large Print Guidelines Reference{% endblock %}
+
+{% block content %}
+<p>This page presents the complete ACB Large Print Guidelines (revised May 6, 2025) supplemented with WCAG 2.2 AA digital accessibility requirements. These are the rules enforced by the <a href="{{ url_for('audit.audit_form') }}">audit</a> and <a href="{{ url_for('fix.fix_form') }}">fix</a> tools.</p>
+
+<nav aria-labelledby="toc-heading">
+  <h2 id="toc-heading">Table of Contents</h2>
+  <ol>
+    <li><a href="#section-font">Font</a></li>
+    <li><a href="#section-headings">Headings</a></li>
+    <li><a href="#section-emphasis">Emphasis</a></li>
+    <li><a href="#section-alignment">Alignment</a></li>
+    <li><a href="#section-spacing">Spacing</a></li>
+    <li><a href="#section-margins">Margins</a></li>
+    <li><a href="#section-pagination">Pagination</a></li>
+    <li><a href="#section-hyphenation">Hyphenation</a></li>
+    <li><a href="#section-page-numbers">Page Numbers</a></li>
+    <li><a href="#section-doc-properties">Document Properties (WCAG)</a></li>
+    <li><a href="#section-rules-summary">All Rules by Severity</a></li>
+  </ol>
+</nav>
+
+<section id="section-font">
+  <h2>1. Font</h2>
+  <details class="guideline-accordion" open>
+    <summary>Font requirements</summary>
+    <p><strong>Font family:</strong> Arial is the required font for all text in the document. Arial is a clean sans-serif font with excellent legibility at large sizes and high familiarity among readers.</p>
+    <p><strong>Body text size:</strong> 18 point minimum. This is the absolute floor for any text in the document, including footnotes, captions, headers, and footers.</p>
+    <p><strong>No ALL CAPS:</strong> Text must not be formatted in all capital letters. ALL CAPS reduces readability because it removes the ascending and descending letter shapes that help readers recognize words.</p>
+    <h3>Related audit rules</h3>
+    <ul>
+      <li><strong>ACB-FONT-FAMILY</strong> (Critical) -- All text must use Arial font</li>
+      <li><strong>ACB-FONT-SIZE-BODY</strong> (Critical) -- Body text must be 18pt minimum</li>
+      <li><strong>ACB-NO-ALLCAPS</strong> (High) -- Text must not use ALL CAPS formatting</li>
+    </ul>
+  </details>
+</section>
+
+<section id="section-headings">
+  <h2>2. Headings</h2>
+  <details class="guideline-accordion">
+    <summary>Heading requirements</summary>
+    <p><strong>Heading 1:</strong> 22 point, bold, Arial. Used for the document title or main section headings.</p>
+    <p><strong>Heading 2 and below:</strong> 20 point, bold, Arial. Used for subsections.</p>
+    <p><strong>Hierarchy:</strong> Heading levels must not skip. A Heading 3 must be preceded by a Heading 2, which must be preceded by a Heading 1. Skipping levels (e.g., jumping from H1 to H3) confuses document structure for both sighted readers and screen reader users.</p>
+    <p><strong>Alignment:</strong> All headings must be flush left, same as body text.</p>
+    <h3>Related audit rules</h3>
+    <ul>
+      <li><strong>ACB-FONT-SIZE-H1</strong> (High) -- Heading 1 must be 22pt</li>
+      <li><strong>ACB-FONT-SIZE-H2</strong> (High) -- Heading 2 must be 20pt</li>
+      <li><strong>ACB-HEADING-HIERARCHY</strong> (High) -- Heading levels must not skip</li>
+    </ul>
+  </details>
+</section>
+
+<section id="section-emphasis">
+  <h2>3. Emphasis</h2>
+  <details class="guideline-accordion">
+    <summary>Emphasis requirements</summary>
+    <p><strong>Underline only:</strong> When you need to emphasize text, use underline formatting. Do not use italic or bold for emphasis in body text.</p>
+    <p><strong>No italic:</strong> Italic text is prohibited entirely. Italic characters are harder to read for people with low vision because the slanted shapes reduce letter distinction. The audit flags any italic formatting as a Critical finding.</p>
+    <p><strong>Bold restricted to headings:</strong> Bold formatting is reserved for headings only. Bold text in body paragraphs should be converted to underline emphasis. This ensures that visual weight differences in the body text are not used to convey meaning that would be lost to assistive technology users.</p>
+    <h3>Related audit rules</h3>
+    <ul>
+      <li><strong>ACB-NO-ITALIC</strong> (Critical) -- Italic formatting is prohibited</li>
+      <li><strong>ACB-BOLD-HEADINGS-ONLY</strong> (High) -- Bold in body text should be underline emphasis instead</li>
+    </ul>
+  </details>
+</section>
+
+<section id="section-alignment">
+  <h2>4. Alignment</h2>
+  <details class="guideline-accordion">
+    <summary>Alignment requirements</summary>
+    <p><strong>Flush left, ragged right:</strong> All text must be left-aligned. Justified text (aligned to both left and right margins) creates uneven word spacing that makes reading harder for people with low vision and dyslexia. Centered and right-aligned text are also prohibited for body content.</p>
+    <h3>Related audit rules</h3>
+    <ul>
+      <li><strong>ACB-ALIGNMENT</strong> (High) -- Text must be flush left (not justified, centered, or right-aligned)</li>
+    </ul>
+  </details>
+</section>
+
+<section id="section-spacing">
+  <h2>5. Spacing</h2>
+  <details class="guideline-accordion">
+    <summary>Spacing requirements</summary>
+    <p><strong>Line spacing:</strong> 1.15 multiple spacing is required for print documents. For digital documents, WCAG 2.2 AA requires a minimum of 1.5x the font size.</p>
+    <p><strong>Paragraph spacing:</strong> One blank line (12pt space after) between paragraphs. No extra spacing between list items.</p>
+    <h3>Related audit rules</h3>
+    <ul>
+      <li><strong>ACB-LINE-SPACING</strong> (Medium) -- Line spacing must be 1.15</li>
+    </ul>
+  </details>
+</section>
+
+<section id="section-margins">
+  <h2>6. Margins</h2>
+  <details class="guideline-accordion">
+    <summary>Margin requirements</summary>
+    <p><strong>1 inch on all sides:</strong> Top, bottom, left, and right margins must each be at least 1 inch (2.54 cm). This provides adequate white space and prevents text from being cut off during printing.</p>
+    <p><strong>Binding margin:</strong> If the document will be bound (stapled, spiral, or three-ring), add an extra 0.5 inch to the left margin (1.5 inches total on the left side).</p>
+    <h3>Related audit rules</h3>
+    <ul>
+      <li><strong>ACB-MARGINS</strong> (Medium) -- Page margins must be 1 inch on all sides</li>
+    </ul>
+  </details>
+</section>
+
+<section id="section-pagination">
+  <h2>7. Pagination</h2>
+  <details class="guideline-accordion">
+    <summary>Pagination requirements</summary>
+    <p><strong>Widow and orphan control:</strong> Enable widow and orphan control to prevent single lines of a paragraph from appearing alone at the top or bottom of a page. This improves readability and gives the document a professional appearance.</p>
+    <h3>Related audit rules</h3>
+    <ul>
+      <li><strong>ACB-WIDOW-ORPHAN</strong> (Low) -- Widow and orphan control must be enabled</li>
+    </ul>
+  </details>
+</section>
+
+<section id="section-hyphenation">
+  <h2>8. Hyphenation</h2>
+  <details class="guideline-accordion">
+    <summary>Hyphenation requirements</summary>
+    <p><strong>No automatic hyphenation:</strong> Disable automatic hyphenation. Hyphenated words at line breaks are harder to read for people with low vision because they interrupt word recognition. Let words wrap naturally to the next line.</p>
+    <h3>Related audit rules</h3>
+    <ul>
+      <li><strong>ACB-NO-HYPHENATION</strong> (Medium) -- Automatic hyphenation must be disabled</li>
+    </ul>
+  </details>
+</section>
+
+<section id="section-page-numbers">
+  <h2>9. Page Numbers</h2>
+  <details class="guideline-accordion">
+    <summary>Page number requirements</summary>
+    <p><strong>Page numbers required:</strong> Every page must display a page number in the footer. Page numbers must be in Arial, 18pt bold, positioned at the lower outer corner of each page. This helps readers navigate multi-page documents and reference specific pages.</p>
+    <h3>Related audit rules</h3>
+    <ul>
+      <li><strong>ACB-PAGE-NUMBERS</strong> (Medium) -- Page numbers must be present in the footer</li>
+    </ul>
+  </details>
+</section>
+
+<section id="section-doc-properties">
+  <h2>10. Document Properties (WCAG 2.2 Supplement)</h2>
+  <details class="guideline-accordion">
+    <summary>Document property requirements</summary>
+    <p>These rules come from WCAG 2.2 AA, which supplements the ACB print guidelines for digital documents:</p>
+    <p><strong>Document title:</strong> The document must have a title set in its properties (File &gt; Properties &gt; Title in Word). This title is announced by screen readers and helps users identify the document. (WCAG 2.4.2)</p>
+    <p><strong>Document language:</strong> The document language must be set (Review &gt; Language in Word). This tells screen readers which language to use for pronunciation. (WCAG 3.1.1)</p>
+    <h3>Related audit rules</h3>
+    <ul>
+      <li><strong>ACB-DOC-TITLE</strong> (Medium) -- Document must have a title in properties</li>
+      <li><strong>ACB-DOC-LANGUAGE</strong> (Medium) -- Document language must be set</li>
+    </ul>
+  </details>
+</section>
+
+<section id="section-rules-summary">
+  <h2>All Rules by Severity</h2>
+  <p>The following is the complete list of audit rules, grouped by severity level. These are the same rules available in the <a href="{{ url_for('audit.audit_form') }}">audit</a> and <a href="{{ url_for('fix.fix_form') }}">fix</a> tools.</p>
+
+  {% for severity in ["Critical", "High", "Medium", "Low"] %}
+  {% set rules = rules_by_severity[severity] %}
+  {% if rules %}
+  <details class="guideline-accordion">
+    <summary>
+      <span class="severity-badge severity-{{ severity | lower }}">{{ severity }}</span>
+      {{ rules | length }} rule{{ "s" if rules | length != 1 else "" }}
+    </summary>
+    <table class="findings-table">
+      <caption>{{ severity }} severity rules</caption>
+      <thead>
+        <tr>
+          <th scope="col">Rule ID</th>
+          <th scope="col">Description</th>
+          <th scope="col">Guideline Reference</th>
+          <th scope="col">Auto-Fixable</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for rule in rules %}
+        <tr>
+          <td>{{ rule.rule_id }}</td>
+          <td>{{ rule.description }}</td>
+          <td>{{ rule.acb_reference }}</td>
+          <td>{{ "Yes" if rule.auto_fixable else "No (manual)" }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </details>
+  {% endif %}
+  {% endfor %}
+</section>
+{% endblock %}

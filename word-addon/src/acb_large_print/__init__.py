@@ -2,4 +2,4 @@
 
 __version__ = "0.1.2"
 __app_name__ = "ACB Large Print Tool"
-__author__ = "BITS (Blind Information Technology Specialists)"
+__author__ = "BITS (Blind Information Technology Solutions)"

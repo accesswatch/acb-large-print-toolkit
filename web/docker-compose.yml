@@ -1,0 +1,23 @@
+services:
+  web:
+    build:
+      context: ..
+      dockerfile: web/Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - FLASK_ENV=production
+      # Set FEEDBACK_PASSWORD to enable /feedback/review?key=<password>
+      # - FEEDBACK_PASSWORD=change-me-in-production
+    volumes:
+      - feedback-data:/app/instance
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  feedback-data:

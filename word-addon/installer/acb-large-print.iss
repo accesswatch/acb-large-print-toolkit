@@ -4,7 +4,7 @@
 
 #define MyAppName "ACB Large Print Tool"
 #define MyAppVersion "1.0.0"
-#define MyAppPublisher "BITS - Blind Information Technology Specialists"
+#define MyAppPublisher "BITS - Blind Information Technology Solutions"
 #define MyAppURL "https://www.bitsonline.org"
 #define MyAppExeName "acb-large-print-win-x64.exe"
 #define MyCliExeName "acb-large-print-cli-win-x64.exe"

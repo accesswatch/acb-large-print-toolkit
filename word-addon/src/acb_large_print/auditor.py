@@ -141,7 +141,12 @@ def _check_document_properties(doc: Document, result: AuditResult) -> None:
 
     # Language
     styles_elem = doc.styles.element
-    rpr = styles_elem.find(qn("w:docDefaults/w:rPrDefault/w:rPr"))
+    doc_defaults = styles_elem.find(qn("w:docDefaults"))
+    rpr = None
+    if doc_defaults is not None:
+        rpr_default = doc_defaults.find(qn("w:rPrDefault"))
+        if rpr_default is not None:
+            rpr = rpr_default.find(qn("w:rPr"))
     if rpr is not None:
         lang = rpr.find(qn("w:lang"))
         if lang is None or not lang.get(qn("w:val")):

@@ -541,11 +541,13 @@ class WizardFrame(wx.Frame):
         wx.BeginBusyCursor()
         try:
             tmp = Path(tempfile.mkdtemp()) / f"_acb_tmp_{self.src_path.name}"
-            self.fixed_path, self.total_fixes, self.post_audit = fix_document(
+            self.fixed_path, self.total_fixes, self.post_audit, warnings = fix_document(
                 self.src_path, tmp,
             )
 
             lines: list[str] = []
+            for w in warnings:
+                lines.append(f"WARNING: {w}")
             lines.append(f"Fixes applied: {self.total_fixes}")
             lines.append(
                 f"Post-fix score: {self.post_audit.score}/100 "

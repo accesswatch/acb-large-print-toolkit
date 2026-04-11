@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block title %}Create a Template{% endblock %}
+{% block heading %}Create a Template{% endblock %}
+
+{% block content %}
+<details class="help-accordion">
+  <summary>What is a template?</summary>
+  <p>A Word template (<code>.dotx</code>) is a starting point for new documents. When you create a new document from this template, all ACB Large Print styles are pre-configured: Arial font, correct sizes for headings and body text, flush-left alignment, proper spacing, and margins. You do not need to format anything manually.</p>
+</details>
+
+{% if error %}
+<div class="error-box" role="alert">
+  <p><strong>Error:</strong> {{ error }}</p>
+</div>
+{% endif %}
+
+<form method="post" novalidate>
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <div class="form-group">
+    <label for="title">Document title</label>
+    <input type="text" id="title" name="title" value=""
+           placeholder="ACB Large Print Document"
+           aria-describedby="title-help">
+    <p id="title-help" class="help-text">This title appears in the document properties. Leave blank for the default.</p>
+  </div>
+
+  <fieldset>
+    <legend>Template Options</legend>
+
+    <label>
+      <input type="checkbox" name="include_sample">
+      Include sample content (headings, paragraphs, lists, and a table demonstrating the correct formatting)
+    </label>
+
+    <details class="help-accordion">
+      <summary>What does sample content include?</summary>
+      <p>The sample content adds example headings (H1, H2, H3), body paragraphs, a bulleted list, a numbered list, and a simple table -- all formatted to ACB standards. This helps you see what correctly formatted content looks like. Delete the sample content when you start writing your own document.</p>
+    </details>
+
+    <label>
+      <input type="checkbox" name="bound">
+      Add binding margin (extra 0.5 inch on left side)
+    </label>
+
+    <details class="help-accordion">
+      <summary>When do I need a binding margin?</summary>
+      <p>If your document will be printed and bound (stapled, spiral, or three-ring), add a binding margin. This shifts all content 0.5 inches to the right so that text near the left edge is not hidden by the binding. For digital-only documents or unbound printouts, leave this unchecked.</p>
+    </details>
+  </fieldset>
+
+  <button type="submit" class="btn-primary">Create Template</button>
+</form>
+{% endblock %}

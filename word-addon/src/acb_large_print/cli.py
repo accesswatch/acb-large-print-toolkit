@@ -279,7 +279,7 @@ def _cmd_fix(args: argparse.Namespace) -> int:
                 print(f"  {i}. [{f.severity.value}] {f.rule_id}: {f.message}")
         return 0 if result.passed else 2
 
-    output_path, total_fixes, post_audit = fix_document(
+    output_path, total_fixes, post_audit, warnings = fix_document(
         args.file,
         output_path=args.output,
         bound=args.bound,
@@ -287,6 +287,8 @@ def _cmd_fix(args: argparse.Namespace) -> int:
 
     report = generate_fix_summary(str(output_path), total_fixes, post_audit)
     print(report)
+    for w in warnings:
+        print(f"  WARNING: {w}")
 
     return 0 if post_audit.passed else 2
 
@@ -384,11 +386,13 @@ def _cmd_batch(args: argparse.Namespace) -> int:
                 args.output_dir.mkdir(parents=True, exist_ok=True)
                 out = args.output_dir / file_path.name
 
-            output_path, total_fixes, post_audit = fix_document(
+            output_path, total_fixes, post_audit, warnings = fix_document(
                 file_path, output_path=out, bound=args.bound,
             )
             report = generate_fix_summary(str(output_path), total_fixes, post_audit)
             print(report)
+            for w in warnings:
+                print(f"  WARNING: {w}")
             print()
 
             if not post_audit.passed:

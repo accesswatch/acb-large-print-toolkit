@@ -23,6 +23,43 @@
 ### Instructions
 - `prompts/acb-large-print.instructions.md` -- Auto-activates on *.html, *.css files. Quick-reference ACB/WCAG checklist.
 
+## Flask Web Application (April 2026)
+
+The `web/` directory contains a browser-based interface for all core toolkit operations. No installation, no accounts, no JavaScript required.
+
+### Pages
+
+| Route | Purpose |
+|-------|---------|
+| `GET /` | Landing page with operation cards and descriptions |
+| `GET/POST /audit` | Upload a .docx, choose Full/Quick/Custom mode, view compliance report |
+| `GET/POST /fix` | Upload a .docx, choose Full/Essentials/Custom mode, download fixed copy |
+| `GET/POST /template` | Configure and download an ACB-compliant Word template (.dotx) |
+| `GET/POST /export` | Upload a .docx, export as standalone HTML (ZIP) or CMS fragment |
+| `GET /guidelines` | Full ACB Large Print specification and WCAG 2.2 supplement |
+| `GET/POST /feedback` | Submit feedback (rating, task, message) |
+| `GET /feedback/review` | View feedback (password-protected via FEEDBACK_PASSWORD env var) |
+| `GET /health` | Health check endpoint (returns 200) |
+
+### Architecture
+
+- Flask 3.x application factory pattern with blueprints
+- Imports `acb_large_print` core library directly -- zero modifications to existing code
+- CSRF protection (Flask-WTF), rate limiting (Flask-Limiter), structured logging
+- SQLite for feedback storage (WAL mode, concurrent-safe)
+- Docker container with non-root user and health check
+- Caddy reverse proxy (production) for auto-TLS
+- All help text and rule descriptions auto-generated from `constants.py`
+- Native HTML `<details>/<summary>` for contextual help (no JavaScript)
+
+### Environment Variables
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `SECRET_KEY` | Random per-start | Flask session/CSRF secret. Set in production. |
+| `FEEDBACK_PASSWORD` | (unset) | Enables `/feedback/review?key=<password>` |
+| `LOG_LEVEL` | `INFO` | Python logging level |
+
 ## Workspace for Testing
 - `s:\code\lp` -- shared workspace with all toolkit files + test HTML
 - Test file: `04 - April 8 2026 BITS Board Meeting Agenda.html` (BITS board meeting, ~730 lines, HTML fragment from Pandoc/Markdown conversion)

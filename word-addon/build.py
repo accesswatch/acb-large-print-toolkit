@@ -251,7 +251,7 @@ VSVersionInfo(
         StringTable(
           u'040904B0',
           [
-            StringStruct(u'CompanyName', u'BITS - Blind Information Technology Specialists'),
+            StringStruct(u'CompanyName', u'BITS - Blind Information Technology Solutions'),
             StringStruct(u'FileDescription', u'ACB Large Print Compliance Tool'),
             StringStruct(u'FileVersion', u'{__version__}'),
             StringStruct(u'InternalName', u'acb-large-print'),

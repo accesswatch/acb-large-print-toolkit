@@ -265,7 +265,7 @@ AUDIT_RULES: dict[str, RuleDef] = {
         description="Document must have a title in properties",
         severity=Severity.MEDIUM,
         acb_reference="WCAG 2.4.2 Page Titled",
-        auto_fixable=False,
+        auto_fixable=True,
     ),
     "ACB-DOC-LANGUAGE": RuleDef(
         rule_id="ACB-DOC-LANGUAGE",

@@ -150,15 +150,22 @@ Edit the file to replace `YOUR_DOMAIN`:
 sed -i 's/YOUR_DOMAIN/lp.bits-acb.org/' web/Caddyfile
 ```
 
-### 3.3 Create a .env file for production settings (optional)
+### 3.3 Create a .env file for production settings
 
 ```bash
 cat > web/.env << 'EOF'
 FLASK_ENV=production
-MAX_CONTENT_LENGTH=16777216
-GUNICORN_WORKERS=8
-GUNICORN_TIMEOUT=120
+SECRET_KEY=your-random-secret-key-here
+# Uncomment to enable feedback review at /feedback/review?key=<password>
+# FEEDBACK_PASSWORD=change-me-in-production
+LOG_LEVEL=INFO
 EOF
+```
+
+Generate a secure SECRET_KEY:
+
+```bash
+python3 -c "import secrets; print(secrets.token_hex(32))"
 ```
 
 ---
@@ -172,9 +179,11 @@ cd ~/app/web
 docker compose up -d --build
 ```
 
-This builds two containers:
-- `app`: Flask + Gunicorn (port 8000, internal only)
-- `caddy`: Reverse proxy (ports 80 and 443, public)
+This builds the web container:
+- `web`: Flask + Gunicorn (port 8000)
+
+If you added the Caddy service to docker-compose.yml (see Reference Files), it also starts:
+- `caddy`: Reverse proxy (ports 80 and 443, public, auto-TLS)
 
 Caddy automatically obtains a Let's Encrypt TLS certificate on first request.
 
@@ -196,7 +205,7 @@ Expected: both containers show "Up", health returns 200.
 
 ### 4.3 Test from a browser
 
-Open `https://YOUR_DOMAIN` in a browser. You should see the landing page with the four operation cards.
+Open `https://YOUR_DOMAIN` in a browser. You should see the landing page with links to audit, fix, template, export, guidelines, and feedback.
 
 ---
 
@@ -273,9 +282,9 @@ The build takes about 30 seconds. There is a brief downtime (a few seconds) duri
 
 ```bash
 # App logs (Flask/Gunicorn)
-docker compose -f ~/app/web/docker-compose.yml logs app --tail 50 -f
+docker compose -f ~/app/web/docker-compose.yml logs web --tail 50 -f
 
-# Caddy logs (HTTP access)
+# Caddy logs (HTTP access) -- if Caddy is in your compose file
 docker compose -f ~/app/web/docker-compose.yml logs caddy --tail 50 -f
 
 # All logs
@@ -286,7 +295,7 @@ docker compose -f ~/app/web/docker-compose.yml logs --tail 50 -f
 
 ```bash
 cd ~/app/web
-docker compose restart app
+docker compose restart web
 ```
 
 ### Stopping everything
@@ -304,6 +313,26 @@ df -h /
 
 # Docker-specific
 docker system df
+```
+
+### Backing up feedback data
+
+Feedback is stored in a SQLite database inside the `feedback-data` Docker volume:
+
+```bash
+# Copy the database out of the volume
+docker compose -f ~/app/web/docker-compose.yml cp web:/app/instance/feedback.db ./feedback-backup.db
+
+# Or access it directly via the volume mount
+docker volume inspect web_feedback-data
+```
+
+### Viewing feedback
+
+Set the `FEEDBACK_PASSWORD` environment variable in docker-compose.yml, then visit:
+
+```
+https://YOUR_DOMAIN/feedback/review?key=YOUR_PASSWORD
 ```
 
 ### Cleaning up old Docker images
@@ -346,52 +375,70 @@ These files ship with the app in the `web/` directory and are ready to use:
 ### Dockerfile
 
 ```dockerfile
-FROM python:3.12-slim AS base
+FROM python:3.13-slim AS base
 
-RUN groupadd -r appuser && useradd -r -g appuser -d /home/appuser -s /sbin/nologin appuser
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
 
 WORKDIR /app
 
-COPY web/requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+# Install the core library first (changes less often)
+COPY word-addon/pyproject.toml word-addon/
+COPY word-addon/src/ word-addon/src/
+RUN pip install --no-cache-dir ./word-addon
 
-COPY word-addon/src/acb_large_print/ /app/acb_large_print/
-COPY web/src/acb_large_print_web/ /app/acb_large_print_web/
+# Install the web app
+COPY web/pyproject.toml web/requirements.txt web/
+COPY web/src/ web/src/
+RUN pip install --no-cache-dir ./web
 
-RUN chown -R appuser:appuser /app
-USER appuser
+# Create a non-root user
+RUN addgroup --system app && adduser --system --ingroup app app
+RUN mkdir -p /app/instance && chown app:app /app/instance
+
+USER app
 
 EXPOSE 8000
 
-HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"
-
 CMD ["gunicorn", \
      "--bind", "0.0.0.0:8000", \
-     "--workers", "8", \
+     "--workers", "2", \
      "--timeout", "120", \
      "--access-logfile", "-", \
-     "--error-logfile", "-", \
-     "acb_large_print_web.wsgi:app"]
+     "acb_large_print_web.app:create_app()"]
 ```
 
 ### docker-compose.yml
 
 ```yaml
 services:
-  app:
+  web:
     build:
       context: ..
       dockerfile: web/Dockerfile
-    restart: unless-stopped
-    expose:
-      - "8000"
+    ports:
+      - "8000:8000"
     environment:
       - FLASK_ENV=production
-    tmpfs:
-      - /tmp:size=512M
-    read_only: true
+      # - SECRET_KEY=your-secret-here
+      # - FEEDBACK_PASSWORD=change-me-in-production
+    volumes:
+      - feedback-data:/app/instance
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
 
+volumes:
+  feedback-data:
+```
+
+For production with Caddy, add a Caddy service to docker-compose.yml:
+
+```yaml
   caddy:
     image: caddy:2-alpine
     restart: unless-stopped
@@ -405,9 +452,12 @@ services:
       - caddy_config:/config
 
 volumes:
+  feedback-data:
   caddy_data:
   caddy_config:
 ```
+
+When using Caddy, change the `web` service from `ports: ["8000:8000"]` to `expose: ["8000"]` so it is only accessible through the reverse proxy.
 
 ### Caddyfile
 
@@ -438,9 +488,9 @@ your.domain.com {
 
 ### App container exits immediately
 
-- Check logs: `docker compose logs app`
+- Check logs: `docker compose logs web`
 - Common cause: Python import error (missing dependency in requirements.txt)
-- Test locally: `docker compose run --rm app python -c "from acb_large_print_web import create_app; print('OK')"`
+- Test locally: `docker compose run --rm web python -c "from acb_large_print_web import create_app; print('OK')"`
 
 ### Upload fails with 413 error
 
@@ -448,8 +498,8 @@ your.domain.com {
 
 ### Permission denied errors in container
 
-- The container runs as `appuser` (non-root). Only `/tmp` is writable.
-- Check that the Dockerfile `chown` step completed correctly.
+- The container runs as `app` (non-root). Only `/app/instance` and `/tmp` are writable.
+- Check that the Dockerfile user creation and `chown` steps completed correctly.
 
 ### Out of disk space
 
@@ -465,3 +515,15 @@ sudo ufw status                    # firewall rules
 docker compose ps                  # container status
 sudo ss -tlnp | grep -E ':80|:443'  # what's listening
 ```
+
+---
+
+## Environment Variables Reference
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `FLASK_ENV` | `production` | Set to `development` for debug mode |
+| `SECRET_KEY` | Random per-start | Flask session/CSRF secret. **Set a fixed value in production.** |
+| `FEEDBACK_PASSWORD` | (unset) | Set to enable `/feedback/review?key=<password>`. Disabled when unset. |
+| `LOG_LEVEL` | `INFO` | Python logging level (DEBUG, INFO, WARNING, ERROR) |
+| `MAX_CONTENT_LENGTH` | `16777216` (16 MB) | Maximum upload file size in bytes |

@@ -294,4 +294,4 @@ Post-processing removes inline styles, cleans empty paragraphs, and adds `scope`
 
 MIT License. See [LICENSE.txt](LICENSE.txt).
 
-Copyright 2026 BITS (Blind Information Technology Specialists).
+Copyright 2026 BITS (Blind Information Technology Solutions).

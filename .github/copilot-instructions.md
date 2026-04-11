@@ -1,4 +1,4 @@
-This repository contains the ACB Large Print Toolkit -- a VS Code agent toolkit for formatting documents to comply with the American Council of the Blind Large Print Guidelines (revised May 6, 2025), supplemented with WCAG 2.2 AA digital accessibility rules.
+This repository contains the ACB Large Print Toolkit -- a VS Code agent toolkit, desktop application, and web application for formatting documents to comply with the American Council of the Blind Large Print Guidelines (revised May 6, 2025), supplemented with WCAG 2.2 AA digital accessibility rules.
 
 ## Repository layout
 
@@ -12,9 +12,12 @@ This repository contains the ACB Large Print Toolkit -- a VS Code agent toolkit 
 - `.github/skills/markdown-accessibility/` -- Pattern library, severity scoring, emoji maps, fix templates
 - `styles/` -- Reference CSS stylesheet (acb-large-print.css)
 - `templates/` -- HTML boilerplate skeleton (acb-large-print-boilerplate.html)
-- `docs/` -- Detailed toolkit documentation and history
+- `docs/` -- Detailed toolkit documentation, announcement, PRD, and deployment guide
 - `samples/` -- Example source Markdown and converted HTML files
 - `reference/` -- Source ACB specification document (.docx)
+- `web/` -- Flask web application (browser-based audit, fix, template, export, guidelines, feedback)
+- `word-addon/` -- Standalone Python CLI + wxPython GUI tool (auditor, fixer, template builder, exporter)
+- `word-addin/` -- Office.js Web Add-in for Microsoft Word ribbon integration (TypeScript port)
 
 ## Key conventions
 
@@ -44,3 +47,23 @@ This repository contains the ACB Large Print Toolkit -- a VS Code agent toolkit 
 - Links: descriptive text (no bare URLs, no "click here")
 - Spacing: 1 blank line between paragraphs, no blank lines between list items
 - Digital supplement: WCAG 2.2 AA contrast (4.5:1), 400% zoom reflow, 1.5x line-height
+
+## Cross-implementation sync (CRITICAL)
+
+The ACB audit rules, fix logic, constants, and severity definitions exist in multiple implementations that MUST stay in sync:
+
+| Concern | Python (word-addon) | TypeScript (word-addin) | Flask Web (web) | CSS/HTML (styles, agents) |
+|---------|---------------------|-------------------------|-----------------|---------------------------|
+| Constants (font sizes, margins, spacing) | `word-addon/src/acb_large_print/constants.py` | `word-addin/src/constants.ts` | Imports from Python core | `styles/acb-large-print.css` |
+| Audit rules + severity | `word-addon/src/acb_large_print/constants.py` (`AUDIT_RULES`) | `word-addin/src/constants.ts` (`AUDIT_RULES`) | Imports from Python core | Agent rules in `.github/agents/large-print-formatter.agent.md` |
+| Audit logic | `word-addon/src/acb_large_print/auditor.py` | `word-addin/src/auditor.ts` | Imports from Python core | N/A |
+| Fix logic | `word-addon/src/acb_large_print/fixer.py` | `word-addin/src/fixer.ts` | Imports from Python core | N/A |
+| Template builder | `word-addon/src/acb_large_print/template.py` | `word-addin/src/template.ts` | Imports from Python core | N/A |
+| Web routes and templates | N/A | N/A | `web/src/acb_large_print_web/` | N/A |
+
+**When modifying ANY rule, constant, or check:**
+1. Update ALL implementations -- never change one without the others
+2. If adding a new audit rule ID in Python, add the same rule in TypeScript and update the agent
+3. If changing a threshold (e.g., font size, margin tolerance), grep all three locations
+4. The Python `constants.py` is the canonical source of truth -- TypeScript and CSS must match it
+5. The Flask web app imports the Python core directly -- no sync needed for rule logic, but template rendering (help text, rule descriptions) auto-generates from `constants.py`

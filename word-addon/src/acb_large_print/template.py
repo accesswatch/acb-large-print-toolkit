@@ -142,7 +142,12 @@ def _add_page_numbers(doc: Document) -> None:
 def _set_document_language(doc: Document, lang: str = "en-US") -> None:
     """Set the default document language."""
     styles_elem = doc.styles.element
-    rpr_default = styles_elem.find(qn("w:docDefaults/w:rPrDefault/w:rPr"))
+    doc_defaults = styles_elem.find(qn("w:docDefaults"))
+    rpr_default = None
+    if doc_defaults is not None:
+        rpr_def_elem = doc_defaults.find(qn("w:rPrDefault"))
+        if rpr_def_elem is not None:
+            rpr_default = rpr_def_elem.find(qn("w:rPr"))
     if rpr_default is not None:
         lang_elem = rpr_default.find(qn("w:lang"))
         if lang_elem is None:

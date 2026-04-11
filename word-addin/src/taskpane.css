@@ -1,0 +1,417 @@
+/**
+ * Task pane CSS -- WCAG 2.2 AA compliant.
+ *
+ * Accessibility features:
+ * - 4.5:1+ contrast ratios throughout (1.4.3)
+ * - Visible focus indicators with 2px offset (2.4.7, 2.4.11)
+ * - No reliance on color alone for meaning (1.4.1) -- icons + text labels
+ * - Respects prefers-reduced-motion (2.3.3)
+ * - Respects prefers-contrast: more (1.4.3)
+ * - Respects forced-colors / high-contrast mode
+ * - Touch targets >= 24x24 CSS px (2.5.8)
+ * - Content reflows at narrow widths (1.4.10)
+ * - Text scales to 200% without overflow (1.4.4)
+ */
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+:root {
+    /* Token system for easy theme override */
+    --color-bg: #ffffff;
+    --color-text: #1a1a1a;
+    --color-text-secondary: #444444;
+    --color-primary: #0f6cbd;
+    --color-primary-hover: #0a4d8c;
+    --color-primary-text: #ffffff;
+    --color-border: #616161;
+    --color-focus: #000000;
+    --color-severity-critical: #a80000;
+    --color-severity-high: #c25400;
+    --color-severity-medium: #6b5800;
+    --color-severity-low: #2d6a2d;
+    --color-severity-critical-bg: #fde7e7;
+    --color-severity-high-bg: #fff3e0;
+    --color-severity-medium-bg: #fff8e1;
+    --color-severity-low-bg: #e8f5e9;
+    --color-success: #107c10;
+    --color-surface: #f5f5f5;
+
+    --font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-size-base: 0.875rem;
+    --font-size-sm: 0.8125rem;
+    --font-size-lg: 1rem;
+    --font-size-xl: 1.25rem;
+
+    --spacing-xs: 0.25rem;
+    --spacing-sm: 0.5rem;
+    --spacing-md: 0.75rem;
+    --spacing-lg: 1rem;
+
+    --radius: 4px;
+    --focus-width: 2px;
+    --focus-offset: 2px;
+    --min-target: 24px;
+}
+
+html {
+    font-size: 100%;
+}
+
+body {
+    margin: 0;
+    padding: var(--spacing-lg);
+    font-family: var(--font-family);
+    font-size: var(--font-size-base);
+    line-height: 1.5;
+    color: var(--color-text);
+    background-color: var(--color-bg);
+}
+
+/* --- Focus indicators (2.4.7, 2.4.11) --- */
+:focus-visible {
+    outline: var(--focus-width) solid var(--color-focus);
+    outline-offset: var(--focus-offset);
+    border-radius: var(--radius);
+}
+
+/* --- Headings --- */
+h1 {
+    font-size: var(--font-size-xl);
+    margin: 0 0 var(--spacing-lg) 0;
+    color: var(--color-text);
+}
+
+h2 {
+    font-size: var(--font-size-lg);
+    margin: var(--spacing-lg) 0 var(--spacing-sm) 0;
+    color: var(--color-text);
+}
+
+/* --- Buttons --- */
+.actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-lg);
+}
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: var(--min-target);
+    min-width: var(--min-target);
+    padding: var(--spacing-sm) var(--spacing-md);
+    font-family: inherit;
+    font-size: var(--font-size-base);
+    font-weight: 600;
+    line-height: 1.2;
+    border: 2px solid transparent;
+    border-radius: var(--radius);
+    cursor: pointer;
+    text-decoration: none;
+    transition: background-color 0.1s, border-color 0.1s;
+}
+
+.btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.btn-primary {
+    background-color: var(--color-primary);
+    color: var(--color-primary-text);
+    border-color: var(--color-primary);
+}
+
+.btn-primary:hover:not(:disabled) {
+    background-color: var(--color-primary-hover);
+    border-color: var(--color-primary-hover);
+}
+
+.btn-secondary {
+    background-color: var(--color-bg);
+    color: var(--color-primary);
+    border-color: var(--color-border);
+}
+
+.btn-secondary:hover:not(:disabled) {
+    background-color: var(--color-surface);
+    border-color: var(--color-primary);
+}
+
+/* --- Status region --- */
+.status {
+    padding: var(--spacing-sm);
+    font-weight: 600;
+    min-height: 1.5em;
+}
+
+.status:empty {
+    padding: 0;
+    min-height: 0;
+}
+
+/* --- Progress --- */
+.progress {
+    margin: var(--spacing-lg) 0;
+}
+
+.progress-bar {
+    height: 8px;
+    background-color: var(--color-surface);
+    border-radius: 4px;
+    overflow: hidden;
+    border: 1px solid var(--color-border);
+}
+
+.progress-fill {
+    height: 100%;
+    width: 0%;
+    background-color: var(--color-primary);
+    transition: width 0.3s;
+}
+
+.progress-text {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+    margin: var(--spacing-xs) 0 0;
+}
+
+/* --- Score card --- */
+.score-section {
+    margin: var(--spacing-lg) 0;
+}
+
+.score-card {
+    display: flex;
+    align-items: baseline;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-md);
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+}
+
+.score-grade {
+    font-size: 2rem;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.score-value {
+    font-size: var(--font-size-lg);
+    color: var(--color-text-secondary);
+}
+
+.score-summary {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+    margin-top: var(--spacing-xs);
+}
+
+/* --- Filter controls --- */
+.filter-controls {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    padding: var(--spacing-sm) var(--spacing-md);
+    margin-bottom: var(--spacing-md);
+}
+
+.filter-controls legend {
+    font-weight: 600;
+    font-size: var(--font-size-sm);
+    padding: 0 var(--spacing-xs);
+}
+
+.filter-label {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    margin-right: var(--spacing-md);
+    min-height: var(--min-target);
+    font-size: var(--font-size-sm);
+    cursor: pointer;
+}
+
+.filter-checkbox {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--color-primary);
+}
+
+/* --- Findings table --- */
+.findings-list {
+    max-height: 50vh;
+    overflow-y: auto;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+}
+
+.findings-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--font-size-sm);
+}
+
+.findings-table thead {
+    position: sticky;
+    top: 0;
+    background-color: var(--color-surface);
+    z-index: 1;
+}
+
+.findings-table th {
+    text-align: left;
+    padding: var(--spacing-sm) var(--spacing-sm);
+    font-weight: 600;
+    border-bottom: 2px solid var(--color-border);
+    white-space: nowrap;
+}
+
+.findings-table td {
+    padding: var(--spacing-sm);
+    border-bottom: 1px solid #e0e0e0;
+    vertical-align: top;
+}
+
+.findings-table tbody tr:hover {
+    background-color: var(--color-surface);
+}
+
+/* Severity badges -- text + background, not color alone (1.4.1) */
+.severity-badge {
+    display: inline-block;
+    padding: 2px 6px;
+    border-radius: var(--radius);
+    font-weight: 600;
+    font-size: var(--font-size-sm);
+    white-space: nowrap;
+}
+
+.severity-critical {
+    background-color: var(--color-severity-critical-bg);
+    color: var(--color-severity-critical);
+    border: 1px solid var(--color-severity-critical);
+}
+
+.severity-high {
+    background-color: var(--color-severity-high-bg);
+    color: var(--color-severity-high);
+    border: 1px solid var(--color-severity-high);
+}
+
+.severity-medium {
+    background-color: var(--color-severity-medium-bg);
+    color: var(--color-severity-medium);
+    border: 1px solid var(--color-severity-medium);
+}
+
+.severity-low {
+    background-color: var(--color-severity-low-bg);
+    color: var(--color-severity-low);
+    border: 1px solid var(--color-severity-low);
+}
+
+.findings-count {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+    margin-top: var(--spacing-sm);
+}
+
+/* Auto-fixable indicator */
+.fixable-yes {
+    color: var(--color-success);
+    font-weight: 600;
+}
+
+.fixable-no {
+    color: var(--color-text-secondary);
+}
+
+/* --- Fix results --- */
+.fix-summary {
+    font-weight: 600;
+    color: var(--color-success);
+}
+
+.fix-details,
+.template-details {
+    list-style: disc;
+    padding-left: 1.5em;
+    margin: var(--spacing-sm) 0;
+}
+
+.fix-details li,
+.template-details li {
+    margin-bottom: var(--spacing-xs);
+    font-size: var(--font-size-sm);
+}
+
+/* --- Screen reader only --- */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* --- Reduced motion (2.3.3) --- */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        transition-duration: 0.01ms !important;
+        animation-duration: 0.01ms !important;
+    }
+}
+
+/* --- High contrast / forced colors --- */
+@media (forced-colors: active) {
+    .btn {
+        border: 2px solid ButtonText;
+    }
+
+    .severity-badge {
+        border: 1px solid ButtonText;
+        background: Canvas;
+        color: CanvasText;
+    }
+
+    .findings-table th {
+        border-bottom-color: ButtonText;
+    }
+
+    .progress-bar {
+        border-color: ButtonText;
+    }
+
+    .progress-fill {
+        background-color: Highlight;
+    }
+
+    :focus-visible {
+        outline-color: Highlight;
+    }
+}
+
+/* --- Increased contrast preference --- */
+@media (prefers-contrast: more) {
+    :root {
+        --color-border: #000000;
+        --color-text-secondary: #1a1a1a;
+    }
+
+    .findings-table td {
+        border-bottom-color: #000000;
+    }
+}

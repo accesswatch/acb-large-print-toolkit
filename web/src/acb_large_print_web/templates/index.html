@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block title %}ACB Large Print Tool{% endblock %}
+{% block heading %}ACB Large Print Tool{% endblock %}
+
+{% block content %}
+<p>Check and fix your Word documents for compliance with the <a href="{{ url_for('guidelines.guidelines_page') }}">ACB Large Print Guidelines</a>. No installation required -- upload a <code>.docx</code> file and get results instantly.</p>
+
+<section aria-labelledby="ops-heading">
+  <h2 id="ops-heading">Choose an Operation</h2>
+
+  <div class="card-grid">
+    <div class="card">
+      <h3><a href="{{ url_for('audit.audit_form') }}">Audit a Document</a></h3>
+      <p>Upload a Word document and get a detailed compliance report showing which ACB rules pass and which need attention. Choose Full, Quick, or Custom audit modes.</p>
+    </div>
+
+    <div class="card">
+      <h3><a href="{{ url_for('fix.fix_form') }}">Fix a Document</a></h3>
+      <p>Upload a non-compliant document and download a corrected version. The tool fixes fonts, sizes, spacing, alignment, and emphasis automatically. See before and after scores.</p>
+    </div>
+
+    <div class="card">
+      <h3><a href="{{ url_for('template.template_form') }}">Create a Template</a></h3>
+      <p>Generate a pre-configured Word template (<code>.dotx</code>) with all ACB styles built in. Start compliant by default -- no manual formatting required.</p>
+    </div>
+
+    <div class="card">
+      <h3><a href="{{ url_for('export.export_form') }}">Export to HTML</a></h3>
+      <p>Convert a Word document to accessible HTML with ACB-compliant CSS. Choose standalone (full page) or CMS fragment (for pasting into WordPress or Drupal).</p>
+    </div>
+  </div>
+</section>
+
+<section aria-labelledby="about-heading">
+  <h2 id="about-heading">About the ACB Large Print Guidelines</h2>
+
+  <p>The American Council of the Blind (ACB) Large Print Guidelines specify formatting standards that make printed and digital documents readable for people with low vision. Key requirements include:</p>
+
+  <ul>
+    <li>Arial font, 18-point minimum for body text</li>
+    <li>22-point bold headings, 20-point bold subheadings</li>
+    <li>Flush left alignment (never justified)</li>
+    <li>Underline for emphasis (no italic, no bold in body text)</li>
+    <li>1-inch margins on all sides</li>
+    <li>No hyphenation, no ALL CAPS formatting</li>
+  </ul>
+
+  <p>This tool also enforces <strong>WCAG 2.2 AA</strong> digital accessibility requirements including document title, language setting, and heading hierarchy. <a href="{{ url_for('guidelines.guidelines_page') }}">Read the full guidelines reference</a>.</p>
+</section>
+
+<section aria-labelledby="privacy-heading">
+  <h2 id="privacy-heading">Privacy</h2>
+  <p>Uploaded documents are processed in memory and deleted immediately after your results are returned. No files are stored on the server. No accounts or login required.</p>
+</section>
+{% endblock %}

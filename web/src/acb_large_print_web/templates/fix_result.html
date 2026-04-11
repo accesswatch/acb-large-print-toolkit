@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block title %}Fix Results{% endblock %}
+{% block heading %}Fix Results{% endblock %}
+
+{% block content %}
+<section aria-labelledby="score-heading">
+  <h2 id="score-heading">Before and After</h2>
+
+  <div class="score-comparison">
+    <div class="score-box">
+      <h3>Before</h3>
+      <p class="score-number grade-{{ pre_grade | lower }}">{{ pre_score }}/100</p>
+      <p>Grade: {{ pre_grade }}</p>
+    </div>
+    <div class="score-arrow" aria-hidden="true">&rarr;</div>
+    <div class="score-box">
+      <h3>After</h3>
+      <p class="score-number grade-{{ post_grade | lower }}">{{ post_score }}/100</p>
+      <p>Grade: {{ post_grade }}</p>
+    </div>
+  </div>
+
+  <p>{{ total_fixes }} fix{{ "es" if total_fixes != 1 else "" }} applied.
+    {% if remaining > 0 %}{{ remaining }} issue{{ "s" if remaining != 1 else "" }} remaining (manual fix required).{% else %}All issues resolved.{% endif %}
+    {% if mode_label %} Report filtered to: {{ mode_label }}.{% endif %}
+  </p>
+</section>
+
+{% if warnings %}
+<section aria-labelledby="warnings-heading">
+  <h2 id="warnings-heading">Review Required</h2>
+  <ul>{% for warning in warnings %}
+    <li><strong>Warning:</strong> {{ warning }}</li>
+    {% endfor %}</ul>
+</section>
+{% endif %}
+
+<section aria-labelledby="download-heading">
+  <h2 id="download-heading">Download Fixed Document</h2>
+  <form method="post" action="{{ url_for('fix.fix_download') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input type="hidden" name="token" value="{{ token }}">
+    <input type="hidden" name="download_name" value="{{ download_name }}">
+    <button type="submit" class="btn-primary">Download {{ download_name }}</button>
+  </form>
+</section>
+
+{% if post_findings %}
+<section aria-labelledby="remaining-heading">
+  <h2 id="remaining-heading">Remaining Issues</h2>
+  <p>These issues cannot be auto-fixed and require manual attention:</p>
+
+  <table class="findings-table">
+    <caption>Issues remaining after auto-fix</caption>
+    <thead>
+      <tr>
+        <th scope="col">Severity</th>
+        <th scope="col">Rule</th>
+        <th scope="col">Description</th>
+        <th scope="col">Location</th>
+        <th scope="col">Guideline</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for f in post_findings %}
+      <tr>
+        <td><span class="severity-badge severity-{{ f.severity.value | lower }}">{{ f.severity.value }}</span></td>
+        <td>{{ f.rule_id }}</td>
+        <td>{{ f.message }}</td>
+        <td>{{ f.location or "Document-wide" }}</td>
+        <td>{{ f.acb_reference }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endif %}
+
+<section aria-labelledby="next-heading">
+  <h2 id="next-heading">What's Next?</h2>
+  <ul>
+    <li><a href="{{ url_for('audit.audit_form') }}">Audit the fixed document</a> to verify compliance</li>
+    <li><a href="{{ url_for('fix.fix_form') }}">Fix another document</a></li>
+    <li><a href="{{ url_for('guidelines.guidelines_page') }}">Read the full ACB guidelines</a></li>
+  </ul>
+</section>
+{% endblock %}

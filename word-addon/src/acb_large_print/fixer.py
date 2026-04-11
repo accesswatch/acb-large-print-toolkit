@@ -218,10 +218,41 @@ def _fix_page_numbers(doc: Document) -> int:
     return 1
 
 
+def _fix_document_title(doc: Document, file_path: Path) -> tuple[int, str | None]:
+    """Set document title from first Heading 1 or filename. Returns (fix_count, warning).
+
+    WARNING: The inferred title should be manually reviewed.
+    """
+    title = doc.core_properties.title
+    if title and title.strip():
+        return 0, None
+
+    # Try first Heading 1
+    for para in doc.paragraphs:
+        if para.style and para.style.name == "Heading 1" and para.text.strip():
+            doc.core_properties.title = para.text.strip()
+            return 1, (
+                f'Document title was set from the first heading: '
+                f'"{para.text.strip()}". Please review and correct if needed.'
+            )
+
+    # Fallback to filename (without extension)
+    doc.core_properties.title = file_path.stem
+    return 1, (
+        f'Document title was set from the filename: '
+        f'"{file_path.stem}". Please review and correct if needed.'
+    )
+
+
 def _fix_document_language(doc: Document, lang: str = "en-US") -> int:
     """Set document language if missing. Returns 1 if fixed."""
     styles_elem = doc.styles.element
-    rpr = styles_elem.find(qn("w:docDefaults/w:rPrDefault/w:rPr"))
+    doc_defaults = styles_elem.find(qn("w:docDefaults"))
+    rpr = None
+    if doc_defaults is not None:
+        rpr_default = doc_defaults.find(qn("w:rPrDefault"))
+        if rpr_default is not None:
+            rpr = rpr_default.find(qn("w:rPr"))
     if rpr is not None:
         lang_elem = rpr.find(qn("w:lang"))
         if lang_elem is None:
@@ -251,7 +282,7 @@ def fix_document(
         bound: Add binding margin if True.
 
     Returns:
-        Tuple of (output_path, total_fixes, post_fix_audit_result).
+        Tuple of (output_path, total_fixes, post_fix_audit_result, warnings).
     """
     file_path = Path(file_path)
     if output_path is None:
@@ -261,6 +292,7 @@ def fix_document(
     doc = Document(str(file_path))
 
     total_fixes = 0
+    warnings: list[str] = []
     total_fixes += _fix_styles(doc)
     total_fixes += _fix_page_setup(doc, bound=bound)
     total_fixes += _fix_paragraph_formatting(doc)
@@ -268,10 +300,15 @@ def fix_document(
     total_fixes += _fix_page_numbers(doc)
     total_fixes += _fix_document_language(doc)
 
+    title_fixes, title_warning = _fix_document_title(doc, file_path)
+    total_fixes += title_fixes
+    if title_warning:
+        warnings.append(title_warning)
+
     output_path.parent.mkdir(parents=True, exist_ok=True)
     doc.save(str(output_path))
 
     # Run post-fix audit to show remaining issues
     post_audit = audit_document(output_path)
 
-    return output_path, total_fixes, post_audit
+    return output_path, total_fixes, post_audit, warnings

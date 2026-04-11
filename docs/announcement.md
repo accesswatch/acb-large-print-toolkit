@@ -10,7 +10,23 @@ The Blind Information Technology Solutions (BITS) organization today announced t
 
 ## What the Toolkit Does
 
-The ACB Large Print Toolkit is a suite of AI agents, slash commands, reference stylesheets, and document templates that run directly inside VS Code's Copilot Chat interface. Its core agent -- the Large Print Formatter -- operates in nine distinct modes:
+The ACB Large Print Toolkit is a suite of AI agents, slash commands, reference stylesheets, document templates, a desktop application, and a web application that automate compliance with the American Council of the Blind Large Print Guidelines. The toolkit now offers five ways to use it:
+
+### Web Application (New -- April 2026)
+
+A browser-based interface at [lp.bits-acb.org](https://lp.bits-acb.org) that requires no installation. Upload a Word document, choose an operation, and get results immediately. The web app provides:
+
+-   **Audit** -- upload a .docx and get a full ACB compliance report in your browser, with findings grouped by severity
+-   **Fix** -- upload a non-compliant .docx and download a corrected version with before/after compliance scores
+-   **Template** -- generate a pre-configured Word template (.dotx) with ACB-compliant styles
+-   **Export** -- convert a .docx to accessible HTML (standalone page with CSS, or a CMS-ready fragment for WordPress/Drupal)
+-   **Guidelines** -- browse the complete ACB Large Print specification and WCAG 2.2 digital supplement as a searchable reference
+
+The web app runs on a Flask server inside Docker, meets WCAG 2.2 AA from day one with no JavaScript required, and deletes all uploaded files immediately after processing.
+
+### VS Code Copilot Chat Agent
+
+The toolkit's core agent -- the Large Print Formatter -- runs directly inside VS Code's Copilot Chat interface and operates in nine distinct modes:
 
 -   **Audit** -- scans any HTML, CSS, or Markdown file against every ACB rule and produces a PASS/FAIL compliance scorecard
 -   **Convert** -- takes existing documents and automatically fixes deviations: bold abuse, fake headings, italic misuse, broken fragments, and missing document structure
@@ -64,6 +80,12 @@ The toolkit also integrates with external tools when available -- markdownlint f
 The ACB Large Print Toolkit is being merged into [Accessibility Agents](http://www.community-access.org), an open-source project that delivers accessibility guidance and remediation across platforms -- web, mobile, desktop, and documents. By joining that ecosystem, the large print agents gain access to a broader network of accessibility specialists covering WCAG auditing, ARIA patterns, design system tokens, CI/CD pipeline integration, and more, while contributing ACB Large Print expertise back to the community.
 
 "We didn't build this to live in a silo," Bishop said. "Accessibility Agents already has dozens of specialized agents covering everything from color contrast to screen reader testing to PDF remediation. Merging the ACB Large Print Toolkit into that project means any organization using Accessibility Agents gets large print compliance out of the box -- and our agents get smarter by working alongside theirs. A Markdown file can get an ACB formatting audit and a full WCAG accessibility sweep in the same session, from agents that know how to hand off to each other. That's the value of open source: you build one thing well and it multiplies."
+
+## Removing the Installation Barrier
+
+"The number one piece of feedback we heard from chapters was: 'I don't want to install anything,'" Bishop said. "People would see the desktop tool or the VS Code agent and say, 'That looks great but I just need to check one document.' The web app is the answer. Point your browser to the URL, upload your file, and you are done. No accounts, no downloads, no configuration. It runs on a phone, a Chromebook, a library computer -- anywhere you have a browser."
+
+The web application is built on the same Python core library that powers the desktop tool and the CLI. Bug fixes and new rules added to the core library automatically appear in the web app with no additional work.
 
 ## Looking Ahead
 
