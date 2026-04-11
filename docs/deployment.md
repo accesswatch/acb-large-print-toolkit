@@ -131,7 +131,7 @@ Replace `YOUR_DOMAIN` with your actual domain (e.g., `lp.bits-acb.org`).
 ```bash
 cat > web/Caddyfile << 'EOF'
 YOUR_DOMAIN {
-    reverse_proxy app:8000
+    reverse_proxy web:8000
     encode gzip
 
     header {
@@ -238,9 +238,96 @@ Both containers should be "Up".
 
 ---
 
-## Phase 6: Set Up Monitoring (~5 minutes)
+## Phase 6: SSL/TLS Configuration
 
-### 6.1 UptimeRobot (free tier)
+Caddy handles TLS automatically. When Caddy starts with a real domain in the Caddyfile, it:
+
+1. Obtains a free Let's Encrypt certificate via the ACME protocol
+2. Configures TLS 1.2+ with strong cipher suites
+3. Redirects all HTTP (port 80) traffic to HTTPS (port 443)
+4. Renews certificates automatically 30 days before expiry
+
+No manual certificate management is required.
+
+### 6.1 Verify TLS is working
+
+After `docker compose up -d`, wait 30--60 seconds for certificate issuance, then:
+
+```bash
+# Check certificate details
+curl -vI https://YOUR_DOMAIN 2>&1 | grep -E 'subject:|expire|issuer:'
+
+# Verify redirect from HTTP to HTTPS
+curl -sI http://YOUR_DOMAIN | head -5
+```
+
+Expected: the certificate issuer is "Let's Encrypt" and HTTP returns a 301 redirect to HTTPS.
+
+### 6.2 TLS configuration details
+
+Caddy's default TLS configuration is production-grade:
+
+- TLS 1.2 and 1.3 only (TLS 1.0 and 1.1 are disabled)
+- Strong cipher suites (ECDHE + AES-GCM / ChaCha20-Poly1305)
+- OCSP stapling enabled
+- HTTP/2 and HTTP/3 (QUIC) enabled
+- HSTS headers automatic
+
+To verify your TLS grade, test at: `https://www.ssllabs.com/ssltest/analyze.html?d=YOUR_DOMAIN`
+
+### 6.3 Using a custom certificate (optional)
+
+If you need to use a certificate from a different CA (not Let's Encrypt), update the Caddyfile:
+
+```
+your.domain.com {
+    tls /etc/caddy/certs/cert.pem /etc/caddy/certs/key.pem
+    reverse_proxy web:8000
+    encode gzip
+
+    header {
+        X-Content-Type-Options nosniff
+        X-Frame-Options DENY
+        Referrer-Policy strict-origin-when-cross-origin
+        Permissions-Policy interest-cohort=()
+    }
+}
+```
+
+Mount the certificate files into the Caddy container by adding to docker-compose.yml under the `caddy` service:
+
+```yaml
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./certs:/etc/caddy/certs:ro
+      - caddy_data:/data
+      - caddy_config:/config
+```
+
+### 6.4 Troubleshooting TLS
+
+| Symptom | Cause | Fix |
+|---------|-------|-----|
+| "Connection refused" on 443 | Caddy not running or port blocked | `docker compose ps` and `sudo ufw status` |
+| Browser shows "Not Secure" | Certificate not yet issued | Check Caddy logs: `docker compose logs caddy` |
+| Certificate error on first visit | DNS not propagated | Verify: `dig +short YOUR_DOMAIN` matches your server IP |
+| "Too many requests" from Let's Encrypt | Rate limited (5 certs per domain per week) | Wait and retry. Use Let's Encrypt staging for testing. |
+
+To use the Let's Encrypt staging environment (for testing without rate limits), add to Caddyfile:
+
+```
+{
+    acme_ca https://acme-staging-v02.api.letsencrypt.org/directory
+}
+```
+
+Remove this block after testing to switch back to production certificates.
+
+---
+
+## Phase 7: Set Up Monitoring (~5 minutes)
+
+### 7.1 UptimeRobot (free tier)
 
 1. Sign up at [uptimerobot.com](https://uptimerobot.com)
 2. Add a new monitor:
@@ -249,7 +336,7 @@ Both containers should be "Up".
    - Interval: 5 minutes
 3. Configure alert contacts (email and/or SMS)
 
-### 6.2 Basic server monitoring (optional)
+### 7.2 Basic server monitoring (optional)
 
 ```bash
 # Disk usage alert -- add to deploy user's crontab
@@ -261,6 +348,97 @@ Add this line to email a warning if disk usage exceeds 80%:
 ```
 0 6 * * * df -h / | awk 'NR==2 && int($5)>80 {print "Disk usage: "$5}' | mail -s "Disk Alert" you@example.com
 ```
+
+---
+
+## Phase 8: SFTP File Access (~5 minutes)
+
+SFTP (SSH File Transfer Protocol) runs over your existing SSH connection. No additional software or open ports are needed -- SSH is already configured from Phase 1.
+
+**Do not install FTP or FTPS.** Plain FTP transmits credentials in cleartext. SFTP is encrypted by default and uses your existing SSH key authentication.
+
+### 8.1 Connecting via SFTP
+
+From your local machine:
+
+```bash
+sftp deploy@YOUR_SERVER_IP
+```
+
+This uses the same SSH key configured in Phase 1.3. Once connected:
+
+```
+sftp> cd app/web
+sftp> ls
+sftp> put local-file.txt
+sftp> get remote-file.txt
+sftp> exit
+```
+
+### 8.2 Common SFTP operations
+
+| Operation | Command |
+|-----------|---------|
+| Upload a file | `sftp> put /local/path/file.docx /home/deploy/app/web/` |
+| Download a file | `sftp> get /home/deploy/app/web/file.txt /local/path/` |
+| Upload a folder recursively | `sftp> put -r /local/folder /home/deploy/app/web/` |
+| List remote files | `sftp> ls -la` |
+| Change remote directory | `sftp> cd /home/deploy/app/web` |
+
+### 8.3 SFTP with GUI clients
+
+Any SFTP client works. Recommended options that are keyboard-accessible:
+
+| Client | Platform | Notes |
+|--------|----------|-------|
+| WinSCP | Windows | Free, supports SSH key auth. Import your PuTTY/OpenSSH key in Connection > SSH > Authentication. |
+| FileZilla | Windows, macOS, Linux | Free. Use protocol "SFTP" (not FTP). Add key in Edit > Settings > SFTP. |
+| Cyberduck | Windows, macOS | Free. Supports OpenSSH keys directly. |
+| Built-in `sftp` | macOS, Linux | Terminal command, uses `~/.ssh/config` automatically. |
+
+Connection settings for all clients:
+
+- **Protocol:** SFTP (SSH File Transfer Protocol)
+- **Host:** YOUR_SERVER_IP
+- **Port:** 22
+- **Username:** deploy
+- **Authentication:** SSH private key (the one from Phase 1.3)
+
+### 8.4 Backing up the feedback database via SFTP
+
+To download a backup of the feedback SQLite database:
+
+```bash
+# First, copy it out of the Docker volume to the deploy user's home
+ssh deploy@YOUR_SERVER_IP "docker compose -f ~/app/web/docker-compose.yml cp web:/app/instance/feedback.db ~/feedback-backup.db"
+
+# Then download it via SFTP
+sftp deploy@YOUR_SERVER_IP:feedback-backup.db ./feedback-backup.db
+```
+
+### 8.5 Restricting SFTP to a specific directory (optional)
+
+If you want to allow SFTP access only to the app directory (not the full filesystem), add to `/etc/ssh/sshd_config`:
+
+```bash
+Match User sftponly
+    ChrootDirectory /home/deploy/app
+    ForceCommand internal-sftp
+    AllowTcpForwarding no
+    X11Forwarding no
+```
+
+Then create the restricted user:
+
+```bash
+sudo adduser sftponly --shell /usr/sbin/nologin
+sudo usermod -aG docker sftponly
+sudo chown root:root /home/deploy/app
+sudo chmod 755 /home/deploy/app
+sudo systemctl restart sshd
+```
+
+This is optional -- the default `deploy` user with full SSH access is sufficient for most deployments.
 
 ---
 
@@ -345,7 +523,11 @@ This removes images older than 30 days that are not in use.
 
 ### Renewing TLS certificates
 
-Caddy handles this automatically. Certificates renew 30 days before expiry with no manual intervention. Caddy stores certificates in a Docker named volume (`caddy_data`).
+Caddy handles this automatically (see Phase 6). Certificates renew 30 days before expiry with no manual intervention. Caddy stores certificates in a Docker named volume (`caddy_data`). To verify certificate expiry:
+
+```bash
+curl -vI https://YOUR_DOMAIN 2>&1 | grep "expire date"
+```
 
 ### Updating the server OS
 
@@ -463,7 +645,7 @@ When using Caddy, change the `web` service from `ports: ["8000:8000"]` to `expos
 
 ```
 your.domain.com {
-    reverse_proxy app:8000
+    reverse_proxy web:8000
     encode gzip
 
     header {

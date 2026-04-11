@@ -1,0 +1,2 @@
+# Jinja2 templates -- Prettier destroys {% %} syntax inside HTML attributes
+web/src/acb_large_print_web/templates/
