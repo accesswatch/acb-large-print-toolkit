@@ -59,7 +59,40 @@ sudo ufw status
 
 Expected output: rules for OpenSSH, 80/tcp, and 443/tcp are ALLOW.
 
-### 1.5 Enable automatic security updates
+### 1.5 Install fail2ban
+
+Fail2ban monitors log files and blocks IPs that show repeated failed login attempts:
+
+```bash
+sudo apt install -y fail2ban
+```
+
+Create a local config that protects SSH:
+
+```bash
+sudo cat > /etc/fail2ban/jail.local << 'EOF'
+[sshd]
+enabled = true
+port = ssh
+filter = sshd
+logpath = /var/log/auth.log
+maxretry = 5
+bantime = 3600
+findtime = 600
+EOF
+```
+
+Start and enable:
+
+```bash
+sudo systemctl enable fail2ban
+sudo systemctl start fail2ban
+sudo fail2ban-client status sshd
+```
+
+Expected output: shows the jail is active with 0 currently banned IPs.
+
+### 1.6 Enable automatic security updates
 
 ```bash
 sudo apt install -y unattended-upgrades
@@ -67,6 +100,26 @@ sudo dpkg-reconfigure -plow unattended-upgrades
 ```
 
 Select "Yes" when prompted.
+
+### 1.7 Create a swap file (recommended for 2--4 GB VPS)
+
+A swap file prevents out-of-memory kills when Docker builds or document processing temporarily spike memory usage:
+
+```bash
+sudo fallocate -l 2G /swapfile
+sudo chmod 600 /swapfile
+sudo mkswap /swapfile
+sudo swapon /swapfile
+echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
+```
+
+Verify:
+
+```bash
+free -h
+```
+
+Expected: Swap shows 2.0G total.
 
 ---
 
@@ -139,6 +192,8 @@ YOUR_DOMAIN {
         X-Frame-Options DENY
         Referrer-Policy strict-origin-when-cross-origin
         Permissions-Policy interest-cohort=()
+        Content-Security-Policy "default-src 'none'; style-src 'self'; img-src 'self'; font-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'self'"
+        Strict-Transport-Security "max-age=63072000; includeSubDomains; preload"
     }
 }
 EOF
@@ -290,6 +345,8 @@ your.domain.com {
         X-Frame-Options DENY
         Referrer-Policy strict-origin-when-cross-origin
         Permissions-Policy interest-cohort=()
+        Content-Security-Policy "default-src 'none'; style-src 'self'; img-src 'self'; font-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'self'"
+        Strict-Transport-Security "max-age=63072000; includeSubDomains; preload"
     }
 }
 ```
@@ -505,6 +562,41 @@ docker compose -f ~/app/web/docker-compose.yml cp web:/app/instance/feedback.db 
 docker volume inspect web_feedback-data
 ```
 
+### Automated daily backups (recommended)
+
+Create a backup script:
+
+```bash
+cat > ~/backup-feedback.sh << 'SCRIPT'
+#!/bin/bash
+BACKUP_DIR="$HOME/backups"
+mkdir -p "$BACKUP_DIR"
+TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+docker compose -f ~/app/web/docker-compose.yml cp web:/app/instance/feedback.db "$BACKUP_DIR/feedback-$TIMESTAMP.db"
+# Keep only the last 30 backups
+ls -t "$BACKUP_DIR"/feedback-*.db | tail -n +31 | xargs -r rm
+SCRIPT
+chmod +x ~/backup-feedback.sh
+```
+
+Schedule it to run daily at 2 AM:
+
+```bash
+crontab -e
+```
+
+Add:
+
+```
+0 2 * * * /home/deploy/backup-feedback.sh >> /home/deploy/backups/backup.log 2>&1
+```
+
+To download backups to your local machine via SFTP (see Phase 8):
+
+```bash
+sftp deploy@YOUR_SERVER_IP:backups/ ./local-backups/
+```
+
 ### Viewing feedback
 
 Set the `FEEDBACK_PASSWORD` environment variable in docker-compose.yml, then visit:
@@ -590,6 +682,14 @@ CMD ["gunicorn", \
      "acb_large_print_web.app:create_app()"]
 ```
 
+**Image pinning (optional):** For fully reproducible builds, pin the base image to a specific digest. Run `docker pull python:3.13-slim` and note the digest, then replace the FROM line:
+
+```dockerfile
+FROM python:3.13-slim@sha256:<digest> AS base
+```
+
+Update the digest periodically to pick up security patches in the base image.
+
 ### docker-compose.yml
 
 ```yaml
@@ -607,6 +707,11 @@ services:
     volumes:
       - feedback-data:/app/instance
     restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
       interval: 30s
@@ -653,6 +758,8 @@ your.domain.com {
         X-Frame-Options DENY
         Referrer-Policy strict-origin-when-cross-origin
         Permissions-Policy interest-cohort=()
+        Content-Security-Policy "default-src 'none'; style-src 'self'; img-src 'self'; font-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'self'"
+        Strict-Transport-Security "max-age=63072000; includeSubDomains; preload"
     }
 }
 ```
