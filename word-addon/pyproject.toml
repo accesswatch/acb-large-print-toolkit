@@ -30,10 +30,12 @@ classifiers = [
 dependencies = [
     "python-docx>=1.1.0",
     "mammoth>=1.8.0",
-    "wxPython>=4.2.0",
 ]
 
 [project.optional-dependencies]
+gui = [
+    "wxPython>=4.2.0",
+]
 dev = [
     "pyinstaller>=6.0",
     "pytest>=8.0",
