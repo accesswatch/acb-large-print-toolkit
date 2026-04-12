@@ -1,0 +1,37 @@
+# Caddyfile.example -- Copy to Caddyfile and replace domain names
+#
+# Usage:
+#   cp Caddyfile.example Caddyfile
+#   nano Caddyfile    # replace csedesigns.com with your domain
+#
+# This configures:
+#   - csedesigns.com / www.csedesigns.com -- static site from ./www/
+#   - lp.csedesigns.com -- reverse proxy to Flask/Gunicorn
+
+# Main website -- static files
+csedesigns.com, www.csedesigns.com {
+    root * /srv/www
+    file_server
+    encode gzip
+
+    header {
+        X-Content-Type-Options nosniff
+        X-Frame-Options SAMEORIGIN
+        Referrer-Policy strict-origin-when-cross-origin
+    }
+}
+
+# ACB Large Print web application -- reverse proxy to Flask/Gunicorn
+lp.csedesigns.com {
+    reverse_proxy web:8000
+    encode gzip
+
+    header {
+        X-Content-Type-Options nosniff
+        X-Frame-Options DENY
+        Referrer-Policy strict-origin-when-cross-origin
+        Permissions-Policy "geolocation=(), microphone=(), camera=()"
+        Content-Security-Policy "default-src 'none'; style-src 'self'; img-src 'self'; font-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'self'"
+        Strict-Transport-Security "max-age=63072000; includeSubDomains"
+    }
+}

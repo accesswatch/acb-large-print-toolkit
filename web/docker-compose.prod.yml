@@ -1,0 +1,58 @@
+# Production Docker Compose -- Caddy reverse proxy + Flask/Gunicorn
+# File: web/docker-compose.prod.yml
+#
+# Prerequisites:
+#   - web/.env file with SECRET_KEY, FEEDBACK_PASSWORD, LOG_LEVEL
+#   - web/Caddyfile with your domain configuration
+#   - web/www/ directory for the main site static files
+#   - word-addon/ directory at ../word-addon/ (needed for Docker build)
+#
+# Usage:
+#   cd ~/app/web
+#   docker compose -f docker-compose.prod.yml up -d --build
+
+services:
+  web:
+    build:
+      context: ..
+      dockerfile: web/Dockerfile
+    expose:
+      - "8000"
+    env_file: .env
+    environment:
+      - FLASK_DEBUG=0
+    volumes:
+      - feedback-data:/app/instance
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./www:/srv/www:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      web:
+        condition: service_healthy
+
+volumes:
+  feedback-data:
+  caddy_data:
+  caddy_config:
