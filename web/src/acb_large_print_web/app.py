@@ -13,7 +13,11 @@ from flask_wtf.csrf import CSRFProtect
 from .rules import get_rules_by_severity
 
 csrf = CSRFProtect()
-limiter = Limiter(key_func=get_remote_address, default_limits=["120 per minute"])
+limiter = Limiter(
+    key_func=get_remote_address,
+    default_limits=["120 per minute"],
+    storage_uri="memory://",
+)
 
 
 def create_app(config: dict | None = None) -> Flask:

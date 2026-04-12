@@ -20,6 +20,7 @@ RUN pip install --no-cache-dir ./web
 RUN addgroup --system app && adduser --system --ingroup app app
 RUN mkdir -p /app/instance && chown app:app /app/instance
 
+ENV HOME=/app
 USER app
 
 EXPOSE 8000
