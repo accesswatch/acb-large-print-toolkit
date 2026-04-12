@@ -27,6 +27,7 @@
         <li><a href="{{ url_for('guidelines.guidelines_page') }}"{% if request.blueprint == 'guidelines' %} aria-current="page"{% endif %}>Guidelines</a></li>
         <li><a href="{{ url_for('guide.guide_page') }}"{% if request.blueprint == 'guide' %} aria-current="page"{% endif %}>Guide</a></li>
         <li><a href="{{ url_for('about.about_page') }}"{% if request.blueprint == 'about' %} aria-current="page"{% endif %}>About</a></li>
+        <li><a href="{{ url_for('changelog.changelog_page') }}"{% if request.blueprint == 'changelog' %} aria-current="page"{% endif %}>Changelog</a></li>
       </ul>
     </nav>
   </header>
