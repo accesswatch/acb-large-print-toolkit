@@ -13,6 +13,14 @@ from werkzeug.utils import secure_filename
 
 ALLOWED_EXTENSIONS = {".docx", ".xlsx", ".pptx", ".md", ".pdf"}
 
+# Additional extensions accepted by the convert route (Pandoc + MarkItDown)
+CONVERT_EXTENSIONS = ALLOWED_EXTENSIONS | {
+    ".rst", ".odt", ".rtf",     # Pandoc inputs
+    ".html", ".htm",             # MarkItDown
+    ".csv", ".json", ".xml",    # MarkItDown
+    ".epub", ".zip",            # MarkItDown
+}
+
 # Human-readable format labels for error messages
 _FORMAT_LABELS = {
     ".docx": "Word document",
@@ -31,11 +39,16 @@ class UploadError(Exception):
     """Raised when an uploaded file fails validation."""
 
 
-def validate_upload(file: FileStorage) -> tuple[str, Path]:
+def validate_upload(
+    file: FileStorage,
+    allowed_extensions: set[str] | None = None,
+) -> tuple[str, Path]:
     """Validate and save an uploaded file to a temporary directory.
 
     Args:
         file: Flask FileStorage object from request.files.
+        allowed_extensions: Set of allowed file extensions (with leading dot).
+            Defaults to ALLOWED_EXTENSIONS if not specified.
 
     Returns:
         Tuple of (token, saved_file_path). The token is a UUID string
@@ -45,10 +58,12 @@ def validate_upload(file: FileStorage) -> tuple[str, Path]:
         UploadError: If the file is missing, has a disallowed extension,
                      or has no filename.
     """
+    if allowed_extensions is None:
+        allowed_extensions = ALLOWED_EXTENSIONS
+
     if file is None or file.filename == "":
         raise UploadError(
-            "No file selected. Please choose a document to upload "
-            "(.docx, .xlsx, .pptx, .md, or .pdf)."
+            "No file selected. Please choose a document to upload."
         )
 
     filename = secure_filename(file.filename)
@@ -56,11 +71,11 @@ def validate_upload(file: FileStorage) -> tuple[str, Path]:
         raise UploadError("Invalid filename.")
 
     ext = Path(filename).suffix.lower()
-    if ext not in ALLOWED_EXTENSIONS:
+    if ext not in allowed_extensions:
+        allowed_list = ", ".join(sorted(allowed_extensions))
         raise UploadError(
             f"File type '{ext}' is not supported. "
-            "Please upload a Word (.docx), Excel (.xlsx), PowerPoint (.pptx), "
-            "Markdown (.md), or PDF (.pdf) file."
+            f"Accepted: {allowed_list}."
         )
 
     token = str(uuid.uuid4())

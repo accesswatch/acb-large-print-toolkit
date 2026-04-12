@@ -489,6 +489,58 @@ class TestConvertPage:
         assert resp.status_code == 200
         assert resp.content_type.startswith("text/markdown")
 
+    def test_convert_form_has_direction_radios(self, client):
+        resp = client.get("/convert/")
+        assert b'name="direction"' in resp.data
+        assert b'value="to-markdown"' in resp.data
+        assert b'value="to-html"' in resp.data
+
+    def test_convert_to_html_md_file(self, client):
+        """Upload a .md with direction=to-html; expect HTML back if Pandoc installed."""
+        from acb_large_print.pandoc_converter import pandoc_available
+        md_content = b"# Hello World\n\nSome text.\n"
+        data = {
+            "document": (io.BytesIO(md_content), "test.md"),
+            "direction": "to-html",
+        }
+        resp = client.post("/convert/", data=data, content_type="multipart/form-data")
+        if pandoc_available():
+            assert resp.status_code == 200
+            assert resp.content_type.startswith("text/html")
+            assert b"test.html" in resp.headers.get("Content-Disposition", "").encode()
+            # Verify ACB CSS is embedded
+            assert b"font-family: Arial" in resp.data
+            assert b"Hello World" in resp.data
+        else:
+            # Pandoc not installed -- should get an error page
+            assert resp.status_code in (400, 500)
+            assert b"Pandoc" in resp.data
+
+    def test_convert_to_html_unsupported_ext(self, client):
+        """Upload an .xlsx with direction=to-html -- not a Pandoc-supported format."""
+        from acb_large_print.pandoc_converter import pandoc_available
+        if not pandoc_available():
+            pytest.skip("Pandoc not installed")
+        xlsx_data = _make_fake_xlsx()
+        data = {
+            "document": (xlsx_data, "test.xlsx"),
+            "direction": "to-html",
+        }
+        resp = client.post("/convert/", data=data, content_type="multipart/form-data")
+        assert resp.status_code == 400
+        assert b"cannot be converted to HTML" in resp.data
+
+    def test_convert_rst_accepted(self, client):
+        """The .rst extension should be accepted by the convert upload validator."""
+        data = {
+            "document": (io.BytesIO(b"Hello\n=====\n\nSome text.\n"), "test.rst"),
+            "direction": "to-markdown",
+        }
+        resp = client.post("/convert/", data=data, content_type="multipart/form-data")
+        # May fail at conversion (MarkItDown may not handle .rst) but should not
+        # fail at upload validation (400 "not supported")
+        assert resp.status_code != 400 or b"not supported" not in resp.data
+
 
 # ============================================================
 # Markdown and PDF audit

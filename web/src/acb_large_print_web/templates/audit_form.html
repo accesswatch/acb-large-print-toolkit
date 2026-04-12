@@ -71,13 +71,14 @@
     </div>
   </fieldset>
 
-  <div id="custom-rules" class="custom-rules-panel">
+  <details id="custom-rules" class="custom-rules-panel">
+    <summary>Select individual rules (for Custom Audit mode)</summary>
     <fieldset>
-      <legend>Select Rules to Include</legend>
+      <legend class="visually-hidden">Select Rules to Include</legend>
       {% set field_prefix = "rule" %}
       {% include "_help_rules.html" %}
     </fieldset>
-  </div>
+  </details>
 
   <details class="help-accordion">
     <summary>Understanding severity levels</summary>

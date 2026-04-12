@@ -54,6 +54,8 @@ def _build_parser() -> argparse.ArgumentParser:
             "  acb-large-print export report.docx --cms\n"
             "  acb-large-print convert slides.pptx\n"
             "  acb-large-print convert report.pdf -o report.md\n"
+            "  acb-large-print convert-html notes.md\n"
+            "  acb-large-print convert-html report.rst -o report.html\n"
             "\n"
             "Exit codes:\n"
             "  0  Success\n"
@@ -218,6 +220,34 @@ def _build_parser() -> argparse.ArgumentParser:
     conv_p.add_argument(
         "--output", "-o", type=Path, default=None,
         help="Output .md file path (default: same name with .md extension)",
+    )
+
+    # ---- convert-html ----
+    convhtml_p = sub.add_parser(
+        "convert-html",
+        help="Convert a document to ACB-compliant HTML via Pandoc",
+        description=(
+            "Convert a document to standalone, accessible HTML with "
+            "embedded ACB Large Print CSS using Pandoc. "
+            "Supports .md, .rst, .odt, .rtf, and .docx files."
+        ),
+    )
+    convhtml_p.add_argument("file", type=Path, help="Path to document file")
+    convhtml_p.add_argument(
+        "--output", "-o", type=Path, default=None,
+        help="Output .html file path (default: same name with .html extension)",
+    )
+    convhtml_p.add_argument(
+        "--title", "-t", type=str, default=None,
+        help="Document title for the HTML output (default: filename stem)",
+    )
+    convhtml_p.add_argument(
+        "--css", type=Path, default=None,
+        help="Custom CSS file to embed instead of the built-in ACB CSS",
+    )
+    convhtml_p.add_argument(
+        "--lang", type=str, default="en",
+        help="BCP-47 language tag for the HTML lang attribute (default: en)",
     )
 
     # ---- gui ----
@@ -538,6 +568,39 @@ def _cmd_convert(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_convert_html(args: argparse.Namespace) -> int:
+    """Execute the convert-html command (Pandoc to ACB HTML)."""
+    from .pandoc_converter import PANDOC_INPUT_EXTENSIONS, convert_to_html
+
+    if not args.file.exists():
+        print(f"Error: File not found: {args.file}", file=sys.stderr)
+        return 1
+
+    ext = args.file.suffix.lower()
+    if ext not in PANDOC_INPUT_EXTENSIONS:
+        print(
+            f"Error: Cannot convert '{ext}' files to HTML. "
+            f"Supported: {', '.join(sorted(PANDOC_INPUT_EXTENSIONS))}",
+            file=sys.stderr,
+        )
+        return 1
+
+    try:
+        output_path, html_text = convert_to_html(
+            args.file,
+            output_path=args.output,
+            title=args.title,
+            css_path=args.css,
+            lang=args.lang,
+        )
+    except RuntimeError as exc:
+        print(f"Error: {exc}", file=sys.stderr)
+        return 1
+
+    log.info("HTML saved to: %s (%d characters)", output_path, len(html_text))
+    return 0
+
+
 def _cmd_gui(_args: argparse.Namespace) -> int:
     """Launch the graphical interface."""
     try:
@@ -557,7 +620,7 @@ def _cmd_gui(_args: argparse.Namespace) -> int:
 def _cmd_completions(args: argparse.Namespace) -> int:
     """Generate shell completion script."""
     prog = "acb-large-print"
-    commands = "audit fix template batch export convert gui completions"
+    commands = "audit fix template batch export convert convert-html gui completions"
     prog_under = prog.replace("-", "_")
 
     if args.shell == "bash":
@@ -655,6 +718,7 @@ def main(argv: list[str] | None = None, *, force_cli: bool = False) -> int:
         "batch": _cmd_batch,
         "export": _cmd_export,
         "convert": _cmd_convert,
+        "convert-html": _cmd_convert_html,
         "gui": _cmd_gui,
         "completions": _cmd_completions,
     }

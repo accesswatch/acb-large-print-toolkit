@@ -1,0 +1,70 @@
+# ==========================================================================
+# Docker build context exclusions
+# Build context is the repo root (set by docker-compose context: ..)
+# Only word-addon/src/, word-addon/pyproject.toml, and web/ are needed.
+# ==========================================================================
+
+# --- Git and IDE ---
+.git/
+.github/
+.gitignore
+.history/
+.prettierignore
+.vscode/
+
+# --- Documentation and metadata ---
+docs/
+samples/
+reference/
+templates/
+styles/
+README.md
+LICENSE*
+*.md
+
+# --- Server credentials (never send to Docker) ---
+server.credentials
+csedesigns.com.zone
+
+# --- Scripts (host-side only, not in container) ---
+scripts/
+
+# --- Word Add-in (TypeScript -- not used by server) ---
+word-addin/
+
+# --- Desktop-only files in word-addon ---
+word-addon/build/
+word-addon/build.py
+word-addon/dist/
+word-addon/installer/
+word-addon/README.md
+word-addon/LICENSE.txt
+word-addon/requirements.txt
+word-addon/src/acb_large_print/cli.py
+word-addon/src/acb_large_print/cli_main.py
+word-addon/src/acb_large_print/__main__.py
+word-addon/src/acb_large_print/gui.py
+word-addon/src/acb_large_print/__pycache__/
+word-addon/src/acb_large_print.egg-info/
+
+# --- Web dev/test files (not needed in image) ---
+web/tests/
+web/.dockerignore
+web/docker-compose*.yml
+web/Caddyfile*
+web/www/
+web/.env*
+web/README.md
+
+# --- Python artifacts ---
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+*.egg
+dist/
+.pytest_cache/
+.coverage
+htmlcov/
+.venv/
+venv/

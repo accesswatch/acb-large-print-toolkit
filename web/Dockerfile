@@ -6,7 +6,13 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
-# Install the core library first (changes less often)
+# Install Pandoc (for Markdown/RST/ODT/RTF -> ACB HTML conversion)
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends pandoc \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install the core library (audit, fix, convert, export -- no CLI/GUI)
+# The .dockerignore excludes desktop-only files (cli.py, gui.py, __main__.py)
 COPY word-addon/pyproject.toml word-addon/
 COPY word-addon/src/ word-addon/src/
 RUN pip install --no-cache-dir ./word-addon

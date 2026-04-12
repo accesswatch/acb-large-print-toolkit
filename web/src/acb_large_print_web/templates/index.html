@@ -63,14 +63,15 @@
     </div>
 
     <div class="card card-convert">
-      <h3><a href="{{ url_for('convert.convert_form') }}">Convert to Markdown</a></h3>
-      <p>Transform any supported document into clean Markdown text using Microsoft MarkItDown. Useful for text analysis, LLM pipelines, or creating accessible Markdown versions.</p>
+      <h3><a href="{{ url_for('convert.convert_form') }}">Convert Documents</a></h3>
+      <p>Two-way conversion: transform documents into clean Markdown text via MarkItDown, or convert Markdown, RST, ODT, and RTF into standalone ACB-compliant HTML via Pandoc.</p>
       <ul class="card-formats">
         <li class="format-tag format-docx">Word</li>
         <li class="format-tag format-xlsx">Excel</li>
         <li class="format-tag format-pptx">PowerPoint</li>
         <li class="format-tag format-pdf">PDF</li>
-        <li class="format-tag format-misc">HTML, CSV, JSON, XML, ePub</li>
+        <li class="format-tag format-md">Markdown</li>
+        <li class="format-tag format-misc">RST, ODT, RTF, HTML, CSV, JSON</li>
       </ul>
     </div>
   </div>

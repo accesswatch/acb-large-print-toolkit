@@ -44,6 +44,15 @@ try:
 except ImportError:
     _CONVERT_EXTENSIONS: set[str] = set()
 
+# Extensions Pandoc can convert to ACB HTML
+try:
+    from .pandoc_converter import PANDOC_INPUT_EXTENSIONS as _PANDOC_EXTENSIONS
+    from .pandoc_converter import pandoc_available as _pandoc_available
+except ImportError:
+    _PANDOC_EXTENSIONS: set[str] = set()
+    def _pandoc_available() -> bool:
+        return False
+
 
 # ── Wizard step indices ───────────────────────────────────────────────
 STEP_WELCOME = 0
@@ -263,14 +272,30 @@ class WizardFrame(wx.Frame):
             self.chk_convert_md.SetLabel(
                 "Markdown file (MarkItDown not installed)"
             )
-        sizer.Add(self.chk_convert_md, flag=wx.BOTTOM, border=12)
+        sizer.Add(self.chk_convert_md, flag=wx.BOTTOM, border=6)
+
+        self.chk_convert_html = wx.CheckBox(
+            page,
+            label="ACB &HTML file (convert document to HTML via Pandoc)",
+        )
+        self.chk_convert_html.SetName(
+            "Convert document to ACB-compliant HTML using Pandoc"
+        )
+        self.chk_convert_html.SetValue(False)
+        if not _PANDOC_EXTENSIONS or not _pandoc_available():
+            self.chk_convert_html.Disable()
+            self.chk_convert_html.SetLabel(
+                "ACB HTML file (Pandoc not installed)"
+            )
+        sizer.Add(self.chk_convert_html, flag=wx.BOTTOM, border=12)
 
         note = wx.StaticText(page, label=(
             "The CMS fragment is a single file you can paste directly into "
             "a WordPress or Drupal HTML block. The standalone version is a "
             "complete web page with a separate CSS file for hosting or email. "
-            "The Markdown option converts the document to Markdown text using "
-            "Microsoft MarkItDown."
+            "The Markdown option converts to Markdown via MarkItDown. "
+            "The ACB HTML option converts to accessible HTML with embedded "
+            "ACB Large Print CSS via Pandoc."
         ))
         note.Wrap(560)
         sizer.Add(note)
@@ -444,10 +469,10 @@ class WizardFrame(wx.Frame):
             wx.CallAfter(self._run_initial_audit)
 
         elif step == STEP_AUDIT:
-            if self._is_docx or self._can_convert:
+            if self._is_docx or self._can_convert or self._can_convert_html:
                 self._show_step(STEP_OPTIONS)
             else:
-                # Skip HTML export options for non-convertible formats
+                # Skip export options for non-convertible formats
                 self._show_step(STEP_FIX)
                 wx.CallAfter(self._run_fix)
 
@@ -586,6 +611,16 @@ class WizardFrame(wx.Frame):
             bool(_CONVERT_EXTENSIONS)
             and self.src_path is not None
             and self.src_path.suffix.lower() in _CONVERT_EXTENSIONS
+        )
+
+    @property
+    def _can_convert_html(self) -> bool:
+        """True if the source file can be converted to HTML via Pandoc."""
+        return (
+            bool(_PANDOC_EXTENSIONS)
+            and _pandoc_available()
+            and self.src_path is not None
+            and self.src_path.suffix.lower() in _PANDOC_EXTENSIONS
         )
 
     # ── Audit ─────────────────────────────────────────────────────────
@@ -804,6 +839,14 @@ class WizardFrame(wx.Frame):
                 md_path = docx_dest.with_suffix(".md")
                 convert_to_markdown(src, output_path=md_path)
                 self.saved_files.append(f"Markdown: {md_path}")
+
+            # 4. Optional Pandoc HTML conversion
+            if self.chk_convert_html.GetValue() and self._can_convert_html:
+                from .pandoc_converter import convert_to_html
+                html_path = docx_dest.with_suffix(".html")
+                title = docx_dest.stem.replace("-", " ").replace("_", " ")
+                convert_to_html(src, output_path=html_path, title=title)
+                self.saved_files.append(f"ACB HTML: {html_path}")
 
             self.status_bar.SetStatusText(
                 f"Saved {len(self.saved_files)} files"
