@@ -79,10 +79,13 @@ lp/
     tests/                               Test suite
     Dockerfile                           Production container image
     docker-compose.yml                   Compose file for deployment
-  word-addon/                            Desktop CLI + GUI (Python)
+  desktop/                               Desktop CLI + GUI (Python)
     src/acb_large_print/                 Core library (canonical source of truth)
-  word-addin/                            Office.js Word Add-in (TypeScript)
+  office-addin/                          Office.js Word Add-in (TypeScript)
     src/                                 TypeScript port of audit/fix/template
+  vendor/                                Vendored third-party source
+    daisy-ace/                           DAISY Ace source (MIT)
+    daisy-a11y-meta-viewer/              DAISY a11y-meta-viewer source (CC BY-NC-SA 4.0)
 ```
 
 ## Quick start
@@ -106,7 +109,7 @@ Open the web app in any browser. Upload a Word, Excel, PowerPoint, Markdown, or 
 ```bash
 cd web
 pip install -e ".[dev]"
-pip install -e "../word-addon"
+pip install -e "../desktop"
 flask --app acb_large_print_web.app:create_app run --debug
 ```
 
@@ -352,10 +355,10 @@ This toolkit implements the ACB Large Print Guidelines, a public specification f
 
 The `web/` directory contains a Flask web application that provides browser-based access to all core operations. No installation or account required. Runs in Docker for production deployment. See [web/README.md](web/README.md) for full documentation.
 
-## Word Addon Tool
+## Desktop Tool
 
-The `word-addon/` directory contains a standalone desktop application (CLI and GUI) that audits, fixes, and exports Microsoft Word documents for ACB compliance. It builds as one-file executables for 6 platforms via PyInstaller and GitHub Actions. See [word-addon/README.md](word-addon/README.md) for full documentation.
+The `desktop/` directory contains a standalone desktop application (CLI and GUI) that audits, fixes, and exports Microsoft Word documents for ACB compliance. It builds as one-file executables for 6 platforms via PyInstaller and GitHub Actions. See [desktop/README.md](desktop/README.md) for full documentation.
 
-## Word Add-in
+## Office Add-in
 
-The `word-addin/` directory contains an Office.js Web Add-in that integrates ACB Large Print audit, fix, and template tools directly into the Microsoft Word ribbon. TypeScript port of the Python core. Deployed to GitHub Pages automatically on push.
+The `office-addin/` directory contains an Office.js Web Add-in that integrates ACB Large Print audit, fix, and template tools directly into the Microsoft Word ribbon. TypeScript port of the Python core. Deployed to GitHub Pages automatically on push.

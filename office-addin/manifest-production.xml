@@ -1,0 +1,221 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<OfficeApp
+  xmlns="http://schemas.microsoft.com/office/appforoffice/1.1"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xmlns:bt="http://schemas.microsoft.com/office/officeappbasictypes/1.0"
+  xmlns:ov="http://schemas.microsoft.com/office/taskpaneappversionoverrides"
+  xsi:type="TaskPaneApp">
+
+  <Id>e7f2a4b1-3c5d-4e6f-8a9b-0c1d2e3f4a5c</Id>
+  <Version>1.0.0</Version>
+  <ProviderName>BITS - Blind Information Technology Solutions</ProviderName>
+  <DefaultLocale>en-US</DefaultLocale>
+  <DisplayName DefaultValue="ACB Large Print Tool" />
+  <Description DefaultValue="Audit, fix, and create Word documents that comply with the American Council of the Blind Large Print Guidelines." />
+  <SupportUrl DefaultValue="https://www.bitsonline.org" />
+
+  <Hosts>
+    <Host Name="Document" />
+  </Hosts>
+
+  <DefaultSettings>
+    <SourceLocation DefaultValue="https://accesswatch.github.io/acb-large-print-toolkit/office-addin/taskpane.html" />
+  </DefaultSettings>
+
+  <Permissions>ReadWriteDocument</Permissions>
+
+  <VersionOverrides xmlns="http://schemas.microsoft.com/office/taskpaneappversionoverrides" xsi:type="VersionOverridesV1_0">
+    <Hosts>
+      <Host xsi:type="Document">
+        <DesktopFormFactor>
+          <GetStarted>
+            <Title resid="getStartedTitle" />
+            <Description resid="getStartedDescription" />
+            <LearnMoreUrl resid="learnMoreUrl" />
+          </GetStarted>
+
+          <ExtensionPoint xsi:type="PrimaryCommandSurface">
+            <OfficeTab id="TabHome">
+              <Group id="acbGroup">
+                <Label resid="groupLabel" />
+
+                <Control xsi:type="Button" id="auditButton">
+                  <Label resid="auditButtonLabel" />
+                  <Supertip>
+                    <Title resid="auditButtonLabel" />
+                    <Description resid="auditButtonTip" />
+                  </Supertip>
+                  <Icon>
+                    <bt:Image size="16" resid="icon16" />
+                    <bt:Image size="32" resid="icon32" />
+                    <bt:Image size="80" resid="icon80" />
+                  </Icon>
+                  <Action xsi:type="ShowTaskpane">
+                    <TaskpaneId>acbTaskpane</TaskpaneId>
+                    <SourceLocation resid="taskpaneUrl" />
+                  </Action>
+                </Control>
+
+                <Control xsi:type="Button" id="fixButton">
+                  <Label resid="fixButtonLabel" />
+                  <Supertip>
+                    <Title resid="fixButtonLabel" />
+                    <Description resid="fixButtonTip" />
+                  </Supertip>
+                  <Icon>
+                    <bt:Image size="16" resid="icon16" />
+                    <bt:Image size="32" resid="icon32" />
+                    <bt:Image size="80" resid="icon80" />
+                  </Icon>
+                  <Action xsi:type="ExecuteFunction">
+                    <FunctionName>fixDocument</FunctionName>
+                  </Action>
+                </Control>
+
+                <Control xsi:type="Button" id="templateButton">
+                  <Label resid="templateButtonLabel" />
+                  <Supertip>
+                    <Title resid="templateButtonLabel" />
+                    <Description resid="templateButtonTip" />
+                  </Supertip>
+                  <Icon>
+                    <bt:Image size="16" resid="icon16" />
+                    <bt:Image size="32" resid="icon32" />
+                    <bt:Image size="80" resid="icon80" />
+                  </Icon>
+                  <Action xsi:type="ExecuteFunction">
+                    <FunctionName>applyTemplate</FunctionName>
+                  </Action>
+                </Control>
+              </Group>
+            </OfficeTab>
+          </ExtensionPoint>
+        </DesktopFormFactor>
+      </Host>
+    </Hosts>
+
+    <Resources>
+      <bt:Images>
+        <bt:Image id="icon16" DefaultValue="https://accesswatch.github.io/acb-large-print-toolkit/office-addin/assets/icon-16.png" />
+        <bt:Image id="icon32" DefaultValue="https://accesswatch.github.io/acb-large-print-toolkit/office-addin/assets/icon-32.png" />
+        <bt:Image id="icon80" DefaultValue="https://accesswatch.github.io/acb-large-print-toolkit/office-addin/assets/icon-80.png" />
+      </bt:Images>
+      <bt:Urls>
+        <bt:Url id="taskpaneUrl" DefaultValue="https://accesswatch.github.io/acb-large-print-toolkit/office-addin/taskpane.html" />
+        <bt:Url id="commandsUrl" DefaultValue="https://accesswatch.github.io/acb-large-print-toolkit/office-addin/commands.html" />
+        <bt:Url id="learnMoreUrl" DefaultValue="https://www.bitsonline.org" />
+      </bt:Urls>
+      <bt:ShortStrings>
+        <bt:String id="groupLabel" DefaultValue="ACB Large Print" />
+        <bt:String id="auditButtonLabel" DefaultValue="Audit" />
+        <bt:String id="fixButtonLabel" DefaultValue="Fix" />
+        <bt:String id="templateButtonLabel" DefaultValue="Template" />
+        <bt:String id="getStartedTitle" DefaultValue="ACB Large Print Tool" />
+      </bt:ShortStrings>
+      <bt:LongStrings>
+        <bt:String id="auditButtonTip" DefaultValue="Audit this document for ACB Large Print Guidelines compliance. Opens a task pane showing all findings with severity and location." />
+        <bt:String id="fixButtonTip" DefaultValue="Automatically fix all auto-fixable ACB compliance issues: font, size, alignment, spacing, italic removal, bold-to-underline conversion." />
+        <bt:String id="templateButtonTip" DefaultValue="Apply ACB Large Print styles to this document: configure all heading styles, body text, margins, page numbers, and hyphenation settings." />
+        <bt:String id="getStartedDescription" DefaultValue="Audit, fix, and format Word documents to comply with the American Council of the Blind Large Print Guidelines." />
+      </bt:LongStrings>
+    </Resources>
+
+    <VersionOverrides xmlns="http://schemas.microsoft.com/office/taskpaneappversionoverrides" xsi:type="VersionOverridesV1_1">
+      <Requirements>
+        <Sets DefaultMinVersion="1.3">
+          <Set Name="WordApi" MinVersion="1.3" />
+        </Sets>
+      </Requirements>
+      <Hosts>
+        <Host xsi:type="Document">
+          <DesktopFormFactor>
+            <FunctionFile resid="commandsUrl" />
+            <ExtensionPoint xsi:type="PrimaryCommandSurface">
+              <OfficeTab id="TabHome">
+                <Group id="acbGroupV11">
+                  <Label resid="groupLabel" />
+
+                  <Control xsi:type="Button" id="auditButtonV11">
+                    <Label resid="auditButtonLabel" />
+                    <Supertip>
+                      <Title resid="auditButtonLabel" />
+                      <Description resid="auditButtonTip" />
+                    </Supertip>
+                    <Icon>
+                      <bt:Image size="16" resid="icon16" />
+                      <bt:Image size="32" resid="icon32" />
+                      <bt:Image size="80" resid="icon80" />
+                    </Icon>
+                    <Action xsi:type="ShowTaskpane">
+                      <TaskpaneId>acbTaskpane</TaskpaneId>
+                      <SourceLocation resid="taskpaneUrl" />
+                    </Action>
+                  </Control>
+
+                  <Control xsi:type="Button" id="fixButtonV11">
+                    <Label resid="fixButtonLabel" />
+                    <Supertip>
+                      <Title resid="fixButtonLabel" />
+                      <Description resid="fixButtonTip" />
+                    </Supertip>
+                    <Icon>
+                      <bt:Image size="16" resid="icon16" />
+                      <bt:Image size="32" resid="icon32" />
+                      <bt:Image size="80" resid="icon80" />
+                    </Icon>
+                    <Action xsi:type="ExecuteFunction">
+                      <FunctionName>fixDocument</FunctionName>
+                    </Action>
+                  </Control>
+
+                  <Control xsi:type="Button" id="templateButtonV11">
+                    <Label resid="templateButtonLabel" />
+                    <Supertip>
+                      <Title resid="templateButtonLabel" />
+                      <Description resid="templateButtonTip" />
+                    </Supertip>
+                    <Icon>
+                      <bt:Image size="16" resid="icon16" />
+                      <bt:Image size="32" resid="icon32" />
+                      <bt:Image size="80" resid="icon80" />
+                    </Icon>
+                    <Action xsi:type="ExecuteFunction">
+                      <FunctionName>applyTemplate</FunctionName>
+                    </Action>
+                  </Control>
+                </Group>
+              </OfficeTab>
+            </ExtensionPoint>
+          </DesktopFormFactor>
+        </Host>
+      </Hosts>
+
+      <Resources>
+        <bt:Images>
+          <bt:Image id="icon16" DefaultValue="https://accesswatch.github.io/acb-large-print-toolkit/office-addin/assets/icon-16.png" />
+          <bt:Image id="icon32" DefaultValue="https://accesswatch.github.io/acb-large-print-toolkit/office-addin/assets/icon-32.png" />
+          <bt:Image id="icon80" DefaultValue="https://accesswatch.github.io/acb-large-print-toolkit/office-addin/assets/icon-80.png" />
+        </bt:Images>
+        <bt:Urls>
+          <bt:Url id="taskpaneUrl" DefaultValue="https://accesswatch.github.io/acb-large-print-toolkit/office-addin/taskpane.html" />
+          <bt:Url id="commandsUrl" DefaultValue="https://accesswatch.github.io/acb-large-print-toolkit/office-addin/commands.html" />
+          <bt:Url id="learnMoreUrl" DefaultValue="https://www.bitsonline.org" />
+        </bt:Urls>
+        <bt:ShortStrings>
+          <bt:String id="groupLabel" DefaultValue="ACB Large Print" />
+          <bt:String id="auditButtonLabel" DefaultValue="Audit" />
+          <bt:String id="fixButtonLabel" DefaultValue="Fix" />
+          <bt:String id="templateButtonLabel" DefaultValue="Template" />
+          <bt:String id="getStartedTitle" DefaultValue="ACB Large Print Tool" />
+        </bt:ShortStrings>
+        <bt:LongStrings>
+          <bt:String id="auditButtonTip" DefaultValue="Audit this document for ACB Large Print Guidelines compliance. Opens a task pane showing all findings with severity and location." />
+          <bt:String id="fixButtonTip" DefaultValue="Automatically fix all auto-fixable ACB compliance issues: font, size, alignment, spacing, italic removal, bold-to-underline conversion." />
+          <bt:String id="templateButtonTip" DefaultValue="Apply ACB Large Print styles to this document: configure all heading styles, body text, margins, page numbers, and hyphenation settings." />
+          <bt:String id="getStartedDescription" DefaultValue="Audit, fix, and format Word documents to comply with the American Council of the Blind Large Print Guidelines." />
+        </bt:LongStrings>
+      </Resources>
+    </VersionOverrides>
+  </VersionOverrides>
+</OfficeApp>
+

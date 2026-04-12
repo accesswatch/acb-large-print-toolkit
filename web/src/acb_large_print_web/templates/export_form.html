@@ -4,6 +4,12 @@
 {% block heading %}Export to HTML{% endblock %}
 
 {% block content %}
+{% set tip_icon = "&#9758;" %}
+{% set tip_text = "Publishing a Word document on the web? Export creates an accessible HTML page with all ACB styling built in." %}
+{% set tip_link_url = url_for('guide.guide_page') + '#how-export' %}
+{% set tip_link_text = "Read the export guide" %}
+{% include '_workflow_tip.html' %}
+
 <details class="help-accordion">
   <summary>What does export do?</summary>
   <p>Export converts your Word document to accessible HTML with ACB-compliant CSS styling. The output is ready to publish on a website. Choose between two formats depending on your publishing workflow.</p>
@@ -22,7 +28,7 @@
     <input type="file" id="document" name="document" accept=".docx"
            aria-describedby="file-help"
            {% if error %}aria-invalid="true"{% endif %}>
-    <p id="file-help" class="help-text">Accepted format: <code>.docx</code> (Microsoft Word). Maximum size: 16 MB.</p>
+    <p id="file-help" class="help-text">Accepted format: <code>.docx</code> (Microsoft Word). Maximum size: 500 MB.</p>
   </div>
 
   <div class="form-group">

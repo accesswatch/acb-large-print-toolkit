@@ -1,0 +1,77 @@
+{
+    "checkepub": {
+        "langmissing": {
+            "kbtitle": "Language",
+            "resdesc": "Add the missing OPF xml:lang attribute",
+            "ruledesc": "The language must be specified (xml:lang in OPF package)",
+            "testdesc": "Ensures the OPF XML language is provided"
+        },
+        "mediaoverlaypagebreakviolation": {
+            "kbtitle": "Page Navigation",
+            "resdesc": "Add epub:type pagebreak in SMIL par ({{ref}})",
+            "ruledesc": "SMIL must correctly reference page breaks ({{ref}})",
+            "testdesc": "Ensures that the Media Overlays reference page breaks ({{ref}})"
+        },
+        "metadatadeprecated": {
+            "kbtitle": "Schema.org Accessibility Metadata",
+            "resdesc": "Avoid using '{{name}}' deprecated metadata",
+            "ruledesc": "'{{name}}' metadata usage is discouraged",
+            "testdesc": "Checks that no deprecated metadata is used"
+        },
+        "metadatainvalid": {
+            "kbtitle": "Schema.org Accessibility Metadata",
+            "resdesc": "Use one of the metadata values defined by schema.org",
+            "ruledesc": "'{{name}}' metadata must be set to one of the expected values",
+            "testdesc": "Value '{{value}}' is invalid for '{{name}}' metadata"
+        },
+        "metadatapagebreaks": {
+            "kbtitle": "Schema.org Accessibility Metadata",
+            "resdesc": "Add page breaks to publication documents",
+            "ruledesc": "When the accessibility feature 'printPageNumbers'/'pageBreakMarkers' is declared, documents should include page breaks",
+            "testdesc": "Accessibility feature 'printPageNumbers'/'pageBreakMarkers' is declared but there are no page breaks"
+        },
+        "metadataprintpagenumbers": {
+            "kbtitle": "Schema.org Accessibility Metadata",
+            "resdesc": "Add a page list to the Navigation Document",
+            "ruledesc": "When the accessibility feature 'pageNavigation' is declared, the Navigation Document should include a page list",
+            "testdesc": "Accessibility feature 'pageNavigation' is declared but page list is missing"
+        },
+        "metadataviolation": {
+            "kbtitle": "Schema.org Accessibility Metadata",
+            "resdesc": "Add a '{{name}}' metadata property to the Package Document",
+            "ruledesc": "Publications must declare the '{{name}}' metadata",
+            "ruledesc_alt": "Publications should declare the '{{name}}' metadata",
+            "testdesc": "Ensures a '{{name}}' metadata is present"
+        },
+        "missingpagebreakviolation": {
+            "kbtitle": "Page Navigation",
+            "resdesc": "Ensure page list includes all page breaks ({{ref}})",
+            "ruledesc": "Publication page list must reference all page breaks ({{ref}})",
+            "testdesc": "Check that all page breaks are included in the page list ({{ref}})"
+        },
+        "ordertocviolation": {
+            "kbtitle": "Table of Contents",
+            "resdesc": "Order the Table Of Contents items ({{ref}})",
+            "ruledesc": "TOC must match the publication reading order ({{ref}})",
+            "testdesc": "Ensures the publication TOC is ordered ({{ref}})"
+        },
+        "pagelistbrokenviolation": {
+            "kbtitle": "Page Navigation",
+            "resdesc": "Make sure that page list items point to epub:type page breaks ({{ref}})",
+            "ruledesc": "Publication page list must reference page breaks ({{ref}})",
+            "testdesc": "Ensures the page list links to page breaks ({{ref}})"
+        },
+        "pagesourceviolation": {
+            "kbtitle": "Page Navigation",
+            "resdesc": "Add a 'dc:source / pageBreakSource' metadata property to the Package Document",
+            "ruledesc": "Publications with page breaks must declare the 'dc:source / pageBreakSource' metadata",
+            "testdesc": "Ensures the source of page breaks is identified"
+        },
+        "titleviolation": {
+            "kbtitle": "EPUB Title",
+            "resdesc": "Add a 'dc:title' metadata property to the Package Document",
+            "ruledesc": "Publications must have a title",
+            "testdesc": "Ensures the EPUB has a title"
+        }
+    }
+}

@@ -52,7 +52,11 @@ def template_submit():
 
         return response
 
-    except Exception:
+    except Exception as exc:
+        import logging
+        logging.getLogger("acb_large_print").exception(
+            "Template creation failed: %s", exc
+        )
         if temp_dir:
             cleanup_tempdir(temp_dir)
         return render_template(

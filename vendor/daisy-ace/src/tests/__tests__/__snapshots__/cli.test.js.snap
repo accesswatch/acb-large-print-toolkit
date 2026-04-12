@@ -1,0 +1,89 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`Running the CLI on a non-existant document should fail 1`] = `
+"[32minfo[39m:    Closing logs.
+Re-run Ace using the --verbose option to enable full debug logging."
+`;
+
+exports[`Running the CLI on a non-existant document should fail 2`] = `
+"[31merror[39m:   Couldn’t find EPUB file 'unexisting.epub'
+[31merror[39m:"
+`;
+
+exports[`Running the CLI with -o pointing to an existing directory should fail 1`] = `
+"[33mwarn[39m:    Output directory is not empty.
+
+  Running Ace would override the following files or directories:
+
+  - report/report.json
+  - report/report.html
+  - report/js
+
+  Use option --force to override."
+`;
+
+exports[`Running the CLI with no input should fail 1`] = `"[31merror[39m:   Input required"`;
+
+exports[`Running the CLI with no input should fail 2`] = `
+"Ace by DAISY, an Accessibility Checker for EPUB
+
+  Usage: ace [options] <input>
+
+  Options:
+
+    -h, --help             output usage information
+    -v, --version          output the version number
+
+    -o, --outdir  <path>   save final reports to the specified directory
+    -t, --tempdir <path>   specify a custom directory to store the temporary reports
+    -f, --force            override any existing output file or directory
+        --subdir           output reports to a sub-directory named after the input EPUB
+
+    -V, --verbose          display verbose output
+    -s, --silent           do not display any output
+
+    -l, --lang  <language> language code for localized messages (e.g. "fr"), default is "en"
+
+    -T, --timeout <milliseconds> (default is 240000 per document)
+
+    -M, --doNotReportMedia skips reporting media resources
+
+    -E, --exiterror2 exit process with code 2 when fail (return-2-on-validation-error)
+  Examples
+    $ ace -o out ~/Documents/book.epub
+
+  If you find DAISY Ace useful, please help us by donating to support its ongoing maintenance.
+  Support our work https://daisy.org/AceCLSponsor"
+`;
+
+exports[`Running the CLI with the -h option should print help 1`] = `
+"Ace by DAISY, an Accessibility Checker for EPUB
+
+  Usage: ace [options] <input>
+
+  Options:
+
+    -h, --help             output usage information
+    -v, --version          output the version number
+
+    -o, --outdir  <path>   save final reports to the specified directory
+    -t, --tempdir <path>   specify a custom directory to store the temporary reports
+    -f, --force            override any existing output file or directory
+        --subdir           output reports to a sub-directory named after the input EPUB
+
+    -V, --verbose          display verbose output
+    -s, --silent           do not display any output
+
+    -l, --lang  <language> language code for localized messages (e.g. "fr"), default is "en"
+
+    -T, --timeout <milliseconds> (default is 240000 per document)
+
+    -M, --doNotReportMedia skips reporting media resources
+
+    -E, --exiterror2 exit process with code 2 when fail (return-2-on-validation-error)
+  Examples
+    $ ace -o out ~/Documents/book.epub
+
+  If you find DAISY Ace useful, please help us by donating to support its ongoing maintenance.
+  Support our work https://daisy.org/AceCLSponsor"
+`;

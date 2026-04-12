@@ -605,7 +605,7 @@ app/
     pyproject.toml
     requirements.txt
     src/
-  word-addon/
+  desktop/
     pyproject.toml
     src/
   scripts/
@@ -624,14 +624,14 @@ sftp deploy@YOUR_SERVER_IP
 # Create directories if they do not already exist
 sftp> mkdir app
 sftp> mkdir app/web
-sftp> mkdir app/word-addon
+sftp> mkdir app/desktop
 sftp> mkdir app/scripts
 
 # Upload the web directory
 sftp> put -r web/ app/web/
 
-# Upload the word-addon directory (needed for Docker build)
-sftp> put -r word-addon/ app/word-addon/
+# Upload the desktop directory (needed for Docker build)
+sftp> put -r desktop/ app/desktop/
 
 # Upload scripts
 sftp> put -r scripts/ app/scripts/
@@ -639,7 +639,7 @@ sftp> put -r scripts/ app/scripts/
 sftp> exit
 ```
 
-**With WinSCP or another GUI client:** Connect using SFTP protocol, navigate to `/home/deploy/`, and drag the `web/`, `word-addon/`, and `scripts/` folders into the `app/` directory.
+**With WinSCP or another GUI client:** Connect using SFTP protocol, navigate to `/home/deploy/`, and drag the `web/`, `desktop/`, and `scripts/` folders into the `app/` directory.
 
 After uploading, set scripts as executable via SSH:
 
@@ -650,10 +650,10 @@ ssh deploy@YOUR_SERVER_IP "chmod 700 ~/app/scripts/*.sh"
 Verify the upload:
 
 ```bash
-ssh deploy@YOUR_SERVER_IP "ls -la ~/app/web/ && ls -la ~/app/word-addon/"
+ssh deploy@YOUR_SERVER_IP "ls -la ~/app/web/ && ls -la ~/app/desktop/"
 ```
 
-You should see `Dockerfile`, `docker-compose.prod.yml`, `pyproject.toml`, and `src/` in the web directory, and `pyproject.toml` and `src/` in the word-addon directory.
+You should see `Dockerfile`, `docker-compose.prod.yml`, `pyproject.toml`, and `src/` in the web directory, and `pyproject.toml` and `src/` in the desktop directory.
 
 ### 4.2 Create the production environment file (.env)
 
@@ -851,7 +851,7 @@ volumes:
 - **`depends_on: web: condition: service_healthy`** prevents Caddy from starting until the Flask health check passes.
 - **`feedback-data`** is a Docker named volume that persists the SQLite database across container restarts and rebuilds. Do not delete this volume unless you intend to lose all feedback data.
 - **`caddy_data`** stores TLS certificates. Do not delete this volume or you may hit Let's Encrypt rate limits when re-issuing certificates.
-- **`context: ..`** means the Docker build context is the parent of `web/` (the repository root). This is why `word-addon/` must also be present on the server at `~/app/word-addon/`.
+- **`context: ..`** means the Docker build context is the parent of `web/` (the repository root). This is why `desktop/` must also be present on the server at `~/app/desktop/`.
 - The `healthcheck` command runs **inside** the web container, so `http://localhost:8000/health` refers to the Gunicorn process in that container. This works correctly regardless of whether the port is published to the host.
 
 ---
@@ -1215,9 +1215,33 @@ For WinSCP, FileZilla, Cyberduck, or any SFTP-capable client:
 | `/home/deploy/app/web/` | Flask app, Dockerfile, compose files, Caddyfile, .env |
 | `/home/deploy/app/web/src/` | Flask application source code |
 | `/home/deploy/app/web/www/` | Static files for csedesigns.com |
-| `/home/deploy/app/word-addon/` | Python core library (needed for Docker build) |
+| `/home/deploy/app/desktop/` | Python core library (needed for Docker build) |
 | `/home/deploy/app/scripts/` | Deployment helper scripts |
 | `/home/deploy/backups/` | Feedback database backups |
+
+### Restricting SFTP to a specific directory (optional)
+
+If you want to allow SFTP access only to the app directory (not the full filesystem), create a restricted user with a chroot jail. Add to `/etc/ssh/sshd_config`:
+
+```bash
+Match User sftponly
+    ChrootDirectory /home/deploy/app
+    ForceCommand internal-sftp
+    AllowTcpForwarding no
+    X11Forwarding no
+```
+
+Then create the restricted user:
+
+```bash
+sudo adduser sftponly --shell /usr/sbin/nologin
+sudo usermod -aG docker sftponly
+sudo chown root:root /home/deploy/app
+sudo chmod 755 /home/deploy/app
+sudo systemctl restart sshd
+```
+
+This is optional -- the default `deploy` user with full SSH access is sufficient for most deployments.
 
 ---
 
@@ -1623,7 +1647,7 @@ If step 2 fails, the Flask app has a problem (check web logs). If step 2 succeed
 
 ### Upload fails with 413 error
 
-The file exceeds the 16 MB upload limit configured in the Flask app (`MAX_CONTENT_LENGTH`). This is by design. Upload a smaller file.
+The file exceeds the 500 MB upload limit configured in the Flask app (`MAX_CONTENT_LENGTH`). This is by design. Upload a smaller file.
 
 ### "sudo: unable to resolve host" warnings
 
@@ -1710,7 +1734,7 @@ These are set directly in the compose file `environment:` block (not secrets):
 |----------|-------|-------------|
 | `FLASK_DEBUG` | `0` | Disables Flask debug mode. Never set to `1` in production. |
 
-The Flask app also reads `MAX_CONTENT_LENGTH` (default: 16 MB) for upload file size limits, configured in the application source code.
+The Flask app also reads `MAX_CONTENT_LENGTH` (default: 500 MB) for upload file size limits, configured in the application source code.
 
 ---
 
@@ -1965,8 +1989,8 @@ for F in "$WEB_ROOT/$COMPOSE_FILE" "$WEB_ROOT/.env" "$WEB_ROOT/Caddyfile" "$WEB_
     fi
 done
 
-if [[ ! -d "$APP_ROOT/word-addon/src" ]]; then
-    echo "ERROR: word-addon/src/ directory missing (needed for Docker build)."
+if [[ ! -d "$APP_ROOT/desktop/src" ]]; then
+    echo "ERROR: desktop/src/ directory missing (needed for Docker build)."
     MISSING=1
 fi
 
@@ -2234,9 +2258,9 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
-COPY word-addon/pyproject.toml word-addon/
-COPY word-addon/src/ word-addon/src/
-RUN pip install --no-cache-dir ./word-addon
+COPY desktop/pyproject.toml desktop/
+COPY desktop/src/ desktop/src/
+RUN pip install --no-cache-dir ./desktop
 
 COPY web/pyproject.toml web/requirements.txt web/
 COPY web/src/ web/src/

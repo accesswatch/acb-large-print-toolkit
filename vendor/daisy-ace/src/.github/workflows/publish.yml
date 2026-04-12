@@ -1,0 +1,68 @@
+#
+# https://docs.npmjs.com/trusted-publishers
+#
+
+#GIT_COMMITTER_DATE="$(git show master --format=%aD | head -1)" git tag -a "v1.4.4" master -m "release tag v1.4.4" && git push --tags origin master && git --no-pager tag --list --format='%(refname)   %(taggerdate)'
+
+#git tag -d v1.4.4 && git push origin :refs/tags/v1.4.4
+
+name: Publish Package(s)
+
+#on:
+#  release:
+#    types: [published]
+
+on:
+  push:
+    #branches: [master]
+    tags:
+      # https://github.com/daisy/ace/settings/rules
+      - "v*" # excludes slash /
+
+permissions:
+  id-token: write # Required for OIDC
+  contents: read
+
+jobs:
+  publish:
+    #if: "github.event_name == 'push' && contains(github.event.head_commit.message, 'release tag')"
+    #if: "contains(github.event.head_commit.message, 'release tag')"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+          registry-url: "https://registry.npmjs.org"
+      - run: node --version ; npm --version ; yarn --version
+      - run: npm --global install npm@^11
+      - run: npm --version
+      - run: npm --global install yarn@^1
+      - run: yarn --version
+      - name: YARN INSTALL and POSTINSTALL(s) (includes BUILD)
+        run: rm -rf node_modules ; yarn install --frozen-lockfile --ignore-scripts --network-timeout 1000000 ; cd node_modules/electron ; yarn --verbose --network-timeout 1000000 run postinstall ; cd ../.. ; cd node_modules/puppeteer ; rm -rf ~/.cache/puppeteer/ ; yarn --verbose --network-timeout 1000000 run postinstall ; cd ../.. ; yarn --verbose run postinstall ; ((npm exec --no --offline -- taze --fail-on-outdated --all --force --recursive --include-locked --concurrency 10 --loglevel debug --cwd . && npm exec --no --offline -- taze major --fail-on-outdated --all --force --recursive --include-locked --concurrency 10 --loglevel debug --cwd .) || echo OK)
+        shell: bash
+        #POSTINSTALL ===> -run: yarn npmVersionsCheck && yarn build && yarn patchElectronJestRunner && yarn patchElectronJestRunner_
+      - name: PACKAGE PUBLISH
+        #env:
+        #  NPM_CONFIG_PROVENANCE: true
+        shell: bash
+        run: |
+          for relativefilepath in packages/*; do
+              filename=`basename "${relativefilepath}"`
+              echo "${filename} (${relativefilepath})"
+              cd "${relativefilepath}"
+              if [ "${filename}" != "ace-core-legacy" ]; then
+                  echo "PUBLISH: [${filename}] ..."
+                  # --dry-run
+                  # --provenance
+
+                  #npm publish --access public --tag=next .
+                  npm publish --access public --tag=latest
+
+                  # IN CASE OF ERROR THAT INTERRUPTS THE PUBLISHING OF ALL PACKAGES (FOR EXAMPLE: NPM REGISTRY 404), TRY AGAIN AND IGNORE "ALREADY EXIST" ERROR ===>
+                  #(npm publish --access public --tag=latest . || echo OK || true)
+              fi
+              cd - &> /dev/null
+          done

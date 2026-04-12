@@ -759,3 +759,114 @@ footer p {
   text-decoration-thickness: 1px;
   text-underline-offset: 2px;
 }
+
+/* --- Guide Page --- */
+.guide-toc {
+  column-count: 2;
+  column-gap: 2rem;
+  padding-left: 1.5rem;
+}
+
+@media (max-width: 40em) {
+  .guide-toc {
+    column-count: 1;
+  }
+}
+
+.guide-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  margin: 1.5rem 0;
+}
+
+.guide-step {
+  display: flex;
+  gap: 1rem;
+  border: 2px solid #0055cc;
+  border-radius: 0.25rem;
+  padding: 1.25rem;
+  background: #f0f5ff;
+}
+
+.step-number {
+  flex-shrink: 0;
+  width: 2.5rem;
+  height: 2.5rem;
+  line-height: 2.5rem;
+  text-align: center;
+  font-size: 1.333rem;
+  font-weight: 700;
+  color: #ffffff;
+  background: #0055cc;
+  border-radius: 50%;
+}
+
+.step-content h3 {
+  margin-top: 0;
+}
+
+.guide-tip {
+  background: #fff8e0;
+  border-left: 4px solid #b8860b;
+  padding: 0.5em 1em;
+  font-size: 1rem;
+}
+
+/* --- Contextual Workflow Banner --- */
+.workflow-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  border: 2px solid #0055cc;
+  border-left-width: 5px;
+  background: #f0f5ff;
+  padding: 1rem 1.25rem;
+  border-radius: 0.25rem;
+  margin-bottom: 1.5rem;
+}
+
+.workflow-banner p {
+  margin: 0;
+}
+
+.workflow-banner .banner-icon {
+  flex-shrink: 0;
+  font-size: 1.333rem;
+}
+
+.workflow-banner a {
+  font-weight: 700;
+}
+
+/* --- Quick-Start Cards (index) --- */
+.quickstart-steps {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  gap: 1rem;
+  margin: 1.5rem 0;
+}
+
+.quickstart-step {
+  border: 2px solid #0055cc;
+  border-top-width: 5px;
+  border-radius: 0.25rem;
+  padding: 1rem;
+  text-align: center;
+}
+
+.quickstart-step .qs-number {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #0055cc;
+}
+
+.quickstart-step h3 {
+  margin: 0.25rem 0 0.5rem;
+  font-size: 1.125rem;
+}
+
+.quickstart-step p {
+  font-size: 1rem;
+  margin-bottom: 0;
+}

@@ -1,0 +1,37 @@
+{
+  "name": "@daisy/ace-report",
+  "version": "1.4.5-alpha.1",
+  "engines": {
+    "node": ">=20.0.0",
+    "yarn": "^1.22.0",
+    "npm": ">=10.0.0"
+  },
+  "description": "Reporting utilities for Ace",
+  "author": {
+    "name": "DAISY developers",
+    "organization": "DAISY Consortium",
+    "url": "http://www.daisy.org/"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/daisy/ace",
+    "directory": "packages/ace-report"
+  },
+  "bugs": {
+    "url": "https://github.com/daisy/ace/issues"
+  },
+  "license": "MIT",
+  "main": "lib/index.js",
+  "dependencies": {
+    "@daisy/ace-config": "1.4.5-alpha.1",
+    "@daisy/ace-localize": "1.4.5-alpha.1",
+    "@daisy/ace-meta": "1.4.5-alpha.1",
+    "escape-html": "^1.0.3",
+    "fs-extra": "^11.3.4",
+    "handlebars": "^4.7.9",
+    "winston": "^3.19.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

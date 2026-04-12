@@ -1,0 +1,40 @@
+{
+  "name": "@daisy/ace-core",
+  "version": "1.4.5-alpha.1",
+  "engines": {
+    "node": ">=20.0.0",
+    "yarn": "^1.22.0",
+    "npm": ">=10.0.0"
+  },
+  "description": "Core library for Ace",
+  "author": {
+    "name": "DAISY developers",
+    "organization": "DAISY Consortium",
+    "url": "http://www.daisy.org/"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/daisy/ace",
+    "directory": "packages/ace-core"
+  },
+  "bugs": {
+    "url": "https://github.com/daisy/ace/issues"
+  },
+  "license": "MIT",
+  "main": "lib/index.js",
+  "dependencies": {
+    "@daisy/ace-localize": "1.4.5-alpha.1",
+    "@daisy/ace-logger": "1.4.5-alpha.1",
+    "@daisy/ace-meta": "1.4.5-alpha.1",
+    "@daisy/ace-report": "1.4.5-alpha.1",
+    "@daisy/ace-report-axe": "1.4.5-alpha.1",
+    "@daisy/epub-utils": "1.4.5-alpha.1",
+    "@daisy/axe-core-for-ace": "4.11.2-canary.1",
+    "p-map": "^4.0.0",
+    "tmp": "^0.2.5",
+    "winston": "^3.19.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

@@ -6,6 +6,28 @@
 {% block content %}
 <p>Check and fix your Office documents for compliance with the <a href="{{ url_for('guidelines.guidelines_page') }}">ACB Large Print Guidelines</a> and WCAG 2.2 AA accessibility standards. No installation required -- upload a file and get results instantly.</p>
 
+<section aria-labelledby="quickstart-heading">
+  <h2 id="quickstart-heading">Quick Start</h2>
+  <div class="quickstart-steps">
+    <div class="quickstart-step">
+      <div class="qs-number" aria-hidden="true">1</div>
+      <h3><a href="{{ url_for('audit.audit_form') }}">Audit</a></h3>
+      <p>Upload your document and see every accessibility issue, organized by severity.</p>
+    </div>
+    <div class="quickstart-step">
+      <div class="qs-number" aria-hidden="true">2</div>
+      <h3><a href="{{ url_for('fix.fix_form') }}">Fix</a></h3>
+      <p>Auto-correct fonts, sizes, spacing, and emphasis. Download a compliant copy.</p>
+    </div>
+    <div class="quickstart-step">
+      <div class="qs-number" aria-hidden="true">3</div>
+      <h3><a href="{{ url_for('audit.audit_form') }}">Re-Audit</a></h3>
+      <p>Upload the fixed document to confirm. Address any remaining manual items.</p>
+    </div>
+  </div>
+  <p>New to this tool? <a href="{{ url_for('guide.guide_page') }}">Read the full user guide</a> for step-by-step help with every feature.</p>
+</section>
+
 <section aria-labelledby="formats-heading">
   <h2 id="formats-heading">Supported Document Formats</h2>
 

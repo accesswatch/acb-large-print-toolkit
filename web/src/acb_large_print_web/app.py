@@ -8,7 +8,7 @@ import os
 from flask import Flask, flash
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
-from flask_wtf.csrf import CSRFProtect
+from flask_wtf.csrf import CSRFError, CSRFProtect
 
 from .rules import get_help_urls_map, get_rules_by_category, get_rules_by_severity
 
@@ -23,9 +23,10 @@ limiter = Limiter(
 def create_app(config: dict | None = None) -> Flask:
     """Create and configure the Flask application."""
     app = Flask(__name__)
+    app.url_map.strict_slashes = False
 
     # Defaults
-    app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024  # 16 MB
+    app.config["MAX_CONTENT_LENGTH"] = 500 * 1024 * 1024  # 500 MB
     secret = os.environ.get("SECRET_KEY", "")
     if not secret:
         secret = os.urandom(32).hex()
@@ -75,6 +76,7 @@ def create_app(config: dict | None = None) -> Flask:
     from .routes.feedback import feedback_bp
     from .routes.about import about_bp
     from .routes.convert import convert_bp
+    from .routes.guide import guide_bp
 
     app.register_blueprint(main_bp)
     app.register_blueprint(audit_bp, url_prefix="/audit")
@@ -83,6 +85,7 @@ def create_app(config: dict | None = None) -> Flask:
     app.register_blueprint(export_bp, url_prefix="/export")
     app.register_blueprint(convert_bp, url_prefix="/convert")
     app.register_blueprint(guidelines_bp, url_prefix="/guidelines")
+    app.register_blueprint(guide_bp, url_prefix="/guide")
     app.register_blueprint(feedback_bp, url_prefix="/feedback")
     app.register_blueprint(about_bp, url_prefix="/about")
 
@@ -91,12 +94,21 @@ def create_app(config: dict | None = None) -> Flask:
     def health():
         return "ok", 200
 
+    @app.errorhandler(CSRFError)
+    def csrf_error(e):
+        return _render_error(
+            "Session Expired",
+            "Your form session has expired. Please go back, refresh the page, "
+            "and try again.",
+            400,
+        )
+
     # Error handlers
     @app.errorhandler(413)
     def too_large(e):
         return _render_error(
             "File Too Large",
-            "The uploaded file exceeds the 16 MB size limit. "
+            "The uploaded file exceeds the 500 MB size limit. "
             "Please upload a smaller file.",
             413,
         )

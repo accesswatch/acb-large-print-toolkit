@@ -1,0 +1,52 @@
+{
+  "name": "@daisy/ace",
+  "version": "1.4.5-alpha.1",
+  "engines": {
+    "node": ">=20.0.0",
+    "yarn": "^1.22.0",
+    "npm": ">=10.0.0"
+  },
+  "description": "Ace by DAISY, an Accessibility Checker for EPUB",
+  "keywords": [
+    "a11y",
+    "accessibility",
+    "ace",
+    "checker",
+    "daisy",
+    "epub",
+    "validator",
+    "wcag"
+  ],
+  "author": {
+    "name": "DAISY developers",
+    "organization": "DAISY Consortium",
+    "url": "http://www.daisy.org/"
+  },
+  "homepage": "https://daisy.github.io/ace",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/daisy/ace",
+    "directory": "packages/ace"
+  },
+  "bugs": {
+    "url": "https://github.com/daisy/ace/issues"
+  },
+  "license": "MIT",
+  "bin": {
+    "ace": "./bin/ace.js",
+    "ace-http": "./bin/ace-http.js",
+    "ace-electron": "./bin/ace-electron.js",
+    "ace-puppeteer": "./bin/ace-puppeteer.js"
+  },
+  "main": "lib/index.js",
+  "dependencies": {
+    "@daisy/ace-axe-runner-electron": "1.4.5-alpha.1",
+    "@daisy/ace-cli": "1.4.5-alpha.1",
+    "@daisy/ace-core": "1.4.5-alpha.1",
+    "@daisy/ace-http": "1.4.5-alpha.1",
+    "electron": "^41.2.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

@@ -1,0 +1,71 @@
+{
+    "checkepub": {
+        "langmissing": {
+            "kbtitle": "Sprog",
+            "resdesc": "Tilføj den manglende OPF xml:lang attribut",
+            "ruledesc": "Sprog skal angives (xml:lang i OPF pakken)",
+            "testdesc": "Sikrer at OPF XML sprog-attributten er angivet"
+        },
+        "mediaoverlaypagebreakviolation": {
+            "kbtitle": "Sidenavigation",
+            "resdesc": "Tilføj epub:type sideskift i SMIL par elementet ({{ref}})",
+            "ruledesc": "SMIL filen skal referere til sideskift ({{ref}})",
+            "testdesc": "Sikrer at Media Overlays har referencer til fysiske sideskift ({{ref}})"
+        },
+        "metadatadeprecated": {
+            "kbtitle": "Metadata for tilgængelighed fra Schema.org",
+            "resdesc": "Undgå at bruge '{{name}}', det er forældet metadata",
+            "ruledesc": "Brug af '{{name}}' metadata frarådes",
+            "testdesc": "Tjekker at der ikke er brugt forældet metadata"
+        },
+        "metadatainvalid": {
+            "kbtitle": "Metadata for tilgængelighed fra Schema.org",
+            "resdesc": "Brug en af metadata-værdierne defineret af Schema.org",
+            "ruledesc": "'{{name}}' metadata-feltet skal have en tilladt værdi",
+            "testdesc": "Værdien '{{value}}' er ikke tilladt for '{{name}}' metadata-feltet"
+        },
+        "metadataprintpagenumbers": {
+            "kbtitle": "Metadata for tilgængelighed fra Schema.org",
+            "resdesc": "Tilføj en liste over sider til navigations-dokumentet",
+            "ruledesc": "Når tilgængeligheds-egenskaben 'pageNavigation' bruges, bør navigations-dokumentet indeholde en liste over sider",
+            "testdesc": "Tilgængeligheds-egenskaben 'pageNavigation' bruges, men ingen liste over sider er angivet"
+        },
+        "metadataviolation": {
+            "kbtitle": "Metadata for tilgængelighed fra Schema.org",
+            "resdesc": "Tilføj et '{{name}}' metadata-element til pakke-dokumentet",
+            "ruledesc": "Publikationen skal angive et '{{name}}' metadata-element",
+            "ruledesc_alt": "Publikationen skal angive et '{{name}}' metadata-element (SHOULD)",
+            "testdesc": "Sikrer at '{{name}}' metadata-elementet er til stede"
+        },
+        "missingpagebreakviolation": {
+            "kbtitle": "Sidenavigation",
+            "resdesc": "Sørg for at sidelisten indeholder alle sideskift ({{ref}})",
+            "ruledesc": "Publikationens sideliste skal indeholde referencer til at alle sideskift ({{ref}})",
+            "testdesc": "Tjekker at alle sideskift er med i sidelisten ({{ref}})"
+        },
+        "ordertocviolation": {
+            "kbtitle": "Indholdsfortegnelse",
+            "resdesc": "Rækkefølge for elementer i indholdsfortegnelsen ({{ref}})",
+            "ruledesc": "Indholdsfortegnelsen skal være magen til læserækkefølgen ({{ref}})",
+            "testdesc": "Sikrer at publikationens indholdsfortegnelse er i korrekt rækkefølge ({{ref}})"
+        },
+        "pagelistbrokenviolation": {
+            "kbtitle": "Sidenavigation",
+            "resdesc": "Sørg for at alle elementer i sidelisten peger på epub:type sideskift ({{ref}})",
+            "ruledesc": "Publikationens sideliste skal referere til sideskift ({{ref}})",
+            "testdesc": "Sikrer at sidelisten refererer til sideskift ({{ref}})"
+        },
+        "pagesourceviolation": {
+            "kbtitle": "Sidenavigation",
+            "resdesc": "Tilføj et 'dc:source / pageBreakSource' metadata-element til pakke-dokumentet",
+            "ruledesc": "Publikationer med sideskift skal angive et 'dc:source / pageBreakSource' metadata-element",
+            "testdesc": "Sikrer at kilden til sideskift er identificeret"
+        },
+        "titleviolation": {
+            "kbtitle": "EPUB titel",
+            "resdesc": "Tilføj et 'dc:title' metadata-element til pakke-dokumentet",
+            "ruledesc": "Publikationer skal have en titel",
+            "testdesc": "Sikrer at EPUB'en har en titel"
+        }
+    }
+}

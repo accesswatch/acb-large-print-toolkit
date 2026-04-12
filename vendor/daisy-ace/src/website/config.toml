@@ -1,0 +1,9 @@
+baseURL = "https://daisy.github.io/ace"
+languageCode = "en-us"
+title = "Ace, by DAISY"
+description = "hi"
+theme = "daisy"
+publishDir = "site"
+
+[params]
+  description = "**[Ace](/ace)**, an accessibility checker for EPUB! A **[DAISY Consortium](http://daisy.org)** project. Latest version: v1.4.4"

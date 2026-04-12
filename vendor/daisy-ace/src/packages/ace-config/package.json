@@ -1,0 +1,33 @@
+{
+  "name": "@daisy/ace-config",
+  "version": "1.4.5-alpha.1",
+  "engines": {
+    "node": ">=20.0.0",
+    "yarn": "^1.22.0",
+    "npm": ">=10.0.0"
+  },
+  "description": "Config utilities for Ace",
+  "author": {
+    "name": "DAISY developers",
+    "organization": "DAISY Consortium",
+    "url": "http://www.daisy.org/"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/daisy/ace",
+    "directory": "packages/ace-config"
+  },
+  "bugs": {
+    "url": "https://github.com/daisy/ace/issues"
+  },
+  "license": "MIT",
+  "main": "lib/index.js",
+  "dependencies": {
+    "conf": "^9.0.2",
+    "env-paths": "^2.2.1",
+    "lodash.mergewith": "^4.6.2"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

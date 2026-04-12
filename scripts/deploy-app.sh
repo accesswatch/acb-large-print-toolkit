@@ -52,8 +52,8 @@ for F in "$WEB_ROOT/$COMPOSE_FILE" "$WEB_ROOT/.env" "$WEB_ROOT/Caddyfile" "$WEB_
     fi
 done
 
-if [[ ! -d "$APP_ROOT/word-addon/src/acb_large_print" ]]; then
-    echo "ERROR: word-addon/src/acb_large_print/ directory missing (needed for Docker build)."
+if [[ ! -d "$APP_ROOT/desktop/src/acb_large_print" ]]; then
+    echo "ERROR: desktop/src/acb_large_print/ directory missing (needed for Docker build)."
     MISSING=1
 fi
 

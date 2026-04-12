@@ -1,0 +1,71 @@
+{
+    "checkepub": {
+        "langmissing": {
+            "kbtitle": "",
+            "resdesc": "",
+            "ruledesc": "",
+            "testdesc": ""
+        },
+        "mediaoverlaypagebreakviolation": {
+            "kbtitle": "",
+            "resdesc": "",
+            "ruledesc": "",
+            "testdesc": ""
+        },
+        "metadatadeprecated": {
+            "kbtitle": "",
+            "resdesc": "",
+            "ruledesc": "",
+            "testdesc": ""
+        },
+        "metadatainvalid": {
+            "kbtitle": "Métadonnées d'accessibilité Schema.org",
+            "resdesc": "Utiliser l’une des valeurs définie par schema.org",
+            "ruledesc": "La métadonnée '{{name}}' doit avoir une valeur parmi les valeurs prédéfinies",
+            "testdesc": "La valeur '{{value}}' est incorrecte pour la métadonnée '{{name}}'"
+        },
+        "metadataprintpagenumbers": {
+            "kbtitle": "Schema.org Accessibility Metadata",
+            "resdesc": "Ajouter une liste de pages au document de navigation",
+            "ruledesc": "Quand la propriété d’accessibilité 'pageNavigation' est déclarée, le document de navigation doit avoir une liste de pages",
+            "testdesc": "La propriété d’accessibilité 'pageNavigation' est déclarée mais aucune liste de pages n’a été trouvée"
+        },
+        "metadataviolation": {
+            "kbtitle": "Métadonnées d'accessibilité Schema.org",
+            "resdesc": "Ajouter la métadonnée '{{name}}' au Document de Package",
+            "ruledesc": "Toute publication doit déclarer la métadonnée '{{name}}'",
+            "ruledesc_alt": "Toute publication devrait déclarer la métadonnée '{{name}}'",
+            "testdesc": "Vérifie que la métadonnée '{{name}}' est présente"
+        },
+        "missingpagebreakviolation": {
+            "kbtitle": "",
+            "resdesc": "",
+            "ruledesc": "",
+            "testdesc": ""
+        },
+        "ordertocviolation": {
+            "kbtitle": "",
+            "resdesc": "",
+            "ruledesc": "",
+            "testdesc": ""
+        },
+        "pagelistbrokenviolation": {
+            "kbtitle": "",
+            "resdesc": "",
+            "ruledesc": "",
+            "testdesc": ""
+        },
+        "pagesourceviolation": {
+            "kbtitle": "Navigation par page",
+            "resdesc": "Ajouter la métadonnée 'dc:source / pageBreakSource' au Document de Package",
+            "ruledesc": "Une publication avec des sauts de page doit déclarer la métadonnée 'dc:source / pageBreakSource'",
+            "testdesc": "Vérifie que la source des sauts de page est identifiée"
+        },
+        "titleviolation": {
+            "kbtitle": "Titre de l’EPUB",
+            "resdesc": "Ajouter la métadonnée 'dc:title' au Document de Package",
+            "ruledesc": "Une publication doit avoir un titre",
+            "testdesc": "Vérifie que le EPUB a un titre"
+        }
+    }
+}

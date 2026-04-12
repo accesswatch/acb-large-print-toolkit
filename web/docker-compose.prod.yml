@@ -5,7 +5,7 @@
 #   - web/.env file with SECRET_KEY, FEEDBACK_PASSWORD, LOG_LEVEL
 #   - web/Caddyfile with your domain configuration
 #   - web/www/ directory for the main site static files
-#   - word-addon/ directory at ../word-addon/ (needed for Docker build)
+#   - desktop/ directory at ../desktop/ (needed for Docker build)
 #
 # Usage:
 #   cd ~/app/web

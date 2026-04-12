@@ -74,6 +74,33 @@
 </section>
 {% endif %}
 
+{% if result.metadata_display and result.metadata_display.has_any_metadata %}
+<section aria-labelledby="metadata-heading">
+  <h2 id="metadata-heading">Accessibility Metadata</h2>
+  <p>Human-readable accessibility metadata extracted from this EPUB per the
+    <a href="https://w3c.github.io/publ-a11y/a11y-meta-display-guide/2.0/draft/techniques/epub-metadata/">W3C Accessibility Metadata Display Guide 2.0</a>.</p>
+  {% for section in result.metadata_display.sections() %}
+  {% if section.has_metadata %}
+  <details open>
+    <summary><strong>{{ section.title }}</strong></summary>
+    <ul>
+      {% for stmt in section.statements %}
+      <li>{{ stmt }}</li>
+      {% endfor %}
+    </ul>
+  </details>
+  {% endif %}
+  {% endfor %}
+</section>
+{% elif doc_format == "epub" %}
+<section aria-labelledby="metadata-heading">
+  <h2 id="metadata-heading">Accessibility Metadata</h2>
+  <p>This EPUB does not contain machine-readable accessibility metadata. Publishers should include
+    <a href="https://www.w3.org/wiki/WebSchemas/Accessibility">schema.org accessibility properties</a>
+    in the OPF package document.</p>
+</section>
+{% endif %}
+
 <section aria-labelledby="next-heading">
   <h2 id="next-heading">What's Next?</h2>
   {% if result.findings %}
@@ -90,6 +117,8 @@
   <ul>
     <li><a href="{{ url_for('audit.audit_form') }}">Audit another document</a></li>
     <li><a href="{{ url_for('guidelines.guidelines_page') }}">Read the full ACB guidelines</a></li>
+    <li><a href="{{ url_for('guide.guide_page') }}#understanding-results">Help understanding these results</a></li>
+    <li><a href="{{ url_for('guide.guide_page') }}#common-issues">Common issues and how to fix them</a></li>
   </ul>
 </section>
 {% endblock %}

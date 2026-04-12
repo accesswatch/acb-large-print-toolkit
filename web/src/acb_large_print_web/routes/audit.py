@@ -16,6 +16,15 @@ from ..upload import UploadError, cleanup_token, validate_upload
 audit_bp = Blueprint("audit", __name__)
 
 
+def _is_ace_installed() -> bool:
+    """Ace is a required dependency -- always True in the web app."""
+    try:
+        from acb_large_print.ace_runner import ace_available
+        return ace_available()
+    except ImportError:
+        return False
+
+
 def _audit_by_extension(saved_path: Path):
     """Dispatch to the correct auditor based on file extension."""
     ext = saved_path.suffix.lower()
@@ -46,7 +55,7 @@ def _format_from_path(saved_path: Path) -> str:
 
 @audit_bp.route("/", methods=["GET"])
 def audit_form():
-    return render_template("audit_form.html")
+    return render_template("audit_form.html", ace_installed=_is_ace_installed())
 
 
 @audit_bp.route("/", methods=["POST"])
@@ -92,14 +101,16 @@ def audit_submit():
             result=result,
             mode_label=mode_label,
             doc_format=doc_format,
+            ace_installed=_is_ace_installed(),
         )
     except UploadError as e:
-        return render_template("audit_form.html", error=str(e)), 400
+        return render_template("audit_form.html", error=str(e), ace_installed=_is_ace_installed()), 400
     except Exception:
         return render_template(
             "audit_form.html",
             error="An error occurred while processing the document. "
             "Please ensure it is a valid Office file and try again.",
+            ace_installed=_is_ace_installed(),
         ), 500
     finally:
         if token:

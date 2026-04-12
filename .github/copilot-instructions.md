@@ -12,12 +12,12 @@ This repository contains the ACB Document Accessibility Toolkit -- a VS Code age
 - `.github/skills/markdown-accessibility/` -- Pattern library, severity scoring, emoji maps, fix templates
 - `styles/` -- Reference CSS stylesheet (acb-large-print.css)
 - `templates/` -- HTML boilerplate skeleton (acb-large-print-boilerplate.html)
-- `docs/` -- Detailed toolkit documentation, announcement, PRD, and deployment guide
+- `docs/` -- Detailed toolkit documentation, announcement, PRD, deployment guide, and source ACB specification (.docx)
 - `samples/` -- Example source Markdown and converted HTML files
-- `reference/` -- Source ACB specification document (.docx)
+- `vendor/` -- Vendored third-party source (DAISY Ace, DAISY a11y-meta-viewer)
 - `web/` -- Flask web application (browser-based audit, fix, template, export, convert, guidelines, about, feedback)
-- `word-addon/` -- Standalone Python CLI + wxPython GUI tool (auditor, fixer, converter, template builder, exporter)
-- `word-addin/` -- Office.js Web Add-in for Microsoft Word ribbon integration (TypeScript port)
+- `desktop/` -- Standalone Python CLI + wxPython GUI tool (auditor, fixer, converter, template builder, exporter)
+- `office-addin/` -- Office.js Web Add-in for Microsoft Word ribbon integration (TypeScript port)
 
 ## Key conventions
 
@@ -52,17 +52,18 @@ This repository contains the ACB Document Accessibility Toolkit -- a VS Code age
 
 The ACB audit rules, fix logic, constants, and severity definitions exist in multiple implementations that MUST stay in sync:
 
-| Concern                                  | Python (word-addon)                                           | TypeScript (word-addin)                       | Flask Web (web)                | CSS/HTML (styles, agents)                                      |
+| Concern                                  | Python (desktop)                                           | TypeScript (office-addin)                       | Flask Web (web)                | CSS/HTML (styles, agents)                                      |
 | ---------------------------------------- | ------------------------------------------------------------- | --------------------------------------------- | ------------------------------ | -------------------------------------------------------------- |
-| Constants (font sizes, margins, spacing) | `word-addon/src/acb_large_print/constants.py`                 | `word-addin/src/constants.ts`                 | Imports from Python core       | `styles/acb-large-print.css`                                   |
-| Audit rules + severity                   | `word-addon/src/acb_large_print/constants.py` (`AUDIT_RULES`) | `word-addin/src/constants.ts` (`AUDIT_RULES`) | Imports from Python core       | Agent rules in `.github/agents/large-print-formatter.agent.md` |
-| Audit logic (Word)                       | `word-addon/src/acb_large_print/auditor.py`                   | `word-addin/src/auditor.ts`                   | Imports from Python core       | N/A                                                            |
-| Audit logic (Excel)                      | `word-addon/src/acb_large_print/xlsx_auditor.py`              | N/A                                           | Imports from Python core       | N/A                                                            |
-| Audit logic (PowerPoint)                 | `word-addon/src/acb_large_print/pptx_auditor.py`              | N/A                                           | Imports from Python core       | N/A                                                            |
-| Audit logic (ePub)                        | `word-addon/src/acb_large_print/epub_auditor.py`              | N/A                                           | Imports from Python core       | N/A                                                            |
-| Fix logic                                | `word-addon/src/acb_large_print/fixer.py`                     | `word-addin/src/fixer.ts`                     | Imports from Python core       | N/A                                                            |
-| Converter (MarkItDown)                   | `word-addon/src/acb_large_print/converter.py`                 | N/A                                           | Imports from Python core       | N/A                                                            |
-| Template builder                         | `word-addon/src/acb_large_print/template.py`                  | `word-addin/src/template.ts`                  | Imports from Python core       | N/A                                                            |
+| Constants (font sizes, margins, spacing) | `desktop/src/acb_large_print/constants.py`                 | `office-addin/src/constants.ts`                 | Imports from Python core       | `styles/acb-large-print.css`                                   |
+| Audit rules + severity                   | `desktop/src/acb_large_print/constants.py` (`AUDIT_RULES`) | `office-addin/src/constants.ts` (`AUDIT_RULES`) | Imports from Python core       | Agent rules in `.github/agents/large-print-formatter.agent.md` |
+| Audit logic (Word)                       | `desktop/src/acb_large_print/auditor.py`                   | `office-addin/src/auditor.ts`                   | Imports from Python core       | N/A                                                            |
+| Audit logic (Excel)                      | `desktop/src/acb_large_print/xlsx_auditor.py`              | N/A                                           | Imports from Python core       | N/A                                                            |
+| Audit logic (PowerPoint)                 | `desktop/src/acb_large_print/pptx_auditor.py`              | N/A                                           | Imports from Python core       | N/A                                                            |
+| Audit logic (ePub)                       | `desktop/src/acb_large_print/epub_auditor.py`              | N/A                                           | Imports from Python core       | N/A                                                            |
+| ePub metadata display (W3C Guide 2.0)   | `desktop/src/acb_large_print/epub_meta_display.py`         | N/A                                           | Imports from Python core       | Vendored JS in `vendor/daisy-a11y-meta-viewer/`                |
+| Fix logic                                | `desktop/src/acb_large_print/fixer.py`                     | `office-addin/src/fixer.ts`                     | Imports from Python core       | N/A                                                            |
+| Converter (MarkItDown)                   | `desktop/src/acb_large_print/converter.py`                 | N/A                                           | Imports from Python core       | N/A                                                            |
+| Template builder                         | `desktop/src/acb_large_print/template.py`                  | `office-addin/src/template.ts`                  | Imports from Python core       | N/A                                                            |
 | Web routes and templates                 | N/A                                                           | N/A                                           | `web/src/acb_large_print_web/` | N/A                                                            |
 
 **When modifying ANY rule, constant, or check:**

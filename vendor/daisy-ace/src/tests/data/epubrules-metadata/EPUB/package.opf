@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<package xmlns="http://www.idpf.org/2007/opf" version="3.0" xml:lang="en" unique-identifier="uid">
+<metadata xmlns:dc="http://purl.org/dc/elements/1.1/">
+  <dc:title id="title">Minimal EPUB 3.0</dc:title>
+  <dc:language>en</dc:language>
+  <dc:identifier id="uid">NOID</dc:identifier>
+  <meta property="dcterms:modified">2017-01-01T00:00:01Z</meta>
+  <!-- Fail #4: good metadata name/value, but using EPUB2 syntax -->
+  <!-- meta property="schema:accessibilityFeature">structuralNavigation</meta -->
+  <meta name="schema:accessibilityFeature" content="structuralNavigation" />
+  <!-- Fail #1: missing accessibility summary -->
+  <!-- <meta property="schema:accessibilitySummary">everything OK!</meta> -->
+  <meta property="schema:accessibilityHazard">noFlashingHazard</meta>
+  <meta property="schema:accessibilityHazard">noSoundHazard</meta>
+  <meta property="schema:accessibilityHazard">noMotionSimulationHazard</meta>
+  <!-- Fail #2: bad metadata value -->
+  <meta property="schema:accessMode">text</meta>
+  <!-- Fail #3: good metadata values, but not allowed to combine (unlike accessModeSufficient) -->
+  <meta property="schema:accessibilityControl">fullKeyboardControl,fullMouseControl</meta>
+  <meta property="schema:accessModeSufficient">visual,textual</meta>
+  <!-- Fail #5: invalid value -->
+  <meta property="dcterms:conformsTo">EPUB Accessibility 1.1 - WCAG 2.0 Level Z</meta>
+</metadata>
+<manifest>
+  <item id="nav"  href="nav.xhtml" media-type="application/xhtml+xml" properties="nav"/>
+  <item id="content_001"  href="content_001.xhtml" media-type="application/xhtml+xml"/>
+</manifest>
+<spine>
+  <itemref idref="content_001" />
+</spine>
+</package>

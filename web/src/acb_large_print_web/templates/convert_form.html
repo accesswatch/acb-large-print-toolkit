@@ -4,6 +4,12 @@
 {% block heading %}Convert a Document{% endblock %}
 
 {% block content %}
+{% set tip_icon = "&#9758;" %}
+{% set tip_text = "Need to extract text or create an accessible web page? Pick one of the options below." %}
+{% set tip_link_url = url_for('guide.guide_page') + '#how-convert' %}
+{% set tip_link_text = "Read the convert guide" %}
+{% include '_workflow_tip.html' %}
+
 <p>Change your document from one format to another. Pick what you want to end up with, upload your file, and we will do the rest.</p>
 
 {% if error %}
@@ -66,7 +72,7 @@
       <input type="file" id="document" name="document" accept="{{ all_accept }}"
              aria-describedby="file-help"
              {% if error %}aria-invalid="true"{% endif %}>
-      <p id="file-help" class="help-text">Maximum file size: 16 MB. The accepted file types depend on which option you chose above.</p>
+      <p id="file-help" class="help-text">Maximum file size: 500 MB. The accepted file types depend on which option you chose above.</p>
     </div>
   </fieldset>
 

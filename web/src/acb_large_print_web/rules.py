@@ -303,6 +303,40 @@ _RULE_HELP_URLS: dict[str, list[tuple[str, str]]] = {
     ],
     "EPUB-LINK-TEXT": [
         ("WebAIM: Links and Hypertext", "https://webaim.org/techniques/hypertext/"),
+        ("Accessible Publishing Knowledge Base: Links", "https://kb.daisy.org/publishing/docs/html/links.html"),
+    ],
+    "EPUB-ACCESSIBILITY-HAZARD": [
+        ("EPUB Accessibility 1.1: Discovery Metadata", "https://www.w3.org/TR/epub-a11y-11/#sec-disc-package"),
+        ("Accessible Publishing Knowledge Base: Hazards", "https://kb.daisy.org/publishing/docs/metadata/schema.org/accessibilityHazard.html"),
+        ("DAISY Ace: EPUB Rules", "https://daisy.github.io/ace/rules/epub/"),
+    ],
+    "EPUB-ACCESS-MODE-SUFFICIENT": [
+        ("EPUB Accessibility 1.1: Discovery Metadata", "https://www.w3.org/TR/epub-a11y-11/#sec-disc-package"),
+        ("Accessible Publishing Knowledge Base: Access Mode", "https://kb.daisy.org/publishing/docs/metadata/schema.org/accessModeSufficient.html"),
+        ("DAISY Ace: EPUB Rules", "https://daisy.github.io/ace/rules/epub/"),
+    ],
+    "EPUB-PAGE-LIST": [
+        ("Accessible Publishing Knowledge Base: Page List", "https://kb.daisy.org/publishing/docs/navigation/pagelist.html"),
+        ("DAISY Ace: EPUB Rules", "https://daisy.github.io/ace/rules/epub/"),
+    ],
+    "EPUB-PAGE-SOURCE": [
+        ("Accessible Publishing Knowledge Base: Page List", "https://kb.daisy.org/publishing/docs/navigation/pagelist.html"),
+        ("EPUB Accessibility 1.1", "https://www.w3.org/TR/epub-a11y-11/"),
+    ],
+    "EPUB-MATHML-ALT": [
+        ("Accessible Publishing Knowledge Base: MathML", "https://kb.daisy.org/publishing/docs/html/mathml.html"),
+        ("DAISY MathCAT (Math Speech)", "https://github.com/daisy/MathCAT"),
+        ("WebAIM: Alternative Text", "https://webaim.org/techniques/alttext/"),
+    ],
+    "ACE-EPUB-CHECK": [
+        ("DAISY Ace: EPUB Rules", "https://daisy.github.io/ace/rules/epub/"),
+        ("EPUB Accessibility 1.1", "https://www.w3.org/TR/epub-a11y-11/"),
+        ("Accessible Publishing Knowledge Base", "https://kb.daisy.org/publishing/"),
+    ],
+    "ACE-AXE-CHECK": [
+        ("DAISY Ace: HTML Rules", "https://daisy.github.io/ace/rules/html/"),
+        ("Deque axe-core Rules", "https://github.com/dequelabs/axe-core/blob/develop/doc/rule-descriptions.md"),
+        ("Accessible Publishing Knowledge Base", "https://kb.daisy.org/publishing/"),
     ],
 }
 

@@ -43,30 +43,30 @@ jobs:
           python-version: "3.12"
 
       - name: Install Python dependencies
-        working-directory: word-addon
+        working-directory: desktop
         run: |
           python -m pip install --upgrade pip
           pip install python-docx>=1.1.0 mammoth>=1.8.0 wxPython>=4.2.0
           pip install pyinstaller>=6.0
 
       - name: Build executables
-        working-directory: word-addon
+        working-directory: desktop
         run: python build.py
 
       - name: List built executables (Unix)
         if: runner.os != 'Windows'
-        working-directory: word-addon
+        working-directory: desktop
         run: ls -la dist/
 
       - name: List built executables (Windows)
         if: runner.os == 'Windows'
-        working-directory: word-addon
+        working-directory: desktop
         run: Get-ChildItem dist/
 
       # Package macOS executables into a .dmg disk image
       - name: Create DMG (macOS)
         if: runner.os == 'macOS'
-        working-directory: word-addon
+        working-directory: desktop
         run: |
           DMG_DIR=$(mktemp -d)
           cp dist/acb-large-print-cli-macos-arm64 "$DMG_DIR/"
@@ -82,7 +82,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.label }}
-          path: word-addon/dist/
+          path: desktop/dist/
           retention-days: 30
 
   # -- Aggregate all platform builds into one download --

@@ -1,0 +1,32 @@
+{
+  "name": "@daisy/jest-puppeteer",
+  "version": "1.4.5-alpha.1",
+  "engines": {
+    "node": ">=20.0.0",
+    "yarn": "^1.22.0",
+    "npm": ">=10.0.0"
+  },
+  "description": "Utilities for running Jest tests through Google Puppeteer",
+  "author": {
+    "name": "DAISY developers",
+    "organization": "DAISY Consortium",
+    "url": "http://www.daisy.org/"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/daisy/ace",
+    "directory": "packages/jest-puppeteer"
+  },
+  "bugs": {
+    "url": "https://github.com/daisy/ace/issues"
+  },
+  "license": "MIT",
+  "main": "lib/index.js",
+  "dependencies": {
+    "@daisy/puppeteer-utils": "1.4.5-alpha.1",
+    "jest-mock": "^30.3.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

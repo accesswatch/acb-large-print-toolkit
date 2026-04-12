@@ -1,0 +1,10 @@
+{# Partial: contextual workflow banner showing suggested next/previous step.
+   Include with: {% include '_workflow_tip.html' %}
+   Set tip_icon, tip_text, and tip_link_url/tip_link_text before including,
+   or use the page-specific defaults defined in each form template. #}
+{% if tip_text is defined and tip_text %}
+<div class="workflow-banner" role="note" aria-label="Workflow tip">
+  <span class="banner-icon" aria-hidden="true">{{ tip_icon | default("&#9432;") }}</span>
+  <p>{{ tip_text }} {% if tip_link_url is defined and tip_link_url %}<a href="{{ tip_link_url }}">{{ tip_link_text | default("Learn more") }}</a>{% endif %}</p>
+</div>
+{% endif %}

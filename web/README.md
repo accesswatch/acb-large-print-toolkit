@@ -61,7 +61,7 @@ web/
 ```bash
 cd web
 pip install -e ".[dev]"
-pip install -e "../word-addon"
+pip install -e "../desktop"
 
 flask --app acb_large_print_web.app:create_app run --debug
 ```
@@ -93,14 +93,14 @@ The app is served on port 8000. For production deployment with Caddy (auto-TLS),
 | `SECRET_KEY` | Random per-start | Flask session secret. Set a fixed value in production. |
 | `FEEDBACK_PASSWORD` | (unset) | Set to enable `/feedback/review?key=<password>`. Disabled when unset. |
 | `LOG_LEVEL` | `INFO` | Python logging level (DEBUG, INFO, WARNING, ERROR). |
-| `MAX_CONTENT_LENGTH` | 16 MB | Maximum upload file size. |
+| `MAX_CONTENT_LENGTH` | 500 MB | Maximum upload file size. |
 
 ## Security
 
 - CSRF protection on all POST forms (Flask-WTF)
 - Rate limiting: 120 requests/minute per IP (Flask-Limiter)
 - Upload validation: .docx, .xlsx, .pptx, .md, .pdf extension whitelist, `secure_filename()`, path traversal prevention
-- 16 MB upload size limit enforced by Flask before handlers run
+- 500 MB upload size limit enforced by Flask before handlers run
 - Temp files deleted in `finally` blocks -- guaranteed cleanup on success or exception
 - Docker: non-root user, health check, tmpfs for temp files
 

@@ -23,6 +23,9 @@
 
     <dt><a href="https://www.w3.org/WAI/">W3C Web Accessibility Initiative (WAI)</a></dt>
     <dd>Develops the Web Content Accessibility Guidelines (WCAG), which this toolkit uses for digital content requirements including contrast, reflow, and line spacing.</dd>
+
+    <dt><a href="https://daisy.org/">DAISY Consortium</a></dt>
+    <dd>An international association of libraries and organizations serving people with print disabilities. DAISY develops the <a href="https://daisy.github.io/ace/">Ace accessibility checker</a>, the <a href="https://github.com/daisy/a11y-meta-viewer">Accessibility Metadata Viewer</a>, the <a href="https://daisy.github.io/pipeline/">Pipeline conversion toolchain</a>, and the <a href="https://kb.daisy.org/publishing/">Accessible Publishing Knowledge Base</a> used by this toolkit for ePub accessibility.</dd>
   </dl>
   <a href="#main" class="back-to-top">Back to top</a>
 </section>
@@ -35,6 +38,8 @@
     <li><a href="https://www.w3.org/TR/WCAG22/">WCAG 2.2</a> -- Web Content Accessibility Guidelines Level AA. Applied to digital output: 4.5:1 contrast ratio, 400% zoom reflow, 1.5x line-height.</li>
     <li><a href="https://support.microsoft.com/en-us/office/improve-accessibility-with-the-accessibility-checker-a16f6de0-2f39-4a2b-8bd8-5ad801426c7f">Microsoft Accessibility Checker</a> -- rules for Word, Excel, and PowerPoint document accessibility (alt text, table headers, reading order, hyperlink text).</li>
     <li><a href="https://pdfa.org/resource/iso-14289-pdfua/">PDF/UA (ISO 14289-1)</a> -- the international standard for accessible PDF documents. Used for PDF audit rules.</li>
+    <li><a href="https://www.w3.org/TR/epub-a11y-11/">EPUB Accessibility 1.1</a> -- W3C specification for accessible EPUB publications. Covers discovery metadata, access modes, navigation, reading order, and conformance to WCAG.</li>
+    <li><a href="https://kb.daisy.org/publishing/">DAISY Accessible Publishing Knowledge Base</a> -- the DAISY Consortium's comprehensive reference for accessible publishing practices, covering headings, images, tables, MathML, page navigation, and metadata.</li>
   </ul>
   <a href="#main" class="back-to-top">Back to top</a>
 </section>
@@ -121,12 +126,24 @@
         <td>MIT</td>
         <td>Convert documents and audio to Markdown (Microsoft)</td>
       </tr>
+      <tr>
+        <td><a href="https://daisy.github.io/ace/">DAISY Ace</a></td>
+        <td>1.3+</td>
+        <td>MIT</td>
+        <td>EPUB accessibility checker -- 100+ axe-core rules + EPUB metadata validation (<a href="https://daisy.org/">DAISY Consortium</a>)</td>
+      </tr>
+      <tr>
+        <td><a href="https://github.com/daisy/a11y-meta-viewer">DAISY a11y-meta-viewer</a></td>
+        <td>2.0</td>
+        <td>CC BY-NC-SA 4.0</td>
+        <td>Reference implementation of the <a href="https://w3c.github.io/publ-a11y/a11y-meta-display-guide/2.0/draft/techniques/epub-metadata/">W3C Accessibility Metadata Display Guide 2.0</a> -- generates human-readable accessibility statements from EPUB metadata (<a href="https://daisy.org/">DAISY Consortium</a>)</td>
+      </tr>
     </tbody>
   </table>
 
   <h3>Optional and Build Dependencies</h3>
   <table>
-    <caption>Optional libraries used for GUI, testing, and packaging</caption>
+    <caption>Optional libraries used for GUI, conversion, testing, and packaging</caption>
     <thead>
       <tr>
         <th scope="col">Library</th>
@@ -147,6 +164,12 @@
         <td>3.1+</td>
         <td>GPL-2.0</td>
         <td>Markdown to HTML conversion (server-side)</td>
+      </tr>
+      <tr>
+        <td><a href="https://daisy.github.io/pipeline/">DAISY Pipeline</a></td>
+        <td>1.14+</td>
+        <td>LGPL</td>
+        <td>Document format conversion -- EPUB, DAISY 2.02, DAISY 3, DTBook (requires Java)</td>
       </tr>
       <tr>
         <td><a href="https://docs.pytest.org/">pytest</a></td>

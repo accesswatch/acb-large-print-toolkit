@@ -117,7 +117,7 @@ The web app will:
 
 ### Architecture
 
-- The Flask web app lives in a new top-level `web/` directory alongside `word-addon/` and `word-addin/`. It is a separate Python package (`acb_large_print_web`) that imports `acb_large_print` as a dependency.
+- The Flask web app lives in a new top-level `web/` directory alongside `desktop/` and `office-addin/`. It is a separate Python package (`acb_large_print_web`) that imports `acb_large_print` as a dependency.
 - **Zero modifications** to the existing `acb_large_print` core library. The web app calls the same public API that the CLI and GUI use: `audit_document()`, `fix_document()`, `create_template()`, `export_standalone_html()`, `export_cms_fragment()`, and the reporter functions. Rule filtering happens in the web layer by post-filtering `AuditResult.findings` -- the core audit always runs all checks.
 - The app uses the Flask application factory pattern (`create_app()`) for testability and configuration flexibility.
 
@@ -410,7 +410,7 @@ No existing tests in the repo. The test suite established here will set the patt
          |       |       |       |       |
          +-------+-------+-------+       |
                  |                        |
-          acb_large_print           word-addin
+          acb_large_print           office-addin
           (Python core)             (TypeScript)
 ```
 

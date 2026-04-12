@@ -4,6 +4,12 @@
 {% block heading %}Audit a Document{% endblock %}
 
 {% block content %}
+{% set tip_icon = "&#9758;" %}
+{% set tip_text = "First time? Start with a Full Audit to see every issue." %}
+{% set tip_link_url = url_for('guide.guide_page') + '#how-audit' %}
+{% set tip_link_text = "Read the audit guide" %}
+{% include '_workflow_tip.html' %}
+
 <details class="help-accordion">
   <summary>What does the audit do?</summary>
   <p>The audit checks your document against the ACB Large Print Guidelines and WCAG 2.2 AA requirements. Rules adapt automatically to the file type:</p>
@@ -31,7 +37,7 @@
     <input type="file" id="document" name="document" accept=".docx,.xlsx,.pptx,.md,.pdf,.epub"
            aria-describedby="file-help"
            {% if error %}aria-invalid="true"{% endif %}>
-    <p id="file-help" class="help-text">Accepted formats: Word (.docx), Excel (.xlsx), PowerPoint (.pptx), Markdown (.md), PDF (.pdf), ePub (.epub). Maximum size: 16 MB.</p>
+    <p id="file-help" class="help-text">Accepted formats: Word (.docx), Excel (.xlsx), PowerPoint (.pptx), Markdown (.md), PDF (.pdf), ePub (.epub). Maximum size: 500 MB.</p>
   </div>
 
   <fieldset>

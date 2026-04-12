@@ -1,0 +1,71 @@
+{
+    "checkepub": {
+        "langmissing": {
+            "kbtitle": "Idioma",
+            "resdesc": "Adicione o atributo OPF xml:lang ausente",
+            "ruledesc": "O idioma deve ser especificado (xml:lang no elemento package do OPF)",
+            "testdesc": "Certifique-se de que o idioma XML do OPF seja fornecido"
+        },
+        "mediaoverlaypagebreakviolation": {
+            "kbtitle": "Navegação de Páginas",
+            "resdesc": "Adicione a quebra de página epub:type no elemento par do SMIL ({{ref}})",
+            "ruledesc": "SMIL deve refenciar corretamente as quebras de página ({{ref}})",
+            "testdesc": "Certifique-se de que Media Overlays referenciem as quebras de página ({{ref}})"
+        },
+        "metadatadeprecated": {
+            "kbtitle": "Metadados de Acessibilidade Schema.org",
+            "resdesc": "Evite usar o metadado obsoleto '{{name}}'",
+            "ruledesc": "O uso do metadado '{{name}}' é desencorajado",
+            "testdesc": "Verique se nenhum metadado obsoleto foi utilizado"
+        },
+        "metadatainvalid": {
+            "kbtitle": "Metadados de Acessibilidade Schema.org",
+            "resdesc": "Use um dos valores de metadados definidos pelo schema.org",
+            "ruledesc": "O metadado '{{name}}' deve ser definido como um dos valores esperados",
+            "testdesc": "O valor '{{value}}' é inválido para o metadado '{{name}}'"
+        },
+        "metadataprintpagenumbers": {
+            "kbtitle": "Metadados de Acessibilidade Schema.org",
+            "resdesc": "Adicione uma lista de páginas ao Documento de Navegação",
+            "ruledesc": "Quando o recurso de acessibilidade 'pageNavigation' é declarado, o Documento de Navegação deve incluir uma lista de páginas",
+            "testdesc": "O recurso de acessibilidade 'pageNavigation' foi declarado mas a lista de páginas está ausente"
+        },
+        "metadataviolation": {
+            "kbtitle": "Metadados de Acessibilidade Schema.org",
+            "resdesc": "Adicione o metadado '{{name}}' ao arquivo OPF",
+            "ruledesc": "Publicações devem declarar o metadado '{{name}}'",
+            "ruledesc_alt": "Publicações devem declarar o metadado '{{name}}' (SHOULD)",
+            "testdesc": "Certifique-se de que o metadado '{{name}}' está presente"
+        },
+        "missingpagebreakviolation": {
+            "kbtitle": "Navegação de Páginas",
+            "resdesc": "Certifique-se de que a lista de páginas inclua todas as quebras de página ({{ref}})",
+            "ruledesc": "A lista de páginas da publicação deve referenciar todas as quebras de página ({{ref}})",
+            "testdesc": "Verifique se todas as quebras de página estão incluídas na lista de páginas ({{ref}})"
+        },
+        "ordertocviolation": {
+            "kbtitle": "Sumário",
+            "resdesc": "Ordene os itens do Sumário ({{ref}})",
+            "ruledesc": "O Sumário deve corresponder à ordem de leitura da publicação ({{ref}})",
+            "testdesc": "Certifique-se de que o Sumário da publicação esteja ordenado ({{ref}})"
+        },
+        "pagelistbrokenviolation": {
+            "kbtitle": "Navegação de Páginas",
+            "resdesc": "Certifique-se de que os itens da lista de páginas apontem para quebras de página epub:type ({{ref}})",
+            "ruledesc": "A lista de páginas da publicação deve referenciar as quebras de página ({{ref}})",
+            "testdesc": "Certifique-se de que a lista de páginas apontem para quebras de página ({{ref}})"
+        },
+        "pagesourceviolation": {
+            "kbtitle": "Navegação de Páginas",
+            "resdesc": "Adicione a propriedade 'dc:source / pageBreakSource' ao arquivo OPF",
+            "ruledesc": "Publicações com quebras de página devem declarar o metadado 'dc:source / pageBreakSource'",
+            "testdesc": "Certifique-se de que a fonte de quebra de páginas foi identificada"
+        },
+        "titleviolation": {
+            "kbtitle": "Título do EPUB",
+            "resdesc": "Adicione a propriedade 'dc:title' ao arquivo OPF",
+            "ruledesc": "Publicações devem ter um título",
+            "testdesc": "Certifique-se de que o EPUB tem um título"
+        }
+    }
+}

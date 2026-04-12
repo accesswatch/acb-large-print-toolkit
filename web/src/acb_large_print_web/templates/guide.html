@@ -1,0 +1,592 @@
+{% extends "base.html" %}
+
+{% block title %}User Guide{% endblock %}
+{% block heading %}User Guide{% endblock %}
+
+{% block content %}
+<p>Everything you need to know to audit, fix, convert, and template your documents for ACB Large Print compliance. New to accessibility? Start with <a href="#quickstart">the quick-start walkthrough</a> below.</p>
+
+<nav aria-labelledby="guide-toc-heading">
+  <h2 id="guide-toc-heading">In This Guide</h2>
+  <ol class="guide-toc">
+    <li><a href="#quickstart">Quick-Start Walkthrough</a></li>
+    <li><a href="#how-audit">How to Audit a Document</a></li>
+    <li><a href="#how-fix">How to Fix a Document</a></li>
+    <li><a href="#how-template">How to Create a Template</a></li>
+    <li><a href="#how-export">How to Export to HTML</a></li>
+    <li><a href="#how-convert">How to Convert Between Formats</a></li>
+    <li><a href="#understanding-results">Understanding Your Results</a></li>
+    <li><a href="#common-issues">Common Issues and How to Fix Them</a></li>
+    <li><a href="#format-tips">Tips by Document Format</a></li>
+    <li><a href="#workflows">Recommended Workflows</a></li>
+    <li><a href="#daisy-tools">DAISY Accessibility Tools</a></li>
+    <li><a href="#keyboard-tips">Keyboard and Screen Reader Tips</a></li>
+    <li><a href="#faq">Frequently Asked Questions</a></li>
+    <li><a href="#getting-help">Getting Help</a></li>
+  </ol>
+</nav>
+
+<!-- ================================================================== -->
+<section id="quickstart">
+  <h2>1. Quick-Start Walkthrough</h2>
+
+  <p>If this is your first time, follow these three steps to check and fix a document in under two minutes:</p>
+
+  <div class="guide-steps">
+    <div class="guide-step">
+      <div class="step-number" aria-hidden="true">1</div>
+      <div class="step-content">
+        <h3>Audit your document</h3>
+        <p>Go to <a href="{{ url_for('audit.audit_form') }}">Audit</a>, upload your file, and click <strong>Run Audit</strong>. You will get a compliance report showing every issue found, organized by severity.</p>
+        <p class="guide-tip"><strong>Tip:</strong> First-time users should use <strong>Full Audit</strong> mode to see everything. You can switch to Quick Audit later once you know what to look for.</p>
+      </div>
+    </div>
+
+    <div class="guide-step">
+      <div class="step-number" aria-hidden="true">2</div>
+      <div class="step-content">
+        <h3>Fix what you can automatically</h3>
+        <p>Go to <a href="{{ url_for('fix.fix_form') }}">Fix</a> and upload the same file. For Word documents, the tool automatically corrects fonts, sizes, spacing, alignment, and emphasis. You download a fixed copy -- your original stays untouched.</p>
+        <p class="guide-tip"><strong>Tip:</strong> Not all issues can be auto-fixed. The fix report tells you exactly which issues need your manual attention and how to fix them step by step.</p>
+      </div>
+    </div>
+
+    <div class="guide-step">
+      <div class="step-number" aria-hidden="true">3</div>
+      <div class="step-content">
+        <h3>Re-audit to confirm</h3>
+        <p>Upload the fixed document back to <a href="{{ url_for('audit.audit_form') }}">Audit</a> to confirm all auto-fixable issues are resolved. Address any remaining manual items from the report.</p>
+        <p class="guide-tip"><strong>Tip:</strong> A perfect score means zero Critical and High findings. Medium and Low findings are best practices -- good to fix but not blocking.</p>
+      </div>
+    </div>
+  </div>
+
+  <details class="help-accordion">
+    <summary>Starting from scratch? Create a template first</summary>
+    <p>If you have not written your document yet, start with <a href="{{ url_for('template.template_form') }}">Create a Template</a>. This gives you a Word document with all ACB styles pre-configured. Write your content in the template and it will be compliant from the start -- no fixing needed.</p>
+  </details>
+
+  <a href="#guide-toc-heading" class="back-to-top">Back to guide contents</a>
+</section>
+
+<!-- ================================================================== -->
+<section id="how-audit">
+  <h2>2. How to Audit a Document</h2>
+
+  <h3>Supported formats</h3>
+  <ul>
+    <li><strong>Word (.docx)</strong> -- full ACB + WCAG rule set (fonts, sizes, spacing, emphasis, headings, margins, document properties)</li>
+    <li><strong>Excel (.xlsx)</strong> -- sheet names, table headers, merged cells, alt text, color-only data, hyperlink text</li>
+    <li><strong>PowerPoint (.pptx)</strong> -- slide titles, reading order, alt text, font sizes, speaker notes, chart descriptions</li>
+    <li><strong>Markdown (.md)</strong> -- heading hierarchy, emphasis violations, link text, alt text, emoji, em-dashes, tables</li>
+    <li><strong>PDF (.pdf)</strong> -- title, language, tagging, font sizes, font families, scanned pages, bookmarks</li>
+    <li><strong>ePub (.epub)</strong> -- title, language, navigation, heading hierarchy, alt text, table headers, accessibility metadata, link text, MathML detection. Includes comprehensive <a href="#daisy-tools">DAISY Ace</a> checks (100+ axe-core rules).</li>
+  </ul>
+
+  <h3>Choosing an audit mode</h3>
+  <dl>
+    <dt><strong>Full Audit</strong> (recommended for first use)</dt>
+    <dd>Checks every rule applicable to your file type. Gives you the complete picture. Use this until you know your document's common issues.</dd>
+
+    <dt><strong>Quick Audit</strong></dt>
+    <dd>Checks only Critical and High severity rules. Use this for a fast pass when you are already familiar with your document's formatting.</dd>
+
+    <dt><strong>Custom Audit</strong></dt>
+    <dd>Pick individual rules to check. Useful when you are working on specific issues (e.g., only font rules) or running a targeted re-check.</dd>
+  </dl>
+
+  <h3>Step-by-step</h3>
+  <ol>
+    <li>Go to <a href="{{ url_for('audit.audit_form') }}">Audit</a>.</li>
+    <li>Choose your rule categories (ACB Large Print, MS Accessibility Checker, or both).</li>
+    <li>Select an audit mode.</li>
+    <li>Upload your file (500 MB maximum).</li>
+    <li>Click <strong>Run Audit</strong>.</li>
+    <li>Review the report. Each finding shows the rule ID, severity, location in the document, and a description of what is wrong.</li>
+  </ol>
+
+  <p class="guide-tip"><strong>Tip:</strong> The audit report groups findings by severity. Tackle Critical issues first -- these make the document unreadable for low-vision users. Then work down through High, Medium, and Low.</p>
+
+  <a href="#guide-toc-heading" class="back-to-top">Back to guide contents</a>
+</section>
+
+<!-- ================================================================== -->
+<section id="how-fix">
+  <h2>3. How to Fix a Document</h2>
+
+  <h3>What gets auto-fixed</h3>
+  <table>
+    <caption>Auto-fix capabilities by document format</caption>
+    <thead>
+      <tr>
+        <th scope="col">Format</th>
+        <th scope="col">Auto-Fix Level</th>
+        <th scope="col">What Is Corrected</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Word (.docx)</td>
+        <td><strong>Full auto-fix</strong></td>
+        <td>Fonts to Arial, sizes to 18pt/22pt/20pt, italic removed, bold emphasis to underline, flush-left alignment, line spacing, margins, widow/orphan control, hyphenation off, language set</td>
+      </tr>
+      <tr>
+        <td>Markdown (.md)</td>
+        <td><strong>Partial auto-fix</strong></td>
+        <td>Heading hierarchy correction, italic removal, em-dash replacement</td>
+      </tr>
+      <tr>
+        <td>Excel, PowerPoint, PDF, ePub</td>
+        <td>Audit only</td>
+        <td>You receive a detailed report with manual fix guidance for each finding</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>Step-by-step</h3>
+  <ol>
+    <li>Go to <a href="{{ url_for('fix.fix_form') }}">Fix</a>.</li>
+    <li>Upload your document.</li>
+    <li>Choose a fix mode (Full, Essentials, or Custom).</li>
+    <li>Click <strong>Fix Document</strong>.</li>
+    <li>For Word and Markdown: download the corrected file. Your original is untouched.</li>
+    <li>For other formats: review the audit report with step-by-step manual fix instructions.</li>
+  </ol>
+
+  <p class="guide-tip"><strong>Tip:</strong> The fix mode controls what appears in the <em>report</em>, not what gets corrected. Your Word document always receives all available auto-fixes regardless of mode.</p>
+
+  <a href="#guide-toc-heading" class="back-to-top">Back to guide contents</a>
+</section>
+
+<!-- ================================================================== -->
+<section id="how-template">
+  <h2>4. How to Create a Template</h2>
+
+  <p>A template (<code>.dotx</code>) is the easiest way to start compliant. Every new document you create from this template inherits all ACB formatting automatically.</p>
+
+  <h3>Step-by-step</h3>
+  <ol>
+    <li>Go to <a href="{{ url_for('template.template_form') }}">Template</a>.</li>
+    <li>Enter a document title (or leave blank for the default).</li>
+    <li>Optionally check "Include sample content" if you want to see examples of correct formatting.</li>
+    <li>Check "Add binding margin" if the document will be printed and bound.</li>
+    <li>Click <strong>Create Template</strong> and save the downloaded <code>.dotx</code> file.</li>
+    <li>In Word, double-click the <code>.dotx</code> file to create a new document based on it.</li>
+  </ol>
+
+  <details class="help-accordion">
+    <summary>How to install the template in Word</summary>
+    <ol>
+      <li>Save the downloaded <code>.dotx</code> file to your Templates folder:
+        <ul>
+          <li><strong>Windows:</strong> <code>%APPDATA%\Microsoft\Templates</code></li>
+          <li><strong>macOS:</strong> <code>~/Library/Group Containers/UBF8T346G9.Office/User Content/Templates</code></li>
+        </ul>
+      </li>
+      <li>In Word, go to <strong>File &gt; New &gt; Personal</strong> (or <strong>Custom</strong> on Mac).</li>
+      <li>Select the ACB Large Print template.</li>
+      <li>Start writing. All styles are already configured.</li>
+    </ol>
+  </details>
+
+  <a href="#guide-toc-heading" class="back-to-top">Back to guide contents</a>
+</section>
+
+<!-- ================================================================== -->
+<section id="how-export">
+  <h2>5. How to Export to HTML</h2>
+
+  <p>Export converts a Word document to a web page with ACB-compliant CSS already applied. Choose between two output modes:</p>
+
+  <dl>
+    <dt><strong>Standalone HTML</strong></dt>
+    <dd>A complete web page with its own CSS file. Upload both files to your web server. Good for dedicated pages, intranet publishing, or email attachments.</dd>
+
+    <dt><strong>CMS Fragment</strong></dt>
+    <dd>An HTML snippet with embedded CSS scoped to a wrapper class. Paste it into WordPress, Drupal, or any CMS editor block. The scoped CSS will not conflict with your site theme.</dd>
+  </dl>
+
+  <h3>Step-by-step</h3>
+  <ol>
+    <li>Go to <a href="{{ url_for('export.export_form') }}">Export</a>.</li>
+    <li>Upload a Word (.docx) file.</li>
+    <li>Optionally set a page title.</li>
+    <li>Choose Standalone or CMS Fragment.</li>
+    <li>Click <strong>Export</strong> and download your result.</li>
+  </ol>
+
+  <p class="guide-tip"><strong>Tip:</strong> If your source is Markdown instead of Word, use <a href="{{ url_for('convert.convert_form') }}">Convert</a> with the "Accessible web page" option instead.</p>
+
+  <a href="#guide-toc-heading" class="back-to-top">Back to guide contents</a>
+</section>
+
+<!-- ================================================================== -->
+<section id="how-convert">
+  <h2>6. How to Convert Between Formats</h2>
+
+  <p>The Convert page offers three conversion directions:</p>
+
+  <h3>To Markdown (plain text extraction)</h3>
+  <p>Extracts readable text from any supported file. Good for feeding documents into AI tools, creating starting points for documentation, or getting a simple version you can search and copy-paste.</p>
+  <p><strong>Accepts:</strong> Word, Excel, PowerPoint, PDF, HTML, CSV, JSON, XML, ePub, ZIP.</p>
+
+  <h3>To accessible web page (HTML)</h3>
+  <p>Turns a document into a complete, accessible HTML page with ACB Large Print CSS built in. Ready to publish on a website.</p>
+  <p><strong>Accepts:</strong> Markdown (.md), Word (.docx), reStructuredText (.rst), OpenDocument (.odt), Rich Text (.rtf).</p>
+
+  <h3>To EPUB or DAISY (via DAISY Pipeline)</h3>
+  <p>When the <a href="https://daisy.github.io/pipeline/">DAISY Pipeline</a> is installed on the server, additional conversions become available: Word to EPUB, HTML to EPUB, HTML to DAISY 2.02, and EPUB upgrades. These conversions produce publications optimized for reading systems used by people with print disabilities.</p>
+  <p><strong>Note:</strong> Pipeline conversions appear automatically when the DAISY Pipeline is installed. If you do not see these options, Pipeline is not available on this server instance.</p>
+
+  <a href="#guide-toc-heading" class="back-to-top">Back to guide contents</a>
+</section>
+
+<!-- ================================================================== -->
+<section id="understanding-results">
+  <h2>7. Understanding Your Results</h2>
+
+  <h3>Severity levels</h3>
+  <table>
+    <caption>What each severity level means and what to do about it</caption>
+    <thead>
+      <tr>
+        <th scope="col">Level</th>
+        <th scope="col">What It Means</th>
+        <th scope="col">Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="severity-badge severity-critical">Critical</span></td>
+        <td>Makes the document unreadable for low-vision users or completely blocks assistive technology</td>
+        <td><strong>Must fix.</strong> These are deal-breakers.</td>
+      </tr>
+      <tr>
+        <td><span class="severity-badge severity-high">High</span></td>
+        <td>Significant readability or structure problems</td>
+        <td><strong>Should fix.</strong> Major quality issues.</td>
+      </tr>
+      <tr>
+        <td><span class="severity-badge severity-medium">Medium</span></td>
+        <td>Compliance gaps that affect quality but may not block reading</td>
+        <td>Fix when possible. Good for polishing.</td>
+      </tr>
+      <tr>
+        <td><span class="severity-badge severity-low">Low</span></td>
+        <td>Minor issues or best-practice recommendations</td>
+        <td>Nice to fix. Not blocking compliance.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>Reading the report</h3>
+  <p>Each finding in the audit report includes:</p>
+  <ul>
+    <li><strong>Rule ID</strong> -- a short code like <code>ACB-FONT-FAMILY</code> or <code>EPUB-MISSING-ALT-TEXT</code>. Click the help links to learn more about each rule.</li>
+    <li><strong>Severity</strong> -- Critical, High, Medium, or Low.</li>
+    <li><strong>Location</strong> -- where in the document the issue was found (paragraph number, slide number, sheet name, heading text, etc.).</li>
+    <li><strong>Description</strong> -- what is wrong and why it matters.</li>
+    <li><strong>Help links</strong> -- links to the DAISY Knowledge Base, Microsoft support, or WCAG documentation for detailed remediation guidance.</li>
+  </ul>
+
+  <a href="#guide-toc-heading" class="back-to-top">Back to guide contents</a>
+</section>
+
+<!-- ================================================================== -->
+<section id="common-issues">
+  <h2>8. Common Issues and How to Fix Them</h2>
+
+  <details class="help-accordion" open>
+    <summary>"All text must use Arial font" (ACB-FONT-FAMILY)</summary>
+    <p><strong>Why:</strong> Arial is required because it is a clean sans-serif font with excellent legibility at large sizes.</p>
+    <p><strong>Auto-fix:</strong> Yes -- the fixer changes all fonts to Arial automatically.</p>
+    <p><strong>Manual fix:</strong> In Word, select all text (Ctrl+A), then change the font to Arial.</p>
+  </details>
+
+  <details class="help-accordion">
+    <summary>"Body text must be 18pt minimum" (ACB-FONT-SIZE-BODY)</summary>
+    <p><strong>Why:</strong> 18pt is the absolute floor for any text, including footnotes and captions.</p>
+    <p><strong>Auto-fix:</strong> Yes -- the fixer increases all body text to 18pt.</p>
+    <p><strong>Manual fix:</strong> Select text smaller than 18pt and increase the font size.</p>
+  </details>
+
+  <details class="help-accordion">
+    <summary>"Italic formatting is prohibited" (ACB-NO-ITALIC)</summary>
+    <p><strong>Why:</strong> Italic text is harder to read for people with low vision because slanted shapes reduce letter distinction.</p>
+    <p><strong>Auto-fix:</strong> Yes -- the fixer removes all italic formatting.</p>
+    <p><strong>Manual fix:</strong> Select italic text, press Ctrl+I to remove italic. If emphasis is needed, use underline (Ctrl+U) instead.</p>
+  </details>
+
+  <details class="help-accordion">
+    <summary>"Images must have alt text" (Various rules)</summary>
+    <p><strong>Why:</strong> Screen readers cannot describe images without alternative text. Users who cannot see the image rely entirely on the alt text.</p>
+    <p><strong>Auto-fix:</strong> No -- alt text requires human judgment about the image content.</p>
+    <p><strong>Manual fix in Word:</strong> Right-click the image &gt; Edit Alt Text. Describe what the image shows in 1-2 sentences. If the image is purely decorative, check "Mark as decorative."</p>
+    <p><strong>Manual fix in ePub:</strong> Add an <code>alt</code> attribute to the <code>&lt;img&gt;</code> tag in the content document.</p>
+  </details>
+
+  <details class="help-accordion">
+    <summary>"Heading levels must not skip" (ACB-HEADING-HIERARCHY / EPUB-HEADING-HIERARCHY)</summary>
+    <p><strong>Why:</strong> Screen reader users navigate by heading levels. Jumping from H1 to H3 breaks their mental model of the document structure.</p>
+    <p><strong>Auto-fix:</strong> Not automatically -- heading intent requires human judgment.</p>
+    <p><strong>Manual fix:</strong> Review your heading hierarchy. Each H3 must have an H2 parent, each H2 must have an H1 parent. Restructure or re-level headings as needed.</p>
+  </details>
+
+  <details class="help-accordion">
+    <summary>"Links must have descriptive text" (Various rules)</summary>
+    <p><strong>Why:</strong> Vague links like "click here" or "read more" do not tell screen reader users where the link goes. Links should make sense read out of context.</p>
+    <p><strong>Auto-fix:</strong> No -- link text requires human judgment.</p>
+    <p><strong>Manual fix:</strong> Replace vague text with descriptive text. For example, change "click here to download the report" to "download the annual report (PDF)".</p>
+  </details>
+
+  <details class="help-accordion">
+    <summary>"ePub should include accessibility metadata" (EPUB-ACCESSIBILITY-METADATA)</summary>
+    <p><strong>Why:</strong> Accessibility metadata tells reading systems and library catalogs what accessibility features the publication offers.</p>
+    <p><strong>Manual fix:</strong> Add schema.org metadata to the OPF package document: accessMode, accessibilityFeature, accessibilitySummary, and accessibilityHazard. See the <a href="https://kb.daisy.org/publishing/docs/metadata/schema.org/index.html">DAISY Knowledge Base on schema.org metadata</a>.</p>
+  </details>
+
+  <a href="#guide-toc-heading" class="back-to-top">Back to guide contents</a>
+</section>
+
+<!-- ================================================================== -->
+<section id="format-tips">
+  <h2>9. Tips by Document Format</h2>
+
+  <details class="help-accordion" open>
+    <summary>Word (.docx)</summary>
+    <ul>
+      <li>Use Word's built-in heading styles (Heading 1, Heading 2, etc.) instead of manually formatting text to look like a heading.</li>
+      <li>Use real bulleted and numbered lists (Home &gt; Bullets/Numbering), not manually typed dashes or numbers.</li>
+      <li>Set the document title in File &gt; Properties &gt; Title.</li>
+      <li>Set the document language in Review &gt; Language.</li>
+      <li>For emphasis, use underline -- never italic, and avoid bold in body text.</li>
+      <li>After using the fix tool, always re-audit to catch any remaining manual-fix items.</li>
+    </ul>
+  </details>
+
+  <details class="help-accordion">
+    <summary>Excel (.xlsx)</summary>
+    <ul>
+      <li>Give every sheet a meaningful name -- "Sheet1" is not helpful to screen reader users.</li>
+      <li>Use Format as Table so each column has a proper header row.</li>
+      <li>Avoid merged cells -- they confuse screen readers navigating the grid.</li>
+      <li>Add alt text to any embedded images or charts.</li>
+      <li>Do not rely on color alone to convey information (e.g., red cells for errors).</li>
+    </ul>
+  </details>
+
+  <details class="help-accordion">
+    <summary>PowerPoint (.pptx)</summary>
+    <ul>
+      <li>Every slide must have a unique title.</li>
+      <li>Check the reading order in the Selection Pane (View &gt; Selection Pane). Objects are read bottom-to-top, so the title should be at the bottom of the list.</li>
+      <li>Add alt text to every image, chart, and SmartArt graphic.</li>
+      <li>Use slide layouts with built-in placeholders instead of manually placed text boxes.</li>
+      <li>Add speaker notes for slide content that is primarily visual.</li>
+    </ul>
+  </details>
+
+  <details class="help-accordion">
+    <summary>Markdown (.md)</summary>
+    <ul>
+      <li>Use ATX-style headings (<code># Heading 1</code>) not Setext-style (underlines).</li>
+      <li>Never use italic (<code>*text*</code>) -- use <code>&lt;u&gt;text&lt;/u&gt;</code> for emphasis instead.</li>
+      <li>Write descriptive link text: <code>[download the annual report](url)</code> not <code>[click here](url)</code>.</li>
+      <li>Add alt text to all images: <code>![Description of the image](image.png)</code>.</li>
+      <li>Do not leave blank lines between list items.</li>
+      <li>Avoid bare URLs -- wrap them in link syntax.</li>
+    </ul>
+  </details>
+
+  <details class="help-accordion">
+    <summary>PDF (.pdf)</summary>
+    <ul>
+      <li>PDFs should be tagged (structured) for accessibility. Scanned documents without OCR will fail many checks.</li>
+      <li>Set the document title and language in the PDF properties.</li>
+      <li>Use bookmarks for navigation in long documents.</li>
+      <li>The best approach for PDFs is to fix the source (usually Word) and re-export.</li>
+    </ul>
+  </details>
+
+  <details class="help-accordion">
+    <summary>ePub (.epub)</summary>
+    <ul>
+      <li>Include a navigation document (table of contents) -- this is required by EPUB Accessibility 1.1.</li>
+      <li>Add schema.org accessibility metadata to the OPF file.</li>
+      <li>Ensure all images have alt text in the content documents.</li>
+      <li>Use proper heading levels (h1-h6) without skipping.</li>
+      <li>ePub audits include DAISY Ace, which runs 100+ axe-core accessibility checks beyond the basic structural rules.</li>
+      <li>If your ePub contains MathML, the audit will detect it and provide specific accessibility guidance for mathematical content.</li>
+    </ul>
+  </details>
+
+  <a href="#guide-toc-heading" class="back-to-top">Back to guide contents</a>
+</section>
+
+<!-- ================================================================== -->
+<section id="workflows">
+  <h2>10. Recommended Workflows</h2>
+
+  <details class="help-accordion" open>
+    <summary>Workflow A: Fix an existing document</summary>
+    <ol>
+      <li><strong>Audit first</strong> -- upload to <a href="{{ url_for('audit.audit_form') }}">Audit</a> to understand the scope of issues.</li>
+      <li><strong>Auto-fix</strong> -- upload to <a href="{{ url_for('fix.fix_form') }}">Fix</a> to correct everything the tool can handle.</li>
+      <li><strong>Manual fixes</strong> -- open the fixed document and address remaining items from the fix report.</li>
+      <li><strong>Re-audit</strong> -- upload the manually-fixed document to <a href="{{ url_for('audit.audit_form') }}">Audit</a> to confirm.</li>
+      <li><strong>Publish</strong> -- optionally <a href="{{ url_for('export.export_form') }}">Export</a> to accessible HTML for web publishing.</li>
+    </ol>
+  </details>
+
+  <details class="help-accordion">
+    <summary>Workflow B: Start a new document from scratch</summary>
+    <ol>
+      <li><strong>Create a template</strong> -- use <a href="{{ url_for('template.template_form') }}">Template</a> to generate a pre-configured .dotx file.</li>
+      <li><strong>Write in the template</strong> -- use the built-in styles for all formatting.</li>
+      <li><strong>Quick audit</strong> -- when done, upload to <a href="{{ url_for('audit.audit_form') }}">Audit</a> with Quick Audit mode to verify compliance.</li>
+    </ol>
+  </details>
+
+  <details class="help-accordion">
+    <summary>Workflow C: Publish meeting minutes or agendas online</summary>
+    <ol>
+      <li>Write your content in Markdown or Word.</li>
+      <li><strong>Audit</strong> to check compliance.</li>
+      <li><strong>Fix</strong> if needed.</li>
+      <li><strong>Convert</strong> to accessible HTML using the <a href="{{ url_for('convert.convert_form') }}">Convert</a> page with "Accessible web page" selected.</li>
+      <li>Upload the HTML file to your website.</li>
+    </ol>
+  </details>
+
+  <details class="help-accordion">
+    <summary>Workflow D: Create accessible EPUB publications</summary>
+    <ol>
+      <li>Start with a properly formatted Word document or Markdown file.</li>
+      <li><strong>Audit</strong> the source document for ACB compliance.</li>
+      <li><strong>Convert to EPUB</strong> using the <a href="{{ url_for('convert.convert_form') }}">Convert</a> page with a DAISY Pipeline conversion (when available).</li>
+      <li><strong>Audit the EPUB</strong> -- upload the .epub to <a href="{{ url_for('audit.audit_form') }}">Audit</a> for EPUB-specific accessibility checks (DAISY Ace runs automatically).</li>
+      <li>Fix any EPUB-specific issues (metadata, alt text, navigation) and re-audit.</li>
+    </ol>
+  </details>
+
+  <a href="#guide-toc-heading" class="back-to-top">Back to guide contents</a>
+</section>
+
+<!-- ================================================================== -->
+<section id="daisy-tools">
+  <h2>11. DAISY Accessibility Tools</h2>
+
+  <p>This toolkit integrates with open source tools from the <a href="https://daisy.org/">DAISY Consortium</a>, an international association serving people with print disabilities. Here is how each integration works:</p>
+
+  <h3>DAISY Ace -- EPUB Accessibility Checker</h3>
+  <p><a href="https://daisy.github.io/ace/">Ace by DAISY</a> is bundled with the web application and runs 100+ automated accessibility checks on EPUB publications using the axe-core engine. Every ePub audit automatically includes:</p>
+  <ul>
+    <li>All axe-core HTML accessibility rules (contrast, ARIA, landmarks, tables, forms)</li>
+    <li>EPUB-specific metadata validation (accessibility metadata, package structure)</li>
+    <li>Content document structure checks (headings, images, links)</li>
+    <li>Findings linked to the <a href="https://kb.daisy.org/publishing/">DAISY Knowledge Base</a> for remediation guidance</li>
+  </ul>
+
+  <h3>DAISY Pipeline -- Document Conversion</h3>
+  <p><a href="https://daisy.github.io/pipeline/">DAISY Pipeline</a> performs format conversions optimized for accessible publishing. When installed, the <a href="{{ url_for('convert.convert_form') }}">Convert</a> page gains additional options:</p>
+  <ul>
+    <li>Word (.docx) to EPUB 3</li>
+    <li>HTML to EPUB 3</li>
+    <li>HTML to DAISY 2.02 (digital talking book format)</li>
+    <li>EPUB 2 to EPUB 3 upgrade</li>
+  </ul>
+
+  <h3>DAISY Knowledge Base</h3>
+  <p>The <a href="https://kb.daisy.org/publishing/">Accessible Publishing Knowledge Base</a> provides the help links you see throughout audit reports. Every ePub-related finding links to a specific Knowledge Base article with detailed remediation guidance.</p>
+
+  <h3>MathML and Mathematical Content</h3>
+  <p>When ePub files contain MathML (mathematical markup), the audit detects it and provides guidance on making mathematical content accessible. The <a href="https://github.com/daisy/MathCAT">MathCAT project</a> (Math Capable Assistive Technology) by DAISY generates speech, braille, and navigation from MathML for screen readers. If your ePub uses MathML, ensure it is properly structured so tools like MathCAT and MathJax can process it.</p>
+
+  <a href="#guide-toc-heading" class="back-to-top">Back to guide contents</a>
+</section>
+
+<!-- ================================================================== -->
+<section id="keyboard-tips">
+  <h2>12. Keyboard and Screen Reader Tips</h2>
+
+  <p>This tool is designed to work fully without a mouse. Here are tips for keyboard and screen reader users:</p>
+
+  <ul>
+    <li><strong>Skip link:</strong> Press Tab on any page to reveal a "Skip to main content" link that jumps past the navigation.</li>
+    <li><strong>Navigation:</strong> The main navigation is a list of links. Use Tab and Enter to navigate between pages.</li>
+    <li><strong>Forms:</strong> All form fields have visible labels and description text. Errors are announced with the <code>alert</code> role.</li>
+    <li><strong>Accordions:</strong> Help sections use <code>&lt;details&gt;/&lt;summary&gt;</code> elements. Press Enter or Space on a summary to expand or collapse. Screen readers announce the expanded/collapsed state.</li>
+    <li><strong>File upload:</strong> After selecting a file, Tab to the submit button and press Enter. Upload progress is indicated by the page loading a new result.</li>
+    <li><strong>Severity badges:</strong> In the audit report, severity levels are shown as colored badges. The text content is always present (not color-only), so screen readers announce "Critical", "High", etc.</li>
+    <li><strong>Help links:</strong> External help links open in new tabs and are announced as such.</li>
+    <li><strong>Back to top:</strong> Each section on the Guidelines and Guide pages has a "Back to table of contents" link for quick navigation.</li>
+  </ul>
+
+  <a href="#guide-toc-heading" class="back-to-top">Back to guide contents</a>
+</section>
+
+<!-- ================================================================== -->
+<section id="faq">
+  <h2>13. Frequently Asked Questions</h2>
+
+  <details class="help-accordion" open>
+    <summary>Is my document stored on the server?</summary>
+    <p>No. Documents are processed in memory and deleted immediately after your results are returned. No files are stored, and no accounts are required.</p>
+  </details>
+
+  <details class="help-accordion">
+    <summary>What is the maximum file size?</summary>
+    <p>500 MB. If your document is larger, try compressing images within the document first (Word: File &gt; Compress Pictures).</p>
+  </details>
+
+  <details class="help-accordion">
+    <summary>Can I audit multiple documents at once?</summary>
+    <p>The web tool processes one document at a time. For batch processing, use the <a href="https://github.com/accesswatch/acb-large-print-toolkit">desktop application</a> which supports folder-level audits.</p>
+  </details>
+
+  <details class="help-accordion">
+    <summary>Why does the fix not change my headings?</summary>
+    <p>Heading hierarchy corrections require understanding your document's intended structure, which only you can determine. The fix tool corrects heading <em>formatting</em> (font, size, bold) but does not change heading <em>levels</em>. Review your heading structure manually using the report's guidance.</p>
+  </details>
+
+  <details class="help-accordion">
+    <summary>What is the difference between ACB and MSAC rules?</summary>
+    <p><strong>ACB Large Print</strong> rules come from the American Council of the Blind's Board of Publications. They cover visual formatting: font, size, spacing, emphasis, alignment, and margins.</p>
+    <p><strong>MS Accessibility Checker (MSAC)</strong> rules are aligned with the Microsoft Office Accessibility Checker and WCAG 2.1. They cover structural accessibility: alt text, table headers, reading order, hyperlink text, document properties.</p>
+    <p>Both categories work together for comprehensive compliance. Run with both enabled for best results.</p>
+  </details>
+
+  <details class="help-accordion">
+    <summary>What about DAISY Pipeline conversions?</summary>
+    <p>DAISY Ace is bundled with the web application and always runs during ePub audits. DAISY Pipeline (for advanced format conversions like Word to EPUB, HTML to DAISY 2.02) requires Java and is an optional server component. Pipeline conversions appear automatically when installed by the server administrator. The core audit, fix, template, and export features work without Pipeline.</p>
+  </details>
+
+  <details class="help-accordion">
+    <summary>Can I use this tool for documents in languages other than English?</summary>
+    <p>Yes. The ACB formatting rules (font, size, spacing) apply regardless of language. The tool audits document structure and formatting, not content. Set the document language property (Rule: ACB-DOC-LANGUAGE) to the correct language code for proper screen reader pronunciation.</p>
+  </details>
+
+  <details class="help-accordion">
+    <summary>Is there a desktop version?</summary>
+    <p>Yes. The <a href="https://github.com/accesswatch/acb-large-print-toolkit">ACB Large Print Toolkit</a> includes a desktop application with a graphical wizard interface, command-line tools, and batch processing support. It runs on Windows without requiring an internet connection.</p>
+  </details>
+
+  <a href="#guide-toc-heading" class="back-to-top">Back to guide contents</a>
+</section>
+
+<!-- ================================================================== -->
+<section id="getting-help">
+  <h2>14. Getting Help</h2>
+
+  <ul>
+    <li><a href="{{ url_for('guidelines.guidelines_page') }}">Full ACB Large Print Guidelines Reference</a> -- complete rule documentation with related audit rules</li>
+    <li><a href="{{ url_for('feedback.feedback_form') }}">Submit Feedback</a> -- report bugs, request features, or share your experience</li>
+    <li><a href="{{ url_for('about.about_page') }}">About This Project</a> -- mission, organizations, standards, and open source dependencies</li>
+    <li><a href="https://github.com/accesswatch/acb-large-print-toolkit/issues">GitHub Issues</a> -- report bugs or request features on the open source repository</li>
+    <li><a href="https://kb.daisy.org/publishing/">DAISY Knowledge Base</a> -- remediation guidance for ePub accessibility issues</li>
+    <li><a href="https://support.microsoft.com/en-us/office/improve-accessibility-with-the-accessibility-checker-a16f6de0-2f39-4a2b-8bd8-5ad801426c7f">Microsoft Accessibility Checker Guide</a> -- Microsoft's guide to the Office accessibility checker</li>
+  </ul>
+
+  <a href="#guide-toc-heading" class="back-to-top">Back to guide contents</a>
+</section>
+{% endblock %}

@@ -1,0 +1,71 @@
+{
+    "checkepub": {
+        "langmissing": {
+            "kbtitle": "",
+            "resdesc": "",
+            "ruledesc": "",
+            "testdesc": ""
+        },
+        "mediaoverlaypagebreakviolation": {
+            "kbtitle": "",
+            "resdesc": "",
+            "ruledesc": "",
+            "testdesc": ""
+        },
+        "metadatadeprecated": {
+            "kbtitle": "",
+            "resdesc": "",
+            "ruledesc": "",
+            "testdesc": ""
+        },
+        "metadatainvalid": {
+            "kbtitle": "Schema.org Barrierefreiheitsmetadaten",
+            "resdesc": "Werte der Metadaten verwenden, die durch schema.org definiert sind",
+            "ruledesc": "'{{name}}' Metadaten müssen auf einen definierten Wert gesetzt werden",
+            "testdesc": "Wert '{{value}}' ist ungültig für '{{name}}' Metadaten"
+        },
+        "metadataprintpagenumbers": {
+            "kbtitle": "Schema.org Barrierefreiheitsmetadaten",
+            "resdesc": "Eine Seitenübersicht zum Navigationsdokument hinzufügen",
+            "ruledesc": "Wenn die Barrierefreiheitsfunktion 'pageNavigation' angegeben ist, sollte das Navigationsdokument eine Seitenübersicht enthalten",
+            "testdesc": "Barrierefreiheitsfunktion 'pageNavigation' ist angegeben aber die Seitenübersicht fehlt"
+        },
+        "metadataviolation": {
+            "kbtitle": "Schema.org Barrierefreiheitsmetadaten",
+            "resdesc": "Metadateneigenschaft '{{name}}' zum Dokumentenpaket hinzufügen",
+            "ruledesc": "Veröffentlichungen müssen die '{{name}}' Metadaten angeben",
+            "ruledesc_alt": "Veröffentlichungen müssen die '{{name}}' Metadaten angeben (SHOULD)",
+            "testdesc": "Stellt sicher, dass '{{name}}' Metadaten vorhanden sind"
+        },
+        "missingpagebreakviolation": {
+            "kbtitle": "",
+            "resdesc": "",
+            "ruledesc": "",
+            "testdesc": ""
+        },
+        "ordertocviolation": {
+            "kbtitle": "",
+            "resdesc": "",
+            "ruledesc": "",
+            "testdesc": ""
+        },
+        "pagelistbrokenviolation": {
+            "kbtitle": "",
+            "resdesc": "",
+            "ruledesc": "",
+            "testdesc": ""
+        },
+        "pagesourceviolation": {
+            "kbtitle": "Seitennavigation",
+            "resdesc": "Eine 'dc:source / pageBreakSource' Metadateneigenschaft zum Dokumentenpaket hinzufügen",
+            "ruledesc": "Veröffentlichungen mit Seitenumbrüchen müssen die Metadaten 'dc:source / pageBreakSource' angeben",
+            "testdesc": "Stellt sicher, dass die Quelle von Seitenumbrüchen identifiziert wird"
+        },
+        "titleviolation": {
+            "kbtitle": "EPUB Titel",
+            "resdesc": "Metadateneigenschaft 'dc:title' zum Dokumentenpaket hinzufügen",
+            "ruledesc": "Veröffentlichungen müssen einen Titel haben",
+            "testdesc": "Stellt sicher, dass EPUB einen Titel hat"
+        }
+    }
+}

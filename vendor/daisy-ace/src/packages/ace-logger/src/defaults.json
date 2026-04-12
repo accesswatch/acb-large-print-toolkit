@@ -1,0 +1,7 @@
+{
+  "logging": {
+    "level": "info",
+    "fileName": "ace.log",
+    "maxMinutes": 5
+  }
+}

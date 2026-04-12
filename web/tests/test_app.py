@@ -20,7 +20,7 @@ def app(tmp_path: Path) -> Flask:
     application = create_app({
         "TESTING": True,
         "WTF_CSRF_ENABLED": False,
-        "MAX_CONTENT_LENGTH": 16 * 1024 * 1024,
+        "MAX_CONTENT_LENGTH": 500 * 1024 * 1024,
     })
     application.instance_path = str(tmp_path / "instance")
     Path(application.instance_path).mkdir(parents=True, exist_ok=True)

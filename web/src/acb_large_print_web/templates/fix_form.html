@@ -4,6 +4,12 @@
 {% block heading %}Fix a Document{% endblock %}
 
 {% block content %}
+{% set tip_icon = "&#9758;" %}
+{% set tip_text = "Not sure what needs fixing? Run an audit first to see the full picture, then come back here to auto-fix." %}
+{% set tip_link_url = url_for('guide.guide_page') + '#how-fix' %}
+{% set tip_link_text = "Read the fix guide" %}
+{% include '_workflow_tip.html' %}
+
 <details class="help-accordion">
   <summary>What does the fix do?</summary>
   <p>For <strong>Word documents</strong>, the fixer automatically corrects ACB Large Print compliance issues: fonts to Arial, sizes to 18pt/22pt/20pt, italic removed, bold emphasis converted to underline, flush-left alignment, line spacing, margins, widow/orphan control, hyphenation off, and language set. You download a fixed copy -- your original is not modified.</p>
@@ -24,7 +30,7 @@
     <input type="file" id="document" name="document" accept=".docx,.xlsx,.pptx,.md,.pdf,.epub"
            aria-describedby="file-help"
            {% if error %}aria-invalid="true"{% endif %}>
-    <p id="file-help" class="help-text">Accepted formats: Word (.docx) and Markdown (.md) for auto-fix; Excel (.xlsx), PowerPoint (.pptx), PDF (.pdf), and ePub (.epub) for audit-only guidance. Maximum size: 16 MB.</p>
+    <p id="file-help" class="help-text">Accepted formats: Word (.docx) and Markdown (.md) for auto-fix; Excel (.xlsx), PowerPoint (.pptx), PDF (.pdf), and ePub (.epub) for audit-only guidance. Maximum size: 500 MB.</p>
   </div>
 
   <fieldset>

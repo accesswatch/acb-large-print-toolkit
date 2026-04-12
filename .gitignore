@@ -9,9 +9,9 @@ build/
 *.spec
 
 # PyInstaller
-word-addon/dist/
-word-addon/build/
-word-addon/installer/version_info.txt
+desktop/dist/
+desktop/build/
+desktop/installer/version_info.txt
 dist/
 
 # Virtual environments

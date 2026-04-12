@@ -7,15 +7,23 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 WORKDIR /app
 
 # Install Pandoc (for Markdown/RST/ODT/RTF -> ACB HTML conversion)
+# Install Node.js (for DAISY Ace EPUB accessibility checker)
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends pandoc \
+    && apt-get install -y --no-install-recommends pandoc nodejs npm \
     && rm -rf /var/lib/apt/lists/*
+
+# Install DAISY Ace globally (MIT license -- https://github.com/daisy/ace)
+# Ace provides 100+ axe-core accessibility checks for EPUB publications
+# Source vendored in vendor/daisy-ace/ for offline builds and auditing
+RUN npm install -g @daisy/ace --no-fund --no-audit \
+    && npm cache clean --force \
+    && ace --version
 
 # Install the core library (audit, fix, convert, export -- no CLI/GUI)
 # The .dockerignore excludes desktop-only files (cli.py, gui.py, __main__.py)
-COPY word-addon/pyproject.toml word-addon/
-COPY word-addon/src/ word-addon/src/
-RUN pip install --no-cache-dir ./word-addon
+COPY desktop/pyproject.toml desktop/
+COPY desktop/src/ desktop/src/
+RUN pip install --no-cache-dir ./desktop
 
 # Install the web app
 COPY web/pyproject.toml web/requirements.txt web/
