@@ -170,12 +170,14 @@ export enum DocFormat {
     DOCX = "docx",
     XLSX = "xlsx",
     PPTX = "pptx",
+    EPUB = "epub",
 }
 
 const ALL_FORMATS: ReadonlySet<DocFormat> = new Set([DocFormat.DOCX, DocFormat.XLSX, DocFormat.PPTX]);
 const DOCX_ONLY: ReadonlySet<DocFormat> = new Set([DocFormat.DOCX]);
 const XLSX_ONLY: ReadonlySet<DocFormat> = new Set([DocFormat.XLSX]);
 const PPTX_ONLY: ReadonlySet<DocFormat> = new Set([DocFormat.PPTX]);
+const EPUB_ONLY: ReadonlySet<DocFormat> = new Set([DocFormat.EPUB]);
 const DOCX_PPTX: ReadonlySet<DocFormat> = new Set([DocFormat.DOCX, DocFormat.PPTX]);
 
 export interface RuleDef {
@@ -675,6 +677,81 @@ export const AUDIT_RULES: Record<string, RuleDef> = {
         autoFixable: false,
         formats: PPTX_ONLY,
     },
+    // -----------------------------------------------------------------
+    // ePub-specific rules
+    // -----------------------------------------------------------------
+    "EPUB-TITLE": {
+        ruleId: "EPUB-TITLE",
+        description: "ePub must have a title set in OPF metadata",
+        severity: Severity.HIGH,
+        acbReference: "WCAG 2.4.2 Page Titled",
+        category: RuleCategory.MSAC,
+        autoFixable: false,
+        formats: EPUB_ONLY,
+    },
+    "EPUB-LANGUAGE": {
+        ruleId: "EPUB-LANGUAGE",
+        description: "ePub must have a language set in OPF metadata",
+        severity: Severity.HIGH,
+        acbReference: "WCAG 3.1.1 Language of Page",
+        category: RuleCategory.MSAC,
+        autoFixable: false,
+        formats: EPUB_ONLY,
+    },
+    "EPUB-NAV-DOCUMENT": {
+        ruleId: "EPUB-NAV-DOCUMENT",
+        description: "ePub must include a navigation document (table of contents)",
+        severity: Severity.HIGH,
+        acbReference: "WCAG 2.4.5 Multiple Ways",
+        category: RuleCategory.MSAC,
+        autoFixable: false,
+        formats: EPUB_ONLY,
+    },
+    "EPUB-HEADING-HIERARCHY": {
+        ruleId: "EPUB-HEADING-HIERARCHY",
+        description: "Heading levels must not skip (e.g., H1 to H3 without H2)",
+        severity: Severity.HIGH,
+        acbReference: "WCAG 1.3.1 Info and Relationships",
+        category: RuleCategory.MSAC,
+        autoFixable: false,
+        formats: EPUB_ONLY,
+    },
+    "EPUB-MISSING-ALT-TEXT": {
+        ruleId: "EPUB-MISSING-ALT-TEXT",
+        description: "Images in ePub content must have alternative text",
+        severity: Severity.CRITICAL,
+        acbReference: "WCAG 1.1.1 Non-text Content",
+        category: RuleCategory.MSAC,
+        autoFixable: false,
+        formats: EPUB_ONLY,
+    },
+    "EPUB-TABLE-HEADERS": {
+        ruleId: "EPUB-TABLE-HEADERS",
+        description: "Tables in ePub content must use <th> header cells",
+        severity: Severity.HIGH,
+        acbReference: "WCAG 1.3.1 Info and Relationships",
+        category: RuleCategory.MSAC,
+        autoFixable: false,
+        formats: EPUB_ONLY,
+    },
+    "EPUB-ACCESSIBILITY-METADATA": {
+        ruleId: "EPUB-ACCESSIBILITY-METADATA",
+        description: "ePub should include schema.org accessibility metadata (accessMode, accessibilityFeature)",
+        severity: Severity.MEDIUM,
+        acbReference: "EPUB Accessibility 1.1",
+        category: RuleCategory.MSAC,
+        autoFixable: false,
+        formats: EPUB_ONLY,
+    },
+    "EPUB-LINK-TEXT": {
+        ruleId: "EPUB-LINK-TEXT",
+        description: "Hyperlink text must be descriptive (not 'click here' or a raw URL)",
+        severity: Severity.HIGH,
+        acbReference: "WCAG 2.4.4 Link Purpose (In Context)",
+        category: RuleCategory.MSAC,
+        autoFixable: false,
+        formats: EPUB_ONLY,
+    },
 };
 
 /** Convenience sets for category-based filtering. */
@@ -713,6 +790,11 @@ export const XLSX_RULE_IDS: ReadonlySet<string> = new Set(
 export const PPTX_RULE_IDS: ReadonlySet<string> = new Set(
     Object.entries(AUDIT_RULES)
         .filter(([, r]) => r.formats.has(DocFormat.PPTX))
+        .map(([id]) => id),
+);
+export const EPUB_RULE_IDS: ReadonlySet<string> = new Set(
+    Object.entries(AUDIT_RULES)
+        .filter(([, r]) => r.formats.has(DocFormat.EPUB))
         .map(([id]) => id),
 );
 

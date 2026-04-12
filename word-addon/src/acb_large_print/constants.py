@@ -163,6 +163,7 @@ class DocFormat(str, Enum):
     PPTX = "pptx"
     MD = "md"
     PDF = "pdf"
+    EPUB = "epub"
 
 
 # Shorthand sets for tagging rules
@@ -173,6 +174,7 @@ _XLSX_ONLY = frozenset({DocFormat.XLSX})
 _PPTX_ONLY = frozenset({DocFormat.PPTX})
 _MD_ONLY = frozenset({DocFormat.MD})
 _PDF_ONLY = frozenset({DocFormat.PDF})
+_EPUB_ONLY = frozenset({DocFormat.EPUB})
 _DOCX_PPTX = frozenset({DocFormat.DOCX, DocFormat.PPTX})
 _XLSX_PPTX = frozenset({DocFormat.XLSX, DocFormat.PPTX})
 _MD_PDF = frozenset({DocFormat.MD, DocFormat.PDF})
@@ -752,6 +754,81 @@ AUDIT_RULES: dict[str, RuleDef] = {
         auto_fixable=False,
         formats=_PDF_ONLY,
     ),
+    # -----------------------------------------------------------------
+    # ePub-specific rules
+    # -----------------------------------------------------------------
+    "EPUB-TITLE": RuleDef(
+        rule_id="EPUB-TITLE",
+        description="ePub must have a title set in OPF metadata",
+        severity=Severity.HIGH,
+        acb_reference="WCAG 2.4.2 Page Titled",
+        category=RuleCategory.MSAC,
+        auto_fixable=False,
+        formats=_EPUB_ONLY,
+    ),
+    "EPUB-LANGUAGE": RuleDef(
+        rule_id="EPUB-LANGUAGE",
+        description="ePub must have a language set in OPF metadata",
+        severity=Severity.HIGH,
+        acb_reference="WCAG 3.1.1 Language of Page",
+        category=RuleCategory.MSAC,
+        auto_fixable=False,
+        formats=_EPUB_ONLY,
+    ),
+    "EPUB-NAV-DOCUMENT": RuleDef(
+        rule_id="EPUB-NAV-DOCUMENT",
+        description="ePub must include a navigation document (table of contents)",
+        severity=Severity.HIGH,
+        acb_reference="WCAG 2.4.5 Multiple Ways",
+        category=RuleCategory.MSAC,
+        auto_fixable=False,
+        formats=_EPUB_ONLY,
+    ),
+    "EPUB-HEADING-HIERARCHY": RuleDef(
+        rule_id="EPUB-HEADING-HIERARCHY",
+        description="Heading levels must not skip (e.g., H1 to H3 without H2)",
+        severity=Severity.HIGH,
+        acb_reference="WCAG 1.3.1 Info and Relationships",
+        category=RuleCategory.MSAC,
+        auto_fixable=False,
+        formats=_EPUB_ONLY,
+    ),
+    "EPUB-MISSING-ALT-TEXT": RuleDef(
+        rule_id="EPUB-MISSING-ALT-TEXT",
+        description="Images in ePub content must have alternative text",
+        severity=Severity.CRITICAL,
+        acb_reference="WCAG 1.1.1 Non-text Content",
+        category=RuleCategory.MSAC,
+        auto_fixable=False,
+        formats=_EPUB_ONLY,
+    ),
+    "EPUB-TABLE-HEADERS": RuleDef(
+        rule_id="EPUB-TABLE-HEADERS",
+        description="Tables in ePub content must use <th> header cells",
+        severity=Severity.HIGH,
+        acb_reference="WCAG 1.3.1 Info and Relationships",
+        category=RuleCategory.MSAC,
+        auto_fixable=False,
+        formats=_EPUB_ONLY,
+    ),
+    "EPUB-ACCESSIBILITY-METADATA": RuleDef(
+        rule_id="EPUB-ACCESSIBILITY-METADATA",
+        description="ePub should include schema.org accessibility metadata (accessMode, accessibilityFeature)",
+        severity=Severity.MEDIUM,
+        acb_reference="EPUB Accessibility 1.1",
+        category=RuleCategory.MSAC,
+        auto_fixable=False,
+        formats=_EPUB_ONLY,
+    ),
+    "EPUB-LINK-TEXT": RuleDef(
+        rule_id="EPUB-LINK-TEXT",
+        description="Hyperlink text must be descriptive (not 'click here' or a raw URL)",
+        severity=Severity.HIGH,
+        acb_reference="WCAG 2.4.4 Link Purpose (In Context)",
+        category=RuleCategory.MSAC,
+        auto_fixable=False,
+        formats=_EPUB_ONLY,
+    ),
 }
 
 
@@ -783,4 +860,7 @@ MD_RULE_IDS: frozenset[str] = frozenset(
 )
 PDF_RULE_IDS: frozenset[str] = frozenset(
     rid for rid, r in AUDIT_RULES.items() if DocFormat.PDF in r.formats
+)
+EPUB_RULE_IDS: frozenset[str] = frozenset(
+    rid for rid, r in AUDIT_RULES.items() if DocFormat.EPUB in r.formats
 )

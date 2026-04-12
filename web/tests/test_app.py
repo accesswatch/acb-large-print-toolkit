@@ -704,8 +704,99 @@ class TestUploadValidation:
         resp = client.get("/")
         assert b"Markdown" in resp.data or b".md" in resp.data
         assert b"PDF" in resp.data or b".pdf" in resp.data
+        assert b"ePub" in resp.data or b".epub" in resp.data
 
     def test_audit_form_accepts_md_and_pdf(self, client):
         resp = client.get("/audit/")
         assert b".md" in resp.data
         assert b".pdf" in resp.data
+        assert b".epub" in resp.data
+
+
+# ============================================================
+# ePub audit
+# ============================================================
+
+def _make_fake_epub() -> io.BytesIO:
+    """Create a minimal valid .epub file (ZIP with OPF metadata)."""
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w") as zf:
+        zf.writestr("mimetype", "application/epub+zip")
+        zf.writestr(
+            "META-INF/container.xml",
+            '<?xml version="1.0" encoding="UTF-8"?>'
+            '<container xmlns="urn:oasis:names:tc:opendocument:xmlns:container" version="1.0">'
+            '<rootfiles><rootfile full-path="content.opf" '
+            'media-type="application/oebps-package+xml"/></rootfiles>'
+            '</container>',
+        )
+        # OPF with no title and no language -- should trigger EPUB-TITLE + EPUB-LANGUAGE
+        zf.writestr(
+            "content.opf",
+            '<?xml version="1.0" encoding="UTF-8"?>'
+            '<package xmlns="http://www.idpf.org/2007/opf" version="3.0">'
+            '<metadata xmlns:dc="http://purl.org/dc/elements/1.1/">'
+            '</metadata>'
+            '<manifest>'
+            '<item id="ch1" href="ch1.xhtml" media-type="application/xhtml+xml"/>'
+            '</manifest>'
+            '<spine><itemref idref="ch1"/></spine>'
+            '</package>',
+        )
+        zf.writestr(
+            "ch1.xhtml",
+            '<html><body><h1>Chapter 1</h1><p>Content</p></body></html>',
+        )
+    buf.seek(0)
+    return buf
+
+
+class TestEpubAudit:
+    """Upload ePub files and verify audit works."""
+
+    def test_audit_epub_full(self, client):
+        epub_data = _make_fake_epub()
+        data = {
+            "document": (epub_data, "test.epub"),
+            "mode": "full",
+        }
+        resp = client.post("/audit/", data=data, content_type="multipart/form-data")
+        assert resp.status_code == 200
+        assert b"Audit Report" in resp.data or b"Score" in resp.data
+
+    def test_audit_epub_quick(self, client):
+        epub_data = _make_fake_epub()
+        data = {
+            "document": (epub_data, "test.epub"),
+            "mode": "quick",
+        }
+        resp = client.post("/audit/", data=data, content_type="multipart/form-data")
+        assert resp.status_code == 200
+
+    def test_corrupt_epub_rejected(self, client):
+        data = {"document": (io.BytesIO(b"not a zip archive"), "test.epub")}
+        resp = client.post("/audit/", data=data, content_type="multipart/form-data")
+        assert resp.status_code == 400
+        assert b"does not appear to be a valid" in resp.data
+
+    def test_fix_epub_returns_warning(self, client):
+        """ePub fix should work but return audit-only guidance."""
+        epub_data = _make_fake_epub()
+        data = {"document": (epub_data, "test.epub")}
+        resp = client.post("/fix/", data=data, content_type="multipart/form-data")
+        assert resp.status_code == 200
+
+    def test_epub_auditor_finds_missing_metadata(self):
+        """Direct unit test: the epub auditor detects missing title and language."""
+        import tempfile
+        from acb_large_print.epub_auditor import audit_epub
+        epub_data = _make_fake_epub()
+        with tempfile.NamedTemporaryFile(suffix=".epub", delete=False) as f:
+            f.write(epub_data.read())
+            f.flush()
+            result = audit_epub(f.name)
+        rule_ids = {finding.rule_id for finding in result.findings}
+        assert "EPUB-TITLE" in rule_ids, f"Expected EPUB-TITLE, got {rule_ids}"
+        assert "EPUB-LANGUAGE" in rule_ids, f"Expected EPUB-LANGUAGE, got {rule_ids}"
+        assert "EPUB-NAV-DOCUMENT" in rule_ids, f"Expected EPUB-NAV-DOCUMENT, got {rule_ids}"
+        assert "EPUB-ACCESSIBILITY-METADATA" in rule_ids

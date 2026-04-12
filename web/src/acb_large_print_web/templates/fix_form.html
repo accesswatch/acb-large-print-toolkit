@@ -21,10 +21,10 @@
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
   <div class="form-group">
     <label for="document">Upload a document</label>
-    <input type="file" id="document" name="document" accept=".docx,.xlsx,.pptx,.md,.pdf"
+    <input type="file" id="document" name="document" accept=".docx,.xlsx,.pptx,.md,.pdf,.epub"
            aria-describedby="file-help"
            {% if error %}aria-invalid="true"{% endif %}>
-    <p id="file-help" class="help-text">Accepted formats: Word (.docx) and Markdown (.md) for auto-fix; Excel (.xlsx), PowerPoint (.pptx), and PDF (.pdf) for audit-only guidance. Maximum size: 16 MB.</p>
+    <p id="file-help" class="help-text">Accepted formats: Word (.docx) and Markdown (.md) for auto-fix; Excel (.xlsx), PowerPoint (.pptx), PDF (.pdf), and ePub (.epub) for audit-only guidance. Maximum size: 16 MB.</p>
   </div>
 
   <fieldset>

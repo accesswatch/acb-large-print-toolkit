@@ -19,6 +19,7 @@
     <li><a href="#section-hyphenation">Hyphenation</a></li>
     <li><a href="#section-page-numbers">Page Numbers</a></li>
     <li><a href="#section-doc-properties">Document Properties (WCAG)</a></li>
+    <li><a href="#section-epub">ePub Accessibility</a></li>
     <li><a href="#section-rules-summary">All Rules by Severity</a></li>
   </ol>
 </nav>
@@ -169,6 +170,34 @@
     <ul>
       <li><strong>ACB-DOC-TITLE</strong> (Medium) -- Document must have a title in properties</li>
       <li><strong>ACB-DOC-LANGUAGE</strong> (Medium) -- Document language must be set</li>
+    </ul>
+  </details>
+  <a href="#toc-heading" class="back-to-top">Back to table of contents</a>
+</section>
+
+<section id="section-epub">
+  <h2>11. ePub Accessibility</h2>
+  <details class="guideline-accordion" open>
+    <summary>ePub accessibility requirements</summary>
+    <p>These rules are based on <a href="https://www.w3.org/TR/epub-a11y-11/">EPUB Accessibility 1.1</a> and WCAG 2.2 AA, applied when auditing .epub files:</p>
+    <p><strong>Title:</strong> The ePub package must include a <code>&lt;dc:title&gt;</code> element in its OPF metadata. Screen readers and reading systems use this title to identify the publication.</p>
+    <p><strong>Language:</strong> The ePub package must declare a language (<code>&lt;dc:language&gt;</code>) so reading systems can select the correct text-to-speech voice and hyphenation rules.</p>
+    <p><strong>Navigation document:</strong> The ePub must include a navigation document (EPUB 3 nav or EPUB 2 NCX) so readers can jump between chapters and sections. This is the ePub equivalent of a table of contents.</p>
+    <p><strong>Heading hierarchy:</strong> Content documents must use proper heading levels (h1 through h6) without skipping any levels. A heading level 3 must be preceded by a heading level 2.</p>
+    <p><strong>Alt text:</strong> Every image must have meaningful alternative text. Decorative images should have an empty alt attribute (<code>alt=""</code>).</p>
+    <p><strong>Table headers:</strong> Data tables must use <code>&lt;th&gt;</code> elements so screen readers can associate data cells with their headers.</p>
+    <p><strong>Accessibility metadata:</strong> The ePub should include schema.org accessibility metadata (accessMode, accessibilityFeature, accessibilitySummary, accessibilityHazard) so reading systems and library catalogs can describe the publication's accessibility characteristics.</p>
+    <p><strong>Link text:</strong> Hyperlinks must have descriptive text. Avoid vague phrases like "click here", "read more", or "here".</p>
+    <h3>Related audit rules</h3>
+    <ul>
+      <li><strong>EPUB-TITLE</strong> (High) -- ePub must have a title in OPF metadata</li>
+      <li><strong>EPUB-LANGUAGE</strong> (High) -- ePub must declare a language</li>
+      <li><strong>EPUB-NAV-DOCUMENT</strong> (High) -- ePub must include a navigation document</li>
+      <li><strong>EPUB-HEADING-HIERARCHY</strong> (High) -- Heading levels must not skip</li>
+      <li><strong>EPUB-MISSING-ALT-TEXT</strong> (Critical) -- Images must have alt text</li>
+      <li><strong>EPUB-TABLE-HEADERS</strong> (High) -- Tables must use th elements</li>
+      <li><strong>EPUB-ACCESSIBILITY-METADATA</strong> (Medium) -- ePub should include accessibility metadata</li>
+      <li><strong>EPUB-LINK-TEXT</strong> (High) -- Links must have descriptive text</li>
     </ul>
   </details>
   <a href="#toc-heading" class="back-to-top">Back to table of contents</a>

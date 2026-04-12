@@ -4,10 +4,11 @@ A cross-platform desktop application that audits, remediates, and exports Micros
 
 ## Features
 
-- Audit .docx, .xlsx, and .pptx files against ACB Large Print and MSAC accessibility rules
+- Audit .docx, .xlsx, .pptx, and .epub files against ACB Large Print and MSAC accessibility rules
 - Auto-fix compliance issues in Word documents (fonts, spacing, emphasis, headings, margins)
 - Audit Excel workbooks (sheet names, table headers, merged cells, alt text, hidden content, color-only data)
 - Audit PowerPoint presentations (slide titles, reading order, alt text, font sizes, speaker notes, charts)
+- Audit ePub e-books (title, language, navigation, heading hierarchy, alt text, table headers, accessibility metadata, link text)
 - Convert documents to Markdown via Microsoft MarkItDown (.docx, .xlsx, .pptx, .pdf, .html, .csv, .json, .xml, .epub)
 - Generate ACB-compliant Word templates (.dotx) with pre-configured styles
 - Export Word documents to accessible HTML (standalone or CMS-ready fragments)

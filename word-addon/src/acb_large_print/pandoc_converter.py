@@ -2,7 +2,7 @@
 
 Wraps the Pandoc CLI to convert text-oriented document formats into
 standalone, accessible HTML with embedded ACB Large Print CSS.
-Supported input: .md, .rst, .odt, .rtf, .docx.
+Supported input: .md, .rst, .odt, .rtf, .docx, .epub.
 
 Pandoc is an external dependency -- not a Python package.  The module
 falls back gracefully when it is not installed.
@@ -27,6 +27,7 @@ PANDOC_INPUT_EXTENSIONS: set[str] = {
     ".odt",     # OpenDocument Text
     ".rtf",     # Rich Text Format
     ".docx",    # Word (Pandoc's own reader)
+    ".epub",    # ePub e-books
 }
 
 # Pandoc input format flag for each extension
@@ -36,6 +37,7 @@ _INPUT_FORMAT: dict[str, str] = {
     ".odt": "odt",
     ".rtf": "rtf",
     ".docx": "docx",
+    ".epub": "epub",
 }
 
 # ---------------------------------------------------------------------------

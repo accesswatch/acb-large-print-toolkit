@@ -56,6 +56,13 @@ def _fix_by_extension(saved_path: Path, output_path: Path, *, bound: bool = Fals
             "PDF files cannot be auto-fixed. "
             "Use Adobe Acrobat Pro or re-export from the source application."
         ]
+    elif ext == ".epub":
+        from acb_large_print.epub_auditor import audit_epub
+        post_audit = audit_epub(saved_path)
+        return saved_path, 0, post_audit, [
+            "ePub files cannot be auto-fixed yet. "
+            "Review the audit findings and fix them in your ePub editor."
+        ]
     else:
         from acb_large_print.fixer import fix_document
         return fix_document(saved_path, output_path, bound=bound)
@@ -76,6 +83,9 @@ def _audit_by_extension(saved_path: Path):
     elif ext == ".pdf":
         from acb_large_print.pdf_auditor import audit_pdf
         return audit_pdf(saved_path)
+    elif ext == ".epub":
+        from acb_large_print.epub_auditor import audit_epub
+        return audit_epub(saved_path)
     else:
         from acb_large_print.auditor import audit_document
         return audit_document(saved_path)

@@ -11,6 +11,7 @@ A VS Code agent toolkit, desktop application, and web application for auditing a
 | PowerPoint (.pptx) | MSAC rules -- slide titles, reading order, alt text, font sizes, speaker notes, charts | Planned | -- | -- | To Markdown |
 | Markdown (.md) | ACB emphasis, headings, images, lists | Planned | -- | -- | -- |
 | PDF (.pdf) | Page-level structure and text extraction | Planned | -- | -- | To Markdown |
+| ePub (.epub) | EPUB Accessibility 1.1 (title, language, nav, headings, alt text, tables, links, metadata) | Planned | -- | -- | To Markdown, To HTML |
 | HTML/CSS | ACB + WCAG 2.2 AA (via VS Code agent) | Yes (via agent) | Yes | -- | To Markdown |
 
 ## Five ways to use it
@@ -25,9 +26,9 @@ A VS Code agent toolkit, desktop application, and web application for auditing a
 
 ## What this toolkit does
 
-- Audits Word (.docx), Excel (.xlsx), PowerPoint (.pptx), Markdown (.md), PDF (.pdf), HTML, and CSS files for accessibility
+- Audits Word (.docx), Excel (.xlsx), PowerPoint (.pptx), Markdown (.md), PDF (.pdf), ePub (.epub), HTML, and CSS files for accessibility
 - Auto-fixes Word document compliance issues (fonts, spacing, emphasis, headings, margins)
-- Provides detailed audit reports for Excel, PowerPoint, Markdown, and PDF with manual fix guidance
+- Provides detailed audit reports for Excel, PowerPoint, Markdown, PDF, and ePub with manual fix guidance
 - Generates ACB-compliant Word templates (.dotx) with pre-configured styles
 - Exports Word documents to accessible HTML (standalone or CMS-ready fragments)
 - Converts documents to Markdown via Microsoft MarkItDown (.docx, .xlsx, .pptx, .pdf, .html, .csv, .json, .xml, .epub)

@@ -13,6 +13,7 @@
     <li><strong>PowerPoint (.pptx)</strong> -- slide titles, reading order, alt text, font sizes, speaker notes, and chart descriptions.</li>
     <li><strong>Markdown (.md)</strong> -- heading hierarchy, emphasis violations, link text, alt text, emoji, em-dashes, and tables.</li>
     <li><strong>PDF (.pdf)</strong> -- title, language, tagging, font sizes, font families, scanned pages, and bookmarks.</li>
+    <li><strong>ePub (.epub)</strong> -- title, language, navigation, heading hierarchy, alt text, table headers, accessibility metadata, and link text.</li>
   </ul>
   <p>You receive a detailed report showing each finding with its severity and the relevant guideline reference.</p>
 </details>
@@ -27,10 +28,10 @@
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
   <div class="form-group">
     <label for="document">Upload a document</label>
-    <input type="file" id="document" name="document" accept=".docx,.xlsx,.pptx,.md,.pdf"
+    <input type="file" id="document" name="document" accept=".docx,.xlsx,.pptx,.md,.pdf,.epub"
            aria-describedby="file-help"
            {% if error %}aria-invalid="true"{% endif %}>
-    <p id="file-help" class="help-text">Accepted formats: Word (.docx), Excel (.xlsx), PowerPoint (.pptx), Markdown (.md), PDF (.pdf). Maximum size: 16 MB.</p>
+    <p id="file-help" class="help-text">Accepted formats: Word (.docx), Excel (.xlsx), PowerPoint (.pptx), Markdown (.md), PDF (.pdf), ePub (.epub). Maximum size: 16 MB.</p>
   </div>
 
   <fieldset>

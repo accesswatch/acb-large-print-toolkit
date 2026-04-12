@@ -272,6 +272,38 @@ _RULE_HELP_URLS: dict[str, list[tuple[str, str]]] = {
     "PDF-BOOKMARKS": [
         ("Adobe: Creating Accessible PDFs", "https://helpx.adobe.com/acrobat/using/creating-accessible-pdfs.html"),
     ],
+    # --- ePub rules ---
+    "EPUB-TITLE": [
+        ("EPUB Accessibility 1.1", "https://www.w3.org/TR/epub-a11y-11/"),
+        ("Accessible Publishing Knowledge Base: Title", "https://kb.daisy.org/publishing/docs/epub/title.html"),
+    ],
+    "EPUB-LANGUAGE": [
+        ("EPUB Accessibility 1.1", "https://www.w3.org/TR/epub-a11y-11/"),
+        ("Accessible Publishing Knowledge Base: Language", "https://kb.daisy.org/publishing/docs/epub/language.html"),
+    ],
+    "EPUB-NAV-DOCUMENT": [
+        ("EPUB Accessibility 1.1", "https://www.w3.org/TR/epub-a11y-11/"),
+        ("Accessible Publishing Knowledge Base: Navigation", "https://kb.daisy.org/publishing/docs/navigation/toc.html"),
+    ],
+    "EPUB-HEADING-HIERARCHY": [
+        ("Accessible Publishing Knowledge Base: Headings", "https://kb.daisy.org/publishing/docs/html/headings.html"),
+        ("WebAIM: Headings", "https://webaim.org/techniques/semanticstructure/"),
+    ],
+    "EPUB-MISSING-ALT-TEXT": [
+        ("Accessible Publishing Knowledge Base: Images", "https://kb.daisy.org/publishing/docs/html/images.html"),
+        ("WebAIM: Alternative Text", "https://webaim.org/techniques/alttext/"),
+    ],
+    "EPUB-TABLE-HEADERS": [
+        ("Accessible Publishing Knowledge Base: Tables", "https://kb.daisy.org/publishing/docs/html/tables.html"),
+        ("WebAIM: Creating Accessible Tables", "https://webaim.org/techniques/tables/data"),
+    ],
+    "EPUB-ACCESSIBILITY-METADATA": [
+        ("EPUB Accessibility 1.1: Discovery Metadata", "https://www.w3.org/TR/epub-a11y-11/#sec-disc-package"),
+        ("Schema.org: Accessibility Properties", "https://www.w3.org/wiki/WebSchemas/Accessibility"),
+    ],
+    "EPUB-LINK-TEXT": [
+        ("WebAIM: Links and Hypertext", "https://webaim.org/techniques/hypertext/"),
+    ],
 }
 
 

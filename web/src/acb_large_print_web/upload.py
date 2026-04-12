@@ -11,14 +11,14 @@ from pathlib import Path
 from werkzeug.datastructures import FileStorage
 from werkzeug.utils import secure_filename
 
-ALLOWED_EXTENSIONS = {".docx", ".xlsx", ".pptx", ".md", ".pdf"}
+ALLOWED_EXTENSIONS = {".docx", ".xlsx", ".pptx", ".md", ".pdf", ".epub"}
 
 # Additional extensions accepted by the convert route (Pandoc + MarkItDown)
 CONVERT_EXTENSIONS = ALLOWED_EXTENSIONS | {
     ".rst", ".odt", ".rtf",     # Pandoc inputs
     ".html", ".htm",             # MarkItDown
     ".csv", ".json", ".xml",    # MarkItDown
-    ".epub", ".zip",            # MarkItDown
+    ".zip",                      # MarkItDown
 }
 
 # Human-readable format labels for error messages
@@ -28,6 +28,7 @@ _FORMAT_LABELS = {
     ".pptx": "PowerPoint presentation",
     ".md": "Markdown file",
     ".pdf": "PDF document",
+    ".epub": "ePub e-book",
 }
 _UUID_RE = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
 
@@ -89,8 +90,8 @@ def validate_upload(
     with open(saved_path, "rb") as f:
         header = f.read(8)
 
-    if ext in {".docx", ".xlsx", ".pptx"}:
-        # Office Open XML files are ZIP archives starting with PK
+    if ext in {".docx", ".xlsx", ".pptx", ".epub"}:
+        # Office Open XML and ePub files are ZIP archives starting with PK
         if header[:2] != b"PK":
             fmt_label = _FORMAT_LABELS.get(ext, "Office document")
             cleanup_token(token)

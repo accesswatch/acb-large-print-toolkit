@@ -44,6 +44,7 @@ def _build_parser() -> argparse.ArgumentParser:
             "  acb-large-print audit report.docx\n"
             "  acb-large-print audit budget.xlsx\n"
             "  acb-large-print audit slides.pptx\n"
+            "  acb-large-print audit book.epub\n"
             "  acb-large-print audit report.docx -f json -o report.json\n"
             "  acb-large-print fix  report.docx -o report-fixed.docx\n"
             "  acb-large-print fix  report.docx -o fixed.docx -b\n"
@@ -83,9 +84,9 @@ def _build_parser() -> argparse.ArgumentParser:
     audit_p = sub.add_parser(
         "audit",
         help="Audit a document for ACB compliance",
-        description="Scan a .docx, .xlsx, or .pptx file and report all ACB guideline violations.",
+        description="Scan a .docx, .xlsx, .pptx, or .epub file and report all ACB guideline violations.",
     )
-    audit_p.add_argument("file", type=Path, help="Path to .docx, .xlsx, or .pptx file to audit")
+    audit_p.add_argument("file", type=Path, help="Path to .docx, .xlsx, .pptx, or .epub file to audit")
     audit_p.add_argument(
         "--format", "-f", choices=["text", "json"], default="text",
         help="Output format (default: text)",
@@ -99,9 +100,9 @@ def _build_parser() -> argparse.ArgumentParser:
     fix_p = sub.add_parser(
         "fix",
         help="Fix a document for ACB compliance",
-        description="Automatically fix ACB compliance issues in a .docx file. Excel and PowerPoint files are audited with manual fix guidance.",
+        description="Automatically fix ACB compliance issues in a .docx file. Excel, PowerPoint, and ePub files are audited with manual fix guidance.",
     )
-    fix_p.add_argument("file", type=Path, help="Path to .docx, .xlsx, or .pptx file to fix")
+    fix_p.add_argument("file", type=Path, help="Path to .docx, .xlsx, .pptx, or .epub file to fix")
     fix_p.add_argument(
         "--output", "-o", type=Path, default=None,
         help="Output file path (default: overwrites input)",
@@ -272,7 +273,7 @@ def _build_parser() -> argparse.ArgumentParser:
 
 
 # ── Supported file extensions ─────────────────────────────────────────
-SUPPORTED_EXTENSIONS = {".docx", ".xlsx", ".pptx"}
+SUPPORTED_EXTENSIONS = {".docx", ".xlsx", ".pptx", ".epub"}
 
 
 def _audit_by_extension(file_path: Path):
@@ -284,6 +285,9 @@ def _audit_by_extension(file_path: Path):
     elif ext == ".pptx":
         from .pptx_auditor import audit_presentation
         return audit_presentation(file_path)
+    elif ext == ".epub":
+        from .epub_auditor import audit_epub
+        return audit_epub(file_path)
     else:
         from .auditor import audit_document
         return audit_document(file_path)
@@ -309,6 +313,13 @@ def _fix_by_extension(file_path: Path, output_path: Path | None = None, *, bound
             "PowerPoint presentations cannot be auto-fixed yet. "
             "Review the audit findings and fix them manually in PowerPoint."
         ]
+    elif ext == ".epub":
+        from .epub_auditor import audit_epub
+        post_audit = audit_epub(file_path)
+        return file_path, 0, post_audit, [
+            "ePub files cannot be auto-fixed yet. "
+            "Review the audit findings and fix them in your ePub editor."
+        ]
     else:
         from .fixer import fix_document
         return fix_document(file_path, output_path=output_path, bound=bound)
@@ -323,8 +334,8 @@ def _cmd_audit(args: argparse.Namespace) -> int:
         return 1
 
     ext = args.file.suffix.lower()
-    if ext not in (".docx", ".xlsx", ".pptx"):
-        print(f"Error: Unsupported file type '{ext}'. Use .docx, .xlsx, or .pptx.", file=sys.stderr)
+    if ext not in (".docx", ".xlsx", ".pptx", ".epub"):
+        print(f"Error: Unsupported file type '{ext}'. Use .docx, .xlsx, .pptx, or .epub.", file=sys.stderr)
         return 1
 
     log.debug("Auditing: %s", args.file)
@@ -356,7 +367,7 @@ def _cmd_fix(args: argparse.Namespace) -> int:
 
     ext = args.file.suffix.lower()
     if ext not in SUPPORTED_EXTENSIONS:
-        print(f"Error: Unsupported file type '{ext}'. Use .docx, .xlsx, or .pptx.", file=sys.stderr)
+        print(f"Error: Unsupported file type '{ext}'. Use .docx, .xlsx, .pptx, or .epub.", file=sys.stderr)
         return 1
 
     if args.dry_run:

@@ -1,10 +1,10 @@
 # ACB Document Accessibility Web Application
 
-A Flask web application that provides browser-based access to the ACB Document Accessibility Tool. Upload a Word, Excel, PowerPoint, Markdown, or PDF document, choose an operation (audit, fix, template, export, convert), and get results immediately -- no installation required.
+A Flask web application that provides browser-based access to the ACB Document Accessibility Tool. Upload a Word, Excel, PowerPoint, Markdown, PDF, or ePub document, choose an operation (audit, fix, template, export, convert), and get results immediately -- no installation required.
 
 ## Features
 
-- **Audit** -- check a .docx, .xlsx, .pptx, .md, or .pdf file against accessibility rules with Full, Quick, or Custom mode. Rules adapt automatically to each file format.
+- **Audit** -- check a .docx, .xlsx, .pptx, .md, .pdf, or .epub file against accessibility rules with Full, Quick, or Custom mode. Rules adapt automatically to each file format.
 - **Fix** -- auto-fix compliance issues in Word documents and download the corrected file. Other formats receive a detailed audit with manual fix guidance.
 - **Template** -- generate a pre-configured ACB-compliant Word template (.dotx)
 - **Export** -- convert a .docx to accessible HTML (standalone ZIP or CMS fragment)
@@ -22,6 +22,7 @@ A Flask web application that provides browser-based access to the ACB Document A
 | PowerPoint (.pptx) | Full (MSAC rules: slide titles, reading order, alt text, font sizes, speaker notes, charts) | Planned | -- | -- | To Markdown |
 | Markdown (.md) | Basic (ACB emphasis, headings, images, lists) | Planned | -- | -- | -- |
 | PDF (.pdf) | Basic (page-level structure and text extraction) | Planned | -- | -- | To Markdown |
+| ePub (.epub) | Full (EPUB Accessibility 1.1: title, language, nav, headings, alt text, tables, links, metadata) | Planned | -- | -- | To Markdown, To HTML |
 
 ## Architecture
 

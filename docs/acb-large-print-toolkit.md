@@ -36,13 +36,14 @@ The `web/` directory contains a browser-based interface for all core toolkit ope
 | PowerPoint (.pptx) | Full (MSAC: slide titles, reading order, alt text, font sizes, speaker notes, charts) | Planned | -- | -- | To Markdown |
 | Markdown (.md) | Basic (ACB emphasis, headings, images, lists) | Planned | -- | -- | -- |
 | PDF (.pdf) | Basic (page-level structure and text extraction) | Planned | -- | -- | To Markdown |
+| ePub (.epub) | Full (EPUB Accessibility 1.1: title, language, nav, headings, alt text, tables, links, metadata) | Planned | -- | -- | To Markdown, To HTML |
 
 ### Pages
 
 | Route | Purpose |
 |-------|---------|
 | `GET /` | Landing page with format pills, operation cards, and descriptions |
-| `GET/POST /audit` | Upload a .docx/.xlsx/.pptx, choose Full/Quick/Custom mode, view compliance report |
+| `GET/POST /audit` | Upload a .docx/.xlsx/.pptx/.epub, choose Full/Quick/Custom mode, view compliance report |
 | `GET/POST /fix` | Upload a file, Word gets auto-fixed, Excel/PowerPoint get audit guidance |
 | `GET/POST /template` | Configure and download an ACB-compliant Word template (.dotx) |
 | `GET/POST /export` | Upload a .docx, export as standalone HTML (ZIP) or CMS fragment |
@@ -115,9 +116,10 @@ All three interfaces (CLI, GUI, Web) now support .docx, .xlsx, and .pptx files:
 | PowerPoint (.pptx) | Full (MSAC rules) | Planned | -- | -- | To Markdown |
 | Markdown (.md) | Basic (ACB rules) | Planned | -- | -- | -- |
 | PDF (.pdf) | Basic (page-level) | Planned | -- | -- | To Markdown |
+| ePub (.epub) | Full (EPUB A11y 1.1) | Planned | -- | -- | To Markdown, To HTML |
 
 ### CLI Changes
-- `audit` command accepts .docx, .xlsx, .pptx, .md, .pdf
+- `audit` command accepts .docx, .xlsx, .pptx, .epub, .md, .pdf
 - `fix` command accepts all formats (Word gets auto-fixed; others get audit report with manual fix guidance)
 - `convert` command converts documents to Markdown via MarkItDown (.docx, .xlsx, .pptx, .pdf, .html, .csv, .json, .xml, .epub)
 - `batch` command scans directories for all supported file types

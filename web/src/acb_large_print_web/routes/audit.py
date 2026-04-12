@@ -31,6 +31,9 @@ def _audit_by_extension(saved_path: Path):
     elif ext == ".pdf":
         from acb_large_print.pdf_auditor import audit_pdf
         return audit_pdf(saved_path)
+    elif ext == ".epub":
+        from acb_large_print.epub_auditor import audit_epub
+        return audit_epub(saved_path)
     else:
         from acb_large_print.auditor import audit_document
         return audit_document(saved_path)
