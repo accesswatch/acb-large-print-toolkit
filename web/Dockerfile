@@ -18,7 +18,7 @@ RUN pip install --no-cache-dir ./web
 
 # Create a non-root user
 RUN addgroup --system app && adduser --system --ingroup app app
-RUN mkdir -p /app/instance && chown app:app /app/instance
+RUN mkdir -p /app/instance /app/.gunicorn && chown -R app:app /app/instance /app/.gunicorn
 
 ENV HOME=/app
 USER app
