@@ -29,11 +29,13 @@ The `web/` directory contains a browser-based interface for all core toolkit ope
 
 ### Supported Document Formats
 
-| Format | Audit | Auto-Fix | Template | Export |
-|--------|-------|----------|----------|--------|
-| Word (.docx) | Full (30+ ACB + MSAC rules) | Yes | Yes (.dotx) | Yes (HTML/ZIP) |
-| Excel (.xlsx) | Full (MSAC: sheet names, table headers, merged cells, alt text, hidden content, color-only) | Planned | -- | -- |
-| PowerPoint (.pptx) | Full (MSAC: slide titles, reading order, alt text, font sizes, speaker notes, charts) | Planned | -- | -- |
+| Format | Audit | Auto-Fix | Template | Export | Convert |
+|--------|-------|----------|----------|--------|---------|
+| Word (.docx) | Full (30+ ACB + MSAC rules) | Yes | Yes (.dotx) | Yes (HTML/ZIP) | To Markdown |
+| Excel (.xlsx) | Full (MSAC: sheet names, table headers, merged cells, alt text, hidden content, color-only) | Planned | -- | -- | To Markdown |
+| PowerPoint (.pptx) | Full (MSAC: slide titles, reading order, alt text, font sizes, speaker notes, charts) | Planned | -- | -- | To Markdown |
+| Markdown (.md) | Basic (ACB emphasis, headings, images, lists) | Planned | -- | -- | -- |
+| PDF (.pdf) | Basic (page-level structure and text extraction) | Planned | -- | -- | To Markdown |
 
 ### Pages
 
@@ -44,7 +46,9 @@ The `web/` directory contains a browser-based interface for all core toolkit ope
 | `GET/POST /fix` | Upload a file, Word gets auto-fixed, Excel/PowerPoint get audit guidance |
 | `GET/POST /template` | Configure and download an ACB-compliant Word template (.dotx) |
 | `GET/POST /export` | Upload a .docx, export as standalone HTML (ZIP) or CMS fragment |
+| `GET/POST /convert` | Upload any supported document, convert to Markdown via MarkItDown |
 | `GET /guidelines` | Full ACB Large Print specification and WCAG 2.2 supplement |
+| `GET /about` | Project mission, organizations, standards, dependencies, acknowledgments |
 | `GET/POST /feedback` | Submit feedback (rating, task, message) |
 | `GET /feedback/review` | View feedback (password-protected via FEEDBACK_PASSWORD env var) |
 | `GET /health` | Health check endpoint (returns 200) |
@@ -104,16 +108,19 @@ The `web/` directory contains a browser-based interface for all core toolkit ope
 
 All three interfaces (CLI, GUI, Web) now support .docx, .xlsx, and .pptx files:
 
-| Format | Audit | Auto-Fix | Template | Export |
-|--------|-------|----------|----------|--------|
-| Word (.docx) | Full (30+ ACB + MSAC rules) | Yes | Yes (.dotx) | Yes (HTML) |
-| Excel (.xlsx) | Full (MSAC rules) | Planned | -- | -- |
-| PowerPoint (.pptx) | Full (MSAC rules) | Planned | -- | -- |
+| Format | Audit | Auto-Fix | Template | Export | Convert |
+|--------|-------|----------|----------|--------|---------|
+| Word (.docx) | Full (30+ ACB + MSAC rules) | Yes | Yes (.dotx) | Yes (HTML) | To Markdown |
+| Excel (.xlsx) | Full (MSAC rules) | Planned | -- | -- | To Markdown |
+| PowerPoint (.pptx) | Full (MSAC rules) | Planned | -- | -- | To Markdown |
+| Markdown (.md) | Basic (ACB rules) | Planned | -- | -- | -- |
+| PDF (.pdf) | Basic (page-level) | Planned | -- | -- | To Markdown |
 
 ### CLI Changes
-- `audit` command accepts .docx, .xlsx, .pptx
-- `fix` command accepts all three formats (Word gets auto-fixed; Excel/PowerPoint get audit report with manual fix guidance)
-- `batch` command scans directories for all three file types
+- `audit` command accepts .docx, .xlsx, .pptx, .md, .pdf
+- `fix` command accepts all formats (Word gets auto-fixed; others get audit report with manual fix guidance)
+- `convert` command converts documents to Markdown via MarkItDown (.docx, .xlsx, .pptx, .pdf, .html, .csv, .json, .xml, .epub)
+- `batch` command scans directories for all supported file types
 - Format dispatch via `_audit_by_extension()` and `_fix_by_extension()` helpers
 
 ### GUI Changes
@@ -122,6 +129,7 @@ All three interfaces (CLI, GUI, Web) now support .docx, .xlsx, and .pptx files:
 - Validation accepts .docx, .xlsx, .pptx
 - Audit and fix dispatched by extension
 - HTML export options (CMS, standalone) only shown for Word files
+- Markdown conversion option shown for all MarkItDown-convertible formats
 - Save dialog uses the source file's extension
 
 ## CMS Embed Snippet

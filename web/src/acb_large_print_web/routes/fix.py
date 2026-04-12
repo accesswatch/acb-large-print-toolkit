@@ -30,7 +30,6 @@ def _fix_by_extension(saved_path: Path, output_path: Path, *, bound: bool = Fals
     ext = saved_path.suffix.lower()
     if ext == ".xlsx":
         from acb_large_print.xlsx_auditor import audit_workbook
-        # No auto-fixer yet for Excel -- return audit-only results
         post_audit = audit_workbook(saved_path)
         return saved_path, 0, post_audit, [
             "Excel workbooks cannot be auto-fixed yet. "
@@ -38,11 +37,24 @@ def _fix_by_extension(saved_path: Path, output_path: Path, *, bound: bool = Fals
         ]
     elif ext == ".pptx":
         from acb_large_print.pptx_auditor import audit_presentation
-        # No auto-fixer yet for PowerPoint -- return audit-only results
         post_audit = audit_presentation(saved_path)
         return saved_path, 0, post_audit, [
             "PowerPoint presentations cannot be auto-fixed yet. "
             "Review the audit findings and fix them manually in PowerPoint."
+        ]
+    elif ext == ".md":
+        from acb_large_print.md_auditor import audit_markdown
+        post_audit = audit_markdown(saved_path)
+        return saved_path, 0, post_audit, [
+            "Markdown auto-fix is coming soon. "
+            "Review the audit findings and fix them in your text editor."
+        ]
+    elif ext == ".pdf":
+        from acb_large_print.pdf_auditor import audit_pdf
+        post_audit = audit_pdf(saved_path)
+        return saved_path, 0, post_audit, [
+            "PDF files cannot be auto-fixed. "
+            "Use Adobe Acrobat Pro or re-export from the source application."
         ]
     else:
         from acb_large_print.fixer import fix_document
@@ -58,6 +70,12 @@ def _audit_by_extension(saved_path: Path):
     elif ext == ".pptx":
         from acb_large_print.pptx_auditor import audit_presentation
         return audit_presentation(saved_path)
+    elif ext == ".md":
+        from acb_large_print.md_auditor import audit_markdown
+        return audit_markdown(saved_path)
+    elif ext == ".pdf":
+        from acb_large_print.pdf_auditor import audit_pdf
+        return audit_pdf(saved_path)
     else:
         from acb_large_print.auditor import audit_document
         return audit_document(saved_path)

@@ -17,6 +17,9 @@ The Flask web application has been built and is ready for deployment. All core f
 | Fix page (Full / Essentials / Custom modes) | Done | Before/after scores, download fixed .docx, review-required warnings |
 | Template generation | Done | Title, sample content, binding margin options |
 | HTML export (Standalone ZIP + CMS fragment) | Done | Both modes working |
+| Convert to Markdown (MarkItDown) | Done | .docx, .xlsx, .pptx, .pdf, .html, .csv, .json, .xml, .epub |
+| Markdown and PDF audit | Done | Basic page-level structure checks |
+| About page | Done | Mission, organizations, standards, dependencies, acknowledgments |
 | Guidelines reference page | Done | Full ACB spec + WCAG supplement from constants.py |
 | Feedback page with SQLite storage | Done | Password-protected review page via FEEDBACK_PASSWORD env var |
 | CSRF protection (Flask-WTF) | Done | All forms have hidden csrf_token |
@@ -25,7 +28,7 @@ The Flask web application has been built and is ready for deployment. All core f
 | Favicon (SVG) | Done | "LP" monogram |
 | Flash message support | Done | Category-based flash rendering in base template |
 | Docker + Compose | Done | Non-root user, health check, feedback volume |
-| Test suite (28 tests) | Done | Smoke tests, error handling, feedback, accessibility checks, integration |
+| Test suite | Done | Smoke tests, error handling, feedback, accessibility checks, integration |
 | Contextual help (details/summary) | Done | Every form page has expandable help accordions |
 | WCAG 2.2 AA compliance | Done | lang, landmarks, labels, contrast, skip nav, focus indicators |
 | No JavaScript required | Done | All functionality works without JS |

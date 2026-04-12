@@ -15,8 +15,8 @@ This repository contains the ACB Document Accessibility Toolkit -- a VS Code age
 - `docs/` -- Detailed toolkit documentation, announcement, PRD, and deployment guide
 - `samples/` -- Example source Markdown and converted HTML files
 - `reference/` -- Source ACB specification document (.docx)
-- `web/` -- Flask web application (browser-based audit, fix, template, export, guidelines, feedback)
-- `word-addon/` -- Standalone Python CLI + wxPython GUI tool (auditor, fixer, template builder, exporter)
+- `web/` -- Flask web application (browser-based audit, fix, template, export, convert, guidelines, about, feedback)
+- `word-addon/` -- Standalone Python CLI + wxPython GUI tool (auditor, fixer, converter, template builder, exporter)
 - `word-addin/` -- Office.js Web Add-in for Microsoft Word ribbon integration (TypeScript port)
 
 ## Key conventions
@@ -60,6 +60,7 @@ The ACB audit rules, fix logic, constants, and severity definitions exist in mul
 | Audit logic (Excel)                      | `word-addon/src/acb_large_print/xlsx_auditor.py`              | N/A                                           | Imports from Python core       | N/A                                                            |
 | Audit logic (PowerPoint)                 | `word-addon/src/acb_large_print/pptx_auditor.py`              | N/A                                           | Imports from Python core       | N/A                                                            |
 | Fix logic                                | `word-addon/src/acb_large_print/fixer.py`                     | `word-addin/src/fixer.ts`                     | Imports from Python core       | N/A                                                            |
+| Converter (MarkItDown)                   | `word-addon/src/acb_large_print/converter.py`                 | N/A                                           | Imports from Python core       | N/A                                                            |
 | Template builder                         | `word-addon/src/acb_large_print/template.py`                  | `word-addin/src/template.ts`                  | Imports from Python core       | N/A                                                            |
 | Web routes and templates                 | N/A                                                           | N/A                                           | `web/src/acb_large_print_web/` | N/A                                                            |
 

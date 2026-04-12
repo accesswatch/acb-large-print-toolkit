@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block title %}Convert to Markdown{% endblock %}
+{% block heading %}Convert to Markdown{% endblock %}
+
+{% block content %}
+<details class="help-accordion">
+  <summary>What does convert do?</summary>
+  <p>Convert uses <a href="https://github.com/microsoft/markitdown">Microsoft MarkItDown</a> to transform your document into clean Markdown text. This is useful for text analysis, LLM pipelines, or creating accessible Markdown versions of Office documents and PDFs.</p>
+  <p>Supported formats: Word (.docx), Excel (.xlsx), PowerPoint (.pptx), PDF (.pdf), HTML (.html), CSV (.csv), JSON (.json), XML (.xml), ePub (.epub), and ZIP (.zip).</p>
+  <p>Audio files (.mp3, .wav) are not supported in the web interface for privacy reasons -- audio transcription requires sending data to external APIs.</p>
+</details>
+
+{% if error %}
+<div class="error-box" role="alert">
+  <p><strong>Error:</strong> {{ error }}</p>
+</div>
+{% endif %}
+
+<form method="post" enctype="multipart/form-data" novalidate>
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <div class="form-group">
+    <label for="document">Upload a document to convert</label>
+    <input type="file" id="document" name="document" accept="{{ accept_extensions }}"
+           aria-describedby="file-help"
+           {% if error %}aria-invalid="true"{% endif %}>
+    <p id="file-help" class="help-text">Accepted formats: Word, Excel, PowerPoint, PDF, HTML, CSV, JSON, XML, ePub, ZIP. Maximum size: 16 MB.</p>
+  </div>
+
+  <details class="help-accordion">
+    <summary>What is the output?</summary>
+    <p>You will receive a <code>.md</code> (Markdown) file preserving the document's structure -- headings, lists, tables, and links -- as plain text with minimal markup. Images are not extracted; their alt text or captions are preserved where available.</p>
+  </details>
+
+  <button type="submit">Convert to Markdown</button>
+</form>
+{% endblock %}

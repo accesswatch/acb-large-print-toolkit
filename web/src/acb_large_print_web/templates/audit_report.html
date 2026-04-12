@@ -8,7 +8,9 @@
   <h2 id="score-heading">Compliance Score</h2>
 
   {% if doc_format %}
-  <p><span class="format-pill format-{{ doc_format }}">{{ doc_format | upper }}</span></p>
+  <ul class="format-pills">
+    <li class="format-pill format-{{ doc_format }}">{{ doc_format | upper }}</li>
+  </ul>
   {% endif %}
 
   <p class="score-display">
@@ -23,6 +25,21 @@
 <section aria-labelledby="findings-heading">
   <h2 id="findings-heading">Findings</h2>
 
+  {% set ns = namespace(critical=0, high=0, medium=0, low=0) %}
+  {% for f in result.findings %}
+    {% if f.severity.value == "Critical" %}{% set ns.critical = ns.critical + 1 %}
+    {% elif f.severity.value == "High" %}{% set ns.high = ns.high + 1 %}
+    {% elif f.severity.value == "Medium" %}{% set ns.medium = ns.medium + 1 %}
+    {% elif f.severity.value == "Low" %}{% set ns.low = ns.low + 1 %}
+    {% endif %}
+  {% endfor %}
+  <ul class="severity-summary" aria-label="Findings by severity">
+    {%- if ns.critical %}<li><span class="severity-badge severity-critical">Critical</span> {{ ns.critical }}</li>{% endif %}
+    {%- if ns.high %}<li><span class="severity-badge severity-high">High</span> {{ ns.high }}</li>{% endif %}
+    {%- if ns.medium %}<li><span class="severity-badge severity-medium">Medium</span> {{ ns.medium }}</li>{% endif %}
+    {%- if ns.low %}<li><span class="severity-badge severity-low">Low</span> {{ ns.low }}</li>{% endif %}
+  </ul>
+
   <table class="findings-table">
     <caption>Accessibility findings sorted by severity</caption>
     <thead>
@@ -32,24 +49,27 @@
         <th scope="col">Description</th>
         <th scope="col">Location</th>
         <th scope="col">Guideline</th>
+        <th scope="col">Learn More</th>
       </tr>
     </thead>
     <tbody>
       {% for f in result.findings %}
       <tr>
         <td><span class="severity-badge severity-{{ f.severity.value | lower }}">{{ f.severity.value }}</span></td>
-        <td>{{ f.rule_id }}</td>
+        <td><a href="{{ url_for('guidelines.guidelines_page') }}#section-rules-summary">{{ f.rule_id }}</a></td>
         <td>{{ f.message }}</td>
         <td>{{ f.location or "Document-wide" }}</td>
         <td>{{ f.acb_reference }}</td>
+        <td>{% set urls = help_urls_map.get(f.rule_id, []) %}{% include '_help_links.html' with context %}</td>
       </tr>
       {% endfor %}
     </tbody>
   </table>
 </section>
 {% else %}
-<section>
-  <h2>No Issues Found</h2>
+<section class="celebration" aria-labelledby="perfect-heading">
+  <h2 id="perfect-heading">No Issues Found</h2>
+  <p class="score-number grade-a">100/100</p>
   <p>This document fully complies with the checked rules. Well done.</p>
 </section>
 {% endif %}

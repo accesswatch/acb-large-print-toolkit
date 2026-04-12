@@ -14,6 +14,7 @@
       <p>Grade: {{ pre_grade }}</p>
     </div>
     <div class="score-arrow" aria-hidden="true">&rarr;</div>
+    <span class="visually-hidden">improved to</span>
     <div class="score-box">
       <h3>After</h3>
       <p class="score-number grade-{{ post_grade | lower }}">{{ post_score }}/100</p>
@@ -60,16 +61,18 @@
         <th scope="col">Description</th>
         <th scope="col">Location</th>
         <th scope="col">Guideline</th>
+        <th scope="col">Learn More</th>
       </tr>
     </thead>
     <tbody>
       {% for f in post_findings %}
       <tr>
         <td><span class="severity-badge severity-{{ f.severity.value | lower }}">{{ f.severity.value }}</span></td>
-        <td>{{ f.rule_id }}</td>
+        <td><a href="{{ url_for('guidelines.guidelines_page') }}#section-rules-summary">{{ f.rule_id }}</a></td>
         <td>{{ f.message }}</td>
         <td>{{ f.location or "Document-wide" }}</td>
         <td>{{ f.acb_reference }}</td>
+        <td>{% set urls = help_urls_map.get(f.rule_id, []) %}{% include '_help_links.html' with context %}</td>
       </tr>
       {% endfor %}
     </tbody>

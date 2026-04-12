@@ -271,8 +271,8 @@ Emoji-as-bullet pattern: List item where first non-whitespace character is an em
 Detection patterns:
 
 ```text
-—           Unicode em-dash (U+2014)
-–           Unicode en-dash (U+2013)
+ -            Unicode em-dash (U+2014)
+ -            Unicode en-dash (U+2013)
 ---         Three hyphens in prose (not on its own line as HR)
 --          Two hyphens in prose (used as em-dash substitute)
 ```
@@ -287,7 +287,7 @@ Safe to skip (do not modify):
 
 Replacement: ` - ` (space + hyphen + space)
 
-En-dash in numeric ranges: `2–4 hours` -> `2 - 4 hours`
+En-dash in numeric ranges: `2 - 4 hours` -> `2 - 4 hours`
 
 ## Pattern Library: Mermaid Diagrams
 
@@ -358,7 +358,7 @@ For more information, see the [installation guide](https://example.com/guide).
 
 ```markdown
 # Before
-The agent—when invoked—will scan all files.
+The agent - when invoked - will scan all files.
 
 # After
 The agent - when invoked - will scan all files.

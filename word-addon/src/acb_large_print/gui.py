@@ -38,6 +38,12 @@ from .reporter import generate_html_report, generate_text_report
 _SUPPORTED_EXTENSIONS = {".docx", ".xlsx", ".pptx"}
 _DOCX_ONLY_EXTENSIONS = {".docx"}
 
+# Extensions MarkItDown can convert to Markdown
+try:
+    from .converter import CONVERTIBLE_EXTENSIONS as _CONVERT_EXTENSIONS
+except ImportError:
+    _CONVERT_EXTENSIONS: set[str] = set()
+
 
 # ── Wizard step indices ───────────────────────────────────────────────
 STEP_WELCOME = 0
@@ -218,7 +224,8 @@ class WizardFrame(wx.Frame):
 
         intro = wx.StaticText(page, label=(
             "Choose which outputs to create in addition to the "
-            "fixed Word document."
+            "fixed document. HTML exports are available for Word "
+            "documents only. Markdown conversion works for all formats."
         ))
         intro.Wrap(560)
         sizer.Add(intro, flag=wx.BOTTOM, border=12)
@@ -241,12 +248,29 @@ class WizardFrame(wx.Frame):
             "Create standalone HTML file with external CSS stylesheet"
         )
         self.chk_standalone.SetValue(True)
-        sizer.Add(self.chk_standalone, flag=wx.BOTTOM, border=12)
+        sizer.Add(self.chk_standalone, flag=wx.BOTTOM, border=6)
+
+        self.chk_convert_md = wx.CheckBox(
+            page,
+            label="&Markdown file (convert document to Markdown via MarkItDown)",
+        )
+        self.chk_convert_md.SetName(
+            "Convert document to Markdown using MarkItDown"
+        )
+        self.chk_convert_md.SetValue(False)
+        if not _CONVERT_EXTENSIONS:
+            self.chk_convert_md.Disable()
+            self.chk_convert_md.SetLabel(
+                "Markdown file (MarkItDown not installed)"
+            )
+        sizer.Add(self.chk_convert_md, flag=wx.BOTTOM, border=12)
 
         note = wx.StaticText(page, label=(
             "The CMS fragment is a single file you can paste directly into "
             "a WordPress or Drupal HTML block. The standalone version is a "
-            "complete web page with a separate CSS file for hosting or email."
+            "complete web page with a separate CSS file for hosting or email. "
+            "The Markdown option converts the document to Markdown text using "
+            "Microsoft MarkItDown."
         ))
         note.Wrap(560)
         sizer.Add(note)
@@ -420,10 +444,10 @@ class WizardFrame(wx.Frame):
             wx.CallAfter(self._run_initial_audit)
 
         elif step == STEP_AUDIT:
-            if self._is_docx:
+            if self._is_docx or self._can_convert:
                 self._show_step(STEP_OPTIONS)
             else:
-                # Skip HTML export options for non-Word files
+                # Skip HTML export options for non-convertible formats
                 self._show_step(STEP_FIX)
                 wx.CallAfter(self._run_fix)
 
@@ -554,6 +578,15 @@ class WizardFrame(wx.Frame):
     def _is_docx(self) -> bool:
         """True if the source file is a Word document."""
         return self.src_path is not None and self.src_path.suffix.lower() == ".docx"
+
+    @property
+    def _can_convert(self) -> bool:
+        """True if the source file can be converted to Markdown."""
+        return (
+            bool(_CONVERT_EXTENSIONS)
+            and self.src_path is not None
+            and self.src_path.suffix.lower() in _CONVERT_EXTENSIONS
+        )
 
     # ── Audit ─────────────────────────────────────────────────────────
 
@@ -712,13 +745,13 @@ class WizardFrame(wx.Frame):
             self.html_dir_picker.SetPath(str(self.src_path.parent))
             # Hide HTML export controls for non-Word files
             show_html = self._is_docx
-            self.html_dir_picker.GetParent().FindWindowByName(
-                "HTML output folder location"
-            )
             self.html_dir_picker.Show(show_html)
-            for ctrl_name in ("HTML output folder location",):
-                ctrl = self.html_dir_picker
-                ctrl.Show(show_html)
+            # Enable/disable HTML and Markdown checkboxes based on format
+            self.chk_cms.Enable(show_html)
+            self.chk_standalone.Enable(show_html)
+            if not show_html:
+                self.chk_cms.SetValue(False)
+                self.chk_standalone.SetValue(False)
 
     def _do_save(self) -> bool:
         docx_dest = self.save_docx_picker.GetPath()
@@ -764,6 +797,13 @@ class WizardFrame(wx.Frame):
                     )
                     self.saved_files.append(f"Standalone HTML: {html_path}")
                     self.saved_files.append(f"CSS stylesheet: {css_path}")
+
+            # 3. Optional Markdown conversion (any convertible format)
+            if self.chk_convert_md.GetValue() and self._can_convert:
+                from .converter import convert_to_markdown
+                md_path = docx_dest.with_suffix(".md")
+                convert_to_markdown(src, output_path=md_path)
+                self.saved_files.append(f"Markdown: {md_path}")
 
             self.status_bar.SetStatusText(
                 f"Saved {len(self.saved_files)} files"

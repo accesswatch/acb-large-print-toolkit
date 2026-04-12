@@ -10,7 +10,7 @@ from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from flask_wtf.csrf import CSRFProtect
 
-from .rules import get_rules_by_category, get_rules_by_severity
+from .rules import get_help_urls_map, get_rules_by_category, get_rules_by_severity
 
 csrf = CSRFProtect()
 limiter = Limiter(
@@ -51,6 +51,7 @@ def create_app(config: dict | None = None) -> Flask:
         return {
             "rules_by_severity": get_rules_by_severity(),
             "rules_by_category": get_rules_by_category(),
+            "help_urls_map": get_help_urls_map(),
         }
 
     # Register blueprints
@@ -61,14 +62,18 @@ def create_app(config: dict | None = None) -> Flask:
     from .routes.export import export_bp
     from .routes.guidelines import guidelines_bp
     from .routes.feedback import feedback_bp
+    from .routes.about import about_bp
+    from .routes.convert import convert_bp
 
     app.register_blueprint(main_bp)
     app.register_blueprint(audit_bp, url_prefix="/audit")
     app.register_blueprint(fix_bp, url_prefix="/fix")
     app.register_blueprint(template_bp, url_prefix="/template")
     app.register_blueprint(export_bp, url_prefix="/export")
+    app.register_blueprint(convert_bp, url_prefix="/convert")
     app.register_blueprint(guidelines_bp, url_prefix="/guidelines")
     app.register_blueprint(feedback_bp, url_prefix="/feedback")
+    app.register_blueprint(about_bp, url_prefix="/about")
 
     # Health check
     @app.route("/health")

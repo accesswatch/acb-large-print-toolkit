@@ -93,6 +93,8 @@ nav[aria-label="Main navigation"] {
   display: flex;
   flex-wrap: wrap;
   gap: 0.35rem;
+  list-style: none;
+  padding-left: 0;
 }
 
 /* -- Card accent borders (left stripe by operation type) -- */
@@ -107,6 +109,8 @@ nav[aria-label="Main navigation"] {
   flex-wrap: wrap;
   gap: 0.75rem;
   margin: 1rem 0 1.5rem;
+  list-style: none;
+  padding-left: 0;
 }
 
 .format-pill {
@@ -540,6 +544,150 @@ footer p {
   color: #444;
 }
 
+/* --- Visually Hidden (screen reader only) --- */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* --- Findings Severity Summary --- */
+.severity-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  margin-bottom: 1rem;
+  list-style: none;
+  padding-left: 0;
+}
+
+.severity-summary li {
+  font-weight: 700;
+}
+
+/* --- Perfect Score Celebration --- */
+.celebration {
+  border: 3px solid #2e6b2e;
+  background: #f0fff0;
+  padding: 1.5rem;
+  border-radius: 0.5rem;
+  text-align: center;
+}
+
+.celebration h2 {
+  color: #2e6b2e;
+  margin-top: 0;
+}
+
+.celebration .score-number {
+  font-size: 2.5rem;
+}
+
+/* --- Back to Top Link --- */
+.back-to-top {
+  display: inline-block;
+  font-size: 1rem;
+  margin-top: 0.5rem;
+}
+
+/* --- Expand / Collapse All Toggle --- */
+.toggle-all-wrap {
+  margin-bottom: 1rem;
+}
+
+.toggle-all-btn {
+  font-family: Arial, sans-serif;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #0055cc;
+  background: none;
+  border: 2px solid #0055cc;
+  padding: 0.4em 1em;
+  border-radius: 0.25rem;
+  cursor: pointer;
+}
+
+.toggle-all-btn:hover,
+.toggle-all-btn:focus {
+  background: #0055cc;
+  color: #ffffff;
+  outline: 3px solid #003d99;
+  outline-offset: 2px;
+}
+
+/* --- Print Stylesheet --- */
+@media print {
+  .skip-link,
+  nav[aria-label="Main navigation"],
+  footer,
+  .btn-primary,
+  .back-to-top,
+  .toggle-all-wrap,
+  .help-accordion {
+    display: none !important;
+  }
+
+  body {
+    max-width: none;
+    padding: 0;
+  }
+
+  main {
+    padding: 0;
+  }
+
+  .card {
+    break-inside: avoid;
+    border: 1px solid #000;
+  }
+
+  .findings-table {
+    font-size: 0.875rem;
+  }
+
+  .findings-table th,
+  .findings-table td {
+    padding: 0.25em 0.5em;
+  }
+
+  .severity-badge,
+  .format-tag,
+  .format-pill {
+    border: 1px solid currentColor;
+    background: transparent !important;
+    color: #000 !important;
+  }
+
+  details {
+    border: none;
+  }
+
+  details > summary {
+    list-style: none;
+    padding: 0;
+    font-weight: 700;
+  }
+
+  details[open] > summary {
+    border-bottom: none;
+  }
+
+  /* Force all details open in print */
+  details:not([open]) {
+    display: block;
+  }
+
+  details:not([open]) > *:not(summary) {
+    display: block;
+  }
+}
+
 /* --- Responsive --- */
 @media (max-width: 40em) {
   nav[aria-label="Main navigation"] {
@@ -557,4 +705,22 @@ footer p {
   .score-arrow {
     transform: rotate(90deg);
   }
+}
+
+/* --- Help Links (Learn More) --- */
+.help-links {
+  list-style: none;
+  padding: 0;
+  margin: 0.25rem 0 0 0;
+  font-size: 0.889rem;
+}
+
+.help-links li {
+  margin-bottom: 0.15rem;
+}
+
+.help-links a {
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
 }

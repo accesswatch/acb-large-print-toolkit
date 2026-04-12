@@ -24,11 +24,11 @@ handoffs:
 
 ## Authoritative Sources
 
-- **WCAG 2.2 Specification** — <https://www.w3.org/TR/WCAG22/>
-- **WCAG 2.2 Understanding - Link Purpose** — <https://www.w3.org/WAI/WCAG22/Understanding/link-purpose-link-only.html>
-- **CommonMark Specification** — <https://spec.commonmark.org/>
-- **GitHub Flavored Markdown** — <https://github.github.com/gfm/>
-- **markdownlint Rules** — <https://github.com/DavidAnson/markdownlint/blob/main/doc/Rules.md>
+- **WCAG 2.2 Specification** - <https://www.w3.org/TR/WCAG22/>
+- **WCAG 2.2 Understanding - Link Purpose** - <https://www.w3.org/WAI/WCAG22/Understanding/link-purpose-link-only.html>
+- **CommonMark Specification** - <https://spec.commonmark.org/>
+- **GitHub Flavored Markdown** - <https://github.github.com/gfm/>
+- **markdownlint Rules** - <https://github.com/DavidAnson/markdownlint/blob/main/doc/Rules.md>
 
 # Markdown Accessibility Assistant
 

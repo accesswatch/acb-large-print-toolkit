@@ -25,6 +25,12 @@ def _audit_by_extension(saved_path: Path):
     elif ext == ".pptx":
         from acb_large_print.pptx_auditor import audit_presentation
         return audit_presentation(saved_path)
+    elif ext == ".md":
+        from acb_large_print.md_auditor import audit_markdown
+        return audit_markdown(saved_path)
+    elif ext == ".pdf":
+        from acb_large_print.pdf_auditor import audit_pdf
+        return audit_pdf(saved_path)
     else:
         from acb_large_print.auditor import audit_document
         return audit_document(saved_path)

@@ -4,13 +4,14 @@ A VS Code agent toolkit, desktop application, and web application for auditing a
 
 ## Supported Document Formats
 
-| Format | Audit | Auto-Fix | Template | Export |
-|--------|-------|----------|----------|--------|
-| Word (.docx) | 30+ ACB + MSAC rules | Yes -- fonts, spacing, emphasis, headings, margins | Yes (.dotx) | HTML (standalone or CMS) |
-| Excel (.xlsx) | MSAC rules -- sheet names, table headers, merged cells, alt text, hidden content, color-only | Planned | -- | -- |
-| PowerPoint (.pptx) | MSAC rules -- slide titles, reading order, alt text, font sizes, speaker notes, charts | Planned | -- | -- |
-| HTML/CSS | ACB + WCAG 2.2 AA (via VS Code agent) | Yes (via agent) | Yes | -- |
-| Markdown (.md) | ACB emphasis, headings, images, lists (via agent) | Yes (via agent) | -- | Yes (to HTML) |
+| Format | Audit | Auto-Fix | Template | Export | Convert |
+|--------|-------|----------|----------|--------|---------|
+| Word (.docx) | 30+ ACB + MSAC rules | Yes -- fonts, spacing, emphasis, headings, margins | Yes (.dotx) | HTML (standalone or CMS) | To Markdown |
+| Excel (.xlsx) | MSAC rules -- sheet names, table headers, merged cells, alt text, hidden content, color-only | Planned | -- | -- | To Markdown |
+| PowerPoint (.pptx) | MSAC rules -- slide titles, reading order, alt text, font sizes, speaker notes, charts | Planned | -- | -- | To Markdown |
+| Markdown (.md) | ACB emphasis, headings, images, lists | Planned | -- | -- | -- |
+| PDF (.pdf) | Page-level structure and text extraction | Planned | -- | -- | To Markdown |
+| HTML/CSS | ACB + WCAG 2.2 AA (via VS Code agent) | Yes (via agent) | Yes | -- | To Markdown |
 
 ## Five ways to use it
 
@@ -24,11 +25,12 @@ A VS Code agent toolkit, desktop application, and web application for auditing a
 
 ## What this toolkit does
 
-- Audits Word (.docx), Excel (.xlsx), PowerPoint (.pptx), HTML, CSS, and Markdown files for accessibility
+- Audits Word (.docx), Excel (.xlsx), PowerPoint (.pptx), Markdown (.md), PDF (.pdf), HTML, and CSS files for accessibility
 - Auto-fixes Word document compliance issues (fonts, spacing, emphasis, headings, margins)
-- Provides detailed audit reports for Excel and PowerPoint with manual fix guidance
+- Provides detailed audit reports for Excel, PowerPoint, Markdown, and PDF with manual fix guidance
 - Generates ACB-compliant Word templates (.dotx) with pre-configured styles
 - Exports Word documents to accessible HTML (standalone or CMS-ready fragments)
+- Converts documents to Markdown via Microsoft MarkItDown (.docx, .xlsx, .pptx, .pdf, .html, .csv, .json, .xml, .epub)
 - Converts Markdown to ACB-compliant HTML with proper document structure
 - Produces PowerShell scripts for configuring Word document styles
 - Detects and uses external tools (markdownlint, Pandoc) when available
@@ -73,7 +75,7 @@ lp/
     ACB Large Print Guidelines, revised 5-6-25.docx   Source specification
   web/                                   Flask web application
     src/acb_large_print_web/             Application package
-    tests/                               Test suite (28 tests)
+    tests/                               Test suite
     Dockerfile                           Production container image
     docker-compose.yml                   Compose file for deployment
   word-addon/                            Desktop CLI + GUI (Python)
@@ -86,15 +88,17 @@ lp/
 
 ### Use the web app (no install)
 
-Open the web app in any browser. Upload a Word, Excel, or PowerPoint file and choose an operation:
+Open the web app in any browser. Upload a Word, Excel, PowerPoint, Markdown, or PDF file and choose an operation:
 
 | Page | What it does |
 |------|-------------|
-| **Audit** | Check any Office document against accessibility rules (Full, Quick, or Custom mode) |
-| **Fix** | Auto-fix Word documents; get audit-based fix guidance for Excel and PowerPoint |
+| **Audit** | Check any supported document against accessibility rules (Full, Quick, or Custom mode) |
+| **Fix** | Auto-fix Word documents; get audit-based fix guidance for other formats |
 | **Template** | Generate an ACB-compliant Word template (.dotx) |
 | **Export** | Convert a .docx to accessible HTML (standalone or CMS fragment) |
+| **Convert** | Transform any supported document to Markdown via Microsoft MarkItDown |
 | **Guidelines** | Browse the full ACB specification and WCAG 2.2 supplement |
+| **About** | Project mission, organizations, standards, open source dependencies, and acknowledgments |
 
 ### Run the web app locally
 

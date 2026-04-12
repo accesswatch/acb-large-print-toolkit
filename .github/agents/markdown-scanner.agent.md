@@ -7,10 +7,10 @@ tools: ['read', 'runInTerminal', 'getTerminalOutput', 'search']
 
 ## Authoritative Sources
 
-- **WCAG 2.2 Specification** — <https://www.w3.org/TR/WCAG22/>
-- **CommonMark Specification** — <https://spec.commonmark.org/>
-- **markdownlint Rules** — <https://github.com/DavidAnson/markdownlint/blob/main/doc/Rules.md>
-- **GitHub Flavored Markdown** — <https://github.github.com/gfm/>
+- **WCAG 2.2 Specification** - <https://www.w3.org/TR/WCAG22/>
+- **CommonMark Specification** - <https://spec.commonmark.org/>
+- **markdownlint Rules** - <https://github.com/DavidAnson/markdownlint/blob/main/doc/Rules.md>
+- **GitHub Flavored Markdown** - <https://github.github.com/gfm/>
 
 # Markdown Scanner
 
@@ -226,8 +226,8 @@ For each ASCII diagram:
 
 Detect in prose (not in code blocks, inline code, YAML front matter, or HTML comments):
 
-- `—` (U+2014 em-dash)
-- `–` (U+2013 en-dash)
+- ` - ` (U+2014 em-dash)
+- ` - ` (U+2013 en-dash)
 - ` -- ` or `--` used as em-dash in prose
 - ` --- ` in prose (not on its own line as HR)
 
@@ -324,7 +324,7 @@ Return structured findings in this exact format:
 #### Domain 7: Em-Dash Normalization
 | # | Line | Severity | Current | Fix | Auto-fix |
 |---|------|----------|---------|-----|----------|
-| 1 | 23 | Moderate | `agent—when invoked—` | `agent - when invoked -` | Yes |
+| 1 | 23 | Moderate | `agent - when invoked - ` | `agent - when invoked -` | Yes |
 
 #### Domain 8: Anchor Links
 | # | Line | Severity | Anchor | Issue | Suggestion |

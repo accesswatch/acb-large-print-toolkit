@@ -1,0 +1,224 @@
+{% extends "base.html" %}
+
+{% block title %}About{% endblock %}
+{% block heading %}About This Project{% endblock %}
+
+{% block content %}
+
+<section aria-labelledby="mission-heading">
+  <h2 id="mission-heading">Mission</h2>
+  <p>The ACB Document Accessibility Toolkit helps authors, publishers, and organizations produce documents that comply with the <a href="https://acb.org/large-print-guidelines">American Council of the Blind Large Print Guidelines</a> and <a href="https://www.w3.org/TR/WCAG22/">WCAG 2.2 Level AA</a>. The toolkit audits, fixes, and templates Word, Excel, PowerPoint, Markdown, and PDF documents for accessibility.</p>
+</section>
+
+<section aria-labelledby="orgs-heading">
+  <h2 id="orgs-heading">Organizations</h2>
+
+  <dl>
+    <dt><a href="https://acb.org/">American Council of the Blind (ACB)</a></dt>
+    <dd>The nation's leading membership organization of blind and visually impaired people. ACB publishes the Large Print Guidelines through its <a href="https://acb.org/board-publications">Board of Publications</a>, which define minimum standards for font, size, spacing, emphasis, and layout in large print materials.</dd>
+
+    <dt><a href="https://acb.org/bits">Blind Information Technology Specialists (BITS)</a></dt>
+    <dd>A special interest affiliate of the American Council of the Blind. BITS members are professionals in the technology field who are blind or visually impaired. BITS sponsors this open source project to advance document accessibility tooling.</dd>
+
+    <dt><a href="https://www.w3.org/WAI/">W3C Web Accessibility Initiative (WAI)</a></dt>
+    <dd>Develops the Web Content Accessibility Guidelines (WCAG), which this toolkit uses for digital content requirements including contrast, reflow, and line spacing.</dd>
+  </dl>
+</section>
+
+<section aria-labelledby="standards-heading">
+  <h2 id="standards-heading">Standards and References</h2>
+
+  <ul>
+    <li><a href="https://acb.org/large-print-guidelines">ACB Large Print Guidelines</a> -- revised May 6, 2025. The canonical specification for large print formatting: Arial 18pt body, 22pt headings, 20pt subheadings, flush left alignment, underline-only emphasis, no italic.</li>
+    <li><a href="https://www.w3.org/TR/WCAG22/">WCAG 2.2</a> -- Web Content Accessibility Guidelines Level AA. Applied to digital output: 4.5:1 contrast ratio, 400% zoom reflow, 1.5x line-height.</li>
+    <li><a href="https://support.microsoft.com/en-us/office/improve-accessibility-with-the-accessibility-checker-a16f6de0-2f39-4a2b-8bd8-5ad801426c7f">Microsoft Accessibility Checker</a> -- rules for Word, Excel, and PowerPoint document accessibility (alt text, table headers, reading order, hyperlink text).</li>
+    <li><a href="https://pdfa.org/resource/iso-14289-pdfua/">PDF/UA (ISO 14289-1)</a> -- the international standard for accessible PDF documents. Used for PDF audit rules.</li>
+  </ul>
+</section>
+
+<section aria-labelledby="deps-heading">
+  <h2 id="deps-heading">Open Source Dependencies</h2>
+  <p>This project is built with open source software. We gratefully acknowledge the following projects:</p>
+
+  <h3>Core Libraries</h3>
+  <table>
+    <caption>Python libraries used by the ACB Document Accessibility Toolkit</caption>
+    <thead>
+      <tr>
+        <th scope="col">Library</th>
+        <th scope="col">Version</th>
+        <th scope="col">License</th>
+        <th scope="col">Purpose</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a href="https://www.python.org/">Python</a></td>
+        <td>3.13+</td>
+        <td>PSF</td>
+        <td>Runtime language</td>
+      </tr>
+      <tr>
+        <td><a href="https://flask.palletsprojects.com/">Flask</a></td>
+        <td>3.1+</td>
+        <td>BSD-3-Clause</td>
+        <td>Web application framework</td>
+      </tr>
+      <tr>
+        <td><a href="https://flask-wtf.readthedocs.io/">Flask-WTF</a></td>
+        <td>1.2+</td>
+        <td>BSD-3-Clause</td>
+        <td>CSRF protection and form handling</td>
+      </tr>
+      <tr>
+        <td><a href="https://flask-limiter.readthedocs.io/">Flask-Limiter</a></td>
+        <td>3.5+</td>
+        <td>MIT</td>
+        <td>Rate limiting for abuse prevention</td>
+      </tr>
+      <tr>
+        <td><a href="https://gunicorn.org/">Gunicorn</a></td>
+        <td>23.0+</td>
+        <td>MIT</td>
+        <td>Production WSGI server</td>
+      </tr>
+      <tr>
+        <td><a href="https://python-docx.readthedocs.io/">python-docx</a></td>
+        <td>1.1+</td>
+        <td>MIT</td>
+        <td>Read, audit, and modify Word (.docx) documents</td>
+      </tr>
+      <tr>
+        <td><a href="https://github.com/mwilliamson/python-mammoth">Mammoth</a></td>
+        <td>1.8+</td>
+        <td>BSD-2-Clause</td>
+        <td>Convert Word documents to clean HTML</td>
+      </tr>
+      <tr>
+        <td><a href="https://github.com/mwilliamson/python-mammoth">openpyxl</a></td>
+        <td>3.1+</td>
+        <td>MIT</td>
+        <td>Read and audit Excel (.xlsx) workbooks</td>
+      </tr>
+      <tr>
+        <td><a href="https://python-pptx.readthedocs.io/">python-pptx</a></td>
+        <td>1.0+</td>
+        <td>MIT</td>
+        <td>Read and audit PowerPoint (.pptx) presentations</td>
+      </tr>
+      <tr>
+        <td><a href="https://pymupdf.readthedocs.io/">PyMuPDF (fitz)</a></td>
+        <td>1.24+</td>
+        <td>AGPL-3.0</td>
+        <td>Read and audit PDF documents</td>
+      </tr>
+      <tr>
+        <td><a href="https://github.com/microsoft/markitdown">MarkItDown</a></td>
+        <td>0.1+</td>
+        <td>MIT</td>
+        <td>Convert documents and audio to Markdown (Microsoft)</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>Optional and Build Dependencies</h3>
+  <table>
+    <caption>Optional libraries used for GUI, testing, and packaging</caption>
+    <thead>
+      <tr>
+        <th scope="col">Library</th>
+        <th scope="col">Version</th>
+        <th scope="col">License</th>
+        <th scope="col">Purpose</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a href="https://wxpython.org/">wxPython</a></td>
+        <td>4.2+</td>
+        <td>wxWindows (LGPL-like)</td>
+        <td>Desktop GUI (wizard interface)</td>
+      </tr>
+      <tr>
+        <td><a href="https://pandoc.org/">Pandoc</a></td>
+        <td>3.1+</td>
+        <td>GPL-2.0</td>
+        <td>Markdown to HTML conversion (server-side)</td>
+      </tr>
+      <tr>
+        <td><a href="https://docs.pytest.org/">pytest</a></td>
+        <td>8.0+</td>
+        <td>MIT</td>
+        <td>Test framework</td>
+      </tr>
+      <tr>
+        <td><a href="https://pyinstaller.org/">PyInstaller</a></td>
+        <td>6.0+</td>
+        <td>GPL-2.0 (with exception)</td>
+        <td>Windows desktop executable packaging</td>
+      </tr>
+      <tr>
+        <td><a href="https://jrsoftware.org/isinfo.php">Inno Setup</a></td>
+        <td>6.0+</td>
+        <td>Inno Setup License (free)</td>
+        <td>Windows installer (.exe) creation</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>Infrastructure</h3>
+  <table>
+    <caption>Infrastructure and deployment components</caption>
+    <thead>
+      <tr>
+        <th scope="col">Component</th>
+        <th scope="col">License</th>
+        <th scope="col">Purpose</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a href="https://www.docker.com/">Docker</a></td>
+        <td>Apache 2.0</td>
+        <td>Container runtime for web deployment</td>
+      </tr>
+      <tr>
+        <td><a href="https://caddyserver.com/">Caddy</a></td>
+        <td>Apache 2.0</td>
+        <td>Reverse proxy with automatic HTTPS</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<section aria-labelledby="project-heading">
+  <h2 id="project-heading">Project Information</h2>
+
+  <dl>
+    <dt>Source code</dt>
+    <dd><a href="https://github.com/accesswatch/acb-large-print-toolkit">github.com/accesswatch/acb-large-print-toolkit</a></dd>
+
+    <dt>License</dt>
+    <dd><a href="https://opensource.org/licenses/MIT">MIT License</a></dd>
+
+    <dt>Author</dt>
+    <dd>Jeff Bishop, President of <a href="https://acb.org/bits">BITS</a></dd>
+
+    <dt>Desktop tool version</dt>
+    <dd>1.0.0</dd>
+
+    <dt>Web application version</dt>
+    <dd>0.1.0</dd>
+
+    <dt>Python version</dt>
+    <dd>3.13+</dd>
+  </dl>
+</section>
+
+<section aria-labelledby="acknowledgments-heading">
+  <h2 id="acknowledgments-heading">Acknowledgments</h2>
+  <p>This project would not be possible without the tireless advocacy of the American Council of the Blind and the volunteers who authored and maintain the <a href="https://acb.org/large-print-guidelines">ACB Large Print Guidelines</a>. Special thanks to the <a href="https://acb.org/board-publications">ACB Board of Publications</a> for establishing clear, enforceable standards that make printed and digital materials accessible to people who are blind or have low vision.</p>
+  <p>Thanks also to the <a href="https://acb.org/bits">BITS</a> community for testing, feedback, and ongoing development support, and to the open source maintainers whose libraries make this toolkit possible.</p>
+</section>
+
+{% endblock %}

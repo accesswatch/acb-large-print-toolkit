@@ -19,6 +19,7 @@
         {% if not rule.auto_fixable %}<span class="manual-tag">(manual fix required)</span>{% endif %}
       </label>
       <span class="rule-ref">{{ rule.acb_reference }}</span>
+      {% set urls = rule.help_urls %}{% include '_help_links.html' with context %}
     </li>{% endfor %}
   </ul>
 </details>

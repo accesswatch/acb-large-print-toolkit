@@ -52,6 +52,8 @@ def _build_parser() -> argparse.ArgumentParser:
             "  acb-large-print batch audit docs/ -r -f json\n"
             "  acb-large-print batch fix docs/ -r -d fixed/\n"
             "  acb-large-print export report.docx --cms\n"
+            "  acb-large-print convert slides.pptx\n"
+            "  acb-large-print convert report.pdf -o report.md\n"
             "\n"
             "Exit codes:\n"
             "  0  Success\n"
@@ -200,6 +202,22 @@ def _build_parser() -> argparse.ArgumentParser:
     export_p.add_argument(
         "--css", type=Path, default=None,
         help="Custom CSS file path (standalone mode only)",
+    )
+
+    # ---- convert ----
+    conv_p = sub.add_parser(
+        "convert",
+        help="Convert a document to Markdown",
+        description=(
+            "Convert a document to Markdown using MarkItDown. "
+            "Supports .docx, .xlsx, .pptx, .pdf, .html, .csv, .json, "
+            ".xml, .epub, and .zip files. Does NOT support audio files."
+        ),
+    )
+    conv_p.add_argument("file", type=Path, help="Path to document file")
+    conv_p.add_argument(
+        "--output", "-o", type=Path, default=None,
+        help="Output .md file path (default: same name with .md extension)",
     )
 
     # ---- gui ----
@@ -493,6 +511,33 @@ def _cmd_export(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_convert(args: argparse.Namespace) -> int:
+    """Execute the convert command."""
+    from .converter import CONVERTIBLE_EXTENSIONS, convert_to_markdown
+
+    if not args.file.exists():
+        print(f"Error: File not found: {args.file}", file=sys.stderr)
+        return 1
+
+    ext = args.file.suffix.lower()
+    if ext not in CONVERTIBLE_EXTENSIONS:
+        print(
+            f"Error: Cannot convert '{ext}' files. "
+            f"Supported: {', '.join(sorted(CONVERTIBLE_EXTENSIONS))}",
+            file=sys.stderr,
+        )
+        return 1
+
+    try:
+        output_path, text = convert_to_markdown(args.file, output_path=args.output)
+    except RuntimeError as exc:
+        print(f"Error: {exc}", file=sys.stderr)
+        return 1
+
+    log.info("Markdown saved to: %s (%d characters)", output_path, len(text))
+    return 0
+
+
 def _cmd_gui(_args: argparse.Namespace) -> int:
     """Launch the graphical interface."""
     try:
@@ -512,7 +557,7 @@ def _cmd_gui(_args: argparse.Namespace) -> int:
 def _cmd_completions(args: argparse.Namespace) -> int:
     """Generate shell completion script."""
     prog = "acb-large-print"
-    commands = "audit fix template batch export gui completions"
+    commands = "audit fix template batch export convert gui completions"
     prog_under = prog.replace("-", "_")
 
     if args.shell == "bash":
@@ -609,6 +654,7 @@ def main(argv: list[str] | None = None, *, force_cli: bool = False) -> int:
         "template": _cmd_template,
         "batch": _cmd_batch,
         "export": _cmd_export,
+        "convert": _cmd_convert,
         "gui": _cmd_gui,
         "completions": _cmd_completions,
     }

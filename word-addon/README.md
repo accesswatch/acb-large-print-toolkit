@@ -8,6 +8,7 @@ A cross-platform desktop application that audits, remediates, and exports Micros
 - Auto-fix compliance issues in Word documents (fonts, spacing, emphasis, headings, margins)
 - Audit Excel workbooks (sheet names, table headers, merged cells, alt text, hidden content, color-only data)
 - Audit PowerPoint presentations (slide titles, reading order, alt text, font sizes, speaker notes, charts)
+- Convert documents to Markdown via Microsoft MarkItDown (.docx, .xlsx, .pptx, .pdf, .html, .csv, .json, .xml, .epub)
 - Generate ACB-compliant Word templates (.dotx) with pre-configured styles
 - Export Word documents to accessible HTML (standalone or CMS-ready fragments)
 - Accessible GUI wizard (screen reader compatible, keyboard navigable)
@@ -52,6 +53,7 @@ Requires Python 3.10 or later.
 | openpyxl | 3.1.0+ | Read and write .xlsx files |
 | python-pptx | 1.0.0+ | Read and write .pptx files |
 | mammoth | 1.8.0+ | Convert .docx to clean HTML |
+| markitdown | 0.1.5+ | Convert documents to Markdown |
 | wxPython | 4.2.0+ | Accessible cross-platform GUI |
 
 ## Usage
@@ -68,10 +70,10 @@ The 7-step wizard walks through:
 
 1. Open a .docx, .xlsx, or .pptx file
 2. Initial audit (view compliance report in your browser)
-3. Choose output options (standalone HTML, CMS fragment -- Word only)
+3. Choose output options (standalone HTML, CMS fragment, Markdown conversion)
 4. Auto-remediate all fixable issues (Word) or review audit guidance (Excel, PowerPoint)
 5. Verify the fixed document (view report showing improvements)
-6. Save the fixed document and optional HTML exports
+6. Save the fixed document and optional HTML/Markdown exports
 7. Summary of everything accomplished
 
 ### CLI mode
@@ -120,6 +122,15 @@ acb-large-print export report.docx --cms
 acb-large-print export report.docx -o output.html --title "Board Meeting Agenda"
 ```
 
+#### Convert to Markdown
+
+```bash
+# Convert any supported document to Markdown
+acb-large-print convert slides.pptx
+acb-large-print convert report.pdf -o report.md
+acb-large-print convert budget.xlsx
+```
+
 #### Batch processing
 
 ```bash
@@ -144,8 +155,9 @@ word-addon/
     fixer.py             Auto-remediation engine -- applies fixes to python-docx Document
     reporter.py          Report generators (text, JSON, HTML)
     exporter.py          DOCX-to-HTML export (mammoth + ACB post-processing)
+    converter.py         Document-to-Markdown conversion (via MarkItDown)
     template.py          Word template (.dotx) generator with ACB styles
-    cli.py               argparse CLI with audit/fix/template/export/batch/gui commands
+    cli.py               argparse CLI with audit/fix/template/export/convert/batch/gui commands
     gui.py               wxPython 7-step wizard (accessible, screen reader compatible)
   build.py               Cross-platform PyInstaller build script
   pyproject.toml         Project metadata and dependencies

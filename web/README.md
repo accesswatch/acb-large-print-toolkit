@@ -1,23 +1,27 @@
 # ACB Document Accessibility Web Application
 
-A Flask web application that provides browser-based access to the ACB Document Accessibility Tool. Upload a Word, Excel, or PowerPoint document, choose an operation (audit, fix, template, export), and get results immediately -- no installation required.
+A Flask web application that provides browser-based access to the ACB Document Accessibility Tool. Upload a Word, Excel, PowerPoint, Markdown, or PDF document, choose an operation (audit, fix, template, export, convert), and get results immediately -- no installation required.
 
 ## Features
 
-- **Audit** -- check a .docx, .xlsx, or .pptx file against accessibility rules with Full, Quick, or Custom mode. Rules adapt automatically to each file format.
-- **Fix** -- auto-fix compliance issues in Word documents and download the corrected file. Excel and PowerPoint files receive a detailed audit with manual fix guidance.
+- **Audit** -- check a .docx, .xlsx, .pptx, .md, or .pdf file against accessibility rules with Full, Quick, or Custom mode. Rules adapt automatically to each file format.
+- **Fix** -- auto-fix compliance issues in Word documents and download the corrected file. Other formats receive a detailed audit with manual fix guidance.
 - **Template** -- generate a pre-configured ACB-compliant Word template (.dotx)
 - **Export** -- convert a .docx to accessible HTML (standalone ZIP or CMS fragment)
+- **Convert** -- transform any supported document to Markdown via Microsoft MarkItDown
 - **Guidelines** -- browse the full ACB Large Print specification and WCAG 2.2 supplement
+- **About** -- project mission, organizations, standards, open source dependencies, and acknowledgments
 - **Feedback** -- collect user feedback with SQLite storage and password-protected review
 
 ## Supported Formats
 
-| Format | Audit | Auto-Fix | Template | Export |
-|--------|-------|----------|----------|--------|
-| Word (.docx) | Full (30+ ACB + MSAC rules) | Yes | Yes (.dotx) | Yes (HTML) |
-| Excel (.xlsx) | Full (MSAC rules: sheet names, table headers, merged cells, alt text, hidden content, color-only) | Planned | -- | -- |
-| PowerPoint (.pptx) | Full (MSAC rules: slide titles, reading order, alt text, font sizes, speaker notes, charts) | Planned | -- | -- |
+| Format | Audit | Auto-Fix | Template | Export | Convert |
+|--------|-------|----------|----------|--------|---------|
+| Word (.docx) | Full (30+ ACB + MSAC rules) | Yes | Yes (.dotx) | Yes (HTML) | To Markdown |
+| Excel (.xlsx) | Full (MSAC rules: sheet names, table headers, merged cells, alt text, hidden content, color-only) | Planned | -- | -- | To Markdown |
+| PowerPoint (.pptx) | Full (MSAC rules: slide titles, reading order, alt text, font sizes, speaker notes, charts) | Planned | -- | -- | To Markdown |
+| Markdown (.md) | Basic (ACB emphasis, headings, images, lists) | Planned | -- | -- | -- |
+| PDF (.pdf) | Basic (page-level structure and text extraction) | Planned | -- | -- | To Markdown |
 
 ## Architecture
 
@@ -37,7 +41,9 @@ web/
         fix.py            GET/POST /fix
         template.py       GET/POST /template
         export.py         GET/POST /export
+        convert.py        GET/POST /convert
         guidelines.py     GET /guidelines
+        about.py          GET /about
         feedback.py       GET/POST /feedback, GET /feedback/review
       templates/          Jinja2 HTML templates
       static/             CSS and favicon
@@ -92,7 +98,7 @@ The app is served on port 8000. For production deployment with Caddy (auto-TLS),
 
 - CSRF protection on all POST forms (Flask-WTF)
 - Rate limiting: 120 requests/minute per IP (Flask-Limiter)
-- Upload validation: .docx, .xlsx, .pptx extension whitelist, `secure_filename()`, path traversal prevention
+- Upload validation: .docx, .xlsx, .pptx, .md, .pdf extension whitelist, `secure_filename()`, path traversal prevention
 - 16 MB upload size limit enforced by Flask before handlers run
 - Temp files deleted in `finally` blocks -- guaranteed cleanup on success or exception
 - Docker: non-root user, health check, tmpfs for temp files
@@ -121,6 +127,7 @@ The app is served on port 8000. For production deployment with Caddy (auto-TLS),
 | WSGI server | Gunicorn 23.x |
 | Python | 3.13 |
 | Core library | acb_large_print (local) |
+| Document conversion | MarkItDown (Microsoft) |
 | CSRF | Flask-WTF |
 | Rate limiting | Flask-Limiter |
 | Feedback storage | SQLite (WAL mode) |

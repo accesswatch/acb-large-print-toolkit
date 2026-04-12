@@ -1,0 +1,7 @@
+{# Partial: render help links for a rule.
+   Expects `urls` - a list of dicts with 'label' and 'url' keys. #}
+{% if urls %}
+<ul class="help-links">{% for link in urls %}
+  <li><a href="{{ link.url }}" rel="noopener noreferrer" target="_blank">{{ link.label }}<span class="visually-hidden"> (opens in new tab)</span></a></li>
+{% endfor %}</ul>
+{% endif %}

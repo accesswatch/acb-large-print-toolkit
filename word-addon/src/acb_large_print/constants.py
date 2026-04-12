@@ -161,15 +161,21 @@ class DocFormat(str, Enum):
     DOCX = "docx"
     XLSX = "xlsx"
     PPTX = "pptx"
+    MD = "md"
+    PDF = "pdf"
 
 
 # Shorthand sets for tagging rules
 _ALL_FORMATS = frozenset({DocFormat.DOCX, DocFormat.XLSX, DocFormat.PPTX})
+_ALL_WITH_MD_PDF = frozenset(DocFormat)
 _DOCX_ONLY = frozenset({DocFormat.DOCX})
 _XLSX_ONLY = frozenset({DocFormat.XLSX})
 _PPTX_ONLY = frozenset({DocFormat.PPTX})
+_MD_ONLY = frozenset({DocFormat.MD})
+_PDF_ONLY = frozenset({DocFormat.PDF})
 _DOCX_PPTX = frozenset({DocFormat.DOCX, DocFormat.PPTX})
 _XLSX_PPTX = frozenset({DocFormat.XLSX, DocFormat.PPTX})
+_MD_PDF = frozenset({DocFormat.MD, DocFormat.PDF})
 
 
 @dataclass(frozen=True)
@@ -587,6 +593,165 @@ AUDIT_RULES: dict[str, RuleDef] = {
         auto_fixable=False,
         formats=_PPTX_ONLY,
     ),
+    # -----------------------------------------------------------------
+    # Markdown-specific rules
+    # -----------------------------------------------------------------
+    "MD-HEADING-HIERARCHY": RuleDef(
+        rule_id="MD-HEADING-HIERARCHY",
+        description="Heading levels must not skip (e.g., # to ### without ##)",
+        severity=Severity.HIGH,
+        acb_reference="WCAG 1.3.1 Info and Relationships",
+        category=RuleCategory.MSAC,
+        auto_fixable=True,
+        formats=_MD_ONLY,
+    ),
+    "MD-MULTIPLE-H1": RuleDef(
+        rule_id="MD-MULTIPLE-H1",
+        description="Document should have only one top-level heading (H1)",
+        severity=Severity.HIGH,
+        acb_reference="WCAG 1.3.1 Info and Relationships",
+        category=RuleCategory.MSAC,
+        auto_fixable=True,
+        formats=_MD_ONLY,
+    ),
+    "MD-NO-ITALIC": RuleDef(
+        rule_id="MD-NO-ITALIC",
+        description="Italic emphasis (*text* or _text_) is prohibited by ACB guidelines",
+        severity=Severity.CRITICAL,
+        acb_reference="ACB Guidelines Section 3: Emphasis",
+        category=RuleCategory.ACB,
+        auto_fixable=True,
+        formats=_MD_ONLY,
+    ),
+    "MD-BOLD-EMPHASIS": RuleDef(
+        rule_id="MD-BOLD-EMPHASIS",
+        description="Bold (**text**) should not be used for body emphasis; use <u>text</u> instead",
+        severity=Severity.HIGH,
+        acb_reference="ACB Guidelines Section 3: Emphasis",
+        category=RuleCategory.ACB,
+        auto_fixable=False,
+        formats=_MD_ONLY,
+    ),
+    "MD-BARE-URL": RuleDef(
+        rule_id="MD-BARE-URL",
+        description="URLs should be wrapped in descriptive link text, not shown raw",
+        severity=Severity.MEDIUM,
+        acb_reference="WCAG 2.4.4 Link Purpose (In Context)",
+        category=RuleCategory.MSAC,
+        auto_fixable=False,
+        formats=_MD_ONLY,
+    ),
+    "MD-AMBIGUOUS-LINK": RuleDef(
+        rule_id="MD-AMBIGUOUS-LINK",
+        description="Link text must be descriptive (not 'click here', 'here', 'link', 'read more')",
+        severity=Severity.HIGH,
+        acb_reference="WCAG 2.4.4 Link Purpose (In Context)",
+        category=RuleCategory.MSAC,
+        auto_fixable=False,
+        formats=_MD_ONLY,
+    ),
+    "MD-MISSING-ALT-TEXT": RuleDef(
+        rule_id="MD-MISSING-ALT-TEXT",
+        description="Images must have alternative text: ![description](url)",
+        severity=Severity.CRITICAL,
+        acb_reference="WCAG 1.1.1 Non-text Content",
+        category=RuleCategory.MSAC,
+        auto_fixable=False,
+        formats=_MD_ONLY,
+    ),
+    "MD-NO-EMOJI": RuleDef(
+        rule_id="MD-NO-EMOJI",
+        description="Emoji characters must be removed or replaced with plain text equivalents",
+        severity=Severity.MEDIUM,
+        acb_reference="WCAG 1.3.3 Sensory Characteristics",
+        category=RuleCategory.MSAC,
+        auto_fixable=True,
+        formats=_MD_ONLY,
+    ),
+    "MD-TABLE-NO-DESCRIPTION": RuleDef(
+        rule_id="MD-TABLE-NO-DESCRIPTION",
+        description="Tables should be preceded by a text description or caption",
+        severity=Severity.MEDIUM,
+        acb_reference="WCAG 1.3.1 Info and Relationships",
+        category=RuleCategory.MSAC,
+        auto_fixable=False,
+        formats=_MD_ONLY,
+    ),
+    "MD-EM-DASH": RuleDef(
+        rule_id="MD-EM-DASH",
+        description="Em-dashes and en-dashes should be replaced with plain dashes",
+        severity=Severity.MEDIUM,
+        acb_reference="Cognitive Accessibility",
+        category=RuleCategory.MSAC,
+        auto_fixable=True,
+        formats=_MD_ONLY,
+    ),
+    # -----------------------------------------------------------------
+    # PDF-specific rules
+    # -----------------------------------------------------------------
+    "PDF-TITLE": RuleDef(
+        rule_id="PDF-TITLE",
+        description="PDF must have a title set in document metadata",
+        severity=Severity.HIGH,
+        acb_reference="WCAG 2.4.2 Page Titled",
+        category=RuleCategory.MSAC,
+        auto_fixable=False,
+        formats=_PDF_ONLY,
+    ),
+    "PDF-LANGUAGE": RuleDef(
+        rule_id="PDF-LANGUAGE",
+        description="PDF must have a language set in document metadata",
+        severity=Severity.HIGH,
+        acb_reference="WCAG 3.1.1 Language of Page",
+        category=RuleCategory.MSAC,
+        auto_fixable=False,
+        formats=_PDF_ONLY,
+    ),
+    "PDF-TAGGED": RuleDef(
+        rule_id="PDF-TAGGED",
+        description="PDF must be tagged (structured) for screen reader access",
+        severity=Severity.CRITICAL,
+        acb_reference="WCAG 1.3.1 Info and Relationships",
+        category=RuleCategory.MSAC,
+        auto_fixable=False,
+        formats=_PDF_ONLY,
+    ),
+    "PDF-FONT-SIZE": RuleDef(
+        rule_id="PDF-FONT-SIZE",
+        description="Text must be at least 18pt per ACB guidelines",
+        severity=Severity.CRITICAL,
+        acb_reference="ACB Guidelines Section 1: Font",
+        category=RuleCategory.ACB,
+        auto_fixable=False,
+        formats=_PDF_ONLY,
+    ),
+    "PDF-FONT-FAMILY": RuleDef(
+        rule_id="PDF-FONT-FAMILY",
+        description="Text should use Arial or a comparable sans-serif font",
+        severity=Severity.HIGH,
+        acb_reference="ACB Guidelines Section 1: Font",
+        category=RuleCategory.ACB,
+        auto_fixable=False,
+        formats=_PDF_ONLY,
+    ),
+    "PDF-NO-IMAGES-OF-TEXT": RuleDef(
+        rule_id="PDF-NO-IMAGES-OF-TEXT",
+        description="Scanned or image-only pages cannot be read by screen readers",
+        severity=Severity.CRITICAL,
+        acb_reference="WCAG 1.4.5 Images of Text",
+        category=RuleCategory.MSAC,
+        auto_fixable=False,
+        formats=_PDF_ONLY,
+    ),
+    "PDF-BOOKMARKS": RuleDef(
+        rule_id="PDF-BOOKMARKS",
+        description="Multi-page PDFs should have bookmarks for navigation",
+        severity=Severity.MEDIUM,
+        acb_reference="WCAG 2.4.5 Multiple Ways",
+        category=RuleCategory.MSAC,
+        auto_fixable=False,
+        formats=_PDF_ONLY,
+    ),
 }
 
 
@@ -612,4 +777,10 @@ XLSX_RULE_IDS: frozenset[str] = frozenset(
 )
 PPTX_RULE_IDS: frozenset[str] = frozenset(
     rid for rid, r in AUDIT_RULES.items() if DocFormat.PPTX in r.formats
+)
+MD_RULE_IDS: frozenset[str] = frozenset(
+    rid for rid, r in AUDIT_RULES.items() if DocFormat.MD in r.formats
+)
+PDF_RULE_IDS: frozenset[str] = frozenset(
+    rid for rid, r in AUDIT_RULES.items() if DocFormat.PDF in r.formats
 )

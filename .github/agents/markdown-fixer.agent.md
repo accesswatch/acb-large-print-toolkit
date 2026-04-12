@@ -7,10 +7,10 @@ tools: ['read', 'edit', 'runInTerminal', 'getTerminalOutput']
 
 ## Authoritative Sources
 
-- **WCAG 2.2 Specification** — <https://www.w3.org/TR/WCAG22/>
-- **CommonMark Specification** — <https://spec.commonmark.org/>
-- **markdownlint Rules** — <https://github.com/DavidAnson/markdownlint/blob/main/doc/Rules.md>
-- **Unicode Emoji Standard** — <https://unicode.org/emoji/>
+- **WCAG 2.2 Specification** - <https://www.w3.org/TR/WCAG22/>
+- **CommonMark Specification** - <https://spec.commonmark.org/>
+- **markdownlint Rules** - <https://github.com/DavidAnson/markdownlint/blob/main/doc/Rules.md>
+- **Unicode Emoji Standard** - <https://unicode.org/emoji/>
 
 # Markdown Fixer
 
@@ -165,7 +165,7 @@ For each file processed, return:
 | # | Domain | Line | Change | Before | After |
 |---|--------|------|--------|--------|-------|
 | 1 | Emoji | 12 | Removed emoji from heading | `## 🚀 Quick Start` | `## Quick Start` |
-| 2 | Em-dash | 34 | Normalized em-dash | `agent—invoked` | `agent - invoked` |
+| 2 | Em-dash | 34 | Normalized em-dash | `agent - invoked` | `agent - invoked` |
 | 3 | Table | 88 | Added description | *(none)* | "The following table lists..." |
 | 4 | Mermaid | 56 | Replaced with text + details | ` ```mermaid\ngraph...` | "[description]\n<details>..." |
 

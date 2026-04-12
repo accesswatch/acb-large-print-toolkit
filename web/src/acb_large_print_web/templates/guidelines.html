@@ -23,6 +23,10 @@
   </ol>
 </nav>
 
+<div class="toggle-all-wrap">
+  <button type="button" class="toggle-all-btn" aria-label="Expand all guideline sections" onclick="var d=this.closest('.toggle-all-wrap').parentElement.querySelectorAll('details.guideline-accordion');var allOpen=[...d].every(function(x){return x.open});d.forEach(function(x){x.open=!allOpen});this.textContent=allOpen?'Expand All':'Collapse All';this.setAttribute('aria-label',allOpen?'Expand all guideline sections':'Collapse all guideline sections')">Expand All</button>
+</div>
+
 <section id="section-font">
   <h2>1. Font</h2>
   <details class="guideline-accordion" open>
@@ -37,6 +41,7 @@
       <li><strong>ACB-NO-ALLCAPS</strong> (High) -- Text must not use ALL CAPS formatting</li>
     </ul>
   </details>
+  <a href="#toc-heading" class="back-to-top">Back to table of contents</a>
 </section>
 
 <section id="section-headings">
@@ -54,6 +59,7 @@
       <li><strong>ACB-HEADING-HIERARCHY</strong> (High) -- Heading levels must not skip</li>
     </ul>
   </details>
+  <a href="#toc-heading" class="back-to-top">Back to table of contents</a>
 </section>
 
 <section id="section-emphasis">
@@ -69,6 +75,7 @@
       <li><strong>ACB-BOLD-HEADINGS-ONLY</strong> (High) -- Bold in body text should be underline emphasis instead</li>
     </ul>
   </details>
+  <a href="#toc-heading" class="back-to-top">Back to table of contents</a>
 </section>
 
 <section id="section-alignment">
@@ -81,6 +88,7 @@
       <li><strong>ACB-ALIGNMENT</strong> (High) -- Text must be flush left (not justified, centered, or right-aligned)</li>
     </ul>
   </details>
+  <a href="#toc-heading" class="back-to-top">Back to table of contents</a>
 </section>
 
 <section id="section-spacing">
@@ -94,6 +102,7 @@
       <li><strong>ACB-LINE-SPACING</strong> (Medium) -- Line spacing must be 1.15</li>
     </ul>
   </details>
+  <a href="#toc-heading" class="back-to-top">Back to table of contents</a>
 </section>
 
 <section id="section-margins">
@@ -107,6 +116,7 @@
       <li><strong>ACB-MARGINS</strong> (Medium) -- Page margins must be 1 inch on all sides</li>
     </ul>
   </details>
+  <a href="#toc-heading" class="back-to-top">Back to table of contents</a>
 </section>
 
 <section id="section-pagination">
@@ -119,6 +129,7 @@
       <li><strong>ACB-WIDOW-ORPHAN</strong> (Low) -- Widow and orphan control must be enabled</li>
     </ul>
   </details>
+  <a href="#toc-heading" class="back-to-top">Back to table of contents</a>
 </section>
 
 <section id="section-hyphenation">
@@ -131,6 +142,7 @@
       <li><strong>ACB-NO-HYPHENATION</strong> (Medium) -- Automatic hyphenation must be disabled</li>
     </ul>
   </details>
+  <a href="#toc-heading" class="back-to-top">Back to table of contents</a>
 </section>
 
 <section id="section-page-numbers">
@@ -143,6 +155,7 @@
       <li><strong>ACB-PAGE-NUMBERS</strong> (Medium) -- Page numbers must be present in the footer</li>
     </ul>
   </details>
+  <a href="#toc-heading" class="back-to-top">Back to table of contents</a>
 </section>
 
 <section id="section-doc-properties">
@@ -158,6 +171,7 @@
       <li><strong>ACB-DOC-LANGUAGE</strong> (Medium) -- Document language must be set</li>
     </ul>
   </details>
+  <a href="#toc-heading" class="back-to-top">Back to table of contents</a>
 </section>
 
 <section id="section-rules-summary">
@@ -180,6 +194,7 @@
           <th scope="col">Description</th>
           <th scope="col">Guideline Reference</th>
           <th scope="col">Auto-Fixable</th>
+          <th scope="col">Learn More</th>
         </tr>
       </thead>
       <tbody>
@@ -189,6 +204,7 @@
           <td>{{ rule.description }}</td>
           <td>{{ rule.acb_reference }}</td>
           <td>{{ "Yes" if rule.auto_fixable else "No (manual)" }}</td>
+          <td>{% set urls = rule.help_urls %}{% include '_help_links.html' with context %}</td>
         </tr>
         {% endfor %}
       </tbody>
@@ -196,5 +212,6 @@
   </details>
   {% endif %}
   {% endfor %}
+  <a href="#toc-heading" class="back-to-top">Back to table of contents</a>
 </section>
 {% endblock %}

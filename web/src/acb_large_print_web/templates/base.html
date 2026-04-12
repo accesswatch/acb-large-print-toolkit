@@ -23,7 +23,9 @@
         <li><a href="{{ url_for('fix.fix_form') }}"{% if request.blueprint == 'fix' %} aria-current="page"{% endif %}>Fix</a></li>
         <li><a href="{{ url_for('template.template_form') }}"{% if request.blueprint == 'template' %} aria-current="page"{% endif %}>Template</a></li>
         <li><a href="{{ url_for('export.export_form') }}"{% if request.blueprint == 'export' %} aria-current="page"{% endif %}>Export</a></li>
+        <li><a href="{{ url_for('convert.convert_form') }}"{% if request.blueprint == 'convert' %} aria-current="page"{% endif %}>Convert</a></li>
         <li><a href="{{ url_for('guidelines.guidelines_page') }}"{% if request.blueprint == 'guidelines' %} aria-current="page"{% endif %}>Guidelines</a></li>
+        <li><a href="{{ url_for('about.about_page') }}"{% if request.blueprint == 'about' %} aria-current="page"{% endif %}>About</a></li>
       </ul>
     </nav>
   </header>
@@ -46,8 +48,8 @@
 
   <footer role="contentinfo">
     <p>A <a href="https://acb.org/bits">BITS</a> community project. Blind Information Technology Solutions, a special interest affiliate of the American Council of the Blind.</p>
-    <p>Supports Word (.docx), Excel (.xlsx), and PowerPoint (.pptx) documents.</p>
-    <p><a href="{{ url_for('feedback.feedback_form') }}">Share your feedback</a></p>
+    <p>Supports Word (.docx), Excel (.xlsx), PowerPoint (.pptx), Markdown (.md), and PDF (.pdf) documents.</p>
+    <p><a href="{{ url_for('feedback.feedback_form') }}">Share your feedback</a> -- <a href="{{ url_for('about.about_page') }}">About this project</a></p>
   </footer>
 </body>
 </html>

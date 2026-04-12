@@ -7,7 +7,8 @@
 <details class="help-accordion">
   <summary>What does the fix do?</summary>
   <p>For <strong>Word documents</strong>, the fixer automatically corrects ACB Large Print compliance issues: fonts to Arial, sizes to 18pt/22pt/20pt, italic removed, bold emphasis converted to underline, flush-left alignment, line spacing, margins, widow/orphan control, hyphenation off, and language set. You download a fixed copy -- your original is not modified.</p>
-  <p>For <strong>Excel and PowerPoint</strong> files, auto-fix is not yet available. You will receive an audit report with detailed findings and manual fix guidance instead.</p>
+  <p>For <strong>Markdown files</strong>, the fixer corrects heading hierarchy, italic removal, and em-dash replacement. Other Markdown issues require manual review.</p>
+  <p>For <strong>Excel, PowerPoint, and PDF</strong> files, auto-fix is not yet available. You will receive an audit report with detailed findings and manual fix guidance instead.</p>
 </details>
 
 {% if error %}
@@ -20,10 +21,10 @@
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
   <div class="form-group">
     <label for="document">Upload a document</label>
-    <input type="file" id="document" name="document" accept=".docx,.xlsx,.pptx"
+    <input type="file" id="document" name="document" accept=".docx,.xlsx,.pptx,.md,.pdf"
            aria-describedby="file-help"
            {% if error %}aria-invalid="true"{% endif %}>
-    <p id="file-help" class="help-text">Accepted formats: Word (.docx) for auto-fix, Excel (.xlsx) and PowerPoint (.pptx) for audit-only fix guidance. Maximum size: 16 MB.</p>
+    <p id="file-help" class="help-text">Accepted formats: Word (.docx) and Markdown (.md) for auto-fix; Excel (.xlsx), PowerPoint (.pptx), and PDF (.pdf) for audit-only guidance. Maximum size: 16 MB.</p>
   </div>
 
   <fieldset>

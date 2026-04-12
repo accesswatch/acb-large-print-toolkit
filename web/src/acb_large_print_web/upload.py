@@ -11,13 +11,15 @@ from pathlib import Path
 from werkzeug.datastructures import FileStorage
 from werkzeug.utils import secure_filename
 
-ALLOWED_EXTENSIONS = {".docx", ".xlsx", ".pptx"}
+ALLOWED_EXTENSIONS = {".docx", ".xlsx", ".pptx", ".md", ".pdf"}
 
 # Human-readable format labels for error messages
 _FORMAT_LABELS = {
     ".docx": "Word document",
     ".xlsx": "Excel workbook",
     ".pptx": "PowerPoint presentation",
+    ".md": "Markdown file",
+    ".pdf": "PDF document",
 }
 _UUID_RE = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
 
@@ -46,7 +48,7 @@ def validate_upload(file: FileStorage) -> tuple[str, Path]:
     if file is None or file.filename == "":
         raise UploadError(
             "No file selected. Please choose a document to upload "
-            "(.docx, .xlsx, or .pptx)."
+            "(.docx, .xlsx, .pptx, .md, or .pdf)."
         )
 
     filename = secure_filename(file.filename)
@@ -57,7 +59,8 @@ def validate_upload(file: FileStorage) -> tuple[str, Path]:
     if ext not in ALLOWED_EXTENSIONS:
         raise UploadError(
             f"File type '{ext}' is not supported. "
-            "Please upload a Word (.docx), Excel (.xlsx), or PowerPoint (.pptx) file."
+            "Please upload a Word (.docx), Excel (.xlsx), PowerPoint (.pptx), "
+            "Markdown (.md), or PDF (.pdf) file."
         )
 
     token = str(uuid.uuid4())
@@ -67,17 +70,27 @@ def validate_upload(file: FileStorage) -> tuple[str, Path]:
 
     file.save(str(saved_path))
 
-    # Basic magic-byte check: Office Open XML files (.docx/.xlsx/.pptx)
-    # are ZIP archives starting with PK
+    # Validate file content based on format
     with open(saved_path, "rb") as f:
-        header = f.read(4)
-    if header[:2] != b"PK":
-        fmt_label = _FORMAT_LABELS.get(ext, "Office document")
-        cleanup_token(token)
-        raise UploadError(
-            f"The uploaded file does not appear to be a valid {fmt_label}. "
-            "It may be corrupted or in a different format."
-        )
+        header = f.read(8)
+
+    if ext in {".docx", ".xlsx", ".pptx"}:
+        # Office Open XML files are ZIP archives starting with PK
+        if header[:2] != b"PK":
+            fmt_label = _FORMAT_LABELS.get(ext, "Office document")
+            cleanup_token(token)
+            raise UploadError(
+                f"The uploaded file does not appear to be a valid {fmt_label}. "
+                "It may be corrupted or in a different format."
+            )
+    elif ext == ".pdf":
+        if header[:5] != b"%PDF-":
+            cleanup_token(token)
+            raise UploadError(
+                "The uploaded file does not appear to be a valid PDF. "
+                "It may be corrupted or in a different format."
+            )
+    # .md files are plain text -- no magic byte check needed
 
     return token, saved_path
 

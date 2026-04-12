@@ -9,11 +9,13 @@
 <section aria-labelledby="formats-heading">
   <h2 id="formats-heading">Supported Document Formats</h2>
 
-  <div class="format-pills">
-    <span class="format-pill format-docx">Word (.docx)</span>
-    <span class="format-pill format-xlsx">Excel (.xlsx)</span>
-    <span class="format-pill format-pptx">PowerPoint (.pptx)</span>
-  </div>
+  <ul class="format-pills">
+    <li class="format-pill format-docx">Word (.docx)</li>
+    <li class="format-pill format-xlsx">Excel (.xlsx)</li>
+    <li class="format-pill format-pptx">PowerPoint (.pptx)</li>
+    <li class="format-pill format-md">Markdown (.md)</li>
+    <li class="format-pill format-pdf">PDF (.pdf)</li>
+  </ul>
 </section>
 
 <section aria-labelledby="ops-heading">
@@ -22,38 +24,54 @@
   <div class="card-grid">
     <div class="card card-audit">
       <h3><a href="{{ url_for('audit.audit_form') }}">Audit a Document</a></h3>
-      <p>Upload a Word, Excel, or PowerPoint file and get a detailed compliance report. Choose Full, Quick, or Custom audit modes. Rules adapt automatically to each file format.</p>
-      <p class="card-formats">
-        <span class="format-tag format-docx">Word</span>
-        <span class="format-tag format-xlsx">Excel</span>
-        <span class="format-tag format-pptx">PowerPoint</span>
-      </p>
+      <p>Upload a Word, Excel, PowerPoint, Markdown, or PDF file and get a detailed compliance report. Choose Full, Quick, or Custom audit modes. Rules adapt automatically to each file format.</p>
+      <ul class="card-formats">
+        <li class="format-tag format-docx">Word</li>
+        <li class="format-tag format-xlsx">Excel</li>
+        <li class="format-tag format-pptx">PowerPoint</li>
+        <li class="format-tag format-md">Markdown</li>
+        <li class="format-tag format-pdf">PDF</li>
+      </ul>
     </div>
 
     <div class="card card-fix">
       <h3><a href="{{ url_for('fix.fix_form') }}">Fix a Document</a></h3>
-      <p>Upload a non-compliant document and download a corrected version. Word documents get full auto-fix (fonts, sizes, spacing, alignment, emphasis). Excel and PowerPoint files receive a detailed audit with manual fix guidance.</p>
-      <p class="card-formats">
-        <span class="format-tag format-docx">Word -- auto-fix</span>
-        <span class="format-tag format-xlsx">Excel -- audit only</span>
-        <span class="format-tag format-pptx">PowerPoint -- audit only</span>
-      </p>
+      <p>Upload a non-compliant document and download a corrected version. Word documents get full auto-fix (fonts, sizes, spacing, alignment, emphasis). Other formats receive a detailed audit with manual fix guidance.</p>
+      <ul class="card-formats">
+        <li class="format-tag format-docx">Word -- auto-fix</li>
+        <li class="format-tag format-xlsx">Excel -- audit only</li>
+        <li class="format-tag format-pptx">PowerPoint -- audit only</li>
+        <li class="format-tag format-md">Markdown -- audit only</li>
+        <li class="format-tag format-pdf">PDF -- audit only</li>
+      </ul>
     </div>
 
     <div class="card card-template">
       <h3><a href="{{ url_for('template.template_form') }}">Create a Template</a></h3>
       <p>Generate a pre-configured Word template (<code>.dotx</code>) with all ACB styles built in. Start compliant by default -- no manual formatting required.</p>
-      <p class="card-formats">
-        <span class="format-tag format-docx">Word</span>
-      </p>
+      <ul class="card-formats">
+        <li class="format-tag format-docx">Word</li>
+      </ul>
     </div>
 
     <div class="card card-export">
       <h3><a href="{{ url_for('export.export_form') }}">Export to HTML</a></h3>
       <p>Convert a Word document to accessible HTML with ACB-compliant CSS. Choose standalone (full page) or CMS fragment (for pasting into WordPress or Drupal).</p>
-      <p class="card-formats">
-        <span class="format-tag format-docx">Word</span>
-      </p>
+      <ul class="card-formats">
+        <li class="format-tag format-docx">Word</li>
+      </ul>
+    </div>
+
+    <div class="card card-convert">
+      <h3><a href="{{ url_for('convert.convert_form') }}">Convert to Markdown</a></h3>
+      <p>Transform any supported document into clean Markdown text using Microsoft MarkItDown. Useful for text analysis, LLM pipelines, or creating accessible Markdown versions.</p>
+      <ul class="card-formats">
+        <li class="format-tag format-docx">Word</li>
+        <li class="format-tag format-xlsx">Excel</li>
+        <li class="format-tag format-pptx">PowerPoint</li>
+        <li class="format-tag format-pdf">PDF</li>
+        <li class="format-tag format-misc">HTML, CSV, JSON, XML, ePub</li>
+      </ul>
     </div>
   </div>
 </section>

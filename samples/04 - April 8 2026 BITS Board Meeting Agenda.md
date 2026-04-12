@@ -8,33 +8,33 @@ Welcome to our April board meeting!
 
 ## Agenda
 
-1.  Call to Order – Jeff Bishop
-2.  Roll call – Secretary Robin Frost
+1.  Call to Order - Jeff Bishop
+2.  Roll call - Secretary Robin Frost
 3.  Adoption of March 4 Board meeting minutes - Secretary Robin Frost
 4.  Adoption of proposed agenda and Approval of Consent Agenda - Jeff Bishop
-5.  Treasurer’s Report – Diane Scalzi
-6.  President's Report – Jeff Bishop
+5.  Treasurer’s Report - Diane Scalzi
+6.  President's Report - Jeff Bishop
 7.  Committee reports (vital information only)
 8.  Old Business
-1.  Summer Auction Donation – Jeff Bishop and Board
+1.  Summer Auction Donation - Jeff Bishop and Board
 2.  New Business
-1.  Changing Email Providers – Jeff Bishop
-2.  Budgeting for new committees – Jeff Bishop
-3.  Changes and Responsibilities by committee chairs – Jeff Bishop
+1.  Changing Email Providers - Jeff Bishop
+2.  Budgeting for new committees - Jeff Bishop
+3.  Changes and Responsibilities by committee chairs - Jeff Bishop
 4.  Member Comments and Questions
-11. Date and time of next Board meeting – May 6, 2026
+11. Date and time of next Board meeting - May 6, 2026
 12. Adjourn
 
 ## President’s Report
 
 **April Board Meeting**  
-**Jeff Bishop, President – BITS**
+**Jeff Bishop, President - BITS**
 
 Before anything else, I would like us to pause for a moment and reflect on who we are and why we are here.
 
 We are here for people.
 
-At the heart of BITS is not simply technology, programs, committees, or systems. At the heart of BITS are people — people with hopes, needs, ideas, challenges, talents, and dreams. We are blessed with a tremendous amount of knowledge, experience, compassion, and ability within this organization. With that comes both opportunity and responsibility.
+At the heart of BITS is not simply technology, programs, committees, or systems. At the heart of BITS are people - people with hopes, needs, ideas, challenges, talents, and dreams. We are blessed with a tremendous amount of knowledge, experience, compassion, and ability within this organization. With that comes both opportunity and responsibility.
 
 As we continue to grow, we must center our programs and services even more intentionally around what it means to be welcoming, to help members flourish, and to honor the small but meaningful things in life that matter most to people when we are made aware of them. This is about making sure that no one is left out, that people feel valued and respected, and that we do not lose sight of the simple human needs that can sometimes be overlooked.
 
@@ -46,11 +46,11 @@ This message is directed first to myself, then to our Board of Directors, and al
 
 In many recent conversations, I have noticed something that deserves our attention: some of the quieter and smaller voices in our organization are not being heard and valued as fully as they should be. For that, I take responsibility, and I am committed to putting a plan in place to address it. I cannot do that alone. I need your help, your honesty, and your partnership to make that effort meaningful and successful.
 
-There is no “I” in team, and BITS is at its best when we remember that we are not just an organization — we are a family working toward the same shared goal: helping our membership flourish and doing what is best for the people we serve.
+There is no “I” in team, and BITS is at its best when we remember that we are not just an organization - we are a family working toward the same shared goal: helping our membership flourish and doing what is best for the people we serve.
 
 As you prepare for our conversations, I would ask each of you to reflect on two questions.
 
-First: If you had three wishes for BITS, what would they be? These wishes might relate to the organization itself, to communication, to recognition, to your role, to leadership — including my own leadership — or to anything else that is personally on your mind. I encourage you to write these down and give yourself time to think. Do not rush. These conversations are meant to be thoughtful, respectful, and safe spaces for constructive reflection.
+First: If you had three wishes for BITS, what would they be? These wishes might relate to the organization itself, to communication, to recognition, to your role, to leadership - including my own leadership - or to anything else that is personally on your mind. I encourage you to write these down and give yourself time to think. Do not rush. These conversations are meant to be thoughtful, respectful, and safe spaces for constructive reflection.
 
 Second: What are two or three things about the organization that you would most like to see done differently?
 
@@ -72,7 +72,7 @@ I want to emphasize that we are all busy and that comes with grace as well. It i
 
 Now I would like to speak about innovation.
 
-We have been working hard across many areas — programs, mentoring, fundraising, education, and organizational development. That work matters, and I am proud of it. But in the midst of doing so much, we must also be careful not to lose sight of simplicity.
+We have been working hard across many areas - programs, mentoring, fundraising, education, and organizational development. That work matters, and I am proud of it. But in the midst of doing so much, we must also be careful not to lose sight of simplicity.
 
 Sometimes, in our efforts to build, grow, and serve, we can make things more complex than they need to be for new members, for long-time members, and even for leaders within the organization. Because of that, you will begin to see a significant effort around simplification: making it easier to join BITS, easier to renew, easier to engage with courses, easier to understand our calendar of activities, easier to access information, and easier to connect with the programs and services we offer.
 
@@ -84,7 +84,7 @@ In closing, I return to where I began: people matter most.
 
 Caring, leadership, shared responsibility, innovation, and constructive communication are not separate ideas. Together, they form the foundation of a stronger BITS. In the coming month, you will hear more about some meaningful changes and important efforts now underway. But beneath all of it is a simple truth: our emphasis on people is at the heart of our thinking.
 
-To our leaders, I look forward to our conversations with openness, respect, and a genuine desire to learn from you. I want to better understand how I can support each of you — not only in your roles within BITS, but also as people whose lives, perspectives, and well-being matter.
+To our leaders, I look forward to our conversations with openness, respect, and a genuine desire to learn from you. I want to better understand how I can support each of you - not only in your roles within BITS, but also as people whose lives, perspectives, and well-being matter.
 
 Thank you for your leadership, your care, and your continued commitment to this organization and the people we serve.
 
@@ -144,16 +144,16 @@ Karen Hughes, and Debbie Hazelton
 
 ### Fundraising Committee
 
-**Fundraising Committee – April Report**
+**Fundraising Committee - April Report**
 
 **Current Projects**
 
 **Blind Girl Designs  
-Our new BITS logo is now featured across all merchandise options—including apparel and cozy blankets. To date, 10 members have already placed orders, thank you for getting us off to a strong start.**
+Our new BITS logo is now featured across all merchandise options - including apparel and cozy blankets. To date, 10 members have already placed orders, thank you for getting us off to a strong start.**
 
 **We encourage Board and Committee members to lead by example by updating their wardrobe with the new BITS logo. For all members, this is a great opportunity to refresh your current items with the updated colors or make your first purchase to proudly represent BITS.**
 
-**And remember—if you are attending the 2026 ACB Convention in St. Louis and are spotted wearing BITS merchandise, you just might receive a special surprise.**
+**And remember - if you are attending the 2026 ACB Convention in St. Louis and are spotted wearing BITS merchandise, you just might receive a special surprise.**
 
 **Shop the collection here:**[**https://blind-girl-designs.myshopify.com/collections/bits-blind-information-technology-solutions**](https://blind-girl-designs.myshopify.com/collections/bits-blind-information-technology-solutions)
 
@@ -460,7 +460,7 @@ We are organizing a **New Outlook Bug Bash** to ensure the product meets the nee
 -   Particularly seeking individuals who are blind or have low vision
 -   **To participate:** Email [**support@bits-acb.org**](mailto:support@bits-acb.org)
 
-##### BITS Whisperer – Beta Testers Needed
+##### BITS Whisperer - Beta Testers Needed
 
 We are seeking beta testers for **BITS Whisperer**, a new transcription and AI-powered application.
 
