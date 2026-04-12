@@ -1,19 +1,10 @@
 {% extends "base.html" %}
 
-{% block title %}Convert Documents{% endblock %}
-{% block heading %}Convert Documents{% endblock %}
+{% block title %}Convert a Document{% endblock %}
+{% block heading %}Convert a Document{% endblock %}
 
 {% block content %}
-<details class="help-accordion">
-  <summary>What does convert do?</summary>
-  <p>Two conversion directions are available:</p>
-  <dl>
-    <dt><strong>To Markdown</strong> (via <a href="https://github.com/microsoft/markitdown">Microsoft MarkItDown</a>)</dt>
-    <dd>Transforms Office documents and PDFs into clean Markdown text. Useful for text analysis, LLM pipelines, or creating accessible Markdown versions. Supports: Word (.docx), Excel (.xlsx), PowerPoint (.pptx), PDF (.pdf), HTML (.html), CSV (.csv), JSON (.json), XML (.xml), ePub (.epub), and ZIP (.zip).</dd>
-    <dt><strong>To ACB HTML</strong> (via <a href="https://pandoc.org/">Pandoc</a>)</dt>
-    <dd>Converts text documents into standalone, accessible HTML with embedded ACB Large Print CSS. Output is ready for web hosting, email, or CMS embedding. Supports: Markdown (.md), reStructuredText (.rst), OpenDocument (.odt), Rich Text (.rtf), and Word (.docx).</dd>
-  </dl>
-</details>
+<p>Change your document from one format to another. Pick what you want to end up with, upload your file, and we will do the rest.</p>
 
 {% if error %}
 <div class="error-box" role="alert">
@@ -25,38 +16,65 @@
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
   <fieldset>
-    <legend>Conversion Direction</legend>
+    <legend>Step 1: What do you want to create?</legend>
+
     <div class="radio-group">
       <label>
         <input type="radio" name="direction" value="to-markdown" checked>
-        <strong>To Markdown</strong> -- convert Office documents, PDFs, and other formats to Markdown via MarkItDown.
+        <strong>Plain text (Markdown)</strong> -- extract the text content from your document into a simple, readable file.
       </label>
+
       <label>
         <input type="radio" name="direction" value="to-html"{% if not pandoc_installed %} disabled{% endif %}>
-        <strong>To ACB HTML</strong> -- convert Markdown, RST, ODT, RTF, or Word to accessible HTML with ACB Large Print CSS via Pandoc.
-        {% if not pandoc_installed %}<em>(Pandoc not available on this server.)</em>{% endif %}
+        <strong>Accessible web page (HTML)</strong> -- create a ready-to-use web page that follows the ACB Large Print Guidelines.
+        {% if not pandoc_installed %}<br><em>This option is temporarily unavailable on this server.</em>{% endif %}
       </label>
     </div>
   </fieldset>
 
-  <div class="form-group">
-    <label for="document">Upload a document to convert</label>
-    <input type="file" id="document" name="document" accept="{{ all_accept }}"
-           aria-describedby="file-help"
-           {% if error %}aria-invalid="true"{% endif %}>
-    <p id="file-help" class="help-text">To Markdown: Word, Excel, PowerPoint, PDF, HTML, CSV, JSON, XML, ePub, ZIP. To ACB HTML: Markdown, RST, ODT, RTF, Word. Maximum size: 16 MB.</p>
-  </div>
-
   <details class="help-accordion">
-    <summary>What is the output?</summary>
-    <dl>
-      <dt>To Markdown</dt>
-      <dd>A <code>.md</code> file preserving the document's structure -- headings, lists, tables, and links -- as plain text with minimal markup. Images are not extracted; their alt text or captions are preserved where available.</dd>
-      <dt>To ACB HTML</dt>
-      <dd>A standalone <code>.html</code> file with embedded ACB Large Print CSS (Arial, 18pt body, 22pt headings, flush left, proper spacing, WCAG 2.2 contrast). Ready to open in any browser or paste into a CMS.</dd>
-    </dl>
+    <summary>Which option should I choose?</summary>
+
+    <h3>Choose "Plain text" when you want to:</h3>
+    <ul>
+      <li>Pull the text out of a Word, Excel, PowerPoint, or PDF file</li>
+      <li>Get a simple version you can read, search, or copy-paste</li>
+      <li>Feed a document into an AI tool or text analysis pipeline</li>
+      <li>Create a starting point for writing accessible Markdown documentation</li>
+    </ul>
+    <p><strong>Accepts:</strong> Word, Excel, PowerPoint, PDF, HTML, CSV, JSON, XML, ePub, and ZIP files.</p>
+    <p><strong>You get back:</strong> a <code>.md</code> (Markdown) file -- plain text with simple formatting marks for headings, lists, and links. Opens in any text editor.</p>
+
+    <h3>Choose "Accessible web page" when you want to:</h3>
+    <ul>
+      <li>Turn a Markdown or text document into a web page people can read in a browser</li>
+      <li>Create an HTML version that already meets ACB Large Print and WCAG accessibility standards</li>
+      <li>Get a file you can upload to a website, email as an attachment, or paste into a CMS like WordPress</li>
+      <li>Publish meeting minutes, agendas, reports, or other documents online in an accessible format</li>
+    </ul>
+    <p><strong>Accepts:</strong> Markdown (.md), Word (.docx), reStructuredText (.rst), OpenDocument (.odt), and Rich Text (.rtf) files.</p>
+    <p><strong>You get back:</strong> a standalone <code>.html</code> web page with accessibility formatting already built in -- Arial font, large text, proper spacing, high contrast, and all the other ACB requirements. Just open it in a browser or upload it to your website.</p>
+
+    <h3>What is the difference between "Export to HTML" and this page?</h3>
+    <p><strong>Export</strong> (in the main menu) is specifically for Word documents and gives you extra options like CMS fragments for pasting into WordPress. <strong>This page</strong> handles a wider range of input formats and always produces a complete, standalone web page with all the accessibility CSS included.</p>
   </details>
 
-  <button type="submit" class="btn-primary">Convert</button>
+  <fieldset>
+    <legend>Step 2: Upload your file</legend>
+    <div class="form-group">
+      <label for="document">Choose a file from your computer</label>
+      <input type="file" id="document" name="document" accept="{{ all_accept }}"
+             aria-describedby="file-help"
+             {% if error %}aria-invalid="true"{% endif %}>
+      <p id="file-help" class="help-text">Maximum file size: 16 MB. The accepted file types depend on which option you chose above.</p>
+    </div>
+  </fieldset>
+
+  <button type="submit" class="btn-primary">Convert My Document</button>
 </form>
+
+<details class="help-accordion">
+  <summary>What happens to my file?</summary>
+  <p>Your document is converted on the server and the result is sent back to you immediately as a download. Your original file is deleted from the server right after. We do not store, read, or share your documents.</p>
+</details>
 {% endblock %}
