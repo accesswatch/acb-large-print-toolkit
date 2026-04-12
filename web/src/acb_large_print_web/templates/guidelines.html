@@ -24,7 +24,7 @@
 </nav>
 
 <div class="toggle-all-wrap">
-  <button type="button" class="toggle-all-btn" aria-label="Expand all guideline sections" onclick="var d=this.closest('.toggle-all-wrap').parentElement.querySelectorAll('details.guideline-accordion');var allOpen=[...d].every(function(x){return x.open});d.forEach(function(x){x.open=!allOpen});this.textContent=allOpen?'Expand All':'Collapse All';this.setAttribute('aria-label',allOpen?'Expand all guideline sections':'Collapse all guideline sections')">Expand All</button>
+  <button type="button" class="toggle-all-btn" aria-label="Collapse all guideline sections">Collapse All</button>
 </div>
 
 <section id="section-font">
@@ -46,7 +46,7 @@
 
 <section id="section-headings">
   <h2>2. Headings</h2>
-  <details class="guideline-accordion">
+  <details class="guideline-accordion" open>
     <summary>Heading requirements</summary>
     <p><strong>Heading 1:</strong> 22 point, bold, Arial. Used for the document title or main section headings.</p>
     <p><strong>Heading 2 and below:</strong> 20 point, bold, Arial. Used for subsections.</p>
@@ -64,7 +64,7 @@
 
 <section id="section-emphasis">
   <h2>3. Emphasis</h2>
-  <details class="guideline-accordion">
+  <details class="guideline-accordion" open>
     <summary>Emphasis requirements</summary>
     <p><strong>Underline only:</strong> When you need to emphasize text, use underline formatting. Do not use italic or bold for emphasis in body text.</p>
     <p><strong>No italic:</strong> Italic text is prohibited entirely. Italic characters are harder to read for people with low vision because the slanted shapes reduce letter distinction. The audit flags any italic formatting as a Critical finding.</p>
@@ -80,7 +80,7 @@
 
 <section id="section-alignment">
   <h2>4. Alignment</h2>
-  <details class="guideline-accordion">
+  <details class="guideline-accordion" open>
     <summary>Alignment requirements</summary>
     <p><strong>Flush left, ragged right:</strong> All text must be left-aligned. Justified text (aligned to both left and right margins) creates uneven word spacing that makes reading harder for people with low vision and dyslexia. Centered and right-aligned text are also prohibited for body content.</p>
     <h3>Related audit rules</h3>
@@ -93,7 +93,7 @@
 
 <section id="section-spacing">
   <h2>5. Spacing</h2>
-  <details class="guideline-accordion">
+  <details class="guideline-accordion" open>
     <summary>Spacing requirements</summary>
     <p><strong>Line spacing:</strong> 1.15 multiple spacing is required for print documents. For digital documents, WCAG 2.2 AA requires a minimum of 1.5x the font size.</p>
     <p><strong>Paragraph spacing:</strong> One blank line (12pt space after) between paragraphs. No extra spacing between list items.</p>
@@ -107,7 +107,7 @@
 
 <section id="section-margins">
   <h2>6. Margins</h2>
-  <details class="guideline-accordion">
+  <details class="guideline-accordion" open>
     <summary>Margin requirements</summary>
     <p><strong>1 inch on all sides:</strong> Top, bottom, left, and right margins must each be at least 1 inch (2.54 cm). This provides adequate white space and prevents text from being cut off during printing.</p>
     <p><strong>Binding margin:</strong> If the document will be bound (stapled, spiral, or three-ring), add an extra 0.5 inch to the left margin (1.5 inches total on the left side).</p>
@@ -121,7 +121,7 @@
 
 <section id="section-pagination">
   <h2>7. Pagination</h2>
-  <details class="guideline-accordion">
+  <details class="guideline-accordion" open>
     <summary>Pagination requirements</summary>
     <p><strong>Widow and orphan control:</strong> Enable widow and orphan control to prevent single lines of a paragraph from appearing alone at the top or bottom of a page. This improves readability and gives the document a professional appearance.</p>
     <h3>Related audit rules</h3>
@@ -134,7 +134,7 @@
 
 <section id="section-hyphenation">
   <h2>8. Hyphenation</h2>
-  <details class="guideline-accordion">
+  <details class="guideline-accordion" open>
     <summary>Hyphenation requirements</summary>
     <p><strong>No automatic hyphenation:</strong> Disable automatic hyphenation. Hyphenated words at line breaks are harder to read for people with low vision because they interrupt word recognition. Let words wrap naturally to the next line.</p>
     <h3>Related audit rules</h3>
@@ -147,7 +147,7 @@
 
 <section id="section-page-numbers">
   <h2>9. Page Numbers</h2>
-  <details class="guideline-accordion">
+  <details class="guideline-accordion" open>
     <summary>Page number requirements</summary>
     <p><strong>Page numbers required:</strong> Every page must display a page number in the footer. Page numbers must be in Arial, 18pt bold, positioned at the lower outer corner of each page. This helps readers navigate multi-page documents and reference specific pages.</p>
     <h3>Related audit rules</h3>
@@ -160,7 +160,7 @@
 
 <section id="section-doc-properties">
   <h2>10. Document Properties (WCAG 2.2 Supplement)</h2>
-  <details class="guideline-accordion">
+  <details class="guideline-accordion" open>
     <summary>Document property requirements</summary>
     <p>These rules come from WCAG 2.2 AA, which supplements the ACB print guidelines for digital documents:</p>
     <p><strong>Document title:</strong> The document must have a title set in its properties (File &gt; Properties &gt; Title in Word). This title is announced by screen readers and helps users identify the document. (WCAG 2.4.2)</p>
@@ -181,7 +181,7 @@
   {% for severity in ["Critical", "High", "Medium", "Low"] %}
   {% set rules = rules_by_severity[severity] %}
   {% if rules %}
-  <details class="guideline-accordion">
+  <details class="guideline-accordion" open>
     <summary>
       <span class="severity-badge severity-{{ severity | lower }}">{{ severity }}</span>
       {{ rules | length }} rule{{ "s" if rules | length != 1 else "" }}
@@ -214,4 +214,6 @@
   {% endfor %}
   <a href="#toc-heading" class="back-to-top">Back to table of contents</a>
 </section>
+
+<script src="{{ url_for('static', filename='guidelines.js') }}"></script>
 {% endblock %}
