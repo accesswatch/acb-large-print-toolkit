@@ -102,6 +102,7 @@ nav[aria-label="Main navigation"] {
 .card-fix    { border-left: 5px solid #2e6b2e; }
 .card-template { border-left: 5px solid #6b3fa0; }
 .card-export { border-left: 5px solid #b8860b; }
+.card-convert { border-left: 5px solid #8b5cf6; }
 
 /* --- Format Pills (hero section showing supported formats) --- */
 .format-pills {
@@ -140,6 +141,18 @@ nav[aria-label="Main navigation"] {
   border-color: #b7472a;
 }
 
+.format-pill.format-md {
+  background: #f3e8ff;
+  color: #4c1d95;
+  border-color: #6b3fa0;
+}
+
+.format-pill.format-pdf {
+  background: #fff3e0;
+  color: #7c2d12;
+  border-color: #c75000;
+}
+
 /* --- Format Tags (compact labels inside cards, rule lists, etc.) --- */
 .format-tag {
   display: inline-block;
@@ -165,6 +178,21 @@ nav[aria-label="Main navigation"] {
 
 .format-tag.format-pptx {
   background: #b7472a;
+  color: #ffffff;
+}
+
+.format-tag.format-md {
+  background: #6b3fa0;
+  color: #ffffff;
+}
+
+.format-tag.format-pdf {
+  background: #c75000;
+  color: #ffffff;
+}
+
+.format-tag.format-misc {
+  background: #555555;
   color: #ffffff;
 }
 
@@ -235,7 +263,14 @@ legend {
   gap: 0.75rem;
 }
 
+.checkbox-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
 .radio-group label,
+.checkbox-group label,
 fieldset > label {
   display: flex;
   align-items: flex-start;

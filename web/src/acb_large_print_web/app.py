@@ -48,10 +48,21 @@ def create_app(config: dict | None = None) -> Flask:
     # Make rule metadata available in all templates
     @app.context_processor
     def inject_rules():
+        from importlib.metadata import version as pkg_version
+        try:
+            web_ver = pkg_version("acb-large-print-web")
+        except Exception:
+            web_ver = "0.1.0"
+        try:
+            desktop_ver = pkg_version("acb-large-print")
+        except Exception:
+            desktop_ver = "0.1.2"
         return {
             "rules_by_severity": get_rules_by_severity(),
             "rules_by_category": get_rules_by_category(),
             "help_urls_map": get_help_urls_map(),
+            "web_version": web_ver,
+            "desktop_version": desktop_ver,
         }
 
     # Register blueprints

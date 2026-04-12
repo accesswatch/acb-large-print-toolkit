@@ -8,6 +8,7 @@
 <section aria-labelledby="mission-heading">
   <h2 id="mission-heading">Mission</h2>
   <p>The ACB Document Accessibility Toolkit helps authors, publishers, and organizations produce documents that comply with the <a href="https://acb.org/large-print-guidelines">American Council of the Blind Large Print Guidelines</a> and <a href="https://www.w3.org/TR/WCAG22/">WCAG 2.2 Level AA</a>. The toolkit audits, fixes, and templates Word, Excel, PowerPoint, Markdown, and PDF documents for accessibility.</p>
+  <a href="#main" class="back-to-top">Back to top</a>
 </section>
 
 <section aria-labelledby="orgs-heading">
@@ -23,6 +24,7 @@
     <dt><a href="https://www.w3.org/WAI/">W3C Web Accessibility Initiative (WAI)</a></dt>
     <dd>Develops the Web Content Accessibility Guidelines (WCAG), which this toolkit uses for digital content requirements including contrast, reflow, and line spacing.</dd>
   </dl>
+  <a href="#main" class="back-to-top">Back to top</a>
 </section>
 
 <section aria-labelledby="standards-heading">
@@ -34,6 +36,7 @@
     <li><a href="https://support.microsoft.com/en-us/office/improve-accessibility-with-the-accessibility-checker-a16f6de0-2f39-4a2b-8bd8-5ad801426c7f">Microsoft Accessibility Checker</a> -- rules for Word, Excel, and PowerPoint document accessibility (alt text, table headers, reading order, hyperlink text).</li>
     <li><a href="https://pdfa.org/resource/iso-14289-pdfua/">PDF/UA (ISO 14289-1)</a> -- the international standard for accessible PDF documents. Used for PDF audit rules.</li>
   </ul>
+  <a href="#main" class="back-to-top">Back to top</a>
 </section>
 
 <section aria-labelledby="deps-heading">
@@ -95,7 +98,7 @@
         <td>Convert Word documents to clean HTML</td>
       </tr>
       <tr>
-        <td><a href="https://github.com/mwilliamson/python-mammoth">openpyxl</a></td>
+        <td><a href="https://openpyxl.readthedocs.io/">openpyxl</a></td>
         <td>3.1+</td>
         <td>MIT</td>
         <td>Read and audit Excel (.xlsx) workbooks</td>
@@ -189,6 +192,7 @@
       </tr>
     </tbody>
   </table>
+  <a href="#main" class="back-to-top">Back to top</a>
 </section>
 
 <section aria-labelledby="project-heading">
@@ -205,20 +209,22 @@
     <dd>Jeff Bishop, President of <a href="https://acb.org/bits">BITS</a></dd>
 
     <dt>Desktop tool version</dt>
-    <dd>1.0.0</dd>
+    <dd>{{ desktop_version }}</dd>
 
     <dt>Web application version</dt>
-    <dd>0.1.0</dd>
+    <dd>{{ web_version }}</dd>
 
     <dt>Python version</dt>
     <dd>3.13+</dd>
   </dl>
+  <a href="#main" class="back-to-top">Back to top</a>
 </section>
 
 <section aria-labelledby="acknowledgments-heading">
   <h2 id="acknowledgments-heading">Acknowledgments</h2>
   <p>This project would not be possible without the tireless advocacy of the American Council of the Blind and the volunteers who authored and maintain the <a href="https://acb.org/large-print-guidelines">ACB Large Print Guidelines</a>. Special thanks to the <a href="https://acb.org/board-publications">ACB Board of Publications</a> for establishing clear, enforceable standards that make printed and digital materials accessible to people who are blind or have low vision.</p>
   <p>Thanks also to the <a href="https://acb.org/bits">BITS</a> community for testing, feedback, and ongoing development support, and to the open source maintainers whose libraries make this toolkit possible.</p>
+  <a href="#main" class="back-to-top">Back to top</a>
 </section>
 
 {% endblock %}

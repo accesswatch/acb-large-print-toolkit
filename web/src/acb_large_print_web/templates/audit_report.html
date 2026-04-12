@@ -81,6 +81,10 @@
   <p>Your Word document has issues that can be fixed automatically. <a href="{{ url_for('fix.fix_form') }}" class="btn-primary">Fix This Document</a></p>
   {% elif doc_format in ("xlsx", "pptx") %}
   <p>Auto-fix for {{ doc_format | upper }} files is coming soon. Use the findings above to make corrections manually in Microsoft Office.</p>
+  {% elif doc_format == "md" %}
+  <p>Markdown files cannot be auto-fixed by the web tool. Use the findings above to edit the source <code>.md</code> file directly, focusing on heading levels, emphasis, and link text.</p>
+  {% elif doc_format == "pdf" %}
+  <p>PDF remediation requires Adobe Acrobat Pro or a similar editor. Use the findings above and the Learn More links for step-by-step fix instructions.</p>
   {% endif %}
   {% endif %}
   <ul>
