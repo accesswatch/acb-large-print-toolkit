@@ -6,7 +6,8 @@
 {% block content %}
 <details class="help-accordion">
   <summary>What does the fix do?</summary>
-  <p>The fixer automatically corrects ACB Large Print compliance issues in your Word document. It changes fonts to Arial, adjusts sizes to 18pt/22pt/20pt, removes italic formatting, converts bold emphasis to underline, sets flush-left alignment, corrects line spacing, fixes margins, enables widow/orphan control, disables hyphenation, and sets the document language. You download a fixed copy -- your original file is not modified.</p>
+  <p>For <strong>Word documents</strong>, the fixer automatically corrects ACB Large Print compliance issues: fonts to Arial, sizes to 18pt/22pt/20pt, italic removed, bold emphasis converted to underline, flush-left alignment, line spacing, margins, widow/orphan control, hyphenation off, and language set. You download a fixed copy -- your original is not modified.</p>
+  <p>For <strong>Excel and PowerPoint</strong> files, auto-fix is not yet available. You will receive an audit report with detailed findings and manual fix guidance instead.</p>
 </details>
 
 {% if error %}
@@ -18,12 +19,29 @@
 <form method="post" enctype="multipart/form-data" novalidate>
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
   <div class="form-group">
-    <label for="document">Upload a Word document</label>
-    <input type="file" id="document" name="document" accept=".docx"
+    <label for="document">Upload a document</label>
+    <input type="file" id="document" name="document" accept=".docx,.xlsx,.pptx"
            aria-describedby="file-help"
            {% if error %}aria-invalid="true"{% endif %}>
-    <p id="file-help" class="help-text">Accepted format: <code>.docx</code> (Microsoft Word). Maximum size: 16 MB.</p>
+    <p id="file-help" class="help-text">Accepted formats: Word (.docx) for auto-fix, Excel (.xlsx) and PowerPoint (.pptx) for audit-only fix guidance. Maximum size: 16 MB.</p>
   </div>
+
+  <fieldset>
+    <legend>Rule Categories</legend>
+    <p class="help-text">Choose which rule sets to include in the results report. Both are enabled by default. The fixer always applies all auto-fixable corrections regardless of selection.</p>
+
+    <div class="checkbox-group">
+      <label>
+        <input type="checkbox" name="category" value="acb" checked>
+        <strong>ACB Large Print</strong> -- {{ rules_by_category.acb | length }} rules from the ACB Board of Publications guidelines.
+      </label>
+
+      <label>
+        <input type="checkbox" name="category" value="msac" checked>
+        <strong>MS Accessibility Checker</strong> -- {{ rules_by_category.msac | length }} rules aligned with the Microsoft Office Accessibility Checker and WCAG 2.1.
+      </label>
+    </div>
+  </fieldset>
 
   <fieldset>
     <legend>Fix Mode</legend>
@@ -58,7 +76,7 @@
     <legend>Additional Options</legend>
     <label>
       <input type="checkbox" name="bound">
-      Add binding margin (extra 0.5 inch on left side for bound documents)
+      Add binding margin (extra 0.5 inch on left side for bound Word documents)
     </label>
   </fieldset>
 
@@ -70,7 +88,8 @@
       <li><strong>Essentials Fix</strong> shows only Critical and High severity results.</li>
       <li><strong>Custom Fix</strong> shows only the rules you select.</li>
     </ul>
-    <p>Regardless of mode, your downloaded document will have all auto-fixable issues corrected. Some issues (like heading hierarchy and document title) require manual attention.</p>
+    <p>Regardless of mode, your downloaded Word document will have all auto-fixable issues corrected. Some issues (like heading hierarchy and document title) require manual attention.</p>
+    <p>For Excel and PowerPoint, the tool runs a full audit and provides a detailed remediation guide. Auto-fix support for these formats is planned for a future release.</p>
   </details>
 
   <button type="submit" class="btn-primary">Fix Document</button>

@@ -6,6 +6,11 @@
 {% block content %}
 <section aria-labelledby="score-heading">
   <h2 id="score-heading">Compliance Score</h2>
+
+  {% if doc_format %}
+  <p><span class="format-pill format-{{ doc_format }}">{{ doc_format | upper }}</span></p>
+  {% endif %}
+
   <p class="score-display">
     <span class="score-number grade-{{ result.grade | lower }}">{{ result.score }}/100</span>
     <span class="score-grade">Grade: {{ result.grade }}</span>
@@ -52,7 +57,11 @@
 <section aria-labelledby="next-heading">
   <h2 id="next-heading">What's Next?</h2>
   {% if result.findings %}
-  <p>Your document has issues that can be fixed automatically. <a href="{{ url_for('fix.fix_form') }}" class="btn-primary">Fix This Document</a></p>
+  {% if doc_format == "docx" %}
+  <p>Your Word document has issues that can be fixed automatically. <a href="{{ url_for('fix.fix_form') }}" class="btn-primary">Fix This Document</a></p>
+  {% elif doc_format in ("xlsx", "pptx") %}
+  <p>Auto-fix for {{ doc_format | upper }} files is coming soon. Use the findings above to make corrections manually in Microsoft Office.</p>
+  {% endif %}
   {% endif %}
   <ul>
     <li><a href="{{ url_for('audit.audit_form') }}">Audit another document</a></li>

@@ -1,12 +1,17 @@
-"""Fix route -- upload a .docx and download a remediated copy."""
+"""Fix route -- upload a document and download a remediated copy."""
+
+from pathlib import Path
 
 from flask import Blueprint, render_template, request, send_file
 from werkzeug.utils import secure_filename
 
-from acb_large_print.auditor import audit_document
-from acb_large_print.fixer import fix_document
-
-from ..rules import filter_findings, get_all_rule_ids, get_rule_ids_by_severity
+from ..rules import (
+    filter_findings,
+    get_all_rule_ids,
+    get_rule_ids_by_category,
+    get_rule_ids_by_format,
+    get_rule_ids_by_severity,
+)
 from ..upload import (
     UploadError,
     cleanup_token,
@@ -15,6 +20,51 @@ from ..upload import (
 )
 
 fix_bp = Blueprint("fix", __name__)
+
+
+def _fix_by_extension(saved_path: Path, output_path: Path, *, bound: bool = False):
+    """Dispatch to the correct fixer based on file extension.
+
+    Returns (output_path, total_fixes, post_audit, warnings).
+    """
+    ext = saved_path.suffix.lower()
+    if ext == ".xlsx":
+        from acb_large_print.xlsx_auditor import audit_workbook
+        # No auto-fixer yet for Excel -- return audit-only results
+        post_audit = audit_workbook(saved_path)
+        return saved_path, 0, post_audit, [
+            "Excel workbooks cannot be auto-fixed yet. "
+            "Review the audit findings and fix them manually in Excel."
+        ]
+    elif ext == ".pptx":
+        from acb_large_print.pptx_auditor import audit_presentation
+        # No auto-fixer yet for PowerPoint -- return audit-only results
+        post_audit = audit_presentation(saved_path)
+        return saved_path, 0, post_audit, [
+            "PowerPoint presentations cannot be auto-fixed yet. "
+            "Review the audit findings and fix them manually in PowerPoint."
+        ]
+    else:
+        from acb_large_print.fixer import fix_document
+        return fix_document(saved_path, output_path, bound=bound)
+
+
+def _audit_by_extension(saved_path: Path):
+    """Dispatch to the correct auditor based on file extension."""
+    ext = saved_path.suffix.lower()
+    if ext == ".xlsx":
+        from acb_large_print.xlsx_auditor import audit_workbook
+        return audit_workbook(saved_path)
+    elif ext == ".pptx":
+        from acb_large_print.pptx_auditor import audit_presentation
+        return audit_presentation(saved_path)
+    else:
+        from acb_large_print.auditor import audit_document
+        return audit_document(saved_path)
+
+
+def _format_from_path(saved_path: Path) -> str:
+    return saved_path.suffix.lower().lstrip(".")
 
 
 @fix_bp.route("/", methods=["GET"])
@@ -30,18 +80,26 @@ def fix_submit():
 
         bound = request.form.get("bound") == "on"
         mode = request.form.get("mode", "full")
+        doc_format = _format_from_path(saved_path)
 
         # Run pre-fix audit for before score
-        pre_audit = audit_document(saved_path)
+        pre_audit = _audit_by_extension(saved_path)
 
-        # Fix the document (always applies all fixes)
-        output_name = saved_path.stem + "-fixed.docx"
+        # Fix the document (Word only for now; xlsx/pptx return audit-only)
+        ext = saved_path.suffix.lower()
+        output_name = saved_path.stem + "-fixed" + ext
         output_path = saved_path.parent / output_name
-        _, total_fixes, post_audit, warnings = fix_document(
+        _, total_fixes, post_audit, warnings = _fix_by_extension(
             saved_path, output_path, bound=bound
         )
 
         # Filter post-fix findings for display based on mode
+        categories = request.form.getlist("category")
+        if not categories:
+            categories = ["acb", "msac"]
+        category_rule_ids = get_rule_ids_by_category(*categories)
+        format_rule_ids = get_rule_ids_by_format(doc_format)
+
         if mode == "essentials":
             selected = get_rule_ids_by_severity("Critical", "High")
             mode_label = "Essentials Fix -- Critical and High focus"
@@ -54,6 +112,7 @@ def fix_submit():
             selected = get_all_rule_ids()
             mode_label = "Full Fix -- all rules"
 
+        selected = selected & category_rule_ids & format_rule_ids
         post_findings = filter_findings(post_audit.findings, selected)
 
         return render_template(
@@ -80,7 +139,7 @@ def fix_submit():
         return render_template(
             "fix_form.html",
             error="An error occurred while fixing the document. "
-            "Please ensure it is a valid .docx file and try again.",
+            "Please ensure it is a valid Office file and try again.",
         ), 500
     # Note: do NOT clean up here -- the temp dir must survive for the download
 

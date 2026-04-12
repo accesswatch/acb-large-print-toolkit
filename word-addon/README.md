@@ -1,15 +1,17 @@
-# ACB Large Print Tool
+# ACB Document Accessibility Tool
 
-A cross-platform desktop application that audits, remediates, and exports Microsoft Word documents to comply with the American Council of the Blind (ACB) Large Print Guidelines, supplemented with WCAG 2.2 AA digital accessibility rules.
+A cross-platform desktop application that audits, remediates, and exports Microsoft Office documents (Word, Excel, PowerPoint) to comply with the American Council of the Blind (ACB) Large Print Guidelines, Microsoft Accessibility Checker rules, and WCAG 2.2 AA digital accessibility standards.
 
 ## Features
 
-- Audit .docx files against 30+ ACB Large Print rules
-- Auto-fix compliance issues (fonts, spacing, emphasis, headings, margins)
+- Audit .docx, .xlsx, and .pptx files against ACB Large Print and MSAC accessibility rules
+- Auto-fix compliance issues in Word documents (fonts, spacing, emphasis, headings, margins)
+- Audit Excel workbooks (sheet names, table headers, merged cells, alt text, hidden content, color-only data)
+- Audit PowerPoint presentations (slide titles, reading order, alt text, font sizes, speaker notes, charts)
 - Generate ACB-compliant Word templates (.dotx) with pre-configured styles
-- Export to accessible HTML (standalone or CMS-ready fragments)
+- Export Word documents to accessible HTML (standalone or CMS-ready fragments)
 - Accessible GUI wizard (screen reader compatible, keyboard navigable)
-- Full CLI for scripting and batch processing
+- Full CLI for scripting and batch processing of all three formats
 - Cross-platform: Windows, macOS, and Linux (x64 and ARM64)
 
 ## Installation
@@ -47,6 +49,8 @@ Requires Python 3.10 or later.
 | Package | Version | Purpose |
 |---|---|---|
 | python-docx | 1.1.0+ | Read and write .docx files |
+| openpyxl | 3.1.0+ | Read and write .xlsx files |
+| python-pptx | 1.0.0+ | Read and write .pptx files |
 | mammoth | 1.8.0+ | Convert .docx to clean HTML |
 | wxPython | 4.2.0+ | Accessible cross-platform GUI |
 
@@ -62,12 +66,12 @@ acb-large-print
 
 The 7-step wizard walks through:
 
-1. Open a .docx file
+1. Open a .docx, .xlsx, or .pptx file
 2. Initial audit (view compliance report in your browser)
-3. Choose output options (standalone HTML, CMS fragment)
-4. Auto-remediate all fixable issues
+3. Choose output options (standalone HTML, CMS fragment -- Word only)
+4. Auto-remediate all fixable issues (Word) or review audit guidance (Excel, PowerPoint)
 5. Verify the fixed document (view report showing improvements)
-6. Save the fixed .docx and optional HTML exports
+6. Save the fixed document and optional HTML exports
 7. Summary of everything accomplished
 
 ### CLI mode
@@ -76,6 +80,8 @@ The 7-step wizard walks through:
 
 ```bash
 acb-large-print audit report.docx
+acb-large-print audit budget.xlsx
+acb-large-print audit slides.pptx
 acb-large-print audit report.docx --format json
 acb-large-print audit report.docx -o audit-report.txt
 ```
@@ -83,9 +89,14 @@ acb-large-print audit report.docx -o audit-report.txt
 #### Fix a document
 
 ```bash
+# Word documents get auto-fixed
 acb-large-print fix report.docx
 acb-large-print fix report.docx -o report-fixed.docx
 acb-large-print fix report.docx --bound   # add binding margin
+
+# Excel and PowerPoint files are audited with manual fix guidance
+acb-large-print fix budget.xlsx
+acb-large-print fix slides.pptx
 ```
 
 #### Create a template
@@ -112,8 +123,11 @@ acb-large-print export report.docx -o output.html --title "Board Meeting Agenda"
 #### Batch processing
 
 ```bash
-acb-large-print batch audit *.docx
-acb-large-print batch fix *.docx --output-dir fixed/
+# Audit all Office documents in a directory
+acb-large-print batch audit docs/ -r
+
+# Batch fix (Word gets auto-fixed, Excel/PowerPoint get audit reports)
+acb-large-print batch fix docs/ -r --output-dir fixed/
 ```
 
 ## Architecture
@@ -124,7 +138,9 @@ word-addon/
     __init__.py          Version and metadata
     __main__.py          Entry point (CLI dispatch or GUI launch)
     constants.py         ACB rule definitions and thresholds
-    auditor.py           Document scanner -- checks 30+ rules, returns AuditResult
+    auditor.py           Word document scanner -- checks 30+ rules, returns AuditResult
+    xlsx_auditor.py      Excel workbook scanner -- MSAC accessibility rules
+    pptx_auditor.py      PowerPoint presentation scanner -- MSAC accessibility rules
     fixer.py             Auto-remediation engine -- applies fixes to python-docx Document
     reporter.py          Report generators (text, JSON, HTML)
     exporter.py          DOCX-to-HTML export (mammoth + ACB post-processing)

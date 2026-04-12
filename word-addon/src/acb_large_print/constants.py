@@ -150,6 +150,28 @@ class Severity(str, Enum):
     LOW = "Low"
 
 
+class RuleCategory(str, Enum):
+    """Rule source category -- allows toggling rule sets on/off."""
+    ACB = "acb"    # ACB Large Print Guidelines
+    MSAC = "msac"  # Microsoft Accessibility Checker / WCAG baseline
+
+
+class DocFormat(str, Enum):
+    """Document formats a rule can apply to."""
+    DOCX = "docx"
+    XLSX = "xlsx"
+    PPTX = "pptx"
+
+
+# Shorthand sets for tagging rules
+_ALL_FORMATS = frozenset({DocFormat.DOCX, DocFormat.XLSX, DocFormat.PPTX})
+_DOCX_ONLY = frozenset({DocFormat.DOCX})
+_XLSX_ONLY = frozenset({DocFormat.XLSX})
+_PPTX_ONLY = frozenset({DocFormat.PPTX})
+_DOCX_PPTX = frozenset({DocFormat.DOCX, DocFormat.PPTX})
+_XLSX_PPTX = frozenset({DocFormat.XLSX, DocFormat.PPTX})
+
+
 @dataclass(frozen=True)
 class RuleDef:
     """Audit rule metadata."""
@@ -157,7 +179,9 @@ class RuleDef:
     description: str
     severity: Severity
     acb_reference: str
+    category: RuleCategory = RuleCategory.ACB
     auto_fixable: bool = True
+    formats: frozenset[DocFormat] = _DOCX_ONLY
 
 
 # Audit rules keyed by rule_id
@@ -274,4 +298,318 @@ AUDIT_RULES: dict[str, RuleDef] = {
         acb_reference="WCAG 3.1.1 Language of Page",
         auto_fixable=True,
     ),
+    # -----------------------------------------------------------------
+    # Microsoft Accessibility Checker (MSAC) rules
+    # These mirror checks from the built-in MS Office Accessibility
+    # Checker and axe-core WCAG 2.1 rules (cf. extCheck by Jamal Mazrui).
+    # Users can toggle this category on/off independently of ACB rules.
+    # -----------------------------------------------------------------
+    "ACB-MISSING-ALT-TEXT": RuleDef(
+        rule_id="ACB-MISSING-ALT-TEXT",
+        description="Images and shapes must have alternative text",
+        severity=Severity.CRITICAL,
+        acb_reference="WCAG 1.1.1 Non-text Content",
+        category=RuleCategory.MSAC,
+        auto_fixable=False,
+        formats=_ALL_FORMATS,
+    ),
+    "ACB-TABLE-HEADER-ROW": RuleDef(
+        rule_id="ACB-TABLE-HEADER-ROW",
+        description="Tables must have a designated header row",
+        severity=Severity.HIGH,
+        acb_reference="WCAG 1.3.1 Info and Relationships",
+        category=RuleCategory.MSAC,
+        auto_fixable=True,
+        formats=_DOCX_ONLY,
+    ),
+    "ACB-LINK-TEXT": RuleDef(
+        rule_id="ACB-LINK-TEXT",
+        description="Hyperlink text must be descriptive (not 'click here' or a raw URL)",
+        severity=Severity.HIGH,
+        acb_reference="WCAG 2.4.4 Link Purpose (In Context)",
+        category=RuleCategory.MSAC,
+        auto_fixable=False,
+        formats=_ALL_FORMATS,
+    ),
+    "ACB-FORM-FIELD-LABEL": RuleDef(
+        rule_id="ACB-FORM-FIELD-LABEL",
+        description="Form fields must have descriptive help text",
+        severity=Severity.HIGH,
+        acb_reference="WCAG 1.3.1 Info and Relationships",
+        category=RuleCategory.MSAC,
+        auto_fixable=False,
+    ),
+    "ACB-COMPLEX-TABLE": RuleDef(
+        rule_id="ACB-COMPLEX-TABLE",
+        description="Tables with both row and column headers may confuse screen readers",
+        severity=Severity.MEDIUM,
+        acb_reference="WCAG 1.3.1 Info and Relationships",
+        category=RuleCategory.MSAC,
+        auto_fixable=False,
+    ),
+    "ACB-EMPTY-TABLE-CELL": RuleDef(
+        rule_id="ACB-EMPTY-TABLE-CELL",
+        description="Empty table cells should contain a placeholder (dash or N/A)",
+        severity=Severity.LOW,
+        acb_reference="WCAG 1.3.1 Info and Relationships",
+        category=RuleCategory.MSAC,
+        auto_fixable=True,
+        formats=frozenset({DocFormat.DOCX, DocFormat.XLSX}),
+    ),
+    "ACB-FLOATING-CONTENT": RuleDef(
+        rule_id="ACB-FLOATING-CONTENT",
+        description="Floating text boxes may be read out of order by screen readers",
+        severity=Severity.MEDIUM,
+        acb_reference="WCAG 1.3.2 Meaningful Sequence",
+        category=RuleCategory.MSAC,
+        auto_fixable=False,
+        formats=_DOCX_ONLY,
+    ),
+    "ACB-FAKE-LIST": RuleDef(
+        rule_id="ACB-FAKE-LIST",
+        description="Manually typed bullet or number characters should use built-in list styles",
+        severity=Severity.MEDIUM,
+        acb_reference="WCAG 1.3.1 Info and Relationships",
+        category=RuleCategory.MSAC,
+        auto_fixable=False,
+        formats=_DOCX_PPTX,
+    ),
+    "ACB-REPEATED-SPACES": RuleDef(
+        rule_id="ACB-REPEATED-SPACES",
+        description="Consecutive spaces used for visual layout should be replaced with proper formatting",
+        severity=Severity.LOW,
+        acb_reference="WCAG 1.3.2 Meaningful Sequence",
+        category=RuleCategory.MSAC,
+        auto_fixable=True,
+        formats=_DOCX_ONLY,
+    ),
+    "ACB-LONG-SECTION": RuleDef(
+        rule_id="ACB-LONG-SECTION",
+        description="More than 20 paragraphs without a heading impairs screen reader navigation",
+        severity=Severity.MEDIUM,
+        acb_reference="WCAG 2.4.6 Headings and Labels",
+        category=RuleCategory.MSAC,
+        auto_fixable=False,
+        formats=_DOCX_ONLY,
+    ),
+    "ACB-DUPLICATE-HEADING": RuleDef(
+        rule_id="ACB-DUPLICATE-HEADING",
+        description="Headings at the same level with identical text create ambiguous navigation",
+        severity=Severity.LOW,
+        acb_reference="WCAG 2.4.6 Headings and Labels",
+        category=RuleCategory.MSAC,
+        auto_fixable=False,
+        formats=_DOCX_PPTX,
+    ),
+    "ACB-LINK-UNDERLINE": RuleDef(
+        rule_id="ACB-LINK-UNDERLINE",
+        description="Hyperlinks must be underlined to be distinguishable from body text",
+        severity=Severity.MEDIUM,
+        acb_reference="WCAG 1.4.1 Use of Color",
+        category=RuleCategory.MSAC,
+        auto_fixable=True,
+        formats=_DOCX_ONLY,
+    ),
+    "ACB-DOC-AUTHOR": RuleDef(
+        rule_id="ACB-DOC-AUTHOR",
+        description="Document author should be set in properties",
+        severity=Severity.LOW,
+        acb_reference="WCAG 2.4.2 Page Titled",
+        category=RuleCategory.MSAC,
+        auto_fixable=False,
+        formats=_ALL_FORMATS,
+    ),
+    # -----------------------------------------------------------------
+    # Excel-specific rules  (cf. extCheck by Jamal Mazrui)
+    # -----------------------------------------------------------------
+    "XLSX-TITLE": RuleDef(
+        rule_id="XLSX-TITLE",
+        description="Workbook title must be set in document properties",
+        severity=Severity.HIGH,
+        acb_reference="WCAG 2.4.2 Page Titled",
+        category=RuleCategory.MSAC,
+        auto_fixable=False,
+        formats=_XLSX_ONLY,
+    ),
+    "XLSX-SHEET-NAME": RuleDef(
+        rule_id="XLSX-SHEET-NAME",
+        description="Worksheet tabs must have descriptive names (not Sheet1, Sheet2)",
+        severity=Severity.MEDIUM,
+        acb_reference="WCAG 2.4.6 Headings and Labels",
+        category=RuleCategory.MSAC,
+        auto_fixable=False,
+        formats=_XLSX_ONLY,
+    ),
+    "XLSX-TABLE-HEADERS": RuleDef(
+        rule_id="XLSX-TABLE-HEADERS",
+        description="Excel Tables must have the header row enabled",
+        severity=Severity.HIGH,
+        acb_reference="WCAG 1.3.1 Info and Relationships",
+        category=RuleCategory.MSAC,
+        auto_fixable=True,
+        formats=_XLSX_ONLY,
+    ),
+    "XLSX-MERGED-CELLS": RuleDef(
+        rule_id="XLSX-MERGED-CELLS",
+        description="Merged cells disrupt screen reader table navigation",
+        severity=Severity.MEDIUM,
+        acb_reference="WCAG 1.3.1 Info and Relationships",
+        category=RuleCategory.MSAC,
+        auto_fixable=False,
+        formats=_XLSX_ONLY,
+    ),
+    "XLSX-BLANK-COLUMN-HEADER": RuleDef(
+        rule_id="XLSX-BLANK-COLUMN-HEADER",
+        description="Table column headers must not be blank or generic",
+        severity=Severity.HIGH,
+        acb_reference="WCAG 1.3.1 Info and Relationships",
+        category=RuleCategory.MSAC,
+        auto_fixable=False,
+        formats=_XLSX_ONLY,
+    ),
+    "XLSX-COLOR-ONLY": RuleDef(
+        rule_id="XLSX-COLOR-ONLY",
+        description="Cells with background color but no text may convey meaning through color alone",
+        severity=Severity.MEDIUM,
+        acb_reference="WCAG 1.4.1 Use of Color",
+        category=RuleCategory.MSAC,
+        auto_fixable=False,
+        formats=_XLSX_ONLY,
+    ),
+    "XLSX-HIDDEN-CONTENT": RuleDef(
+        rule_id="XLSX-HIDDEN-CONTENT",
+        description="Hidden rows or columns may be skipped by screen readers",
+        severity=Severity.MEDIUM,
+        acb_reference="WCAG 1.3.2 Meaningful Sequence",
+        category=RuleCategory.MSAC,
+        auto_fixable=False,
+        formats=_XLSX_ONLY,
+    ),
+    "XLSX-HEADER-FROZEN": RuleDef(
+        rule_id="XLSX-HEADER-FROZEN",
+        description="Header row should be frozen so it stays visible when scrolling",
+        severity=Severity.LOW,
+        acb_reference="WCAG 1.3.1 Info and Relationships",
+        category=RuleCategory.MSAC,
+        auto_fixable=True,
+        formats=_XLSX_ONLY,
+    ),
+    "XLSX-SHEET-NAME-LENGTH": RuleDef(
+        rule_id="XLSX-SHEET-NAME-LENGTH",
+        description="Worksheet tab name exceeds 31 characters (Excel maximum)",
+        severity=Severity.LOW,
+        acb_reference="WCAG 2.4.6 Headings and Labels",
+        category=RuleCategory.MSAC,
+        auto_fixable=False,
+        formats=_XLSX_ONLY,
+    ),
+    # -----------------------------------------------------------------
+    # PowerPoint-specific rules  (cf. extCheck by Jamal Mazrui)
+    # -----------------------------------------------------------------
+    "PPTX-TITLE": RuleDef(
+        rule_id="PPTX-TITLE",
+        description="Presentation title must be set in document properties",
+        severity=Severity.HIGH,
+        acb_reference="WCAG 2.4.2 Page Titled",
+        category=RuleCategory.MSAC,
+        auto_fixable=False,
+        formats=_PPTX_ONLY,
+    ),
+    "PPTX-SLIDE-TITLE": RuleDef(
+        rule_id="PPTX-SLIDE-TITLE",
+        description="Every slide must have a unique, non-empty title",
+        severity=Severity.CRITICAL,
+        acb_reference="WCAG 1.3.1 Info and Relationships",
+        category=RuleCategory.MSAC,
+        auto_fixable=False,
+        formats=_PPTX_ONLY,
+    ),
+    "PPTX-READING-ORDER": RuleDef(
+        rule_id="PPTX-READING-ORDER",
+        description="Slide reading order should match visual layout (top-to-bottom, left-to-right)",
+        severity=Severity.MEDIUM,
+        acb_reference="WCAG 1.3.2 Meaningful Sequence",
+        category=RuleCategory.MSAC,
+        auto_fixable=False,
+        formats=_PPTX_ONLY,
+    ),
+    "PPTX-TITLE-READING-ORDER": RuleDef(
+        rule_id="PPTX-TITLE-READING-ORDER",
+        description="Title placeholder should be first in reading order",
+        severity=Severity.MEDIUM,
+        acb_reference="WCAG 1.3.2 Meaningful Sequence",
+        category=RuleCategory.MSAC,
+        auto_fixable=False,
+        formats=_PPTX_ONLY,
+    ),
+    "PPTX-SMALL-FONT": RuleDef(
+        rule_id="PPTX-SMALL-FONT",
+        description="Text on slides should be at least 18pt for readability",
+        severity=Severity.MEDIUM,
+        acb_reference="WCAG 1.4.3 Contrast (Minimum)",
+        category=RuleCategory.MSAC,
+        auto_fixable=False,
+        formats=_PPTX_ONLY,
+    ),
+    "PPTX-SPEAKER-NOTES": RuleDef(
+        rule_id="PPTX-SPEAKER-NOTES",
+        description="Slides with visual content should have speaker notes for context",
+        severity=Severity.LOW,
+        acb_reference="WCAG 1.1.1 Non-text Content",
+        category=RuleCategory.MSAC,
+        auto_fixable=False,
+        formats=_PPTX_ONLY,
+    ),
+    "PPTX-CHART-ALT-TEXT": RuleDef(
+        rule_id="PPTX-CHART-ALT-TEXT",
+        description="Charts must have alternative text describing the key finding",
+        severity=Severity.CRITICAL,
+        acb_reference="WCAG 1.1.1 Non-text Content",
+        category=RuleCategory.MSAC,
+        auto_fixable=False,
+        formats=_XLSX_PPTX,
+    ),
+    "PPTX-DUPLICATE-SLIDE-TITLE": RuleDef(
+        rule_id="PPTX-DUPLICATE-SLIDE-TITLE",
+        description="Multiple slides share identical titles, creating ambiguous navigation",
+        severity=Severity.LOW,
+        acb_reference="WCAG 2.4.6 Headings and Labels",
+        category=RuleCategory.MSAC,
+        auto_fixable=False,
+        formats=_PPTX_ONLY,
+    ),
+    "PPTX-HEADING-SKIP": RuleDef(
+        rule_id="PPTX-HEADING-SKIP",
+        description="Heading levels are skipped on a slide (e.g., Title followed by H3)",
+        severity=Severity.HIGH,
+        acb_reference="WCAG 1.3.1 Info and Relationships",
+        category=RuleCategory.MSAC,
+        auto_fixable=False,
+        formats=_PPTX_ONLY,
+    ),
 }
+
+
+# Convenience sets for category-based filtering
+ACB_RULE_IDS: frozenset[str] = frozenset(
+    rid for rid, r in AUDIT_RULES.items() if r.category == RuleCategory.ACB
+)
+MSAC_RULE_IDS: frozenset[str] = frozenset(
+    rid for rid, r in AUDIT_RULES.items() if r.category == RuleCategory.MSAC
+)
+
+
+def rules_for_format(fmt: DocFormat) -> dict[str, RuleDef]:
+    """Return only the rules applicable to a given document format."""
+    return {rid: r for rid, r in AUDIT_RULES.items() if fmt in r.formats}
+
+
+DOCX_RULE_IDS: frozenset[str] = frozenset(
+    rid for rid, r in AUDIT_RULES.items() if DocFormat.DOCX in r.formats
+)
+XLSX_RULE_IDS: frozenset[str] = frozenset(
+    rid for rid, r in AUDIT_RULES.items() if DocFormat.XLSX in r.formats
+)
+PPTX_RULE_IDS: frozenset[str] = frozenset(
+    rid for rid, r in AUDIT_RULES.items() if DocFormat.PPTX in r.formats
+)

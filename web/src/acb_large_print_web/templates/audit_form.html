@@ -6,7 +6,13 @@
 {% block content %}
 <details class="help-accordion">
   <summary>What does the audit do?</summary>
-  <p>The audit checks your Word document (<code>.docx</code>) against the ACB Large Print Guidelines and WCAG 2.2 AA requirements. It examines fonts, sizes, spacing, alignment, emphasis, headings, margins, and document properties. You receive a detailed report showing each finding with its severity and the relevant guideline reference.</p>
+  <p>The audit checks your document against the ACB Large Print Guidelines and WCAG 2.2 AA requirements. Rules adapt automatically to the file type:</p>
+  <ul>
+    <li><strong>Word (.docx)</strong> -- fonts, sizes, spacing, alignment, emphasis, headings, margins, and document properties.</li>
+    <li><strong>Excel (.xlsx)</strong> -- sheet names, table headers, merged cells, alt text, hidden content, and color-only cells.</li>
+    <li><strong>PowerPoint (.pptx)</strong> -- slide titles, reading order, alt text, font sizes, speaker notes, and chart descriptions.</li>
+  </ul>
+  <p>You receive a detailed report showing each finding with its severity and the relevant guideline reference.</p>
 </details>
 
 {% if error %}
@@ -18,12 +24,29 @@
 <form method="post" enctype="multipart/form-data" novalidate>
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
   <div class="form-group">
-    <label for="document">Upload a Word document</label>
-    <input type="file" id="document" name="document" accept=".docx"
+    <label for="document">Upload a document</label>
+    <input type="file" id="document" name="document" accept=".docx,.xlsx,.pptx"
            aria-describedby="file-help"
            {% if error %}aria-invalid="true"{% endif %}>
-    <p id="file-help" class="help-text">Accepted format: <code>.docx</code> (Microsoft Word). Maximum size: 16 MB.</p>
+    <p id="file-help" class="help-text">Accepted formats: Word (.docx), Excel (.xlsx), PowerPoint (.pptx). Maximum size: 16 MB.</p>
   </div>
+
+  <fieldset>
+    <legend>Rule Categories</legend>
+    <p class="help-text">Choose which rule sets to include. Both are enabled by default.</p>
+
+    <div class="checkbox-group">
+      <label>
+        <input type="checkbox" name="category" value="acb" checked>
+        <strong>ACB Large Print</strong> -- {{ rules_by_category.acb | length }} rules from the ACB Board of Publications guidelines (font, size, spacing, emphasis, margins, headings). Applies primarily to Word documents.
+      </label>
+
+      <label>
+        <input type="checkbox" name="category" value="msac" checked>
+        <strong>MS Accessibility Checker</strong> -- {{ rules_by_category.msac | length }} rules aligned with the Microsoft Office Accessibility Checker and WCAG 2.1 (alt text, tables, links, forms, reading order). Applies to all formats.
+      </label>
+    </div>
+  </fieldset>
 
   <fieldset>
     <legend>Audit Mode</legend>
@@ -31,7 +54,7 @@
     <div class="radio-group">
       <label>
         <input type="radio" name="mode" value="full" checked>
-        <strong>Full Audit</strong> -- check all {{ rules_by_severity.values() | map('length') | sum }} rules. Recommended for first-time users.
+        <strong>Full Audit</strong> -- check all rules applicable to the uploaded format. Recommended for first-time users.
       </label>
 
       <label>
@@ -58,16 +81,16 @@
     <summary>Understanding severity levels</summary>
     <dl>
       <dt><span class="severity-badge severity-critical">Critical</span></dt>
-      <dd>Issues that make the document unreadable for low-vision users. Must be fixed. Examples: wrong font, text smaller than 18pt, italic formatting.</dd>
+      <dd>Issues that make the document unreadable for low-vision users or completely block assistive technology. Must be fixed. Examples: wrong font, text smaller than 18pt, missing slide titles, images without alt text.</dd>
 
       <dt><span class="severity-badge severity-high">High</span></dt>
-      <dd>Significant readability or structure issues. Should be fixed. Examples: wrong heading sizes, justified alignment, bold misused for body emphasis, skipped heading levels.</dd>
+      <dd>Significant readability or structure issues. Should be fixed. Examples: wrong heading sizes, justified alignment, skipped heading levels, blank column headers.</dd>
 
       <dt><span class="severity-badge severity-medium">Medium</span></dt>
-      <dd>Compliance gaps that affect quality but may not block readability. Examples: incorrect line spacing, missing page numbers, no document title.</dd>
+      <dd>Compliance gaps that affect quality but may not block readability. Examples: incorrect line spacing, merged cells, reading order mismatches, generic sheet names.</dd>
 
       <dt><span class="severity-badge severity-low">Low</span></dt>
-      <dd>Minor issues or best-practice recommendations. Example: widow and orphan control not enabled.</dd>
+      <dd>Minor issues or best-practice recommendations. Examples: widow/orphan control, header row not frozen, missing speaker notes.</dd>
     </dl>
   </details>
 

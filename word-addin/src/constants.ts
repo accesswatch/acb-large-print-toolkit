@@ -161,12 +161,31 @@ export enum Severity {
     LOW = "Low",
 }
 
+export enum RuleCategory {
+    ACB = "acb",    // ACB Large Print Guidelines
+    MSAC = "msac",  // Microsoft Accessibility Checker / WCAG baseline
+}
+
+export enum DocFormat {
+    DOCX = "docx",
+    XLSX = "xlsx",
+    PPTX = "pptx",
+}
+
+const ALL_FORMATS: ReadonlySet<DocFormat> = new Set([DocFormat.DOCX, DocFormat.XLSX, DocFormat.PPTX]);
+const DOCX_ONLY: ReadonlySet<DocFormat> = new Set([DocFormat.DOCX]);
+const XLSX_ONLY: ReadonlySet<DocFormat> = new Set([DocFormat.XLSX]);
+const PPTX_ONLY: ReadonlySet<DocFormat> = new Set([DocFormat.PPTX]);
+const DOCX_PPTX: ReadonlySet<DocFormat> = new Set([DocFormat.DOCX, DocFormat.PPTX]);
+
 export interface RuleDef {
     ruleId: string;
     description: string;
     severity: Severity;
     acbReference: string;
+    category: RuleCategory;
     autoFixable: boolean;
+    formats: ReadonlySet<DocFormat>;
 }
 
 export const AUDIT_RULES: Record<string, RuleDef> = {
@@ -175,114 +194,527 @@ export const AUDIT_RULES: Record<string, RuleDef> = {
         description: "All text must use Arial font",
         severity: Severity.CRITICAL,
         acbReference: "ACB Guidelines Section 1: Font",
+        category: RuleCategory.ACB,
         autoFixable: true,
+        formats: DOCX_ONLY,
     },
     "ACB-FONT-SIZE-BODY": {
         ruleId: "ACB-FONT-SIZE-BODY",
         description: `Body text must be ${BODY_SIZE_PT}pt minimum`,
         severity: Severity.CRITICAL,
         acbReference: "ACB Guidelines Section 1: Font Size",
+        category: RuleCategory.ACB,
         autoFixable: true,
+        formats: DOCX_ONLY,
     },
     "ACB-FONT-SIZE-H1": {
         ruleId: "ACB-FONT-SIZE-H1",
         description: `Heading 1 must be ${HEADING1_SIZE_PT}pt`,
         severity: Severity.HIGH,
         acbReference: "ACB Guidelines Section 2: Headings",
+        category: RuleCategory.ACB,
         autoFixable: true,
+        formats: DOCX_ONLY,
     },
     "ACB-FONT-SIZE-H2": {
         ruleId: "ACB-FONT-SIZE-H2",
         description: `Heading 2 must be ${HEADING2_SIZE_PT}pt`,
         severity: Severity.HIGH,
         acbReference: "ACB Guidelines Section 2: Headings",
+        category: RuleCategory.ACB,
         autoFixable: true,
+        formats: DOCX_ONLY,
     },
     "ACB-NO-ITALIC": {
         ruleId: "ACB-NO-ITALIC",
         description: "Italic formatting is prohibited",
         severity: Severity.CRITICAL,
         acbReference: "ACB Guidelines Section 3: Emphasis",
+        category: RuleCategory.ACB,
         autoFixable: true,
+        formats: DOCX_ONLY,
     },
     "ACB-BOLD-HEADINGS-ONLY": {
         ruleId: "ACB-BOLD-HEADINGS-ONLY",
         description: "Bold in body text should be underline emphasis instead",
         severity: Severity.HIGH,
         acbReference: "ACB Guidelines Section 3: Emphasis",
+        category: RuleCategory.ACB,
         autoFixable: true,
+        formats: DOCX_ONLY,
     },
     "ACB-ALIGNMENT": {
         ruleId: "ACB-ALIGNMENT",
         description: "Text must be flush left (not justified, centered, or right-aligned)",
         severity: Severity.HIGH,
         acbReference: "ACB Guidelines Section 4: Alignment",
+        category: RuleCategory.ACB,
         autoFixable: true,
+        formats: DOCX_ONLY,
     },
     "ACB-LINE-SPACING": {
         ruleId: "ACB-LINE-SPACING",
         description: `Line spacing must be ${LINE_SPACING_MULTIPLE}`,
         severity: Severity.MEDIUM,
         acbReference: "ACB Guidelines Section 5: Spacing",
+        category: RuleCategory.ACB,
         autoFixable: true,
+        formats: DOCX_ONLY,
     },
     "ACB-MARGINS": {
         ruleId: "ACB-MARGINS",
         description: "Page margins must be 1 inch on all sides",
         severity: Severity.MEDIUM,
         acbReference: "ACB Guidelines Section 6: Margins",
+        category: RuleCategory.ACB,
         autoFixable: true,
+        formats: DOCX_ONLY,
     },
     "ACB-WIDOW-ORPHAN": {
         ruleId: "ACB-WIDOW-ORPHAN",
         description: "Widow and orphan control must be enabled",
         severity: Severity.LOW,
         acbReference: "ACB Guidelines Section 7: Pagination",
+        category: RuleCategory.ACB,
         autoFixable: true,
+        formats: DOCX_ONLY,
     },
     "ACB-NO-HYPHENATION": {
         ruleId: "ACB-NO-HYPHENATION",
         description: "Automatic hyphenation must be disabled",
         severity: Severity.MEDIUM,
         acbReference: "ACB Guidelines Section 8: Hyphenation",
+        category: RuleCategory.ACB,
         autoFixable: true,
+        formats: DOCX_ONLY,
     },
     "ACB-PAGE-NUMBERS": {
         ruleId: "ACB-PAGE-NUMBERS",
         description: "Page numbers must be present in the footer",
         severity: Severity.MEDIUM,
         acbReference: "ACB Guidelines Section 9: Page Numbers",
+        category: RuleCategory.ACB,
         autoFixable: true,
+        formats: DOCX_ONLY,
     },
     "ACB-HEADING-HIERARCHY": {
         ruleId: "ACB-HEADING-HIERARCHY",
         description: "Heading levels must not skip (e.g., H1 to H3)",
         severity: Severity.HIGH,
         acbReference: "ACB Guidelines Section 2: Headings",
+        category: RuleCategory.ACB,
         autoFixable: false,
+        formats: DOCX_ONLY,
     },
     "ACB-NO-ALLCAPS": {
         ruleId: "ACB-NO-ALLCAPS",
         description: "Text must not use ALL CAPS formatting",
         severity: Severity.HIGH,
         acbReference: "ACB Guidelines Section 1: Font",
+        category: RuleCategory.ACB,
         autoFixable: true,
+        formats: DOCX_ONLY,
     },
     "ACB-DOC-TITLE": {
         ruleId: "ACB-DOC-TITLE",
         description: "Document must have a title in properties",
         severity: Severity.MEDIUM,
         acbReference: "WCAG 2.4.2 Page Titled",
+        category: RuleCategory.ACB,
         autoFixable: true,
+        formats: DOCX_ONLY,
     },
     "ACB-DOC-LANGUAGE": {
         ruleId: "ACB-DOC-LANGUAGE",
         description: "Document language must be set",
         severity: Severity.MEDIUM,
         acbReference: "WCAG 3.1.1 Language of Page",
+        category: RuleCategory.ACB,
         autoFixable: true,
+        formats: DOCX_ONLY,
+    },
+    // -----------------------------------------------------------------
+    // Microsoft Accessibility Checker (MSAC) rules
+    // -----------------------------------------------------------------
+    "ACB-MISSING-ALT-TEXT": {
+        ruleId: "ACB-MISSING-ALT-TEXT",
+        description: "Images and shapes must have alternative text",
+        severity: Severity.CRITICAL,
+        acbReference: "WCAG 1.1.1 Non-text Content",
+        category: RuleCategory.MSAC,
+        autoFixable: false,
+        formats: ALL_FORMATS,
+    },
+    "ACB-TABLE-HEADER-ROW": {
+        ruleId: "ACB-TABLE-HEADER-ROW",
+        description: "Tables must have a designated header row",
+        severity: Severity.HIGH,
+        acbReference: "WCAG 1.3.1 Info and Relationships",
+        category: RuleCategory.MSAC,
+        autoFixable: true,
+        formats: DOCX_ONLY,
+    },
+    "ACB-LINK-TEXT": {
+        ruleId: "ACB-LINK-TEXT",
+        description: "Hyperlink text must be descriptive (not 'click here' or a raw URL)",
+        severity: Severity.HIGH,
+        acbReference: "WCAG 2.4.4 Link Purpose (In Context)",
+        category: RuleCategory.MSAC,
+        autoFixable: false,
+        formats: ALL_FORMATS,
+    },
+    "ACB-FORM-FIELD-LABEL": {
+        ruleId: "ACB-FORM-FIELD-LABEL",
+        description: "Form fields must have descriptive help text",
+        severity: Severity.HIGH,
+        acbReference: "WCAG 1.3.1 Info and Relationships",
+        category: RuleCategory.MSAC,
+        autoFixable: false,
+        formats: DOCX_ONLY,
+    },
+    "ACB-COMPLEX-TABLE": {
+        ruleId: "ACB-COMPLEX-TABLE",
+        description: "Tables with both row and column headers may confuse screen readers",
+        severity: Severity.MEDIUM,
+        acbReference: "WCAG 1.3.1 Info and Relationships",
+        category: RuleCategory.MSAC,
+        autoFixable: false,
+        formats: DOCX_ONLY,
+    },
+    "ACB-EMPTY-TABLE-CELL": {
+        ruleId: "ACB-EMPTY-TABLE-CELL",
+        description: "Empty table cells should contain a placeholder (dash or N/A)",
+        severity: Severity.LOW,
+        acbReference: "WCAG 1.3.1 Info and Relationships",
+        category: RuleCategory.MSAC,
+        autoFixable: true,
+        formats: new Set([DocFormat.DOCX, DocFormat.XLSX]),
+    },
+    "ACB-FLOATING-CONTENT": {
+        ruleId: "ACB-FLOATING-CONTENT",
+        description: "Floating text boxes may be read out of order by screen readers",
+        severity: Severity.MEDIUM,
+        acbReference: "WCAG 1.3.2 Meaningful Sequence",
+        category: RuleCategory.MSAC,
+        autoFixable: false,
+        formats: DOCX_ONLY,
+    },
+    "ACB-FAKE-LIST": {
+        ruleId: "ACB-FAKE-LIST",
+        description: "Manually typed bullet or number characters should use built-in list styles",
+        severity: Severity.MEDIUM,
+        acbReference: "WCAG 1.3.1 Info and Relationships",
+        category: RuleCategory.MSAC,
+        autoFixable: false,
+        formats: DOCX_PPTX,
+    },
+    "ACB-REPEATED-SPACES": {
+        ruleId: "ACB-REPEATED-SPACES",
+        description: "Consecutive spaces used for visual layout should be replaced with proper formatting",
+        severity: Severity.LOW,
+        acbReference: "WCAG 1.3.2 Meaningful Sequence",
+        category: RuleCategory.MSAC,
+        autoFixable: true,
+        formats: DOCX_ONLY,
+    },
+    "ACB-LONG-SECTION": {
+        ruleId: "ACB-LONG-SECTION",
+        description: "More than 20 paragraphs without a heading impairs screen reader navigation",
+        severity: Severity.MEDIUM,
+        acbReference: "WCAG 2.4.6 Headings and Labels",
+        category: RuleCategory.MSAC,
+        autoFixable: false,
+        formats: DOCX_ONLY,
+    },
+    "ACB-DUPLICATE-HEADING": {
+        ruleId: "ACB-DUPLICATE-HEADING",
+        description: "Headings at the same level with identical text create ambiguous navigation",
+        severity: Severity.LOW,
+        acbReference: "WCAG 2.4.6 Headings and Labels",
+        category: RuleCategory.MSAC,
+        autoFixable: false,
+        formats: DOCX_PPTX,
+    },
+    "ACB-LINK-UNDERLINE": {
+        ruleId: "ACB-LINK-UNDERLINE",
+        description: "Hyperlinks must be underlined to be distinguishable from body text",
+        severity: Severity.MEDIUM,
+        acbReference: "WCAG 1.4.1 Use of Color",
+        category: RuleCategory.MSAC,
+        autoFixable: true,
+        formats: DOCX_ONLY,
+    },
+    "ACB-DOC-AUTHOR": {
+        ruleId: "ACB-DOC-AUTHOR",
+        description: "Document author should be set in properties",
+        severity: Severity.LOW,
+        acbReference: "WCAG 2.4.2 Page Titled",
+        category: RuleCategory.MSAC,
+        autoFixable: false,
+        formats: ALL_FORMATS,
+    },
+    // -----------------------------------------------------------------
+    // Excel-specific MSAC rules
+    // -----------------------------------------------------------------
+    "XLSX-TITLE": {
+        ruleId: "XLSX-TITLE",
+        description: "Workbook title must be set in document properties",
+        severity: Severity.HIGH,
+        acbReference: "WCAG 2.4.2 Page Titled",
+        category: RuleCategory.MSAC,
+        autoFixable: false,
+        formats: XLSX_ONLY,
+    },
+    "XLSX-SHEET-NAME": {
+        ruleId: "XLSX-SHEET-NAME",
+        description: "Worksheet tabs must have descriptive names (not Sheet1, Sheet2)",
+        severity: Severity.MEDIUM,
+        acbReference: "WCAG 2.4.6 Headings and Labels",
+        category: RuleCategory.MSAC,
+        autoFixable: false,
+        formats: XLSX_ONLY,
+    },
+    "XLSX-TABLE-HEADERS": {
+        ruleId: "XLSX-TABLE-HEADERS",
+        description: "Excel Tables must have the header row enabled",
+        severity: Severity.HIGH,
+        acbReference: "WCAG 1.3.1 Info and Relationships",
+        category: RuleCategory.MSAC,
+        autoFixable: true,
+        formats: XLSX_ONLY,
+    },
+    "XLSX-MERGED-CELLS": {
+        ruleId: "XLSX-MERGED-CELLS",
+        description: "Merged cells disrupt screen reader table navigation",
+        severity: Severity.MEDIUM,
+        acbReference: "WCAG 1.3.1 Info and Relationships",
+        category: RuleCategory.MSAC,
+        autoFixable: false,
+        formats: XLSX_ONLY,
+    },
+    "XLSX-ALT-TEXT": {
+        ruleId: "XLSX-ALT-TEXT",
+        description: "Charts, images, and shapes must have alternative text",
+        severity: Severity.CRITICAL,
+        acbReference: "WCAG 1.1.1 Non-text Content",
+        category: RuleCategory.MSAC,
+        autoFixable: false,
+        formats: XLSX_ONLY,
+    },
+    "XLSX-BLANK-COLUMN-HEADER": {
+        ruleId: "XLSX-BLANK-COLUMN-HEADER",
+        description: "Table column headers must not be blank or generic",
+        severity: Severity.HIGH,
+        acbReference: "WCAG 1.3.1 Info and Relationships",
+        category: RuleCategory.MSAC,
+        autoFixable: false,
+        formats: XLSX_ONLY,
+    },
+    "XLSX-COLOR-ONLY": {
+        ruleId: "XLSX-COLOR-ONLY",
+        description: "Cells with background color but no text may convey meaning through color alone",
+        severity: Severity.MEDIUM,
+        acbReference: "WCAG 1.4.1 Use of Color",
+        category: RuleCategory.MSAC,
+        autoFixable: false,
+        formats: XLSX_ONLY,
+    },
+    "XLSX-HIDDEN-CONTENT": {
+        ruleId: "XLSX-HIDDEN-CONTENT",
+        description: "Hidden rows or columns may be skipped by screen readers",
+        severity: Severity.MEDIUM,
+        acbReference: "WCAG 1.3.2 Meaningful Sequence",
+        category: RuleCategory.MSAC,
+        autoFixable: false,
+        formats: XLSX_ONLY,
+    },
+    "XLSX-HEADER-FROZEN": {
+        ruleId: "XLSX-HEADER-FROZEN",
+        description: "Header row should be frozen so it stays visible when scrolling",
+        severity: Severity.LOW,
+        acbReference: "WCAG 1.3.1 Info and Relationships",
+        category: RuleCategory.MSAC,
+        autoFixable: true,
+        formats: XLSX_ONLY,
+    },
+    "XLSX-SHEET-NAME-LENGTH": {
+        ruleId: "XLSX-SHEET-NAME-LENGTH",
+        description: "Worksheet tab name exceeds 31 characters (Excel maximum)",
+        severity: Severity.LOW,
+        acbReference: "WCAG 2.4.6 Headings and Labels",
+        category: RuleCategory.MSAC,
+        autoFixable: false,
+        formats: XLSX_ONLY,
+    },
+    "XLSX-DOC-TITLE": {
+        ruleId: "XLSX-DOC-TITLE",
+        description: "Workbook must have a title in properties",
+        severity: Severity.MEDIUM,
+        acbReference: "WCAG 2.4.2 Page Titled",
+        category: RuleCategory.MSAC,
+        autoFixable: false,
+        formats: XLSX_ONLY,
+    },
+    // -----------------------------------------------------------------
+    // PowerPoint-specific MSAC rules
+    // -----------------------------------------------------------------
+    "PPTX-TITLE": {
+        ruleId: "PPTX-TITLE",
+        description: "Presentation title must be set in document properties",
+        severity: Severity.HIGH,
+        acbReference: "WCAG 2.4.2 Page Titled",
+        category: RuleCategory.MSAC,
+        autoFixable: false,
+        formats: PPTX_ONLY,
+    },
+    "PPTX-SLIDE-TITLE": {
+        ruleId: "PPTX-SLIDE-TITLE",
+        description: "Every slide must have a unique, non-empty title",
+        severity: Severity.CRITICAL,
+        acbReference: "WCAG 1.3.1 Info and Relationships",
+        category: RuleCategory.MSAC,
+        autoFixable: false,
+        formats: PPTX_ONLY,
+    },
+    "PPTX-READING-ORDER": {
+        ruleId: "PPTX-READING-ORDER",
+        description: "Slide reading order should match visual layout (top-to-bottom, left-to-right)",
+        severity: Severity.MEDIUM,
+        acbReference: "WCAG 1.3.2 Meaningful Sequence",
+        category: RuleCategory.MSAC,
+        autoFixable: false,
+        formats: PPTX_ONLY,
+    },
+    "PPTX-TITLE-READING-ORDER": {
+        ruleId: "PPTX-TITLE-READING-ORDER",
+        description: "Title placeholder should be first in reading order",
+        severity: Severity.MEDIUM,
+        acbReference: "WCAG 1.3.2 Meaningful Sequence",
+        category: RuleCategory.MSAC,
+        autoFixable: false,
+        formats: PPTX_ONLY,
+    },
+    "PPTX-ALT-TEXT": {
+        ruleId: "PPTX-ALT-TEXT",
+        description: "Images and shapes must have alternative text",
+        severity: Severity.CRITICAL,
+        acbReference: "WCAG 1.1.1 Non-text Content",
+        category: RuleCategory.MSAC,
+        autoFixable: false,
+        formats: PPTX_ONLY,
+    },
+    "PPTX-SMALL-FONT": {
+        ruleId: "PPTX-SMALL-FONT",
+        description: "Text on slides should be at least 18pt for readability",
+        severity: Severity.MEDIUM,
+        acbReference: "WCAG 1.4.3 Contrast (Minimum)",
+        category: RuleCategory.MSAC,
+        autoFixable: false,
+        formats: PPTX_ONLY,
+    },
+    "PPTX-SPEAKER-NOTES": {
+        ruleId: "PPTX-SPEAKER-NOTES",
+        description: "Slides with visual content should have speaker notes for context",
+        severity: Severity.LOW,
+        acbReference: "WCAG 1.1.1 Non-text Content",
+        category: RuleCategory.MSAC,
+        autoFixable: false,
+        formats: PPTX_ONLY,
+    },
+    "PPTX-DUPLICATE-TITLE": {
+        ruleId: "PPTX-DUPLICATE-TITLE",
+        description: "Multiple slides share the same title, creating ambiguous navigation",
+        severity: Severity.MEDIUM,
+        acbReference: "WCAG 2.4.6 Headings and Labels",
+        category: RuleCategory.MSAC,
+        autoFixable: false,
+        formats: PPTX_ONLY,
+    },
+    "PPTX-TABLE-HEADER": {
+        ruleId: "PPTX-TABLE-HEADER",
+        description: "Tables on slides must have a designated header row",
+        severity: Severity.HIGH,
+        acbReference: "WCAG 1.3.1 Info and Relationships",
+        category: RuleCategory.MSAC,
+        autoFixable: false,
+        formats: PPTX_ONLY,
+    },
+    "PPTX-CHART-ALT-TEXT": {
+        ruleId: "PPTX-CHART-ALT-TEXT",
+        description: "Charts must have alternative text or data table fallback",
+        severity: Severity.CRITICAL,
+        acbReference: "WCAG 1.1.1 Non-text Content",
+        category: RuleCategory.MSAC,
+        autoFixable: false,
+        formats: new Set([DocFormat.XLSX, DocFormat.PPTX]),
+    },
+    "PPTX-LINK-TEXT": {
+        ruleId: "PPTX-LINK-TEXT",
+        description: "Hyperlink text must be descriptive (not 'click here' or raw URL)",
+        severity: Severity.HIGH,
+        acbReference: "WCAG 2.4.4 Link Purpose (In Context)",
+        category: RuleCategory.MSAC,
+        autoFixable: false,
+        formats: PPTX_ONLY,
+    },
+    "PPTX-DUPLICATE-SLIDE-TITLE": {
+        ruleId: "PPTX-DUPLICATE-SLIDE-TITLE",
+        description: "Multiple slides share identical titles, creating ambiguous navigation",
+        severity: Severity.LOW,
+        acbReference: "WCAG 2.4.6 Headings and Labels",
+        category: RuleCategory.MSAC,
+        autoFixable: false,
+        formats: PPTX_ONLY,
+    },
+    "PPTX-HEADING-SKIP": {
+        ruleId: "PPTX-HEADING-SKIP",
+        description: "Heading levels are skipped on a slide (e.g., Title followed by H3)",
+        severity: Severity.HIGH,
+        acbReference: "WCAG 1.3.1 Info and Relationships",
+        category: RuleCategory.MSAC,
+        autoFixable: false,
+        formats: PPTX_ONLY,
     },
 };
+
+/** Convenience sets for category-based filtering. */
+export const ACB_RULE_IDS: ReadonlySet<string> = new Set(
+    Object.entries(AUDIT_RULES)
+        .filter(([, r]) => r.category === RuleCategory.ACB)
+        .map(([id]) => id),
+);
+export const MSAC_RULE_IDS: ReadonlySet<string> = new Set(
+    Object.entries(AUDIT_RULES)
+        .filter(([, r]) => r.category === RuleCategory.MSAC)
+        .map(([id]) => id),
+);
+
+/** Format-based rule filtering. */
+export function rulesForFormat(fmt: DocFormat): Record<string, RuleDef> {
+    const result: Record<string, RuleDef> = {};
+    for (const [id, rule] of Object.entries(AUDIT_RULES)) {
+        if (rule.formats.has(fmt)) {
+            result[id] = rule;
+        }
+    }
+    return result;
+}
+
+export const DOCX_RULE_IDS: ReadonlySet<string> = new Set(
+    Object.entries(AUDIT_RULES)
+        .filter(([, r]) => r.formats.has(DocFormat.DOCX))
+        .map(([id]) => id),
+);
+export const XLSX_RULE_IDS: ReadonlySet<string> = new Set(
+    Object.entries(AUDIT_RULES)
+        .filter(([, r]) => r.formats.has(DocFormat.XLSX))
+        .map(([id]) => id),
+);
+export const PPTX_RULE_IDS: ReadonlySet<string> = new Set(
+    Object.entries(AUDIT_RULES)
+        .filter(([, r]) => r.formats.has(DocFormat.PPTX))
+        .map(([id]) => id),
+);
 
 /** Severity deduction map for scoring. */
 export const SEVERITY_DEDUCTIONS: Record<Severity, number> = {

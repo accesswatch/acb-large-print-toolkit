@@ -1,4 +1,4 @@
-This repository contains the ACB Large Print Toolkit -- a VS Code agent toolkit, desktop application, and web application for formatting documents to comply with the American Council of the Blind Large Print Guidelines (revised May 6, 2025), supplemented with WCAG 2.2 AA digital accessibility rules.
+This repository contains the ACB Document Accessibility Toolkit -- a VS Code agent toolkit, desktop application, and web application for auditing and fixing Office documents (Word, Excel, PowerPoint) for accessibility. Enforces the American Council of the Blind Large Print Guidelines (revised May 6, 2025), Microsoft Accessibility Checker rules, and WCAG 2.2 AA digital accessibility standards.
 
 ## Repository layout
 
@@ -52,16 +52,19 @@ This repository contains the ACB Large Print Toolkit -- a VS Code agent toolkit,
 
 The ACB audit rules, fix logic, constants, and severity definitions exist in multiple implementations that MUST stay in sync:
 
-| Concern | Python (word-addon) | TypeScript (word-addin) | Flask Web (web) | CSS/HTML (styles, agents) |
-|---------|---------------------|-------------------------|-----------------|---------------------------|
-| Constants (font sizes, margins, spacing) | `word-addon/src/acb_large_print/constants.py` | `word-addin/src/constants.ts` | Imports from Python core | `styles/acb-large-print.css` |
-| Audit rules + severity | `word-addon/src/acb_large_print/constants.py` (`AUDIT_RULES`) | `word-addin/src/constants.ts` (`AUDIT_RULES`) | Imports from Python core | Agent rules in `.github/agents/large-print-formatter.agent.md` |
-| Audit logic | `word-addon/src/acb_large_print/auditor.py` | `word-addin/src/auditor.ts` | Imports from Python core | N/A |
-| Fix logic | `word-addon/src/acb_large_print/fixer.py` | `word-addin/src/fixer.ts` | Imports from Python core | N/A |
-| Template builder | `word-addon/src/acb_large_print/template.py` | `word-addin/src/template.ts` | Imports from Python core | N/A |
-| Web routes and templates | N/A | N/A | `web/src/acb_large_print_web/` | N/A |
+| Concern                                  | Python (word-addon)                                           | TypeScript (word-addin)                       | Flask Web (web)                | CSS/HTML (styles, agents)                                      |
+| ---------------------------------------- | ------------------------------------------------------------- | --------------------------------------------- | ------------------------------ | -------------------------------------------------------------- |
+| Constants (font sizes, margins, spacing) | `word-addon/src/acb_large_print/constants.py`                 | `word-addin/src/constants.ts`                 | Imports from Python core       | `styles/acb-large-print.css`                                   |
+| Audit rules + severity                   | `word-addon/src/acb_large_print/constants.py` (`AUDIT_RULES`) | `word-addin/src/constants.ts` (`AUDIT_RULES`) | Imports from Python core       | Agent rules in `.github/agents/large-print-formatter.agent.md` |
+| Audit logic (Word)                       | `word-addon/src/acb_large_print/auditor.py`                   | `word-addin/src/auditor.ts`                   | Imports from Python core       | N/A                                                            |
+| Audit logic (Excel)                      | `word-addon/src/acb_large_print/xlsx_auditor.py`              | N/A                                           | Imports from Python core       | N/A                                                            |
+| Audit logic (PowerPoint)                 | `word-addon/src/acb_large_print/pptx_auditor.py`              | N/A                                           | Imports from Python core       | N/A                                                            |
+| Fix logic                                | `word-addon/src/acb_large_print/fixer.py`                     | `word-addin/src/fixer.ts`                     | Imports from Python core       | N/A                                                            |
+| Template builder                         | `word-addon/src/acb_large_print/template.py`                  | `word-addin/src/template.ts`                  | Imports from Python core       | N/A                                                            |
+| Web routes and templates                 | N/A                                                           | N/A                                           | `web/src/acb_large_print_web/` | N/A                                                            |
 
 **When modifying ANY rule, constant, or check:**
+
 1. Update ALL implementations -- never change one without the others
 2. If adding a new audit rule ID in Python, add the same rule in TypeScript and update the agent
 3. If changing a threshold (e.g., font size, margin tolerance), grep all three locations

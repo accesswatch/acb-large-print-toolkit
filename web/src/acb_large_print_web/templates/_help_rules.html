@@ -14,6 +14,8 @@
       <label>
         <input type="checkbox" name="{{ prefix }}" value="{{ rule.rule_id }}" checked>
         <strong>{{ rule.rule_id }}</strong> -- {{ rule.description }}
+        {% if rule.category == "msac" %}<span class="category-tag category-msac">MSAC</span>{% endif %}
+        {% for fmt in rule.formats %}<span class="format-tag format-{{ fmt }}">{{ fmt }}</span>{% endfor %}
         {% if not rule.auto_fixable %}<span class="manual-tag">(manual fix required)</span>{% endif %}
       </label>
       <span class="rule-ref">{{ rule.acb_reference }}</span>

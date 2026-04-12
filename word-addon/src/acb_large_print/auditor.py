@@ -11,6 +11,15 @@ from docx.enum.text import WD_ALIGN_PARAGRAPH, WD_LINE_SPACING
 from docx.oxml.ns import qn
 from docx.shared import Inches, Pt
 
+# VML namespace not in python-docx's nsmap -- register manually
+_VML_NS = "urn:schemas-microsoft-com:vml"
+_WPS_NS = "http://schemas.microsoft.com/office/word/2010/wordprocessingShape"
+
+
+def _vml_qn(tag: str) -> str:
+    """Build a qualified name for VML namespace tags (v:shape, v:textbox, etc.)."""
+    return f"{{{_VML_NS}}}{tag}"
+
 from . import constants as C
 
 
@@ -26,6 +35,10 @@ class Finding:
     @property
     def rule(self) -> C.RuleDef:
         return C.AUDIT_RULES[self.rule_id]
+
+    @property
+    def acb_reference(self) -> str:
+        return self.rule.acb_reference
 
 
 @dataclass
@@ -256,6 +269,8 @@ def _check_styles(doc: Document, result: AuditResult) -> None:
 def _check_paragraph_content(doc: Document, result: AuditResult) -> None:
     """Check each paragraph and run for direct formatting violations."""
     prev_heading_level = 0
+    paragraphs_since_heading = 0
+    heading_texts: dict[int, list[str]] = {}  # level -> list of heading texts
 
     for i, para in enumerate(doc.paragraphs):
         result.total_paragraphs += 1
@@ -277,6 +292,19 @@ def _check_paragraph_content(doc: Document, result: AuditResult) -> None:
                     loc,
                 )
             prev_heading_level = level
+
+            # Duplicate heading text check
+            heading_text = para.text.strip()
+            if heading_text:
+                if level not in heading_texts:
+                    heading_texts[level] = []
+                if heading_text in heading_texts[level]:
+                    result.add(
+                        "ACB-DUPLICATE-HEADING",
+                        f"Duplicate H{level} heading: '{heading_text[:60]}'",
+                        loc,
+                    )
+                heading_texts[level].append(heading_text)
 
         # Direct alignment override
         if para.paragraph_format.alignment is not None:
@@ -342,6 +370,47 @@ def _check_paragraph_content(doc: Document, result: AuditResult) -> None:
                     loc,
                 )
 
+        # Repeated blank characters (consecutive spaces for visual layout)
+        if "  " in para.text and not is_heading:
+            # Flag runs of 3+ spaces as likely layout abuse
+            space_runs = re.findall(r" {3,}", para.text)
+            if space_runs:
+                result.add(
+                    "ACB-REPEATED-SPACES",
+                    f"Paragraph contains {len(space_runs)} run(s) of consecutive spaces",
+                    loc,
+                )
+
+        # Fake list detection (manually typed bullets/numbers)
+        stripped = para.text.strip()
+        if stripped and not is_heading:
+            # Typed bullet characters: bullet, en-dash, em-dash, heavy bullet
+            if stripped[0] in "\u2022\u2023\u25cf\u25cb\u25e6\u2043\u2219\u00b7":
+                result.add(
+                    "ACB-FAKE-LIST",
+                    f"Manually typed bullet character '{stripped[0]}' used instead of built-in list style",
+                    loc,
+                )
+            # Typed numbered list: "1." "2)" "a." at start
+            elif re.match(r"^(\d{1,3}[\.\)]\s|[a-z][\.\)]\s)", stripped) and style_name == "Normal":
+                result.add(
+                    "ACB-FAKE-LIST",
+                    f"Manually typed list numbering detected",
+                    loc,
+                )
+
+        # Track paragraphs since last heading for long-section check
+        if is_heading:
+            paragraphs_since_heading = 0
+        else:
+            paragraphs_since_heading += 1
+            if paragraphs_since_heading == 21:
+                result.add(
+                    "ACB-LONG-SECTION",
+                    f"20+ paragraphs without a heading (last heading was before paragraph {i + 1 - 20})",
+                    loc,
+                )
+
 
 def _check_hyphenation(doc: Document, result: AuditResult) -> None:
     """Check whether auto-hyphenation is enabled."""
@@ -377,6 +446,236 @@ def _check_page_numbers(doc: Document, result: AuditResult) -> None:
         )
 
 
+# ---------------------------------------------------------------------------
+# Microsoft Accessibility Checker (MSAC) rule checks
+# ---------------------------------------------------------------------------
+
+_NON_DESCRIPTIVE_LINK_RE = re.compile(
+    r"^(click here|here|read more|learn more|more|link|this link|details|info|"
+    r"download|submit|go|open|visit|see|view|page|website)\.?$",
+    re.IGNORECASE,
+)
+
+_URL_LIKE_RE = re.compile(r"^https?://", re.IGNORECASE)
+
+
+def _check_alt_text(doc: Document, result: AuditResult) -> None:
+    """Check images and shapes for missing alt text."""
+    body = doc.element.body
+    # Inline images (w:drawing > wp:inline and wp:anchor with pic:pic)
+    for drawing in body.iter(qn("w:drawing")):
+        # Look for docPr which holds the alt text
+        for doc_pr in drawing.iter(qn("wp:docPr")):
+            name = doc_pr.get("name", "")
+            descr = doc_pr.get("descr", "").strip()
+            # Also check for decorative mark (a14:decorative)
+            decorative = False
+            for ext_lst in drawing.iter(qn("a:extLst")):
+                xml_str = ext_lst.xml if hasattr(ext_lst, "xml") else ""
+                if "decorative" in str(xml_str).lower():
+                    decorative = True
+                    break
+            if not descr and not decorative:
+                result.add(
+                    "ACB-MISSING-ALT-TEXT",
+                    f"Image or shape '{name}' has no alternative text",
+                    f"Inline image: {name}",
+                )
+
+    # Also check v:shape elements (legacy shapes)
+    for shape in body.iter(_vml_qn("shape")):
+        alt = shape.get("alt", "").strip()
+        name = shape.get("id", "unknown shape")
+        if not alt:
+            result.add(
+                "ACB-MISSING-ALT-TEXT",
+                f"Shape '{name}' has no alternative text",
+                f"Shape: {name}",
+            )
+
+
+def _check_tables(doc: Document, result: AuditResult) -> None:
+    """Check tables for header rows, complex headers, and empty cells."""
+    for ti, table in enumerate(doc.tables):
+        loc = f"Table {ti + 1}"
+        rows = table.rows
+        if not rows:
+            continue
+
+        # Check header row designation via w:tblLook
+        tbl_elem = table._tbl
+        tbl_pr = tbl_elem.find(qn("w:tblPr"))
+        has_header = False
+        if tbl_pr is not None:
+            tbl_look = tbl_pr.find(qn("w:tblLook"))
+            if tbl_look is not None:
+                first_row = tbl_look.get(qn("w:firstRow"), "0")
+                if first_row in ("1", "true"):
+                    has_header = True
+            # Also check if first row is marked as header via trPr/tblHeader
+            first_row_elem = rows[0]._tr
+            tr_pr = first_row_elem.find(qn("w:trPr"))
+            if tr_pr is not None:
+                tbl_header = tr_pr.find(qn("w:tblHeader"))
+                if tbl_header is not None:
+                    has_header = True
+
+        if not has_header:
+            result.add(
+                "ACB-TABLE-HEADER-ROW",
+                "Table does not have a designated header row",
+                loc,
+            )
+
+        # Check for complex table (both first row and first column have bold/header styling)
+        if has_header and len(rows) > 1 and len(table.columns) > 1:
+            first_col_has_headers = True
+            for row in rows[1:]:
+                cell = row.cells[0]
+                cell_text = cell.text.strip()
+                if not cell_text:
+                    first_col_has_headers = False
+                    break
+                # Check if first cell in each row is bold
+                has_bold = False
+                for para in cell.paragraphs:
+                    for run in para.runs:
+                        if run.font.bold:
+                            has_bold = True
+                            break
+                if not has_bold:
+                    first_col_has_headers = False
+                    break
+            if first_col_has_headers:
+                result.add(
+                    "ACB-COMPLEX-TABLE",
+                    "Table has both row and column headers -- verify screen reader navigation",
+                    loc,
+                )
+
+        # Check for empty cells
+        for ri, row in enumerate(rows):
+            for ci, cell in enumerate(row.cells):
+                if not cell.text.strip():
+                    result.add(
+                        "ACB-EMPTY-TABLE-CELL",
+                        f"Empty cell at row {ri + 1}, column {ci + 1}",
+                        loc,
+                    )
+
+
+def _check_hyperlinks(doc: Document, result: AuditResult) -> None:
+    """Check hyperlinks for non-descriptive text and missing underline."""
+    for para in doc.paragraphs:
+        for hyp in para._element.findall(qn("w:hyperlink")):
+            # Build display text from runs inside the hyperlink
+            runs = hyp.findall(qn("w:r"))
+            display_text = "".join(
+                (r.find(qn("w:t")).text or "") for r in runs if r.find(qn("w:t")) is not None
+            ).strip()
+            loc = f"Hyperlink: '{display_text[:60]}'" if display_text else "Hyperlink (empty)"
+
+            # Non-descriptive text
+            if display_text and _NON_DESCRIPTIVE_LINK_RE.match(display_text):
+                result.add(
+                    "ACB-LINK-TEXT",
+                    f"Non-descriptive hyperlink text: '{display_text}'",
+                    loc,
+                )
+            elif display_text and _URL_LIKE_RE.match(display_text):
+                result.add(
+                    "ACB-LINK-TEXT",
+                    f"Raw URL used as hyperlink text: '{display_text[:60]}'",
+                    loc,
+                )
+
+            # Underline check
+            for r in runs:
+                rpr = r.find(qn("w:rPr"))
+                if rpr is not None:
+                    u_elem = rpr.find(qn("w:u"))
+                    if u_elem is not None:
+                        u_val = u_elem.get(qn("w:val"), "single")
+                        if u_val == "none":
+                            result.add(
+                                "ACB-LINK-UNDERLINE",
+                                f"Hyperlink is not underlined: '{display_text[:60]}'",
+                                loc,
+                            )
+                            break
+
+
+def _check_form_fields(doc: Document, result: AuditResult) -> None:
+    """Check legacy form fields for missing help text / labels."""
+    body = doc.element.body
+    for fld in body.iter(qn("w:fldChar")):
+        fld_type = fld.get(qn("w:fldCharType"), "")
+        if fld_type != "begin":
+            continue
+        ff_data = fld.find(qn("w:ffData"))
+        if ff_data is None:
+            continue
+        # Check for status/help text
+        help_text = ff_data.find(qn("w:helpText"))
+        status_text = ff_data.find(qn("w:statusText"))
+        name_elem = ff_data.find(qn("w:name"))
+        field_name = name_elem.get(qn("w:val"), "unnamed") if name_elem is not None else "unnamed"
+
+        has_label = False
+        if help_text is not None and help_text.get(qn("w:val"), "").strip():
+            has_label = True
+        if status_text is not None and status_text.get(qn("w:val"), "").strip():
+            has_label = True
+
+        if not has_label:
+            result.add(
+                "ACB-FORM-FIELD-LABEL",
+                f"Form field '{field_name}' has no help text",
+                f"Form field: {field_name}",
+            )
+
+
+def _check_floating_content(doc: Document, result: AuditResult) -> None:
+    """Check for floating text boxes (wp:anchor with textbox content)."""
+    body = doc.element.body
+    for drawing in body.iter(qn("w:drawing")):
+        for anchor in drawing.iter(qn("wp:anchor")):
+            # Look for text box content (wps:txbx or w:txbxContent)
+            has_textbox = False
+            for child in anchor.iter():
+                if child.tag.endswith("}txbx") or child.tag.endswith("}txbxContent"):
+                    has_textbox = True
+                    break
+            if has_textbox:
+                doc_pr_list = list(anchor.iter(qn("wp:docPr")))
+                name = doc_pr_list[0].get("name", "text box") if doc_pr_list else "text box"
+                result.add(
+                    "ACB-FLOATING-CONTENT",
+                    f"Floating text box '{name}' -- reading order may differ from visual order",
+                    f"Floating: {name}",
+                )
+
+    # Also check VML floating text boxes (v:textbox inside w:pict)
+    for pict in body.iter(qn("w:pict")):
+        for textbox in pict.iter(_vml_qn("textbox")):
+            result.add(
+                "ACB-FLOATING-CONTENT",
+                "Legacy floating text box found -- reading order may differ from visual order",
+                "Floating: VML text box",
+            )
+
+
+def _check_author(doc: Document, result: AuditResult) -> None:
+    """Check document author property."""
+    author = doc.core_properties.author
+    if not author or not author.strip():
+        result.add(
+            "ACB-DOC-AUTHOR",
+            "Document has no author set in properties",
+            "Document Properties",
+        )
+
+
 def audit_document(file_path: str | Path) -> AuditResult:
     """Run a full ACB Large Print compliance audit on a Word document.
 
@@ -397,6 +696,12 @@ def audit_document(file_path: str | Path) -> AuditResult:
     _check_paragraph_content(doc, result)
     _check_hyphenation(doc, result)
     _check_page_numbers(doc, result)
+    _check_alt_text(doc, result)
+    _check_tables(doc, result)
+    _check_hyperlinks(doc, result)
+    _check_form_fields(doc, result)
+    _check_floating_content(doc, result)
+    _check_author(doc, result)
 
     # Sort findings by severity
     severity_order = {

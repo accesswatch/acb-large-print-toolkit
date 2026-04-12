@@ -1,6 +1,16 @@
-# ACB Large Print Toolkit
+# ACB Document Accessibility Toolkit
 
-A VS Code agent toolkit, desktop application, and web application for formatting documents to comply with the American Council of the Blind (ACB) Large Print Guidelines (revised May 6, 2025), supplemented with WCAG 2.2 AA digital accessibility rules.
+A VS Code agent toolkit, desktop application, and web application for auditing and fixing Office documents for accessibility. Enforces the American Council of the Blind (ACB) Large Print Guidelines (revised May 6, 2025), Microsoft Accessibility Checker rules, and WCAG 2.2 AA digital accessibility standards.
+
+## Supported Document Formats
+
+| Format | Audit | Auto-Fix | Template | Export |
+|--------|-------|----------|----------|--------|
+| Word (.docx) | 30+ ACB + MSAC rules | Yes -- fonts, spacing, emphasis, headings, margins | Yes (.dotx) | HTML (standalone or CMS) |
+| Excel (.xlsx) | MSAC rules -- sheet names, table headers, merged cells, alt text, hidden content, color-only | Planned | -- | -- |
+| PowerPoint (.pptx) | MSAC rules -- slide titles, reading order, alt text, font sizes, speaker notes, charts | Planned | -- | -- |
+| HTML/CSS | ACB + WCAG 2.2 AA (via VS Code agent) | Yes (via agent) | Yes | -- |
+| Markdown (.md) | ACB emphasis, headings, images, lists (via agent) | Yes (via agent) | -- | Yes (to HTML) |
 
 ## Five ways to use it
 
@@ -14,8 +24,9 @@ A VS Code agent toolkit, desktop application, and web application for formatting
 
 ## What this toolkit does
 
-- Audits Word documents (.docx), HTML, CSS, and Markdown files against ACB Large Print rules
-- Auto-fixes compliance issues (fonts, spacing, emphasis, headings, margins)
+- Audits Word (.docx), Excel (.xlsx), PowerPoint (.pptx), HTML, CSS, and Markdown files for accessibility
+- Auto-fixes Word document compliance issues (fonts, spacing, emphasis, headings, margins)
+- Provides detailed audit reports for Excel and PowerPoint with manual fix guidance
 - Generates ACB-compliant Word templates (.dotx) with pre-configured styles
 - Exports Word documents to accessible HTML (standalone or CMS-ready fragments)
 - Converts Markdown to ACB-compliant HTML with proper document structure
@@ -75,12 +86,12 @@ lp/
 
 ### Use the web app (no install)
 
-Open the web app in any browser. Upload a .docx file and choose an operation:
+Open the web app in any browser. Upload a Word, Excel, or PowerPoint file and choose an operation:
 
 | Page | What it does |
 |------|-------------|
-| **Audit** | Check a document against ACB Large Print rules (Full, Quick, or Custom mode) |
-| **Fix** | Auto-fix compliance issues and download the corrected document |
+| **Audit** | Check any Office document against accessibility rules (Full, Quick, or Custom mode) |
+| **Fix** | Auto-fix Word documents; get audit-based fix guidance for Excel and PowerPoint |
 | **Template** | Generate an ACB-compliant Word template (.dotx) |
 | **Export** | Convert a .docx to accessible HTML (standalone or CMS fragment) |
 | **Guidelines** | Browse the full ACB specification and WCAG 2.2 supplement |

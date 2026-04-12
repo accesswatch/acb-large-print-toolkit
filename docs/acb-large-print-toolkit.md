@@ -27,13 +27,21 @@
 
 The `web/` directory contains a browser-based interface for all core toolkit operations. No installation, no accounts, no JavaScript required.
 
+### Supported Document Formats
+
+| Format | Audit | Auto-Fix | Template | Export |
+|--------|-------|----------|----------|--------|
+| Word (.docx) | Full (30+ ACB + MSAC rules) | Yes | Yes (.dotx) | Yes (HTML/ZIP) |
+| Excel (.xlsx) | Full (MSAC: sheet names, table headers, merged cells, alt text, hidden content, color-only) | Planned | -- | -- |
+| PowerPoint (.pptx) | Full (MSAC: slide titles, reading order, alt text, font sizes, speaker notes, charts) | Planned | -- | -- |
+
 ### Pages
 
 | Route | Purpose |
 |-------|---------|
-| `GET /` | Landing page with operation cards and descriptions |
-| `GET/POST /audit` | Upload a .docx, choose Full/Quick/Custom mode, view compliance report |
-| `GET/POST /fix` | Upload a .docx, choose Full/Essentials/Custom mode, download fixed copy |
+| `GET /` | Landing page with format pills, operation cards, and descriptions |
+| `GET/POST /audit` | Upload a .docx/.xlsx/.pptx, choose Full/Quick/Custom mode, view compliance report |
+| `GET/POST /fix` | Upload a file, Word gets auto-fixed, Excel/PowerPoint get audit guidance |
 | `GET/POST /template` | Configure and download an ACB-compliant Word template (.dotx) |
 | `GET/POST /export` | Upload a .docx, export as standalone HTML (ZIP) or CMS fragment |
 | `GET /guidelines` | Full ACB Large Print specification and WCAG 2.2 supplement |
@@ -91,6 +99,30 @@ The `web/` directory contains a browser-based interface for all core toolkit ope
 - Agent uses vscode_askQuestions for: CSS delivery (embed vs external vs CMS snippet), print intent, ACB/WCAG conflict resolution
 - Emphasis on web: underline styled distinct from hyperlinks (thicker, offset)
 - Agent file synced bidirectionally: User config is source of truth, workspace copy for sharing/testing
+
+## Desktop Tool -- Multi-Format Support (April 2026)
+
+All three interfaces (CLI, GUI, Web) now support .docx, .xlsx, and .pptx files:
+
+| Format | Audit | Auto-Fix | Template | Export |
+|--------|-------|----------|----------|--------|
+| Word (.docx) | Full (30+ ACB + MSAC rules) | Yes | Yes (.dotx) | Yes (HTML) |
+| Excel (.xlsx) | Full (MSAC rules) | Planned | -- | -- |
+| PowerPoint (.pptx) | Full (MSAC rules) | Planned | -- | -- |
+
+### CLI Changes
+- `audit` command accepts .docx, .xlsx, .pptx
+- `fix` command accepts all three formats (Word gets auto-fixed; Excel/PowerPoint get audit report with manual fix guidance)
+- `batch` command scans directories for all three file types
+- Format dispatch via `_audit_by_extension()` and `_fix_by_extension()` helpers
+
+### GUI Changes
+- File picker wildcard includes all three formats
+- Welcome text updated for multi-format
+- Validation accepts .docx, .xlsx, .pptx
+- Audit and fix dispatched by extension
+- HTML export options (CMS, standalone) only shown for Word files
+- Save dialog uses the source file's extension
 
 ## CMS Embed Snippet
 - Purpose: class-scoped output for pasting into WordPress, Drupal, or any CMS HTML editor

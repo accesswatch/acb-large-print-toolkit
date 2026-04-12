@@ -27,8 +27,8 @@ EXPOSE 8000
 
 # Run with gunicorn (production WSGI server)
 CMD ["gunicorn", \
-     "--bind", "0.0.0.0:8000", \
-     "--workers", "2", \
-     "--timeout", "120", \
-     "--access-logfile", "-", \
-     "acb_large_print_web.app:create_app()"]
+    "--bind", "0.0.0.0:8000", \
+    "--workers", "2", \
+    "--timeout", "120", \
+    "--access-logfile", "-", \
+    "acb_large_print_web.app:create_app()"]

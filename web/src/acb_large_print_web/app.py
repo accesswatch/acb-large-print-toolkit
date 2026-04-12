@@ -10,7 +10,7 @@ from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from flask_wtf.csrf import CSRFProtect
 
-from .rules import get_rules_by_severity
+from .rules import get_rules_by_category, get_rules_by_severity
 
 csrf = CSRFProtect()
 limiter = Limiter(
@@ -48,7 +48,10 @@ def create_app(config: dict | None = None) -> Flask:
     # Make rule metadata available in all templates
     @app.context_processor
     def inject_rules():
-        return {"rules_by_severity": get_rules_by_severity()}
+        return {
+            "rules_by_severity": get_rules_by_severity(),
+            "rules_by_category": get_rules_by_category(),
+        }
 
     # Register blueprints
     from .routes.main import main_bp

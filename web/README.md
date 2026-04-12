@@ -1,15 +1,23 @@
-# ACB Large Print Web Application
+# ACB Document Accessibility Web Application
 
-A Flask web application that provides browser-based access to the ACB Large Print Tool. Upload a Word document, choose an operation (audit, fix, template, export), and get results immediately -- no installation required.
+A Flask web application that provides browser-based access to the ACB Document Accessibility Tool. Upload a Word, Excel, or PowerPoint document, choose an operation (audit, fix, template, export), and get results immediately -- no installation required.
 
 ## Features
 
-- **Audit** -- check a .docx file against 30+ ACB Large Print rules with Full, Quick, or Custom mode
-- **Fix** -- auto-fix compliance issues and download the corrected document
+- **Audit** -- check a .docx, .xlsx, or .pptx file against accessibility rules with Full, Quick, or Custom mode. Rules adapt automatically to each file format.
+- **Fix** -- auto-fix compliance issues in Word documents and download the corrected file. Excel and PowerPoint files receive a detailed audit with manual fix guidance.
 - **Template** -- generate a pre-configured ACB-compliant Word template (.dotx)
 - **Export** -- convert a .docx to accessible HTML (standalone ZIP or CMS fragment)
 - **Guidelines** -- browse the full ACB Large Print specification and WCAG 2.2 supplement
 - **Feedback** -- collect user feedback with SQLite storage and password-protected review
+
+## Supported Formats
+
+| Format | Audit | Auto-Fix | Template | Export |
+|--------|-------|----------|----------|--------|
+| Word (.docx) | Full (30+ ACB + MSAC rules) | Yes | Yes (.dotx) | Yes (HTML) |
+| Excel (.xlsx) | Full (MSAC rules: sheet names, table headers, merged cells, alt text, hidden content, color-only) | Planned | -- | -- |
+| PowerPoint (.pptx) | Full (MSAC rules: slide titles, reading order, alt text, font sizes, speaker notes, charts) | Planned | -- | -- |
 
 ## Architecture
 
@@ -84,7 +92,7 @@ The app is served on port 8000. For production deployment with Caddy (auto-TLS),
 
 - CSRF protection on all POST forms (Flask-WTF)
 - Rate limiting: 120 requests/minute per IP (Flask-Limiter)
-- Upload validation: .docx extension whitelist, `secure_filename()`, path traversal prevention
+- Upload validation: .docx, .xlsx, .pptx extension whitelist, `secure_filename()`, path traversal prevention
 - 16 MB upload size limit enforced by Flask before handlers run
 - Temp files deleted in `finally` blocks -- guaranteed cleanup on success or exception
 - Docker: non-root user, health check, tmpfs for temp files
@@ -96,7 +104,12 @@ The app is served on port 8000. For production deployment with Caddy (auto-TLS),
 - Landmark regions: header, nav, main, footer
 - All form controls have associated labels
 - Error messages linked via `aria-describedby` and `aria-invalid`
+- Flash messages include text prefixes (Error/Success/Warning/Note) -- not color alone
+- Severity badges, format pills, and format tags all have visible text labels -- color is supplementary
+- All text and interactive-component contrast meets WCAG 2.2 AA thresholds
+- Visible focus indicators (3px solid outline) on all interactive elements including nav links
 - Native `<details>/<summary>` for contextual help (no JavaScript)
+- `aria-current="page"` on active nav item
 - ACB Large Print CSS applied to the tool itself
 - Works without JavaScript enabled
 

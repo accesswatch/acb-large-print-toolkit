@@ -35,19 +35,21 @@ def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="acb-large-print",
         description=(
-            "ACB Large Print Tool -- audit, fix, and create Word document "
-            "templates that comply with the American Council of the Blind "
-            "Large Print Guidelines."
+            "ACB Document Accessibility Tool -- audit, fix, and create "
+            "Office document templates that comply with the American "
+            "Council of the Blind Large Print Guidelines."
         ),
         epilog=(
             "Examples:\n"
             "  acb-large-print audit report.docx\n"
+            "  acb-large-print audit budget.xlsx\n"
+            "  acb-large-print audit slides.pptx\n"
             "  acb-large-print audit report.docx -f json -o report.json\n"
             "  acb-large-print fix  report.docx -o report-fixed.docx\n"
             "  acb-large-print fix  report.docx -o fixed.docx -b\n"
             "  acb-large-print fix  report.docx --dry-run\n"
             "  acb-large-print template -t 'Meeting Minutes'\n"
-            "  acb-large-print batch audit *.docx -f json\n"
+            "  acb-large-print batch audit docs/ -r -f json\n"
             "  acb-large-print batch fix docs/ -r -d fixed/\n"
             "  acb-large-print export report.docx --cms\n"
             "\n"
@@ -76,10 +78,10 @@ def _build_parser() -> argparse.ArgumentParser:
     # ---- audit ----
     audit_p = sub.add_parser(
         "audit",
-        help="Audit a Word document for ACB compliance",
-        description="Scan a .docx file and report all ACB guideline violations.",
+        help="Audit a document for ACB compliance",
+        description="Scan a .docx, .xlsx, or .pptx file and report all ACB guideline violations.",
     )
-    audit_p.add_argument("file", type=Path, help="Path to .docx file to audit")
+    audit_p.add_argument("file", type=Path, help="Path to .docx, .xlsx, or .pptx file to audit")
     audit_p.add_argument(
         "--format", "-f", choices=["text", "json"], default="text",
         help="Output format (default: text)",
@@ -92,10 +94,10 @@ def _build_parser() -> argparse.ArgumentParser:
     # ---- fix ----
     fix_p = sub.add_parser(
         "fix",
-        help="Fix a Word document for ACB compliance",
-        description="Automatically fix ACB compliance issues in a .docx file.",
+        help="Fix a document for ACB compliance",
+        description="Automatically fix ACB compliance issues in a .docx file. Excel and PowerPoint files are audited with manual fix guidance.",
     )
-    fix_p.add_argument("file", type=Path, help="Path to .docx file to fix")
+    fix_p.add_argument("file", type=Path, help="Path to .docx, .xlsx, or .pptx file to fix")
     fix_p.add_argument(
         "--output", "-o", type=Path, default=None,
         help="Output file path (default: overwrites input)",
@@ -141,7 +143,7 @@ def _build_parser() -> argparse.ArgumentParser:
     batch_p = sub.add_parser(
         "batch",
         help="Process multiple documents at once",
-        description="Run audit or fix on multiple .docx files.",
+        description="Run audit or fix on multiple .docx, .xlsx, or .pptx files.",
     )
     batch_p.add_argument(
         "action", choices=["audit", "fix"],
@@ -149,7 +151,7 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     batch_p.add_argument(
         "files", type=Path, nargs="+",
-        help="Paths to .docx files (supports glob patterns)",
+        help="Paths to .docx/.xlsx/.pptx files or directories (supports glob patterns)",
     )
     batch_p.add_argument(
         "--format", "-f", choices=["text", "json"], default="text",
@@ -221,17 +223,64 @@ def _build_parser() -> argparse.ArgumentParser:
     return parser
 
 
+# ── Supported file extensions ─────────────────────────────────────────
+SUPPORTED_EXTENSIONS = {".docx", ".xlsx", ".pptx"}
+
+
+def _audit_by_extension(file_path: Path):
+    """Dispatch to the correct auditor based on file extension."""
+    ext = file_path.suffix.lower()
+    if ext == ".xlsx":
+        from .xlsx_auditor import audit_workbook
+        return audit_workbook(file_path)
+    elif ext == ".pptx":
+        from .pptx_auditor import audit_presentation
+        return audit_presentation(file_path)
+    else:
+        from .auditor import audit_document
+        return audit_document(file_path)
+
+
+def _fix_by_extension(file_path: Path, output_path: Path | None = None, *, bound: bool = False):
+    """Dispatch to the correct fixer based on file extension.
+
+    Returns (output_path, total_fixes, post_audit, warnings).
+    """
+    ext = file_path.suffix.lower()
+    if ext == ".xlsx":
+        from .xlsx_auditor import audit_workbook
+        post_audit = audit_workbook(file_path)
+        return file_path, 0, post_audit, [
+            "Excel workbooks cannot be auto-fixed yet. "
+            "Review the audit findings and fix them manually in Excel."
+        ]
+    elif ext == ".pptx":
+        from .pptx_auditor import audit_presentation
+        post_audit = audit_presentation(file_path)
+        return file_path, 0, post_audit, [
+            "PowerPoint presentations cannot be auto-fixed yet. "
+            "Review the audit findings and fix them manually in PowerPoint."
+        ]
+    else:
+        from .fixer import fix_document
+        return fix_document(file_path, output_path=output_path, bound=bound)
+
+
 def _cmd_audit(args: argparse.Namespace) -> int:
     """Execute the audit command."""
-    from .auditor import audit_document
     from .reporter import generate_json_report, generate_text_report
 
     if not args.file.exists():
         print(f"Error: File not found: {args.file}", file=sys.stderr)
         return 1
 
+    ext = args.file.suffix.lower()
+    if ext not in (".docx", ".xlsx", ".pptx"):
+        print(f"Error: Unsupported file type '{ext}'. Use .docx, .xlsx, or .pptx.", file=sys.stderr)
+        return 1
+
     log.debug("Auditing: %s", args.file)
-    result = audit_document(args.file)
+    result = _audit_by_extension(args.file)
     log.debug("Score: %d/100 (%s), %d findings", result.score, result.grade, len(result.findings))
 
     if args.format == "json":
@@ -251,18 +300,21 @@ def _cmd_audit(args: argparse.Namespace) -> int:
 
 def _cmd_fix(args: argparse.Namespace) -> int:
     """Execute the fix command."""
-    from .auditor import audit_document
-    from .fixer import fix_document
     from .reporter import generate_fix_summary
 
     if not args.file.exists():
         print(f"Error: File not found: {args.file}", file=sys.stderr)
         return 1
 
+    ext = args.file.suffix.lower()
+    if ext not in SUPPORTED_EXTENSIONS:
+        print(f"Error: Unsupported file type '{ext}'. Use .docx, .xlsx, or .pptx.", file=sys.stderr)
+        return 1
+
     if args.dry_run:
         # Dry-run: audit only, report what would be fixed
         log.info("Dry run -- no files will be modified")
-        result = audit_document(args.file)
+        result = _audit_by_extension(args.file)
         fixable = [f for f in result.findings if f.auto_fixable]
         manual = [f for f in result.findings if not f.auto_fixable]
         print(f"File: {args.file}")
@@ -279,10 +331,10 @@ def _cmd_fix(args: argparse.Namespace) -> int:
                 print(f"  {i}. [{f.severity.value}] {f.rule_id}: {f.message}")
         return 0 if result.passed else 2
 
-    output_path, total_fixes, post_audit, warnings = fix_document(
+    output_path, total_fixes, post_audit, warnings = _fix_by_extension(
         args.file,
         output_path=args.output,
-        bound=args.bound,
+        bound=getattr(args, "bound", False),
     )
 
     report = generate_fix_summary(str(output_path), total_fixes, post_audit)
@@ -315,8 +367,6 @@ def _cmd_template(args: argparse.Namespace) -> int:
 
 def _cmd_batch(args: argparse.Namespace) -> int:
     """Execute the batch command."""
-    from .auditor import audit_document
-    from .fixer import fix_document
     from .reporter import generate_fix_summary, generate_json_report, generate_text_report
 
     # Expand glob patterns and optional recursive search
@@ -324,9 +374,10 @@ def _cmd_batch(args: argparse.Namespace) -> int:
     for pattern in args.files:
         p = Path(str(pattern))
         if p.is_dir():
-            # Directory given: find .docx files
+            # Directory given: find supported files
             glob_method = p.rglob if args.recursive else p.glob
-            files.extend(glob_method("*.docx"))
+            for ext in SUPPORTED_EXTENSIONS:
+                files.extend(glob_method(f"*{ext}"))
         elif "*" in str(pattern) or "?" in str(pattern):
             if args.recursive:
                 files.extend(pattern.parent.rglob(pattern.name))
@@ -336,7 +387,7 @@ def _cmd_batch(args: argparse.Namespace) -> int:
             files.append(pattern)
 
     if not files:
-        print("Error: No matching .docx files found.", file=sys.stderr)
+        print("Error: No matching document files found.", file=sys.stderr)
         return 1
 
     total_files = len(files)
@@ -348,15 +399,15 @@ def _cmd_batch(args: argparse.Namespace) -> int:
         if not file_path.exists():
             log.warning("Skipping (not found): %s", file_path)
             continue
-        if file_path.suffix.lower() != ".docx":
-            log.warning("Skipping (not .docx): %s", file_path)
+        if file_path.suffix.lower() not in SUPPORTED_EXTENSIONS:
+            log.warning("Skipping (unsupported format): %s", file_path)
             continue
 
         total_processed += 1
         log.info("Processing %d/%d: %s", idx, total_files, file_path.name)
 
         if args.action == "audit":
-            result = audit_document(file_path)
+            result = _audit_by_extension(file_path)
             total_issues += len(result.findings)
 
             if args.format == "json":
@@ -371,7 +422,7 @@ def _cmd_batch(args: argparse.Namespace) -> int:
 
         elif args.action == "fix":
             if args.dry_run:
-                result = audit_document(file_path)
+                result = _audit_by_extension(file_path)
                 fixable = [f for f in result.findings if f.auto_fixable]
                 manual = [f for f in result.findings if not f.auto_fixable]
                 print(f"File: {file_path}")
@@ -386,8 +437,8 @@ def _cmd_batch(args: argparse.Namespace) -> int:
                 args.output_dir.mkdir(parents=True, exist_ok=True)
                 out = args.output_dir / file_path.name
 
-            output_path, total_fixes, post_audit, warnings = fix_document(
-                file_path, output_path=out, bound=args.bound,
+            output_path, total_fixes, post_audit, warnings = _fix_by_extension(
+                file_path, output_path=out, bound=getattr(args, "bound", False),
             )
             report = generate_fix_summary(str(output_path), total_fixes, post_audit)
             print(report)

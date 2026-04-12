@@ -1,0 +1,24 @@
+; BIND zone file for csedesigns.com
+; WordPress.com import: supports A, AAAA, CNAME, MX, SRV, TXT, NS only.
+; CAA records must be added manually via the WordPress.com DNS UI.
+; See docs/deployment.md "Phase 1: DNS Configuration" for full context.
+;
+; Server: RackNerd VPS (107.175.91.158)
+; TLS:    Caddy + Let's Encrypt (automatic)
+; Mail:   None -- SPF/DMARC reject all to prevent spoofing
+; FTP:    Not used -- SFTP over SSH (port 22) only
+
+; --- A records (web) ---
+@       3600  IN  A    107.175.91.158
+www     3600  IN  A    107.175.91.158
+lp      3600  IN  A    107.175.91.158
+
+; --- Email anti-spoofing (no mail server) ---
+@       3600  IN  TXT  "v=spf1 -all"
+_dmarc  3600  IN  TXT  "v=DMARC1; p=reject; sp=reject; adkim=s; aspf=s"
+
+; --- CAA records (add manually in WordPress.com DNS UI) ---
+; WordPress.com supports CAA via the UI but NOT via BIND import.
+; Go to Upgrades > Domains > DNS Records > Manage > Add a record > Type: CAA
+;   Name: @    Flag: 0    Tag: issue      Value: letsencrypt.org
+;   Name: @    Flag: 0    Tag: issuewild  Value: ;

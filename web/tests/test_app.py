@@ -71,6 +71,30 @@ def _make_fake_docx() -> io.BytesIO:
     return buf
 
 
+def _make_fake_xlsx() -> io.BytesIO:
+    """Create a minimal valid .xlsx file using openpyxl."""
+    from openpyxl import Workbook
+    buf = io.BytesIO()
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Sheet1"
+    ws["A1"] = "Test"
+    wb.save(buf)
+    buf.seek(0)
+    return buf
+
+
+def _make_fake_pptx() -> io.BytesIO:
+    """Create a minimal valid .pptx file using python-pptx."""
+    from pptx import Presentation
+    buf = io.BytesIO()
+    prs = Presentation()
+    prs.slides.add_slide(prs.slide_layouts[6])  # blank layout
+    prs.save(buf)
+    buf.seek(0)
+    return buf
+
+
 # ============================================================
 # Smoke tests -- every page loads
 # ============================================================
@@ -81,7 +105,7 @@ class TestPageLoads:
     def test_home(self, client):
         resp = client.get("/")
         assert resp.status_code == 200
-        assert b"ACB Large Print Tool" in resp.data
+        assert b"ACB Document Accessibility Tool" in resp.data
 
     def test_audit_form(self, client):
         resp = client.get("/audit/")
@@ -293,3 +317,100 @@ class TestTemplateGeneration:
         })
         # Should return 200 with a result page or a download
         assert resp.status_code == 200
+
+
+# ============================================================
+# Multi-format audit (xlsx, pptx)
+# ============================================================
+
+class TestMultiFormatAudit:
+    """Upload Excel and PowerPoint files and verify audit works."""
+
+    def test_audit_xlsx(self, client):
+        xlsx_data = _make_fake_xlsx()
+        data = {
+            "document": (xlsx_data, "test.xlsx"),
+            "mode": "full",
+        }
+        resp = client.post("/audit/", data=data, content_type="multipart/form-data")
+        assert resp.status_code == 200
+        assert b"Audit Report" in resp.data or b"Score" in resp.data
+
+    def test_audit_pptx(self, client):
+        pptx_data = _make_fake_pptx()
+        data = {
+            "document": (pptx_data, "test.pptx"),
+            "mode": "full",
+        }
+        resp = client.post("/audit/", data=data, content_type="multipart/form-data")
+        assert resp.status_code == 200
+        assert b"Audit Report" in resp.data or b"Score" in resp.data
+
+    def test_audit_xlsx_quick_mode(self, client):
+        xlsx_data = _make_fake_xlsx()
+        data = {
+            "document": (xlsx_data, "test.xlsx"),
+            "mode": "quick",
+        }
+        resp = client.post("/audit/", data=data, content_type="multipart/form-data")
+        assert resp.status_code == 200
+
+    def test_audit_pptx_quick_mode(self, client):
+        pptx_data = _make_fake_pptx()
+        data = {
+            "document": (pptx_data, "test.pptx"),
+            "mode": "quick",
+        }
+        resp = client.post("/audit/", data=data, content_type="multipart/form-data")
+        assert resp.status_code == 200
+
+    def test_corrupt_xlsx_rejected(self, client):
+        data = {"document": (io.BytesIO(b"not a zip archive"), "test.xlsx")}
+        resp = client.post("/audit/", data=data, content_type="multipart/form-data")
+        assert resp.status_code == 400
+        assert b"does not appear to be a valid" in resp.data
+
+    def test_corrupt_pptx_rejected(self, client):
+        data = {"document": (io.BytesIO(b"not a zip archive"), "test.pptx")}
+        resp = client.post("/audit/", data=data, content_type="multipart/form-data")
+        assert resp.status_code == 400
+        assert b"does not appear to be a valid" in resp.data
+
+
+# ============================================================
+# Accessibility structure (extended)
+# ============================================================
+
+class TestAccessibilityExtended:
+    """Verify WCAG 2.2 AA structural requirements added in multi-format update."""
+
+    def test_skip_link_present(self, client):
+        resp = client.get("/")
+        assert b"skip-link" in resp.data
+        assert b"Skip to main content" in resp.data
+
+    def test_home_shows_all_three_formats(self, client):
+        resp = client.get("/")
+        assert b"Word (.docx)" in resp.data
+        assert b"Excel (.xlsx)" in resp.data
+        assert b"PowerPoint (.pptx)" in resp.data
+
+    def test_audit_form_accepts_all_formats(self, client):
+        resp = client.get("/audit/")
+        assert b".docx,.xlsx,.pptx" in resp.data
+
+    def test_flash_error_has_text_prefix(self, client):
+        """Error flash messages include 'Error:' text so meaning is not color-alone."""
+        resp = client.post("/audit/", data={})
+        assert b"<strong>Error:</strong>" in resp.data
+
+    def test_format_tags_in_rule_list(self, client):
+        """Rule list checkboxes include format tags with text labels."""
+        resp = client.get("/audit/")
+        assert b'class="format-tag format-docx"' in resp.data
+
+    def test_severity_badges_have_text(self, client):
+        """Severity badges use text labels, not just color."""
+        resp = client.get("/audit/")
+        for level in [b"Critical", b"High", b"Medium", b"Low"]:
+            assert level in resp.data

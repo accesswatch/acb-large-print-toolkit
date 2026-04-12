@@ -1,8 +1,8 @@
-# PRD: ACB Large Print Web Application
+# PRD: ACB Document Accessibility Web Application
 
-**Status:** Implemented (v0.1)
+**Status:** Implemented (v2.0)
 **Author:** Jeff Bishop, BITS
-**Date:** April 11, 2026
+**Date:** April 12, 2026
 **Target:** v2.0 release
 
 ---
@@ -55,12 +55,12 @@ Meanwhile, the core engine -- audit, fix, template builder, and HTML export -- i
 
 ## Solution
 
-Build a Flask web application that wraps the existing `acb_large_print` Python library in a browser-accessible interface. Users upload a `.docx` file through a web form, choose an operation (audit, fix, create template, export to HTML), and receive results in the browser or as a file download. No installation. No accounts. No login.
+Build a Flask web application that wraps the existing `acb_large_print` Python library in a browser-accessible interface. Users upload a `.docx`, `.xlsx`, or `.pptx` file through a web form, choose an operation (audit, fix, create template, export to HTML), and receive results in the browser or as a file download. No installation. No accounts. No login.
 
 The web app will:
 
-- Accept `.docx` uploads (max 16 MB) and validate them server-side
-- Provide all four core operations: audit, fix, template creation, and HTML export
+- Accept `.docx`, `.xlsx`, and `.pptx` uploads (max 16 MB) and validate them server-side
+- Provide all four core operations: audit (all three formats), fix (Word auto-fix; Excel/PowerPoint audit guidance), template creation (Word), and HTML export (Word)
 - Display audit reports directly in the browser as accessible HTML
 - Return fixed documents and templates as immediate file downloads
 - Delete all uploaded and generated files immediately after the response is sent
@@ -166,9 +166,9 @@ Six thin blueprints. Each handles GET (show form) and POST (process upload), cal
 
 | Blueprint | URL | Core API called | Response |
 |-----------|-----|-----------------|----------|
-| `main_bp` | `GET /` | None | Landing page with operation cards and brief descriptions |
-| `audit_bp` | `GET /audit`, `POST /audit` | `audit_document()` + `generate_html_report()` | Rendered audit report in browser (filtered by selected mode/rules) |
-| `fix_bp` | `GET /fix`, `POST /fix` | `fix_document()` | Fixed `.docx` file download + before/after score + applied rules summary |
+| `main_bp` | `GET /` | None | Landing page with format pills, operation cards, and descriptions |
+| `audit_bp` | `GET /audit`, `POST /audit` | `audit_document()` / `audit_workbook()` / `audit_presentation()` | Rendered audit report in browser (filtered by selected mode/rules) |
+| `fix_bp` | `GET /fix`, `POST /fix` | `fix_document()` (Word) or audit-only (Excel/PowerPoint) | Fixed `.docx` download or audit guidance + before/after score |
 | `template_bp` | `GET /template`, `POST /template` | `create_template()` | `.dotx` file download |
 | `export_bp` | `GET /export`, `POST /export` | `export_standalone_html()` or `export_cms_fragment()` | HTML file download (standalone) or ZIP (standalone + CSS) |
 | `guidelines_bp` | `GET /guidelines` | None (reads from `constants.py`) | Full ACB specification reference page |
@@ -218,7 +218,7 @@ All templates use the ACB Large Print CSS for body text, headings, and spacing. 
 - Uploaded files are saved to a new `tempfile.TemporaryDirectory()` per request.
 - Temp directories are deleted in a `finally` block after the response is sent -- guaranteed cleanup even on exceptions.
 - No files are ever written outside the temp directory.
-- File extension whitelist: `.docx` only.
+- File extension whitelist: `.docx`, `.xlsx`, `.pptx` only.
 - `MAX_CONTENT_LENGTH = 16 * 1024 * 1024` (16 MB) enforced by Flask before the upload handler runs.
 - `werkzeug.utils.secure_filename()` applied to all uploaded filenames.
 - The Docker container runs as non-root with a read-only filesystem except for `/tmp`.
@@ -365,17 +365,19 @@ No existing tests in the repo. The test suite established here will set the patt
 ## Out of Scope
 
 - **User accounts and authentication** -- the tool is completely open, no login required. If auth is needed later, it can be added as middleware without changing the route logic.
-- **Batch processing (multi-file upload)** -- v1 handles one file at a time. Batch is a future enhancement.
-- **PDF support** -- the core library only handles `.docx`. PDF is a separate tool.
-- **CI/CD pipeline** -- deployment is manual `docker compose up` for v1. GitHub Actions deployment can be added later.
+- **Batch processing (multi-file upload)** -- v2 handles one file at a time. Batch is a future enhancement.
+- **PDF support** -- the core library only handles Office formats. PDF is a separate tool.
+- **CI/CD pipeline** -- deployment is manual `docker compose up` for v2. GitHub Actions deployment can be added later.
 - **Custom domain and DNS setup** -- the PRD covers the app. Domain configuration is an ops task done at deployment time.
-- **Changes to the existing CLI, GUI, or VS Code agents** -- these continue working exactly as they do today.
+- **Excel and PowerPoint auto-fix** -- audit is supported for all three formats, but auto-fix is Word-only. Excel and PowerPoint auto-fix is a future enhancement.
 
 ### Previously out of scope, now implemented
 
 - **Database** -- SQLite added for feedback persistence (concurrent-safe with WAL mode).
 - **Rate limiting** -- 120 requests/minute via Flask-Limiter (configurable).
 - **CSRF protection** -- Flask-WTF CSRFProtect on all POST forms.
+- **Multi-format support** -- .xlsx and .pptx audit support added across web, CLI, and GUI.
+- **CLI and GUI multi-format support** -- CLI audit, fix, and batch commands accept .docx, .xlsx, and .pptx. GUI file picker and wizard flow updated for all three formats.
 
 ## Further Notes
 

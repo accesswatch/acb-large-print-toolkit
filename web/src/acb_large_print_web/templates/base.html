@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="csrf-token" content="{{ csrf_token() }}">
-  <title>{% block title %}ACB Large Print Tool{% endblock %} -- BITS</title>
+  <title>{% block title %}ACB Document Accessibility Tool{% endblock %} -- BITS</title>
   <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='acb-large-print.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='forms.css') }}">
@@ -14,7 +14,10 @@
 
   <header role="banner">
     <nav aria-label="Main navigation">
-      <a href="{{ url_for('main.index') }}" class="nav-brand">ACB Large Print Tool</a>
+      <a href="{{ url_for('main.index') }}" class="nav-brand">
+        <span class="brand-icon" aria-hidden="true">&#9854;</span>
+        ACB Document Accessibility
+      </a>
       <ul class="nav-list">
         <li><a href="{{ url_for('audit.audit_form') }}"{% if request.blueprint == 'audit' %} aria-current="page"{% endif %}>Audit</a></li>
         <li><a href="{{ url_for('fix.fix_form') }}"{% if request.blueprint == 'fix' %} aria-current="page"{% endif %}>Fix</a></li>
@@ -26,13 +29,13 @@
   </header>
 
   <main id="main">
-    <h1>{% block heading %}ACB Large Print Tool{% endblock %}</h1>
+    <h1>{% block heading %}ACB Document Accessibility Tool{% endblock %}</h1>
 
     {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
     {% for category, message in messages %}
     <div class="flash-{{ category }}" role="alert">
-      <p>{{ message }}</p>
+      <p>{% if category == "error" %}<strong>Error:</strong> {% elif category == "success" %}<strong>Success:</strong> {% elif category == "warning" %}<strong>Warning:</strong> {% elif category == "info" %}<strong>Note:</strong> {% endif %}{{ message }}</p>
     </div>
     {% endfor %}
     {% endif %}
@@ -43,6 +46,7 @@
 
   <footer role="contentinfo">
     <p>A <a href="https://acb.org/bits">BITS</a> community project. Blind Information Technology Solutions, a special interest affiliate of the American Council of the Blind.</p>
+    <p>Supports Word (.docx), Excel (.xlsx), and PowerPoint (.pptx) documents.</p>
     <p><a href="{{ url_for('feedback.feedback_form') }}">Share your feedback</a></p>
   </footer>
 </body>

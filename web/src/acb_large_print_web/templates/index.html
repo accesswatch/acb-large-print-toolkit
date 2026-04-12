@@ -1,33 +1,59 @@
 {% extends "base.html" %}
 
-{% block title %}ACB Large Print Tool{% endblock %}
-{% block heading %}ACB Large Print Tool{% endblock %}
+{% block title %}ACB Document Accessibility Tool{% endblock %}
+{% block heading %}ACB Document Accessibility Tool{% endblock %}
 
 {% block content %}
-<p>Check and fix your Word documents for compliance with the <a href="{{ url_for('guidelines.guidelines_page') }}">ACB Large Print Guidelines</a>. No installation required -- upload a <code>.docx</code> file and get results instantly.</p>
+<p>Check and fix your Office documents for compliance with the <a href="{{ url_for('guidelines.guidelines_page') }}">ACB Large Print Guidelines</a> and WCAG 2.2 AA accessibility standards. No installation required -- upload a file and get results instantly.</p>
+
+<section aria-labelledby="formats-heading">
+  <h2 id="formats-heading">Supported Document Formats</h2>
+
+  <div class="format-pills">
+    <span class="format-pill format-docx">Word (.docx)</span>
+    <span class="format-pill format-xlsx">Excel (.xlsx)</span>
+    <span class="format-pill format-pptx">PowerPoint (.pptx)</span>
+  </div>
+</section>
 
 <section aria-labelledby="ops-heading">
   <h2 id="ops-heading">Choose an Operation</h2>
 
   <div class="card-grid">
-    <div class="card">
+    <div class="card card-audit">
       <h3><a href="{{ url_for('audit.audit_form') }}">Audit a Document</a></h3>
-      <p>Upload a Word document and get a detailed compliance report showing which ACB rules pass and which need attention. Choose Full, Quick, or Custom audit modes.</p>
+      <p>Upload a Word, Excel, or PowerPoint file and get a detailed compliance report. Choose Full, Quick, or Custom audit modes. Rules adapt automatically to each file format.</p>
+      <p class="card-formats">
+        <span class="format-tag format-docx">Word</span>
+        <span class="format-tag format-xlsx">Excel</span>
+        <span class="format-tag format-pptx">PowerPoint</span>
+      </p>
     </div>
 
-    <div class="card">
+    <div class="card card-fix">
       <h3><a href="{{ url_for('fix.fix_form') }}">Fix a Document</a></h3>
-      <p>Upload a non-compliant document and download a corrected version. The tool fixes fonts, sizes, spacing, alignment, and emphasis automatically. See before and after scores.</p>
+      <p>Upload a non-compliant document and download a corrected version. Word documents get full auto-fix (fonts, sizes, spacing, alignment, emphasis). Excel and PowerPoint files receive a detailed audit with manual fix guidance.</p>
+      <p class="card-formats">
+        <span class="format-tag format-docx">Word -- auto-fix</span>
+        <span class="format-tag format-xlsx">Excel -- audit only</span>
+        <span class="format-tag format-pptx">PowerPoint -- audit only</span>
+      </p>
     </div>
 
-    <div class="card">
+    <div class="card card-template">
       <h3><a href="{{ url_for('template.template_form') }}">Create a Template</a></h3>
       <p>Generate a pre-configured Word template (<code>.dotx</code>) with all ACB styles built in. Start compliant by default -- no manual formatting required.</p>
+      <p class="card-formats">
+        <span class="format-tag format-docx">Word</span>
+      </p>
     </div>
 
-    <div class="card">
+    <div class="card card-export">
       <h3><a href="{{ url_for('export.export_form') }}">Export to HTML</a></h3>
       <p>Convert a Word document to accessible HTML with ACB-compliant CSS. Choose standalone (full page) or CMS fragment (for pasting into WordPress or Drupal).</p>
+      <p class="card-formats">
+        <span class="format-tag format-docx">Word</span>
+      </p>
     </div>
   </div>
 </section>
@@ -46,7 +72,7 @@
     <li>No hyphenation, no ALL CAPS formatting</li>
   </ul>
 
-  <p>This tool also enforces <strong>WCAG 2.2 AA</strong> digital accessibility requirements including document title, language setting, and heading hierarchy. <a href="{{ url_for('guidelines.guidelines_page') }}">Read the full guidelines reference</a>.</p>
+  <p>For Excel and PowerPoint, the tool enforces <strong>Microsoft Accessibility Checker</strong> rules aligned with WCAG 2.1 AA: sheet names, table headers, alt text, reading order, slide titles, and more. <a href="{{ url_for('guidelines.guidelines_page') }}">Read the full guidelines reference</a>.</p>
 </section>
 
 <section aria-labelledby="privacy-heading">

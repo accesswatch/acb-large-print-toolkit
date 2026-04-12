@@ -34,6 +34,10 @@ from .exporter import export_cms_fragment, export_standalone_html
 from .fixer import fix_document
 from .reporter import generate_html_report, generate_text_report
 
+# Supported file extensions for the GUI
+_SUPPORTED_EXTENSIONS = {".docx", ".xlsx", ".pptx"}
+_DOCX_ONLY_EXTENSIONS = {".docx"}
+
 
 # ── Wizard step indices ───────────────────────────────────────────────
 STEP_WELCOME = 0
@@ -149,13 +153,13 @@ class WizardFrame(wx.Frame):
         sizer = wx.BoxSizer(wx.VERTICAL)
 
         intro = wx.StaticText(page, label=(
-            "Welcome to the ACB Large Print Compliance Wizard.\n\n"
+            "Welcome to the ACB Document Accessibility Wizard.\n\n"
             "This wizard will:\n"
-            "  1. Audit your Word document for ACB guideline violations\n"
-            "  2. Attempt to automatically fix issues found\n"
+            "  1. Audit your document for ACB guideline violations\n"
+            "  2. Attempt to automatically fix issues found (Word only)\n"
             "  3. Verify the fixes were applied correctly\n"
             "  4. Save the corrected document and optional HTML exports\n\n"
-            "Select a Word document to begin."
+            "Select a Word, Excel, or PowerPoint document to begin."
         ))
         intro.Wrap(560)
         sizer.Add(intro, flag=wx.BOTTOM, border=15)
@@ -164,8 +168,13 @@ class WizardFrame(wx.Frame):
         sizer.Add(lbl)
         self.file_picker = wx.FilePickerCtrl(
             page,
-            message="Open a Word document",
-            wildcard="Word Documents (*.docx)|*.docx",
+            message="Open a document",
+            wildcard=(
+                "Office Documents (*.docx;*.xlsx;*.pptx)|*.docx;*.xlsx;*.pptx|"
+                "Word Documents (*.docx)|*.docx|"
+                "Excel Workbooks (*.xlsx)|*.xlsx|"
+                "PowerPoint Presentations (*.pptx)|*.pptx"
+            ),
             style=wx.FLP_OPEN | wx.FLP_FILE_MUST_EXIST | wx.FLP_USE_TEXTCTRL,
         )
         self.file_picker.SetName("Document file path")
@@ -308,12 +317,17 @@ class WizardFrame(wx.Frame):
         intro.Wrap(560)
         sizer.Add(intro, flag=wx.BOTTOM, border=12)
 
-        lbl_docx = wx.StaticText(page, label="Fixed &Word document:")
+        lbl_docx = wx.StaticText(page, label="Fixed &document:")
         sizer.Add(lbl_docx)
         self.save_docx_picker = wx.FilePickerCtrl(
             page,
-            message="Save fixed Word document as",
-            wildcard="Word Documents (*.docx)|*.docx",
+            message="Save fixed document as",
+            wildcard=(
+                "Office Documents (*.docx;*.xlsx;*.pptx)|*.docx;*.xlsx;*.pptx|"
+                "Word Documents (*.docx)|*.docx|"
+                "Excel Workbooks (*.xlsx)|*.xlsx|"
+                "PowerPoint Presentations (*.pptx)|*.pptx"
+            ),
             style=wx.FLP_SAVE | wx.FLP_OVERWRITE_PROMPT | wx.FLP_USE_TEXTCTRL,
         )
         self.save_docx_picker.SetName("Save fixed Word document location")
@@ -406,7 +420,12 @@ class WizardFrame(wx.Frame):
             wx.CallAfter(self._run_initial_audit)
 
         elif step == STEP_AUDIT:
-            self._show_step(STEP_OPTIONS)
+            if self._is_docx:
+                self._show_step(STEP_OPTIONS)
+            else:
+                # Skip HTML export options for non-Word files
+                self._show_step(STEP_FIX)
+                wx.CallAfter(self._run_fix)
 
         elif step == STEP_OPTIONS:
             self._show_step(STEP_FIX)
@@ -470,7 +489,7 @@ class WizardFrame(wx.Frame):
         path_str = self.file_picker.GetPath()
         if not path_str:
             wx.MessageBox(
-                "Please select a Word document to continue.",
+                "Please select a document to continue.",
                 "No file selected",
                 wx.OK | wx.ICON_INFORMATION,
             )
@@ -485,16 +504,56 @@ class WizardFrame(wx.Frame):
             )
             self.file_picker.SetFocus()
             return False
-        if p.suffix.lower() != ".docx":
+        if p.suffix.lower() not in _SUPPORTED_EXTENSIONS:
             wx.MessageBox(
-                "Please select a .docx file.",
-                "Wrong file type",
+                "Please select a .docx, .xlsx, or .pptx file.",
+                "Unsupported file type",
                 wx.OK | wx.ICON_INFORMATION,
             )
             self.file_picker.SetFocus()
             return False
         self.src_path = p
         return True
+
+    def _audit_by_extension(self, file_path: Path) -> AuditResult:
+        """Dispatch to the correct auditor based on file extension."""
+        ext = file_path.suffix.lower()
+        if ext == ".xlsx":
+            from .xlsx_auditor import audit_workbook
+            return audit_workbook(file_path)
+        elif ext == ".pptx":
+            from .pptx_auditor import audit_presentation
+            return audit_presentation(file_path)
+        else:
+            return audit_document(file_path)
+
+    def _fix_by_extension(self, file_path: Path, output_path: Path):
+        """Dispatch to the correct fixer based on file extension.
+
+        Returns (output_path, total_fixes, post_audit, warnings).
+        """
+        ext = file_path.suffix.lower()
+        if ext == ".xlsx":
+            from .xlsx_auditor import audit_workbook
+            post_audit = audit_workbook(file_path)
+            return file_path, 0, post_audit, [
+                "Excel workbooks cannot be auto-fixed yet. "
+                "Review the audit findings and fix them manually in Excel."
+            ]
+        elif ext == ".pptx":
+            from .pptx_auditor import audit_presentation
+            post_audit = audit_presentation(file_path)
+            return file_path, 0, post_audit, [
+                "PowerPoint presentations cannot be auto-fixed yet. "
+                "Review the audit findings and fix them manually in PowerPoint."
+            ]
+        else:
+            return fix_document(file_path, output_path)
+
+    @property
+    def _is_docx(self) -> bool:
+        """True if the source file is a Word document."""
+        return self.src_path is not None and self.src_path.suffix.lower() == ".docx"
 
     # ── Audit ─────────────────────────────────────────────────────────
 
@@ -504,7 +563,7 @@ class WizardFrame(wx.Frame):
         self.audit_status.SetLabel("Auditing document, please wait...")
         wx.BeginBusyCursor()
         try:
-            self.pre_audit = audit_document(self.src_path)
+            self.pre_audit = self._audit_by_extension(self.src_path)
             report = generate_text_report(self.pre_audit)
             self.audit_text.SetValue(report)
             self.audit_text.SetInsertionPoint(0)
@@ -541,7 +600,7 @@ class WizardFrame(wx.Frame):
         wx.BeginBusyCursor()
         try:
             tmp = Path(tempfile.mkdtemp()) / f"_acb_tmp_{self.src_path.name}"
-            self.fixed_path, self.total_fixes, self.post_audit, warnings = fix_document(
+            self.fixed_path, self.total_fixes, self.post_audit, warnings = self._fix_by_extension(
                 self.src_path, tmp,
             )
 
@@ -608,7 +667,7 @@ class WizardFrame(wx.Frame):
         wx.BeginBusyCursor()
         try:
             target = self.fixed_path if self.fixed_path else self.src_path
-            self.post_audit = audit_document(target)
+            self.post_audit = self._audit_by_extension(target)
             report = generate_text_report(self.post_audit)
             self.verify_text.SetValue(report)
             self.verify_text.SetInsertionPoint(0)
@@ -646,16 +705,26 @@ class WizardFrame(wx.Frame):
 
     def _prepare_save_defaults(self) -> None:
         if self.src_path:
-            default_name = f"{self.src_path.stem}-acb-compliant.docx"
+            ext = self.src_path.suffix.lower()
+            default_name = f"{self.src_path.stem}-acb-compliant{ext}"
             default_path = self.src_path.parent / default_name
             self.save_docx_picker.SetPath(str(default_path))
             self.html_dir_picker.SetPath(str(self.src_path.parent))
+            # Hide HTML export controls for non-Word files
+            show_html = self._is_docx
+            self.html_dir_picker.GetParent().FindWindowByName(
+                "HTML output folder location"
+            )
+            self.html_dir_picker.Show(show_html)
+            for ctrl_name in ("HTML output folder location",):
+                ctrl = self.html_dir_picker
+                ctrl.Show(show_html)
 
     def _do_save(self) -> bool:
         docx_dest = self.save_docx_picker.GetPath()
         if not docx_dest:
             wx.MessageBox(
-                "Please choose a save location for the Word document.",
+                "Please choose a save location for the document.",
                 "No save location",
                 wx.OK | wx.ICON_INFORMATION,
             )
@@ -667,33 +736,34 @@ class WizardFrame(wx.Frame):
 
         wx.BeginBusyCursor()
         try:
-            # 1. Copy fixed .docx to chosen location
+            # 1. Copy fixed document to chosen location
             src = self.fixed_path if self.fixed_path else self.src_path
             docx_dest.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(str(src), str(docx_dest))
-            self.saved_files.append(f"Word document: {docx_dest}")
+            self.saved_files.append(f"Document: {docx_dest}")
 
-            # 2. Optional HTML exports
-            html_dir = self.html_dir_picker.GetPath()
-            if not html_dir:
-                html_dir = str(docx_dest.parent)
-            html_dir = Path(html_dir)
+            # 2. Optional HTML exports (Word only)
+            if self._is_docx:
+                html_dir = self.html_dir_picker.GetPath()
+                if not html_dir:
+                    html_dir = str(docx_dest.parent)
+                html_dir = Path(html_dir)
 
-            title = docx_dest.stem.replace("-", " ").replace("_", " ")
+                title = docx_dest.stem.replace("-", " ").replace("_", " ")
 
-            if self.chk_cms.GetValue():
-                cms_path = html_dir / f"{docx_dest.stem}-cms.html"
-                export_cms_fragment(src, cms_path, title=title)
-                self.saved_files.append(f"CMS fragment: {cms_path}")
+                if self.chk_cms.GetValue():
+                    cms_path = html_dir / f"{docx_dest.stem}-cms.html"
+                    export_cms_fragment(src, cms_path, title=title)
+                    self.saved_files.append(f"CMS fragment: {cms_path}")
 
-            if self.chk_standalone.GetValue():
-                html_path = html_dir / f"{docx_dest.stem}.html"
-                css_path = html_dir / "acb-large-print.css"
-                export_standalone_html(
-                    src, html_path, title=title, css_path=css_path,
-                )
-                self.saved_files.append(f"Standalone HTML: {html_path}")
-                self.saved_files.append(f"CSS stylesheet: {css_path}")
+                if self.chk_standalone.GetValue():
+                    html_path = html_dir / f"{docx_dest.stem}.html"
+                    css_path = html_dir / "acb-large-print.css"
+                    export_standalone_html(
+                        src, html_path, title=title, css_path=css_path,
+                    )
+                    self.saved_files.append(f"Standalone HTML: {html_path}")
+                    self.saved_files.append(f"CSS stylesheet: {css_path}")
 
             self.status_bar.SetStatusText(
                 f"Saved {len(self.saved_files)} files"
