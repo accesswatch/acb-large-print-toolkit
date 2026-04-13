@@ -1038,8 +1038,8 @@ class TestPipelineConverterUnit:
 
     def test_convert_with_pipeline_not_installed(self, tmp_path, monkeypatch):
         from acb_large_print import pipeline_converter
-        monkeypatch.setattr("shutil.which", lambda cmd: None)
+        monkeypatch.setattr(pipeline_converter, "pipeline_available", lambda: False)
         f = tmp_path / "test.html"
         f.write_text("<html></html>")
-        with pytest.raises(RuntimeError, match="not installed"):
+        with pytest.raises(RuntimeError, match="not reachable"):
             pipeline_converter.convert_with_pipeline(f, "html-to-epub")

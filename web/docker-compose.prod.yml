@@ -1,4 +1,4 @@
-# Production Docker Compose -- Caddy reverse proxy + Flask/Gunicorn
+# Production Docker Compose -- Caddy reverse proxy + Flask/Gunicorn + Pipeline
 # File: web/docker-compose.prod.yml
 #
 # Prerequisites:
@@ -12,6 +12,26 @@
 #   docker compose -f docker-compose.prod.yml up -d --build
 
 services:
+  pipeline:
+    image: daisyorg/pipeline:v1.15.4
+    environment:
+      PIPELINE2_WS_HOST: "0.0.0.0"
+      PIPELINE2_WS_AUTHENTICATION: "false"
+    expose:
+      - "8181"
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "5m"
+        max-file: "2"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8181/ws/alive"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
   web:
     build:
       context: ..
@@ -21,8 +41,12 @@ services:
     env_file: .env
     environment:
       - FLASK_DEBUG=0
+      - PIPELINE_URL=http://pipeline:8181/ws
     volumes:
       - feedback-data:/app/instance
+    depends_on:
+      pipeline:
+        condition: service_healthy
     restart: unless-stopped
     logging:
       driver: json-file
