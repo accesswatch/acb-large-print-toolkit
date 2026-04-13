@@ -18,6 +18,11 @@ The Flask web application has been built and is ready for deployment. All core f
 | Template generation | Done | Title, sample content, binding margin options |
 | HTML export (Standalone ZIP + CMS fragment) | Done | Both modes working |
 | Convert to Markdown (MarkItDown) | Done | .docx, .xlsx, .pptx, .pdf, .html, .csv, .json, .xml, .epub |
+| Convert to HTML (Pandoc) | Done | .md, .docx, .rst, .odt, .rtf, .epub -- ACB formatting, binding margin, print stylesheet options |
+| Convert to Word (Pandoc) | Done | .md, .rst, .odt, .rtf, .html, .epub -- produces .docx for editing or audit/fix |
+| Convert to EPUB 3 (Pandoc) | Done | .md, .docx, .rst, .odt, .rtf, .html -- lightweight EPUB with ACB CSS |
+| Convert to PDF (Pandoc + WeasyPrint) | Done | .md, .docx, .rst, .odt, .rtf, .epub, .html -- ACB print formatting, binding margin option |
+| Convert to EPUB/DAISY (DAISY Pipeline) | Done | Word to EPUB 3, HTML to EPUB 3, EPUB to DAISY 2.02, EPUB to DAISY 3 |
 | Markdown and PDF audit | Done | Basic page-level structure checks |
 | About page | Done | Mission, organizations, standards, dependencies, acknowledgments |
 | Guidelines reference page | Done | Full ACB spec + WCAG supplement from constants.py |
@@ -284,6 +289,8 @@ For complete step-by-step commands starting from a bare server, see [docs/deploy
 | Web framework | Flask | 3.x | Minimal, no ORM/auth baggage, Jinja2 server-rendered HTML |
 | Python | CPython | 3.13 | Latest stable, matches `python:3.13-slim` Docker image |
 | Core library | acb_large_print | (local) | Existing audit/fix/template/export engine -- zero changes |
+| Document converter | Pandoc | 3.1+ | Universal document converter: Markdown/Word/RST/ODT/RTF/ePub to HTML, Word, EPUB 3, and PDF (via WeasyPrint) |
+| PDF renderer | WeasyPrint | 62.0+ | CSS-based PDF rendering with ACB print formatting (CourtBouillon). Requires Pango, Cairo, GDK-Pixbuf system libraries and Liberation Sans font. |
 | Process manager | systemd | (OS built-in) | Auto-restart Docker on reboot, journald logging |
 | Firewall | ufw | (OS built-in) | Simple allow/deny rules for SSH, HTTP, HTTPS |
 | Monitoring | UptimeRobot | Free tier | 5-minute HTTP pings to `/health`, email/SMS alerts on downtime |

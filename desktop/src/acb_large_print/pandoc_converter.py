@@ -1,11 +1,17 @@
-"""Convert documents to ACB-compliant HTML using Pandoc.
+"""Convert documents using Pandoc (and optionally WeasyPrint for PDF).
 
-Wraps the Pandoc CLI to convert text-oriented document formats into
-standalone, accessible HTML with embedded ACB Large Print CSS.
+Wraps the Pandoc CLI to convert text-oriented document formats into:
+- Standalone, accessible HTML with embedded ACB Large Print CSS
+- Word (.docx) documents with optional ACB reference styling
+- EPUB 3 e-books with embedded ACB accessibility CSS
+- PDF documents rendered from ACB HTML via WeasyPrint
+
 Supported input: .md, .rst, .odt, .rtf, .docx, .epub.
 
 Pandoc is an external dependency -- not a Python package.  The module
-falls back gracefully when it is not installed.
+falls back gracefully when it is not installed.  WeasyPrint is an
+optional Python dependency for PDF output; the module falls back
+gracefully when it is not installed.
 """
 
 from __future__ import annotations
@@ -262,4 +268,434 @@ def convert_to_html(
 
     finally:
         # Clean up temp header file
+        shutil.rmtree(tmp_dir, ignore_errors=True)
+
+
+# ---------------------------------------------------------------------------
+# ACB CSS for PDF rendering (print-optimized variant)
+# Uses print line-height (1.15) and @page rules for margins. Font stack
+# puts Arial first, with Liberation Sans as Linux fallback.
+# ---------------------------------------------------------------------------
+_ACB_PDF_CSS = """\
+html { font-size: 100%; }
+body {
+  font-family: Arial, "Liberation Sans", sans-serif;
+  font-size: 18pt;
+  font-weight: 400;
+  color: #000;
+  background-color: #fff;
+  text-align: left;
+  line-height: 1.15;
+  letter-spacing: 0.12em;
+  word-spacing: 0.16em;
+  margin: 0;
+  padding: 0;
+  hyphens: none;
+  columns: 1;
+}
+@page {
+  size: letter;
+  margin: 1in;
+}
+h1, h2 {
+  font-family: Arial, "Liberation Sans", sans-serif;
+  font-size: 22pt;
+  font-weight: 700;
+  line-height: 1.15;
+  text-align: left;
+  text-transform: none;
+  margin-top: 1.5em;
+  margin-bottom: 1em;
+}
+h3, h4, h5, h6 {
+  font-family: Arial, "Liberation Sans", sans-serif;
+  font-size: 20pt;
+  font-weight: 700;
+  line-height: 1.15;
+  text-align: left;
+  text-transform: none;
+  margin-top: 1.5em;
+  margin-bottom: 1em;
+}
+p {
+  margin-top: 0;
+  margin-bottom: 1em;
+}
+em, .acb-emphasis {
+  font-style: normal;
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+}
+u {
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+}
+a {
+  color: #000;
+  text-decoration: underline;
+}
+ul { list-style-type: disc; padding-left: 1.5em; margin-top: 0; margin-bottom: 1em; }
+ul li { margin-bottom: 0; padding-left: 0.5em; }
+ol { list-style-type: decimal; padding-left: 1.5em; margin-top: 0; margin-bottom: 1em; }
+ol li { margin-bottom: 0; padding-left: 0.5em; }
+table { border-collapse: collapse; width: 100%; font-size: inherit; }
+th, td { text-align: left; padding: 0.5em 0.75em; border: 1px solid #666; }
+th { font-weight: 700; }
+caption { font-size: 18pt; font-weight: 700; text-align: left; margin-bottom: 0.5em; }
+figure { margin: 1.5em 0; }
+figcaption { font-size: 18pt; margin-top: 0.5em; }
+img { max-width: 100%; height: auto; }
+"""
+
+# Binding-margin variant adds 0.5in extra on the left for bound documents
+_ACB_PDF_CSS_BINDING = _ACB_PDF_CSS.replace(
+    "margin: 1in;",
+    "margin: 1in 1in 1in 1.5in;",
+)
+
+
+def weasyprint_available() -> bool:
+    """Return True if WeasyPrint is installed and importable."""
+    try:
+        import weasyprint  # noqa: F401
+        return True
+    except ImportError:
+        return False
+
+
+def convert_to_docx(
+    src_path: Path,
+    output_path: Path | None = None,
+    *,
+    title: str | None = None,
+    lang: str = "en",
+) -> tuple[Path, int]:
+    """Convert a document to Word (.docx) via Pandoc.
+
+    Args:
+        src_path: Path to input file (.md, .rst, .odt, .rtf, .epub).
+        output_path: Optional path for the .docx file.
+        title: Document title metadata.
+        lang: BCP-47 language tag for the document.
+
+    Returns:
+        (output_path, file_size_bytes)
+
+    Raises:
+        FileNotFoundError: If *src_path* does not exist.
+        ValueError: If the extension is not in PANDOC_INPUT_EXTENSIONS.
+        RuntimeError: If Pandoc is not installed or conversion fails.
+    """
+    src_path = Path(src_path)
+    if not src_path.exists():
+        raise FileNotFoundError(f"File not found: {src_path}")
+
+    ext = src_path.suffix.lower()
+    if ext not in PANDOC_INPUT_EXTENSIONS:
+        raise ValueError(
+            f"Cannot convert '{ext}' files to Word. "
+            f"Supported: {', '.join(sorted(PANDOC_INPUT_EXTENSIONS))}"
+        )
+    # Don't convert .docx -> .docx
+    if ext == ".docx":
+        raise ValueError(
+            "The input file is already a Word document (.docx). "
+            "Choose a different input format."
+        )
+
+    exe = shutil.which("pandoc")
+    if not exe:
+        raise RuntimeError(
+            "Pandoc is not installed. "
+            "Install it from https://pandoc.org/installing.html"
+        )
+
+    if output_path is None:
+        output_path = src_path.with_suffix(".docx")
+    else:
+        output_path = Path(output_path)
+
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    if title is None:
+        title = src_path.stem.replace("-", " ").replace("_", " ")
+
+    input_fmt = _INPUT_FORMAT.get(ext, "markdown")
+
+    cmd = [
+        exe,
+        "--standalone",
+        "--from", input_fmt,
+        "--to", "docx",
+        "--metadata", f"title={title}",
+        "--metadata", f"lang={lang}",
+        "--output", str(output_path),
+        str(src_path),
+    ]
+
+    log.info("Running: %s", " ".join(cmd))
+    result = subprocess.run(
+        cmd,
+        capture_output=True,
+        text=True,
+        timeout=60,
+    )
+
+    if result.returncode != 0:
+        stderr = result.stderr.strip()
+        raise RuntimeError(
+            f"Pandoc conversion failed (exit code {result.returncode}): "
+            f"{stderr}"
+        )
+
+    size = output_path.stat().st_size
+    log.info(
+        "Pandoc conversion complete: %s -> %s (%d bytes)",
+        src_path.name, output_path.name, size,
+    )
+    return output_path, size
+
+
+def convert_to_epub(
+    src_path: Path,
+    output_path: Path | None = None,
+    *,
+    title: str | None = None,
+    css_path: Path | None = None,
+    lang: str = "en",
+) -> tuple[Path, int]:
+    """Convert a document to EPUB 3 via Pandoc with ACB CSS.
+
+    Args:
+        src_path: Path to input file (.md, .rst, .odt, .rtf, .docx).
+        output_path: Optional path for the .epub file.
+        title: Document title metadata.
+        css_path: Optional CSS file to embed. Uses ACB CSS if omitted.
+            Pass the sentinel ``Path("__no_acb_css__")`` to skip ACB CSS.
+        lang: BCP-47 language tag.
+
+    Returns:
+        (output_path, file_size_bytes)
+
+    Raises:
+        FileNotFoundError: If *src_path* does not exist.
+        ValueError: If the extension is not in PANDOC_INPUT_EXTENSIONS.
+        RuntimeError: If Pandoc is not installed or conversion fails.
+    """
+    src_path = Path(src_path)
+    if not src_path.exists():
+        raise FileNotFoundError(f"File not found: {src_path}")
+
+    ext = src_path.suffix.lower()
+    if ext not in PANDOC_INPUT_EXTENSIONS:
+        raise ValueError(
+            f"Cannot convert '{ext}' files to EPUB. "
+            f"Supported: {', '.join(sorted(PANDOC_INPUT_EXTENSIONS))}"
+        )
+    # Don't convert .epub -> .epub
+    if ext == ".epub":
+        raise ValueError(
+            "The input file is already an EPUB. "
+            "Choose a different input format."
+        )
+
+    exe = shutil.which("pandoc")
+    if not exe:
+        raise RuntimeError(
+            "Pandoc is not installed. "
+            "Install it from https://pandoc.org/installing.html"
+        )
+
+    if output_path is None:
+        output_path = src_path.with_suffix(".epub")
+    else:
+        output_path = Path(output_path)
+
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    if title is None:
+        title = src_path.stem.replace("-", " ").replace("_", " ")
+
+    # Resolve CSS for EPUB embedding
+    if css_path is not None and css_path.name == "__no_acb_css__":
+        css_text = ""
+    elif css_path and css_path.exists():
+        css_text = css_path.read_text(encoding="utf-8")
+    else:
+        css_text = _ACB_CSS
+
+    tmp_dir = Path(tempfile.mkdtemp())
+    try:
+        input_fmt = _INPUT_FORMAT.get(ext, "markdown")
+
+        cmd = [
+            exe,
+            "--from", input_fmt,
+            "--to", "epub3",
+            "--metadata", f"title={title}",
+            "--metadata", f"lang={lang}",
+            "--output", str(output_path),
+        ]
+
+        # Embed ACB CSS into the EPUB
+        if css_text:
+            css_file = tmp_dir / "acb-epub.css"
+            css_file.write_text(css_text, encoding="utf-8")
+            cmd.extend(["--css", str(css_file)])
+
+        cmd.append(str(src_path))
+
+        log.info("Running: %s", " ".join(cmd))
+        result = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            timeout=60,
+        )
+
+        if result.returncode != 0:
+            stderr = result.stderr.strip()
+            raise RuntimeError(
+                f"Pandoc EPUB conversion failed (exit code {result.returncode}): "
+                f"{stderr}"
+            )
+
+        size = output_path.stat().st_size
+        log.info(
+            "Pandoc EPUB conversion complete: %s -> %s (%d bytes)",
+            src_path.name, output_path.name, size,
+        )
+        return output_path, size
+
+    finally:
+        shutil.rmtree(tmp_dir, ignore_errors=True)
+
+
+def convert_to_pdf(
+    src_path: Path,
+    output_path: Path | None = None,
+    *,
+    title: str | None = None,
+    css_path: Path | None = None,
+    lang: str = "en",
+    binding_margin: bool = False,
+) -> tuple[Path, int]:
+    """Convert a document to PDF via Pandoc (HTML intermediate) + WeasyPrint.
+
+    The two-step process:
+    1. Pandoc converts the source to standalone HTML with ACB CSS.
+    2. WeasyPrint renders the HTML+CSS to PDF, honoring @page rules,
+       print line-height (1.15), and ACB BOP font standards (Arial 18pt).
+
+    Args:
+        src_path: Path to input file (.md, .rst, .odt, .rtf, .docx, .epub).
+        output_path: Optional path for the .pdf file.
+        title: Document title for PDF metadata.
+        css_path: Optional CSS file. Uses ACB print CSS if omitted.
+            Pass the sentinel ``Path("__no_acb_css__")`` to skip ACB CSS.
+        lang: BCP-47 language tag.
+        binding_margin: If True, adds 0.5-inch extra left margin for binding.
+
+    Returns:
+        (output_path, file_size_bytes)
+
+    Raises:
+        FileNotFoundError: If *src_path* does not exist.
+        ValueError: If the extension is not supported.
+        RuntimeError: If Pandoc or WeasyPrint is not installed.
+    """
+    src_path = Path(src_path)
+    if not src_path.exists():
+        raise FileNotFoundError(f"File not found: {src_path}")
+
+    ext = src_path.suffix.lower()
+    if ext not in PANDOC_INPUT_EXTENSIONS:
+        raise ValueError(
+            f"Cannot convert '{ext}' files to PDF. "
+            f"Supported: {', '.join(sorted(PANDOC_INPUT_EXTENSIONS))}"
+        )
+
+    exe = shutil.which("pandoc")
+    if not exe:
+        raise RuntimeError(
+            "Pandoc is not installed. "
+            "Install it from https://pandoc.org/installing.html"
+        )
+
+    try:
+        import weasyprint
+    except ImportError as exc:
+        raise RuntimeError(
+            "WeasyPrint is not installed. PDF conversion is unavailable. "
+            "Install it with: pip install weasyprint"
+        ) from exc
+
+    if output_path is None:
+        output_path = src_path.with_suffix(".pdf")
+    else:
+        output_path = Path(output_path)
+
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    if title is None:
+        title = src_path.stem.replace("-", " ").replace("_", " ")
+
+    # Resolve CSS: use ACB print-optimized variant by default
+    if css_path is not None and css_path.name == "__no_acb_css__":
+        pdf_css = ""
+    elif css_path and css_path.exists():
+        pdf_css = css_path.read_text(encoding="utf-8")
+    else:
+        pdf_css = _ACB_PDF_CSS_BINDING if binding_margin else _ACB_PDF_CSS
+
+    tmp_dir = Path(tempfile.mkdtemp())
+    try:
+        # Step 1: Pandoc -> HTML (intermediate, no CSS -- we apply CSS in WeasyPrint)
+        html_intermediate = tmp_dir / f"{src_path.stem}.html"
+        input_fmt = _INPUT_FORMAT.get(ext, "markdown")
+
+        cmd = [
+            exe,
+            "--standalone",
+            "--from", input_fmt,
+            "--to", "html5",
+            "--metadata", f"title={title}",
+            "--metadata", f"lang={lang}",
+            "--output", str(html_intermediate),
+            str(src_path),
+        ]
+
+        log.info("Pandoc (HTML intermediate): %s", " ".join(cmd))
+        result = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            timeout=60,
+        )
+
+        if result.returncode != 0:
+            stderr = result.stderr.strip()
+            raise RuntimeError(
+                f"Pandoc conversion failed (exit code {result.returncode}): "
+                f"{stderr}"
+            )
+
+        # Step 2: WeasyPrint renders HTML + ACB CSS -> PDF
+        log.info("WeasyPrint: rendering %s -> %s", html_intermediate.name, output_path.name)
+        html_doc = weasyprint.HTML(filename=str(html_intermediate))
+        stylesheets = []
+        if pdf_css:
+            stylesheets.append(weasyprint.CSS(string=pdf_css))
+        html_doc.write_pdf(str(output_path), stylesheets=stylesheets)
+
+        size = output_path.stat().st_size
+        log.info(
+            "PDF conversion complete: %s -> %s (%d bytes)",
+            src_path.name, output_path.name, size,
+        )
+        return output_path, size
+
+    finally:
         shutil.rmtree(tmp_dir, ignore_errors=True)

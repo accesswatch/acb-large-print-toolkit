@@ -6,13 +6,13 @@ A VS Code agent toolkit, desktop application, and web application for auditing a
 
 | Format | Audit | Auto-Fix | Template | Export | Convert |
 |--------|-------|----------|----------|--------|---------|
-| Word (.docx) | 30+ ACB + MSAC rules | Yes -- fonts, spacing, emphasis, headings, margins | Yes (.dotx) | HTML (standalone or CMS) | To Markdown |
+| Word (.docx) | 30+ ACB + MSAC rules | Yes -- fonts, spacing, emphasis, headings, margins | Yes (.dotx) | HTML (standalone or CMS) | To Markdown, To HTML, To EPUB 3 |
 | Excel (.xlsx) | MSAC rules -- sheet names, table headers, merged cells, alt text, hidden content, color-only | Planned | -- | -- | To Markdown |
 | PowerPoint (.pptx) | MSAC rules -- slide titles, reading order, alt text, font sizes, speaker notes, charts | Planned | -- | -- | To Markdown |
-| Markdown (.md) | ACB emphasis, headings, images, lists | Planned | -- | -- | -- |
+| Markdown (.md) | ACB emphasis, headings, images, lists | Planned | -- | -- | To HTML, To Word, To EPUB 3, To PDF |
 | PDF (.pdf) | Page-level structure and text extraction | Planned | -- | -- | To Markdown |
-| ePub (.epub) | EPUB Accessibility 1.1 (title, language, nav, headings, alt text, tables, links, metadata) | Planned | -- | -- | To Markdown, To HTML |
-| HTML/CSS | ACB + WCAG 2.2 AA (via VS Code agent) | Yes (via agent) | Yes | -- | To Markdown |
+| ePub (.epub) | EPUB Accessibility 1.1 (title, language, nav, headings, alt text, tables, links, metadata) | Planned | -- | -- | To Markdown, To HTML, To PDF |
+| HTML/CSS | ACB + WCAG 2.2 AA (via VS Code agent) | Yes (via agent) | Yes | -- | To Word, To EPUB 3, To PDF |
 
 ## Five ways to use it
 
@@ -32,6 +32,7 @@ A VS Code agent toolkit, desktop application, and web application for auditing a
 - Generates ACB-compliant Word templates (.dotx) with pre-configured styles
 - Exports Word documents to accessible HTML (standalone or CMS-ready fragments)
 - Converts documents to Markdown via Microsoft MarkItDown (.docx, .xlsx, .pptx, .pdf, .html, .csv, .json, .xml, .epub)
+- Converts documents to accessible HTML, Word (.docx), EPUB 3, and PDF via Pandoc (and WeasyPrint for PDF)
 - Converts Markdown to ACB-compliant HTML with proper document structure
 - Produces PowerShell scripts for configuring Word document styles
 - Detects and uses external tools (markdownlint, Pandoc) when available
@@ -100,7 +101,7 @@ Open the web app in any browser. Upload a Word, Excel, PowerPoint, Markdown, or 
 | **Fix** | Auto-fix Word documents; get audit-based fix guidance for other formats |
 | **Template** | Generate an ACB-compliant Word template (.dotx) |
 | **Export** | Convert a .docx to accessible HTML (standalone or CMS fragment) |
-| **Convert** | Transform any supported document to Markdown via Microsoft MarkItDown |
+| **Convert** | Transform documents between formats (Markdown, HTML, Word, EPUB 3, PDF, DAISY) |
 | **Guidelines** | Browse the full ACB specification and WCAG 2.2 supplement |
 | **About** | Project mission, organizations, standards, open source dependencies, and acknowledgments |
 

@@ -8,7 +8,7 @@ A Flask web application that provides browser-based access to the ACB Document A
 - **Fix** -- auto-fix compliance issues in Word documents and download the corrected file. Other formats receive a detailed audit with manual fix guidance.
 - **Template** -- generate a pre-configured ACB-compliant Word template (.dotx)
 - **Export** -- convert a .docx to accessible HTML (standalone ZIP or CMS fragment)
-- **Convert** -- transform any supported document to Markdown via Microsoft MarkItDown
+- **Convert** -- transform documents between formats via six conversion directions: Markdown (MarkItDown), HTML (Pandoc), Word (Pandoc), EPUB 3 (Pandoc), PDF (Pandoc + WeasyPrint), and EPUB/DAISY (DAISY Pipeline)
 - **Guidelines** -- browse the full ACB Large Print specification and WCAG 2.2 supplement
 - **About** -- project mission, organizations, standards, open source dependencies, and acknowledgments
 - **Feedback** -- collect user feedback with SQLite storage and password-protected review
@@ -17,12 +17,13 @@ A Flask web application that provides browser-based access to the ACB Document A
 
 | Format | Audit | Auto-Fix | Template | Export | Convert |
 |--------|-------|----------|----------|--------|---------|
-| Word (.docx) | Full (30+ ACB + MSAC rules) | Yes | Yes (.dotx) | Yes (HTML) | To Markdown |
+| Word (.docx) | Full (30+ ACB + MSAC rules) | Yes | Yes (.dotx) | Yes (HTML) | To Markdown, To HTML, To EPUB 3 |
 | Excel (.xlsx) | Full (MSAC rules: sheet names, table headers, merged cells, alt text, hidden content, color-only) | Planned | -- | -- | To Markdown |
 | PowerPoint (.pptx) | Full (MSAC rules: slide titles, reading order, alt text, font sizes, speaker notes, charts) | Planned | -- | -- | To Markdown |
-| Markdown (.md) | Basic (ACB emphasis, headings, images, lists) | Planned | -- | -- | -- |
+| Markdown (.md) | Basic (ACB emphasis, headings, images, lists) | Planned | -- | -- | To HTML, To Word, To EPUB 3, To PDF |
 | PDF (.pdf) | Basic (page-level structure and text extraction) | Planned | -- | -- | To Markdown |
-| ePub (.epub) | Full (EPUB Accessibility 1.1: title, language, nav, headings, alt text, tables, links, metadata) | Planned | -- | -- | To Markdown, To HTML |
+| HTML (.html) | -- | -- | -- | -- | To Word, To EPUB 3, To PDF |
+| ePub (.epub) | Full (EPUB Accessibility 1.1: title, language, nav, headings, alt text, tables, links, metadata) | Planned | -- | -- | To Markdown, To HTML, To PDF, To DAISY 2.02, To DAISY 3 |
 
 ## Architecture
 

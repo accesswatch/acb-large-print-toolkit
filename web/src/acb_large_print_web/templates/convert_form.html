@@ -45,6 +45,33 @@
         </span>
       </label>
 
+      <label>
+        <input type="radio" name="direction" value="to-docx"{% if not pandoc_installed %} disabled{% endif %}>
+        <span>
+          <strong>Word document (.docx)</strong><br>
+          Create a Word document from Markdown, reStructuredText, OpenDocument, Rich Text, or ePub files. Good for delivering editable documents or collaborating with people who use Microsoft Word.
+          {% if not pandoc_installed %}<br><em>This option is temporarily unavailable on this server.</em>{% endif %}
+        </span>
+      </label>
+
+      <label>
+        <input type="radio" name="direction" value="to-epub"{% if not pandoc_installed %} disabled{% endif %}>
+        <span>
+          <strong>EPUB 3 e-book (via Pandoc)</strong><br>
+          Create an EPUB 3 e-book with ACB Large Print CSS embedded. Good for reading on e-readers, phones, or tablets. Accepts the same formats as HTML conversion. For DAISY-specific output, use the Pipeline option below.
+          {% if not pandoc_installed %}<br><em>This option is temporarily unavailable on this server.</em>{% endif %}
+        </span>
+      </label>
+
+      <label>
+        <input type="radio" name="direction" value="to-pdf"{% if not pandoc_installed or not weasyprint_installed %} disabled{% endif %}>
+        <span>
+          <strong>Accessible PDF</strong><br>
+          Create a PDF with ACB BOP print formatting -- Arial font, 18-point body text, 22-point headings, 1.15 line spacing, 1-inch margins, and flush-left alignment. Ready for printing or sharing as a fixed-layout document.
+          {% if not pandoc_installed or not weasyprint_installed %}<br><em>This option is temporarily unavailable on this server.</em>{% endif %}
+        </span>
+      </label>
+
       {% if pipeline_installed and pipeline_conversions %}
       <label>
         <input type="radio" name="direction" value="to-pipeline">
@@ -97,6 +124,39 @@
     <p><strong>You get back:</strong> a standalone <code>.html</code> web page with accessibility formatting already built in -- Arial font, large text, proper spacing, high contrast, and all the other ACB requirements. Just open it in a browser or upload it to your website.</p>
     <p><strong>Powered by:</strong> <a href="https://pandoc.org/">Pandoc</a> (John MacFarlane, UC Berkeley). Pandoc is the gold standard for document-to-HTML conversion. It understands heading hierarchy, semantic lists, tables, footnotes, and cross-references -- and produces clean, well-structured HTML. We then embed our ACB Large Print CSS so the output meets accessibility standards out of the box. Pandoc accepts fewer input formats than MarkItDown, but produces much higher quality HTML output.</p>
 
+    <h3>Choose "Word document" when you want to:</h3>
+    <ul>
+      <li>Deliver an editable document to someone who uses Microsoft Word</li>
+      <li>Convert Markdown or other text formats into a Word file for collaboration or review</li>
+      <li>Create a starting point for a Word document that you will format with ACB styles later</li>
+      <li>Share content with people who cannot open HTML or EPUB files</li>
+    </ul>
+    <p><strong>Accepts:</strong> Markdown (.md), reStructuredText (.rst), OpenDocument (.odt), Rich Text (.rtf), and ePub (.epub) files. (Does not accept .docx input -- the file is already a Word document.)</p>
+    <p><strong>You get back:</strong> a <code>.docx</code> Word document with headings, lists, tables, and links preserved. You can then open it in Word and apply ACB Large Print styles using our desktop tool or the Word add-in.</p>
+    <p><strong>Powered by:</strong> <a href="https://pandoc.org/">Pandoc</a>. Pandoc produces clean, well-structured Word documents that use Word's built-in heading styles (Heading 1, Heading 2, etc.), making them easy to format and audit for accessibility.</p>
+
+    <h3>Choose "EPUB 3 e-book (via Pandoc)" when you want to:</h3>
+    <ul>
+      <li>Create an e-book from Markdown, Word, or other text documents</li>
+      <li>Read the content on an e-reader, phone, or tablet</li>
+      <li>Get an EPUB with ACB Large Print CSS already embedded</li>
+      <li>Quickly produce an EPUB without needing the DAISY Pipeline service running</li>
+    </ul>
+    <p><strong>Accepts:</strong> Markdown (.md), Word (.docx), reStructuredText (.rst), OpenDocument (.odt), and Rich Text (.rtf) files. (Does not accept .epub input -- the file is already an EPUB.)</p>
+    <p><strong>You get back:</strong> an <code>.epub</code> file with ACB Large Print CSS embedded. The EPUB uses the same Arial font, large text, and accessibility formatting as the HTML output.</p>
+    <p><strong>Powered by:</strong> <a href="https://pandoc.org/">Pandoc</a>. Pandoc produces EPUB 3 files with proper navigation documents and chapter structure. This option is always available when Pandoc is installed -- unlike the Pipeline option below, it does not require a separate DAISY Pipeline service.</p>
+
+    <h3>Choose "Accessible PDF" when you want to:</h3>
+    <ul>
+      <li>Create a fixed-layout document that looks the same on every screen and printer</li>
+      <li>Print meeting agendas, reports, or newsletters in ACB Large Print format</li>
+      <li>Share a document that cannot be easily edited (read-only distribution)</li>
+      <li>Produce a print-ready file with proper margins, binding gutters, and page breaks</li>
+    </ul>
+    <p><strong>Accepts:</strong> Markdown (.md), Word (.docx), reStructuredText (.rst), OpenDocument (.odt), Rich Text (.rtf), and ePub (.epub) files.</p>
+    <p><strong>You get back:</strong> a <code>.pdf</code> file with ACB BOP print formatting -- Arial 18-point body text, 22-point headings, 20-point subheadings, 1.15 line spacing (ACB print standard), 1-inch margins, flush-left alignment, and underline-only emphasis. If you check the binding margin option, the left margin increases to 1.5 inches.</p>
+    <p><strong>Powered by:</strong> <a href="https://pandoc.org/">Pandoc</a> and <a href="https://weasyprint.org/">WeasyPrint</a> (CourtBouillon, BSD license). Pandoc converts your document to HTML, then WeasyPrint renders that HTML with our ACB print CSS into a PDF. WeasyPrint is a CSS-based PDF engine, so the same ACB BOP typography and spacing rules that work in the browser also produce pixel-perfect print output.</p>
+
     {% if pipeline_installed and pipeline_conversions %}
     <h3>Choose "EPUB or DAISY format" when you want to:</h3>
     <ul>
@@ -113,8 +173,11 @@
     <h3>How do I decide between them?</h3>
     <p>Think about <strong>who will read it</strong> and <strong>how they will read it</strong>:</p>
     <ul>
-      <li><strong>Reading on screen or printing?</strong> Use "Accessible web page" -- you get an HTML file with ACB formatting that looks right in any browser and prints cleanly.</li>
-      <li><strong>Reading on an e-reader or DAISY player?</strong> Use "EPUB or DAISY format" -- these are the formats those devices expect.{% if not pipeline_installed %} (Not available on this server.){% endif %}</li>
+      <li><strong>Reading on screen or sharing online?</strong> Use "Accessible web page" -- you get an HTML file with ACB formatting that looks right in any browser.</li>
+      <li><strong>Printing on paper?</strong> Use "Accessible PDF" -- you get a fixed-layout document with ACB BOP print formatting (18pt Arial, 1.15 line spacing, 1-inch margins) that prints identically on any printer.</li>
+      <li><strong>Sharing an editable document?</strong> Use "Word document" -- you get a .docx file people can open and edit in Microsoft Word.</li>
+      <li><strong>Reading on an e-reader or phone?</strong> Use "EPUB 3 e-book" -- the content reflows to fit small screens and works with e-reader accessibility features.</li>
+      <li><strong>Reading on a DAISY player or braille display?</strong> Use "EPUB or DAISY format" (Pipeline) -- these are the formats those devices expect.{% if not pipeline_installed %} (Not available on this server.){% endif %}</li>
       <li><strong>Editing, searching, or feeding to an AI tool?</strong> Use "Plain text" -- you get raw content in a simple format that works everywhere.</li>
       <li><strong>Pasting into WordPress or Drupal?</strong> Use <a href="{{ url_for('export.export_form') }}">Export to HTML</a> instead -- it has a CMS Fragment mode that avoids conflicts with your site's theme.</li>
     </ul>
@@ -124,9 +187,10 @@
     <ol>
       <li><strong>Start with Plain text</strong> to extract content from a PDF or PowerPoint into Markdown.</li>
       <li><strong>Edit the Markdown</strong> in any text editor to clean up headings, fix links, and improve structure.</li>
-      <li><strong>Then convert the Markdown</strong> to an accessible web page or EPUB using one of the other options.</li>
+      <li><strong>Then convert the Markdown</strong> to an accessible web page, Word document, EPUB, or PDF using one of the other options.</li>
     </ol>
     <p>This two-step process often produces better results than a single direct conversion, because you can review and improve the content between steps.</p>
+    <p>Another common workflow: convert a Word document to HTML for your website, then also convert the same source to PDF for a print handout and to EPUB for e-reader distribution -- all from the same source file.</p>
 
     <h3>What is the difference between "Export to HTML" and this page?</h3>
     <p><strong>Export</strong> (in the main navigation) is specifically for Word documents and gives you extra options like CMS fragments for pasting into WordPress or Drupal. <strong>This page</strong> handles a wider range of input formats and always produces a complete, standalone web page with all the accessibility styling included.</p>
@@ -200,7 +264,7 @@
       <label for="title">Page title</label>
       <input type="text" id="title" name="title" value=""
              aria-describedby="title-help">
-      <p id="title-help" class="help-text">Sets the title shown in the browser tab and used by screen readers. Leave blank to use the filename as the title. Only applies to HTML output.</p>
+      <p id="title-help" class="help-text">Sets the document title used by browsers, screen readers, and PDF metadata. Leave blank to use the filename as the title. Applies to HTML, Word, EPUB, and PDF output.</p>
     </div>
   </fieldset>
 
@@ -245,6 +309,37 @@
       <li><strong>Rich Text (.rtf)</strong> -- legacy text format with basic formatting</li>
     </ul>
 
+    <h3>For Word document (.docx) output</h3>
+    <p>All text-oriented formats except Word itself (since the file is already a .docx):</p>
+    <ul>
+      <li><strong>Markdown (.md)</strong> -- best input; heading styles, lists, and tables map directly to Word styles</li>
+      <li><strong>ePub (.epub)</strong> -- e-book content extracted into a Word document</li>
+      <li><strong>reStructuredText (.rst)</strong> -- technical documentation format</li>
+      <li><strong>OpenDocument (.odt)</strong> -- LibreOffice and Google Docs export format</li>
+      <li><strong>Rich Text (.rtf)</strong> -- legacy text format with basic formatting</li>
+    </ul>
+
+    <h3>For EPUB 3 e-book (via Pandoc) output</h3>
+    <p>All text-oriented formats except EPUB itself:</p>
+    <ul>
+      <li><strong>Markdown (.md)</strong> -- best input; heading structure becomes EPUB chapters and navigation</li>
+      <li><strong>Word (.docx)</strong> -- headings, lists, tables, and basic formatting are preserved</li>
+      <li><strong>reStructuredText (.rst)</strong> -- technical documentation format</li>
+      <li><strong>OpenDocument (.odt)</strong> -- LibreOffice and Google Docs export format</li>
+      <li><strong>Rich Text (.rtf)</strong> -- legacy text format with basic formatting</li>
+    </ul>
+
+    <h3>For accessible PDF output</h3>
+    <p>All text-oriented formats supported by Pandoc:</p>
+    <ul>
+      <li><strong>Markdown (.md)</strong> -- best input; produces the cleanest PDF with proper heading hierarchy</li>
+      <li><strong>Word (.docx)</strong> -- headings, lists, tables, and basic formatting are preserved</li>
+      <li><strong>ePub (.epub)</strong> -- e-book content rendered as a print-ready PDF</li>
+      <li><strong>reStructuredText (.rst)</strong> -- technical documentation format</li>
+      <li><strong>OpenDocument (.odt)</strong> -- LibreOffice and Google Docs export format</li>
+      <li><strong>Rich Text (.rtf)</strong> -- legacy text format with basic formatting</li>
+    </ul>
+
     {% if pipeline_installed and pipeline_conversions %}
     <h3>For EPUB or DAISY output (via DAISY Pipeline)</h3>
     <p>Each Pipeline conversion accepts a specific input type:</p>
@@ -272,8 +367,8 @@
     <li><strong>Start with a well-structured source.</strong> Documents with proper headings, lists, and styles convert more cleanly than documents that use only manual formatting (bold text, extra blank lines, and tab characters). This matters most for HTML and EPUB output, where document structure becomes semantic HTML elements.</li>
     <li><strong>Word documents work best for HTML conversion</strong> when they use Word's built-in heading styles (Heading 1, Heading 2, etc.) rather than manually formatted bold text. Pandoc reads these styles and produces correct heading hierarchy.</li>
     <li><strong>PDFs vary in quality.</strong> Tagged PDFs (created from Word or InDesign) convert well to plain text. Scanned PDFs or image-only PDFs may produce little or no text. For best results, convert PDFs to plain text first, clean up the Markdown, then convert to HTML or EPUB.</li>
-    <li><strong>Excel and PowerPoint are plain-text-only.</strong> MarkItDown can extract their text content, but they cannot be converted directly to HTML or EPUB. Extract to Markdown first, then convert from there.</li>
-    <li><strong>Markdown is the best input for HTML output.</strong> Pandoc was built for Markdown-to-HTML conversion and produces the cleanest output from <code>.md</code> files. If your source is a PDF or PowerPoint, the two-step approach (extract to Markdown first, then convert to HTML) almost always gives better results.</li>
+    <li><strong>Excel and PowerPoint are plain-text-only.</strong> MarkItDown can extract their text content, but they cannot be converted directly to HTML, Word, EPUB, or PDF. Extract to Markdown first, then convert from there.</li>
+    <li><strong>Markdown is the best input for all Pandoc outputs.</strong> Pandoc was built for Markdown conversion and produces the cleanest output from <code>.md</code> files -- whether you are creating HTML, Word, EPUB, or PDF. If your source is a PDF or PowerPoint, the two-step approach (extract to Markdown first, then convert) almost always gives better results.</li>
     <li><strong>Use Audit first.</strong> If you are converting a Word document to an accessible web page, run it through <a href="{{ url_for('audit.audit_form') }}">Audit</a> first to catch any issues in the source document before conversion.</li>
     <li><strong>For WordPress or Drupal,</strong> use <a href="{{ url_for('export.export_form') }}">Export to HTML</a> instead -- it offers a CMS Fragment mode that creates a snippet you can paste directly into your content editor without conflicting with your site's theme.</li>
   </ul>

@@ -89,7 +89,7 @@ designed to paste directly into WordPress, Drupal, or any content
 management system without breaking your site theme.</li>
 </ul>
 <h3 id="convert-a-document">Convert a Document</h3>
-<p>Three conversion engines, each suited to a different purpose:</p>
+<p>Six conversion directions, each suited to a different purpose:</p>
 <ul>
 <li><strong>Extract to Markdown</strong> (via Microsoft MarkItDown) –
 pull the text content from any Word, Excel (.xlsx and legacy .xls),
@@ -105,6 +105,21 @@ stylesheet. Pandoc produces the highest quality HTML output with proper
 heading hierarchy, semantic lists, tables, and footnotes. Options
 include ACB formatting toggle, binding margin for printed/bound
 documents, and a print-ready stylesheet.</li>
+<li><strong>Convert to Word document</strong> (via Pandoc) – transform a
+Markdown, reStructuredText, OpenDocument, Rich Text, HTML, or ePub file
+into a .docx file editable in Microsoft Word. Useful when you need to
+run the toolkit’s audit and auto-fix on content that started in another
+format.</li>
+<li><strong>Convert to EPUB 3 e-book</strong> (via Pandoc) – create a
+lightweight EPUB 3 e-book from Markdown, Word, reStructuredText,
+OpenDocument, Rich Text, or HTML with ACB Large Print CSS embedded. A
+quick path to a portable e-book for any e-reader application.</li>
+<li><strong>Convert to accessible PDF</strong> (via Pandoc + WeasyPrint)
+– create a print-ready PDF from Markdown, Word, reStructuredText,
+OpenDocument, Rich Text, ePub, or HTML with ACB BOP print rules – Arial
+18pt, 1.15 line spacing, 1-inch margins, and optional binding margin.
+Good for meeting agendas, newsletters, and reports that will be printed
+in large print.</li>
 <li><strong>Convert to EPUB or DAISY</strong> (via DAISY Pipeline 2) –
 create accessible EPUB 3 e-books from Word or HTML files, or convert
 existing EPUBs to DAISY 2.02 talking book format or DAISY 3/DTBook
@@ -115,8 +130,8 @@ Consortium’s open-source Pipeline engine.</li>
 <p>The convert page includes guided help that explains when each engine
 is the better choice and how to chain them together (for example,
 extracting a PDF to Markdown first, editing the result, then converting
-the Markdown to an accessible web page or EPUB for the best
-results).</p>
+the Markdown to an accessible web page, Word document, EPUB, or PDF for
+the best results).</p>
 <h3 id="browse-the-guidelines">Browse the Guidelines</h3>
 <p>A dedicated Guidelines page presents the complete ACB Large Print
 specification and the WCAG 2.2 AA digital supplement as browsable,
@@ -177,7 +192,7 @@ notes, charts)</td>
 <td>Planned</td>
 <td>–</td>
 <td>–</td>
-<td>To HTML</td>
+<td>To HTML, To Word, To EPUB 3, To PDF</td>
 </tr>
 <tr>
 <td>PDF (.pdf)</td>
@@ -194,7 +209,31 @@ detection</td>
 <td>–</td>
 <td>–</td>
 <td>–</td>
-<td>To EPUB 3</td>
+<td>To Word, To EPUB 3, To PDF, To EPUB 3 (Pipeline)</td>
+</tr>
+<tr>
+<td>reStructuredText (.rst)</td>
+<td>–</td>
+<td>–</td>
+<td>–</td>
+<td>–</td>
+<td>To HTML, To Word, To EPUB 3, To PDF</td>
+</tr>
+<tr>
+<td>OpenDocument (.odt)</td>
+<td>–</td>
+<td>–</td>
+<td>–</td>
+<td>–</td>
+<td>To HTML, To Word, To EPUB 3, To PDF</td>
+</tr>
+<tr>
+<td>Rich Text (.rtf)</td>
+<td>–</td>
+<td>–</td>
+<td>–</td>
+<td>–</td>
+<td>To HTML, To Word, To EPUB 3, To PDF</td>
 </tr>
 <tr>
 <td>ePub (.epub)</td>
@@ -203,7 +242,7 @@ integration)</td>
 <td>Planned</td>
 <td>–</td>
 <td>–</td>
-<td>To Markdown, To HTML, To DAISY 2.02, To DAISY 3</td>
+<td>To Markdown, To HTML, To PDF, To DAISY 2.02, To DAISY 3</td>
 </tr>
 </tbody>
 </table>
@@ -276,6 +315,14 @@ fixed or a new rule is added to the core, it appears in the web app
 automatically with no extra work. There is one set of rules, one set of
 thresholds, and one source of truth – the <code>constants.py</code> file
 that defines every audit rule, severity level, and ACB reference.</p>
+<p>Document conversion is powered by three open source tools: Microsoft
+MarkItDown for text extraction, Pandoc for document-to-document
+conversion (HTML, Word, EPUB, and PDF via WeasyPrint), and DAISY
+Pipeline 2 for accessible EPUB and DAISY talking book production.
+WeasyPrint, from CourtBouillon, renders Pandoc’s HTML output to PDF
+using a dedicated ACB print stylesheet with <span class="citation"
+data-cites="page">@page</span> rules, Liberation Sans font (metrically
+identical to Arial), and proper print formatting.</p>
 <p>This also means audit results are identical across every interface. A
 document that scores 85% in the desktop app will score 85% in the web
 app. The rules do not change based on how you access the tool.</p>
@@ -368,9 +415,9 @@ href="http://www.community-access.org">Accessibility Agents</a>, an
 open-source ecosystem that delivers accessibility guidance and
 remediation across web, mobile, desktop, and document formats.</p>
 <h2 id="try-it-now">Try It Now</h2>
-<p>Visit <a href="https://lp.csedesigns.com">lp.csedesigns.com</a>, upload a
-document, and see the results in seconds. No sign-up, no download. Just
-accessible documents.</p>
+<p>Visit <a href="https://lp.csedesigns.com">lp.csedesigns.com</a>,
+upload a document, and see the results in seconds. No sign-up, no
+download. Just accessible documents.</p>
 <hr />
 <p><strong>About BITS:</strong> The Blind Information Technology
 Solutions (BITS) is a special interest affiliate of the American Council

@@ -1,9 +1,12 @@
-"""Convert route -- convert documents via MarkItDown, Pandoc, or DAISY Pipeline.
+"""Convert route -- convert documents via MarkItDown, Pandoc, WeasyPrint, or DAISY Pipeline.
 
-Three conversion directions:
+Six conversion directions:
 1. To Markdown (MarkItDown): .docx, .xlsx, .pptx, .pdf, .html, .csv, etc.
-2. To ACB HTML (Pandoc): .md, .rst, .odt, .rtf, .docx
-3. To EPUB / DAISY (Pipeline): .docx, .html, .epub (when Pipeline is installed)
+2. To ACB HTML (Pandoc): .md, .rst, .odt, .rtf, .docx, .epub
+3. To Word .docx (Pandoc): .md, .rst, .odt, .rtf, .epub
+4. To EPUB 3 (Pandoc): .md, .rst, .odt, .rtf, .docx
+5. To PDF (Pandoc + WeasyPrint): .md, .rst, .odt, .rtf, .docx, .epub
+6. To EPUB / DAISY (Pipeline): .docx, .html, .epub (when Pipeline is installed)
 """
 
 from flask import Blueprint, render_template, request, send_file
@@ -12,7 +15,11 @@ from acb_large_print.converter import CONVERTIBLE_EXTENSIONS, convert_to_markdow
 from acb_large_print.pandoc_converter import (
     PANDOC_INPUT_EXTENSIONS,
     convert_to_html,
+    convert_to_docx,
+    convert_to_epub,
+    convert_to_pdf,
     pandoc_available,
+    weasyprint_available,
 )
 from acb_large_print.pipeline_converter import (
     PIPELINE_INPUT_EXTENSIONS,
@@ -45,6 +52,7 @@ def _template_context(**extra):
         html_accept=_HTML_ACCEPT,
         all_accept=_ALL_ACCEPT,
         pandoc_installed=pandoc_available(),
+        weasyprint_installed=weasyprint_available(),
         pipeline_installed=pipeline_available(),
         pipeline_conversions=pipeline_conversions,
         **extra,
@@ -125,6 +133,104 @@ def convert_submit():
                 mimetype="text/html; charset=utf-8",
                 as_attachment=True,
                 download_name=f"{saved_path.stem}.html",
+            )
+        elif direction == "to-docx":
+            # Pandoc: document -> Word (.docx)
+            if not pandoc_available():
+                raise UploadError(
+                    "Pandoc is not installed on the server. "
+                    "Word conversion is unavailable."
+                )
+            if ext not in PANDOC_INPUT_EXTENSIONS:
+                raise UploadError(
+                    f"File type '{ext}' cannot be converted to Word. "
+                    f"Supported: {', '.join(sorted(PANDOC_INPUT_EXTENSIONS))}."
+                )
+            if ext == ".docx":
+                raise UploadError(
+                    "The input file is already a Word document (.docx). "
+                    "Choose a different input format."
+                )
+            docx_output = temp_dir / f"{saved_path.stem}.docx"
+            user_title = request.form.get("title", "").strip()
+            title = user_title or saved_path.stem.replace("-", " ").replace("_", " ")
+            output_path, _ = convert_to_docx(
+                saved_path, output_path=docx_output, title=title,
+            )
+            return send_file(
+                str(output_path),
+                mimetype="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                as_attachment=True,
+                download_name=f"{saved_path.stem}.docx",
+            )
+        elif direction == "to-epub":
+            # Pandoc: document -> EPUB 3
+            if not pandoc_available():
+                raise UploadError(
+                    "Pandoc is not installed on the server. "
+                    "EPUB conversion is unavailable."
+                )
+            if ext not in PANDOC_INPUT_EXTENSIONS:
+                raise UploadError(
+                    f"File type '{ext}' cannot be converted to EPUB. "
+                    f"Supported: {', '.join(sorted(PANDOC_INPUT_EXTENSIONS))}."
+                )
+            if ext == ".epub":
+                raise UploadError(
+                    "The input file is already an EPUB. "
+                    "Choose a different input format."
+                )
+            epub_output = temp_dir / f"{saved_path.stem}.epub"
+            user_title = request.form.get("title", "").strip()
+            title = user_title or saved_path.stem.replace("-", " ").replace("_", " ")
+            acb_format = request.form.get("acb_format") == "on"
+            css_path = None
+            if not acb_format:
+                css_path = _NO_ACB_CSS_SENTINEL
+            output_path, _ = convert_to_epub(
+                saved_path, output_path=epub_output, title=title,
+                css_path=css_path,
+            )
+            return send_file(
+                str(output_path),
+                mimetype="application/epub+zip",
+                as_attachment=True,
+                download_name=f"{saved_path.stem}.epub",
+            )
+        elif direction == "to-pdf":
+            # Pandoc + WeasyPrint: document -> PDF
+            if not pandoc_available():
+                raise UploadError(
+                    "Pandoc is not installed on the server. "
+                    "PDF conversion is unavailable."
+                )
+            if not weasyprint_available():
+                raise UploadError(
+                    "WeasyPrint is not installed on the server. "
+                    "PDF conversion is unavailable."
+                )
+            if ext not in PANDOC_INPUT_EXTENSIONS:
+                raise UploadError(
+                    f"File type '{ext}' cannot be converted to PDF. "
+                    f"Supported: {', '.join(sorted(PANDOC_INPUT_EXTENSIONS))}."
+                )
+            pdf_output = temp_dir / f"{saved_path.stem}.pdf"
+            user_title = request.form.get("title", "").strip()
+            title = user_title or saved_path.stem.replace("-", " ").replace("_", " ")
+            acb_format = request.form.get("acb_format") == "on"
+            binding_margin = request.form.get("binding_margin") == "on"
+            css_path = None
+            if not acb_format:
+                css_path = _NO_ACB_CSS_SENTINEL
+            output_path, _ = convert_to_pdf(
+                saved_path, output_path=pdf_output, title=title,
+                css_path=css_path, binding_margin=binding_margin,
+            )
+            return send_file(
+                str(output_path),
+                mimetype="application/pdf",
+                as_attachment=True,
+                download_name=f"{saved_path.stem}.pdf",
             )
         elif direction == "to-pipeline" or direction.startswith("pipeline-"):
             # DAISY Pipeline conversion

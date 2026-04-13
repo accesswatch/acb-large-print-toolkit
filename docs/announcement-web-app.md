@@ -55,13 +55,16 @@ Convert a Word document into accessible HTML with ACB-compliant CSS. Two output 
 
 ### Convert a Document
 
-Three conversion engines, each suited to a different purpose:
+Six conversion directions, each suited to a different purpose:
 
 - **Extract to Markdown** (via Microsoft MarkItDown) -- pull the text content from any Word, Excel (.xlsx and legacy .xls), PowerPoint, PDF, HTML, CSV, JSON, XML, or ePub document into a clean, readable Markdown file. Supports the widest range of input formats. Useful for repurposing existing content or preparing a source file for further conversion.
 - **Convert to Accessible HTML** (via Pandoc) -- transform a Markdown, Word, reStructuredText, OpenDocument, Rich Text, or ePub file into a fully accessible web page with ACB Large Print formatting, WCAG 2.2 AA compliance, and optional binding margins and print stylesheet. Pandoc produces the highest quality HTML output with proper heading hierarchy, semantic lists, tables, and footnotes. Options include ACB formatting toggle, binding margin for printed/bound documents, and a print-ready stylesheet.
+- **Convert to Word document** (via Pandoc) -- transform a Markdown, reStructuredText, OpenDocument, Rich Text, HTML, or ePub file into a .docx file editable in Microsoft Word. Useful when you need to run the toolkit's audit and auto-fix on content that started in another format.
+- **Convert to EPUB 3 e-book** (via Pandoc) -- create a lightweight EPUB 3 e-book from Markdown, Word, reStructuredText, OpenDocument, Rich Text, or HTML with ACB Large Print CSS embedded. A quick path to a portable e-book for any e-reader application.
+- **Convert to accessible PDF** (via Pandoc + WeasyPrint) -- create a print-ready PDF from Markdown, Word, reStructuredText, OpenDocument, Rich Text, ePub, or HTML with ACB BOP print rules -- Arial 18pt, 1.15 line spacing, 1-inch margins, and optional binding margin. Good for meeting agendas, newsletters, and reports that will be printed in large print.
 - **Convert to EPUB or DAISY** (via DAISY Pipeline 2) -- create accessible EPUB 3 e-books from Word or HTML files, or convert existing EPUBs to DAISY 2.02 talking book format or DAISY 3/DTBook format. Best for content destined for e-readers, refreshable braille displays, or dedicated DAISY playback devices. Powered by the DAISY Consortium's open-source Pipeline engine.
 
-The convert page includes guided help that explains when each engine is the better choice and how to chain them together (for example, extracting a PDF to Markdown first, editing the result, then converting the Markdown to an accessible web page or EPUB for the best results).
+The convert page includes guided help that explains when each engine is the better choice and how to chain them together (for example, extracting a PDF to Markdown first, editing the result, then converting the Markdown to an accessible web page, Word document, EPUB, or PDF for the best results).
 
 ### Browse the Guidelines
 
@@ -74,10 +77,13 @@ A dedicated Guidelines page presents the complete ACB Large Print specification 
 | Word (.docx) | Full (30+ ACB and Microsoft Accessibility Checker rules) | Yes | Yes (.dotx) | Yes (HTML) | To Markdown, To HTML, To EPUB 3 |
 | Excel (.xlsx, .xls) | Full (sheet names, table headers, merged cells, alt text, hidden content, color-only data) | Planned | -- | -- | To Markdown |
 | PowerPoint (.pptx) | Full (slide titles, reading order, alt text, font sizes, speaker notes, charts) | Planned | -- | -- | To Markdown |
-| Markdown (.md) | ACB emphasis, headings, images, lists | Planned | -- | -- | To HTML |
+| Markdown (.md) | ACB emphasis, headings, images, lists | Planned | -- | -- | To HTML, To Word, To EPUB 3, To PDF |
 | PDF (.pdf) | Structure, metadata, fonts, tagged content, scanned page detection | Planned | -- | -- | To Markdown |
-| HTML (.html) | -- | -- | -- | -- | To EPUB 3 |
-| ePub (.epub) | Full (15 EPUB Accessibility 1.1 rules plus DAISY Ace integration) | Planned | -- | -- | To Markdown, To HTML, To DAISY 2.02, To DAISY 3 |
+| HTML (.html) | -- | -- | -- | -- | To Word, To EPUB 3, To PDF, To EPUB 3 (Pipeline) |
+| reStructuredText (.rst) | -- | -- | -- | -- | To HTML, To Word, To EPUB 3, To PDF |
+| OpenDocument (.odt) | -- | -- | -- | -- | To HTML, To Word, To EPUB 3, To PDF |
+| Rich Text (.rtf) | -- | -- | -- | -- | To HTML, To Word, To EPUB 3, To PDF |
+| ePub (.epub) | Full (15 EPUB Accessibility 1.1 rules plus DAISY Ace integration) | Planned | -- | -- | To Markdown, To HTML, To PDF, To DAISY 2.02, To DAISY 3 |
 
 ## Built for Everyone
 
@@ -123,6 +129,8 @@ Document privacy is a core design principle:
 ## Same Engine, Zero Compromises
 
 The web application runs on the exact same Python core library that powers the desktop application and the command-line tool. When a bug is fixed or a new rule is added to the core, it appears in the web app automatically with no extra work. There is one set of rules, one set of thresholds, and one source of truth -- the `constants.py` file that defines every audit rule, severity level, and ACB reference.
+
+Document conversion is powered by three open source tools: Microsoft MarkItDown for text extraction, Pandoc for document-to-document conversion (HTML, Word, EPUB, and PDF via WeasyPrint), and DAISY Pipeline 2 for accessible EPUB and DAISY talking book production. WeasyPrint, from CourtBouillon, renders Pandoc's HTML output to PDF using a dedicated ACB print stylesheet with @page rules, Liberation Sans font (metrically identical to Arial), and proper print formatting.
 
 This also means audit results are identical across every interface. A document that scores 85% in the desktop app will score 85% in the web app. The rules do not change based on how you access the tool.
 

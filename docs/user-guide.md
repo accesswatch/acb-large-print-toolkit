@@ -147,7 +147,7 @@ Tip: If your source is Markdown instead of Word, use Convert with the "Accessibl
 
 ## 6. How to Convert Between Formats
 
-The Convert page offers three conversion directions, each powered by a different engine. Choose the one that matches what you need to produce.
+The Convert page offers six conversion directions, each powered by a different engine. Choose the one that matches what you need to produce.
 
 ### To Markdown (plain text extraction)
 
@@ -159,7 +159,7 @@ Extracts readable text from any supported file. Good for feeding documents into 
 
 **You get back:** a `.md` (Markdown) file -- plain text with formatting marks for headings, lists, and links. Opens in any text editor.
 
-**Best when:** you need the raw content out of a document, regardless of its original format. Also the right first step if you plan to convert to HTML or EPUB later -- extract to Markdown, clean up the result, then convert from there.
+**Best when:** you need the raw content out of a document, regardless of its original format. Also the right first step if you plan to convert to HTML, Word, EPUB, or PDF later -- extract to Markdown, clean up the result, then convert from there.
 
 ### To accessible web page (HTML)
 
@@ -179,11 +179,57 @@ Turns a document into a complete, accessible HTML page with ACB Large Print CSS 
 
 **Best when:** you need a web page that people will read in a browser, print on paper, email as an attachment, or upload to a website. Markdown (.md) files produce the cleanest output because Pandoc was specifically designed for Markdown-to-HTML conversion.
 
+### To Word document (.docx)
+
+**Powered by:** [Pandoc](https://pandoc.org/) (John MacFarlane, UC Berkeley)
+
+Converts a document into a Word file. Pandoc maps headings, lists, tables, and emphasis into Word's native styles, so the output is immediately editable in Microsoft Word.
+
+**Accepts:** Markdown (.md), reStructuredText (.rst), OpenDocument (.odt), Rich Text (.rtf), HTML (.html), and ePub (.epub).
+
+**You get back:** a `.docx` file that opens directly in Microsoft Word or LibreOffice Writer.
+
+**Best when:** you have a Markdown or HTML document and need a Word version for colleagues who work in Word, or when you want to run the toolkit's audit and auto-fix on content that started in another format. A common workflow: extract to Markdown, clean up, convert to Word, then run Fix for full ACB compliance.
+
+### To EPUB 3 e-book (via Pandoc)
+
+**Powered by:** [Pandoc](https://pandoc.org/) (John MacFarlane, UC Berkeley)
+
+Creates a lightweight EPUB 3 e-book with ACB Large Print CSS embedded in the stylesheet. Pandoc generates proper EPUB structure including a navigation document, content documents with semantic markup, and EPUB metadata from the document title.
+
+**Accepts:** Markdown (.md), Word (.docx), reStructuredText (.rst), OpenDocument (.odt), Rich Text (.rtf), and HTML (.html).
+
+**You get back:** an `.epub` file that opens in any e-reader application (Apple Books, Calibre, Thorium, etc.).
+
+**Options:**
+
+- **ACB formatting** (on by default) -- embeds the ACB Large Print stylesheet in the EPUB
+- **Binding margin** -- not applicable to EPUB (ignored)
+- **Print stylesheet** -- not applicable to EPUB (ignored)
+
+**Best when:** you need a simple, portable e-book and do not require DAISY Pipeline's advanced metadata and accessibility features. For a quick Markdown-to-EPUB conversion, this is the fastest path. For production-quality accessible EPUB with full schema.org metadata, use the DAISY Pipeline option instead.
+
+### To accessible PDF
+
+**Powered by:** [Pandoc](https://pandoc.org/) + [WeasyPrint](https://weasyprint.org/) (CourtBouillon)
+
+Creates an accessible PDF formatted with ACB BOP print-optimized rules. Pandoc converts the source document to HTML, then WeasyPrint renders that HTML to PDF using a dedicated print stylesheet with @page rules. The PDF uses Liberation Sans (metrically identical to Arial) for consistent typography, 18pt body text, 22pt headings, 1.15 line spacing (the ACB print specification), and 1-inch margins.
+
+**Accepts:** Markdown (.md), Word (.docx), reStructuredText (.rst), OpenDocument (.odt), Rich Text (.rtf), ePub (.epub), and HTML (.html).
+
+**You get back:** a `.pdf` file ready for printing or distribution.
+
+**Options:**
+
+- **Binding margin** -- adds 0.5 inches of extra left margin for printed/bound documents
+
+**Best when:** you need a print-ready document with ACB-compliant formatting. Good for meeting agendas, newsletters, and reports that will be printed and distributed in large print. Note: WeasyPrint produces CSS-rendered PDFs that are visually formatted but may not be fully PDF/UA tagged. For maximum PDF accessibility, fix the source document first and use your word processor's PDF export.
+
 ### To EPUB or DAISY (via DAISY Pipeline)
 
 **Powered by:** [DAISY Pipeline 2](https://daisy.github.io/pipeline/) (DAISY Consortium)
 
-Creates accessible publications in structured formats designed for reading systems used by people with print disabilities. Unlike the other two tools, Pipeline produces packaged publications -- EPUB e-books and DAISY talking books -- with proper accessibility metadata, navigation documents, and reading order.
+Creates accessible publications in structured formats designed for reading systems used by people with print disabilities. Unlike the other tools, Pipeline produces packaged publications -- EPUB e-books and DAISY talking books -- with proper accessibility metadata, navigation documents, and reading order.
 
 Available conversions:
 
@@ -200,8 +246,11 @@ Note: Pipeline conversions appear automatically when the DAISY Pipeline is insta
 
 Think about **who will read the result** and **how they will read it:**
 
-- **Reading on screen or printing?** Use "Accessible web page" -- an HTML file with ACB formatting that works in any browser and prints cleanly.
-- **Reading on an e-reader or DAISY player?** Use "EPUB or DAISY" -- these are the formats those devices expect.
+- **Reading on screen or printing from a browser?** Use "Accessible web page" -- an HTML file with ACB formatting that works in any browser and prints cleanly.
+- **Need a print-ready PDF?** Use "Accessible PDF" -- formatted with ACB print rules (1.15 line spacing, 1-inch margins, Arial 18pt).
+- **Need a Word file to edit or run through Fix?** Use "Word document" -- gives you a .docx to open in Microsoft Word.
+- **Need a simple e-book?** Use "EPUB 3 e-book (via Pandoc)" -- a quick path to a portable .epub file.
+- **Reading on a DAISY player or need full EPUB accessibility metadata?** Use "EPUB or DAISY" via Pipeline -- these are the formats those devices expect.
 - **Editing, searching, or feeding to an AI tool?** Use "Plain text" -- raw content in a simple format that works everywhere.
 - **Pasting into WordPress or Drupal?** Use the Export page instead -- it has CMS Fragment mode.
 
@@ -211,7 +260,7 @@ You can get the best output by using two conversions in sequence:
 
 1. **Extract to Markdown** to pull text from a PDF, PowerPoint, or other complex format.
 2. **Edit the Markdown** in any text editor to clean up headings, fix links, and improve structure.
-3. **Convert the Markdown** to an accessible web page or EPUB.
+3. **Convert the Markdown** to an accessible web page, Word document, EPUB, or PDF.
 
 This two-step approach almost always produces better results than a one-step direct conversion, because you can review and improve the content between steps.
 
@@ -383,9 +432,17 @@ Each finding in the audit report includes:
 
 1. Start with a properly formatted Word document or Markdown file.
 2. **Audit** the source document for ACB compliance.
-3. **Convert to EPUB** using the Convert page with a DAISY Pipeline conversion (when available).
+3. **Convert to EPUB** using the Convert page -- choose "EPUB 3 e-book (via Pandoc)" for a quick e-book, or a DAISY Pipeline conversion for production-quality EPUB with full accessibility metadata.
 4. **Audit the EPUB** -- upload the .epub to Audit for EPUB-specific accessibility checks (DAISY Ace runs automatically).
 5. Fix any EPUB-specific issues (metadata, alt text, navigation) and re-audit.
+
+### Workflow E: Produce large print PDF for distribution
+
+1. Write your content in Markdown or Word.
+2. **Audit** to check compliance.
+3. **Fix** if needed (for Word documents).
+4. **Convert to PDF** using the Convert page with "Accessible PDF" selected. Enable "Binding margin" if the document will be printed and bound.
+5. Distribute the PDF for printing. The output uses ACB BOP print formatting -- Arial 18pt, 1.15 line spacing, 1-inch margins.
 
 ---
 

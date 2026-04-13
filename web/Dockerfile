@@ -9,12 +9,18 @@ WORKDIR /app
 # Install system dependencies:
 #   pandoc        -- Markdown/RST/ODT/RTF -> ACB HTML conversion
 #   nodejs + npm  -- DAISY Ace EPUB accessibility checker
+#   WeasyPrint system libs -- CSS-based PDF rendering
+#   fonts-liberation -- Liberation Sans (metrically identical to Arial)
+#                       for ACB BOP font compliance in PDF output
 # DAISY Pipeline 2 runs as a separate Docker service (sidecar) -- see
 # docker-compose.yml / docker-compose.prod.yml.  The web app connects to it
 # via its REST API (no JRE or .deb needed in this image).
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
-       pandoc nodejs npm \
+    pandoc nodejs npm \
+    libpango-1.0-0 libpangocairo-1.0-0 libcairo2 libgdk-pixbuf-2.0-0 \
+    libffi-dev shared-mime-info \
+    fonts-liberation \
     && rm -rf /var/lib/apt/lists/*
 
 # Install DAISY Ace globally (MIT license -- https://github.com/daisy/ace)
