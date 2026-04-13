@@ -14,7 +14,7 @@ The ACB Large Print Toolkit is a suite of AI agents, slash commands, reference s
 
 ### Web Application (New -- April 2026)
 
-A browser-based interface at [lp.bits-acb.org](https://lp.bits-acb.org) that requires no installation. Upload a Word document, choose an operation, and get results immediately. The web app provides:
+A browser-based interface at [lp.csedesigns.com](https://lp.csedesigns.com) that requires no installation. Upload a Word document, choose an operation, and get results immediately. The web app provides:
 
 -   **Audit** -- upload a .docx and get a full ACB compliance report in your browser, with findings grouped by severity
 -   **Fix** -- upload a non-compliant .docx and download a corrected version with before/after compliance scores

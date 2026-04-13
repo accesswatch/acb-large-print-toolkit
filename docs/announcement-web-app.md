@@ -4,7 +4,7 @@
 
 ***
 
-The Blind Information Technology Solutions (BITS) organization today announced the launch of the ACB Document Accessibility Web Application, a free, browser-based tool that checks and fixes Office documents for compliance with the American Council of the Blind (ACB) Large Print Guidelines and WCAG 2.2 AA accessibility standards. The web app is live now at [lp.bits-acb.org](https://lp.bits-acb.org) and requires no account, no download, and no installation.
+The Blind Information Technology Solutions (BITS) organization today announced the launch of the ACB Document Accessibility Web Application, a free, browser-based tool that checks and fixes Office documents for compliance with the American Council of the Blind (ACB) Large Print Guidelines and WCAG 2.2 AA accessibility standards. The web app is live now at [lp.csedesigns.com](https://lp.csedesigns.com) and requires no account, no download, and no installation.
 
 "The number one piece of feedback we heard from ACB chapters was: 'I don't want to install anything,'" said **Jeff Bishop, President of BITS**. "People would see our desktop tool and say, 'That looks great, but I just need to check one document.' The web app is the answer. Open your browser, upload your file, and you are done. It works on a phone, a Chromebook, a library computer -- anywhere you have a browser."
 
@@ -180,7 +180,7 @@ The project is part of [Accessibility Agents](http://www.community-access.org), 
 
 ## Try It Now
 
-Visit [lp.bits-acb.org](https://lp.bits-acb.org), upload a document, and see the results in seconds. No sign-up, no download. Just accessible documents.
+Visit [lp.csedesigns.com](https://lp.csedesigns.com), upload a document, and see the results in seconds. No sign-up, no download. Just accessible documents.
 
 ***
 
