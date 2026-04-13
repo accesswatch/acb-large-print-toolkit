@@ -55,8 +55,8 @@ jobs:
           key: ${{ secrets.DEPLOY_SSH_KEY }}
           port: 22
           command_timeout: 15m
-          script_stop: true
           script: |
+            set -e
             echo "=== Starting deploy at $(date -u) ==="
             cd ~/app
             git fetch origin main
