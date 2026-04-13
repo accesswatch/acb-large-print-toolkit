@@ -21,6 +21,7 @@ styles/
 README.md
 LICENSE*
 *.md
+!CHANGELOG.md
 
 # --- Server credentials (never send to Docker) ---
 server.credentials

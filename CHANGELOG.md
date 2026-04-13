@@ -6,6 +6,23 @@ Releases are tagged in the [GitHub repository](https://github.com/accesswatch/ac
 
 ---
 
+## [Unreleased]
+
+### Added
+
+- **Automated deployment workflow** (`.github/workflows/deploy.yml`): push-triggered CI/CD that runs tests then SSHes to the production server to deploy. Uses `appleboy/ssh-action`, requires `DEPLOY_HOST`, `DEPLOY_USER`, `DEPLOY_SSH_KEY` secrets. Triggers on changes to `web/`, `desktop/src/`, `scripts/deploy-app.sh`, `CHANGELOG.md`.
+- **Changelog route** (`/changelog`): renders `CHANGELOG.md` as HTML using a built-in Markdown parser -- no external dependency. Linked from the About page and main navigation bar.
+- **Changelog template** (`changelog.html`): version TOC, styled content sections, back-to-top link.
+- **Changelog CSS**: heading borders, inline code styling, horizontal rules, list spacing in `forms.css`.
+- **Docker CHANGELOG.md inclusion**: `.dockerignore` now allows `CHANGELOG.md` through the `*.md` exclusion; Dockerfile copies it to `/app/CHANGELOG.md`.
+- **Changelog mandate in copilot-instructions.md**: every commit that changes behavior must update `CHANGELOG.md`.
+
+### Fixed
+
+- **Changelog path resolution**: `changelog.py` now walks parent directories to find `CHANGELOG.md` (works in both dev checkout and Docker site-packages install), with `/app/CHANGELOG.md` as Docker fallback.
+
+---
+
 ## [0.3.0] -- 2026-04-12
 
 ### ePub Accessibility Auditing

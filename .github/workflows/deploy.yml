@@ -1,0 +1,64 @@
+name: Deploy Web App
+
+# Trigger: push to main that changes web app, desktop core, or deploy scripts
+on:
+  push:
+    branches: [main]
+    paths:
+      - "web/**"
+      - "desktop/src/**"
+      - "desktop/pyproject.toml"
+      - "scripts/deploy-app.sh"
+      - "CHANGELOG.md"
+      - ".github/workflows/deploy.yml"
+  workflow_dispatch: # manual trigger from Actions tab
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false # never cancel an in-progress deploy
+
+jobs:
+  test:
+    name: Run tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install dependencies
+        run: |
+          pip install -e ./desktop
+          pip install -e ./web
+          pip install pytest
+
+      - name: Run web tests
+        run: python -m pytest web/tests/ -x -q
+
+  deploy:
+    name: Deploy to production
+    needs: test
+    runs-on: ubuntu-latest
+    environment: production # requires GitHub environment approval (optional)
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          port: ${{ secrets.DEPLOY_PORT || 22 }}
+          script_stop: true
+          script: |
+            echo "=== Starting deploy at $(date -u) ==="
+            cd ~/app
+            git fetch origin main
+            git reset --hard origin/main
+            bash scripts/deploy-app.sh
+            echo "=== Deploy finished at $(date -u) ==="

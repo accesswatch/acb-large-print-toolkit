@@ -10,8 +10,34 @@ from markupsafe import Markup
 
 changelog_bp = Blueprint("changelog", __name__)
 
-_REPO_ROOT = Path(__file__).resolve().parents[4]  # web/src/acb_large_print_web/routes -> repo root
-_CHANGELOG_PATH = _REPO_ROOT / "CHANGELOG.md"
+
+def _find_changelog() -> Path:
+    """Locate CHANGELOG.md -- works both in dev (repo checkout) and Docker.
+
+    Search order:
+    1. CHANGELOG_PATH environment variable (explicit override)
+    2. Traverse parents of this file looking for CHANGELOG.md (dev checkout)
+    3. /app/CHANGELOG.md (Docker default from Dockerfile COPY)
+    """
+    import os
+
+    env_path = os.environ.get("CHANGELOG_PATH")
+    if env_path:
+        return Path(env_path)
+
+    # Walk up from this file to find repo root
+    p = Path(__file__).resolve().parent
+    for _ in range(8):
+        candidate = p / "CHANGELOG.md"
+        if candidate.is_file():
+            return candidate
+        p = p.parent
+
+    # Docker fallback: COPY CHANGELOG.md /app/
+    return Path("/app/CHANGELOG.md")
+
+
+_CHANGELOG_PATH = _find_changelog()
 
 
 def _md_to_html(md: str) -> str:

@@ -73,3 +73,15 @@ The ACB audit rules, fix logic, constants, and severity definitions exist in mul
 3. If changing a threshold (e.g., font size, margin tolerance), grep all three locations
 4. The Python `constants.py` is the canonical source of truth -- TypeScript and CSS must match it
 5. The Flask web app imports the Python core directly -- no sync needed for rule logic, but template rendering (help text, rule descriptions) auto-generates from `constants.py`
+
+## Changelog (CRITICAL)
+
+The file `CHANGELOG.md` at the repository root is the single source of truth for project history. It is rendered as HTML by the Flask web app at `/changelog`.
+
+**When making ANY commit that adds features, fixes bugs, changes behavior, or modifies dependencies:**
+
+1. Update `CHANGELOG.md` under the current `[Unreleased]` or version heading
+2. Use Keep a Changelog format: `### Added`, `### Changed`, `### Fixed`, `### Removed`
+3. Be specific -- name files, rule IDs, routes, and CLI flags that changed
+4. Group related changes under descriptive `### Section` headings
+5. The changelog is deployed inside the Docker image (`COPY CHANGELOG.md ./`) and served at `/changelog` -- never remove it from the build
