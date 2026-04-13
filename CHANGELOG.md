@@ -60,13 +60,6 @@ Releases are tagged in the [GitHub repository](https://github.com/accesswatch/ac
 - Vendored DAISY a11y-meta-viewer reference implementation in `vendor/daisy-a11y-meta-viewer/`
 - Audit report renders metadata sections with details/summary accordions
 
-### DAISY Pipeline Conversions
-
-- Added `pipeline_converter.py` with DAISY Pipeline 2 REST API integration
-- Supported conversions: DOCX-to-EPUB, HTML-to-EPUB, HTML-to-DAISY 2.02, EPUB upgrade
-- Convert route automatically detects Pipeline availability and shows/hides options
-- Timeout and error handling for long-running Pipeline jobs
-
 ### Online Help System
 
 - Added `/guide` route with 14-section user guide:
@@ -105,7 +98,7 @@ Releases are tagged in the [GitHub repository](https://github.com/accesswatch/ac
 
 ### Tests
 
-- Added desktop tests: `epub_auditor`, `epub_meta_display`, `ace_runner`, `pipeline_converter`, integration
+- Added desktop tests: `epub_auditor`, `epub_meta_display`, `ace_runner`, integration
 - 74 web tests passing
 
 ---
