@@ -9,6 +9,9 @@ WORKDIR /app
 # DAISY Pipeline version (pinned for reproducibility)
 ARG PIPELINE_VERSION=1.15.4
 
+# Pipeline installs to /opt/daisy-pipeline2/bin/
+ENV PATH="/opt/daisy-pipeline2/bin:${PATH}"
+
 # Install system dependencies:
 #   pandoc        -- Markdown/RST/ODT/RTF -> ACB HTML conversion
 #   nodejs + npm  -- DAISY Ace EPUB accessibility checker
