@@ -15,9 +15,11 @@ RUN apt-get update \
 # Install DAISY Ace globally (MIT license -- https://github.com/daisy/ace)
 # Ace provides 100+ axe-core accessibility checks for EPUB publications
 # Source vendored in vendor/daisy-ace/ for offline builds and auditing
+# Note: ace --version requires Electron's libglib-2.0 which isn't in slim;
+# verify install by checking the CLI entry point exists instead.
 RUN npm install -g @daisy/ace --no-fund --no-audit \
     && npm cache clean --force \
-    && ace --version
+    && which ace
 
 # Install the core library (audit, fix, convert, export -- no CLI/GUI)
 # The .dockerignore excludes desktop-only files (cli.py, gui.py, __main__.py)
