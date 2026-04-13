@@ -78,7 +78,7 @@ docker compose -f "$COMPOSE_FILE" up -d --build
 
 echo "--- Waiting for containers to become healthy ---"
 ATTEMPTS=0
-MAX_ATTEMPTS=20
+MAX_ATTEMPTS=40
 HEALTHY=0
 while [[ "$ATTEMPTS" -lt "$MAX_ATTEMPTS" ]]; do
     if docker compose -f "$COMPOSE_FILE" exec -T web python -c \
