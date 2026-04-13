@@ -1,3 +1,6 @@
+# Temporary commit message files
+msg.txt
+
 # Python
 __pycache__/
 *.py[cod]
