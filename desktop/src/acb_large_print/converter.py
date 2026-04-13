@@ -15,7 +15,7 @@ log = logging.getLogger("acb_large_print")
 
 # File extensions MarkItDown can convert (no audio -- see module docstring)
 CONVERTIBLE_EXTENSIONS = {
-    ".docx", ".xlsx", ".pptx", ".pdf",
+    ".docx", ".xlsx", ".xls", ".pptx", ".pdf",
     ".html", ".htm",
     ".csv", ".json", ".xml",
     ".epub", ".zip",

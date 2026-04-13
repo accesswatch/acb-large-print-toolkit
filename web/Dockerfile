@@ -6,11 +6,29 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
-# Install Pandoc (for Markdown/RST/ODT/RTF -> ACB HTML conversion)
-# Install Node.js (for DAISY Ace EPUB accessibility checker)
+# DAISY Pipeline version (pinned for reproducibility)
+ARG PIPELINE_VERSION=1.15.4
+
+# Install system dependencies:
+#   pandoc        -- Markdown/RST/ODT/RTF -> ACB HTML conversion
+#   nodejs + npm  -- DAISY Ace EPUB accessibility checker
+#   default-jre-headless -- Java runtime for DAISY Pipeline 2
+#   curl          -- Download Pipeline .deb package
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends pandoc nodejs npm \
+    && apt-get install -y --no-install-recommends \
+       pandoc nodejs npm default-jre-headless curl \
     && rm -rf /var/lib/apt/lists/*
+
+# Install DAISY Pipeline 2 (LGPL -- https://github.com/daisy/pipeline-assembly)
+# Pipeline provides advanced document conversion: Word->EPUB, HTML->EPUB,
+# EPUB->DAISY 2.02, EPUB->DAISY 3/DTBook
+RUN curl -fsSL -o /tmp/pipeline2.deb \
+       "https://github.com/daisy/pipeline-assembly/releases/download/v${PIPELINE_VERSION}/pipeline2-${PIPELINE_VERSION}_debian.deb" \
+    && dpkg -i /tmp/pipeline2.deb || true \
+    && apt-get update && apt-get install -f -y --no-install-recommends \
+    && rm -f /tmp/pipeline2.deb \
+    && rm -rf /var/lib/apt/lists/* \
+    && dp2 --version
 
 # Install DAISY Ace globally (MIT license -- https://github.com/daisy/ace)
 # Ace provides 100+ axe-core accessibility checks for EPUB publications

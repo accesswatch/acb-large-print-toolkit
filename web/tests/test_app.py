@@ -502,6 +502,7 @@ class TestConvertPage:
         data = {
             "document": (io.BytesIO(md_content), "test.md"),
             "direction": "to-html",
+            "acb_format": "on",
         }
         resp = client.post("/convert/", data=data, content_type="multipart/form-data")
         if pandoc_available():
@@ -800,3 +801,245 @@ class TestEpubAudit:
         assert "EPUB-LANGUAGE" in rule_ids, f"Expected EPUB-LANGUAGE, got {rule_ids}"
         assert "EPUB-NAV-DOCUMENT" in rule_ids, f"Expected EPUB-NAV-DOCUMENT, got {rule_ids}"
         assert "EPUB-ACCESSIBILITY-METADATA" in rule_ids
+
+
+# ============================================================
+# DAISY Pipeline conversion
+# ============================================================
+
+class TestPipelineConversion:
+    """Tests for DAISY Pipeline integration on the /convert/ route."""
+
+    def test_convert_form_shows_pipeline_when_available(self, client, monkeypatch):
+        """When Pipeline is available, the form should show the EPUB/DAISY option."""
+        monkeypatch.setattr(
+            "acb_large_print_web.routes.convert.pipeline_available", lambda: True
+        )
+        monkeypatch.setattr(
+            "acb_large_print_web.routes.convert.get_available_conversions",
+            lambda: {
+                "html-to-epub": {
+                    "label": "HTML to EPUB 3",
+                    "script": "html-to-epub3",
+                    "description": "Packages HTML into an accessible EPUB 3",
+                    "input_ext": ".html",
+                    "output_ext": ".epub",
+                },
+            },
+        )
+        resp = client.get("/convert/")
+        assert resp.status_code == 200
+        assert b"EPUB or DAISY format" in resp.data
+        assert b"DAISY Pipeline" in resp.data
+
+    def test_convert_form_hides_pipeline_when_unavailable(self, client, monkeypatch):
+        """When Pipeline is not installed, the EPUB/DAISY radio should not appear."""
+        monkeypatch.setattr(
+            "acb_large_print_web.routes.convert.pipeline_available", lambda: False
+        )
+        monkeypatch.setattr(
+            "acb_large_print_web.routes.convert.get_available_conversions",
+            lambda: {},
+        )
+        resp = client.get("/convert/")
+        assert resp.status_code == 200
+        assert b'value="to-pipeline"' not in resp.data
+
+    def test_pipeline_not_installed_returns_error(self, client, monkeypatch):
+        """Submitting a Pipeline conversion when Pipeline is absent returns an error."""
+        monkeypatch.setattr(
+            "acb_large_print_web.routes.convert.pipeline_available", lambda: False
+        )
+        html_content = b"<html><body><h1>Test</h1></body></html>"
+        data = {
+            "document": (io.BytesIO(html_content), "test.html"),
+            "direction": "to-pipeline",
+            "pipeline_conversion": "html-to-epub",
+        }
+        resp = client.post("/convert/", data=data, content_type="multipart/form-data")
+        assert resp.status_code == 400
+        assert b"Pipeline" in resp.data
+
+    def test_pipeline_invalid_conversion_key(self, client, monkeypatch):
+        """Submitting an unknown Pipeline conversion key returns an error."""
+        monkeypatch.setattr(
+            "acb_large_print_web.routes.convert.pipeline_available", lambda: True
+        )
+        monkeypatch.setattr(
+            "acb_large_print_web.routes.convert.get_available_conversions",
+            lambda: {},
+        )
+        html_content = b"<html><body><h1>Test</h1></body></html>"
+        data = {
+            "document": (io.BytesIO(html_content), "test.html"),
+            "direction": "to-pipeline",
+            "pipeline_conversion": "nonexistent-conversion",
+        }
+        resp = client.post("/convert/", data=data, content_type="multipart/form-data")
+        assert resp.status_code == 400
+        assert b"not available" in resp.data
+
+    def test_pipeline_html_to_epub_success(self, client, monkeypatch, tmp_path):
+        """Mock a successful Pipeline HTML-to-EPUB conversion."""
+        # Create a fake EPUB output file
+        fake_epub = tmp_path / "output.epub"
+        fake_epub.write_bytes(b"PK\x03\x04fake-epub-content")
+
+        def mock_convert(src_path, conversion_key, output_dir=None):
+            return fake_epub, "Converted to output.epub"
+
+        monkeypatch.setattr(
+            "acb_large_print_web.routes.convert.pipeline_available", lambda: True
+        )
+        monkeypatch.setattr(
+            "acb_large_print_web.routes.convert.get_available_conversions",
+            lambda: {
+                "html-to-epub": {
+                    "label": "HTML to EPUB 3",
+                    "script": "html-to-epub3",
+                    "description": "Test",
+                    "input_ext": ".html",
+                    "output_ext": ".epub",
+                },
+            },
+        )
+        monkeypatch.setattr(
+            "acb_large_print_web.routes.convert.convert_with_pipeline",
+            mock_convert,
+        )
+        html_content = b"<html><body><h1>Test</h1></body></html>"
+        data = {
+            "document": (io.BytesIO(html_content), "test.html"),
+            "direction": "to-pipeline",
+            "pipeline_conversion": "html-to-epub",
+        }
+        resp = client.post("/convert/", data=data, content_type="multipart/form-data")
+        assert resp.status_code == 200
+        assert resp.content_type == "application/epub+zip"
+        assert b"output.epub" in resp.headers.get("Content-Disposition", "").encode()
+
+    def test_pipeline_epub_to_daisy_returns_zip(self, client, monkeypatch, tmp_path):
+        """Mock a Pipeline EPUB-to-DAISY conversion that returns a directory (zipped)."""
+        # Create a fake DAISY output directory
+        daisy_dir = tmp_path / "daisy_output"
+        daisy_dir.mkdir()
+        (daisy_dir / "ncc.html").write_text("<html><body>NCC</body></html>")
+        (daisy_dir / "content.smil").write_text("<smil>test</smil>")
+
+        def mock_convert(src_path, conversion_key, output_dir=None):
+            return daisy_dir, "Converted to DAISY 2.02"
+
+        monkeypatch.setattr(
+            "acb_large_print_web.routes.convert.pipeline_available", lambda: True
+        )
+        monkeypatch.setattr(
+            "acb_large_print_web.routes.convert.get_available_conversions",
+            lambda: {
+                "epub-to-daisy202": {
+                    "label": "EPUB to DAISY 2.02",
+                    "script": "epub3-to-daisy202",
+                    "description": "Test",
+                    "input_ext": ".epub",
+                    "output_ext": "",
+                },
+            },
+        )
+        monkeypatch.setattr(
+            "acb_large_print_web.routes.convert.convert_with_pipeline",
+            mock_convert,
+        )
+        epub_data = _make_fake_epub()
+        data = {
+            "document": (epub_data, "test.epub"),
+            "direction": "to-pipeline",
+            "pipeline_conversion": "epub-to-daisy202",
+        }
+        resp = client.post("/convert/", data=data, content_type="multipart/form-data")
+        assert resp.status_code == 200
+        assert resp.content_type == "application/zip"
+        assert b".zip" in resp.headers.get("Content-Disposition", "").encode()
+
+    def test_pipeline_legacy_direction_format(self, client, monkeypatch, tmp_path):
+        """The route also accepts pipeline-{key} as the direction value (legacy)."""
+        fake_epub = tmp_path / "output.epub"
+        fake_epub.write_bytes(b"PK\x03\x04fake-epub")
+
+        def mock_convert(src_path, conversion_key, output_dir=None):
+            return fake_epub, "Converted"
+
+        monkeypatch.setattr(
+            "acb_large_print_web.routes.convert.pipeline_available", lambda: True
+        )
+        monkeypatch.setattr(
+            "acb_large_print_web.routes.convert.get_available_conversions",
+            lambda: {
+                "html-to-epub": {
+                    "label": "HTML to EPUB 3",
+                    "script": "html-to-epub3",
+                    "description": "Test",
+                    "input_ext": ".html",
+                    "output_ext": ".epub",
+                },
+            },
+        )
+        monkeypatch.setattr(
+            "acb_large_print_web.routes.convert.convert_with_pipeline",
+            mock_convert,
+        )
+        html_content = b"<html><body><h1>Test</h1></body></html>"
+        data = {
+            "document": (io.BytesIO(html_content), "test.html"),
+            "direction": "pipeline-html-to-epub",
+        }
+        resp = client.post("/convert/", data=data, content_type="multipart/form-data")
+        assert resp.status_code == 200
+        assert resp.content_type == "application/epub+zip"
+
+
+class TestPipelineConverterUnit:
+    """Unit tests for pipeline_converter.py functions (no dp2 required)."""
+
+    def test_pipeline_conversions_dict_complete(self):
+        from acb_large_print.pipeline_converter import PIPELINE_CONVERSIONS
+        assert "docx-to-epub" in PIPELINE_CONVERSIONS
+        assert "html-to-epub" in PIPELINE_CONVERSIONS
+        assert "epub-to-daisy202" in PIPELINE_CONVERSIONS
+        assert "epub-to-daisy3" in PIPELINE_CONVERSIONS
+
+    def test_pipeline_input_extensions(self):
+        from acb_large_print.pipeline_converter import PIPELINE_INPUT_EXTENSIONS
+        assert ".docx" in PIPELINE_INPUT_EXTENSIONS
+        assert ".html" in PIPELINE_INPUT_EXTENSIONS
+        assert ".epub" in PIPELINE_INPUT_EXTENSIONS
+
+    def test_pipeline_available_returns_bool(self):
+        from acb_large_print.pipeline_converter import pipeline_available
+        result = pipeline_available()
+        assert isinstance(result, bool)
+
+    def test_convert_with_pipeline_missing_file(self):
+        from acb_large_print.pipeline_converter import convert_with_pipeline
+        with pytest.raises(FileNotFoundError):
+            convert_with_pipeline(Path("/nonexistent/file.html"), "html-to-epub")
+
+    def test_convert_with_pipeline_bad_key(self, tmp_path):
+        from acb_large_print.pipeline_converter import convert_with_pipeline
+        f = tmp_path / "test.html"
+        f.write_text("<html></html>")
+        with pytest.raises(ValueError, match="Unknown conversion"):
+            convert_with_pipeline(f, "nonexistent-key")
+
+    def test_convert_with_pipeline_wrong_extension(self, tmp_path):
+        from acb_large_print.pipeline_converter import convert_with_pipeline
+        f = tmp_path / "test.txt"
+        f.write_text("not html")
+        with pytest.raises(ValueError, match="expects .html"):
+            convert_with_pipeline(f, "html-to-epub")
+
+    def test_convert_with_pipeline_not_installed(self, tmp_path, monkeypatch):
+        from acb_large_print import pipeline_converter
+        monkeypatch.setattr("shutil.which", lambda cmd: None)
+        f = tmp_path / "test.html"
+        f.write_text("<html></html>")
+        with pytest.raises(RuntimeError, match="not installed"):
+            pipeline_converter.convert_with_pipeline(f, "html-to-epub")

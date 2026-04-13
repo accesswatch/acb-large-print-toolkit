@@ -138,12 +138,24 @@
         <td>CC BY-NC-SA 4.0</td>
         <td>Reference implementation of the <a href="https://w3c.github.io/publ-a11y/a11y-meta-display-guide/2.0/draft/techniques/epub-metadata/">W3C Accessibility Metadata Display Guide 2.0</a> -- generates human-readable accessibility statements from EPUB metadata (<a href="https://daisy.org/">DAISY Consortium</a>)</td>
       </tr>
+      <tr>
+        <td><a href="https://pandoc.org/">Pandoc</a></td>
+        <td>3.1+</td>
+        <td>GPL-2.0</td>
+        <td>Universal document converter -- transforms Markdown, Word, reStructuredText, OpenDocument, Rich Text, and ePub into accessible HTML with embedded ACB Large Print CSS (John MacFarlane, University of California, Berkeley)</td>
+      </tr>
+      <tr>
+        <td><a href="https://daisy.github.io/pipeline/">DAISY Pipeline 2</a></td>
+        <td>1.15+</td>
+        <td>LGPL-3.0</td>
+        <td>Advanced document conversion engine -- Word to EPUB 3, HTML to EPUB 3, EPUB to DAISY 2.02, EPUB to DAISY 3/DTBook. Used for producing accessible e-books and talking book formats (<a href="https://daisy.org/">DAISY Consortium</a>)</td>
+      </tr>
     </tbody>
   </table>
 
   <h3>Optional and Build Dependencies</h3>
   <table>
-    <caption>Optional libraries used for GUI, conversion, testing, and packaging</caption>
+    <caption>Optional libraries used for GUI, testing, and packaging</caption>
     <thead>
       <tr>
         <th scope="col">Library</th>
@@ -159,13 +171,6 @@
         <td>wxWindows (LGPL-like)</td>
         <td>Desktop GUI (wizard interface)</td>
       </tr>
-      <tr>
-        <td><a href="https://pandoc.org/">Pandoc</a></td>
-        <td>3.1+</td>
-        <td>GPL-2.0</td>
-        <td>Markdown to HTML conversion (server-side)</td>
-      </tr>
-
       <tr>
         <td><a href="https://docs.pytest.org/">pytest</a></td>
         <td>8.0+</td>
@@ -208,6 +213,11 @@
         <td>Apache 2.0</td>
         <td>Reverse proxy with automatic HTTPS</td>
       </tr>
+      <tr>
+        <td><a href="https://openjdk.org/">OpenJDK (JRE)</a></td>
+        <td>GPL-2.0 + Classpath</td>
+        <td>Java runtime required by DAISY Pipeline 2</td>
+      </tr>
     </tbody>
   </table>
   <a href="#main" class="back-to-top">Back to top</a>
@@ -244,7 +254,8 @@
 <section aria-labelledby="acknowledgments-heading">
   <h2 id="acknowledgments-heading">Acknowledgments</h2>
   <p>This project would not be possible without the tireless advocacy of the American Council of the Blind and the volunteers who authored and maintain the <a href="https://acb.org/large-print-guidelines">ACB Large Print Guidelines</a>. Special thanks to the <a href="https://acb.org/board-publications">ACB Board of Publications</a> for establishing clear, enforceable standards that make printed and digital materials accessible to people who are blind or have low vision.</p>
-  <p>We gratefully acknowledge the <a href="https://daisy.org/">DAISY Consortium</a> for their leadership in accessible publishing. This toolkit relies on <a href="https://daisy.github.io/ace/">DAISY Ace</a> for EPUB accessibility validation and the <a href="https://github.com/daisy/a11y-meta-viewer">DAISY Accessibility Metadata Viewer</a> for human-readable display of EPUB accessibility metadata per the <a href="https://w3c.github.io/publ-a11y/a11y-meta-display-guide/2.0/draft/techniques/epub-metadata/">W3C Accessibility Metadata Display Guide 2.0</a>.</p>
+  <p>We gratefully acknowledge the <a href="https://daisy.org/">DAISY Consortium</a> for their leadership in accessible publishing. This toolkit relies on three DAISY projects: <a href="https://daisy.github.io/ace/">DAISY Ace</a> for EPUB accessibility validation, the <a href="https://github.com/daisy/a11y-meta-viewer">DAISY Accessibility Metadata Viewer</a> for human-readable display of EPUB accessibility metadata per the <a href="https://w3c.github.io/publ-a11y/a11y-meta-display-guide/2.0/draft/techniques/epub-metadata/">W3C Accessibility Metadata Display Guide 2.0</a>, and <a href="https://daisy.github.io/pipeline/">DAISY Pipeline 2</a> for advanced document-to-EPUB and EPUB-to-DAISY conversions that produce accessible publications for e-readers, refreshable braille displays, and DAISY players.</p>
+  <p>The HTML conversion engine is powered by <a href="https://pandoc.org/">Pandoc</a>, the universal document converter created by John MacFarlane. Pandoc transforms Markdown, Word, reStructuredText, OpenDocument, Rich Text, and ePub files into accessible HTML with ACB Large Print styling.</p>
   <p>Thanks also to the <a href="https://www.bits-acb.org">BITS</a> community for testing, feedback, and ongoing development support, and to the open source maintainers whose libraries make this toolkit possible.</p>
   <a href="#main" class="back-to-top">Back to top</a>
 </section>

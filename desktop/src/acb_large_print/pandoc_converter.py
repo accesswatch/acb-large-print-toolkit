@@ -207,8 +207,10 @@ def convert_to_html(
     if title is None:
         title = src_path.stem.replace("-", " ").replace("_", " ")
 
-    # Resolve CSS: use provided file or the built-in ACB CSS
-    if css_path and css_path.exists():
+    # Resolve CSS: use provided file, skip CSS, or use built-in ACB CSS
+    if css_path is not None and css_path.name == "__no_acb_css__":
+        css_text = ""  # User opted out of ACB formatting
+    elif css_path and css_path.exists():
         css_text = css_path.read_text(encoding="utf-8")
     else:
         css_text = _ACB_CSS

@@ -224,19 +224,36 @@
 <section id="how-convert">
   <h2>6. How to Convert Between Formats</h2>
 
-  <p>The Convert page offers three conversion directions:</p>
+  <p>The Convert page walks you through a guided, step-by-step process to change your document from one format to another. Two main conversion directions are available, plus optional DAISY Pipeline conversions when installed.</p>
 
   <h3>To Markdown (plain text extraction)</h3>
-  <p>Extracts readable text from any supported file. Good for feeding documents into AI tools, creating starting points for documentation, or getting a simple version you can search and copy-paste.</p>
-  <p><strong>Accepts:</strong> Word, Excel, PowerPoint, PDF, HTML, CSV, JSON, XML, ePub, ZIP.</p>
+  <p>Extracts readable text from almost any file. Good for feeding documents into AI tools, creating starting points for documentation, or getting a simple version you can search and copy-paste.</p>
+  <p><strong>Accepts:</strong> Word (.docx), Excel (.xlsx), PowerPoint (.pptx), PDF (.pdf), HTML, CSV, JSON, XML, ePub (.epub), and ZIP files.</p>
 
   <h3>To accessible web page (HTML)</h3>
-  <p>Turns a document into a complete, accessible HTML page with ACB Large Print CSS built in. Ready to publish on a website.</p>
-  <p><strong>Accepts:</strong> Markdown (.md), Word (.docx), reStructuredText (.rst), OpenDocument (.odt), Rich Text (.rtf).</p>
+  <p>Turns a document into a complete, accessible HTML page with ACB Large Print CSS built in. Ready to publish on a website. You control the formatting with three options:</p>
+  <ul>
+    <li><strong>ACB Large Print formatting</strong> (on by default) -- applies Arial font, large text, proper spacing, high contrast, and all other ACB requirements</li>
+    <li><strong>Binding margin</strong> -- adds extra left margin for printed and bound documents</li>
+    <li><strong>Print stylesheet</strong> -- includes print-optimized CSS for documents that will be both viewed on screen and printed</li>
+  </ul>
+  <p><strong>Accepts:</strong> Markdown (.md), Word (.docx), ePub (.epub), reStructuredText (.rst), OpenDocument (.odt), Rich Text (.rtf).</p>
 
   <h3>To EPUB or DAISY (via DAISY Pipeline)</h3>
   <p>When the <a href="https://daisy.github.io/pipeline/">DAISY Pipeline</a> is installed on the server, additional conversions become available: Word to EPUB, HTML to EPUB, HTML to DAISY 2.02, and EPUB upgrades. These conversions produce publications optimized for reading systems used by people with print disabilities.</p>
   <p><strong>Note:</strong> Pipeline conversions appear automatically when the DAISY Pipeline is installed. If you do not see these options, Pipeline is not available on this server instance.</p>
+
+  <h3>Step-by-step</h3>
+  <ol>
+    <li>Go to <a href="{{ url_for('convert.convert_form') }}">Convert</a>.</li>
+    <li><strong>Step 1:</strong> Choose what you want to create -- plain text (Markdown) or an accessible web page (HTML).</li>
+    <li><strong>Step 2:</strong> Review the formatting options. The defaults follow ACB guidelines and are recommended for most uses. Adjust only if you have a specific need (binding margins for print, or skipping ACB formatting to add your own CSS later).</li>
+    <li><strong>Step 3:</strong> Optionally set a page title (for HTML output only).</li>
+    <li><strong>Step 4:</strong> Upload your file.</li>
+    <li>Click <strong>Convert My Document</strong> and download the result.</li>
+  </ol>
+
+  <p class="guide-tip"><strong>Tip:</strong> For the best HTML results, start with a well-structured source document that uses proper heading styles, lists, and tables rather than manual formatting with bold text and extra blank lines.</p>
 
   <a href="#guide-toc-heading" class="back-to-top">Back to guide contents</a>
 </section>

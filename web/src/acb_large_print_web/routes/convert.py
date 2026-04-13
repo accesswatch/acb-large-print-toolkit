@@ -27,6 +27,9 @@ from pathlib import Path
 
 convert_bp = Blueprint("convert", __name__)
 
+# Sentinel path used to signal "skip ACB CSS" to pandoc_converter
+_NO_ACB_CSS_SENTINEL = Path("__no_acb_css__")
+
 # Build the accept strings for the file inputs
 _MD_ACCEPT = ",".join(sorted(CONVERTIBLE_EXTENSIONS))
 _HTML_ACCEPT = ",".join(sorted(PANDOC_INPUT_EXTENSIONS))
@@ -79,19 +82,56 @@ def convert_submit():
                     f"Supported: {', '.join(sorted(PANDOC_INPUT_EXTENSIONS))}."
                 )
             html_output = temp_dir / f"{saved_path.stem}.html"
-            title = saved_path.stem.replace("-", " ").replace("_", " ")
+
+            # Read form options
+            user_title = request.form.get("title", "").strip()
+            title = user_title or saved_path.stem.replace("-", " ").replace("_", " ")
+            acb_format = request.form.get("acb_format") == "on"
+            binding_margin = request.form.get("binding_margin") == "on"
+            print_ready = request.form.get("print_ready") == "on"
+
+            # Build CSS path: None means use built-in ACB CSS,
+            # pass a blank sentinel to skip ACB CSS when unchecked
+            css_path = None  # default: built-in ACB CSS
+            if not acb_format:
+                css_path = _NO_ACB_CSS_SENTINEL
+
             output_path, text = convert_to_html(
                 saved_path, output_path=html_output, title=title,
+                css_path=css_path,
             )
+
+            # Post-process: inject binding margin and/or strip print stylesheet
+            if acb_format and (binding_margin or not print_ready):
+                html_text = output_path.read_text(encoding="utf-8")
+                if binding_margin:
+                    html_text = html_text.replace(
+                        "padding: 1rem 1rem;",
+                        "padding: 1rem 1rem 1rem 1.5rem;",
+                        1,
+                    )
+                if not print_ready:
+                    # Remove the @media print block from embedded CSS
+                    import re
+                    html_text = re.sub(
+                        r"@media\s+print\s*\{[^}]*(?:\{[^}]*\}[^}]*)*\}",
+                        "",
+                        html_text,
+                    )
+                output_path.write_text(html_text, encoding="utf-8")
+
             return send_file(
                 str(output_path),
                 mimetype="text/html; charset=utf-8",
                 as_attachment=True,
                 download_name=f"{saved_path.stem}.html",
             )
-        elif direction.startswith("pipeline-"):
+        elif direction == "to-pipeline" or direction.startswith("pipeline-"):
             # DAISY Pipeline conversion
-            conversion_key = direction.replace("pipeline-", "")
+            if direction == "to-pipeline":
+                conversion_key = request.form.get("pipeline_conversion", "")
+            else:
+                conversion_key = direction.replace("pipeline-", "")
             if not pipeline_available():
                 raise UploadError(
                     "DAISY Pipeline is not installed on the server. "

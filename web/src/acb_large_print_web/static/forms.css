@@ -18,14 +18,14 @@
   left: 0;
 }
 
-/* --- Navigation --- */
+/* --- Tab Navigation Bar --- */
 nav[aria-label="Main navigation"] {
   display: flex;
   flex-wrap: wrap;
-  align-items: baseline;
-  gap: 1rem;
+  align-items: flex-end;
+  gap: 0;
   border-bottom: 2px solid #1a1a1a;
-  padding-bottom: 0.75rem;
+  padding-bottom: 0;
   margin-bottom: 2rem;
 }
 
@@ -34,6 +34,9 @@ nav[aria-label="Main navigation"] {
   font-weight: 700;
   text-decoration: none;
   color: #1a1a1a;
+  padding: 0.5rem 0;
+  margin-right: auto;
+  flex-shrink: 0;
 }
 
 .nav-brand:hover,
@@ -41,27 +44,53 @@ nav[aria-label="Main navigation"] {
   text-decoration: underline;
 }
 
-.nav-list {
+.nav-brand[aria-current="page"] {
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+}
+
+.nav-tabs {
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem 1.5rem;
+  gap: 0;
   list-style: none;
   padding: 0;
   margin: 0;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
 }
 
-.nav-list a {
-  padding: 0.25em 0;
+.nav-tabs a {
+  display: flex;
+  align-items: center;
+  white-space: nowrap;
+  padding: 0.625rem 1rem;
+  text-decoration: none;
+  color: #444;
+  font-weight: 400;
+  font-size: 1rem;
+  border-bottom: 3px solid transparent;
+  min-height: 44px;
+  min-width: 44px;
+  margin-bottom: -2px;
+  position: relative;
 }
 
-.nav-list a:focus {
-  outline: 3px solid #0055cc;
-  outline-offset: 2px;
-}
-
-.nav-list a[aria-current="page"] {
+.nav-tabs a[aria-selected="true"] {
+  color: #0055cc;
   font-weight: 700;
-  border-bottom: 3px solid currentColor;
+  border-bottom-color: #0055cc;
+}
+
+.nav-tabs a[aria-selected="false"]:hover {
+  color: #003d99;
+  border-bottom-color: #b3d4fc;
+}
+
+.nav-tabs a:focus {
+  outline: 3px solid #0055cc;
+  outline-offset: -2px;
+  z-index: 1;
 }
 
 /* --- Cards (landing page) --- */
@@ -153,6 +182,12 @@ nav[aria-label="Main navigation"] {
   border-color: #c75000;
 }
 
+.format-pill.format-epub {
+  background: #e0f2f1;
+  color: #004d40;
+  border-color: #00796b;
+}
+
 /* --- Format Tags (compact labels inside cards, rule lists, etc.) --- */
 .format-tag {
   display: inline-block;
@@ -188,6 +223,11 @@ nav[aria-label="Main navigation"] {
 
 .format-tag.format-pdf {
   background: #c75000;
+  color: #ffffff;
+}
+
+.format-tag.format-epub {
+  background: #00796b;
   color: #ffffff;
 }
 
@@ -574,6 +614,32 @@ footer {
   padding-top: 1rem;
 }
 
+.footer-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.5rem;
+  list-style: none;
+  padding: 0;
+  margin: 0.5rem 0 1rem;
+}
+
+.footer-links a {
+  font-size: 1rem;
+  padding: 0.25em 0;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.footer-links a:focus {
+  outline: 3px solid #0055cc;
+  outline-offset: 2px;
+}
+
+.footer-links a[aria-current="page"] {
+  font-weight: 700;
+}
+
 footer p {
   font-size: 1rem;
   color: #444;
@@ -724,11 +790,19 @@ footer p {
 }
 
 /* --- Responsive --- */
-@media (max-width: 40em) {
+@media (max-width: 50em) {
   nav[aria-label="Main navigation"] {
     flex-direction: column;
+    align-items: stretch;
   }
 
+  .nav-tabs {
+    margin: 0 -1rem;
+    padding: 0 0.5rem;
+  }
+}
+
+@media (max-width: 40em) {
   .card-grid {
     grid-template-columns: 1fr;
   }
@@ -739,6 +813,11 @@ footer p {
 
   .score-arrow {
     transform: rotate(90deg);
+  }
+
+  .footer-links {
+    flex-direction: column;
+    gap: 0;
   }
 }
 

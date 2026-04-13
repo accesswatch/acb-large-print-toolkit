@@ -147,25 +147,73 @@ Tip: If your source is Markdown instead of Word, use Convert with the "Accessibl
 
 ## 6. How to Convert Between Formats
 
-The Convert page offers three conversion directions:
+The Convert page offers three conversion directions, each powered by a different engine. Choose the one that matches what you need to produce.
 
 ### To Markdown (plain text extraction)
 
-Extracts readable text from any supported file. Good for feeding documents into AI tools, creating starting points for documentation, or getting a simple version you can search and copy-paste.
+**Powered by:** [Microsoft MarkItDown](https://github.com/microsoft/markitdown)
 
-Accepts: Word, Excel, PowerPoint, PDF, HTML, CSV, JSON, XML, ePub, ZIP.
+Extracts readable text from any supported file. Good for feeding documents into AI tools, creating starting points for documentation, or getting a simple version you can search and copy-paste. MarkItDown handles the widest range of input formats but produces plain text, not a finished web page.
+
+**Accepts:** Word (.docx), Excel (.xlsx, .xls), PowerPoint (.pptx), PDF (.pdf), HTML, CSV, JSON, XML, ePub (.epub), and ZIP files.
+
+**You get back:** a `.md` (Markdown) file -- plain text with formatting marks for headings, lists, and links. Opens in any text editor.
+
+**Best when:** you need the raw content out of a document, regardless of its original format. Also the right first step if you plan to convert to HTML or EPUB later -- extract to Markdown, clean up the result, then convert from there.
 
 ### To accessible web page (HTML)
 
-Turns a document into a complete, accessible HTML page with ACB Large Print CSS built in. Ready to publish on a website.
+**Powered by:** [Pandoc](https://pandoc.org/) (John MacFarlane, UC Berkeley)
 
-Accepts: Markdown (.md), Word (.docx), reStructuredText (.rst), OpenDocument (.odt), Rich Text (.rtf).
+Turns a document into a complete, accessible HTML page with ACB Large Print CSS built in. Pandoc is the gold standard for document-to-HTML conversion -- it understands heading hierarchy, semantic lists, tables, footnotes, and cross-references, and produces clean, well-structured HTML. We embed our ACB Large Print CSS so the output meets accessibility standards out of the box.
+
+**Accepts:** Markdown (.md), Word (.docx), reStructuredText (.rst), OpenDocument (.odt), Rich Text (.rtf), and ePub (.epub).
+
+**You get back:** a standalone `.html` web page with all accessibility formatting included -- Arial font, large text, proper spacing, high contrast, and all other ACB requirements.
+
+**Options:**
+
+- **ACB formatting** (on by default) -- applies the full ACB Large Print stylesheet
+- **Binding margin** -- shifts content right by 0.5 inches for printed/bound documents
+- **Print stylesheet** -- adds `@media print` rules for ACB's tighter print line-height (1.15 instead of 1.5)
+
+**Best when:** you need a web page that people will read in a browser, print on paper, email as an attachment, or upload to a website. Markdown (.md) files produce the cleanest output because Pandoc was specifically designed for Markdown-to-HTML conversion.
 
 ### To EPUB or DAISY (via DAISY Pipeline)
 
-When the DAISY Pipeline is installed on the server, additional conversions become available: Word to EPUB, HTML to EPUB, HTML to DAISY 2.02, and EPUB upgrades. These conversions produce publications optimized for reading systems used by people with print disabilities.
+**Powered by:** [DAISY Pipeline 2](https://daisy.github.io/pipeline/) (DAISY Consortium)
 
-Note: Pipeline conversions appear automatically when the DAISY Pipeline is installed. If you do not see these options, Pipeline is not available on this server instance. The desktop application supports DAISY Pipeline conversions when Pipeline is installed locally.
+Creates accessible publications in structured formats designed for reading systems used by people with print disabilities. Unlike the other two tools, Pipeline produces packaged publications -- EPUB e-books and DAISY talking books -- with proper accessibility metadata, navigation documents, and reading order.
+
+Available conversions:
+
+- **Word to EPUB 3** -- converts a Word document (.docx) to an accessible EPUB 3 e-book through a DTBook intermediate format that preserves document structure
+- **HTML to EPUB 3** -- packages an HTML page (.html) into a portable, accessible e-book
+- **EPUB to DAISY 2.02** -- converts an ePub (.epub) to DAISY 2.02 talking book format for playback on dedicated DAISY hardware
+- **EPUB to DAISY 3** -- converts an ePub (.epub) to DAISY 3 / DTBook structured text format
+
+**You get back:** an `.epub` file (for EPUB conversions) or a `.zip` file containing the DAISY output folder.
+
+Note: Pipeline conversions appear automatically when the DAISY Pipeline is installed on the server. If you do not see these options, Pipeline is not available on this server instance.
+
+### How do I decide between them?
+
+Think about **who will read the result** and **how they will read it:**
+
+- **Reading on screen or printing?** Use "Accessible web page" -- an HTML file with ACB formatting that works in any browser and prints cleanly.
+- **Reading on an e-reader or DAISY player?** Use "EPUB or DAISY" -- these are the formats those devices expect.
+- **Editing, searching, or feeding to an AI tool?** Use "Plain text" -- raw content in a simple format that works everywhere.
+- **Pasting into WordPress or Drupal?** Use the Export page instead -- it has CMS Fragment mode.
+
+### Chaining conversions for better results
+
+You can get the best output by using two conversions in sequence:
+
+1. **Extract to Markdown** to pull text from a PDF, PowerPoint, or other complex format.
+2. **Edit the Markdown** in any text editor to clean up headings, fix links, and improve structure.
+3. **Convert the Markdown** to an accessible web page or EPUB.
+
+This two-step approach almost always produces better results than a one-step direct conversion, because you can review and improve the content between steps.
 
 ---
 

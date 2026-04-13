@@ -1,7 +1,7 @@
 # Core dependencies
 python-docx>=1.1.0
 mammoth>=1.8.0
-markitdown[pdf,docx,xlsx,pptx]>=0.1.5
+markitdown[pdf,docx,xlsx,xls,pptx]>=0.1.5
 pymupdf>=1.24.0
 wxPython>=4.2.0
 

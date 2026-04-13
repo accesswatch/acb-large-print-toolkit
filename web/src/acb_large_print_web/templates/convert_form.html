@@ -5,12 +5,12 @@
 
 {% block content %}
 {% set tip_icon = "&#9758;" %}
-{% set tip_text = "Need to extract text or create an accessible web page? Pick one of the options below." %}
+{% set tip_text = "Change your document from one format to another. Choose what you want to create, pick your options, upload your file, and we handle the rest." %}
 {% set tip_link_url = url_for('guide.guide_page') + '#how-convert' %}
 {% set tip_link_text = "Read the convert guide" %}
 {% include '_workflow_tip.html' %}
 
-<p>Change your document from one format to another. Pick what you want to end up with, upload your file, and we will do the rest.</p>
+<p>This page converts your documents between formats. You can extract plain text from almost any file, or create an accessible web page ready for publishing. Each step below walks you through the process.</p>
 
 {% if error %}
 <div class="error-box" role="alert">
@@ -21,21 +21,55 @@
 <form method="post" enctype="multipart/form-data" novalidate>
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
+  <!-- ============================================================ -->
+  <!-- STEP 1: Choose output format                                 -->
+  <!-- ============================================================ -->
   <fieldset>
     <legend>Step 1: What do you want to create?</legend>
 
     <div class="radio-group">
       <label>
         <input type="radio" name="direction" value="to-markdown" checked>
-        <strong>Plain text (Markdown)</strong> -- extract the text content from your document into a simple, readable file.
+        <span>
+          <strong>Plain text (Markdown)</strong><br>
+          Extract the readable text content from your document into a simple file you can open in any text editor, search, copy, or paste.
+        </span>
       </label>
 
       <label>
         <input type="radio" name="direction" value="to-html"{% if not pandoc_installed %} disabled{% endif %}>
-        <strong>Accessible web page (HTML)</strong> -- create a ready-to-use web page that follows the ACB Large Print Guidelines.
-        {% if not pandoc_installed %}<br><em>This option is temporarily unavailable on this server.</em>{% endif %}
+        <span>
+          <strong>Accessible web page (HTML)</strong><br>
+          Create a complete web page with ACB Large Print formatting and WCAG 2.2 AA accessibility built in. Ready to upload to a website or email as an attachment.
+          {% if not pandoc_installed %}<br><em>This option is temporarily unavailable on this server.</em>{% endif %}
+        </span>
       </label>
+
+      {% if pipeline_installed and pipeline_conversions %}
+      <label>
+        <input type="radio" name="direction" value="to-pipeline">
+        <span>
+          <strong>EPUB or DAISY format</strong><br>
+          Create an accessible EPUB 3 e-book or convert to DAISY talking book format using the DAISY Pipeline. Best for content that will be read on e-readers, refreshable braille displays, or DAISY players.
+        </span>
+      </label>
+      {% endif %}
     </div>
+
+    {% if pipeline_installed and pipeline_conversions %}
+    <div id="pipeline-options" class="radio-group" style="margin-top: 0.75rem; margin-left: 1.75rem;">
+      <p><strong>Which Pipeline conversion?</strong></p>
+      {% for key, conv in pipeline_conversions.items() %}
+      <label>
+        <input type="radio" name="pipeline_conversion" value="{{ key }}"{% if loop.first %} checked{% endif %}>
+        <span>
+          <strong>{{ conv.label }}</strong><br>
+          {{ conv.description }}. Accepts: <code>{{ conv.input_ext }}</code> files.
+        </span>
+      </label>
+      {% endfor %}
+    </div>
+    {% endif %}
   </fieldset>
 
   <details class="help-accordion">
@@ -48,39 +82,200 @@
       <li>Feed a document into an AI tool or text analysis pipeline</li>
       <li>Create a starting point for writing accessible Markdown documentation</li>
     </ul>
-    <p><strong>Accepts:</strong> Word, Excel, PowerPoint, PDF, HTML, CSV, JSON, XML, ePub, and ZIP files.</p>
+    <p><strong>Accepts:</strong> Word (.docx), Excel (.xlsx, .xls), PowerPoint (.pptx), PDF (.pdf), HTML, CSV, JSON, XML, ePub (.epub), and ZIP files.</p>
     <p><strong>You get back:</strong> a <code>.md</code> (Markdown) file -- plain text with simple formatting marks for headings, lists, and links. Opens in any text editor.</p>
+    <p><strong>Powered by:</strong> <a href="https://github.com/microsoft/markitdown">MarkItDown</a> (Microsoft). This tool is optimized for extracting readable text and preserving document structure (headings, lists, tables, links) as lightweight Markdown. It handles the widest range of input formats but produces plain text, not a finished web page.</p>
 
     <h3>Choose "Accessible web page" when you want to:</h3>
     <ul>
-      <li>Turn a Markdown or text document into a web page people can read in a browser</li>
+      <li>Turn a Markdown, Word, or other text document into a page people can read in a browser</li>
       <li>Create an HTML version that already meets ACB Large Print and WCAG accessibility standards</li>
-      <li>Get a file you can upload to a website, email as an attachment, or paste into a CMS like WordPress</li>
+      <li>Get a file you can upload to a website, email as an attachment, or paste into a content management system</li>
       <li>Publish meeting minutes, agendas, reports, or other documents online in an accessible format</li>
     </ul>
-    <p><strong>Accepts:</strong> Markdown (.md), Word (.docx), reStructuredText (.rst), OpenDocument (.odt), and Rich Text (.rtf) files.</p>
+    <p><strong>Accepts:</strong> Markdown (.md), Word (.docx), reStructuredText (.rst), OpenDocument (.odt), Rich Text (.rtf), and ePub (.epub) files.</p>
     <p><strong>You get back:</strong> a standalone <code>.html</code> web page with accessibility formatting already built in -- Arial font, large text, proper spacing, high contrast, and all the other ACB requirements. Just open it in a browser or upload it to your website.</p>
+    <p><strong>Powered by:</strong> <a href="https://pandoc.org/">Pandoc</a> (John MacFarlane, UC Berkeley). Pandoc is the gold standard for document-to-HTML conversion. It understands heading hierarchy, semantic lists, tables, footnotes, and cross-references -- and produces clean, well-structured HTML. We then embed our ACB Large Print CSS so the output meets accessibility standards out of the box. Pandoc accepts fewer input formats than MarkItDown, but produces much higher quality HTML output.</p>
+
+    {% if pipeline_installed and pipeline_conversions %}
+    <h3>Choose "EPUB or DAISY format" when you want to:</h3>
+    <ul>
+      <li>Create an accessible EPUB 3 e-book from a Word document or HTML page</li>
+      <li>Distribute content to people who use e-readers, refreshable braille displays, or DAISY players</li>
+      <li>Convert an EPUB to DAISY 2.02 talking book format for playback on dedicated DAISY hardware</li>
+      <li>Convert an EPUB to DAISY 3 / DTBook format for structure-preserving archival</li>
+    </ul>
+    <p><strong>Accepts:</strong> depends on the specific conversion -- Word (.docx), HTML (.html), or ePub (.epub).</p>
+    <p><strong>You get back:</strong> an <code>.epub</code> file (for EPUB conversions) or a <code>.zip</code> file containing the DAISY output folder (for DAISY conversions).</p>
+    <p><strong>Powered by:</strong> <a href="https://daisy.github.io/pipeline/">DAISY Pipeline 2</a> (DAISY Consortium). Pipeline is purpose-built for accessible publishing. Unlike the other two tools, Pipeline produces packaged publications -- EPUB e-books and DAISY talking books -- designed for assistive technology. It adds proper EPUB accessibility metadata, navigation documents, and reading order. Use Pipeline when the end result needs to work on an e-reader, a refreshable braille display, or a DAISY player, rather than in a web browser.</p>
+    {% endif %}
+
+    <h3>How do I decide between them?</h3>
+    <p>Think about <strong>who will read it</strong> and <strong>how they will read it</strong>:</p>
+    <ul>
+      <li><strong>Reading on screen or printing?</strong> Use "Accessible web page" -- you get an HTML file with ACB formatting that looks right in any browser and prints cleanly.</li>
+      <li><strong>Reading on an e-reader or DAISY player?</strong> Use "EPUB or DAISY format" -- these are the formats those devices expect.{% if not pipeline_installed %} (Not available on this server.){% endif %}</li>
+      <li><strong>Editing, searching, or feeding to an AI tool?</strong> Use "Plain text" -- you get raw content in a simple format that works everywhere.</li>
+      <li><strong>Pasting into WordPress or Drupal?</strong> Use <a href="{{ url_for('export.export_form') }}">Export to HTML</a> instead -- it has a CMS Fragment mode that avoids conflicts with your site's theme.</li>
+    </ul>
+
+    <h3>Can I chain them together?</h3>
+    <p>Yes, and this is often the best approach for complex workflows:</p>
+    <ol>
+      <li><strong>Start with Plain text</strong> to extract content from a PDF or PowerPoint into Markdown.</li>
+      <li><strong>Edit the Markdown</strong> in any text editor to clean up headings, fix links, and improve structure.</li>
+      <li><strong>Then convert the Markdown</strong> to an accessible web page or EPUB using one of the other options.</li>
+    </ol>
+    <p>This two-step process often produces better results than a single direct conversion, because you can review and improve the content between steps.</p>
 
     <h3>What is the difference between "Export to HTML" and this page?</h3>
-    <p><strong>Export</strong> (in the main menu) is specifically for Word documents and gives you extra options like CMS fragments for pasting into WordPress. <strong>This page</strong> handles a wider range of input formats and always produces a complete, standalone web page with all the accessibility CSS included.</p>
+    <p><strong>Export</strong> (in the main navigation) is specifically for Word documents and gives you extra options like CMS fragments for pasting into WordPress or Drupal. <strong>This page</strong> handles a wider range of input formats and always produces a complete, standalone web page with all the accessibility styling included.</p>
   </details>
 
+  <!-- ============================================================ -->
+  <!-- STEP 2: ACB formatting options (shown for HTML output)       -->
+  <!-- ============================================================ -->
   <fieldset>
-    <legend>Step 2: Upload your file</legend>
+    <legend>Step 2: Formatting options</legend>
+
+    <p>These options control how your output is formatted. The defaults follow the ACB Large Print Guidelines. Change them only if you have a specific reason.</p>
+
+    <div class="checkbox-group">
+      <label>
+        <input type="checkbox" name="acb_format" checked>
+        <span>
+          <strong>Apply ACB Large Print formatting</strong><br>
+          Uses Arial font, 18-point body text, 22-point headings, flush-left alignment, 1.5 line spacing, high contrast colors, and underline-only emphasis. Recommended for all accessible documents.
+        </span>
+      </label>
+
+      <label>
+        <input type="checkbox" name="binding_margin">
+        <span>
+          <strong>Add binding margin</strong><br>
+          Adds an extra 0.5-inch margin on the left side for documents that will be printed and bound (stapled, spiral, or three-ring). Leave unchecked for digital-only documents.
+        </span>
+      </label>
+
+      <label>
+        <input type="checkbox" name="print_ready">
+        <span>
+          <strong>Include print stylesheet</strong><br>
+          Adds a print-optimized stylesheet so the document prints cleanly on paper. Uses ACB print line spacing (1.15) and hides navigation elements. Good for documents that will be both viewed on screen and printed.
+        </span>
+      </label>
+    </div>
+  </fieldset>
+
+  <details class="help-accordion">
+    <summary>What do these formatting options do?</summary>
+
+    <h3>ACB Large Print formatting</h3>
+    <p>When checked (recommended), your output follows the American Council of the Blind Board of Publications guidelines:</p>
+    <ul>
+      <li>Arial font throughout the document</li>
+      <li>18-point minimum for body text, 22-point for headings, 20-point for subheadings</li>
+      <li>Flush left alignment (never justified or centered)</li>
+      <li>WCAG 2.2 AA line height (1.5 times the font size) for digital viewing</li>
+      <li>Letter spacing of 0.12em and word spacing of 0.16em for readability</li>
+      <li>High contrast (near-black text on white background)</li>
+      <li>Underline for emphasis (never italic, never bold in body text)</li>
+      <li>1-inch margins on all sides</li>
+    </ul>
+    <p>When unchecked, the document uses the browser's default styling. This is useful when you plan to add your own CSS later.</p>
+
+    <h3>Binding margin</h3>
+    <p>Shifts all content 0.5 inches to the right so text near the left edge is not hidden by a binding. Only needed for documents that will be physically printed and bound. The total left margin becomes 1.5 inches (1 inch standard plus 0.5 inch binding).</p>
+
+    <h3>Print stylesheet</h3>
+    <p>Adds CSS rules that activate only when the document is printed (using your browser's Print function or Ctrl+P). The print version uses ACB's print-specific line height of 1.15 (tighter than the 1.5 used on screen) and hides screen-only elements like navigation links.</p>
+  </details>
+
+  <!-- ============================================================ -->
+  <!-- STEP 3: Optional title                                       -->
+  <!-- ============================================================ -->
+  <fieldset>
+    <legend>Step 3: Document title (optional)</legend>
+    <div class="form-group">
+      <label for="title">Page title</label>
+      <input type="text" id="title" name="title" value=""
+             aria-describedby="title-help">
+      <p id="title-help" class="help-text">Sets the title shown in the browser tab and used by screen readers. Leave blank to use the filename as the title. Only applies to HTML output.</p>
+    </div>
+  </fieldset>
+
+  <!-- ============================================================ -->
+  <!-- STEP 4: Upload                                               -->
+  <!-- ============================================================ -->
+  <fieldset>
+    <legend>Step 4: Upload your file</legend>
     <div class="form-group">
       <label for="document">Choose a file from your computer</label>
       <input type="file" id="document" name="document" accept="{{ all_accept }}"
              aria-describedby="file-help"
              {% if error %}aria-invalid="true"{% endif %}>
-      <p id="file-help" class="help-text">Maximum file size: 500 MB. The accepted file types depend on which option you chose above.</p>
+      <p id="file-help" class="help-text">Maximum file size: 500 MB. The accepted file types depend on which output format you chose in Step 1.</p>
     </div>
   </fieldset>
+
+  <details class="help-accordion">
+    <summary>Which file types are accepted?</summary>
+
+    <h3>For plain text (Markdown) output</h3>
+    <p>You can convert almost any document format:</p>
+    <ul>
+      <li><strong>Word (.docx)</strong> -- full text, headings, lists, tables, and links are preserved</li>
+      <li><strong>Excel (.xlsx)</strong> -- each sheet becomes a section with its data in table format</li>
+      <li><strong>PowerPoint (.pptx)</strong> -- slide titles, text content, and speaker notes are extracted</li>
+      <li><strong>PDF (.pdf)</strong> -- text is extracted from tagged and untagged PDFs (quality depends on the PDF structure)</li>
+      <li><strong>HTML (.html)</strong> -- text content extracted from web pages</li>
+      <li><strong>ePub (.epub)</strong> -- full text content from e-books</li>
+      <li><strong>Data files (.csv, .json, .xml)</strong> -- structured data converted to readable text</li>
+      <li><strong>ZIP (.zip)</strong> -- text extracted from files inside the archive</li>
+    </ul>
+
+    <h3>For accessible web page (HTML) output</h3>
+    <p>Best results come from text-oriented document formats:</p>
+    <ul>
+      <li><strong>Markdown (.md)</strong> -- best input format; heading structure, lists, links, and tables convert cleanly</li>
+      <li><strong>Word (.docx)</strong> -- headings, lists, tables, and basic formatting are preserved</li>
+      <li><strong>ePub (.epub)</strong> -- e-book content converted to a single accessible web page</li>
+      <li><strong>reStructuredText (.rst)</strong> -- technical documentation format</li>
+      <li><strong>OpenDocument (.odt)</strong> -- LibreOffice and Google Docs export format</li>
+      <li><strong>Rich Text (.rtf)</strong> -- legacy text format with basic formatting</li>
+    </ul>
+
+    {% if pipeline_installed and pipeline_conversions %}
+    <h3>For EPUB or DAISY output (via DAISY Pipeline)</h3>
+    <p>Each Pipeline conversion accepts a specific input type:</p>
+    <ul>
+      <li><strong>Word to EPUB 3</strong> -- accepts Word (.docx). Converts through DTBook intermediate format for structure preservation.</li>
+      <li><strong>HTML to EPUB 3</strong> -- accepts HTML (.html). Packages a web page into a portable, accessible e-book.</li>
+      <li><strong>EPUB to DAISY 2.02</strong> -- accepts ePub (.epub). Creates a talking book format for dedicated DAISY players.</li>
+      <li><strong>EPUB to DAISY 3</strong> -- accepts ePub (.epub). Creates a DTBook structured text format.</li>
+    </ul>
+    <p>DAISY conversions that produce a folder of files (DAISY 2.02, DAISY 3) are packaged as a ZIP download.</p>
+    {% endif %}
+  </details>
 
   <button type="submit" class="btn-primary">Convert My Document</button>
 </form>
 
 <details class="help-accordion">
   <summary>What happens to my file?</summary>
-  <p>Your document is converted on the server and the result is sent back to you immediately as a download. Your original file is deleted from the server right after. We do not store, read, or share your documents.</p>
+  <p>Your document is converted on the server and the result is sent back to you immediately as a download. Your original file is deleted from the server right after the conversion is complete. We do not store, read, or share your documents.</p>
+</details>
+
+<details class="help-accordion">
+  <summary>Tips for getting the best results</summary>
+  <ul>
+    <li><strong>Start with a well-structured source.</strong> Documents with proper headings, lists, and styles convert more cleanly than documents that use only manual formatting (bold text, extra blank lines, and tab characters). This matters most for HTML and EPUB output, where document structure becomes semantic HTML elements.</li>
+    <li><strong>Word documents work best for HTML conversion</strong> when they use Word's built-in heading styles (Heading 1, Heading 2, etc.) rather than manually formatted bold text. Pandoc reads these styles and produces correct heading hierarchy.</li>
+    <li><strong>PDFs vary in quality.</strong> Tagged PDFs (created from Word or InDesign) convert well to plain text. Scanned PDFs or image-only PDFs may produce little or no text. For best results, convert PDFs to plain text first, clean up the Markdown, then convert to HTML or EPUB.</li>
+    <li><strong>Excel and PowerPoint are plain-text-only.</strong> MarkItDown can extract their text content, but they cannot be converted directly to HTML or EPUB. Extract to Markdown first, then convert from there.</li>
+    <li><strong>Markdown is the best input for HTML output.</strong> Pandoc was built for Markdown-to-HTML conversion and produces the cleanest output from <code>.md</code> files. If your source is a PDF or PowerPoint, the two-step approach (extract to Markdown first, then convert to HTML) almost always gives better results.</li>
+    <li><strong>Use Audit first.</strong> If you are converting a Word document to an accessible web page, run it through <a href="{{ url_for('audit.audit_form') }}">Audit</a> first to catch any issues in the source document before conversion.</li>
+    <li><strong>For WordPress or Drupal,</strong> use <a href="{{ url_for('export.export_form') }}">Export to HTML</a> instead -- it offers a CMS Fragment mode that creates a snippet you can paste directly into your content editor without conflicting with your site's theme.</li>
+  </ul>
 </details>
 {% endblock %}

@@ -10,12 +10,31 @@ Releases are tagged in the [GitHub repository](https://github.com/accesswatch/ac
 
 ### Added
 
+- **Tab navigation bar** (`base.html`, `forms.css`): replaced the flat link list with an accessible tab bar using `role="tablist"`, `role="tab"`, `aria-selected`, and `aria-current="page"`. Core operations (Audit, Fix, Template, Export, Convert, Guidelines) are prominent tabs; secondary pages (User Guide, About, Changelog, Feedback) moved to a footer navigation with `aria-label="Additional links"`.
+- **Convert page redesign** (`convert_form.html`, `convert.py`): rewrote as a guided 4-step wizard with plain language. Step 1: choose output format. Step 2: ACB formatting options (ACB Large Print checkbox on by default, binding margin, print stylesheet). Step 3: optional document title. Step 4: file upload. Added comprehensive help accordions for every step, accepted file types per direction, and tips for best results.
+- **ACB formatting options for HTML conversion** (`convert.py`, `pandoc_converter.py`): users can toggle ACB Large Print CSS, add a binding margin (extra 0.5 inch left), and include/exclude a print stylesheet. The `pandoc_converter.convert_to_html()` now accepts a sentinel `css_path` to skip ACB CSS when the user opts out.
+- **DAISY Pipeline 2 integration** (`Dockerfile`, `pipeline_converter.py`, `convert.py`, `convert_form.html`): added DAISY Pipeline 2 (v1.15.4) to the Docker image for advanced document-to-EPUB and EPUB-to-DAISY conversions. Four Pipeline conversions: Word to EPUB 3, HTML to EPUB 3, EPUB to DAISY 2.02, EPUB to DAISY 3/DTBook. Pipeline radio options appear dynamically when Pipeline is installed. DAISY folder outputs are automatically packaged as ZIP downloads. Includes JRE (`default-jre-headless`) as Pipeline dependency.
+- **Conversion engine guidance** (`convert_form.html`): each output format option now names its engine (MarkItDown, Pandoc, or DAISY Pipeline), explains what it is best at, and guides users to the right choice. "How do I decide?" section compares all three by audience and use case. "Can I chain them together?" section explains the two-step extract-then-convert workflow. Tips section updated with engine-specific advice.
+- **Legacy Excel (.xls) support** (`requirements.txt`, `converter.py`): added `[xls]` extra to MarkItDown dependency and `.xls` to `CONVERTIBLE_EXTENSIONS` for older Excel file conversion.
+- **About page: Pandoc and DAISY Pipeline attribution** (`about.html`): moved Pandoc from optional to core dependencies table with expanded description crediting John MacFarlane. Added DAISY Pipeline 2 (LGPL-3.0) and OpenJDK JRE to core and infrastructure tables. Updated acknowledgments section to credit all three DAISY projects (Ace, a11y-meta-viewer, Pipeline) and Pandoc by name.
+- **Pipeline unit tests** (`test_app.py`): 14 new tests covering form rendering (Pipeline shown/hidden), error handling (not installed, invalid key), mock successful conversions (EPUB output, DAISY ZIP output), legacy `pipeline-{key}` direction format, and `pipeline_converter.py` unit tests (dict completeness, extension validation, missing file, wrong extension, not installed).
+- **ePub format styles** (`forms.css`): added `.format-pill.format-epub` (teal badge) and `.format-tag.format-epub` (teal compact label) for consistent ePub representation across the landing page and cards.
+- **Footer navigation links** (`base.html`, `forms.css`): User Guide, About, Changelog, and Feedback links now appear as a horizontal link list in the footer with proper `aria-current="page"` state and 44px minimum touch targets.
+- **Responsive horizontal scroll for tabs** (`forms.css`): on narrow viewports (under 50em), the tab bar stacks below the brand and allows horizontal scroll for overflow. At 40em, footer links stack vertically.
+- **User guide convert section expanded** (`user-guide.md`): comprehensive rewrite documenting all three conversion engines, when to use each, accepted formats, output descriptions, ACB formatting options, and chaining conversions workflow.
+- **Announcement updated** (`announcement-web-app.md`): convert section rewritten with all three engines, format support table expanded with Pipeline columns (EPUB 3, DAISY 2.02, DAISY 3), HTML row added.
 - **Automated deployment workflow** (`.github/workflows/deploy.yml`): push-triggered CI/CD that runs tests then SSHes to the production server to deploy. Uses `appleboy/ssh-action`, requires `DEPLOY_HOST`, `DEPLOY_USER`, `DEPLOY_SSH_KEY` secrets. Triggers on changes to `web/`, `desktop/src/`, `scripts/deploy-app.sh`, `CHANGELOG.md`.
 - **Changelog route** (`/changelog`): renders `CHANGELOG.md` as HTML using a built-in Markdown parser -- no external dependency. Linked from the About page and main navigation bar.
 - **Changelog template** (`changelog.html`): version TOC, styled content sections, back-to-top link.
 - **Changelog CSS**: heading borders, inline code styling, horizontal rules, list spacing in `forms.css`.
 - **Docker CHANGELOG.md inclusion**: `.dockerignore` now allows `CHANGELOG.md` through the `*.md` exclusion; Dockerfile copies it to `/app/CHANGELOG.md`.
 - **Changelog mandate in copilot-instructions.md**: every commit that changes behavior must update `CHANGELOG.md`.
+
+### Changed
+
+- **Navigation structure** (`base.html`): main nav reduced from 9 items to 6 tabs (Audit, Fix, Template, Export, Convert, Guidelines). The brand link now also gets `aria-current="page"` when on the home page. Secondary links (User Guide, About, Changelog, Feedback) relocated to footer.
+- **Tab bar contrast and touch targets** (`forms.css`): active tab uses `#0055cc` with 3px bottom border; inactive tabs use `#444` text (meets WCAG AA 4.5:1 on white); all tabs have 44px minimum height/width for touch targets.
+- **Convert test** (`test_app.py`): `test_convert_to_html_md_file` now sends `acb_format=on` to match the new form behavior where ACB formatting is a checkbox.
 
 ### Fixed
 
