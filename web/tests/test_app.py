@@ -159,7 +159,11 @@ class TestPageLoads:
     def test_health(self, client):
         resp = client.get("/health")
         assert resp.status_code == 200
-        assert resp.data == b"ok"
+        payload = resp.get_json()
+        assert payload is not None
+        assert payload["status"] in {"ok", "degraded"}
+        assert "services" in payload
+        assert set(payload["services"].keys()) == {"web", "pipeline", "ollama"}
 
 
 # ============================================================

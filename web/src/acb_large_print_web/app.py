@@ -4,8 +4,11 @@ from __future__ import annotations
 
 import logging
 import os
+import socket
+from datetime import UTC, datetime
+from urllib.parse import urlparse
 
-from flask import Flask, flash
+from flask import Flask, flash, jsonify
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from flask_wtf.csrf import CSRFError, CSRFProtect
@@ -95,7 +98,29 @@ def create_app(config: dict | None = None) -> Flask:
     # Health check
     @app.route("/health")
     def health():
-        return "ok", 200
+        pipeline_url = os.environ.get("PIPELINE_URL", "http://pipeline:8181/ws")
+        ollama_url = os.environ.get("OLLAMA_HOST", "http://ollama:11434")
+
+        pipeline_status = _check_tcp_endpoint(pipeline_url)
+        ollama_status = _check_http_endpoint(f"{ollama_url.rstrip('/')}/api/tags")
+
+        services = {
+            "web": {"status": "ok", "detail": "service responding"},
+            "pipeline": pipeline_status,
+            "ollama": ollama_status,
+        }
+        all_ok = all(service.get("status") == "ok" for service in services.values())
+
+        return (
+            jsonify(
+                {
+                    "status": "ok" if all_ok else "degraded",
+                    "services": services,
+                    "timestamp_utc": datetime.now(UTC).isoformat(),
+                }
+            ),
+            200,
+        )
 
     @app.errorhandler(CSRFError)
     def csrf_error(e):
@@ -161,3 +186,37 @@ def _render_error(title: str, message: str, code: int):
     from flask import render_template
 
     return render_template("error.html", title=title, message=message), code
+
+
+def _check_tcp_endpoint(url: str, timeout: float = 2.0) -> dict[str, str | int]:
+    """Check host:port reachability for internal services."""
+    parsed = urlparse(url)
+    host = parsed.hostname
+    port = parsed.port
+
+    if not host:
+        return {"status": "down", "error": f"invalid URL: {url}"}
+
+    if port is None:
+        port = 443 if parsed.scheme == "https" else 80
+
+    try:
+        with socket.create_connection((host, port), timeout=timeout):
+            return {"status": "ok", "host": host, "port": port}
+    except OSError as exc:
+        return {"status": "down", "host": host, "port": port, "error": str(exc)}
+
+
+def _check_http_endpoint(url: str, timeout: float = 2.0) -> dict[str, str | int]:
+    """Check HTTP endpoint status code for internal services."""
+    from urllib.request import Request, urlopen
+
+    req = Request(url, method="GET")
+    try:
+        with urlopen(req, timeout=timeout) as resp:  # noqa: S310
+            code = getattr(resp, "status", 200)
+            if 200 <= code < 400:
+                return {"status": "ok", "url": url, "http_status": code}
+            return {"status": "down", "url": url, "http_status": code}
+    except Exception as exc:  # pragma: no cover - network/runtime dependent
+        return {"status": "down", "url": url, "error": str(exc)}

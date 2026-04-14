@@ -63,6 +63,8 @@ Releases are tagged in the [GitHub repository](https://github.com/accesswatch/ac
 
 ### Changed
 
+- **Health endpoint now reports all service states** (`web/src/acb_large_print_web/app.py`, `web/tests/test_app.py`): `/health` now returns JSON with overall status plus per-service status for `web`, `pipeline`, and `ollama`, including endpoint details and timestamp, so operators can see dependency state from one URL.
+
 - **Stress validation and lessons-learned documentation expanded** (`README.md`, `desktop/README.md`, `web/README.md`, `docs/user-guide.md`, `web/src/acb_large_print_web/templates/guide.html`, `web/src/acb_large_print_web/templates/about.html`): documentation now explains, in plain language, what heading and document-repair scenarios were stress-tested, what failures were discovered during learning, how the platform was adapted, what the final measured outcomes were, and what confidence limits still remain for cross-platform runtime proof.
 
 - **Paragraph indentation enforcement tightened** (`desktop/src/acb_large_print/auditor.py`, `desktop/src/acb_large_print/fixer.py`, `desktop/src/acb_large_print/constants.py`, `office-addin/src/constants.ts`, `word-addin/src/constants.ts`): non-list paragraph left indent and first-line indent checks now enforce the configured target exactly, catching negative hanging indents and outdents in addition to positive indents. Rule descriptions now reflect the configurable target with flush-left as the default.
