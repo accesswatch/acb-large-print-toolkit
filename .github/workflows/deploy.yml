@@ -9,6 +9,7 @@ on:
       - "desktop/src/**"
       - "desktop/pyproject.toml"
       - "scripts/deploy-app.sh"
+      - "scripts/post-deploy-check.sh"
       - "CHANGELOG.md"
       - ".github/workflows/deploy.yml"
   workflow_dispatch: # manual trigger from Actions tab
@@ -62,4 +63,5 @@ jobs:
             git fetch origin main
             git reset --hard origin/main
             bash scripts/deploy-app.sh
+            bash scripts/post-deploy-check.sh
             echo "=== Deploy finished at $(date -u) ==="
