@@ -80,6 +80,8 @@ Releases are tagged in the [GitHub repository](https://github.com/accesswatch/ac
 
 ### Fixed
 
+- **Deployment verification now enforces service health with diagnostics** (`scripts/post-deploy-check.sh`, `web/docker-compose.prod.yml`, `.github/workflows/deploy.yml`): post-deploy checks now require `pipeline`, `web`, and `ollama` containers to reach Docker `healthy` state (not just running). On failure, the script exits non-zero, prints container health state, recent health probe history, and tail logs (including `ollama list` probe output), and saves a timestamped log file under `~/deploy-logs/` for troubleshooting. Ollama container healthcheck now uses `ollama list` so health does not depend on `curl` being present in the image.
+
 - **Changelog path resolution**: `changelog.py` now walks parent directories to find `CHANGELOG.md` (works in both dev checkout and Docker site-packages install), with `/app/CHANGELOG.md` as Docker fallback.
 
 ---

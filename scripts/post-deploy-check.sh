@@ -8,8 +8,84 @@
 #   - Installs the disk usage alert cron job (weekly Sunday 6 AM)
 #   - Verifies Docker is enabled on boot
 #   - Prunes unused Docker images
-#   - Runs a quick site health check
+#   - Runs site and container health checks
+#   - Fails deploy verification when required services are unhealthy
+#   - Emits troubleshooting diagnostics for failing services
 set -euo pipefail
+
+APP_ROOT="${APP_ROOT:-$HOME/app}"
+WEB_ROOT="${WEB_ROOT:-$APP_ROOT/web}"
+COMPOSE_FILE="${COMPOSE_FILE:-docker-compose.prod.yml}"
+LOG_DIR="${LOG_DIR:-$HOME/deploy-logs}"
+TS="$(date -u +%Y%m%d-%H%M%S)"
+LOG_FILE="${LOG_DIR}/post-deploy-check-${TS}.log"
+
+mkdir -p "$LOG_DIR"
+exec > >(tee -a "$LOG_FILE") 2>&1
+
+compose() {
+    docker compose -f "$WEB_ROOT/$COMPOSE_FILE" "$@"
+}
+
+service_cid() {
+    local service="$1"
+    compose ps -q "$service" | head -n 1
+}
+
+dump_service_diagnostics() {
+    local service="$1"
+    local cid
+    cid="$(service_cid "$service")"
+
+    echo "--- Diagnostics: $service ---"
+    if [[ -z "$cid" ]]; then
+        echo "  Container not found for service '$service'."
+        return
+    fi
+
+    echo "  Container ID: $cid"
+    docker inspect --format '  State={{.State.Status}} Health={{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}}' "$cid" || true
+    echo "  Recent health log entries:"
+    docker inspect --format '{{if .State.Health}}{{range .State.Health.Log}}  - {{.Start}} exit={{.ExitCode}} output={{printf "%q" .Output}}{{println}}{{end}}{{else}}  - none{{end}}' "$cid" || true
+    echo "  Last 120 service log lines:"
+    compose logs --tail 120 "$service" || true
+
+    if [[ "$service" == "ollama" ]]; then
+        echo "  Ollama probe from inside container (ollama list):"
+        compose exec -T ollama ollama list || true
+    fi
+}
+
+wait_for_service_healthy() {
+    local service="$1"
+    local timeout_seconds="$2"
+    local interval_seconds="${3:-5}"
+    local max_attempts=$((timeout_seconds / interval_seconds))
+    local attempt=1
+
+    if (( max_attempts < 1 )); then
+        max_attempts=1
+    fi
+
+    echo "--- Waiting for service health: $service (timeout ${timeout_seconds}s) ---"
+    while (( attempt <= max_attempts )); do
+        local cid state health
+        cid="$(service_cid "$service")"
+        if [[ -z "$cid" ]]; then
+            echo "  $service: container missing (attempt $attempt/$max_attempts)"
+        else
+            state="$(docker inspect --format '{{.State.Status}}' "$cid" 2>/dev/null || echo unknown)"
+            health="$(docker inspect --format '{{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}}' "$cid" 2>/dev/null || echo unknown)"
+            echo "  $service: state=$state health=$health (attempt $attempt/$max_attempts)"
+            if [[ "$state" == "running" && "$health" == "healthy" ]]; then
+                return 0
+            fi
+        fi
+        sleep "$interval_seconds"
+        attempt=$((attempt + 1))
+    done
+    return 1
+}
 
 # --- Pre-flight checks ---
 if [[ "$(whoami)" == "root" ]]; then
@@ -18,6 +94,7 @@ if [[ "$(whoami)" == "root" ]]; then
 fi
 
 echo "=== Post-Deploy Maintenance ==="
+echo "Log file: $LOG_FILE"
 echo ""
 
 # --- 1. Backup cron job ---
@@ -80,22 +157,49 @@ echo "--- Running health checks ---"
 check_url() {
     local label="$1"
     local url="$2"
+    local required="${3:-false}"
     local code
     code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 10 "$url" 2>/dev/null || echo "000")
     if [[ "$code" == "200" ]]; then
         echo "  $label: OK ($code)"
+        return 0
     else
         echo "  $label: PROBLEM ($code)"
+        if [[ "$required" == "true" ]]; then
+            return 1
+        fi
+        return 0
     fi
 }
 
-check_url "lp.csedesigns.com/health" "https://lp.csedesigns.com/health"
-check_url "lp.csedesigns.com/" "https://lp.csedesigns.com/"
+URL_FAIL=0
+check_url "lp.csedesigns.com/health" "https://lp.csedesigns.com/health" true || URL_FAIL=1
+check_url "lp.csedesigns.com/" "https://lp.csedesigns.com/" true || URL_FAIL=1
 check_url "csedesigns.com/" "https://csedesigns.com/"
 
 echo ""
 echo "--- Container status ---"
-docker compose -f ~/app/web/docker-compose.prod.yml ps --format "table {{.Name}}\t{{.Status}}"
+compose ps --format "table {{.Name}}\t{{.Status}}"
 
 echo ""
-echo "=== Done ==="
+echo "--- Required service health gates ---"
+SERVICE_FAIL=0
+for svc in pipeline web ollama; do
+    if ! wait_for_service_healthy "$svc" 180 5; then
+        echo "  $svc: FAILED health gate"
+        SERVICE_FAIL=1
+        dump_service_diagnostics "$svc"
+    else
+        echo "  $svc: passed health gate"
+    fi
+done
+
+echo ""
+if [[ "$URL_FAIL" -ne 0 || "$SERVICE_FAIL" -ne 0 ]]; then
+    echo "=== Post-deploy verification FAILED ==="
+    echo "See log file: $LOG_FILE"
+    exit 1
+fi
+
+echo "=== Post-deploy verification PASSED ==="
+echo "Log saved: $LOG_FILE"
