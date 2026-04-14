@@ -50,6 +50,11 @@ No unreleased changes yet.
 - Expanded guide/about/help surfaces to explain rule behavior, conversion pathways, and remediation workflows.
 - Consolidated project docs and release-facing references to better support operations, onboarding, and compliance reporting.
 
+### Security
+
+- Added `pip-audit` to deployment requirements for continuous Python dependency vulnerability scanning. Integrated into release and deployment workflows to detect known CVEs in transitive dependencies.
+- Resolved CVE-2026-40192 (pillow) and CVE-2026-40260 (pypdf) by upgrading to fixed versions: pillow >=12.2.0, pypdf >=6.10.0. All dependencies now pass pip-audit security checks.
+
 ### Removed
 
 - Removed in-progress noise and interim bugfix tracking from the 1.0 release narrative in favor of feature-grouped release notes.
