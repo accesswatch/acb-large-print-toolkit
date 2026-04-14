@@ -8,7 +8,7 @@ import socket
 from datetime import UTC, datetime
 from urllib.parse import urlparse
 
-from flask import Flask, flash, jsonify
+from flask import Flask, jsonify
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from flask_wtf.csrf import CSRFError, CSRFProtect
@@ -57,17 +57,23 @@ def create_app(config: dict | None = None) -> Flask:
         try:
             web_ver = pkg_version("acb-large-print-web")
         except Exception:
-            web_ver = "0.1.0"
+            web_ver = "1.0.0"
         try:
             desktop_ver = pkg_version("acb-large-print")
         except Exception:
-            desktop_ver = "0.1.2"
+            desktop_ver = "1.0.0"
+
+        if web_ver == desktop_ver:
+            release_ver = web_ver
+        else:
+            release_ver = f"web {web_ver} / desktop {desktop_ver}"
         return {
             "rules_by_severity": get_rules_by_severity(),
             "rules_by_category": get_rules_by_category(),
             "help_urls_map": get_help_urls_map(),
             "web_version": web_ver,
             "desktop_version": desktop_ver,
+            "release_version": release_ver,
         }
 
     # Register blueprints

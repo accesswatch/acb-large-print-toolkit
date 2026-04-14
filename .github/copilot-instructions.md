@@ -86,3 +86,9 @@ The file `CHANGELOG.md` at the repository root is the single source of truth for
 3. Be specific -- name files, rule IDs, routes, and CLI flags that changed
 4. Group related changes under descriptive `### Section` headings
 5. The changelog is deployed inside the Docker image (`COPY CHANGELOG.md ./`) and served at `/changelog` -- never remove it from the build
+
+## Execution preference (CRITICAL)
+
+- Do NOT use Python environment setup/configuration tools (for example `configure_python_environment`) in this repository workflow.
+- Use the already active shell environment/venv in the terminal session for tests and commands.
+- If a command requires a different interpreter, ask the user first before changing environments.
