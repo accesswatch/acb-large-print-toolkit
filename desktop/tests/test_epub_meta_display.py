@@ -14,7 +14,6 @@ from acb_large_print.epub_meta_display import (
     extract_metadata_display,
 )
 
-
 # ---------------------------------------------------------------------------
 # Helpers -- build minimal EPUBs in memory
 # ---------------------------------------------------------------------------
@@ -35,12 +34,12 @@ def _build_epub(meta_elements: str, *, version: str = "3.0") -> Path:
         f'<?xml version="1.0" encoding="utf-8"?>'
         f'<package xmlns="http://www.idpf.org/2007/opf" version="{version}" xml:lang="en">'
         f'<metadata xmlns:dc="http://purl.org/dc/elements/1.1/">'
-        f'{meta_elements}'
-        f'</metadata>'
+        f"{meta_elements}"
+        f"</metadata>"
         f'<manifest><item id="nav" href="nav.xhtml" '
         f'media-type="application/xhtml+xml" properties="nav"/></manifest>'
-        f'<spine/>'
-        f'</package>'
+        f"<spine/>"
+        f"</package>"
     )
 
     tmp = Path(tempfile.mktemp(suffix=".epub"))
@@ -61,6 +60,7 @@ def _cleanup(path: Path) -> None:
 # ---------------------------------------------------------------------------
 # Section count and structure tests
 # ---------------------------------------------------------------------------
+
 
 class TestStructure:
     def test_always_returns_eight_sections(self):
@@ -102,6 +102,7 @@ class TestStructure:
 # ---------------------------------------------------------------------------
 # Ways of Reading (Section 3.1)
 # ---------------------------------------------------------------------------
+
 
 class TestWaysOfReading:
     def test_display_transformability(self):
@@ -158,7 +159,9 @@ class TestWaysOfReading:
             _cleanup(path)
 
     def test_synchronized_audio(self):
-        meta = '<meta property="schema:accessibilityFeature">synchronizedAudioText</meta>'
+        meta = (
+            '<meta property="schema:accessibilityFeature">synchronizedAudioText</meta>'
+        )
         path = _build_epub(meta)
         try:
             display = extract_metadata_display(path)
@@ -172,12 +175,13 @@ class TestWaysOfReading:
 # Conformance (Section 3.2)
 # ---------------------------------------------------------------------------
 
+
 class TestConformance:
     def test_wcag_aa_conformance(self):
         meta = (
             '<meta property="dcterms:conformsTo">'
-            'EPUB Accessibility 1.1 - WCAG 2.2 Level AA'
-            '</meta>'
+            "EPUB Accessibility 1.1 - WCAG 2.2 Level AA"
+            "</meta>"
         )
         path = _build_epub(meta)
         try:
@@ -191,8 +195,8 @@ class TestConformance:
     def test_wcag_aaa_exceeds(self):
         meta = (
             '<meta property="dcterms:conformsTo">'
-            'EPUB Accessibility 1.1 - WCAG 2.1 Level AAA'
-            '</meta>'
+            "EPUB Accessibility 1.1 - WCAG 2.1 Level AAA"
+            "</meta>"
         )
         path = _build_epub(meta)
         try:
@@ -205,8 +209,8 @@ class TestConformance:
     def test_wcag_a_minimum(self):
         meta = (
             '<meta property="dcterms:conformsTo">'
-            'EPUB Accessibility 1.0 - WCAG 2.0 Level A'
-            '</meta>'
+            "EPUB Accessibility 1.0 - WCAG 2.0 Level A"
+            "</meta>"
         )
         path = _build_epub(meta)
         try:
@@ -219,8 +223,8 @@ class TestConformance:
     def test_certifier_shown(self):
         meta = (
             '<meta property="dcterms:conformsTo">'
-            'EPUB Accessibility 1.1 - WCAG 2.2 Level AA'
-            '</meta>'
+            "EPUB Accessibility 1.1 - WCAG 2.2 Level AA"
+            "</meta>"
             '<meta property="a11y:certifiedBy">ACB Team</meta>'
         )
         path = _build_epub(meta)
@@ -244,8 +248,8 @@ class TestConformance:
     def test_epub10_uri_conformance(self):
         meta = (
             '<meta property="dcterms:conformsTo">'
-            'http://www.idpf.org/epub/a11y/accessibility-20170105.html#wcag-aa'
-            '</meta>'
+            "http://www.idpf.org/epub/a11y/accessibility-20170105.html#wcag-aa"
+            "</meta>"
         )
         path = _build_epub(meta)
         try:
@@ -260,6 +264,7 @@ class TestConformance:
 # Navigation (Section 3.3)
 # ---------------------------------------------------------------------------
 
+
 class TestNavigation:
     def test_toc_detected(self):
         meta = '<meta property="schema:accessibilityFeature">tableOfContents</meta>'
@@ -272,7 +277,9 @@ class TestNavigation:
             _cleanup(path)
 
     def test_structural_navigation(self):
-        meta = '<meta property="schema:accessibilityFeature">structuralNavigation</meta>'
+        meta = (
+            '<meta property="schema:accessibilityFeature">structuralNavigation</meta>'
+        )
         path = _build_epub(meta)
         try:
             display = extract_metadata_display(path)
@@ -316,6 +323,7 @@ class TestNavigation:
 # ---------------------------------------------------------------------------
 # Rich Content (Section 3.4)
 # ---------------------------------------------------------------------------
+
 
 class TestRichContent:
     def test_mathml(self):
@@ -373,6 +381,7 @@ class TestRichContent:
 # ---------------------------------------------------------------------------
 # Hazards (Section 3.5)
 # ---------------------------------------------------------------------------
+
 
 class TestHazards:
     def test_no_hazards(self):
@@ -437,12 +446,13 @@ class TestHazards:
 # Accessibility Summary (Section 3.6)
 # ---------------------------------------------------------------------------
 
+
 class TestAccessibilitySummary:
     def test_summary_present(self):
         meta = (
             '<meta property="schema:accessibilitySummary">'
-            'This publication is fully accessible.'
-            '</meta>'
+            "This publication is fully accessible."
+            "</meta>"
         )
         path = _build_epub(meta)
         try:
@@ -467,6 +477,7 @@ class TestAccessibilitySummary:
 # ---------------------------------------------------------------------------
 # Legal Considerations (Section 3.7)
 # ---------------------------------------------------------------------------
+
 
 class TestLegal:
     def test_exemption_declared(self):
@@ -494,6 +505,7 @@ class TestLegal:
 # ---------------------------------------------------------------------------
 # Additional Accessibility Information (Section 3.8)
 # ---------------------------------------------------------------------------
+
 
 class TestAdditionalInfo:
     def test_aria_and_large_print(self):
@@ -551,6 +563,7 @@ class TestAdditionalInfo:
 # Serialisation tests
 # ---------------------------------------------------------------------------
 
+
 class TestSerialisation:
     def test_to_text_includes_section_titles(self):
         meta = (
@@ -591,7 +604,7 @@ class TestSerialisation:
         meta = (
             '<meta property="schema:accessibilityFeature">tableOfContents</meta>'
             '<meta property="dcterms:conformsTo">'
-            'EPUB Accessibility 1.1 - WCAG 2.2 Level AA</meta>'
+            "EPUB Accessibility 1.1 - WCAG 2.2 Level AA</meta>"
         )
         path = _build_epub(meta)
         try:
@@ -609,6 +622,7 @@ class TestSerialisation:
 # ---------------------------------------------------------------------------
 # Edge cases
 # ---------------------------------------------------------------------------
+
 
 class TestEdgeCases:
     def test_corrupt_file_returns_none(self):
@@ -637,8 +651,8 @@ class TestEdgeCases:
     def test_rich_metadata_epub(self):
         """Full metadata EPUB should have has_any_metadata True."""
         meta = (
-            '<dc:title>Test Book</dc:title>'
-            '<dc:language>en</dc:language>'
+            "<dc:title>Test Book</dc:title>"
+            "<dc:language>en</dc:language>"
             '<meta property="schema:accessMode">textual</meta>'
             '<meta property="schema:accessMode">visual</meta>'
             '<meta property="schema:accessModeSufficient">textual</meta>'
@@ -656,7 +670,7 @@ class TestEdgeCases:
             '<meta property="schema:accessibilityHazard">noSoundHazard</meta>'
             '<meta property="schema:accessibilitySummary">Fully accessible.</meta>'
             '<meta property="dcterms:conformsTo">'
-            'EPUB Accessibility 1.1 - WCAG 2.2 Level AA</meta>'
+            "EPUB Accessibility 1.1 - WCAG 2.2 Level AA</meta>"
             '<meta property="a11y:certifiedBy">ACB Team</meta>'
         )
         path = _build_epub(meta)
@@ -666,6 +680,8 @@ class TestEdgeCases:
             # All sections should have metadata except Legal
             for section in display.sections():
                 if section.title != "Legal Considerations":
-                    assert section.has_metadata is True, f"{section.title} should have metadata"
+                    assert (
+                        section.has_metadata is True
+                    ), f"{section.title} should have metadata"
         finally:
             _cleanup(path)

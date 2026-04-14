@@ -37,6 +37,11 @@ The Flask web application has been built and is ready for deployment. All core f
 | Contextual help (details/summary) | Done | Every form page has expandable help accordions |
 | WCAG 2.2 AA compliance | Done | lang, landmarks, labels, contrast, skip nav, focus indicators |
 | No JavaScript required | Done | All functionality works without JS |
+| AI heading detection (fix page) | Done | Two-tier faux heading detection: heuristic scoring (10 signals) + optional Ollama AI refinement. Web form fieldset with enable, AI toggle, confidence threshold. Ollama Docker service added. |
+| Interactive heading review (fix page) | Done | When heading detection finds candidates in a .docx, users review a table of candidates with confidence scores, heuristic signals, and adjustable heading levels before fixes are applied. New `fix_review_headings.html` template and `/fix/confirm` POST route. |
+| AI auto-detection (fix page + desktop GUI) | Done | `is_ai_available()` probes Ollama at localhost:11434. Web form and desktop GUI auto-check the AI checkbox when Ollama is reachable. |
+| Desktop GUI heading detection | Done | Step 3 Options panel in wxPython wizard adds paragraph indent, heading detection, and AI toggle controls. AI checkbox auto-checks when Ollama is available. |
+| Detailed fix records (fix page) | Done | FixRecord dataclass tracks every fix with rule ID, category, description, location. Accordion UI groups fixes by category. |
 
 ### Deviations from Plan
 
@@ -291,6 +296,7 @@ For complete step-by-step commands starting from a bare server, see [docs/deploy
 | Core library | acb_large_print | (local) | Existing audit/fix/template/export engine -- zero changes |
 | Document converter | Pandoc | 3.1+ | Universal document converter: Markdown/Word/RST/ODT/RTF/ePub to HTML, Word, EPUB 3, and PDF (via WeasyPrint) |
 | PDF renderer | WeasyPrint | 62.0+ | CSS-based PDF rendering with ACB print formatting (CourtBouillon). Requires Pango, Cairo, GDK-Pixbuf system libraries and Liberation Sans font. |
+| AI inference | Ollama | Latest | Local LLM inference for heading detection refinement (phi4-mini 3.8B). Runs as Docker service, no data leaves the machine |
 | Process manager | systemd | (OS built-in) | Auto-restart Docker on reboot, journald logging |
 | Firewall | ufw | (OS built-in) | Simple allow/deny rules for SSH, HTTP, HTTPS |
 | Monitoring | UptimeRobot | Free tier | 5-minute HTTP pings to `/health`, email/SMS alerts on downtime |

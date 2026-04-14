@@ -54,7 +54,12 @@ def _apply_paragraph_format(pf, spec: C.ParaDef) -> None:
         pf.first_line_indent = Inches(-spec.hanging_indent_in)
 
 
-def _configure_styles(doc: Document) -> None:
+def _configure_styles(
+    doc: Document,
+    *,
+    list_indent_in: float = C.LIST_INDENT_IN,
+    list_hanging_in: float = C.LIST_HANGING_IN,
+) -> None:
     """Set all ACB styles on a Document."""
     for style_name, style_def in C.ACB_STYLES.items():
         try:
@@ -64,6 +69,15 @@ def _configure_styles(doc: Document) -> None:
             continue
         _apply_font(style.font, style_def.font)
         _apply_paragraph_format(style.paragraph_format, style_def.para)
+
+        # Apply user-configurable list indent to list styles
+        if style_name in ("List Bullet", "List Number"):
+            pf = style.paragraph_format
+            pf.left_indent = Inches(list_indent_in)
+            if list_indent_in > 0 and list_hanging_in > 0:
+                pf.first_line_indent = Inches(-list_hanging_in)
+            elif list_indent_in == 0:
+                pf.first_line_indent = None
 
     # Remove theme color from headings (Word defaults to blue)
     for heading in ("Heading 1", "Heading 2", "Heading 3"):
@@ -115,7 +129,9 @@ def _add_page_numbers(doc: Document) -> None:
             for run in para.runs:
                 run.text = ""
 
-        paragraph = footer.paragraphs[0] if footer.paragraphs else footer.add_paragraph()
+        paragraph = (
+            footer.paragraphs[0] if footer.paragraphs else footer.add_paragraph()
+        )
         paragraph.alignment = WD_ALIGN_PARAGRAPH.RIGHT
 
         run = paragraph.add_run()
@@ -216,6 +232,8 @@ def create_template(
     bound: bool = False,
     include_sample: bool = True,
     title: str = "",
+    list_indent_in: float = C.LIST_INDENT_IN,
+    list_hanging_in: float = C.LIST_HANGING_IN,
 ) -> Path:
     """Create a complete ACB Large Print .dotx template.
 
@@ -224,6 +242,8 @@ def create_template(
         bound: If True, add binding margin to left side.
         include_sample: If True, add demonstration content.
         title: Document title for properties (WCAG 2.4.2).
+        list_indent_in: Left indent for list styles in inches.
+        list_hanging_in: Hanging indent for list styles in inches.
 
     Returns:
         Path to the created template file.
@@ -235,7 +255,9 @@ def create_template(
     doc.core_properties.title = title or "ACB Large Print Document"
     doc.core_properties.author = "ACB Large Print Tool"
 
-    _configure_styles(doc)
+    _configure_styles(
+        doc, list_indent_in=list_indent_in, list_hanging_in=list_hanging_in
+    )
     _configure_page_setup(doc, bound=bound)
     _disable_hyphenation(doc)
     _add_page_numbers(doc)

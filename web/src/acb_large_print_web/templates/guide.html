@@ -21,6 +21,7 @@
     <li><a href="#workflows">Recommended Workflows</a></li>
     <li><a href="#daisy-tools">DAISY Accessibility Tools</a></li>
     <li><a href="#keyboard-tips">Keyboard and Screen Reader Tips</a></li>
+    <li><a href="#stress-testing">Stress Testing and Product Learning</a></li>
     <li><a href="#faq">Frequently Asked Questions</a></li>
     <li><a href="#getting-help">Getting Help</a></li>
   </ol>
@@ -543,8 +544,70 @@
 </section>
 
 <!-- ================================================================== -->
+<section id="stress-testing">
+  <h2>13. Stress Testing and Product Learning</h2>
+
+  <p>The heading-detection and Word-fixing pipeline is backed by a reproducible synthetic stress harness. It exists for one reason: copied-and-pasted real-world documents rarely arrive clean. The product now exercises <strong>{{ stress_summary.total_heading_cases }}</strong> randomized heading scenarios across <strong>{{ stress_summary.document_count }}</strong> generated Word documents, with <strong>{{ stress_summary.cases_per_document }}</strong> scenario blocks per document.</p>
+
+  <p>The corpus is two-phase by design. Phase 1 pressures faux-heading detection with both genuine headings and intentional false positives. Phase 2 runs the fixing path against the same documents and verifies that repaired output lands back on strict ACB formatting, especially flush-left alignment and zero paragraph indentation unless a configured override is in effect.</p>
+
+  <h3>Why this matters</h3>
+  <ul>
+    <li>It catches documents that visually resemble headings but were pasted as plain text or manual formatting.</li>
+    <li>It forces the fixer to normalize centered titles, justified body text, hanging indents, and mixed fonts back into ACB-compliant large print.</li>
+    <li>It turns new failures into product requirements instead of leaving them as one-off test fixtures.</li>
+  </ul>
+
+  <h3>How we validated this release</h3>
+  <p>We run the stress harness in multiple ways so both correctness and repair quality are verified:</p>
+  <ol>
+    <li><strong>Targeted full-process validation</strong>: generate the 1,000-document corpus and run repair checks across all generated files.</li>
+    <li><strong>Full-suite validation</strong>: run the complete heading stress test file to confirm metadata, sampled scenarios, full generation, and full repair behavior all pass together.</li>
+    <li><strong>Ground-truth comparison</strong>: compare detector output directly against the known expected headings in the synthetic corpus.</li>
+    <li><strong>Fix-then-audit enforcement validation</strong>: repair the generated documents and then audit them again for ACB rule compliance.</li>
+  </ol>
+
+  <p>Validation command sequence used by maintainers:</p>
+  <pre><code>python -m pytest desktop/tests/test_heading_stress_corpus.py::test_full_stress_corpus_generates_one_thousand_documents desktop/tests/test_heading_stress_corpus.py::test_full_fixer_stress_corpus_repairs_all_documents -q
+python -m pytest desktop/tests/test_heading_stress_corpus.py -q</code></pre>
+
+  <p>Latest recorded outcomes were clean: the heading stress suite passed, denser randomized comparisons showed zero false positives and zero false negatives in the measured runs, and the full 1,000-document fix-then-audit sweep ended with zero remaining ACB findings.</p>
+
+  <h3>What we learned</h3>
+  <ul>
+    <li>Real documents mix problems together. A file may contain plain-text headings, centered titles, copied email text, font drift, and indentation drift all at once.</li>
+    <li>False positives matter as much as missed headings. Signature lines, reminders, and similar short phrases are exactly where weak detectors make mistakes.</li>
+    <li>Heading detection is only part of the job. The fixer must also normalize the result back to ACB rules, including heading levels and heading text.</li>
+  </ul>
+
+  <h3>How the platform adapted</h3>
+  <ul>
+    <li>We strengthened negative-pattern handling for signatures and callouts.</li>
+    <li>We expanded randomness to cover no-style/plain-text negatives, font-only heading cues, and multilingual numbering.</li>
+    <li>We added heading normalization in the fixer so converted headings no longer leave ALL CAPS text or skipped heading levels behind.</li>
+  </ul>
+
+  <h3>Scenario families covered</h3>
+  <dl>
+    {% for family in stress_summary.families %}
+    <dt><strong>{{ family.name }}</strong></dt>
+    <dd>{{ family.why }} Detection focus: {{ family.detection_focus }}. Fixer focus: {{ family.fixer_focus }}.</dd>
+    {% endfor %}
+  </dl>
+
+  <h3>What the 1,000 documents represented</h3>
+  <p>These were not 1,000 copies of the same sample file. They were designed to stand in for the kinds of Word documents people actually upload: meeting agendas, newsletters, policy manuals, legal outlines, training handouts, appendices, email-style documents, and plain-text paste with no proper heading styles.</p>
+
+  <p>Each generated file placed the possible heading inside a realistic document context. That meant the platform had to do two things well: decide whether a line was truly a heading, and then repair the document so the final result followed ACB rules for alignment, font, spacing, emphasis, and heading structure.</p>
+
+  <p class="guide-tip"><strong>Strict ACB enforcement:</strong> Whenever the corpus generates an ACB-conformant branch, every paragraph is intentionally flush left. Any centered, right-aligned, justified, indented, italicized, or non-Arial branch is treated as a repair scenario and must be corrected by the fixing pipeline.</p>
+
+  <a href="#guide-toc-heading" class="back-to-top">Back to guide contents</a>
+</section>
+
+<!-- ================================================================== -->
 <section id="faq">
-  <h2>13. Frequently Asked Questions</h2>
+  <h2>14. Frequently Asked Questions</h2>
 
   <details class="help-accordion" open>
     <summary>Is my document stored on the server?</summary>
@@ -593,7 +656,7 @@
 
 <!-- ================================================================== -->
 <section id="getting-help">
-  <h2>14. Getting Help</h2>
+  <h2>15. Getting Help</h2>
 
   <ul>
     <li><a href="{{ url_for('guidelines.guidelines_page') }}">Full ACB Large Print Guidelines Reference</a> -- complete rule documentation with related audit rules</li>

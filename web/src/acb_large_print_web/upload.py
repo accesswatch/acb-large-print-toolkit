@@ -15,10 +15,15 @@ ALLOWED_EXTENSIONS = {".docx", ".xlsx", ".pptx", ".md", ".pdf", ".epub"}
 
 # Additional extensions accepted by the convert route (Pandoc + MarkItDown)
 CONVERT_EXTENSIONS = ALLOWED_EXTENSIONS | {
-    ".rst", ".odt", ".rtf",     # Pandoc inputs
-    ".html", ".htm",             # MarkItDown
-    ".csv", ".json", ".xml",    # MarkItDown
-    ".zip",                      # MarkItDown
+    ".rst",
+    ".odt",
+    ".rtf",  # Pandoc inputs
+    ".html",
+    ".htm",  # MarkItDown
+    ".csv",
+    ".json",
+    ".xml",  # MarkItDown
+    ".zip",  # MarkItDown
 }
 
 # Human-readable format labels for error messages
@@ -63,9 +68,7 @@ def validate_upload(
         allowed_extensions = ALLOWED_EXTENSIONS
 
     if file is None or file.filename == "":
-        raise UploadError(
-            "No file selected. Please choose a document to upload."
-        )
+        raise UploadError("No file selected. Please choose a document to upload.")
 
     filename = secure_filename(file.filename)
     if not filename:
@@ -75,8 +78,7 @@ def validate_upload(
     if ext not in allowed_extensions:
         allowed_list = ", ".join(sorted(allowed_extensions))
         raise UploadError(
-            f"File type '{ext}' is not supported. "
-            f"Accepted: {allowed_list}."
+            f"File type '{ext}' is not supported. " f"Accepted: {allowed_list}."
         )
 
     token = str(uuid.uuid4())

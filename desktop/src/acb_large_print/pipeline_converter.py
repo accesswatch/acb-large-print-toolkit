@@ -234,7 +234,7 @@ def convert_with_pipeline(
         f'<jobRequest xmlns="http://www.daisy.org/ns/pipeline/data">'
         f'<script href="{PIPELINE_BASE_URL}/scripts/{script}"/>'
         f'<input name="source"><item value="./{src_path.name}"/></input>'
-        f'</jobRequest>'
+        f"</jobRequest>"
     )
 
     # Create a zip containing the source file
@@ -271,9 +271,7 @@ def convert_with_pipeline(
         final = _wait_for_job(job_id, timeout=timeout)
         status = final.get("status", "")
         if status != "SUCCESS":
-            raise RuntimeError(
-                f"Pipeline job {job_id} ended with status: {status}"
-            )
+            raise RuntimeError(f"Pipeline job {job_id} ended with status: {status}")
 
         # Download the result zip
         result_bytes = _download_result(job_id)
@@ -288,7 +286,10 @@ def convert_with_pipeline(
             candidates = list(output_dir.rglob(f"*{output_ext}"))
             if candidates:
                 out_file = candidates[0]
-                return out_file, f"Converted to {out_file.name} using DAISY Pipeline ({script})"
+                return (
+                    out_file,
+                    f"Converted to {out_file.name} using DAISY Pipeline ({script})",
+                )
 
         # Directory output (DAISY 2.02, DAISY 3)
         return output_dir, f"Converted to {script} format in {output_dir.name}/"

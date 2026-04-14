@@ -71,8 +71,11 @@ def export_submit():
     except Exception:
         if token:
             cleanup_token(token)
-        return render_template(
-            "export_form.html",
-            error="An error occurred while exporting the document. "
-            "Please ensure it is a valid .docx file and try again.",
-        ), 500
+        return (
+            render_template(
+                "export_form.html",
+                error="An error occurred while exporting the document. "
+                "Please ensure it is a valid .docx file and try again.",
+            ),
+            500,
+        )

@@ -65,7 +65,7 @@ lp/
   templates/
     acb-large-print-boilerplate.html     Semantic HTML skeleton
   docs/
-    acb-large-print-toolkit.md           Detailed file inventory and history
+    user-guide.md                        Complete user guide for all interfaces
     announcement.md                      Press release / announcement
     prd-flask-web-app.md                 Web app product requirements document
     deployment.md                        Step-by-step server deployment guide
@@ -347,6 +347,58 @@ When tools are not installed, the agent performs equivalent checks manually.
 - Links: descriptive text (no bare URLs, no "click here")
 - Spacing: 1 blank line between paragraphs, no blank lines between list items
 - Digital supplement: WCAG 2.2 AA contrast (4.5:1), 400% zoom reflow, 1.5x line-height
+
+## Validation And Lessons Learned
+
+We did not treat heading detection and ACB repair as a one-time feature drop. We stress-tested the platform with synthetic Word documents designed to behave like real documents that users actually upload: copied email threads, plain-text paste, newsletter blurbs, agendas, policy manuals, legal outlines, appendices, and flyers.
+
+What the stress work covered:
+
+- 1,000 generated Word documents in the primary full-corpus run
+- 1,000 total heading scenarios in the current release-scale corpus
+- 10 document families covering different writing styles and layout problems
+- 12 randomized scenario patterns including real headings, false positives, no-style body lines, font-only drift, multilingual section labels, centered titles, justified paragraphs, hanging indents, and mixed-font paste artifacts
+- 7 language variants in the current random set: English, Spanish, French, German, Italian, Portuguese, and Dutch
+
+What the 1,000 generated documents represented:
+
+- Board agendas pasted from email threads
+- Newsletters and flyers with decorative layout drift
+- Policy manuals with section labels and long explanatory body text
+- Legal outlines with numbering and nested structure pressure
+- Training handouts with prompts and labels that can look like headings
+- Appendix-style documents with short labels that can be confused with captions or notes
+- Plain-text paste where no proper heading styles exist at all
+
+Each generated document included real document structure around the test case, not just a single isolated line. That means the platform had to judge a candidate heading in context, then repair the surrounding formatting back to ACB rules.
+
+What we proved:
+
+- Full heading stress suite: 5 tests passed
+- Heuristic detector against 1,000 ground-truth scenarios: 0 false positives, 0 false negatives
+- Denser randomized sweep over 4,800 scenarios: 0 false positives, 0 false negatives
+- Fix-then-audit enforcement sweep over 1,000 generated documents: 0 remaining ACB findings after the latest fixes
+- Core fixer and detector test set: 150 tests passed
+
+What we learned while testing:
+
+1. Real-world documents do not fail in one neat way. They mix plain text, manual bold, centered titles, font overrides, copied web formatting, and fake structure in the same file.
+2. A heading detector that only looks for bold text is not good enough. It must also learn from length, punctuation, numbering, body context, and known false-positive shapes like signature lines and callouts.
+3. Passing heading detection alone is not enough. The fixer must also repair the document back to ACB rules, which means alignment, indentation, font normalization, heading hierarchy, and heading text cleanup all have to work together.
+4. The most useful failures were not dramatic crashes. They were policy mismatches, such as faux headings converted to ALL CAPS Heading 3 lines that then created heading-level skips.
+
+How we adapted the platform:
+
+- Added stronger false-positive penalties for signature-like lines and callout/salutation patterns
+- Expanded the synthetic corpus to include multilingual numbering, plain-text/no-style negatives, and font-size-only heading cases
+- Tightened the fixer so converted headings are normalized after conversion, including ALL CAPS cleanup and heading-hierarchy repair
+- Re-ran the full corpus after every meaningful change so we only kept changes that improved measured outcomes
+
+Confidence statement:
+
+- We are confident in the current lessons learned for heading detection and ACB repair behavior on the scenarios we generated and measured.
+- We are also confident that the fixer path is written in a cross-platform way because it uses platform-neutral Python and document-processing libraries rather than OS-specific APIs.
+- We have runtime proof for Windows in this session. Final cross-platform runtime proof still requires executing the same validation commands on macOS and Linux CI runners.
 
 ## License
 

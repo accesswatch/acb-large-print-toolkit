@@ -20,6 +20,7 @@ def _is_ace_installed() -> bool:
     """Ace is a required dependency -- always True in the web app."""
     try:
         from acb_large_print.ace_runner import ace_available
+
         return ace_available()
     except ImportError:
         return False
@@ -30,21 +31,27 @@ def _audit_by_extension(saved_path: Path):
     ext = saved_path.suffix.lower()
     if ext == ".xlsx":
         from acb_large_print.xlsx_auditor import audit_workbook
+
         return audit_workbook(saved_path)
     elif ext == ".pptx":
         from acb_large_print.pptx_auditor import audit_presentation
+
         return audit_presentation(saved_path)
     elif ext == ".md":
         from acb_large_print.md_auditor import audit_markdown
+
         return audit_markdown(saved_path)
     elif ext == ".pdf":
         from acb_large_print.pdf_auditor import audit_pdf
+
         return audit_pdf(saved_path)
     elif ext == ".epub":
         from acb_large_print.epub_auditor import audit_epub
+
         return audit_epub(saved_path)
     else:
         from acb_large_print.auditor import audit_document
+
         return audit_document(saved_path)
 
 
@@ -104,14 +111,22 @@ def audit_submit():
             ace_installed=_is_ace_installed(),
         )
     except UploadError as e:
-        return render_template("audit_form.html", error=str(e), ace_installed=_is_ace_installed()), 400
+        return (
+            render_template(
+                "audit_form.html", error=str(e), ace_installed=_is_ace_installed()
+            ),
+            400,
+        )
     except Exception:
-        return render_template(
-            "audit_form.html",
-            error="An error occurred while processing the document. "
-            "Please ensure it is a valid Office file and try again.",
-            ace_installed=_is_ace_installed(),
-        ), 500
+        return (
+            render_template(
+                "audit_form.html",
+                error="An error occurred while processing the document. "
+                "Please ensure it is a valid Office file and try again.",
+                ace_installed=_is_ace_installed(),
+            ),
+            500,
+        )
     finally:
         if token:
             cleanup_token(token)

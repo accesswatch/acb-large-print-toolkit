@@ -35,10 +35,14 @@ def audit_presentation(file_path: str | Path) -> AuditResult:
 
     # -- Document properties --
     if not (prs.core_properties.title and prs.core_properties.title.strip()):
-        result.add("PPTX-TITLE", "Presentation title is not set in document properties.")
+        result.add(
+            "PPTX-TITLE", "Presentation title is not set in document properties."
+        )
 
     if not (prs.core_properties.author and prs.core_properties.author.strip()):
-        result.add("ACB-DOC-AUTHOR", "Presentation author is not set in document properties.")
+        result.add(
+            "ACB-DOC-AUTHOR", "Presentation author is not set in document properties."
+        )
 
     slide_titles: list[str] = []
     slides_without_notes = 0
@@ -93,7 +97,9 @@ def audit_presentation(file_path: str | Path) -> AuditResult:
 
         # -- Speaker notes --
         notes = slide.notes_slide if slide.has_notes_slide else None
-        has_notes = notes and notes.notes_text_frame and notes.notes_text_frame.text.strip()
+        has_notes = (
+            notes and notes.notes_text_frame and notes.notes_text_frame.text.strip()
+        )
         if not has_notes:
             slides_without_notes += 1
             if has_visual:
@@ -124,6 +130,7 @@ def audit_presentation(file_path: str | Path) -> AuditResult:
 # ---------------------------------------------------------------------------
 # Individual check helpers
 # ---------------------------------------------------------------------------
+
 
 def _check_reading_order(slide, result: AuditResult, loc: str, title_shape) -> None:
     """Check that reading order roughly matches visual order."""

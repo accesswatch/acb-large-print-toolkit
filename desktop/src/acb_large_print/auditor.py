@@ -20,12 +20,14 @@ def _vml_qn(tag: str) -> str:
     """Build a qualified name for VML namespace tags (v:shape, v:textbox, etc.)."""
     return f"{{{_VML_NS}}}{tag}"
 
+
 from . import constants as C
 
 
 @dataclass
 class Finding:
     """A single audit finding."""
+
     rule_id: str
     severity: C.Severity
     message: str
@@ -44,11 +46,14 @@ class Finding:
 @dataclass
 class AuditResult:
     """Complete audit results for a document."""
+
     file_path: str
     findings: list[Finding] = field(default_factory=list)
     total_paragraphs: int = 0
     total_runs: int = 0
-    metadata_display: object | None = None  # EpubAccessibilityDisplay when auditing EPUBs
+    metadata_display: object | None = (
+        None  # EpubAccessibilityDisplay when auditing EPUBs
+    )
 
     @property
     def passed(self) -> bool:
@@ -84,13 +89,15 @@ class AuditResult:
 
     def add(self, rule_id: str, message: str, location: str = "") -> None:
         rule = C.AUDIT_RULES[rule_id]
-        self.findings.append(Finding(
-            rule_id=rule_id,
-            severity=rule.severity,
-            message=message,
-            location=location,
-            auto_fixable=rule.auto_fixable,
-        ))
+        self.findings.append(
+            Finding(
+                rule_id=rule_id,
+                severity=rule.severity,
+                message=message,
+                location=location,
+                auto_fixable=rule.auto_fixable,
+            )
+        )
 
     @property
     def critical_count(self) -> int:
@@ -192,7 +199,10 @@ def _check_page_setup(doc: Document, result: AuditResult) -> None:
                 )
 
         if section.bottom_margin is not None:
-            if abs(section.bottom_margin - Inches(C.MARGIN_BOTTOM_IN)) > margin_tolerance:
+            if (
+                abs(section.bottom_margin - Inches(C.MARGIN_BOTTOM_IN))
+                > margin_tolerance
+            ):
                 result.add(
                     "ACB-MARGINS",
                     f"Bottom margin is {section.bottom_margin.inches:.2f} inches (expected {C.MARGIN_BOTTOM_IN})",
@@ -267,7 +277,14 @@ def _check_styles(doc: Document, result: AuditResult) -> None:
             )
 
 
-def _check_paragraph_content(doc: Document, result: AuditResult) -> None:
+def _check_paragraph_content(
+    doc: Document,
+    result: AuditResult,
+    *,
+    list_indent_in: float = C.LIST_INDENT_IN,
+    para_indent_in: float = C.PARA_INDENT_IN,
+    first_line_indent_in: float = C.FIRST_LINE_INDENT_IN,
+) -> None:
     """Check each paragraph and run for direct formatting violations."""
     prev_heading_level = 0
     paragraphs_since_heading = 0
@@ -279,7 +296,11 @@ def _check_paragraph_content(doc: Document, result: AuditResult) -> None:
         style_name = para.style.name if para.style else "Normal"
         text_preview = para.text[:60].strip()
         if text_preview:
-            loc = f"Paragraph {i + 1}: '{text_preview}...'" if len(para.text) > 60 else f"Paragraph {i + 1}: '{text_preview}'"
+            loc = (
+                f"Paragraph {i + 1}: '{text_preview}...'"
+                if len(para.text) > 60
+                else f"Paragraph {i + 1}: '{text_preview}'"
+            )
 
         is_heading = _is_heading_style(style_name)
 
@@ -313,6 +334,61 @@ def _check_paragraph_content(doc: Document, result: AuditResult) -> None:
                 result.add(
                     "ACB-ALIGNMENT",
                     f"Direct alignment override (not flush left)",
+                    loc,
+                )
+
+        # List indentation check
+        is_list = style_name in (
+            "List Bullet",
+            "List Number",
+            "List Bullet 2",
+            "List Number 2",
+            "List Bullet 3",
+            "List Number 3",
+        )
+        if is_list:
+            pf = para.paragraph_format
+            actual_indent = pf.left_indent.inches if pf.left_indent else 0.0
+            expected_indent = list_indent_in
+            indent_tolerance = 0.05
+            if abs(actual_indent - expected_indent) > indent_tolerance:
+                result.add(
+                    "ACB-LIST-INDENT",
+                    f'List indent is {actual_indent:.2f}" (expected {expected_indent:.2f}")',
+                    loc,
+                )
+
+        # Non-list, non-heading paragraph indentation checks
+        if not is_list and not is_heading and para.text.strip():
+            pf = para.paragraph_format
+            indent_tolerance = 0.05
+
+            # Left indent check
+            actual_left = pf.left_indent.inches if pf.left_indent else 0.0
+            if abs(actual_left - para_indent_in) > indent_tolerance:
+                # Blockquote-style: body-length text with significant indent
+                if (
+                    actual_left > para_indent_in + 0.25 + indent_tolerance
+                    and len(para.text.strip()) > 40
+                ):
+                    result.add(
+                        "ACB-BLOCKQUOTE-INDENT",
+                        f'Blockquote-style indent ({actual_left:.2f}") on body text',
+                        loc,
+                    )
+                else:
+                    result.add(
+                        "ACB-PARA-INDENT",
+                        f'Paragraph left indent is {actual_left:.2f}" (expected {para_indent_in:.2f}")',
+                        loc,
+                    )
+
+            # First-line indent check
+            actual_fli = pf.first_line_indent.inches if pf.first_line_indent else 0.0
+            if abs(actual_fli - first_line_indent_in) > indent_tolerance:
+                result.add(
+                    "ACB-FIRST-LINE-INDENT",
+                    f'First-line indent is {actual_fli:.2f}" (expected {first_line_indent_in:.2f}")',
                     loc,
                 )
 
@@ -363,7 +439,11 @@ def _check_paragraph_content(doc: Document, result: AuditResult) -> None:
                 )
 
         # Check for all-caps text content (not formatting, but typed in caps)
-        if para.text.strip() and para.text.strip().isupper() and len(para.text.strip()) > 3:
+        if (
+            para.text.strip()
+            and para.text.strip().isupper()
+            and len(para.text.strip()) > 3
+        ):
             if is_heading:
                 result.add(
                     "ACB-NO-ALLCAPS",
@@ -393,7 +473,10 @@ def _check_paragraph_content(doc: Document, result: AuditResult) -> None:
                     loc,
                 )
             # Typed numbered list: "1." "2)" "a." at start
-            elif re.match(r"^(\d{1,3}[\.\)]\s|[a-z][\.\)]\s)", stripped) and style_name == "Normal":
+            elif (
+                re.match(r"^(\d{1,3}[\.\)]\s|[a-z][\.\)]\s)", stripped)
+                and style_name == "Normal"
+            ):
                 result.add(
                     "ACB-FAKE-LIST",
                     f"Manually typed list numbering detected",
@@ -572,9 +655,15 @@ def _check_hyperlinks(doc: Document, result: AuditResult) -> None:
             # Build display text from runs inside the hyperlink
             runs = hyp.findall(qn("w:r"))
             display_text = "".join(
-                (r.find(qn("w:t")).text or "") for r in runs if r.find(qn("w:t")) is not None
+                (r.find(qn("w:t")).text or "")
+                for r in runs
+                if r.find(qn("w:t")) is not None
             ).strip()
-            loc = f"Hyperlink: '{display_text[:60]}'" if display_text else "Hyperlink (empty)"
+            loc = (
+                f"Hyperlink: '{display_text[:60]}'"
+                if display_text
+                else "Hyperlink (empty)"
+            )
 
             # Non-descriptive text
             if display_text and _NON_DESCRIPTIVE_LINK_RE.match(display_text):
@@ -620,7 +709,11 @@ def _check_form_fields(doc: Document, result: AuditResult) -> None:
         help_text = ff_data.find(qn("w:helpText"))
         status_text = ff_data.find(qn("w:statusText"))
         name_elem = ff_data.find(qn("w:name"))
-        field_name = name_elem.get(qn("w:val"), "unnamed") if name_elem is not None else "unnamed"
+        field_name = (
+            name_elem.get(qn("w:val"), "unnamed")
+            if name_elem is not None
+            else "unnamed"
+        )
 
         has_label = False
         if help_text is not None and help_text.get(qn("w:val"), "").strip():
@@ -649,7 +742,11 @@ def _check_floating_content(doc: Document, result: AuditResult) -> None:
                     break
             if has_textbox:
                 doc_pr_list = list(anchor.iter(qn("wp:docPr")))
-                name = doc_pr_list[0].get("name", "text box") if doc_pr_list else "text box"
+                name = (
+                    doc_pr_list[0].get("name", "text box")
+                    if doc_pr_list
+                    else "text box"
+                )
                 result.add(
                     "ACB-FLOATING-CONTENT",
                     f"Floating text box '{name}' -- reading order may differ from visual order",
@@ -677,15 +774,49 @@ def _check_author(doc: Document, result: AuditResult) -> None:
         )
 
 
-def audit_document(file_path: str | Path) -> AuditResult:
+def _check_faux_headings(doc: Document, result: AuditResult) -> None:
+    """Detect paragraphs formatted like headings but without heading styles."""
+    from .heading_detector import detect_headings
+
+    candidates = detect_headings(doc)
+    for c in candidates:
+        preview = c.text[:60]
+        loc = f"Paragraph {c.paragraph_index + 1}: '{preview}'"
+        result.add(
+            "ACB-FAUX-HEADING",
+            f"Looks like Heading {c.suggested_level} but has no heading style "
+            f"(score {c.score}, {c.confidence} confidence)",
+            loc,
+        )
+
+
+def audit_document(
+    file_path: str | Path,
+    *,
+    list_indent_in: float | None = None,
+    para_indent_in: float | None = None,
+    first_line_indent_in: float | None = None,
+) -> AuditResult:
     """Run a full ACB Large Print compliance audit on a Word document.
 
     Args:
         file_path: Path to the .docx file to audit.
+        list_indent_in: Expected list left-indent in inches.  Defaults to
+            ``constants.LIST_INDENT_IN`` (flush left).
+        para_indent_in: Expected non-list paragraph left-indent in inches.
+            Defaults to ``constants.PARA_INDENT_IN`` (flush left).
+        first_line_indent_in: Expected first-line indent in inches.
+            Defaults to ``constants.FIRST_LINE_INDENT_IN`` (zero).
 
     Returns:
         AuditResult with all findings.
     """
+    if list_indent_in is None:
+        list_indent_in = C.LIST_INDENT_IN
+    if para_indent_in is None:
+        para_indent_in = C.PARA_INDENT_IN
+    if first_line_indent_in is None:
+        first_line_indent_in = C.FIRST_LINE_INDENT_IN
     file_path = Path(file_path)
     result = AuditResult(file_path=str(file_path))
 
@@ -694,7 +825,13 @@ def audit_document(file_path: str | Path) -> AuditResult:
     _check_document_properties(doc, result)
     _check_page_setup(doc, result)
     _check_styles(doc, result)
-    _check_paragraph_content(doc, result)
+    _check_paragraph_content(
+        doc,
+        result,
+        list_indent_in=list_indent_in,
+        para_indent_in=para_indent_in,
+        first_line_indent_in=first_line_indent_in,
+    )
     _check_hyphenation(doc, result)
     _check_page_numbers(doc, result)
     _check_alt_text(doc, result)
@@ -703,6 +840,7 @@ def audit_document(file_path: str | Path) -> AuditResult:
     _check_form_fields(doc, result)
     _check_floating_content(doc, result)
     _check_author(doc, result)
+    _check_faux_headings(doc, result)
 
     # Sort findings by severity
     severity_order = {

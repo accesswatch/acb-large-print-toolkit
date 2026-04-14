@@ -17,11 +17,13 @@ from acb_large_print_web.app import create_app
 @pytest.fixture()
 def app(tmp_path: Path) -> Flask:
     """Create a test Flask application with a temporary instance folder."""
-    application = create_app({
-        "TESTING": True,
-        "WTF_CSRF_ENABLED": False,
-        "MAX_CONTENT_LENGTH": 500 * 1024 * 1024,
-    })
+    application = create_app(
+        {
+            "TESTING": True,
+            "WTF_CSRF_ENABLED": False,
+            "MAX_CONTENT_LENGTH": 500 * 1024 * 1024,
+        }
+    )
     application.instance_path = str(tmp_path / "instance")
     Path(application.instance_path).mkdir(parents=True, exist_ok=True)
     return application
@@ -74,6 +76,7 @@ def _make_fake_docx() -> io.BytesIO:
 def _make_fake_xlsx() -> io.BytesIO:
     """Create a minimal valid .xlsx file using openpyxl."""
     from openpyxl import Workbook
+
     buf = io.BytesIO()
     wb = Workbook()
     ws = wb.active
@@ -87,6 +90,7 @@ def _make_fake_xlsx() -> io.BytesIO:
 def _make_fake_pptx() -> io.BytesIO:
     """Create a minimal valid .pptx file using python-pptx."""
     from pptx import Presentation
+
     buf = io.BytesIO()
     prs = Presentation()
     prs.slides.add_slide(prs.slide_layouts[6])  # blank layout
@@ -98,6 +102,7 @@ def _make_fake_pptx() -> io.BytesIO:
 # ============================================================
 # Smoke tests -- every page loads
 # ============================================================
+
 
 class TestPageLoads:
     """Every GET endpoint should return 200."""
@@ -137,6 +142,18 @@ class TestPageLoads:
         assert resp.status_code == 200
         assert b"Feedback" in resp.data
 
+    def test_guide_mentions_stress_testing(self, client):
+        resp = client.get("/guide/")
+        assert resp.status_code == 200
+        assert b"Stress Testing and Product Learning" in resp.data
+        assert b"100000" in resp.data
+
+    def test_about_mentions_stress_harness(self, client):
+        resp = client.get("/about/")
+        assert resp.status_code == 200
+        assert b"Stress Testing" in resp.data
+        assert b"1000" in resp.data
+
     def test_health(self, client):
         resp = client.get("/health")
         assert resp.status_code == 200
@@ -146,6 +163,7 @@ class TestPageLoads:
 # ============================================================
 # Error handling
 # ============================================================
+
 
 class TestErrors:
     def test_404(self, client):
@@ -187,13 +205,17 @@ class TestErrors:
 # Feedback
 # ============================================================
 
+
 class TestFeedback:
     def test_submit_feedback(self, app, client):
-        resp = client.post("/feedback/", data={
-            "rating": "good",
-            "task": "audit",
-            "message": "Works great!",
-        })
+        resp = client.post(
+            "/feedback/",
+            data={
+                "rating": "good",
+                "task": "audit",
+                "message": "Works great!",
+            },
+        )
         assert resp.status_code == 200
         assert b"Thank You" in resp.data
 
@@ -208,16 +230,22 @@ class TestFeedback:
         assert rows[0][1] == "Works great!"
 
     def test_submit_feedback_missing_rating(self, client):
-        resp = client.post("/feedback/", data={
-            "message": "Some feedback",
-        })
+        resp = client.post(
+            "/feedback/",
+            data={
+                "message": "Some feedback",
+            },
+        )
         assert resp.status_code == 400
         assert b"select a rating" in resp.data
 
     def test_submit_feedback_missing_message(self, client):
-        resp = client.post("/feedback/", data={
-            "rating": "excellent",
-        })
+        resp = client.post(
+            "/feedback/",
+            data={
+                "rating": "excellent",
+            },
+        )
         assert resp.status_code == 400
         assert b"enter your feedback" in resp.data
 
@@ -229,6 +257,7 @@ class TestFeedback:
     def test_review_wrong_password(self, app, client):
         app.config["FEEDBACK_PASSWORD"] = "secret123"
         import os
+
         os.environ["FEEDBACK_PASSWORD"] = "secret123"
         resp = client.get("/feedback/review?key=wrong")
         assert resp.status_code == 403
@@ -236,13 +265,17 @@ class TestFeedback:
 
     def test_review_correct_password(self, app, client):
         import os
+
         os.environ["FEEDBACK_PASSWORD"] = "secret123"
         # Submit a feedback entry first
-        client.post("/feedback/", data={
-            "rating": "excellent",
-            "task": "fix",
-            "message": "Love it",
-        })
+        client.post(
+            "/feedback/",
+            data={
+                "rating": "excellent",
+                "task": "fix",
+                "message": "Love it",
+            },
+        )
         resp = client.get("/feedback/review?key=secret123")
         assert resp.status_code == 200
         assert b"Love it" in resp.data
@@ -254,18 +287,33 @@ class TestFeedback:
 # Accessibility checks on rendered HTML
 # ============================================================
 
+
 class TestAccessibility:
     """Basic structural accessibility checks on rendered pages."""
 
     def test_all_pages_have_lang(self, client):
-        for path in ["/", "/audit/", "/fix/", "/guidelines/", "/feedback/",
-                     "/about/", "/convert/"]:
+        for path in [
+            "/",
+            "/audit/",
+            "/fix/",
+            "/guidelines/",
+            "/feedback/",
+            "/about/",
+            "/convert/",
+        ]:
             resp = client.get(path)
             assert b'lang="en"' in resp.data, f"Missing lang on {path}"
 
     def test_all_pages_have_main_landmark(self, client):
-        for path in ["/", "/audit/", "/fix/", "/guidelines/", "/feedback/",
-                     "/about/", "/convert/"]:
+        for path in [
+            "/",
+            "/audit/",
+            "/fix/",
+            "/guidelines/",
+            "/feedback/",
+            "/about/",
+            "/convert/",
+        ]:
             resp = client.get(path)
             assert b'id="main"' in resp.data, f"Missing main landmark on {path}"
 
@@ -286,6 +334,7 @@ class TestAccessibility:
 # ============================================================
 # Upload + audit integration (with real docx)
 # ============================================================
+
 
 class TestAuditIntegration:
     def test_audit_full_mode(self, client):
@@ -312,11 +361,15 @@ class TestAuditIntegration:
 # Template generation
 # ============================================================
 
+
 class TestTemplateGeneration:
     def test_generate_template(self, client):
-        resp = client.post("/template/", data={
-            "title": "Test Template",
-        })
+        resp = client.post(
+            "/template/",
+            data={
+                "title": "Test Template",
+            },
+        )
         # Should return 200 with a result page or a download
         assert resp.status_code == 200
 
@@ -324,6 +377,7 @@ class TestTemplateGeneration:
 # ============================================================
 # Multi-format audit (xlsx, pptx)
 # ============================================================
+
 
 class TestMultiFormatAudit:
     """Upload Excel and PowerPoint files and verify audit works."""
@@ -383,6 +437,7 @@ class TestMultiFormatAudit:
 # Accessibility structure (extended)
 # ============================================================
 
+
 class TestAccessibilityExtended:
     """Verify WCAG 2.2 AA structural requirements added in multi-format update."""
 
@@ -422,6 +477,7 @@ class TestAccessibilityExtended:
 # About page
 # ============================================================
 
+
 class TestAboutPage:
     """Tests for the /about/ route."""
 
@@ -446,6 +502,7 @@ class TestAboutPage:
 # ============================================================
 # Convert route
 # ============================================================
+
 
 class TestConvertPage:
     """Tests for the /convert/ route."""
@@ -498,6 +555,7 @@ class TestConvertPage:
     def test_convert_to_html_md_file(self, client):
         """Upload a .md with direction=to-html; expect HTML back if Pandoc installed."""
         from acb_large_print.pandoc_converter import pandoc_available
+
         md_content = b"# Hello World\n\nSome text.\n"
         data = {
             "document": (io.BytesIO(md_content), "test.md"),
@@ -520,6 +578,7 @@ class TestConvertPage:
     def test_convert_to_html_unsupported_ext(self, client):
         """Upload an .xlsx with direction=to-html -- not a Pandoc-supported format."""
         from acb_large_print.pandoc_converter import pandoc_available
+
         if not pandoc_available():
             pytest.skip("Pandoc not installed")
         xlsx_data = _make_fake_xlsx()
@@ -546,6 +605,7 @@ class TestConvertPage:
 # ============================================================
 # Markdown and PDF audit
 # ============================================================
+
 
 def _make_fake_md() -> io.BytesIO:
     """Create a simple Markdown file with known issues."""
@@ -647,17 +707,20 @@ class TestPdfAudit:
 # Rules help URLs
 # ============================================================
 
+
 class TestRulesHelpUrls:
     """Verify help URL data layer returns valid entries."""
 
     def test_help_urls_map_not_empty(self):
         from acb_large_print_web.rules import get_help_urls_map
+
         urls_map = get_help_urls_map()
         assert isinstance(urls_map, dict)
         assert len(urls_map) > 0
 
     def test_help_urls_contain_valid_dicts(self):
         from acb_large_print_web.rules import get_help_urls_map
+
         urls_map = get_help_urls_map()
         for rule_id, links in urls_map.items():
             assert isinstance(rule_id, str)
@@ -665,12 +728,13 @@ class TestRulesHelpUrls:
             for entry in links:
                 assert "label" in entry, f"Missing 'label' for {rule_id}"
                 assert "url" in entry, f"Missing 'url' for {rule_id}"
-                assert entry["url"].startswith("https://"), (
-                    f"Bad URL for {rule_id}: {entry['url']}"
-                )
+                assert entry["url"].startswith(
+                    "https://"
+                ), f"Bad URL for {rule_id}: {entry['url']}"
 
     def test_wcag_rules_have_w3c_urls(self):
         from acb_large_print_web.rules import get_help_urls_map
+
         urls_map = get_help_urls_map()
         # At least some WCAG-linked rules should have w3.org URLs
         w3_count = sum(
@@ -685,6 +749,7 @@ class TestRulesHelpUrls:
 # ============================================================
 # Upload validation for new formats
 # ============================================================
+
 
 class TestUploadValidation:
     """Verify upload.py accepts/rejects the new file formats."""
@@ -718,6 +783,7 @@ class TestUploadValidation:
 # ePub audit
 # ============================================================
 
+
 def _make_fake_epub() -> io.BytesIO:
     """Create a minimal valid .epub file (ZIP with OPF metadata)."""
     buf = io.BytesIO()
@@ -729,7 +795,7 @@ def _make_fake_epub() -> io.BytesIO:
             '<container xmlns="urn:oasis:names:tc:opendocument:xmlns:container" version="1.0">'
             '<rootfiles><rootfile full-path="content.opf" '
             'media-type="application/oebps-package+xml"/></rootfiles>'
-            '</container>',
+            "</container>",
         )
         # OPF with no title and no language -- should trigger EPUB-TITLE + EPUB-LANGUAGE
         zf.writestr(
@@ -737,16 +803,16 @@ def _make_fake_epub() -> io.BytesIO:
             '<?xml version="1.0" encoding="UTF-8"?>'
             '<package xmlns="http://www.idpf.org/2007/opf" version="3.0">'
             '<metadata xmlns:dc="http://purl.org/dc/elements/1.1/">'
-            '</metadata>'
-            '<manifest>'
+            "</metadata>"
+            "<manifest>"
             '<item id="ch1" href="ch1.xhtml" media-type="application/xhtml+xml"/>'
-            '</manifest>'
+            "</manifest>"
             '<spine><itemref idref="ch1"/></spine>'
-            '</package>',
+            "</package>",
         )
         zf.writestr(
             "ch1.xhtml",
-            '<html><body><h1>Chapter 1</h1><p>Content</p></body></html>',
+            "<html><body><h1>Chapter 1</h1><p>Content</p></body></html>",
         )
     buf.seek(0)
     return buf
@@ -791,6 +857,7 @@ class TestEpubAudit:
         """Direct unit test: the epub auditor detects missing title and language."""
         import tempfile
         from acb_large_print.epub_auditor import audit_epub
+
         epub_data = _make_fake_epub()
         with tempfile.NamedTemporaryFile(suffix=".epub", delete=False) as f:
             f.write(epub_data.read())
@@ -799,13 +866,16 @@ class TestEpubAudit:
         rule_ids = {finding.rule_id for finding in result.findings}
         assert "EPUB-TITLE" in rule_ids, f"Expected EPUB-TITLE, got {rule_ids}"
         assert "EPUB-LANGUAGE" in rule_ids, f"Expected EPUB-LANGUAGE, got {rule_ids}"
-        assert "EPUB-NAV-DOCUMENT" in rule_ids, f"Expected EPUB-NAV-DOCUMENT, got {rule_ids}"
+        assert (
+            "EPUB-NAV-DOCUMENT" in rule_ids
+        ), f"Expected EPUB-NAV-DOCUMENT, got {rule_ids}"
         assert "EPUB-ACCESSIBILITY-METADATA" in rule_ids
 
 
 # ============================================================
 # DAISY Pipeline conversion
 # ============================================================
+
 
 class TestPipelineConversion:
     """Tests for DAISY Pipeline integration on the /convert/ route."""
@@ -1001,6 +1071,7 @@ class TestPipelineConverterUnit:
 
     def test_pipeline_conversions_dict_complete(self):
         from acb_large_print.pipeline_converter import PIPELINE_CONVERSIONS
+
         assert "docx-to-epub" in PIPELINE_CONVERSIONS
         assert "html-to-epub" in PIPELINE_CONVERSIONS
         assert "epub-to-daisy202" in PIPELINE_CONVERSIONS
@@ -1008,22 +1079,26 @@ class TestPipelineConverterUnit:
 
     def test_pipeline_input_extensions(self):
         from acb_large_print.pipeline_converter import PIPELINE_INPUT_EXTENSIONS
+
         assert ".docx" in PIPELINE_INPUT_EXTENSIONS
         assert ".html" in PIPELINE_INPUT_EXTENSIONS
         assert ".epub" in PIPELINE_INPUT_EXTENSIONS
 
     def test_pipeline_available_returns_bool(self):
         from acb_large_print.pipeline_converter import pipeline_available
+
         result = pipeline_available()
         assert isinstance(result, bool)
 
     def test_convert_with_pipeline_missing_file(self):
         from acb_large_print.pipeline_converter import convert_with_pipeline
+
         with pytest.raises(FileNotFoundError):
             convert_with_pipeline(Path("/nonexistent/file.html"), "html-to-epub")
 
     def test_convert_with_pipeline_bad_key(self, tmp_path):
         from acb_large_print.pipeline_converter import convert_with_pipeline
+
         f = tmp_path / "test.html"
         f.write_text("<html></html>")
         with pytest.raises(ValueError, match="Unknown conversion"):
@@ -1031,6 +1106,7 @@ class TestPipelineConverterUnit:
 
     def test_convert_with_pipeline_wrong_extension(self, tmp_path):
         from acb_large_print.pipeline_converter import convert_with_pipeline
+
         f = tmp_path / "test.txt"
         f.write_text("not html")
         with pytest.raises(ValueError, match="expects .html"):
@@ -1038,6 +1114,7 @@ class TestPipelineConverterUnit:
 
     def test_convert_with_pipeline_not_installed(self, tmp_path, monkeypatch):
         from acb_large_print import pipeline_converter
+
         monkeypatch.setattr(pipeline_converter, "pipeline_available", lambda: False)
         f = tmp_path / "test.html"
         f.write_text("<html></html>")

@@ -25,7 +25,13 @@ def _apply_acb_font(font_obj, spec: C.FontDef) -> None:
     font_obj.color.rgb = RGBColor(0, 0, 0)
 
 
-def _fix_styles(doc: Document) -> int:
+def _fix_styles(
+    doc: Document,
+    records: list[C.FixRecord],
+    *,
+    list_indent_in: float = C.LIST_INDENT_IN,
+    list_hanging_in: float = C.LIST_HANGING_IN,
+) -> int:
     """Fix all named styles to match ACB specs. Returns count of fixes."""
     fixes = 0
     for style_name, style_def in C.ACB_STYLES.items():
@@ -37,27 +43,33 @@ def _fix_styles(doc: Document) -> int:
         font = style.font
         pf = style.paragraph_format
         changed = False
+        details: list[str] = []
 
         # Font
         if font.name != style_def.font.name:
             font.name = style_def.font.name
+            details.append(f"font family -> {style_def.font.name}")
             changed = True
         if font.size is None or abs(font.size.pt - style_def.font.size_pt) > 0.5:
             font.size = Pt(style_def.font.size_pt)
+            details.append(f"font size -> {style_def.font.size_pt}pt")
             changed = True
         if font.bold != style_def.font.bold:
             font.bold = style_def.font.bold
             changed = True
         if font.italic:
             font.italic = False
+            details.append("removed italic")
             changed = True
         if font.all_caps:
             font.all_caps = False
+            details.append("removed all caps")
             changed = True
 
         # Paragraph format
         if pf.alignment != WD_ALIGN_PARAGRAPH.LEFT:
             pf.alignment = WD_ALIGN_PARAGRAPH.LEFT
+            details.append("alignment -> flush left")
             changed = True
         if pf.line_spacing != style_def.para.line_spacing:
             pf.line_spacing_rule = WD_LINE_SPACING.MULTIPLE
@@ -66,6 +78,28 @@ def _fix_styles(doc: Document) -> int:
         if pf.widow_control is not True:
             pf.widow_control = True
             changed = True
+
+        # Apply user-configurable list indentation to list styles
+        if style_name in ("List Bullet", "List Number"):
+            target_left = Inches(list_indent_in)
+            if pf.left_indent is None or abs(pf.left_indent - target_left) > Inches(
+                0.05
+            ):
+                pf.left_indent = target_left
+                changed = True
+            if list_indent_in > 0 and list_hanging_in > 0:
+                target_hang = Inches(-list_hanging_in)
+                if pf.first_line_indent is None or abs(
+                    pf.first_line_indent - target_hang
+                ) > Inches(0.05):
+                    pf.first_line_indent = target_hang
+                    changed = True
+            elif list_indent_in == 0:
+                if pf.first_line_indent is not None and pf.first_line_indent != Inches(
+                    0
+                ):
+                    pf.first_line_indent = None
+                    changed = True
 
         # Remove theme colors from headings
         if style_name.startswith("Heading"):
@@ -78,50 +112,197 @@ def _fix_styles(doc: Document) -> int:
                         color_elem.attrib.pop(qn("w:themeColor"), None)
                         color_elem.attrib.pop(qn("w:themeShade"), None)
                         color_elem.set(qn("w:val"), "000000")
+                        details.append("removed theme color")
                         changed = True
 
         if changed:
             fixes += 1
+            desc = f"Fixed style '{style_name}'"
+            if details:
+                desc += ": " + ", ".join(details)
+            records.append(
+                C.FixRecord(
+                    rule_id=(
+                        "ACB-FONT-FAMILY"
+                        if "font family" in desc
+                        else "ACB-FONT-SIZE-BODY"
+                    ),
+                    category=C.FIX_CATEGORY_FONT,
+                    description=desc,
+                    location=f"Style: {style_name}",
+                )
+            )
 
     return fixes
 
 
-def _fix_page_setup(doc: Document, bound: bool = False) -> int:
+def _fix_page_setup(
+    doc: Document, records: list[C.FixRecord], bound: bool = False
+) -> int:
     """Fix page margins and orientation. Returns count of fixes."""
     fixes = 0
     tolerance = Inches(0.05)
-    for section in doc.sections:
+    for idx, section in enumerate(doc.sections):
+        sec_loc = f"Section {idx + 1}"
         left_target = C.MARGIN_LEFT_IN + (C.BINDING_EXTRA_IN if bound else 0)
 
-        if section.top_margin is None or abs(section.top_margin - Inches(C.MARGIN_TOP_IN)) > tolerance:
+        if (
+            section.top_margin is None
+            or abs(section.top_margin - Inches(C.MARGIN_TOP_IN)) > tolerance
+        ):
             section.top_margin = Inches(C.MARGIN_TOP_IN)
             fixes += 1
-        if section.bottom_margin is None or abs(section.bottom_margin - Inches(C.MARGIN_BOTTOM_IN)) > tolerance:
+            records.append(
+                C.FixRecord(
+                    "ACB-MARGINS",
+                    C.FIX_CATEGORY_PAGE,
+                    f"Top margin -> {C.MARGIN_TOP_IN}in",
+                    sec_loc,
+                )
+            )
+        if (
+            section.bottom_margin is None
+            or abs(section.bottom_margin - Inches(C.MARGIN_BOTTOM_IN)) > tolerance
+        ):
             section.bottom_margin = Inches(C.MARGIN_BOTTOM_IN)
             fixes += 1
-        if section.left_margin is None or abs(section.left_margin - Inches(left_target)) > tolerance:
+            records.append(
+                C.FixRecord(
+                    "ACB-MARGINS",
+                    C.FIX_CATEGORY_PAGE,
+                    f"Bottom margin -> {C.MARGIN_BOTTOM_IN}in",
+                    sec_loc,
+                )
+            )
+        if (
+            section.left_margin is None
+            or abs(section.left_margin - Inches(left_target)) > tolerance
+        ):
             section.left_margin = Inches(left_target)
             fixes += 1
-        if section.right_margin is None or abs(section.right_margin - Inches(C.MARGIN_RIGHT_IN)) > tolerance:
+            records.append(
+                C.FixRecord(
+                    "ACB-MARGINS",
+                    C.FIX_CATEGORY_PAGE,
+                    f"Left margin -> {left_target}in",
+                    sec_loc,
+                )
+            )
+        if (
+            section.right_margin is None
+            or abs(section.right_margin - Inches(C.MARGIN_RIGHT_IN)) > tolerance
+        ):
             section.right_margin = Inches(C.MARGIN_RIGHT_IN)
             fixes += 1
+            records.append(
+                C.FixRecord(
+                    "ACB-MARGINS",
+                    C.FIX_CATEGORY_PAGE,
+                    f"Right margin -> {C.MARGIN_RIGHT_IN}in",
+                    sec_loc,
+                )
+            )
 
     return fixes
 
 
-def _fix_paragraph_formatting(doc: Document) -> int:
+def _fix_paragraph_formatting(
+    doc: Document,
+    records: list[C.FixRecord],
+    *,
+    list_indent_in: float = C.LIST_INDENT_IN,
+    list_hanging_in: float = C.LIST_HANGING_IN,
+    para_indent_in: float = C.PARA_INDENT_IN,
+    first_line_indent_in: float = C.FIRST_LINE_INDENT_IN,
+) -> int:
     """Fix direct formatting overrides in paragraph content. Returns fix count."""
     fixes = 0
 
-    for para in doc.paragraphs:
+    for i, para in enumerate(doc.paragraphs):
         style_name = para.style.name if para.style else "Normal"
         is_heading = bool(re.match(r"^Heading \d+$", style_name))
+        is_list = style_name in (
+            "List Bullet",
+            "List Number",
+            "List Bullet 2",
+            "List Number 2",
+            "List Bullet 3",
+            "List Number 3",
+        )
+
+        loc = f"Paragraph {i + 1}"
 
         # Fix alignment
         if para.paragraph_format.alignment is not None:
             if para.paragraph_format.alignment != WD_ALIGN_PARAGRAPH.LEFT:
                 para.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.LEFT
                 fixes += 1
+                records.append(
+                    C.FixRecord(
+                        "ACB-ALIGNMENT",
+                        C.FIX_CATEGORY_ALIGNMENT,
+                        "Alignment -> flush left",
+                        loc,
+                    )
+                )
+
+        # Fix list indentation
+        if is_list:
+            pf = para.paragraph_format
+            actual_indent = pf.left_indent.inches if pf.left_indent else 0.0
+            if abs(actual_indent - list_indent_in) > 0.05:
+                pf.left_indent = (
+                    Inches(list_indent_in) if list_indent_in > 0 else Inches(0)
+                )
+                if list_hanging_in and list_indent_in > 0:
+                    pf.first_line_indent = Inches(-list_hanging_in)
+                elif list_indent_in == 0:
+                    pf.first_line_indent = None
+                fixes += 1
+                records.append(
+                    C.FixRecord(
+                        "ACB-LIST-INDENT",
+                        C.FIX_CATEGORY_ALIGNMENT,
+                        f"List indent -> {list_indent_in}in",
+                        loc,
+                    )
+                )
+
+        # Fix non-list, non-heading paragraph indentation
+        if not is_list and not is_heading and para.text.strip():
+            pf = para.paragraph_format
+            # Left indent
+            actual_left = pf.left_indent.inches if pf.left_indent else 0.0
+            if abs(actual_left - para_indent_in) > 0.05:
+                pf.left_indent = (
+                    Inches(para_indent_in) if para_indent_in > 0 else Inches(0)
+                )
+                fixes += 1
+                records.append(
+                    C.FixRecord(
+                        "ACB-PARA-INDENT",
+                        C.FIX_CATEGORY_ALIGNMENT,
+                        f"Left indent -> {para_indent_in}in",
+                        loc,
+                    )
+                )
+            # First-line indent
+            actual_fli = pf.first_line_indent.inches if pf.first_line_indent else 0.0
+            if abs(actual_fli - first_line_indent_in) > 0.05:
+                pf.first_line_indent = (
+                    Inches(first_line_indent_in)
+                    if abs(first_line_indent_in) > 0.001
+                    else None
+                )
+                fixes += 1
+                records.append(
+                    C.FixRecord(
+                        "ACB-FIRST-LINE-INDENT",
+                        C.FIX_CATEGORY_ALIGNMENT,
+                        f"First-line indent -> {first_line_indent_in}in",
+                        loc,
+                    )
+                )
 
         for run in para.runs:
             # Remove italic everywhere
@@ -130,6 +311,14 @@ def _fix_paragraph_formatting(doc: Document) -> int:
                 # Convert italic text to underline (ACB emphasis)
                 run.font.underline = True
                 fixes += 1
+                records.append(
+                    C.FixRecord(
+                        "ACB-ITALIC",
+                        C.FIX_CATEGORY_EMPHASIS,
+                        "Italic -> underline",
+                        loc,
+                    )
+                )
 
             # Fix bold in body text: convert to underline
             if run.font.bold and not is_heading and run.text.strip():
@@ -137,26 +326,57 @@ def _fix_paragraph_formatting(doc: Document) -> int:
                     run.font.bold = False
                     run.font.underline = True
                     fixes += 1
+                    records.append(
+                        C.FixRecord(
+                            "ACB-BOLD-BODY",
+                            C.FIX_CATEGORY_EMPHASIS,
+                            "Bold body text -> underline",
+                            loc,
+                        )
+                    )
 
             # Fix font family
             if run.font.name and run.font.name != C.FONT_FAMILY:
+                old_name = run.font.name
                 run.font.name = C.FONT_FAMILY
                 fixes += 1
+                records.append(
+                    C.FixRecord(
+                        "ACB-FONT-FAMILY",
+                        C.FIX_CATEGORY_FONT,
+                        f"Font '{old_name}' -> {C.FONT_FAMILY}",
+                        loc,
+                    )
+                )
 
             # Fix font size below minimum
             if run.font.size and run.font.size.pt < C.MIN_SIZE_PT - 0.5:
+                old_size = run.font.size.pt
                 run.font.size = Pt(C.MIN_SIZE_PT)
                 fixes += 1
+                records.append(
+                    C.FixRecord(
+                        "ACB-FONT-SIZE-BODY",
+                        C.FIX_CATEGORY_FONT,
+                        f"Font size {old_size}pt -> {C.MIN_SIZE_PT}pt",
+                        loc,
+                    )
+                )
 
             # Remove all caps
             if run.font.all_caps:
                 run.font.all_caps = False
                 fixes += 1
+                records.append(
+                    C.FixRecord(
+                        "ACB-ALL-CAPS", C.FIX_CATEGORY_EMPHASIS, "Removed all caps", loc
+                    )
+                )
 
     return fixes
 
 
-def _fix_hyphenation(doc: Document) -> int:
+def _fix_hyphenation(doc: Document, records: list[C.FixRecord]) -> int:
     """Disable automatic hyphenation. Returns 1 if fixed, 0 if already correct."""
     settings = doc.settings.element
     auto_hyph = settings.find(qn("w:autoHyphenation"))
@@ -164,16 +384,32 @@ def _fix_hyphenation(doc: Document) -> int:
         val = auto_hyph.get(qn("w:val"), "true")
         if val.lower() not in ("false", "0", "off"):
             auto_hyph.set(qn("w:val"), "false")
+            records.append(
+                C.FixRecord(
+                    "ACB-HYPHENATION",
+                    C.FIX_CATEGORY_PAGE,
+                    "Disabled automatic hyphenation",
+                    "Document settings",
+                )
+            )
             return 1
         return 0
     # Add element explicitly set to false
     elem = OxmlElement("w:autoHyphenation")
     elem.set(qn("w:val"), "false")
     settings.append(elem)
+    records.append(
+        C.FixRecord(
+            "ACB-HYPHENATION",
+            C.FIX_CATEGORY_PAGE,
+            "Disabled automatic hyphenation",
+            "Document settings",
+        )
+    )
     return 1
 
 
-def _fix_page_numbers(doc: Document) -> int:
+def _fix_page_numbers(doc: Document, records: list[C.FixRecord]) -> int:
     """Add page numbers to footer if missing. Returns 1 if added."""
     has_page_numbers = False
     for section in doc.sections:
@@ -215,10 +451,20 @@ def _fix_page_numbers(doc: Document) -> int:
     fld_end.set(qn("w:fldCharType"), "end")
     run._r.append(fld_end)
 
+    records.append(
+        C.FixRecord(
+            "ACB-PAGE-NUMBERS",
+            C.FIX_CATEGORY_PAGE,
+            "Added page numbers to footer",
+            "Section 1 footer",
+        )
+    )
     return 1
 
 
-def _fix_document_title(doc: Document, file_path: Path) -> tuple[int, str | None]:
+def _fix_document_title(
+    doc: Document, file_path: Path, records: list[C.FixRecord]
+) -> tuple[int, str | None]:
     """Set document title from first Heading 1 or filename. Returns (fix_count, warning).
 
     WARNING: The inferred title should be manually reviewed.
@@ -231,20 +477,40 @@ def _fix_document_title(doc: Document, file_path: Path) -> tuple[int, str | None
     for para in doc.paragraphs:
         if para.style and para.style.name == "Heading 1" and para.text.strip():
             doc.core_properties.title = para.text.strip()
-            return 1, (
-                f'Document title was set from the first heading: '
+            warn = (
+                f"Document title was set from the first heading: "
                 f'"{para.text.strip()}". Please review and correct if needed.'
             )
+            records.append(
+                C.FixRecord(
+                    "ACB-DOC-TITLE",
+                    C.FIX_CATEGORY_PROPS,
+                    f"Title set from heading: {para.text.strip()}",
+                    "Core properties",
+                )
+            )
+            return 1, warn
 
     # Fallback to filename (without extension)
     doc.core_properties.title = file_path.stem
-    return 1, (
-        f'Document title was set from the filename: '
+    warn = (
+        f"Document title was set from the filename: "
         f'"{file_path.stem}". Please review and correct if needed.'
     )
+    records.append(
+        C.FixRecord(
+            "ACB-DOC-TITLE",
+            C.FIX_CATEGORY_PROPS,
+            f"Title set from filename: {file_path.stem}",
+            "Core properties",
+        )
+    )
+    return 1, warn
 
 
-def _fix_document_language(doc: Document, lang: str = "en-US") -> int:
+def _fix_document_language(
+    doc: Document, records: list[C.FixRecord], lang: str = "en-US"
+) -> int:
     """Set document language if missing. Returns 1 if fixed."""
     styles_elem = doc.styles.element
     doc_defaults = styles_elem.find(qn("w:docDefaults"))
@@ -264,8 +530,164 @@ def _fix_document_language(doc: Document, lang: str = "en-US") -> int:
         lang_elem.set(qn("w:val"), lang)
         lang_elem.set(qn("w:eastAsia"), lang)
         lang_elem.set(qn("w:bidi"), lang)
+        records.append(
+            C.FixRecord(
+                "ACB-DOC-LANG",
+                C.FIX_CATEGORY_PROPS,
+                f"Document language set to {lang}",
+                "Document defaults",
+            )
+        )
         return 1
     return 0
+
+
+def _convert_faux_headings(
+    doc: Document,
+    records: list[C.FixRecord],
+    *,
+    ai_provider: object | None = None,
+    threshold: int | None = None,
+    system_prompt: str | None = None,
+    confirmed_headings: list | None = None,
+) -> int:
+    """Detect faux headings and convert them to real heading styles.
+
+    This is a pre-pass that runs before other fixes so that subsequent
+    style fixes can apply correct heading formatting.
+
+    Args:
+        confirmed_headings: Pre-confirmed list of
+            ``(paragraph_index, suggested_level, text)`` tuples from an
+            interactive review step.  When provided, detection is skipped
+            and only the confirmed candidates are applied.
+
+    Returns:
+        Number of paragraphs converted to headings.
+    """
+    if confirmed_headings is not None:
+        # Build lightweight candidate objects from confirmed data
+        from .heading_detector import HeadingCandidate
+
+        candidates = [
+            HeadingCandidate(
+                paragraph_index=idx,
+                text=txt,
+                font_size_pt=None,
+                is_bold=False,
+                is_all_caps=False,
+                is_title_case=False,
+                char_count=len(txt),
+                score=100,
+                suggested_level=level,
+                confidence="confirmed",
+            )
+            for idx, level, txt in confirmed_headings
+        ]
+    else:
+        from .heading_detector import detect_headings
+
+        candidates = detect_headings(
+            doc,
+            ai_provider=ai_provider,
+            threshold=threshold,
+            system_prompt=system_prompt,
+        )
+    if not candidates:
+        return 0
+
+    fixes = 0
+    para_list = list(doc.paragraphs)
+    for candidate in candidates:
+        if candidate.paragraph_index >= len(para_list):
+            continue
+        para = para_list[candidate.paragraph_index]
+        # Verify the text still matches (guard against stale indices)
+        if para.text.strip() != candidate.text.strip():
+            continue
+
+        target_style = f"Heading {candidate.suggested_level}"
+        try:
+            _ = doc.styles[target_style]
+        except KeyError:
+            continue
+
+        old_style = para.style.name if para.style else "Normal"
+        para.style = doc.styles[target_style]
+        # Clear direct formatting that conflicts with heading styles
+        for run in para.runs:
+            run.font.size = None
+            run.font.bold = None
+            run.font.name = None
+        fixes += 1
+        records.append(
+            C.FixRecord(
+                rule_id="ACB-FAUX-HEADING",
+                category=C.FIX_CATEGORY_HEADINGS,
+                description=f"Converted '{candidate.text[:60]}' from {old_style} to {target_style} (confidence {candidate.score}%)",
+                location=f"Paragraph {candidate.paragraph_index + 1}",
+            )
+        )
+
+    return fixes
+
+
+def _normalize_heading_structure(doc: Document, records: list[C.FixRecord]) -> int:
+    """Normalize heading text and hierarchy to satisfy ACB heading rules.
+
+    - Converts ALL CAPS heading text to title case.
+    - Prevents skipped heading levels (e.g., H1 -> H3).
+    """
+    fixes = 0
+    heading_pattern = re.compile(r"^Heading (\d+)$")
+    prev_level = 0
+
+    for idx, para in enumerate(doc.paragraphs):
+        style_name = para.style.name if para.style else ""
+        m = heading_pattern.match(style_name)
+        if not m or not para.text.strip():
+            continue
+
+        level = int(m.group(1))
+        loc = f"Paragraph {idx + 1}"
+
+        # Fix ALL CAPS heading text.
+        text = para.text.strip()
+        if text.isupper() and len(text) > 1:
+            para.text = text.title()
+            fixes += 1
+            records.append(
+                C.FixRecord(
+                    "ACB-NO-ALLCAPS",
+                    C.FIX_CATEGORY_HEADINGS,
+                    "Converted ALL CAPS heading text to title case",
+                    loc,
+                )
+            )
+
+        # Fix skipped heading levels.
+        if prev_level and level > prev_level + 1:
+            new_level = prev_level + 1
+            target_style = f"Heading {new_level}"
+            try:
+                para.style = doc.styles[target_style]
+                level = new_level
+                fixes += 1
+                records.append(
+                    C.FixRecord(
+                        "ACB-HEADING-HIERARCHY",
+                        C.FIX_CATEGORY_HEADINGS,
+                        f"Adjusted heading level to avoid skip: Heading {new_level}",
+                        loc,
+                    )
+                )
+            except KeyError:
+                # If style is missing, skip gracefully.
+                pass
+
+        prev_level = level
+
+    return fixes
 
 
 def fix_document(
@@ -273,17 +695,43 @@ def fix_document(
     output_path: str | Path | None = None,
     *,
     bound: bool = False,
-) -> tuple[Path, int, AuditResult]:
+    list_indent_in: float | None = None,
+    list_hanging_in: float | None = None,
+    para_indent_in: float | None = None,
+    first_line_indent_in: float | None = None,
+    detect_headings: bool = False,
+    ai_provider: object | None = None,
+    heading_threshold: int | None = None,
+    system_prompt: str | None = None,
+    confirmed_headings: list | None = None,
+) -> tuple[Path, int, list[C.FixRecord], AuditResult, list[str]]:
     """Fix a Word document for ACB compliance.
 
     Args:
         file_path: Input .docx file.
         output_path: Where to save fixed document. Defaults to overwriting.
         bound: Add binding margin if True.
+        list_indent_in: Left indent for list paragraphs (inches).
+        list_hanging_in: Hanging indent for list paragraphs (inches).
+        para_indent_in: Left indent for non-list paragraphs (inches).
+        first_line_indent_in: First-line indent for paragraphs (inches).
+        detect_headings: Run faux-heading detection and convert to real headings.
+        ai_provider: Optional AI provider for heading detection refinement.
+        heading_threshold: Confidence threshold for heading detection.
+        system_prompt: Custom system prompt for AI heading detection.
 
     Returns:
-        Tuple of (output_path, total_fixes, post_fix_audit_result, warnings).
+        Tuple of (output_path, total_fixes, fix_records, post_fix_audit_result, warnings).
     """
+    if list_indent_in is None:
+        list_indent_in = C.LIST_INDENT_IN
+    if list_hanging_in is None:
+        list_hanging_in = C.LIST_HANGING_IN
+    if para_indent_in is None:
+        para_indent_in = C.PARA_INDENT_IN
+    if first_line_indent_in is None:
+        first_line_indent_in = C.FIRST_LINE_INDENT_IN
+
     file_path = Path(file_path)
     if output_path is None:
         output_path = file_path
@@ -293,14 +741,38 @@ def fix_document(
 
     total_fixes = 0
     warnings: list[str] = []
-    total_fixes += _fix_styles(doc)
-    total_fixes += _fix_page_setup(doc, bound=bound)
-    total_fixes += _fix_paragraph_formatting(doc)
-    total_fixes += _fix_hyphenation(doc)
-    total_fixes += _fix_page_numbers(doc)
-    total_fixes += _fix_document_language(doc)
+    records: list[C.FixRecord] = []
 
-    title_fixes, title_warning = _fix_document_title(doc, file_path)
+    # Phase 4: Heading conversion pre-pass (before other fixes)
+    if detect_headings or confirmed_headings:
+        total_fixes += _convert_faux_headings(
+            doc,
+            records,
+            ai_provider=ai_provider,
+            threshold=heading_threshold,
+            system_prompt=system_prompt,
+            confirmed_headings=confirmed_headings,
+        )
+
+    total_fixes += _normalize_heading_structure(doc, records)
+
+    total_fixes += _fix_styles(
+        doc, records, list_indent_in=list_indent_in, list_hanging_in=list_hanging_in
+    )
+    total_fixes += _fix_page_setup(doc, records, bound=bound)
+    total_fixes += _fix_paragraph_formatting(
+        doc,
+        records,
+        list_indent_in=list_indent_in,
+        list_hanging_in=list_hanging_in,
+        para_indent_in=para_indent_in,
+        first_line_indent_in=first_line_indent_in,
+    )
+    total_fixes += _fix_hyphenation(doc, records)
+    total_fixes += _fix_page_numbers(doc, records)
+    total_fixes += _fix_document_language(doc, records)
+
+    title_fixes, title_warning = _fix_document_title(doc, file_path, records)
     total_fixes += title_fixes
     if title_warning:
         warnings.append(title_warning)
@@ -309,6 +781,11 @@ def fix_document(
     doc.save(str(output_path))
 
     # Run post-fix audit to show remaining issues
-    post_audit = audit_document(output_path)
+    post_audit = audit_document(
+        output_path,
+        list_indent_in=list_indent_in,
+        para_indent_in=para_indent_in,
+        first_line_indent_in=first_line_indent_in,
+    )
 
-    return output_path, total_fixes, post_audit, warnings
+    return output_path, total_fixes, records, post_audit, warnings

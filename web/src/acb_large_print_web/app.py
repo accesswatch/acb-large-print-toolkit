@@ -50,6 +50,7 @@ def create_app(config: dict | None = None) -> Flask:
     @app.context_processor
     def inject_rules():
         from importlib.metadata import version as pkg_version
+
         try:
             web_ver = pkg_version("acb-large-print-web")
         except Exception:
@@ -127,8 +128,7 @@ def create_app(config: dict | None = None) -> Flask:
     def server_error(e):
         return _render_error(
             "Server Error",
-            "Something went wrong while processing your request. "
-            "Please try again.",
+            "Something went wrong while processing your request. " "Please try again.",
             500,
         )
 

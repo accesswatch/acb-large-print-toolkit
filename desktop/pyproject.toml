@@ -56,3 +56,7 @@ where = ["src"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+markers = [
+    "ollama: live integration tests requiring a running Ollama server",
+    "stress: large randomized corpus tests for heading detection and fixer robustness",
+]

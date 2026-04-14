@@ -6,6 +6,7 @@ import re
 from pathlib import Path
 
 from openpyxl import load_workbook
+
 try:
     from openpyxl.chart import ChartBase
 except ImportError:
@@ -16,11 +17,24 @@ from . import constants as C
 from .auditor import AuditResult
 
 # Generic default sheet names across locales
-_GENERIC_SHEET_NAMES = frozenset({
-    "Sheet", "Sheet1", "Sheet2", "Sheet3", "Sheet4", "Sheet5",
-    "Tabelle1", "Tabelle2", "Feuil1", "Feuil2", "Hoja1", "Hoja2",
-    "Foglio1", "Foglio2",
-})
+_GENERIC_SHEET_NAMES = frozenset(
+    {
+        "Sheet",
+        "Sheet1",
+        "Sheet2",
+        "Sheet3",
+        "Sheet4",
+        "Sheet5",
+        "Tabelle1",
+        "Tabelle2",
+        "Feuil1",
+        "Feuil2",
+        "Hoja1",
+        "Hoja2",
+        "Foglio1",
+        "Foglio2",
+    }
+)
 
 # Non-descriptive link text patterns (shared with Word auditor)
 _BAD_LINK_RE = re.compile(
@@ -45,7 +59,9 @@ def audit_workbook(file_path: str | Path) -> AuditResult:
         result.add("XLSX-TITLE", "Workbook title is not set in document properties.")
 
     if not (wb.properties.creator and wb.properties.creator.strip()):
-        result.add("ACB-DOC-AUTHOR", "Workbook author is not set in document properties.")
+        result.add(
+            "ACB-DOC-AUTHOR", "Workbook author is not set in document properties."
+        )
 
     # -- Per-sheet checks --
     for ws in wb.worksheets:
@@ -123,11 +139,11 @@ def audit_workbook(file_path: str | Path) -> AuditResult:
 # Individual check helpers
 # ---------------------------------------------------------------------------
 
+
 def _check_hidden_content(ws: Worksheet, result: AuditResult, loc: str) -> None:
     """Flag hidden rows and columns."""
     hidden_cols = [
-        c for c in (ws.column_dimensions or {}).values()
-        if getattr(c, "hidden", False)
+        c for c in (ws.column_dimensions or {}).values() if getattr(c, "hidden", False)
     ]
     if hidden_cols:
         result.add(
@@ -137,8 +153,7 @@ def _check_hidden_content(ws: Worksheet, result: AuditResult, loc: str) -> None:
         )
 
     hidden_rows = [
-        r for r in (ws.row_dimensions or {}).values()
-        if getattr(r, "hidden", False)
+        r for r in (ws.row_dimensions or {}).values() if getattr(r, "hidden", False)
     ]
     if hidden_rows:
         result.add(
@@ -205,8 +220,16 @@ def _check_color_only(ws: Worksheet, result: AuditResult, loc: str) -> None:
             if cell.value is not None:
                 continue
             fill = cell.fill
-            if fill and fill.fgColor and fill.fgColor.rgb and fill.fgColor.rgb not in (
-                "00000000", None, "0",
+            if (
+                fill
+                and fill.fgColor
+                and fill.fgColor.rgb
+                and fill.fgColor.rgb
+                not in (
+                    "00000000",
+                    None,
+                    "0",
+                )
             ):
                 flagged += 1
     if flagged:

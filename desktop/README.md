@@ -320,6 +320,100 @@ Post-processing removes inline styles, cleans empty paragraphs, and adds `scope`
 4. Run tests: `pytest`
 5. Submit a pull request
 
+## Stress Validation And Lessons Learned
+
+This runbook records what we tested, what we learned, how we adapted the fixer, and what the evidence now supports.
+
+### Scope
+
+- 1,000 generated Word documents in the main release-scale corpus
+- 1,000 total heading scenarios at the current default scale
+- 10 document families
+- 12 randomized scenario patterns
+- 7 language variants in the random heading set
+
+The corpus lives in [desktop/src/acb_large_print/stress_profiles.py](desktop/src/acb_large_print/stress_profiles.py).
+
+### What The Tests Covered
+
+Heading-detection scenarios:
+
+- Genuine headings with strong visual signals
+- Numbered headings and outline-style headings
+- Plain-text lines with no heading styles
+- Font-size-only heading cues
+- False positives such as signature lines and callout labels
+- Multilingual section labels and numbering patterns
+- Mixed-format paste artifacts such as centered titles, justified text, font drift, and indentation drift
+
+What the 1,000 generated documents represented:
+
+- Meeting agendas and board packets assembled from pasted material
+- Newsletters and flyers with decorative layout problems
+- Policy manuals built from older templates with drifted formatting
+- Legal outlines with numbering and hierarchy pressure
+- Training handouts with prompts and labels that may look like headings
+- Appendix-style and reference documents with short labels and notes
+- Plain-text paste where no real heading styles exist
+
+The documents were intentionally built to behave like realistic user uploads. Each potential heading appeared inside a fuller document context, so the platform had to detect structure and then repair the rest of the document back to ACB compliance.
+
+Document-repair scenarios:
+
+- Flush-left alignment enforcement
+- Paragraph and list indentation repair
+- Font family and size normalization
+- Italic removal and body emphasis cleanup
+- Faux-heading conversion to real heading styles
+- Heading hierarchy repair
+- ALL CAPS heading cleanup
+
+### Validation Commands
+
+Run from the repository root after setting PYTHONPATH to include desktop/src and web/src.
+
+Primary full-suite command:
+
+```bash
+python -m pytest desktop/tests/test_heading_stress_corpus.py -q
+```
+
+Core fixer and detector command:
+
+```bash
+python -m pytest desktop/tests/test_fixer_headings.py desktop/tests/test_heading_stress_corpus.py desktop/tests/test_heading_detector.py desktop/tests/test_heading_detector_extensive.py -q
+```
+
+Ground-truth comparison and fix-then-audit sweeps were also run directly with Python one-liners over the full corpus to measure false positives, false negatives, and post-fix ACB findings.
+
+### What We Proved
+
+- Full heading stress suite: 5 passed
+- Core fixer and detector suite: 150 passed
+- 1,000-scenario heuristic comparison: 0 false positives, 0 false negatives
+- 4,800-scenario denser randomized comparison: 0 false positives, 0 false negatives
+- 1,000-document fix-then-audit sweep: 0 remaining ACB findings after the latest fixes
+
+### Lessons Learned
+
+1. Real documents combine multiple failure modes. A single file may contain plain-text headings, copied email content, mixed fonts, centered titles, fake emphasis, and indentation drift all at once.
+2. Heading detection quality depends on negative examples as much as positive ones. Signature lines, reminders, and similar short phrases are exactly where false positives happen if penalties are weak.
+3. Repair quality must be measured separately from detection quality. A detector can be correct while the repaired document still violates ACB rules.
+4. The most valuable findings came from policy-level failures, not crashes. The strongest example was faux headings that were correctly detected but still produced ACB-HEADING-HIERARCHY and ACB-NO-ALLCAPS failures after repair.
+
+### How The Platform Adapted
+
+- Added stronger penalties for signature-like and callout-style false positives
+- Expanded randomness to include multilingual headings, plain-text/no-style negatives, and font-only heading cues
+- Lowered one synthetic expected heading level so the generated ground truth better matched the intended structure
+- Added a fixer normalization pass that converts ALL CAPS heading text to title case and repairs skipped heading levels after faux-heading conversion
+
+### Confidence Statement
+
+- We are confident in the lessons learned for heading detection and ACB repair within the tested corpus because the final measured results are clean across the full release-scale run and the denser randomized run.
+- We are confident in the fixer design being cross-platform because it uses platform-neutral Python document processing rather than OS-specific APIs.
+- We only have runtime proof from Windows in this session. macOS and Linux still need the same validation commands run in CI for full cross-platform execution proof.
+
 ## License
 
 MIT License. See [LICENSE.txt](LICENSE.txt).

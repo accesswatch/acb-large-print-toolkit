@@ -13,6 +13,7 @@ from .auditor import AuditResult, Finding
 
 try:
     import fitz  # PyMuPDF
+
     HAS_PYMUPDF = True
 except ImportError:
     HAS_PYMUPDF = False
@@ -20,9 +21,19 @@ except ImportError:
 
 # Known sans-serif font families (lowercase, prefix match)
 _SANS_SERIF_PREFIXES = (
-    "arial", "helvetica", "verdana", "tahoma", "trebuchet",
-    "calibri", "segoe", "roboto", "open sans", "noto sans",
-    "liberation sans", "dejavu sans", "freesans",
+    "arial",
+    "helvetica",
+    "verdana",
+    "tahoma",
+    "trebuchet",
+    "calibri",
+    "segoe",
+    "roboto",
+    "open sans",
+    "noto sans",
+    "liberation sans",
+    "dejavu sans",
+    "freesans",
 )
 
 
@@ -37,12 +48,14 @@ def audit_pdf(file_path: str | Path) -> AuditResult:
     result = AuditResult(file_path=str(file_path))
 
     if not HAS_PYMUPDF:
-        result.findings.append(Finding(
-            rule_id="PDF-TAGGED",
-            severity=C.Severity.CRITICAL,
-            message="PyMuPDF is not installed; PDF audit requires it (pip install pymupdf)",
-            auto_fixable=False,
-        ))
+        result.findings.append(
+            Finding(
+                rule_id="PDF-TAGGED",
+                severity=C.Severity.CRITICAL,
+                message="PyMuPDF is not installed; PDF audit requires it (pip install pymupdf)",
+                auto_fixable=False,
+            )
+        )
         return result
 
     doc = fitz.open(str(file_path))
@@ -117,7 +130,9 @@ def _check_fonts(doc, result: AuditResult) -> None:
     for page_num in range(min(doc.page_count, 50)):  # Cap at 50 pages
         page = doc[page_num]
         pages_checked += 1
-        blocks = page.get_text("dict", flags=fitz.TEXT_PRESERVE_WHITESPACE).get("blocks", [])
+        blocks = page.get_text("dict", flags=fitz.TEXT_PRESERVE_WHITESPACE).get(
+            "blocks", []
+        )
 
         for block in blocks:
             if block.get("type") != 0:  # text blocks only

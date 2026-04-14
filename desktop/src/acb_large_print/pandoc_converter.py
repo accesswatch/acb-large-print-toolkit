@@ -28,12 +28,12 @@ log = logging.getLogger("acb_large_print")
 # Deliberately scoped to document types relevant to accessibility conversion
 # (not the full 40+ formats Pandoc supports).
 PANDOC_INPUT_EXTENSIONS: set[str] = {
-    ".md",      # Markdown (GFM)
-    ".rst",     # reStructuredText
-    ".odt",     # OpenDocument Text
-    ".rtf",     # Rich Text Format
-    ".docx",    # Word (Pandoc's own reader)
-    ".epub",    # ePub e-books
+    ".md",  # Markdown (GFM)
+    ".rst",  # reStructuredText
+    ".odt",  # OpenDocument Text
+    ".rtf",  # Rich Text Format
+    ".docx",  # Word (Pandoc's own reader)
+    ".epub",  # ePub e-books
 }
 
 # Pandoc input format flag for each extension
@@ -148,7 +148,9 @@ def pandoc_version() -> str | None:
     try:
         result = subprocess.run(
             [exe, "--version"],
-            capture_output=True, text=True, timeout=10,
+            capture_output=True,
+            text=True,
+            timeout=10,
         )
         first_line = result.stdout.strip().splitlines()[0]
         return first_line  # e.g. "pandoc 3.1.13"
@@ -235,12 +237,18 @@ def convert_to_html(
         cmd = [
             exe,
             "--standalone",
-            "--from", input_fmt,
-            "--to", "html5",
-            "--include-in-header", str(header_file),
-            "--metadata", f"title={title}",
-            "--metadata", f"lang={lang}",
-            "--output", str(output_path),
+            "--from",
+            input_fmt,
+            "--to",
+            "html5",
+            "--include-in-header",
+            str(header_file),
+            "--metadata",
+            f"title={title}",
+            "--metadata",
+            f"lang={lang}",
+            "--output",
+            str(output_path),
             str(src_path),
         ]
 
@@ -262,7 +270,9 @@ def convert_to_html(
         html_text = output_path.read_text(encoding="utf-8")
         log.info(
             "Pandoc conversion complete: %s -> %s (%d characters)",
-            src_path.name, output_path.name, len(html_text),
+            src_path.name,
+            output_path.name,
+            len(html_text),
         )
         return output_path, html_text
 
@@ -360,6 +370,7 @@ def weasyprint_available() -> bool:
     """Return True if WeasyPrint is installed and importable."""
     try:
         import weasyprint  # noqa: F401
+
         return True
     except ImportError:
         return False
@@ -427,11 +438,16 @@ def convert_to_docx(
     cmd = [
         exe,
         "--standalone",
-        "--from", input_fmt,
-        "--to", "docx",
-        "--metadata", f"title={title}",
-        "--metadata", f"lang={lang}",
-        "--output", str(output_path),
+        "--from",
+        input_fmt,
+        "--to",
+        "docx",
+        "--metadata",
+        f"title={title}",
+        "--metadata",
+        f"lang={lang}",
+        "--output",
+        str(output_path),
         str(src_path),
     ]
 
@@ -446,14 +462,15 @@ def convert_to_docx(
     if result.returncode != 0:
         stderr = result.stderr.strip()
         raise RuntimeError(
-            f"Pandoc conversion failed (exit code {result.returncode}): "
-            f"{stderr}"
+            f"Pandoc conversion failed (exit code {result.returncode}): " f"{stderr}"
         )
 
     size = output_path.stat().st_size
     log.info(
         "Pandoc conversion complete: %s -> %s (%d bytes)",
-        src_path.name, output_path.name, size,
+        src_path.name,
+        output_path.name,
+        size,
     )
     return output_path, size
 
@@ -497,8 +514,7 @@ def convert_to_epub(
     # Don't convert .epub -> .epub
     if ext == ".epub":
         raise ValueError(
-            "The input file is already an EPUB. "
-            "Choose a different input format."
+            "The input file is already an EPUB. " "Choose a different input format."
         )
 
     exe = shutil.which("pandoc")
@@ -532,11 +548,16 @@ def convert_to_epub(
 
         cmd = [
             exe,
-            "--from", input_fmt,
-            "--to", "epub3",
-            "--metadata", f"title={title}",
-            "--metadata", f"lang={lang}",
-            "--output", str(output_path),
+            "--from",
+            input_fmt,
+            "--to",
+            "epub3",
+            "--metadata",
+            f"title={title}",
+            "--metadata",
+            f"lang={lang}",
+            "--output",
+            str(output_path),
         ]
 
         # Embed ACB CSS into the EPUB
@@ -565,7 +586,9 @@ def convert_to_epub(
         size = output_path.stat().st_size
         log.info(
             "Pandoc EPUB conversion complete: %s -> %s (%d bytes)",
-            src_path.name, output_path.name, size,
+            src_path.name,
+            output_path.name,
+            size,
         )
         return output_path, size
 
@@ -659,11 +682,16 @@ def convert_to_pdf(
         cmd = [
             exe,
             "--standalone",
-            "--from", input_fmt,
-            "--to", "html5",
-            "--metadata", f"title={title}",
-            "--metadata", f"lang={lang}",
-            "--output", str(html_intermediate),
+            "--from",
+            input_fmt,
+            "--to",
+            "html5",
+            "--metadata",
+            f"title={title}",
+            "--metadata",
+            f"lang={lang}",
+            "--output",
+            str(html_intermediate),
             str(src_path),
         ]
 
@@ -683,7 +711,9 @@ def convert_to_pdf(
             )
 
         # Step 2: WeasyPrint renders HTML + ACB CSS -> PDF
-        log.info("WeasyPrint: rendering %s -> %s", html_intermediate.name, output_path.name)
+        log.info(
+            "WeasyPrint: rendering %s -> %s", html_intermediate.name, output_path.name
+        )
         html_doc = weasyprint.HTML(filename=str(html_intermediate))
         stylesheets = []
         if pdf_css:
@@ -693,7 +723,9 @@ def convert_to_pdf(
         size = output_path.stat().st_size
         log.info(
             "PDF conversion complete: %s -> %s (%d bytes)",
-            src_path.name, output_path.name, size,
+            src_path.name,
+            output_path.name,
+            size,
         )
         return output_path, size
 

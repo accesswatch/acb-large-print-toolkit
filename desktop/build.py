@@ -69,14 +69,21 @@ def _build_one(
     stem = name.rsplit(".", 1)[0] if os_label == "win" else name
 
     cmd = [
-        sys.executable, "-m", "PyInstaller",
-        "--name", stem,
+        sys.executable,
+        "-m",
+        "PyInstaller",
+        "--name",
+        stem,
         "--onedir",
         "--noconfirm",
-        "--distpath", str(DIST),
-        "--workpath", str(BUILD / "pyinstaller"),
-        "--specpath", str(BUILD),
-        "--paths", str(SRC),
+        "--distpath",
+        str(DIST),
+        "--workpath",
+        str(BUILD / "pyinstaller"),
+        "--specpath",
+        str(BUILD),
+        "--paths",
+        str(SRC),
     ]
 
     if os_label == "win" and console:
@@ -123,13 +130,17 @@ def _zip_dir(directory: Path) -> Path:
     zip_path = directory.with_suffix(".zip")
     print(f"Packaging: {zip_path.name}")
     # shutil.make_archive wants the base name without .zip
-    shutil.make_archive(str(directory), "zip", root_dir=str(DIST), base_dir=directory.name)
+    shutil.make_archive(
+        str(directory), "zip", root_dir=str(DIST), base_dir=directory.name
+    )
     size_mb = zip_path.stat().st_size / (1024 * 1024)
     print(f"Packaged: {zip_path.name} ({size_mb:.1f} MB)")
     return zip_path
 
 
-def build_exe(*, os_label: str | None = None, arch_label: str | None = None) -> list[Path]:
+def build_exe(
+    *, os_label: str | None = None, arch_label: str | None = None
+) -> list[Path]:
     """Build both CLI and GUI executables with PyInstaller.
 
     Returns list of paths to built output directories.
@@ -160,44 +171,51 @@ def build_exe(*, os_label: str | None = None, arch_label: str | None = None) -> 
     has_wx = False
     try:
         import wx  # noqa: F401
+
         has_wx = True
     except ImportError:
         pass
 
     gui_hidden = list(cli_hidden)
     if has_wx:
-        gui_hidden.extend([
-            "acb_large_print.gui",
-            "wx",
-            "wx.adv",
-        ])
+        gui_hidden.extend(
+            [
+                "acb_large_print.gui",
+                "wx",
+                "wx.adv",
+            ]
+        )
 
     results: list[Path] = []
 
     # 1. CLI executable (console mode, no wxPython dependency)
     cli_entry = SRC / "acb_large_print" / "cli_main.py"
     cli_name = _exe_name(os_label, arch_label, "-cli")
-    results.append(_build_one(
-        entry_point=cli_entry,
-        name=cli_name,
-        os_label=os_label,
-        arch_label=arch_label,
-        hidden=cli_hidden,
-        console=True,
-    ))
+    results.append(
+        _build_one(
+            entry_point=cli_entry,
+            name=cli_name,
+            os_label=os_label,
+            arch_label=arch_label,
+            hidden=cli_hidden,
+            console=True,
+        )
+    )
 
     # 2. GUI executable (windowed mode, includes wxPython)
     if has_wx:
         gui_entry = SRC / "acb_large_print" / "__main__.py"
         gui_name = _exe_name(os_label, arch_label)
-        results.append(_build_one(
-            entry_point=gui_entry,
-            name=gui_name,
-            os_label=os_label,
-            arch_label=arch_label,
-            hidden=gui_hidden,
-            console=False,
-        ))
+        results.append(
+            _build_one(
+                entry_point=gui_entry,
+                name=gui_name,
+                os_label=os_label,
+                arch_label=arch_label,
+                hidden=gui_hidden,
+                console=False,
+            )
+        )
     else:
         print("\nwxPython not installed -- skipping GUI build")
 
@@ -211,7 +229,7 @@ def build_exe(*, os_label: str | None = None, arch_label: str | None = None) -> 
     print(f"Build complete: {len(results)} build(s)")
     for p in results:
         if p.is_dir():
-            total = sum(f.stat().st_size for f in p.rglob('*') if f.is_file())
+            total = sum(f.stat().st_size for f in p.rglob("*") if f.is_file())
             print(f"  {p.name}/ ({total / (1024*1024):.1f} MB)")
     for z in zips:
         if z.exists():
@@ -273,9 +291,12 @@ VSVersionInfo(
 if __name__ == "__main__":
     import argparse
 
-    parser = argparse.ArgumentParser(description="Build ACB Large Print Tool executable")
+    parser = argparse.ArgumentParser(
+        description="Build ACB Large Print Tool executable"
+    )
     parser.add_argument(
-        "--version-info", action="store_true",
+        "--version-info",
+        action="store_true",
         help="Generate Windows version info file only (no build)",
     )
     args = parser.parse_args()

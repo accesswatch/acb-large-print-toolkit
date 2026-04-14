@@ -29,6 +29,7 @@ from pathlib import Path
 import wx
 
 from . import __app_name__, __version__
+from . import constants as C
 from .auditor import AuditResult, audit_document
 from .exporter import export_cms_fragment, export_standalone_html
 from .fixer import fix_document
@@ -50,6 +51,7 @@ try:
     from .pandoc_converter import pandoc_available as _pandoc_available
 except ImportError:
     _PANDOC_EXTENSIONS: set[str] = set()
+
     def _pandoc_available() -> bool:
         return False
 
@@ -110,8 +112,12 @@ class WizardFrame(wx.Frame):
 
         # Page container (swap panels per step)
         self.page_sizer = wx.BoxSizer(wx.VERTICAL)
-        root.Add(self.page_sizer, proportion=1,
-                 flag=wx.EXPAND | wx.LEFT | wx.RIGHT, border=10)
+        root.Add(
+            self.page_sizer,
+            proportion=1,
+            flag=wx.EXPAND | wx.LEFT | wx.RIGHT,
+            border=10,
+        )
 
         # Navigation buttons
         root.Add(wx.StaticLine(panel), flag=wx.EXPAND | wx.TOP, border=5)
@@ -167,15 +173,18 @@ class WizardFrame(wx.Frame):
         page = self._make_page()
         sizer = wx.BoxSizer(wx.VERTICAL)
 
-        intro = wx.StaticText(page, label=(
-            "Welcome to the ACB Document Accessibility Wizard.\n\n"
-            "This wizard will:\n"
-            "  1. Audit your document for ACB guideline violations\n"
-            "  2. Attempt to automatically fix issues found (Word only)\n"
-            "  3. Verify the fixes were applied correctly\n"
-            "  4. Save the corrected document and optional HTML exports\n\n"
-            "Select a Word, Excel, or PowerPoint document to begin."
-        ))
+        intro = wx.StaticText(
+            page,
+            label=(
+                "Welcome to the ACB Document Accessibility Wizard.\n\n"
+                "This wizard will:\n"
+                "  1. Audit your document for ACB guideline violations\n"
+                "  2. Attempt to automatically fix issues found (Word only)\n"
+                "  3. Verify the fixes were applied correctly\n"
+                "  4. Save the corrected document and optional HTML exports\n\n"
+                "Select a Word, Excel, or PowerPoint document to begin."
+            ),
+        )
         intro.Wrap(560)
         sizer.Add(intro, flag=wx.BOTTOM, border=15)
 
@@ -207,16 +216,19 @@ class WizardFrame(wx.Frame):
         sizer.Add(self.audit_status, flag=wx.BOTTOM, border=8)
 
         self.audit_text = wx.TextCtrl(
-            page, style=wx.TE_MULTILINE | wx.TE_READONLY | wx.TE_DONTWRAP,
+            page,
+            style=wx.TE_MULTILINE | wx.TE_READONLY | wx.TE_DONTWRAP,
         )
         self.audit_text.SetName("Initial audit results")
-        mono = wx.Font(10, wx.FONTFAMILY_TELETYPE,
-                       wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL)
+        mono = wx.Font(
+            10, wx.FONTFAMILY_TELETYPE, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL
+        )
         self.audit_text.SetFont(mono)
         sizer.Add(self.audit_text, proportion=1, flag=wx.EXPAND)
 
         self.btn_view_audit = wx.Button(
-            page, label="&View report in browser",
+            page,
+            label="&View report in browser",
         )
         self.btn_view_audit.SetName("Open audit report in default web browser")
         self.btn_view_audit.Bind(wx.EVT_BUTTON, self._on_view_audit_report)
@@ -231,11 +243,14 @@ class WizardFrame(wx.Frame):
         page = self._make_page()
         sizer = wx.BoxSizer(wx.VERTICAL)
 
-        intro = wx.StaticText(page, label=(
-            "Choose which outputs to create in addition to the "
-            "fixed document. HTML exports are available for Word "
-            "documents only. Markdown conversion works for all formats."
-        ))
+        intro = wx.StaticText(
+            page,
+            label=(
+                "Choose which outputs to create in addition to the "
+                "fixed document. HTML exports are available for Word "
+                "documents only. Markdown conversion works for all formats."
+            ),
+        )
         intro.Wrap(560)
         sizer.Add(intro, flag=wx.BOTTOM, border=12)
 
@@ -263,15 +278,11 @@ class WizardFrame(wx.Frame):
             page,
             label="&Markdown file (convert document to Markdown via MarkItDown)",
         )
-        self.chk_convert_md.SetName(
-            "Convert document to Markdown using MarkItDown"
-        )
+        self.chk_convert_md.SetName("Convert document to Markdown using MarkItDown")
         self.chk_convert_md.SetValue(False)
         if not _CONVERT_EXTENSIONS:
             self.chk_convert_md.Disable()
-            self.chk_convert_md.SetLabel(
-                "Markdown file (MarkItDown not installed)"
-            )
+            self.chk_convert_md.SetLabel("Markdown file (MarkItDown not installed)")
         sizer.Add(self.chk_convert_md, flag=wx.BOTTOM, border=6)
 
         self.chk_convert_html = wx.CheckBox(
@@ -284,23 +295,242 @@ class WizardFrame(wx.Frame):
         self.chk_convert_html.SetValue(False)
         if not _PANDOC_EXTENSIONS or not _pandoc_available():
             self.chk_convert_html.Disable()
-            self.chk_convert_html.SetLabel(
-                "ACB HTML file (Pandoc not installed)"
-            )
+            self.chk_convert_html.SetLabel("ACB HTML file (Pandoc not installed)")
         sizer.Add(self.chk_convert_html, flag=wx.BOTTOM, border=12)
 
-        note = wx.StaticText(page, label=(
-            "The CMS fragment is a single file you can paste directly into "
-            "a WordPress or Drupal HTML block. The standalone version is a "
-            "complete web page with a separate CSS file for hosting or email. "
-            "The Markdown option converts to Markdown via MarkItDown. "
-            "The ACB HTML option converts to accessible HTML with embedded "
-            "ACB Large Print CSS via Pandoc."
-        ))
+        # ── List indentation controls ─────────────────────────────────
+        list_box = wx.StaticBox(page, label="List Indentation")
+        list_sizer = wx.StaticBoxSizer(list_box, wx.VERTICAL)
+
+        self.chk_flush_lists = wx.CheckBox(
+            list_box,
+            label="&Flush all lists to the left margin (ACB default)",
+        )
+        self.chk_flush_lists.SetName(
+            "Flush all list items to the left margin with zero indentation"
+        )
+        self.chk_flush_lists.SetValue(C.LIST_INDENT_IN == 0.0)
+        self.chk_flush_lists.Bind(wx.EVT_CHECKBOX, self._on_flush_lists_toggle)
+        list_sizer.Add(self.chk_flush_lists, flag=wx.BOTTOM, border=8)
+
+        indent_grid = wx.FlexGridSizer(cols=2, hgap=8, vgap=6)
+        indent_grid.AddGrowableCol(1)
+
+        lbl_left = wx.StaticText(list_box, label="Left indent (inches):")
+        self.spin_list_indent = wx.SpinCtrlDouble(
+            list_box,
+            min=0.0,
+            max=2.0,
+            inc=0.05,
+            value=str(C.LIST_INDENT_IN),
+        )
+        self.spin_list_indent.SetDigits(2)
+        self.spin_list_indent.SetName("Left indent for list items in inches")
+        indent_grid.Add(lbl_left, flag=wx.ALIGN_CENTER_VERTICAL)
+        indent_grid.Add(self.spin_list_indent, flag=wx.EXPAND)
+
+        lbl_hang = wx.StaticText(list_box, label="Hanging indent (inches):")
+        self.spin_list_hanging = wx.SpinCtrlDouble(
+            list_box,
+            min=0.0,
+            max=2.0,
+            inc=0.05,
+            value=str(C.LIST_HANGING_IN),
+        )
+        self.spin_list_hanging.SetDigits(2)
+        self.spin_list_hanging.SetName(
+            "Hanging indent for list bullet or number in inches"
+        )
+        indent_grid.Add(lbl_hang, flag=wx.ALIGN_CENTER_VERTICAL)
+        indent_grid.Add(self.spin_list_hanging, flag=wx.EXPAND)
+
+        list_sizer.Add(indent_grid, flag=wx.EXPAND | wx.BOTTOM, border=8)
+
+        list_note = wx.StaticText(
+            list_box,
+            label=(
+                "ACB guidelines require flush-left alignment for all text. "
+                "Uncheck this option to keep standard Word list indentation "
+                "(0.50 inch left indent, 0.25 inch hanging indent). "
+                "You can also set custom values below."
+            ),
+        )
+        list_note.Wrap(520)
+        list_sizer.Add(list_note)
+
+        sizer.Add(list_sizer, flag=wx.EXPAND | wx.BOTTOM, border=12)
+
+        # Sync initial enabled state
+        self._on_flush_lists_toggle(None)
+
+        # ── Paragraph indentation controls ────────────────────────────
+        para_box = wx.StaticBox(page, label="Paragraph Indentation")
+        para_sizer = wx.StaticBoxSizer(para_box, wx.VERTICAL)
+
+        self.chk_flush_paragraphs = wx.CheckBox(
+            para_box,
+            label="Flush all &paragraphs to the left margin (ACB default)",
+        )
+        self.chk_flush_paragraphs.SetName(
+            "Remove all paragraph indentation including first-line indent"
+        )
+        self.chk_flush_paragraphs.SetValue(True)
+        self.chk_flush_paragraphs.Bind(
+            wx.EVT_CHECKBOX, self._on_flush_paragraphs_toggle
+        )
+        para_sizer.Add(self.chk_flush_paragraphs, flag=wx.BOTTOM, border=8)
+
+        para_grid = wx.FlexGridSizer(cols=2, hgap=8, vgap=6)
+        para_grid.AddGrowableCol(1)
+
+        lbl_para = wx.StaticText(para_box, label="Left indent (inches):")
+        self.spin_para_indent = wx.SpinCtrlDouble(
+            para_box,
+            min=0.0,
+            max=2.0,
+            inc=0.05,
+            value=str(C.PARA_INDENT_IN),
+        )
+        self.spin_para_indent.SetDigits(2)
+        self.spin_para_indent.SetName("Left indent for paragraphs in inches")
+        para_grid.Add(lbl_para, flag=wx.ALIGN_CENTER_VERTICAL)
+        para_grid.Add(self.spin_para_indent, flag=wx.EXPAND)
+
+        lbl_first = wx.StaticText(para_box, label="First-line indent (inches):")
+        self.spin_first_line_indent = wx.SpinCtrlDouble(
+            para_box,
+            min=0.0,
+            max=2.0,
+            inc=0.05,
+            value=str(C.FIRST_LINE_INDENT_IN),
+        )
+        self.spin_first_line_indent.SetDigits(2)
+        self.spin_first_line_indent.SetName(
+            "First-line indent for paragraphs in inches"
+        )
+        para_grid.Add(lbl_first, flag=wx.ALIGN_CENTER_VERTICAL)
+        para_grid.Add(self.spin_first_line_indent, flag=wx.EXPAND)
+
+        para_sizer.Add(para_grid, flag=wx.EXPAND | wx.BOTTOM, border=8)
+        sizer.Add(para_sizer, flag=wx.EXPAND | wx.BOTTOM, border=12)
+
+        # Sync initial enabled state
+        self._on_flush_paragraphs_toggle(None)
+
+        # ── Heading detection controls ────────────────────────────────
+        hd_box = wx.StaticBox(page, label="Heading Detection (Word only)")
+        hd_sizer = wx.StaticBoxSizer(hd_box, wx.VERTICAL)
+
+        self.chk_detect_headings = wx.CheckBox(
+            hd_box,
+            label="&Detect and convert faux headings to real heading styles",
+        )
+        self.chk_detect_headings.SetName(
+            "Detect paragraphs that look like headings but lack heading styles"
+        )
+        self.chk_detect_headings.SetValue(False)
+        self.chk_detect_headings.Bind(wx.EVT_CHECKBOX, self._on_detect_headings_toggle)
+        hd_sizer.Add(self.chk_detect_headings, flag=wx.BOTTOM, border=6)
+
+        self.chk_use_ai = wx.CheckBox(
+            hd_box,
+            label="Refine with &AI (requires Ollama running locally)",
+        )
+        self.chk_use_ai.SetName(
+            "Use Ollama local AI to improve heading detection accuracy"
+        )
+        from acb_large_print.ai_provider import is_ai_available
+
+        self.chk_use_ai.SetValue(is_ai_available())
+        hd_sizer.Add(self.chk_use_ai, flag=wx.BOTTOM, border=6)
+
+        threshold_row = wx.BoxSizer(wx.HORIZONTAL)
+        lbl_thr = wx.StaticText(hd_box, label="Confidence threshold (0-100):")
+        self.spin_heading_threshold = wx.SpinCtrl(
+            hd_box,
+            min=0,
+            max=100,
+            initial=C.HEADING_CONFIDENCE_THRESHOLD,
+        )
+        self.spin_heading_threshold.SetName(
+            "Minimum confidence score for heading detection"
+        )
+        threshold_row.Add(lbl_thr, flag=wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, border=8)
+        threshold_row.Add(self.spin_heading_threshold)
+        hd_sizer.Add(threshold_row, flag=wx.BOTTOM, border=8)
+
+        hd_note = wx.StaticText(
+            hd_box,
+            label=(
+                "Detects bold, large-font paragraphs styled as Normal and "
+                "converts them to Heading 1, 2, or 3. AI refinement uses "
+                "Ollama to resolve ambiguous candidates."
+            ),
+        )
+        hd_note.Wrap(500)
+        hd_sizer.Add(hd_note)
+
+        sizer.Add(hd_sizer, flag=wx.EXPAND | wx.BOTTOM, border=12)
+
+        # Sync initial enabled state
+        self._on_detect_headings_toggle(None)
+
+        note = wx.StaticText(
+            page,
+            label=(
+                "The CMS fragment is a single file you can paste directly into "
+                "a WordPress or Drupal HTML block. The standalone version is a "
+                "complete web page with a separate CSS file for hosting or email. "
+                "The Markdown option converts to Markdown via MarkItDown. "
+                "The ACB HTML option converts to accessible HTML with embedded "
+                "ACB Large Print CSS via Pandoc."
+            ),
+        )
         note.Wrap(560)
         sizer.Add(note)
 
         page.SetSizer(sizer)
+
+    # ── List indent toggle handler ──────────────────────────────────
+
+    def _on_flush_lists_toggle(self, _event) -> None:
+        """Enable or disable the custom indent fields based on the flush checkbox."""
+        flush = self.chk_flush_lists.GetValue()
+        self.spin_list_indent.Enable(not flush)
+        self.spin_list_hanging.Enable(not flush)
+        if flush:
+            self.spin_list_indent.SetValue(0.0)
+            self.spin_list_hanging.SetValue(0.0)
+        else:
+            # Revert to standard Word indent when unchecked
+            std_left, std_hang = C.LIST_INDENT_STANDARD
+            self.spin_list_indent.SetValue(std_left)
+            self.spin_list_hanging.SetValue(std_hang)
+
+    # ── Paragraph indent toggle handler ───────────────────────────────
+
+    def _on_flush_paragraphs_toggle(self, _event) -> None:
+        """Enable or disable paragraph indent fields based on the flush checkbox."""
+        flush = self.chk_flush_paragraphs.GetValue()
+        self.spin_para_indent.Enable(not flush)
+        self.spin_first_line_indent.Enable(not flush)
+        if flush:
+            self.spin_para_indent.SetValue(0.0)
+            self.spin_first_line_indent.SetValue(0.0)
+
+    # ── Heading detection toggle handler ──────────────────────────────
+
+    def _on_detect_headings_toggle(self, _event) -> None:
+        """Enable or disable AI and threshold fields based on detect headings checkbox."""
+        enabled = self.chk_detect_headings.GetValue()
+        self.chk_use_ai.Enable(enabled)
+        self.spin_heading_threshold.Enable(enabled)
+        if not enabled:
+            self.chk_use_ai.SetValue(False)
+        else:
+            from acb_large_print.ai_provider import is_ai_available
+
+            self.chk_use_ai.SetValue(is_ai_available())
 
     # ── Step 4: Remediation ───────────────────────────────────────────
 
@@ -312,11 +542,13 @@ class WizardFrame(wx.Frame):
         sizer.Add(self.fix_status, flag=wx.BOTTOM, border=8)
 
         self.fix_text = wx.TextCtrl(
-            page, style=wx.TE_MULTILINE | wx.TE_READONLY | wx.TE_DONTWRAP,
+            page,
+            style=wx.TE_MULTILINE | wx.TE_READONLY | wx.TE_DONTWRAP,
         )
         self.fix_text.SetName("Remediation results")
-        mono = wx.Font(10, wx.FONTFAMILY_TELETYPE,
-                       wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL)
+        mono = wx.Font(
+            10, wx.FONTFAMILY_TELETYPE, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL
+        )
         self.fix_text.SetFont(mono)
         sizer.Add(self.fix_text, proportion=1, flag=wx.EXPAND)
 
@@ -329,25 +561,27 @@ class WizardFrame(wx.Frame):
         sizer = wx.BoxSizer(wx.VERTICAL)
 
         self.verify_status = wx.StaticText(
-            page, label="Re-auditing fixed document...",
+            page,
+            label="Re-auditing fixed document...",
         )
         sizer.Add(self.verify_status, flag=wx.BOTTOM, border=8)
 
         self.verify_text = wx.TextCtrl(
-            page, style=wx.TE_MULTILINE | wx.TE_READONLY | wx.TE_DONTWRAP,
+            page,
+            style=wx.TE_MULTILINE | wx.TE_READONLY | wx.TE_DONTWRAP,
         )
         self.verify_text.SetName("Verification audit results")
-        mono = wx.Font(10, wx.FONTFAMILY_TELETYPE,
-                       wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL)
+        mono = wx.Font(
+            10, wx.FONTFAMILY_TELETYPE, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL
+        )
         self.verify_text.SetFont(mono)
         sizer.Add(self.verify_text, proportion=1, flag=wx.EXPAND)
 
         self.btn_view_verify = wx.Button(
-            page, label="View &verification report in browser",
+            page,
+            label="View &verification report in browser",
         )
-        self.btn_view_verify.SetName(
-            "Open verification report in default web browser"
-        )
+        self.btn_view_verify.SetName("Open verification report in default web browser")
         self.btn_view_verify.Bind(wx.EVT_BUTTON, self._on_view_verify_report)
         self.btn_view_verify.Disable()
         sizer.Add(self.btn_view_verify, flag=wx.TOP, border=8)
@@ -360,9 +594,10 @@ class WizardFrame(wx.Frame):
         page = self._make_page()
         sizer = wx.BoxSizer(wx.VERTICAL)
 
-        intro = wx.StaticText(page, label=(
-            "Choose where to save the fixed document and any HTML exports."
-        ))
+        intro = wx.StaticText(
+            page,
+            label=("Choose where to save the fixed document and any HTML exports."),
+        )
         intro.Wrap(560)
         sizer.Add(intro, flag=wx.BOTTOM, border=12)
 
@@ -401,11 +636,13 @@ class WizardFrame(wx.Frame):
         sizer = wx.BoxSizer(wx.VERTICAL)
 
         self.done_text = wx.TextCtrl(
-            page, style=wx.TE_MULTILINE | wx.TE_READONLY | wx.TE_DONTWRAP,
+            page,
+            style=wx.TE_MULTILINE | wx.TE_READONLY | wx.TE_DONTWRAP,
         )
         self.done_text.SetName("Summary of all actions completed")
-        mono = wx.Font(10, wx.FONTFAMILY_TELETYPE,
-                       wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL)
+        mono = wx.Font(
+            10, wx.FONTFAMILY_TELETYPE, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL
+        )
         self.done_text.SetFont(mono)
         sizer.Add(self.done_text, proportion=1, flag=wx.EXPAND)
 
@@ -470,6 +707,11 @@ class WizardFrame(wx.Frame):
 
         elif step == STEP_AUDIT:
             if self._is_docx or self._can_convert or self._can_convert_html:
+                # Disable heading detection for non-Word files
+                self.chk_detect_headings.Enable(self._is_docx)
+                if not self._is_docx:
+                    self.chk_detect_headings.SetValue(False)
+                    self._on_detect_headings_toggle(None)
                 self._show_step(STEP_OPTIONS)
             else:
                 # Skip export options for non-convertible formats
@@ -569,9 +811,11 @@ class WizardFrame(wx.Frame):
         ext = file_path.suffix.lower()
         if ext == ".xlsx":
             from .xlsx_auditor import audit_workbook
+
             return audit_workbook(file_path)
         elif ext == ".pptx":
             from .pptx_auditor import audit_presentation
+
             return audit_presentation(file_path)
         else:
             return audit_document(file_path)
@@ -579,25 +823,59 @@ class WizardFrame(wx.Frame):
     def _fix_by_extension(self, file_path: Path, output_path: Path):
         """Dispatch to the correct fixer based on file extension.
 
-        Returns (output_path, total_fixes, post_audit, warnings).
+        Returns (output_path, total_fixes, fix_records, post_audit, warnings).
         """
         ext = file_path.suffix.lower()
         if ext == ".xlsx":
             from .xlsx_auditor import audit_workbook
+
             post_audit = audit_workbook(file_path)
-            return file_path, 0, post_audit, [
-                "Excel workbooks cannot be auto-fixed yet. "
-                "Review the audit findings and fix them manually in Excel."
-            ]
+            return (
+                file_path,
+                0,
+                [],
+                post_audit,
+                [
+                    "Excel workbooks cannot be auto-fixed yet. "
+                    "Review the audit findings and fix them manually in Excel."
+                ],
+            )
         elif ext == ".pptx":
             from .pptx_auditor import audit_presentation
+
             post_audit = audit_presentation(file_path)
-            return file_path, 0, post_audit, [
-                "PowerPoint presentations cannot be auto-fixed yet. "
-                "Review the audit findings and fix them manually in PowerPoint."
-            ]
+            return (
+                file_path,
+                0,
+                [],
+                post_audit,
+                [
+                    "PowerPoint presentations cannot be auto-fixed yet. "
+                    "Review the audit findings and fix them manually in PowerPoint."
+                ],
+            )
         else:
-            return fix_document(file_path, output_path)
+            # Resolve heading detection options
+            detect_headings = self._is_docx and self.chk_detect_headings.GetValue()
+            ai_provider = None
+            if detect_headings and self.chk_use_ai.GetValue():
+                try:
+                    from .ai_provider import get_provider
+
+                    ai_provider = get_provider()
+                except Exception:
+                    pass  # Fall back to heuristic-only
+            return fix_document(
+                file_path,
+                output_path,
+                list_indent_in=self.spin_list_indent.GetValue(),
+                list_hanging_in=self.spin_list_hanging.GetValue(),
+                para_indent_in=self.spin_para_indent.GetValue(),
+                first_line_indent_in=self.spin_first_line_indent.GetValue(),
+                detect_headings=detect_headings,
+                ai_provider=ai_provider,
+                heading_threshold=self.spin_heading_threshold.GetValue(),
+            )
 
     @property
     def _is_docx(self) -> bool:
@@ -640,8 +918,7 @@ class WizardFrame(wx.Frame):
             grade = self.pre_audit.grade
             n = len(self.pre_audit.findings)
             self.audit_status.SetLabel(
-                f"Audit complete: score {score}/100 "
-                f"(grade {grade}), {n} findings."
+                f"Audit complete: score {score}/100 " f"(grade {grade}), {n} findings."
             )
             self.btn_view_audit.Enable()
             self.status_bar.SetStatusText(
@@ -668,8 +945,11 @@ class WizardFrame(wx.Frame):
         wx.BeginBusyCursor()
         try:
             tmp = Path(tempfile.mkdtemp()) / f"_acb_tmp_{self.src_path.name}"
-            self.fixed_path, self.total_fixes, self.post_audit, warnings = self._fix_by_extension(
-                self.src_path, tmp,
+            self.fixed_path, self.total_fixes, _records, self.post_audit, warnings = (
+                self._fix_by_extension(
+                    self.src_path,
+                    tmp,
+                )
             )
 
             lines: list[str] = []
@@ -699,13 +979,10 @@ class WizardFrame(wx.Frame):
                 lines.append("Remaining issues (may require manual review):")
                 for i, f in enumerate(self.post_audit.findings, 1):
                     lines.append(
-                        f"  {i}. [{f.severity.value}] "
-                        f"{f.rule_id}: {f.message}"
+                        f"  {i}. [{f.severity.value}] " f"{f.rule_id}: {f.message}"
                     )
             else:
-                lines.append(
-                    "All issues resolved. Document is fully compliant."
-                )
+                lines.append("All issues resolved. Document is fully compliant.")
 
             self.fix_text.SetValue("\n".join(lines))
             self.fix_text.SetInsertionPoint(0)
@@ -729,9 +1006,7 @@ class WizardFrame(wx.Frame):
     def _run_verify(self) -> None:
         self.btn_next.Disable()
         self.btn_back.Disable()
-        self.verify_status.SetLabel(
-            "Re-auditing fixed document, please wait..."
-        )
+        self.verify_status.SetLabel("Re-auditing fixed document, please wait...")
         wx.BeginBusyCursor()
         try:
             target = self.fixed_path if self.fixed_path else self.src_path
@@ -828,7 +1103,10 @@ class WizardFrame(wx.Frame):
                     html_path = html_dir / f"{docx_dest.stem}.html"
                     css_path = html_dir / "acb-large-print.css"
                     export_standalone_html(
-                        src, html_path, title=title, css_path=css_path,
+                        src,
+                        html_path,
+                        title=title,
+                        css_path=css_path,
                     )
                     self.saved_files.append(f"Standalone HTML: {html_path}")
                     self.saved_files.append(f"CSS stylesheet: {css_path}")
@@ -836,6 +1114,7 @@ class WizardFrame(wx.Frame):
             # 3. Optional Markdown conversion (any convertible format)
             if self.chk_convert_md.GetValue() and self._can_convert:
                 from .converter import convert_to_markdown
+
                 md_path = docx_dest.with_suffix(".md")
                 convert_to_markdown(src, output_path=md_path)
                 self.saved_files.append(f"Markdown: {md_path}")
@@ -843,14 +1122,13 @@ class WizardFrame(wx.Frame):
             # 4. Optional Pandoc HTML conversion
             if self.chk_convert_html.GetValue() and self._can_convert_html:
                 from .pandoc_converter import convert_to_html
+
                 html_path = docx_dest.with_suffix(".html")
                 title = docx_dest.stem.replace("-", " ").replace("_", " ")
                 convert_to_html(src, output_path=html_path, title=title)
                 self.saved_files.append(f"ACB HTML: {html_path}")
 
-            self.status_bar.SetStatusText(
-                f"Saved {len(self.saved_files)} files"
-            )
+            self.status_bar.SetStatusText(f"Saved {len(self.saved_files)} files")
             return True
 
         except Exception as exc:
@@ -877,18 +1155,14 @@ class WizardFrame(wx.Frame):
                 f"Original score:    {self.pre_audit.score}/100 "
                 f"(grade {self.pre_audit.grade})"
             )
-            lines.append(
-                f"Original findings: {len(self.pre_audit.findings)}"
-            )
+            lines.append(f"Original findings: {len(self.pre_audit.findings)}")
         lines.append(f"Fixes applied:     {self.total_fixes}")
         if self.post_audit:
             lines.append(
                 f"Final score:       {self.post_audit.score}/100 "
                 f"(grade {self.post_audit.grade})"
             )
-            lines.append(
-                f"Remaining issues:  {len(self.post_audit.findings)}"
-            )
+            lines.append(f"Remaining issues:  {len(self.post_audit.findings)}")
         lines.append("")
 
         lines.append("-" * 60)
@@ -900,8 +1174,7 @@ class WizardFrame(wx.Frame):
 
         if self.post_audit and self.post_audit.passed:
             lines.append(
-                "Document is fully compliant with ACB "
-                "Large Print Guidelines."
+                "Document is fully compliant with ACB " "Large Print Guidelines."
             )
         elif self.post_audit:
             lines.append(
@@ -920,7 +1193,9 @@ class WizardFrame(wx.Frame):
     # ==================================================================
 
     def _open_report_in_browser(
-        self, result: AuditResult, label: str,
+        self,
+        result: AuditResult,
+        label: str,
     ) -> None:
         """Write an HTML report to a temp file and open in the browser."""
         html = generate_html_report(result, title=f"ACB {label} Report")

@@ -100,6 +100,116 @@ Tip: The audit report groups findings by severity. Tackle Critical issues first 
 
 Tip: The fix mode controls what appears in the report, not what gets corrected. Your Word document always receives all available auto-fixes regardless of mode.
 
+### Heading Detection (Word documents)
+
+Many Word documents use bold, large text to simulate headings instead of using real heading styles (Heading 1, Heading 2, Heading 3). This causes accessibility problems because screen readers cannot navigate by headings, and the document has no logical structure.
+
+The fixer can detect these "faux headings" and convert them to proper heading styles automatically.
+
+**How it works:**
+
+1. **Heuristic detection** -- The tool scores each paragraph on 10 signals: font size, bold formatting, short length, capitalization patterns, position in the document, and more. Paragraphs scoring above the confidence threshold (default 50 out of 100) are identified as likely headings.
+
+2. **AI refinement (optional)** -- If Ollama is available, the tool can send borderline candidates to a local AI model (phi4-mini) for a second opinion. The AI considers surrounding context to improve accuracy. No data leaves your machine.
+
+3. **Heading level assignment** -- Detected headings are assigned to Heading 1, 2, or 3 based on font size and document position. The first high-confidence heading is typically Heading 1, with subsequent headings assigned based on relative formatting.
+
+**Using heading detection on the web:**
+
+1. On the Fix page, check "Detect and convert faux headings to real heading styles."
+2. Optionally check "Refine with AI" if Ollama is running on the server. The checkbox auto-checks when Ollama is detected.
+3. Adjust the confidence threshold if needed (higher means fewer but more certain conversions).
+4. Click Fix Document.
+5. If candidates are found, you are taken to an **interactive heading review page**. This page shows a table listing every detected heading candidate with:
+   - The paragraph text along with font size and bold/caps formatting info
+   - The heuristic signals that fired and their point values
+   - A confidence score and confidence level (High or Medium)
+   - A heading level dropdown (H1 through H6) pre-set to the suggested level, plus a "Skip" option to exclude a candidate
+   - If AI was used, the AI's reasoning is shown alongside the heuristic signals
+6. Review each candidate. Change heading levels or set any false positives to "Skip."
+7. Click "Apply Selections and Fix" to proceed. The confirmed headings are converted to real heading styles, then the normal fix pipeline runs.
+8. The fix report details section shows every heading that was converted.
+
+If no candidates are found above the confidence threshold, the fix proceeds directly without the review step.
+
+**Using heading detection on the desktop GUI:**
+
+1. Open the ACB Large Print Toolkit desktop application.
+2. In the fix wizard (Step 3: Options), look for the Heading Detection section.
+3. Check "Detect and convert faux headings to real heading styles."
+4. Check "Refine with AI" if you have Ollama installed locally. The checkbox auto-checks when Ollama is detected.
+5. Adjust the confidence threshold using the slider or spin control.
+6. Complete the wizard to run the fix. Detected headings are converted before other fixes are applied.
+
+**Using heading detection on the CLI:**
+
+```shell
+# Heuristic only
+acb-lp fix document.docx --detect-headings
+
+# With AI refinement
+acb-lp fix document.docx --detect-headings --ai
+
+# Standalone detection (report only, no fix)
+acb-lp detect-headings document.docx
+
+# With custom prompt file and threshold
+acb-lp detect-headings document.docx --ai --ai-prompt my-prompt.txt --threshold 75
+```
+
+### How We Tested This Feature And What We Learned
+
+We did not rely on a few hand-made examples. We built a synthetic Word-document stress harness to imitate the kinds of files people actually upload.
+
+What the test set included:
+
+- Meeting agendas
+- Policy manuals
+- Newsletters
+- Legal outlines
+- Appendices and flyers
+- Email-style content
+- Plain-text paste with no heading styles
+- Mixed-font and font-size drift
+- Centered and justified text that had to be repaired
+- Multilingual section labels and numbering patterns
+
+What those 1,000 documents were meant to represent in everyday use:
+
+- A meeting agenda someone pasted out of email
+- A newsletter copied from a website with mixed fonts and centered headings
+- A policy manual built from older templates with indentation drift
+- A legal-outline document with numbering that has to stay structurally correct
+- A training handout where short prompts may or may not be real headings
+- An appendix or report supplement with short labels, notes, and reference items
+
+In other words, the documents were designed to behave like realistic user uploads, not toy examples. Each one placed the potential heading inside a fuller document context so the platform had to make a realistic decision and then repair the result to match ACB rules.
+
+What we measured:
+
+1. Whether the detector found real headings
+2. Whether it avoided common false positives
+3. Whether the fixer converted those headings cleanly
+4. Whether the repaired document passed ACB audit rules afterward
+
+What we learned:
+
+1. Short lines are not automatically headings. Signature lines, reminders, and similar short phrases must be treated carefully.
+2. Real documents often combine several problems at once. A heading may be visually strong while the surrounding document still has bad alignment, bad indentation, or font drift.
+3. Heading detection and ACB enforcement are connected. A heading can be detected correctly and still need further cleanup so the final document does not violate rules such as no ALL CAPS or no skipped heading levels.
+
+How the platform changed because of those lessons:
+
+- We strengthened false-positive handling for signature-like and callout-style text.
+- We expanded the random corpus to include plain-text/no-style negatives, font-only heading cues, and multilingual variants.
+- We added a heading-normalization pass in the fixer so converted headings are cleaned up after detection, including heading hierarchy repair and ALL CAPS cleanup.
+
+What the latest validation showed:
+
+- Full heading stress suite passed
+- Larger randomized comparisons showed zero false positives and zero false negatives in the measured runs
+- Full fix-then-audit validation showed zero remaining ACB findings across the 1,000-document corpus after the latest fixes
+
 ---
 
 ## 4. How to Create a Template
@@ -509,7 +619,9 @@ The web tool processes one document at a time. For batch processing, use the [de
 
 ### Why does the fix not change my headings?
 
-Heading hierarchy corrections require understanding your document's intended structure, which only you can determine. The fix tool corrects heading formatting (font, size, bold) but does not change heading levels. Review your heading structure manually using the report's guidance.
+The fix tool can now detect "faux headings" -- paragraphs that look like headings (bold, large font, short text) but use a Normal style instead of a real Heading style. Enable "Detect and convert faux headings" on the Fix page to use this feature. On the web, you review detected candidates in an interactive table before they are applied. On the CLI, use `--detect-headings`.
+
+For heading hierarchy corrections (changing an H3 to an H2, for example), the fix tool corrects heading formatting (font, size, bold) but does not change heading levels. Review your heading structure manually using the report's guidance.
 
 ### What is the difference between ACB and MSAC rules?
 

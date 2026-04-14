@@ -62,12 +62,16 @@ def generate_text_report(result: AuditResult) -> str:
         lines.append("")
 
         for i, finding in enumerate(result.findings, 1):
-            lines.append(f"  {i}. {_severity_marker(finding.severity)} {finding.rule_id}")
+            lines.append(
+                f"  {i}. {_severity_marker(finding.severity)} {finding.rule_id}"
+            )
             lines.append(f"     {finding.message}")
             if finding.location:
                 lines.append(f"     Location: {finding.location}")
             lines.append(f"     Reference: {finding.rule.acb_reference}")
-            lines.append(f"     Auto-fixable: {'Yes' if finding.auto_fixable else 'No'}")
+            lines.append(
+                f"     Auto-fixable: {'Yes' if finding.auto_fixable else 'No'}"
+            )
             lines.append("")
     else:
         lines.append("No findings. Document is fully compliant.")
@@ -131,6 +135,7 @@ def generate_fix_summary(
     file_path: str,
     total_fixes: int,
     post_audit: AuditResult,
+    fix_records: list[C.FixRecord] | None = None,
 ) -> str:
     """Generate a plain-text fix summary report."""
     lines: list[str] = []
@@ -143,8 +148,30 @@ def generate_fix_summary(
     lines.append(f"File:        {file_path}")
     lines.append(f"Date:        {timestamp}")
     lines.append(f"Fixes made:  {total_fixes}")
-    lines.append(f"Post-fix score: {post_audit.score}/100 (Grade {post_audit.grade})")
+    lines.append(
+        f"Post-fix score: {post_audit.score}/100 " f"(Grade {post_audit.grade})"
+    )
     lines.append("")
+
+    # Detailed fix records grouped by category
+    if fix_records:
+        lines.append("-" * 70)
+        lines.append("Fix Details")
+        lines.append("-" * 70)
+        lines.append("")
+
+        # Group by category
+        by_cat: dict[str, list[C.FixRecord]] = {}
+        for rec in fix_records:
+            by_cat.setdefault(rec.category, []).append(rec)
+
+        for cat, recs in by_cat.items():
+            lines.append(f"  {cat} ({len(recs)} fixes)")
+            for rec in recs:
+                lines.append(f"    - [{rec.rule_id}] {rec.description}")
+                if rec.location:
+                    lines.append(f"      Location: {rec.location}")
+            lines.append("")
 
     if post_audit.findings:
         lines.append("-" * 70)
@@ -152,7 +179,9 @@ def generate_fix_summary(
         lines.append("-" * 70)
         lines.append("")
         for i, finding in enumerate(post_audit.findings, 1):
-            lines.append(f"  {i}. {_severity_marker(finding.severity)} {finding.rule_id}")
+            lines.append(
+                f"  {i}. {_severity_marker(finding.severity)} {finding.rule_id}"
+            )
             lines.append(f"     {finding.message}")
             if finding.location:
                 lines.append(f"     Location: {finding.location}")

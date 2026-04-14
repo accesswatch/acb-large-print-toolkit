@@ -16,7 +16,6 @@ from pathlib import Path
 from . import constants as C
 from .auditor import AuditResult, Finding
 
-
 # ---------------------------------------------------------------------------
 # Regex patterns
 # ---------------------------------------------------------------------------
@@ -33,22 +32,33 @@ _TABLE_SEP_RE = re.compile(r"^\|[\s:|-]+\|$")
 _EM_DASH_RE = re.compile(r"[\u2014\u2013]")
 _EMOJI_RE = re.compile(
     "["
-    "\U0001F600-\U0001F64F"  # emoticons
-    "\U0001F300-\U0001F5FF"  # symbols and pictographs
-    "\U0001F680-\U0001F6FF"  # transport and map
-    "\U0001F900-\U0001F9FF"  # supplemental
-    "\U0001FA00-\U0001FA6F"  # chess/extended-A
-    "\U0001FA70-\U0001FAFF"  # extended-A cont.
-    "\U00002702-\U000027B0"  # dingbats
-    "\U000024C2-\U0001F251"  # enclosed
+    "\U0001f600-\U0001f64f"  # emoticons
+    "\U0001f300-\U0001f5ff"  # symbols and pictographs
+    "\U0001f680-\U0001f6ff"  # transport and map
+    "\U0001f900-\U0001f9ff"  # supplemental
+    "\U0001fa00-\U0001fa6f"  # chess/extended-A
+    "\U0001fa70-\U0001faff"  # extended-A cont.
+    "\U00002702-\U000027b0"  # dingbats
+    "\U000024c2-\U0001f251"  # enclosed
     "]+",
     re.UNICODE,
 )
 
-_AMBIGUOUS_LINK_TEXTS = frozenset({
-    "click here", "here", "link", "read more", "learn more", "more",
-    "this", "this link", "this page", "more info", "info",
-})
+_AMBIGUOUS_LINK_TEXTS = frozenset(
+    {
+        "click here",
+        "here",
+        "link",
+        "read more",
+        "learn more",
+        "more",
+        "this",
+        "this link",
+        "this page",
+        "more info",
+        "info",
+    }
+)
 
 
 def audit_markdown(file_path: str | Path) -> AuditResult:

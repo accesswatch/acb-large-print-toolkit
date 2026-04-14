@@ -169,6 +169,7 @@ u => u
 # Post-processing
 # ---------------------------------------------------------------------------
 
+
 def _post_process_html(html: str) -> str:
     """Clean up mammoth output for ACB compliance."""
     # mammoth emits <em> for italic -- ACB says no italic, convert to underline
@@ -195,6 +196,7 @@ def _post_process_html(html: str) -> str:
 # ---------------------------------------------------------------------------
 # Public API
 # ---------------------------------------------------------------------------
+
 
 def convert_docx_to_html(docx_path: str | Path) -> tuple[str, list[str]]:
     """Convert a .docx file to ACB-compliant HTML body content.

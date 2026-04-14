@@ -28,7 +28,13 @@ from acb_large_print.pipeline_converter import (
     pipeline_available,
 )
 
-from ..upload import CONVERT_EXTENSIONS, UploadError, cleanup_token, get_temp_dir, validate_upload
+from ..upload import (
+    CONVERT_EXTENSIONS,
+    UploadError,
+    cleanup_token,
+    get_temp_dir,
+    validate_upload,
+)
 
 from pathlib import Path
 
@@ -41,7 +47,9 @@ _NO_ACB_CSS_SENTINEL = Path("__no_acb_css__")
 _MD_ACCEPT = ",".join(sorted(CONVERTIBLE_EXTENSIONS))
 _HTML_ACCEPT = ",".join(sorted(PANDOC_INPUT_EXTENSIONS))
 # Union of all for a single file input
-_ALL_ACCEPT = ",".join(sorted(CONVERTIBLE_EXTENSIONS | PANDOC_INPUT_EXTENSIONS | PIPELINE_INPUT_EXTENSIONS))
+_ALL_ACCEPT = ",".join(
+    sorted(CONVERTIBLE_EXTENSIONS | PANDOC_INPUT_EXTENSIONS | PIPELINE_INPUT_EXTENSIONS)
+)
 
 
 def _template_context(**extra):
@@ -105,7 +113,9 @@ def convert_submit():
                 css_path = _NO_ACB_CSS_SENTINEL
 
             output_path, text = convert_to_html(
-                saved_path, output_path=html_output, title=title,
+                saved_path,
+                output_path=html_output,
+                title=title,
                 css_path=css_path,
             )
 
@@ -121,6 +131,7 @@ def convert_submit():
                 if not print_ready:
                     # Remove the @media print block from embedded CSS
                     import re
+
                     html_text = re.sub(
                         r"@media\s+print\s*\{[^}]*(?:\{[^}]*\}[^}]*)*\}",
                         "",
@@ -155,7 +166,9 @@ def convert_submit():
             user_title = request.form.get("title", "").strip()
             title = user_title or saved_path.stem.replace("-", " ").replace("_", " ")
             output_path, _ = convert_to_docx(
-                saved_path, output_path=docx_output, title=title,
+                saved_path,
+                output_path=docx_output,
+                title=title,
             )
             return send_file(
                 str(output_path),
@@ -188,7 +201,9 @@ def convert_submit():
             if not acb_format:
                 css_path = _NO_ACB_CSS_SENTINEL
             output_path, _ = convert_to_epub(
-                saved_path, output_path=epub_output, title=title,
+                saved_path,
+                output_path=epub_output,
+                title=title,
                 css_path=css_path,
             )
             return send_file(
@@ -223,8 +238,11 @@ def convert_submit():
             if not acb_format:
                 css_path = _NO_ACB_CSS_SENTINEL
             output_path, _ = convert_to_pdf(
-                saved_path, output_path=pdf_output, title=title,
-                css_path=css_path, binding_margin=binding_margin,
+                saved_path,
+                output_path=pdf_output,
+                title=title,
+                css_path=css_path,
+                binding_margin=binding_margin,
             )
             return send_file(
                 str(output_path),
@@ -249,10 +267,16 @@ def convert_submit():
                     f"Pipeline conversion '{conversion_key}' is not available."
                 )
             output_path, summary = convert_with_pipeline(
-                saved_path, conversion_key, output_dir=temp_dir,
+                saved_path,
+                conversion_key,
+                output_dir=temp_dir,
             )
             if output_path.is_file():
-                mimetype = "application/epub+zip" if output_path.suffix == ".epub" else "application/octet-stream"
+                mimetype = (
+                    "application/epub+zip"
+                    if output_path.suffix == ".epub"
+                    else "application/octet-stream"
+                )
                 return send_file(
                     str(output_path),
                     mimetype=mimetype,
@@ -262,8 +286,11 @@ def convert_submit():
             else:
                 # Directory output -- package as zip
                 import shutil as _shutil
+
                 zip_path = temp_dir / f"{saved_path.stem}-{conversion_key}.zip"
-                _shutil.make_archive(str(zip_path.with_suffix("")), "zip", str(output_path))
+                _shutil.make_archive(
+                    str(zip_path.with_suffix("")), "zip", str(output_path)
+                )
                 return send_file(
                     str(zip_path),
                     mimetype="application/zip",
@@ -279,7 +306,8 @@ def convert_submit():
                 )
             md_output = temp_dir / f"{saved_path.stem}.md"
             output_path, text = convert_to_markdown(
-                saved_path, output_path=md_output,
+                saved_path,
+                output_path=md_output,
             )
             return send_file(
                 str(output_path),
@@ -289,17 +317,23 @@ def convert_submit():
             )
 
     except UploadError as exc:
-        return render_template(
-            "convert_form.html",
-            error=str(exc),
-            **_template_context(),
-        ), 400
+        return (
+            render_template(
+                "convert_form.html",
+                error=str(exc),
+                **_template_context(),
+            ),
+            400,
+        )
     except RuntimeError as exc:
-        return render_template(
-            "convert_form.html",
-            error=str(exc),
-            **_template_context(),
-        ), 500
+        return (
+            render_template(
+                "convert_form.html",
+                error=str(exc),
+                **_template_context(),
+            ),
+            500,
+        )
     finally:
         if token:
             cleanup_token(token)

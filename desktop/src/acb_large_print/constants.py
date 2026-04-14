@@ -12,7 +12,6 @@ from __future__ import annotations
 from dataclasses import dataclass
 from enum import Enum
 
-
 # ---------------------------------------------------------------------------
 # Font specifications
 # ---------------------------------------------------------------------------
@@ -50,17 +49,37 @@ PAGE_WIDTH_IN = 8.5
 PAGE_HEIGHT_IN = 11.0
 
 # List formatting (inches)
-LIST_INDENT_IN = 0.5
-LIST_HANGING_IN = 0.25
+# Default: flush left (0.0) per ACB guidelines.
+# When the user unchecks flush-left, values revert to 0.5 / 0.25.
+LIST_INDENT_IN = 0.0
+LIST_HANGING_IN = 0.0
+
+# Named presets for UI controls (left_indent, hanging_indent)
+LIST_INDENT_FLUSH = (0.0, 0.0)  # Flush left -- ACB default
+LIST_INDENT_STANDARD = (0.5, 0.25)  # Standard Word indent (user override)
+
+# Paragraph indentation (inches)
+# Default: flush left (0.0) per ACB guidelines Section 4: Alignment.
+# Non-list paragraphs should have no left indent or first-line indent.
+PARA_INDENT_IN = 0.0  # Default: flush left (ACB compliant)
+FIRST_LINE_INDENT_IN = 0.0  # Default: no first-line indent
+PARA_INDENT_FLUSH = 0.0  # Named preset
+PARA_INDENT_BLOCKQUOTE = 0.5  # Common blockquote indent if user opts in
+
+# AI heading detection
+HEADING_CONFIDENCE_THRESHOLD = 50  # Minimum heuristic score (0-100)
+HEADING_HIGH_CONFIDENCE = 75  # Score at which heuristic alone is trusted
 
 
 # ---------------------------------------------------------------------------
 # Style definitions (consumed by template builder and fixer)
 # ---------------------------------------------------------------------------
 
+
 @dataclass(frozen=True)
 class FontDef:
     """Immutable font definition."""
+
     name: str = FONT_FAMILY
     size_pt: float = BODY_SIZE_PT
     bold: bool = False
@@ -71,7 +90,8 @@ class FontDef:
 @dataclass(frozen=True)
 class ParaDef:
     """Immutable paragraph format definition."""
-    alignment: str = "LEFT"       # LEFT | CENTER | RIGHT | JUSTIFY
+
+    alignment: str = "LEFT"  # LEFT | CENTER | RIGHT | JUSTIFY
     line_spacing: float = LINE_SPACING_MULTIPLE
     space_before_pt: float = 0.0
     space_after_pt: float = SPACE_AFTER_BODY_PT
@@ -85,6 +105,7 @@ class ParaDef:
 @dataclass(frozen=True)
 class StyleDef:
     """Complete style definition pairing font and paragraph rules."""
+
     font: FontDef
     para: ParaDef
 
@@ -142,8 +163,10 @@ ACB_STYLES: dict[str, StyleDef] = {
 # Audit rule definitions
 # ---------------------------------------------------------------------------
 
+
 class Severity(str, Enum):
     """Finding severity levels."""
+
     CRITICAL = "Critical"
     HIGH = "High"
     MEDIUM = "Medium"
@@ -152,12 +175,14 @@ class Severity(str, Enum):
 
 class RuleCategory(str, Enum):
     """Rule source category -- allows toggling rule sets on/off."""
-    ACB = "acb"    # ACB Large Print Guidelines
+
+    ACB = "acb"  # ACB Large Print Guidelines
     MSAC = "msac"  # Microsoft Accessibility Checker / WCAG baseline
 
 
 class DocFormat(str, Enum):
     """Document formats a rule can apply to."""
+
     DOCX = "docx"
     XLSX = "xlsx"
     PPTX = "pptx"
@@ -183,6 +208,7 @@ _MD_PDF = frozenset({DocFormat.MD, DocFormat.PDF})
 @dataclass(frozen=True)
 class RuleDef:
     """Audit rule metadata."""
+
     rule_id: str
     description: str
     severity: Severity
@@ -190,6 +216,26 @@ class RuleDef:
     category: RuleCategory = RuleCategory.ACB
     auto_fixable: bool = True
     formats: frozenset[DocFormat] = _DOCX_ONLY
+
+
+# Fix-record categories (used by FixRecord and reporter grouping)
+FIX_CATEGORY_HEADINGS = "Headings"
+FIX_CATEGORY_FONT = "Font Family & Size"
+FIX_CATEGORY_ALIGNMENT = "Alignment & Indentation"
+FIX_CATEGORY_EMPHASIS = "Emphasis"
+FIX_CATEGORY_SPACING = "Spacing"
+FIX_CATEGORY_PAGE = "Page Setup"
+FIX_CATEGORY_PROPS = "Document Properties"
+
+
+@dataclass
+class FixRecord:
+    """A single fix applied by the fixer."""
+
+    rule_id: str
+    category: str  # One of FIX_CATEGORY_* constants
+    description: str  # Human-readable description of what was fixed
+    location: str = ""  # e.g. "Paragraph 5", "Style: Heading 1"
 
 
 # Audit rules keyed by rule_id
@@ -240,6 +286,34 @@ AUDIT_RULES: dict[str, RuleDef] = {
         rule_id="ACB-ALIGNMENT",
         description="Text must be flush left (not justified, centered, or right-aligned)",
         severity=Severity.HIGH,
+        acb_reference="ACB Guidelines Section 4: Alignment",
+        auto_fixable=True,
+    ),
+    "ACB-LIST-INDENT": RuleDef(
+        rule_id="ACB-LIST-INDENT",
+        description="List indentation must match the configured indent setting",
+        severity=Severity.MEDIUM,
+        acb_reference="ACB Guidelines Section 4: Alignment",
+        auto_fixable=True,
+    ),
+    "ACB-PARA-INDENT": RuleDef(
+        rule_id="ACB-PARA-INDENT",
+        description="Non-list paragraph left indent must match the configured setting (flush left by default)",
+        severity=Severity.HIGH,
+        acb_reference="ACB Guidelines Section 4: Alignment",
+        auto_fixable=True,
+    ),
+    "ACB-FIRST-LINE-INDENT": RuleDef(
+        rule_id="ACB-FIRST-LINE-INDENT",
+        description="First-line paragraph indent must match the configured setting (zero by default)",
+        severity=Severity.HIGH,
+        acb_reference="ACB Guidelines Section 4: Alignment",
+        auto_fixable=True,
+    ),
+    "ACB-BLOCKQUOTE-INDENT": RuleDef(
+        rule_id="ACB-BLOCKQUOTE-INDENT",
+        description="Blockquote-style indentation detected; should be flush left or use a named style",
+        severity=Severity.MEDIUM,
         acb_reference="ACB Guidelines Section 4: Alignment",
         auto_fixable=True,
     ),
@@ -426,6 +500,15 @@ AUDIT_RULES: dict[str, RuleDef] = {
         category=RuleCategory.MSAC,
         auto_fixable=False,
         formats=_ALL_FORMATS,
+    ),
+    "ACB-FAUX-HEADING": RuleDef(
+        rule_id="ACB-FAUX-HEADING",
+        description="Paragraph formatted like a heading but without a heading style",
+        severity=Severity.HIGH,
+        acb_reference="WCAG 1.3.1 Info and Relationships",
+        category=RuleCategory.MSAC,
+        auto_fixable=True,
+        formats=_DOCX_ONLY,
     ),
     # -----------------------------------------------------------------
     # Excel-specific rules  (cf. extCheck by Jamal Mazrui)
@@ -871,6 +954,15 @@ AUDIT_RULES: dict[str, RuleDef] = {
         severity=Severity.HIGH,
         acb_reference="WCAG 1.1.1 Non-text Content",
         category=RuleCategory.MSAC,
+        auto_fixable=False,
+        formats=_EPUB_ONLY,
+    ),
+    "EPUB-TEXT-INDENT": RuleDef(
+        rule_id="EPUB-TEXT-INDENT",
+        description="Body text in ePub content has CSS text-indent or margin-left indentation",
+        severity=Severity.MEDIUM,
+        acb_reference="ACB Guidelines Section 4: Alignment",
+        category=RuleCategory.ACB,
         auto_fixable=False,
         formats=_EPUB_ONLY,
     ),

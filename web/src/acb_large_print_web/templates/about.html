@@ -257,6 +257,22 @@
   <a href="#main" class="back-to-top">Back to top</a>
 </section>
 
+<section aria-labelledby="stress-heading">
+  <h2 id="stress-heading">Stress Testing</h2>
+  <p>The toolkit includes a reproducible synthetic Word-document stress harness for the heading-detection and fixing pipeline. The current corpus covers <strong>{{ stress_summary.total_heading_cases }}</strong> heading scenarios across <strong>{{ stress_summary.document_count }}</strong> generated documents.</p>
+  <p>These generated documents deliberately mix ACB-conformant content with failure patterns such as centered titles, justified paragraphs, hanging indents, faux headings, signature blocks, copied web formatting, and body-text emphasis drift. Each failure that proves useful is folded back into the audit rules, fixer behavior, or online help so the product learns from the corpus instead of letting that knowledge stay trapped in tests.</p>
+  <ul>
+    <li><strong>Detection coverage:</strong> {{ stress_summary.families|length }} scenario families spanning paste workflows, agendas, newsletters, policy manuals, flyers, and appendices.</li>
+    <li><strong>Fixer coverage:</strong> Every generated repair document is validated for flush-left alignment and exact paragraph-indent repair after fixing.</li>
+    <li><strong>ACB strictness:</strong> Whenever the harness generates an ACB-guideline branch, all text is left aligned by design.</li>
+  </ul>
+  <p><strong>Validation transparency:</strong> For the current 1,000-document scale, maintainers measure four things: full-suite test health, direct detector-vs-ground-truth accuracy, denser randomized accuracy, and full fix-then-audit ACB compliance. The current measured runs were clean.</p>
+  <p><strong>What we learned:</strong> The biggest risks were not crashes. They were subtle document-policy gaps, especially short false positives and correctly detected headings that still needed hierarchy or text cleanup after repair.</p>
+  <p><strong>How the platform changed:</strong> We strengthened false-positive handling, widened random scenario coverage, and added heading normalization so converted headings no longer leave behind ALL CAPS text or skipped levels.</p>
+  <p><strong>What the documents represented:</strong> The generated files stood in for the kinds of Word documents people really upload: agendas, newsletters, policy manuals, legal outlines, training handouts, appendices, email-style content, and plain-text paste with no real heading styles. The goal was to test realistic document behavior, not just isolated heading samples.</p>
+  <a href="#main" class="back-to-top">Back to top</a>
+</section>
+
 <section aria-labelledby="acknowledgments-heading">
   <h2 id="acknowledgments-heading">Acknowledgments</h2>
   <p>This project would not be possible without the tireless advocacy of the American Council of the Blind and the volunteers who authored and maintain the <a href="https://acb.org/large-print-guidelines">ACB Large Print Guidelines</a>. Special thanks to the <a href="https://acb.org/board-publications">ACB Board of Publications</a> for establishing clear, enforceable standards that make printed and digital materials accessible to people who are blind or have low vision.</p>

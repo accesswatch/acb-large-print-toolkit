@@ -34,9 +34,11 @@ _NS_DC = "http://purl.org/dc/elements/1.1/"
 # Data classes
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class MetadataSection:
     """A single display section of accessibility metadata."""
+
     title: str
     statements: list[str] = field(default_factory=list)
     has_metadata: bool = True
@@ -48,6 +50,7 @@ class EpubAccessibilityDisplay:
 
     Sections follow the W3C Display Guide 2.0 order.
     """
+
     ways_of_reading: MetadataSection | None = None
     conformance: MetadataSection | None = None
     navigation: MetadataSection | None = None
@@ -60,16 +63,20 @@ class EpubAccessibilityDisplay:
 
     def sections(self) -> list[MetadataSection]:
         """Return all non-None sections in display order."""
-        return [s for s in (
-            self.ways_of_reading,
-            self.conformance,
-            self.navigation,
-            self.rich_content,
-            self.hazards,
-            self.accessibility_summary,
-            self.legal,
-            self.additional_info,
-        ) if s is not None]
+        return [
+            s
+            for s in (
+                self.ways_of_reading,
+                self.conformance,
+                self.navigation,
+                self.rich_content,
+                self.hazards,
+                self.accessibility_summary,
+                self.legal,
+                self.additional_info,
+            )
+            if s is not None
+        ]
 
     @property
     def has_any_metadata(self) -> bool:
@@ -104,6 +111,7 @@ class EpubAccessibilityDisplay:
 # ---------------------------------------------------------------------------
 # Public API
 # ---------------------------------------------------------------------------
+
 
 def extract_metadata_display(epub_path: str | Path) -> EpubAccessibilityDisplay | None:
     """Extract and format accessibility metadata from an EPUB file.
@@ -144,6 +152,7 @@ def extract_metadata_display(epub_path: str | Path) -> EpubAccessibilityDisplay 
 # ---------------------------------------------------------------------------
 # OPF parsing helpers
 # ---------------------------------------------------------------------------
+
 
 def _find_opf(zf: zipfile.ZipFile) -> str | None:
     """Locate the OPF file inside the EPUB ZIP."""
@@ -217,6 +226,7 @@ def _get_all(raw: dict[str, list[str]], prop: str) -> list[str]:
 # Section 3.1: Ways of Reading
 # ---------------------------------------------------------------------------
 
+
 def _build_ways_of_reading(raw: dict[str, list[str]]) -> MetadataSection:
     section = MetadataSection(title="Ways of Reading")
     features = _get_all(raw, "schema:accessibilityFeature")
@@ -237,18 +247,21 @@ def _build_ways_of_reading(raw: dict[str, list[str]]) -> MetadataSection:
         )
 
     # 3.1.2 Nonvisual reading
-    text_features = {"longDescription", "alternativeText", "describedMath", "transcript"}
+    text_features = {
+        "longDescription",
+        "alternativeText",
+        "describedMath",
+        "transcript",
+    }
     has_textual_alts = bool(text_features & set(features))
-    textual_only_mode = (modes == ["textual"])
+    textual_only_mode = modes == ["textual"]
     textual_sufficient = "textual" in sufficient
     has_some_textual = "textual" in modes or any("textual" in s for s in sufficient)
-    audio_only = (modes == ["auditory"])
+    audio_only = modes == ["auditory"]
     visual_only = (modes == ["visual"]) and not has_some_textual
 
     if textual_sufficient or textual_only_mode:
-        section.statements.append(
-            "Readable in read aloud or dynamic braille."
-        )
+        section.statements.append("Readable in read aloud or dynamic braille.")
         has_real_metadata = True
     elif has_some_textual or has_textual_alts:
         section.statements.append(
@@ -256,9 +269,7 @@ def _build_ways_of_reading(raw: dict[str, list[str]]) -> MetadataSection:
         )
         has_real_metadata = True
     elif audio_only or visual_only:
-        section.statements.append(
-            "Not readable in read aloud or dynamic braille."
-        )
+        section.statements.append("Not readable in read aloud or dynamic braille.")
         has_real_metadata = True
     else:
         section.statements.append(
@@ -345,15 +356,11 @@ def _build_conformance(raw: dict[str, list[str]]) -> MetadataSection:
     # Certifier
     certifier = _get(raw, "a11y:certifiedBy")
     if certifier:
-        section.statements.append(
-            f"The publication was certified by {certifier}."
-        )
+        section.statements.append(f"The publication was certified by {certifier}.")
 
     certifier_cred = _get(raw, "a11y:certifierCredential")
     if certifier_cred:
-        section.statements.append(
-            f"The certifier's credential is {certifier_cred}."
-        )
+        section.statements.append(f"The certifier's credential is {certifier_cred}.")
 
     # Detailed conformance claim
     epub_label = f"EPUB Accessibility {epub_version}" if epub_version else ""
@@ -366,19 +373,17 @@ def _build_conformance(raw: dict[str, list[str]]) -> MetadataSection:
 
     claim_parts = [p for p in (epub_label, wcag_label, level_detail) if p]
     if claim_parts:
-        section.statements.append(
-            f"Claims to meet {' '.join(claim_parts)}."
-        )
+        section.statements.append(f"Claims to meet {' '.join(claim_parts)}.")
 
     # Certification date
     cert_date = _get(raw, "dcterms:date")
     if cert_date:
-        section.statements.append(
-            f"The publication was certified on {cert_date}."
-        )
+        section.statements.append(f"The publication was certified on {cert_date}.")
 
     # Certifier report
-    cert_report = _get(raw, "link:a11y:certifierReport") or _get(raw, "a11y:certifierReport")
+    cert_report = _get(raw, "link:a11y:certifierReport") or _get(
+        raw, "a11y:certifierReport"
+    )
     if cert_report:
         section.statements.append(
             f"For more information refer to the certifier's report: {cert_report}"
@@ -391,6 +396,7 @@ def _build_conformance(raw: dict[str, list[str]]) -> MetadataSection:
 # Section 3.3: Navigation
 # ---------------------------------------------------------------------------
 
+
 def _build_navigation(raw: dict[str, list[str]]) -> MetadataSection:
     section = MetadataSection(title="Navigation")
     features = _get_all(raw, "schema:accessibilityFeature")
@@ -400,7 +406,11 @@ def _build_navigation(raw: dict[str, list[str]]) -> MetadataSection:
         nav_items.append("Table of contents.")
     if "index" in features:
         nav_items.append("Index with links to referenced entries.")
-    if "pageNavigation" in features or "printPageNumbers" in features or "pageBreakMarkers" in features:
+    if (
+        "pageNavigation" in features
+        or "printPageNumbers" in features
+        or "pageBreakMarkers" in features
+    ):
         nav_items.append("Go to page (page list from print source).")
     if "structuralNavigation" in features:
         nav_items.append("Headings and structural navigation.")
@@ -418,6 +428,7 @@ def _build_navigation(raw: dict[str, list[str]]) -> MetadataSection:
 # Section 3.4: Rich Content
 # ---------------------------------------------------------------------------
 
+
 def _build_rich_content(raw: dict[str, list[str]]) -> MetadataSection:
     section = MetadataSection(title="Rich Content")
     features = _get_all(raw, "schema:accessibilityFeature")
@@ -429,7 +440,11 @@ def _build_rich_content(raw: dict[str, list[str]]) -> MetadataSection:
         items.append("Math formulas in accessible format (MathML).")
     if "latex" in features:
         items.append("Math formulas in accessible format (LaTeX).")
-    if "describedMath" in features and "MathML" not in features and "latex" not in features:
+    if (
+        "describedMath" in features
+        and "MathML" not in features
+        and "latex" not in features
+    ):
         items.append("Text descriptions of math are provided.")
 
     if "MathML-chemistry" in features:
@@ -438,9 +453,7 @@ def _build_rich_content(raw: dict[str, list[str]]) -> MetadataSection:
         items.append("Chemical formulas in accessible format (LaTeX).")
 
     if "longDescriptions" in features:
-        items.append(
-            "Information-rich images are described by extended descriptions."
-        )
+        items.append("Information-rich images are described by extended descriptions.")
 
     if "closedCaptions" in features:
         items.append("Videos have closed captions.")
@@ -461,6 +474,7 @@ def _build_rich_content(raw: dict[str, list[str]]) -> MetadataSection:
 # ---------------------------------------------------------------------------
 # Section 3.5: Hazards
 # ---------------------------------------------------------------------------
+
 
 def _build_hazards(raw: dict[str, list[str]]) -> MetadataSection:
     section = MetadataSection(title="Hazards")
@@ -513,6 +527,7 @@ def _build_hazards(raw: dict[str, list[str]]) -> MetadataSection:
 # Section 3.6: Accessibility Summary
 # ---------------------------------------------------------------------------
 
+
 def _build_summary(raw: dict[str, list[str]]) -> MetadataSection:
     section = MetadataSection(title="Accessibility Summary")
 
@@ -529,6 +544,7 @@ def _build_summary(raw: dict[str, list[str]]) -> MetadataSection:
 # ---------------------------------------------------------------------------
 # Section 3.7: Legal Considerations
 # ---------------------------------------------------------------------------
+
 
 def _build_legal(raw: dict[str, list[str]]) -> MetadataSection:
     section = MetadataSection(title="Legal Considerations")

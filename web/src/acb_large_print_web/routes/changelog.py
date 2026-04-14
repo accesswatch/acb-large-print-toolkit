@@ -100,9 +100,7 @@ def _md_to_html(md: str) -> str:
             # Strip [x.y.z] version anchors for id generation
             slug = re.sub(r"[^\w\s-]", "", heading_match.group(2).lower())
             slug = re.sub(r"\s+", "-", slug.strip())
-            html_parts.append(
-                f'<h{level} id="{slug}">{text}</h{level}>'
-            )
+            html_parts.append(f'<h{level} id="{slug}">{text}</h{level}>')
             continue
 
         # Unordered list items

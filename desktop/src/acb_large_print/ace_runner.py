@@ -65,7 +65,9 @@ def ace_version() -> str | None:
     try:
         result = subprocess.run(
             [exe, "--version"],
-            capture_output=True, text=True, timeout=10,
+            capture_output=True,
+            text=True,
+            timeout=10,
         )
         version = result.stdout.strip()
         return version if version else None
@@ -96,7 +98,8 @@ def run_ace(file_path: str | Path, *, timeout: int = 120) -> dict | None:
         cmd = [
             exe,
             "--json",
-            "--outdir", str(tmp_dir),
+            "--outdir",
+            str(tmp_dir),
             str(file_path),
         ]
 
@@ -163,7 +166,11 @@ def ace_report_to_findings(report: dict) -> list[Finding]:
                 _process_ace_assertion(assertion, findings, seen_rules)
 
     # Earl assertions at top level
-    for earl in report.get("earl:result", []) if isinstance(report.get("earl:result"), list) else []:
+    for earl in (
+        report.get("earl:result", [])
+        if isinstance(report.get("earl:result"), list)
+        else []
+    ):
         _process_earl_result(earl, findings, seen_rules)
 
     return findings
@@ -173,7 +180,9 @@ def _process_ace_assertion(
     assertion: dict, findings: list[Finding], seen: set[str]
 ) -> None:
     """Process a single Ace assertion into findings."""
-    rule_id = assertion.get("@testSubject", {}).get("url", "") or assertion.get("earl:test", {}).get("dct:title", "")
+    rule_id = assertion.get("@testSubject", {}).get("url", "") or assertion.get(
+        "earl:test", {}
+    ).get("dct:title", "")
 
     # axe-core violations come in a different structure
     if "axe:violations" in assertion or "violations" in assertion:
@@ -203,13 +212,15 @@ def _process_ace_assertion(
         seen.add(our_rule)
         if our_rule in C.AUDIT_RULES:
             rule_def = C.AUDIT_RULES[our_rule]
-            findings.append(Finding(
-                rule_id=our_rule,
-                severity=rule_def.severity,
-                message=f"[Ace] {message}" if message else rule_def.description,
-                location="EPUB package",
-                auto_fixable=rule_def.auto_fixable,
-            ))
+            findings.append(
+                Finding(
+                    rule_id=our_rule,
+                    severity=rule_def.severity,
+                    message=f"[Ace] {message}" if message else rule_def.description,
+                    location="EPUB package",
+                    auto_fixable=rule_def.auto_fixable,
+                )
+            )
     else:
         # Ace-specific finding not in our rules -- add as informational
         key = f"ACE:{ace_rule}"
@@ -220,13 +231,15 @@ def _process_ace_assertion(
             impact.lower() if isinstance(impact, str) else "moderate",
             C.Severity.MEDIUM,
         )
-        findings.append(Finding(
-            rule_id="ACE-EPUB-CHECK",
-            severity=severity,
-            message=f"[Ace: {ace_rule}] {message}",
-            location="EPUB package",
-            auto_fixable=False,
-        ))
+        findings.append(
+            Finding(
+                rule_id="ACE-EPUB-CHECK",
+                severity=severity,
+                message=f"[Ace: {ace_rule}] {message}",
+                location="EPUB package",
+                auto_fixable=False,
+            )
+        )
 
 
 def _process_axe_violation(
@@ -253,13 +266,15 @@ def _process_axe_violation(
             msg = f"[Ace/axe] {help_text}"
             if node_count > 1:
                 msg += f" ({node_count} instances)"
-            findings.append(Finding(
-                rule_id=our_rule,
-                severity=rule_def.severity,
-                message=msg,
-                location=_node_location(nodes),
-                auto_fixable=rule_def.auto_fixable,
-            ))
+            findings.append(
+                Finding(
+                    rule_id=our_rule,
+                    severity=rule_def.severity,
+                    message=msg,
+                    location=_node_location(nodes),
+                    auto_fixable=rule_def.auto_fixable,
+                )
+            )
     else:
         key = f"AXE:{axe_id}"
         if key in seen:
@@ -269,18 +284,18 @@ def _process_axe_violation(
         msg = f"[Ace/axe: {axe_id}] {help_text}"
         if node_count > 1:
             msg += f" ({node_count} instances)"
-        findings.append(Finding(
-            rule_id="ACE-AXE-CHECK",
-            severity=severity,
-            message=msg,
-            location=_node_location(nodes),
-            auto_fixable=False,
-        ))
+        findings.append(
+            Finding(
+                rule_id="ACE-AXE-CHECK",
+                severity=severity,
+                message=msg,
+                location=_node_location(nodes),
+                auto_fixable=False,
+            )
+        )
 
 
-def _process_earl_result(
-    earl: dict, findings: list[Finding], seen: set[str]
-) -> None:
+def _process_earl_result(earl: dict, findings: list[Finding], seen: set[str]) -> None:
     """Process a top-level EARL result."""
     outcome = earl.get("earl:outcome", "")
     if "fail" not in str(outcome).lower():
@@ -294,13 +309,15 @@ def _process_earl_result(
     our_rule = _ACE_TO_OUR_RULE.get(title)
     if our_rule and our_rule in C.AUDIT_RULES:
         rule_def = C.AUDIT_RULES[our_rule]
-        findings.append(Finding(
-            rule_id=our_rule,
-            severity=rule_def.severity,
-            message=f"[Ace] {desc}",
-            location="EPUB package",
-            auto_fixable=rule_def.auto_fixable,
-        ))
+        findings.append(
+            Finding(
+                rule_id=our_rule,
+                severity=rule_def.severity,
+                message=f"[Ace] {desc}",
+                location="EPUB package",
+                auto_fixable=rule_def.auto_fixable,
+            )
+        )
 
 
 def _node_location(nodes: list[dict]) -> str:

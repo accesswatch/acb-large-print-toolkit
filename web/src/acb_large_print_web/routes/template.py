@@ -54,12 +54,16 @@ def template_submit():
 
     except Exception as exc:
         import logging
+
         logging.getLogger("acb_large_print").exception(
             "Template creation failed: %s", exc
         )
         if temp_dir:
             cleanup_tempdir(temp_dir)
-        return render_template(
-            "template_form.html",
-            error="An error occurred while creating the template. Please try again.",
-        ), 500
+        return (
+            render_template(
+                "template_form.html",
+                error="An error occurred while creating the template. Please try again.",
+            ),
+            500,
+        )

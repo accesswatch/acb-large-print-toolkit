@@ -47,6 +47,46 @@
   </form>
 </section>
 
+{% if fix_records %}
+<section aria-labelledby="fix-details-heading">
+  <h2 id="fix-details-heading">Fix Details</h2>
+  <p>{{ fix_records | length }} individual fixes applied, grouped by category:</p>
+
+  {% set ns = namespace(categories={}) %}
+  {% for rec in fix_records %}
+    {% if rec.category not in ns.categories %}
+      {% set _ = ns.categories.update({rec.category: []}) %}
+    {% endif %}
+    {% set _ = ns.categories[rec.category].append(rec) %}
+  {% endfor %}
+
+  {% for cat, recs in ns.categories.items() %}
+  <details>
+    <summary>{{ cat }} ({{ recs | length }} fix{{ "es" if recs | length != 1 else "" }})</summary>
+    <table class="findings-table">
+      <caption>{{ cat }} fixes applied</caption>
+      <thead>
+        <tr>
+          <th scope="col">Rule</th>
+          <th scope="col">Description</th>
+          <th scope="col">Location</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for rec in recs %}
+        <tr>
+          <td>{{ rec.rule_id }}</td>
+          <td>{{ rec.description }}</td>
+          <td>{{ rec.location or "Document-wide" }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </details>
+  {% endfor %}
+</section>
+{% endif %}
+
 {% if post_findings %}
 <section aria-labelledby="remaining-heading">
   <h2 id="remaining-heading">Remaining Issues</h2>

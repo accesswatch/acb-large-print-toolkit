@@ -60,6 +60,7 @@ class _HTMLStructureParser(HTMLParser):
         self.ambiguous_links: list[str] = []
         self.mathml_total: int = 0
         self.mathml_without_alt: int = 0
+        self.indented_elements: list[str] = []  # tags with text-indent or margin-left
         self._in_table = False
         self._table_has_th = False
         self._in_link = False
@@ -112,6 +113,16 @@ class _HTMLStructureParser(HTMLParser):
         elif tag_lower == "annotation" and self._in_math:
             self._math_has_annotation = True
 
+        # Check inline style for text-indent or margin-left on body text elements
+        if tag_lower in ("p", "div", "li", "blockquote", "section", "article"):
+            attr_dict = dict(attrs)
+            style = attr_dict.get("style", "")
+            if style:
+                if re.search(r"text-indent\s*:\s*[^0]", style) or re.search(
+                    r"margin-left\s*:\s*[^0]", style
+                ):
+                    self.indented_elements.append(tag_lower)
+
     def handle_endtag(self, tag: str) -> None:
         tag_lower = tag.lower()
         if tag_lower == "table" and self._in_table:
@@ -152,12 +163,17 @@ def audit_epub(file_path: str | Path) -> AuditResult:
     ace_used = False
     try:
         from .ace_runner import ace_available, audit_epub_with_ace
+
         if ace_available():
             ace_result = audit_epub_with_ace(file_path)
             if ace_result is not None and ace_result.findings:
                 result.findings.extend(ace_result.findings)
                 ace_used = True
-                log.info("Ace found %d findings for %s", len(ace_result.findings), file_path.name)
+                log.info(
+                    "Ace found %d findings for %s",
+                    len(ace_result.findings),
+                    file_path.name,
+                )
         else:
             log.warning(
                 "DAISY Ace is not installed. ePub audit will use built-in checks only. "
@@ -183,14 +199,19 @@ def audit_epub(file_path: str | Path) -> AuditResult:
     # (W3C Display Guide 2.0 algorithm -- based on DAISY a11y-meta-viewer)
     try:
         from .epub_meta_display import extract_metadata_display
+
         result.metadata_display = extract_metadata_display(file_path)
     except Exception:
-        log.debug("Metadata display extraction failed for %s", file_path.name, exc_info=True)
+        log.debug(
+            "Metadata display extraction failed for %s", file_path.name, exc_info=True
+        )
 
     return result
 
 
-def _check_opf_metadata(file_path: Path, result: AuditResult, ace_used: bool = False) -> None:
+def _check_opf_metadata(
+    file_path: Path, result: AuditResult, ace_used: bool = False
+) -> None:
     """Parse the ePub OPF file to check metadata."""
     seen_rules = {f.rule_id for f in result.findings}
     try:
@@ -393,6 +414,18 @@ def _check_html_structure(file_path: Path, result: AuditResult) -> None:
             f"elements missing alttext attribute or annotation",
         )
 
+    # CSS text-indent / margin-left check
+    if parser.indented_elements:
+        count = len(parser.indented_elements)
+        tags = ", ".join(f"<{t}>" for t in parser.indented_elements[:5])
+        if count > 5:
+            tags += f" (and {count - 5} more)"
+        result.add(
+            "EPUB-TEXT-INDENT",
+            f"{count} element(s) use CSS text-indent or margin-left "
+            f"for indentation: {tags}",
+        )
+
 
 def _check_headings(headings: list[int], result: AuditResult) -> None:
     """Check heading hierarchy for skipped levels."""
@@ -471,7 +504,11 @@ def _check_page_list(
     for meta in metadata.findall(f"{{{ns_opf}}}meta"):
         prop = meta.get("property", "")
         text = (meta.text or "").strip()
-        if prop == "schema:accessibilityFeature" and text in ("pageNavigation", "printPageNumbers", "pageBreakMarkers"):
+        if prop == "schema:accessibilityFeature" and text in (
+            "pageNavigation",
+            "printPageNumbers",
+            "pageBreakMarkers",
+        ):
             has_page_nav = True
             break
 
@@ -490,10 +527,14 @@ def _check_page_list(
             if href:
                 # Resolve relative to OPF
                 import posixpath
+
                 nav_path = posixpath.join(posixpath.dirname(opf_path), href)
                 try:
                     nav_content = zf.read(nav_path).decode("utf-8", errors="replace")
-                    if 'epub:type="page-list"' in nav_content or "epub:type='page-list'" in nav_content:
+                    if (
+                        'epub:type="page-list"' in nav_content
+                        or "epub:type='page-list'" in nav_content
+                    ):
                         return  # Has page list
                 except (KeyError, OSError):
                     pass
@@ -529,7 +570,10 @@ def _check_page_source(
     for meta in metadata.findall(f"{{{ns_opf}}}meta"):
         prop = meta.get("property", "")
         text = (meta.text or "").strip()
-        if prop == "schema:accessibilityFeature" and text in ("printPageNumbers", "pageBreakMarkers"):
+        if prop == "schema:accessibilityFeature" and text in (
+            "printPageNumbers",
+            "pageBreakMarkers",
+        ):
             has_page_feature = True
             break
 

@@ -93,6 +93,13 @@ nav[aria-label="Main navigation"] {
   z-index: 1;
 }
 
+/* --- Loading State (SPA tab switch) --- */
+main[aria-busy="true"] {
+  opacity: 0.6;
+  pointer-events: none;
+  transition: opacity 0.15s ease;
+}
+
 /* --- Cards (landing page) --- */
 .card-grid {
   display: grid;
@@ -987,4 +994,18 @@ footer p {
   padding: 0.1em 0.3em;
   border-radius: 3px;
   font-size: 0.9em;
+}
+
+/* --- Heading Review --- */
+.signal-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  font-size: 0.85em;
+}
+.signal-list li {
+  margin-bottom: 0.15em;
+}
+.button-group {
+  margin-top: 1.5rem;
 }

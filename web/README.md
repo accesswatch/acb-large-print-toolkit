@@ -76,6 +76,49 @@ cd web
 python -m pytest tests/ -v
 ```
 
+### Heading Stress Validation (1,000-Document Scale)
+
+The web app's Guide and About pages expose stress-testing transparency for heading detection and repair. The validation itself runs through the shared stress harness in the desktop test suite.
+
+Current stress scale:
+
+- 1,000 generated Word documents
+- 1 scenario block per document
+- 1,000 total heading scenarios
+
+What the web-facing platform is proving through that harness:
+
+- Heading detection can separate real headings from common false positives
+- Repair can normalize the same documents back to strict ACB rules
+- Product changes are accepted only after the measured corpus improves or stays clean
+
+Validation commands:
+
+```bash
+python -m pytest desktop/tests/test_heading_stress_corpus.py::test_full_stress_corpus_generates_one_thousand_documents desktop/tests/test_heading_stress_corpus.py::test_full_fixer_stress_corpus_repairs_all_documents -q
+python -m pytest desktop/tests/test_heading_stress_corpus.py -q
+```
+
+Pass/fail interpretation:
+
+- Pass: generation and repair checks complete with zero failures.
+- Fail: treat as regression and investigate failing scenario families before release.
+
+Lessons learned from the completed runs:
+
+1. Users do not upload "cleanly wrong" documents. They upload mixed documents with plain-text paste, bold-only headings, centered titles, font drift, and indentation drift in the same file.
+2. False-positive control is critical. Signature lines and short callouts are easy to misread as headings unless the detector includes negative-pattern penalties.
+3. Good heading detection is not the end of the job. The fixer also has to repair heading hierarchy and heading text so the final document passes ACB audit rules.
+4. The platform improved because stress failures were turned into product changes, not just test notes. We expanded scenario randomness and added heading normalization in the fixer after the corpus exposed those gaps.
+
+Current measured outcomes:
+
+- Full heading stress suite: 5 passed
+- Core fixer and detector suite: 150 passed
+- 1,000-scenario comparison: 0 false positives, 0 false negatives
+- 4,800-scenario denser randomized comparison: 0 false positives, 0 false negatives
+- 1,000-document ACB fix-then-audit sweep: 0 remaining ACB findings
+
 ## Docker
 
 Build and run locally:

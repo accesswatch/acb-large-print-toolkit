@@ -10,6 +10,45 @@ Releases are tagged in the [GitHub repository](https://github.com/accesswatch/ac
 
 ### Added
 
+- **Synthetic heading stress corpus** (`desktop/src/acb_large_print/stress_profiles.py`, `desktop/tests/test_heading_stress_corpus.py`): reproducible randomized corpus with 1,000 heading scenarios across 1,000 generated Word documents. Covers paste-heavy and layout-heavy families including notepad, email, web paste, agendas, policies, newsletters, legal outlines, appendices, and flyers. Includes sample-run tests plus `pytest -m stress` full-corpus generation and fixer verification.
+- **Web help: stress-testing transparency** (`web/src/acb_large_print_web/routes/guide.py`, `web/src/acb_large_print_web/routes/about.py`, `web/src/acb_large_print_web/templates/guide.html`, `web/src/acb_large_print_web/templates/about.html`): guide and About pages now explain the stress harness, why it exists, which scenario families are covered, and how failures are folded back into audit rules and fixer behavior.
+
+- **AI heading detection engine** (`heading_detector.py`, `ai_provider.py`, `ai_providers/ollama_provider.py`): two-tier faux heading detection system. Tier 1 scores paragraphs on 10 heuristic signals (font size, bold, short length, caps, position, whitespace, isolation, run count, style name, proximity to known headings) on a 0-100 scale. Tier 2 optionally refines borderline candidates via Ollama (phi4-mini model) running locally. No data leaves the machine.
+- **Heading detection CLI** (`cli.py`): new `detect-headings` subcommand for standalone heading analysis with `--ai`, `--ai-model`, `--ai-endpoint`, `--ai-prompt` (custom prompt file), `--threshold`, `--apply`, `--json` options. Also `--detect-headings` and `--ai` flags on `fix` and `batch` subcommands.
+- **Heading conversion fixer pre-pass** (`fixer.py`): when `detect_headings=True`, runs heading detection before other fixes and converts faux headings to real Heading 1/2/3 styles. Clears conflicting direct formatting after conversion.
+- **ACB-FAUX-HEADING audit rule** (`constants.py`, `auditor.py`): new HIGH severity auto-fixable rule detects paragraphs that look like headings but use non-heading styles. Wired into `audit_document()` via `_check_faux_headings()`.
+- **FixRecord dataclass** (`constants.py`): structured fix tracking with `rule_id`, `category`, `description`, and `location` fields. Seven category constants: Headings, Font, Alignment, Emphasis, Spacing, Page Setup, Document Properties.
+- **Detailed fix reports** (`fixer.py`, `reporter.py`): every fix function now records individual `FixRecord` entries. `fix_document()` returns a 5-tuple including the records list. `generate_fix_summary()` displays fixes grouped by category.
+- **Fix result accordion UI** (`fix_result.html`): new "Fix Details" section with collapsible `<details>` elements grouped by category, showing rule ID, description, and location for each fix applied.
+- **Heading detection web UI** (`fix_form.html`, `routes/fix.py`): new "Heading Detection" fieldset with enable checkbox, AI toggle (requires Ollama), and confidence threshold slider. Fix route parses form fields and passes to fixer.
+- **Ollama Docker service** (`docker-compose.prod.yml`): new `ollama` service using `ollama/ollama:latest` image with health check, persistent volume (`ollama_data`), and `OLLAMA_HOST` env var on the web service.
+- **Ollama dependency** (`requirements.txt`): added `ollama>=0.4.0` to both desktop and web requirements.
+- **TypeScript constants synced** (`office-addin/src/constants.ts`, `word-addin/src/constants.ts`): `HEADING_CONFIDENCE_THRESHOLD`, `HEADING_HIGH_CONFIDENCE`, and `ACB-FAUX-HEADING` rule added.
+- **User guide: heading detection** (`user-guide.md`): new section documenting heuristic detection, AI refinement, web UI usage, and CLI commands with examples.
+- **Interactive heading review** (`fix_review_headings.html`, `routes/fix.py`): when heading detection finds candidates in a .docx upload, users see a review table with paragraph text, heuristic signals, confidence scores, AI reasoning (if used), and a heading level dropdown (H1-H6 or "Skip") for each candidate before fixes are applied. New `fix_confirm` POST route at `/fix/confirm` processes confirmed selections.
+- **Fix route refactor** (`routes/fix.py`): extracted `_parse_form_options()` and `_run_fix_and_render()` helpers shared by submit and confirm routes, reducing duplication and supporting the two-step heading review flow.
+- **AI auto-detection** (`ai_provider.py`, `fix_form.html`, `gui.py`): new `is_ai_available()` function probes Ollama at localhost:11434 with a 2-second HEAD request. Web fix form and desktop GUI auto-check the AI checkbox when Ollama is reachable.
+- **Desktop GUI: heading detection controls** (`gui.py`): Step 3 Options panel adds paragraph indent checkbox, heading detection checkbox, and AI toggle. AI checkbox defaults to checked when `is_ai_available()` returns True and restores availability on re-enable.
+- **Confirmed headings support** (`fixer.py`): `fix_document()` accepts a `confirmed_headings` parameter (list of paragraph index, level, text tuples). When provided, the fixer uses these directly instead of re-running detection, enabling the web interactive review workflow.
+
+- **Configurable list indentation** (`constants.py`, `auditor.py`, `fixer.py`, `template.py`): new `ACB-LIST-INDENT` audit rule (Medium severity, auto-fixable) checks list item indentation against a configurable target. Default is flush-left (0.0 inch) per ACB alignment guidelines. Two presets: `LIST_INDENT_FLUSH` (0.0/0.0) and `LIST_INDENT_STANDARD` (0.5/0.25).
+- **Desktop GUI: list indent controls** (`gui.py`): Step 3 Options panel adds a "Flush all lists to the left margin" checkbox (checked by default) with left indent and hanging indent spin controls. Unchecking reverts to standard Word indentation (0.50/0.25 inch). Custom values supported.
+- **CLI: list indent options** (`cli.py`): `fix`, `template`, and `batch` subcommands accept `--flush-lists` / `--no-flush-lists` flags and `--list-indent` / `--list-hanging` for custom values.
+- **Web app: list indent form controls** (`fix_form.html`, `fix.py`): "List Indentation" fieldset with flush-left checkbox and custom indent fields. Values are validated and clamped to safe range (0.0 -- 2.0 inches).
+- **TypeScript constants synced** (`office-addin/src/constants.ts`, `word-addin/src/constants.ts`): `LIST_INDENT_IN` and `LIST_HANGING_IN` updated to 0.0, `LIST_INDENT_FLUSH` and `LIST_INDENT_STANDARD` presets added, `ACB-LIST-INDENT` rule added to `AUDIT_RULES`.
+- **SPA tab controller** (`tabs.js`): new client-side script for true ARIA tab pattern with keyboard navigation (Arrow Left/Right, Home, End), lazy content loading via fetch, response caching, inline script re-execution, browser history (pushState/popstate), and document title updates on tab switch. Falls back to normal link navigation without JavaScript.
+- **AI heading detection plan** (`docs/plan-ai-heading-detection.md`): comprehensive 6-phase plan for detecting faux headings in unstyled documents using heuristic scoring (Tier 1) and optional AI refinement (Tier 2) via GitHub Models, Ollama, or Hugging Face.
+
+- **Non-list paragraph indentation audit and fix (Phase 5)**: new rules detect and auto-fix stray paragraph indentation that violates ACB flush-left requirements.
+  - 4 new audit rules: `ACB-PARA-INDENT` (High, auto-fixable), `ACB-FIRST-LINE-INDENT` (High, auto-fixable), `ACB-BLOCKQUOTE-INDENT` (Medium, auto-fixable), `EPUB-TEXT-INDENT` (Medium, not auto-fixable).
+  - 4 new constants: `PARA_INDENT_IN`, `FIRST_LINE_INDENT_IN`, `PARA_INDENT_FLUSH`, `PARA_INDENT_BLOCKQUOTE`.
+  - **Auditor** (`auditor.py`): checks non-list, non-heading paragraphs for left indent and first-line indent violations, with blockquote detection for indents > 0.25 inch on body-length text.
+  - **Fixer** (`fixer.py`): resets paragraph left indent and first-line indent to configured values.
+  - **ePub auditor** (`epub_auditor.py`): detects CSS `text-indent` and `margin-left` on body text elements in ePub HTML content.
+  - **CLI** (`cli.py`): `--flush-paragraphs` / `--no-flush-paragraphs`, `--para-indent`, `--first-line-indent` flags on `fix` and `batch` subcommands.
+  - **Web app** (`fix_form.html`, `routes/fix.py`): "Paragraph Indentation" fieldset with flush checkbox and custom indent fields, matching the list indentation pattern.
+  - **TypeScript** (`office-addin/src/constants.ts`, `word-addin/src/constants.ts`): synced all 4 constants and 4 audit rules.
+
 - **Word, EPUB, and PDF conversion** (`pandoc_converter.py`, `convert.py`, `convert_form.html`): three new output formats on the Convert page. Word (.docx) via Pandoc, EPUB 3 via Pandoc with embedded ACB CSS, and PDF via Pandoc + WeasyPrint with ACB BOP print formatting (Arial 18pt, 1.15 line spacing, 1-inch margins, @page rules). PDF supports binding margin option (extra 0.5-inch left). Convert page now offers six directions: plain text, HTML, Word, EPUB 3, PDF, and DAISY Pipeline.
 - **WeasyPrint integration** (`requirements.txt`, `Dockerfile`, `pandoc_converter.py`): added `weasyprint>=62.0` to web dependencies. Dockerfile installs Pango, Cairo, GDK-Pixbuf, libffi, shared-mime-info, and Liberation Sans font (metrically identical to Arial) for PDF rendering. The `weasyprint_available()` function allows graceful fallback when not installed.
 - **ACB print CSS for PDF** (`pandoc_converter.py`): dedicated `_ACB_PDF_CSS` stylesheet with ACB BOP print-optimized rules -- Arial/Liberation Sans font stack, 18pt body, 22pt headings, 20pt subheadings, 1.15 line spacing, 1-inch margins, underline-only emphasis, flush-left alignment, @page size letter. Binding-margin variant adds 0.5-inch extra on the left.
@@ -24,9 +63,20 @@ Releases are tagged in the [GitHub repository](https://github.com/accesswatch/ac
 
 ### Changed
 
+- **Stress validation and lessons-learned documentation expanded** (`README.md`, `desktop/README.md`, `web/README.md`, `docs/user-guide.md`, `web/src/acb_large_print_web/templates/guide.html`, `web/src/acb_large_print_web/templates/about.html`): documentation now explains, in plain language, what heading and document-repair scenarios were stress-tested, what failures were discovered during learning, how the platform was adapted, what the final measured outcomes were, and what confidence limits still remain for cross-platform runtime proof.
+
+- **Paragraph indentation enforcement tightened** (`desktop/src/acb_large_print/auditor.py`, `desktop/src/acb_large_print/fixer.py`, `desktop/src/acb_large_print/constants.py`, `office-addin/src/constants.ts`, `word-addin/src/constants.ts`): non-list paragraph left indent and first-line indent checks now enforce the configured target exactly, catching negative hanging indents and outdents in addition to positive indents. Rule descriptions now reflect the configurable target with flush-left as the default.
+
+- **True SPA tab control** (`base.html`, `tabs.js`, `forms.css`): navigation tabs now switch content without a full page reload. Clicking a tab fetches the target page, extracts the main content, and swaps it in-place. Cached after first load for instant subsequent switches. Browser back/forward buttons work via pushState history.
+- **Removed redundant ARIA landmark roles** (`base.html`): removed `role="banner"` from `<header>` and `role="contentinfo"` from `<footer>` since these are the implicit roles of those HTML5 elements.
+- **Tab ARIA improvements** (`base.html`): each tab link now has a unique `id` attribute and `aria-controls="main"`; tablist has `aria-label="Document tools"`; removed redundant `aria-current="page"` from tab links (superseded by `aria-selected`). Roving tabindex managed by `tabs.js` for proper keyboard interaction.
+- **Loading state** (`forms.css`): `main[aria-busy="true"]` style dims content and disables pointer events during SPA tab fetches.
 - **Navigation structure** (`base.html`): main nav reduced from 9 items to 6 tabs (Audit, Fix, Template, Export, Convert, Guidelines). The brand link now also gets `aria-current="page"` when on the home page. Secondary links (User Guide, About, Changelog, Feedback) relocated to footer.
 - **Tab bar contrast and touch targets** (`forms.css`): active tab uses `#0055cc` with 3px bottom border; inactive tabs use `#444` text (meets WCAG AA 4.5:1 on white); all tabs have 44px minimum height/width for touch targets.
 - **Convert test** (`test_app.py`): `test_convert_to_html_md_file` now sends `acb_format=on` to match the new form behavior where ACB formatting is a checkbox.
+- **User guide updated** (`user-guide.md`): heading detection section expanded with interactive review workflow steps for web, desktop GUI instructions, AI auto-detection notes, and updated FAQ entry for faux heading detection.
+- **PRD updated** (`prd-flask-web-app.md`): implementation status table expanded with interactive heading review, AI auto-detection, and desktop GUI heading detection rows.
+- **Documentation consolidated**: removed `docs/acb-large-print-toolkit.md` (superseded by `copilot-instructions.md` repo layout and PRD) and `docs/plan-ai-heading-detection.md` (fully implemented). README docs listing updated.
 
 ### Fixed
 

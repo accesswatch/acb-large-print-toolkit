@@ -86,7 +86,132 @@
       <input type="checkbox" name="bound">
       Add binding margin (extra 0.5 inch on left side for bound Word documents)
     </label>
+
+    <fieldset class="nested-fieldset">
+      <legend>List Indentation</legend>
+      <p class="help-text">ACB guidelines require all text to be flush left. By default, list items are set to zero indentation. Uncheck the box below to keep standard Word list indentation or set custom values.</p>
+
+      <label>
+        <input type="checkbox" name="flush_lists" id="flush-lists" checked
+               aria-describedby="flush-help">
+        Flush all lists to the left margin (ACB default)
+      </label>
+      <p id="flush-help" class="help-text">When checked, bullet and numbered list items start at the left margin with no indentation.</p>
+
+      <div id="list-indent-fields" class="indent-fields" style="display:none;">
+        <div class="form-group form-group-inline">
+          <label for="list-indent">Left indent (inches):</label>
+          <input type="number" id="list-indent" name="list_indent"
+                 value="0.50" min="0" max="2" step="0.05"
+                 aria-describedby="indent-help"
+                 class="input-narrow">
+        </div>
+        <div class="form-group form-group-inline">
+          <label for="list-hanging">Hanging indent (inches):</label>
+          <input type="number" id="list-hanging" name="list_hanging"
+                 value="0.25" min="0" max="2" step="0.05"
+                 aria-describedby="indent-help"
+                 class="input-narrow">
+        </div>
+        <p id="indent-help" class="help-text">Standard Word defaults: 0.50 inch left indent, 0.25 inch hanging indent. Adjust if your style guide requires different values.</p>
+      </div>
+    </fieldset>
+
+    <fieldset class="nested-fieldset">
+      <legend>Paragraph Indentation</legend>
+      <p class="help-text">ACB guidelines require flush-left paragraphs with no indentation. By default, paragraph left indent and first-line indent are reset to zero. Uncheck the box below to keep existing indentation or set custom values.</p>
+
+      <label>
+        <input type="checkbox" name="flush_paragraphs" id="flush-paragraphs" checked
+               aria-describedby="flush-para-help">
+        Flush all paragraphs to the left margin (ACB default)
+      </label>
+      <p id="flush-para-help" class="help-text">When checked, body paragraph left indent and first-line indent are both set to zero.</p>
+
+      <div id="para-indent-fields" class="indent-fields" style="display:none;">
+        <div class="form-group form-group-inline">
+          <label for="para-indent">Left indent (inches):</label>
+          <input type="number" id="para-indent" name="para_indent"
+                 value="0.00" min="0" max="2" step="0.05"
+                 aria-describedby="para-indent-help"
+                 class="input-narrow">
+        </div>
+        <div class="form-group form-group-inline">
+          <label for="first-line-indent">First-line indent (inches):</label>
+          <input type="number" id="first-line-indent" name="first_line_indent"
+                 value="0.00" min="0" max="2" step="0.05"
+                 aria-describedby="para-indent-help"
+                 class="input-narrow">
+        </div>
+        <p id="para-indent-help" class="help-text">Set custom paragraph indentation values. ACB default is zero for both. Adjust if your style guide requires indented paragraphs.</p>
+      </div>
+    </fieldset>
+
+    <fieldset class="nested-fieldset">
+      <legend>Heading Detection (Word only)</legend>
+      <p class="help-text">Detect paragraphs formatted as headings (bold, large font) but not using real heading styles. The fixer can convert them to proper headings for better structure and accessibility.</p>
+
+      <label>
+        <input type="checkbox" name="detect_headings" id="detect-headings"
+               aria-describedby="heading-detect-help">
+        Detect and convert faux headings to real heading styles
+      </label>
+      <p id="heading-detect-help" class="help-text">Uses heuristic analysis to identify paragraphs that look like headings but use Normal or other non-heading styles. Converts them to Heading 1, 2, or 3 as appropriate.</p>
+
+      <div id="heading-ai-fields" class="indent-fields" style="display:none;">
+        <label>
+          <input type="checkbox" name="use_ai" id="use-ai"
+                 {% if ai_available %}checked{% endif %}
+                 aria-describedby="ai-help">
+          Refine with AI (requires Ollama)
+        </label>
+        <p id="ai-help" class="help-text">Uses Ollama (local AI) to improve heading detection accuracy by analyzing paragraph context. Requires Ollama to be running.</p>
+
+        <div class="form-group form-group-inline">
+          <label for="heading-threshold">Confidence threshold (0-100):</label>
+          <input type="number" id="heading-threshold" name="heading_threshold"
+                 value="50" min="0" max="100" step="5"
+                 class="input-narrow">
+        </div>
+      </div>
+    </fieldset>
   </fieldset>
+
+  <script>
+    (function () {
+      var chk = document.getElementById("detect-headings");
+      var fields = document.getElementById("heading-ai-fields");
+      function toggle() {
+        fields.style.display = chk.checked ? "" : "none";
+      }
+      chk.addEventListener("change", toggle);
+      toggle();
+    })();
+  </script>
+
+  <script>
+    (function () {
+      var chk = document.getElementById("flush-lists");
+      var fields = document.getElementById("list-indent-fields");
+      function toggle() {
+        fields.style.display = chk.checked ? "none" : "";
+      }
+      chk.addEventListener("change", toggle);
+      toggle();
+    })();
+  </script>
+
+  <script>
+    (function () {
+      var chk = document.getElementById("flush-paragraphs");
+      var fields = document.getElementById("para-indent-fields");
+      function toggle() {
+        fields.style.display = chk.checked ? "none" : "";
+      }
+      chk.addEventListener("change", toggle);
+      toggle();
+    })();
+  </script>
 
   <details class="help-accordion">
     <summary>How does the fix work?</summary>

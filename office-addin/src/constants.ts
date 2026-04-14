@@ -44,12 +44,29 @@ export const BINDING_EXTRA_IN = 0.5;
 export const PAGE_WIDTH_IN = 8.5;
 export const PAGE_HEIGHT_IN = 11.0;
 
-// List formatting (inches)
-export const LIST_INDENT_IN = 0.5;
-export const LIST_HANGING_IN = 0.25;
+// List formatting (inches) -- default flush left per ACB alignment rules
+export const LIST_INDENT_IN = 0.0;
+export const LIST_HANGING_IN = 0.0;
+
+// Presets: [leftIndent, hangingIndent] in inches
+export const LIST_INDENT_FLUSH: [number, number] = [0.0, 0.0];
+export const LIST_INDENT_STANDARD: [number, number] = [0.5, 0.25];
+
+// Paragraph indentation (inches) -- default flush left per ACB alignment rules
+export const PARA_INDENT_IN = 0.0;
+export const FIRST_LINE_INDENT_IN = 0.0;
+export const PARA_INDENT_FLUSH = 0.0;
+export const PARA_INDENT_BLOCKQUOTE = 0.5;
 
 // Margin tolerance (inches)
 export const MARGIN_TOLERANCE_IN = 0.05;
+
+// ---------------------------------------------------------------------------
+// Heading detection thresholds
+// ---------------------------------------------------------------------------
+
+export const HEADING_CONFIDENCE_THRESHOLD = 50;
+export const HEADING_HIGH_CONFIDENCE = 75;
 
 // ---------------------------------------------------------------------------
 // Style definitions
@@ -331,6 +348,42 @@ export const AUDIT_RULES: Record<string, RuleDef> = {
         description: "Document language must be set",
         severity: Severity.MEDIUM,
         acbReference: "WCAG 3.1.1 Language of Page",
+        category: RuleCategory.ACB,
+        autoFixable: true,
+        formats: DOCX_ONLY,
+    },
+    "ACB-LIST-INDENT": {
+        ruleId: "ACB-LIST-INDENT",
+        description: "List item indentation does not match the configured list indent value",
+        severity: Severity.MEDIUM,
+        acbReference: "ACB Guidelines Section 4: Alignment",
+        category: RuleCategory.ACB,
+        autoFixable: true,
+        formats: DOCX_ONLY,
+    },
+    "ACB-PARA-INDENT": {
+        ruleId: "ACB-PARA-INDENT",
+        description: "Paragraph left indent does not match the configured setting; ACB defaults to flush-left alignment",
+        severity: Severity.HIGH,
+        acbReference: "ACB Guidelines Section 4: Alignment",
+        category: RuleCategory.ACB,
+        autoFixable: true,
+        formats: DOCX_ONLY,
+    },
+    "ACB-FIRST-LINE-INDENT": {
+        ruleId: "ACB-FIRST-LINE-INDENT",
+        description: "Paragraph first-line indent does not match the configured setting; ACB defaults to no indentation",
+        severity: Severity.HIGH,
+        acbReference: "ACB Guidelines Section 4: Alignment",
+        category: RuleCategory.ACB,
+        autoFixable: true,
+        formats: DOCX_ONLY,
+    },
+    "ACB-BLOCKQUOTE-INDENT": {
+        ruleId: "ACB-BLOCKQUOTE-INDENT",
+        description: "Paragraph appears to be an indented block quote; consider using a proper style instead of manual indentation",
+        severity: Severity.MEDIUM,
+        acbReference: "ACB Guidelines Section 4: Alignment",
         category: RuleCategory.ACB,
         autoFixable: true,
         formats: DOCX_ONLY,
@@ -797,6 +850,15 @@ export const AUDIT_RULES: Record<string, RuleDef> = {
         autoFixable: false,
         formats: EPUB_ONLY,
     },
+    "EPUB-TEXT-INDENT": {
+        ruleId: "EPUB-TEXT-INDENT",
+        description: "Body text elements use CSS text-indent or margin-left for indentation",
+        severity: Severity.MEDIUM,
+        acbReference: "ACB Guidelines Section 4: Alignment",
+        category: RuleCategory.ACB,
+        autoFixable: false,
+        formats: EPUB_ONLY,
+    },
     "ACE-EPUB-CHECK": {
         ruleId: "ACE-EPUB-CHECK",
         description: "EPUB accessibility issue detected by DAISY Ace checker",
@@ -814,6 +876,15 @@ export const AUDIT_RULES: Record<string, RuleDef> = {
         category: RuleCategory.MSAC,
         autoFixable: false,
         formats: EPUB_ONLY,
+    },
+    "ACB-FAUX-HEADING": {
+        ruleId: "ACB-FAUX-HEADING",
+        description: "Paragraph looks like a heading (bold/large/short) but uses Normal or another non-heading style",
+        severity: Severity.HIGH,
+        acbReference: "ACB LPG Heading Hierarchy",
+        category: RuleCategory.ACB,
+        autoFixable: true,
+        formats: DOCX_ONLY,
     },
 };
 

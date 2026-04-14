@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+
+{% block title %}Review Detected Headings{% endblock %}
+{% block heading %}Review Detected Headings{% endblock %}
+
+{% block content %}
+<section aria-labelledby="review-intro">
+  <h2 id="review-intro">Heading Candidates Found</h2>
+  <p>The following {{ candidates | length }} paragraph{{ "s" if candidates | length != 1 else "" }} in <strong>{{ filename }}</strong> appear to be headings but use non-heading styles. Review each candidate below and adjust the heading level or skip it. Then click "Apply and Fix" to proceed.</p>
+</section>
+
+<form method="post" action="{{ url_for('fix.fix_confirm') }}">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <input type="hidden" name="token" value="{{ token }}">
+  <input type="hidden" name="candidate_count" value="{{ candidates | length }}">
+
+  {# Preserve all original form fields as hidden inputs #}
+  {% for key, value in form_fields.items() %}
+    {% if key != "csrf_token" and key != "document" %}
+      {% if value is string %}
+        <input type="hidden" name="{{ key }}" value="{{ value }}">
+      {% else %}
+        {% for v in value %}
+          <input type="hidden" name="{{ key }}" value="{{ v }}">
+        {% endfor %}
+      {% endif %}
+    {% endif %}
+  {% endfor %}
+
+  <table class="findings-table">
+    <caption>Detected heading candidates for review</caption>
+    <thead>
+      <tr>
+        <th scope="col">#</th>
+        <th scope="col">Text</th>
+        <th scope="col">Signals</th>
+        <th scope="col">Confidence</th>
+        <th scope="col">Heading Level</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for c in candidates %}
+      <tr>
+        <td>{{ loop.index }}</td>
+        <td>
+          <strong>{{ c.text[:120] }}{% if c.text | length > 120 %}...{% endif %}</strong>
+          <input type="hidden" name="idx_{{ loop.index0 }}" value="{{ c.paragraph_index }}">
+          <input type="hidden" name="text_{{ loop.index0 }}" value="{{ c.text }}">
+          {% if c.font_size_pt %}
+          <br><span class="help-text">{{ c.font_size_pt }}pt{% if c.is_bold %}, bold{% endif %}{% if c.is_all_caps %}, ALL CAPS{% endif %}{% if c.is_title_case %}, Title Case{% endif %}</span>
+          {% endif %}
+        </td>
+        <td>
+          <ul class="signal-list">
+          {% for signal_name, signal_score in c.signals %}
+            <li>{{ signal_name }} (+{{ signal_score }})</li>
+          {% endfor %}
+          </ul>
+        </td>
+        <td>
+          <span class="severity-badge severity-{% if c.confidence == 'high' %}low{% elif c.confidence == 'medium' %}medium{% else %}high{% endif %}">
+            {{ c.score }}/100 ({{ c.confidence }})
+          </span>
+          {% if c.ai_reasoning %}
+          <br><span class="help-text">AI: {{ c.ai_reasoning }}</span>
+          {% endif %}
+        </td>
+        <td>
+          <label for="level-{{ loop.index0 }}" class="visually-hidden">Heading level for "{{ c.text[:40] }}"</label>
+          <select id="level-{{ loop.index0 }}" name="level_{{ loop.index0 }}">
+            <option value="1" {% if c.suggested_level == 1 %}selected{% endif %}>Heading 1</option>
+            <option value="2" {% if c.suggested_level == 2 %}selected{% endif %}>Heading 2</option>
+            <option value="3" {% if c.suggested_level == 3 %}selected{% endif %}>Heading 3</option>
+            <option value="4" {% if c.suggested_level == 4 %}selected{% endif %}>Heading 4</option>
+            <option value="5" {% if c.suggested_level == 5 %}selected{% endif %}>Heading 5</option>
+            <option value="6" {% if c.suggested_level == 6 %}selected{% endif %}>Heading 6</option>
+            <option value="skip">Not a heading -- skip</option>
+          </select>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <div class="button-group">
+    <button type="submit" class="btn-primary">Apply and Fix Document</button>
+  </div>
+</form>
+
+<details class="help-accordion">
+  <summary>How does heading review work?</summary>
+  <p>The tool analyzed your document and found paragraphs that look like headings (bold, large font, short text) but are not using heading styles. Each candidate is shown with the signals that triggered detection and a confidence score.</p>
+  <p>For each candidate, you can:</p>
+  <ul>
+    <li>Accept the suggested heading level (the default selection)</li>
+    <li>Change the heading level using the dropdown</li>
+    <li>Select "Not a heading -- skip" to leave the paragraph unchanged</li>
+  </ul>
+  <p>After reviewing, click "Apply and Fix Document" to convert the confirmed headings and apply all other ACB fixes.</p>
+</details>
+{% endblock %}

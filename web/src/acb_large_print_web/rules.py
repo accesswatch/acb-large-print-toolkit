@@ -13,7 +13,6 @@ from acb_large_print.constants import (
     Severity,
 )
 
-
 # ---------------------------------------------------------------------------
 # Help URL generation -- maps every rule to authoritative learning resources
 # ---------------------------------------------------------------------------
@@ -52,95 +51,182 @@ _WCAG_RE = re.compile(r"WCAG\s+(\d+\.\d+\.\d+)")
 _RULE_HELP_URLS: dict[str, list[tuple[str, str]]] = {
     # --- ACB print rules ---
     "ACB-FONT-FAMILY": [
-        ("ACB Large Print Guidelines (PDF)", "https://www.acb.org/large-print-guidelines"),
+        (
+            "ACB Large Print Guidelines (PDF)",
+            "https://www.acb.org/large-print-guidelines",
+        ),
         ("WebAIM: Typefaces and Fonts", "https://webaim.org/techniques/fonts/"),
     ],
     "ACB-FONT-SIZE-BODY": [
-        ("ACB Large Print Guidelines (PDF)", "https://www.acb.org/large-print-guidelines"),
+        (
+            "ACB Large Print Guidelines (PDF)",
+            "https://www.acb.org/large-print-guidelines",
+        ),
         ("WebAIM: Typefaces and Fonts", "https://webaim.org/techniques/fonts/"),
     ],
     "ACB-FONT-SIZE-H1": [
-        ("ACB Large Print Guidelines (PDF)", "https://www.acb.org/large-print-guidelines"),
+        (
+            "ACB Large Print Guidelines (PDF)",
+            "https://www.acb.org/large-print-guidelines",
+        ),
         ("WebAIM: Headings", "https://webaim.org/techniques/semanticstructure/"),
     ],
     "ACB-FONT-SIZE-H2": [
-        ("ACB Large Print Guidelines (PDF)", "https://www.acb.org/large-print-guidelines"),
+        (
+            "ACB Large Print Guidelines (PDF)",
+            "https://www.acb.org/large-print-guidelines",
+        ),
         ("WebAIM: Headings", "https://webaim.org/techniques/semanticstructure/"),
     ],
     "ACB-NO-ITALIC": [
-        ("ACB Large Print Guidelines (PDF)", "https://www.acb.org/large-print-guidelines"),
+        (
+            "ACB Large Print Guidelines (PDF)",
+            "https://www.acb.org/large-print-guidelines",
+        ),
     ],
     "ACB-BOLD-HEADINGS-ONLY": [
-        ("ACB Large Print Guidelines (PDF)", "https://www.acb.org/large-print-guidelines"),
+        (
+            "ACB Large Print Guidelines (PDF)",
+            "https://www.acb.org/large-print-guidelines",
+        ),
     ],
     "ACB-ALIGNMENT": [
-        ("ACB Large Print Guidelines (PDF)", "https://www.acb.org/large-print-guidelines"),
-        ("WebAIM: Reading Order and Alignment", "https://webaim.org/techniques/semanticstructure/"),
+        (
+            "ACB Large Print Guidelines (PDF)",
+            "https://www.acb.org/large-print-guidelines",
+        ),
+        (
+            "WebAIM: Reading Order and Alignment",
+            "https://webaim.org/techniques/semanticstructure/",
+        ),
     ],
     "ACB-LINE-SPACING": [
-        ("ACB Large Print Guidelines (PDF)", "https://www.acb.org/large-print-guidelines"),
-        ("WCAG: Text Spacing", "https://www.w3.org/WAI/WCAG22/Understanding/text-spacing.html"),
+        (
+            "ACB Large Print Guidelines (PDF)",
+            "https://www.acb.org/large-print-guidelines",
+        ),
+        (
+            "WCAG: Text Spacing",
+            "https://www.w3.org/WAI/WCAG22/Understanding/text-spacing.html",
+        ),
     ],
     "ACB-MARGINS": [
-        ("ACB Large Print Guidelines (PDF)", "https://www.acb.org/large-print-guidelines"),
+        (
+            "ACB Large Print Guidelines (PDF)",
+            "https://www.acb.org/large-print-guidelines",
+        ),
     ],
     "ACB-WIDOW-ORPHAN": [
-        ("ACB Large Print Guidelines (PDF)", "https://www.acb.org/large-print-guidelines"),
+        (
+            "ACB Large Print Guidelines (PDF)",
+            "https://www.acb.org/large-print-guidelines",
+        ),
     ],
     "ACB-NO-HYPHENATION": [
-        ("ACB Large Print Guidelines (PDF)", "https://www.acb.org/large-print-guidelines"),
+        (
+            "ACB Large Print Guidelines (PDF)",
+            "https://www.acb.org/large-print-guidelines",
+        ),
     ],
     "ACB-PAGE-NUMBERS": [
-        ("ACB Large Print Guidelines (PDF)", "https://www.acb.org/large-print-guidelines"),
+        (
+            "ACB Large Print Guidelines (PDF)",
+            "https://www.acb.org/large-print-guidelines",
+        ),
     ],
     "ACB-HEADING-HIERARCHY": [
-        ("ACB Large Print Guidelines (PDF)", "https://www.acb.org/large-print-guidelines"),
+        (
+            "ACB Large Print Guidelines (PDF)",
+            "https://www.acb.org/large-print-guidelines",
+        ),
         ("WebAIM: Headings", "https://webaim.org/techniques/semanticstructure/"),
-        ("Microsoft: Accessible Word Headings", "https://support.microsoft.com/en-us/office/create-accessible-word-documents-d9bf3683-87ac-47ea-b91a-78dcacb3c66d#bkmk_headings"),
+        (
+            "Microsoft: Accessible Word Headings",
+            "https://support.microsoft.com/en-us/office/create-accessible-word-documents-d9bf3683-87ac-47ea-b91a-78dcacb3c66d#bkmk_headings",
+        ),
     ],
     "ACB-NO-ALLCAPS": [
-        ("ACB Large Print Guidelines (PDF)", "https://www.acb.org/large-print-guidelines"),
+        (
+            "ACB Large Print Guidelines (PDF)",
+            "https://www.acb.org/large-print-guidelines",
+        ),
         ("WebAIM: Typefaces and Fonts", "https://webaim.org/techniques/fonts/"),
     ],
     "ACB-DOC-TITLE": [
-        ("Microsoft: Set a Document Title", "https://support.microsoft.com/en-us/office/create-accessible-word-documents-d9bf3683-87ac-47ea-b91a-78dcacb3c66d#bkmk_doctitle"),
+        (
+            "Microsoft: Set a Document Title",
+            "https://support.microsoft.com/en-us/office/create-accessible-word-documents-d9bf3683-87ac-47ea-b91a-78dcacb3c66d#bkmk_doctitle",
+        ),
         ("WebAIM: Page Title", "https://webaim.org/techniques/pagetitle/"),
     ],
     "ACB-DOC-LANGUAGE": [
-        ("Microsoft: Set Document Language", "https://support.microsoft.com/en-us/office/create-accessible-word-documents-d9bf3683-87ac-47ea-b91a-78dcacb3c66d#bkmk_language"),
+        (
+            "Microsoft: Set Document Language",
+            "https://support.microsoft.com/en-us/office/create-accessible-word-documents-d9bf3683-87ac-47ea-b91a-78dcacb3c66d#bkmk_language",
+        ),
         ("WebAIM: Document Language", "https://webaim.org/techniques/language/"),
     ],
     # --- MSAC rules ---
     "ACB-MISSING-ALT-TEXT": [
-        ("Microsoft: Add Alt Text", "https://support.microsoft.com/en-us/office/add-alternative-text-to-a-shape-picture-chart-smartart-graphic-or-other-object-44989b2a-903c-4d9a-b742-6a75b451c669"),
+        (
+            "Microsoft: Add Alt Text",
+            "https://support.microsoft.com/en-us/office/add-alternative-text-to-a-shape-picture-chart-smartart-graphic-or-other-object-44989b2a-903c-4d9a-b742-6a75b451c669",
+        ),
         ("WebAIM: Alternative Text", "https://webaim.org/techniques/alttext/"),
     ],
     "ACB-TABLE-HEADER-ROW": [
-        ("Microsoft: Accessible Tables in Word", "https://support.microsoft.com/en-us/office/create-accessible-tables-in-word-cb464015-59dc-46a0-ac01-6217c62210e5"),
-        ("WebAIM: Creating Accessible Tables", "https://webaim.org/techniques/tables/data"),
+        (
+            "Microsoft: Accessible Tables in Word",
+            "https://support.microsoft.com/en-us/office/create-accessible-tables-in-word-cb464015-59dc-46a0-ac01-6217c62210e5",
+        ),
+        (
+            "WebAIM: Creating Accessible Tables",
+            "https://webaim.org/techniques/tables/data",
+        ),
     ],
     "ACB-LINK-TEXT": [
-        ("Microsoft: Accessible Hyperlinks", "https://support.microsoft.com/en-us/office/create-accessible-word-documents-d9bf3683-87ac-47ea-b91a-78dcacb3c66d#bkmk_links"),
+        (
+            "Microsoft: Accessible Hyperlinks",
+            "https://support.microsoft.com/en-us/office/create-accessible-word-documents-d9bf3683-87ac-47ea-b91a-78dcacb3c66d#bkmk_links",
+        ),
         ("WebAIM: Links and Hypertext", "https://webaim.org/techniques/hypertext/"),
     ],
     "ACB-FORM-FIELD-LABEL": [
         ("WebAIM: Creating Accessible Forms", "https://webaim.org/techniques/forms/"),
     ],
     "ACB-COMPLEX-TABLE": [
-        ("Microsoft: Accessible Tables in Word", "https://support.microsoft.com/en-us/office/create-accessible-tables-in-word-cb464015-59dc-46a0-ac01-6217c62210e5"),
-        ("WebAIM: Creating Accessible Tables", "https://webaim.org/techniques/tables/data"),
+        (
+            "Microsoft: Accessible Tables in Word",
+            "https://support.microsoft.com/en-us/office/create-accessible-tables-in-word-cb464015-59dc-46a0-ac01-6217c62210e5",
+        ),
+        (
+            "WebAIM: Creating Accessible Tables",
+            "https://webaim.org/techniques/tables/data",
+        ),
     ],
     "ACB-EMPTY-TABLE-CELL": [
-        ("WebAIM: Creating Accessible Tables", "https://webaim.org/techniques/tables/data"),
+        (
+            "WebAIM: Creating Accessible Tables",
+            "https://webaim.org/techniques/tables/data",
+        ),
     ],
     "ACB-FLOATING-CONTENT": [
-        ("Microsoft: Accessible Word Documents", "https://support.microsoft.com/en-us/office/create-accessible-word-documents-d9bf3683-87ac-47ea-b91a-78dcacb3c66d"),
+        (
+            "Microsoft: Accessible Word Documents",
+            "https://support.microsoft.com/en-us/office/create-accessible-word-documents-d9bf3683-87ac-47ea-b91a-78dcacb3c66d",
+        ),
     ],
     "ACB-FAKE-LIST": [
-        ("Microsoft: Accessible Word Documents", "https://support.microsoft.com/en-us/office/create-accessible-word-documents-d9bf3683-87ac-47ea-b91a-78dcacb3c66d"),
+        (
+            "Microsoft: Accessible Word Documents",
+            "https://support.microsoft.com/en-us/office/create-accessible-word-documents-d9bf3683-87ac-47ea-b91a-78dcacb3c66d",
+        ),
     ],
     "ACB-REPEATED-SPACES": [
-        ("Microsoft: Accessible Word Documents", "https://support.microsoft.com/en-us/office/create-accessible-word-documents-d9bf3683-87ac-47ea-b91a-78dcacb3c66d#bkmk_whitespace"),
+        (
+            "Microsoft: Accessible Word Documents",
+            "https://support.microsoft.com/en-us/office/create-accessible-word-documents-d9bf3683-87ac-47ea-b91a-78dcacb3c66d#bkmk_whitespace",
+        ),
     ],
     "ACB-LONG-SECTION": [
         ("WebAIM: Headings", "https://webaim.org/techniques/semanticstructure/"),
@@ -152,81 +238,150 @@ _RULE_HELP_URLS: dict[str, list[tuple[str, str]]] = {
         ("WebAIM: Links and Hypertext", "https://webaim.org/techniques/hypertext/"),
     ],
     "ACB-DOC-AUTHOR": [
-        ("Microsoft: Accessible Word Documents", "https://support.microsoft.com/en-us/office/create-accessible-word-documents-d9bf3683-87ac-47ea-b91a-78dcacb3c66d"),
+        (
+            "Microsoft: Accessible Word Documents",
+            "https://support.microsoft.com/en-us/office/create-accessible-word-documents-d9bf3683-87ac-47ea-b91a-78dcacb3c66d",
+        ),
     ],
     # --- Excel rules ---
     "XLSX-TITLE": [
-        ("Microsoft: Accessible Excel Workbooks", "https://support.microsoft.com/en-us/office/create-accessible-excel-workbooks-6cc05fc5-1314-48b5-8eb3-683e49b3e593#bkmk_doctitle"),
+        (
+            "Microsoft: Accessible Excel Workbooks",
+            "https://support.microsoft.com/en-us/office/create-accessible-excel-workbooks-6cc05fc5-1314-48b5-8eb3-683e49b3e593#bkmk_doctitle",
+        ),
     ],
     "XLSX-SHEET-NAME": [
-        ("Microsoft: Accessible Excel Workbooks", "https://support.microsoft.com/en-us/office/create-accessible-excel-workbooks-6cc05fc5-1314-48b5-8eb3-683e49b3e593#bkmk_sheettabs"),
+        (
+            "Microsoft: Accessible Excel Workbooks",
+            "https://support.microsoft.com/en-us/office/create-accessible-excel-workbooks-6cc05fc5-1314-48b5-8eb3-683e49b3e593#bkmk_sheettabs",
+        ),
     ],
     "XLSX-TABLE-HEADERS": [
-        ("Microsoft: Accessible Excel Workbooks", "https://support.microsoft.com/en-us/office/create-accessible-excel-workbooks-6cc05fc5-1314-48b5-8eb3-683e49b3e593#bkmk_tableheaders"),
-        ("WebAIM: Creating Accessible Tables", "https://webaim.org/techniques/tables/data"),
+        (
+            "Microsoft: Accessible Excel Workbooks",
+            "https://support.microsoft.com/en-us/office/create-accessible-excel-workbooks-6cc05fc5-1314-48b5-8eb3-683e49b3e593#bkmk_tableheaders",
+        ),
+        (
+            "WebAIM: Creating Accessible Tables",
+            "https://webaim.org/techniques/tables/data",
+        ),
     ],
     "XLSX-MERGED-CELLS": [
-        ("Microsoft: Accessible Excel Workbooks", "https://support.microsoft.com/en-us/office/create-accessible-excel-workbooks-6cc05fc5-1314-48b5-8eb3-683e49b3e593#bkmk_mergedcells"),
+        (
+            "Microsoft: Accessible Excel Workbooks",
+            "https://support.microsoft.com/en-us/office/create-accessible-excel-workbooks-6cc05fc5-1314-48b5-8eb3-683e49b3e593#bkmk_mergedcells",
+        ),
     ],
     "XLSX-BLANK-COLUMN-HEADER": [
-        ("Microsoft: Accessible Excel Workbooks", "https://support.microsoft.com/en-us/office/create-accessible-excel-workbooks-6cc05fc5-1314-48b5-8eb3-683e49b3e593"),
+        (
+            "Microsoft: Accessible Excel Workbooks",
+            "https://support.microsoft.com/en-us/office/create-accessible-excel-workbooks-6cc05fc5-1314-48b5-8eb3-683e49b3e593",
+        ),
     ],
     "XLSX-COLOR-ONLY": [
-        ("Microsoft: Accessible Excel Workbooks", "https://support.microsoft.com/en-us/office/create-accessible-excel-workbooks-6cc05fc5-1314-48b5-8eb3-683e49b3e593#bkmk_color"),
+        (
+            "Microsoft: Accessible Excel Workbooks",
+            "https://support.microsoft.com/en-us/office/create-accessible-excel-workbooks-6cc05fc5-1314-48b5-8eb3-683e49b3e593#bkmk_color",
+        ),
         ("WebAIM: Color and Contrast", "https://webaim.org/articles/contrast/"),
     ],
     "XLSX-HIDDEN-CONTENT": [
-        ("Microsoft: Accessible Excel Workbooks", "https://support.microsoft.com/en-us/office/create-accessible-excel-workbooks-6cc05fc5-1314-48b5-8eb3-683e49b3e593"),
+        (
+            "Microsoft: Accessible Excel Workbooks",
+            "https://support.microsoft.com/en-us/office/create-accessible-excel-workbooks-6cc05fc5-1314-48b5-8eb3-683e49b3e593",
+        ),
     ],
     "XLSX-HEADER-FROZEN": [
-        ("Microsoft: Accessible Excel Workbooks", "https://support.microsoft.com/en-us/office/create-accessible-excel-workbooks-6cc05fc5-1314-48b5-8eb3-683e49b3e593"),
+        (
+            "Microsoft: Accessible Excel Workbooks",
+            "https://support.microsoft.com/en-us/office/create-accessible-excel-workbooks-6cc05fc5-1314-48b5-8eb3-683e49b3e593",
+        ),
     ],
     "XLSX-SHEET-NAME-LENGTH": [
-        ("Microsoft: Accessible Excel Workbooks", "https://support.microsoft.com/en-us/office/create-accessible-excel-workbooks-6cc05fc5-1314-48b5-8eb3-683e49b3e593#bkmk_sheettabs"),
+        (
+            "Microsoft: Accessible Excel Workbooks",
+            "https://support.microsoft.com/en-us/office/create-accessible-excel-workbooks-6cc05fc5-1314-48b5-8eb3-683e49b3e593#bkmk_sheettabs",
+        ),
     ],
     # --- PowerPoint rules ---
     "PPTX-TITLE": [
-        ("Microsoft: Accessible PowerPoint", "https://support.microsoft.com/en-us/office/create-accessible-powerpoint-presentations-6f7772b2-2f33-4bd2-8ca7-dae3b2b3ef25"),
+        (
+            "Microsoft: Accessible PowerPoint",
+            "https://support.microsoft.com/en-us/office/create-accessible-powerpoint-presentations-6f7772b2-2f33-4bd2-8ca7-dae3b2b3ef25",
+        ),
     ],
     "PPTX-SLIDE-TITLE": [
-        ("Microsoft: Accessible PowerPoint", "https://support.microsoft.com/en-us/office/create-accessible-powerpoint-presentations-6f7772b2-2f33-4bd2-8ca7-dae3b2b3ef25#bkmk_slidetitles"),
-        ("WebAIM: PowerPoint Accessibility", "https://webaim.org/techniques/powerpoint/"),
+        (
+            "Microsoft: Accessible PowerPoint",
+            "https://support.microsoft.com/en-us/office/create-accessible-powerpoint-presentations-6f7772b2-2f33-4bd2-8ca7-dae3b2b3ef25#bkmk_slidetitles",
+        ),
+        (
+            "WebAIM: PowerPoint Accessibility",
+            "https://webaim.org/techniques/powerpoint/",
+        ),
     ],
     "PPTX-READING-ORDER": [
-        ("Microsoft: Slide Reading Order", "https://support.microsoft.com/en-us/office/create-accessible-powerpoint-presentations-6f7772b2-2f33-4bd2-8ca7-dae3b2b3ef25#bkmk_readingorder"),
+        (
+            "Microsoft: Slide Reading Order",
+            "https://support.microsoft.com/en-us/office/create-accessible-powerpoint-presentations-6f7772b2-2f33-4bd2-8ca7-dae3b2b3ef25#bkmk_readingorder",
+        ),
     ],
     "PPTX-TITLE-READING-ORDER": [
-        ("Microsoft: Slide Reading Order", "https://support.microsoft.com/en-us/office/create-accessible-powerpoint-presentations-6f7772b2-2f33-4bd2-8ca7-dae3b2b3ef25#bkmk_readingorder"),
+        (
+            "Microsoft: Slide Reading Order",
+            "https://support.microsoft.com/en-us/office/create-accessible-powerpoint-presentations-6f7772b2-2f33-4bd2-8ca7-dae3b2b3ef25#bkmk_readingorder",
+        ),
     ],
     "PPTX-SMALL-FONT": [
-        ("WebAIM: PowerPoint Accessibility", "https://webaim.org/techniques/powerpoint/"),
+        (
+            "WebAIM: PowerPoint Accessibility",
+            "https://webaim.org/techniques/powerpoint/",
+        ),
     ],
     "PPTX-SPEAKER-NOTES": [
-        ("Microsoft: Accessible PowerPoint", "https://support.microsoft.com/en-us/office/create-accessible-powerpoint-presentations-6f7772b2-2f33-4bd2-8ca7-dae3b2b3ef25"),
+        (
+            "Microsoft: Accessible PowerPoint",
+            "https://support.microsoft.com/en-us/office/create-accessible-powerpoint-presentations-6f7772b2-2f33-4bd2-8ca7-dae3b2b3ef25",
+        ),
     ],
     "PPTX-CHART-ALT-TEXT": [
-        ("Microsoft: Add Alt Text", "https://support.microsoft.com/en-us/office/add-alternative-text-to-a-shape-picture-chart-smartart-graphic-or-other-object-44989b2a-903c-4d9a-b742-6a75b451c669"),
+        (
+            "Microsoft: Add Alt Text",
+            "https://support.microsoft.com/en-us/office/add-alternative-text-to-a-shape-picture-chart-smartart-graphic-or-other-object-44989b2a-903c-4d9a-b742-6a75b451c669",
+        ),
         ("WebAIM: Alternative Text", "https://webaim.org/techniques/alttext/"),
     ],
     "PPTX-DUPLICATE-SLIDE-TITLE": [
-        ("Microsoft: Accessible PowerPoint", "https://support.microsoft.com/en-us/office/create-accessible-powerpoint-presentations-6f7772b2-2f33-4bd2-8ca7-dae3b2b3ef25#bkmk_slidetitles"),
+        (
+            "Microsoft: Accessible PowerPoint",
+            "https://support.microsoft.com/en-us/office/create-accessible-powerpoint-presentations-6f7772b2-2f33-4bd2-8ca7-dae3b2b3ef25#bkmk_slidetitles",
+        ),
     ],
     "PPTX-HEADING-SKIP": [
         ("WebAIM: Headings", "https://webaim.org/techniques/semanticstructure/"),
     ],
     # --- Markdown rules ---
     "MD-HEADING-HIERARCHY": [
-        ("CommonMark: ATX Headings", "https://spec.commonmark.org/0.31.2/#atx-headings"),
+        (
+            "CommonMark: ATX Headings",
+            "https://spec.commonmark.org/0.31.2/#atx-headings",
+        ),
         ("WebAIM: Headings", "https://webaim.org/techniques/semanticstructure/"),
     ],
     "MD-MULTIPLE-H1": [
         ("WebAIM: Headings", "https://webaim.org/techniques/semanticstructure/"),
     ],
     "MD-NO-ITALIC": [
-        ("ACB Large Print Guidelines (PDF)", "https://www.acb.org/large-print-guidelines"),
+        (
+            "ACB Large Print Guidelines (PDF)",
+            "https://www.acb.org/large-print-guidelines",
+        ),
     ],
     "MD-BOLD-EMPHASIS": [
-        ("ACB Large Print Guidelines (PDF)", "https://www.acb.org/large-print-guidelines"),
+        (
+            "ACB Large Print Guidelines (PDF)",
+            "https://www.acb.org/large-print-guidelines",
+        ),
     ],
     "MD-BARE-URL": [
         ("CommonMark: Links", "https://spec.commonmark.org/0.31.2/#links"),
@@ -243,88 +398,163 @@ _RULE_HELP_URLS: dict[str, list[tuple[str, str]]] = {
         ("Unicode Emoji Standard", "https://unicode.org/emoji/"),
     ],
     "MD-TABLE-NO-DESCRIPTION": [
-        ("WebAIM: Creating Accessible Tables", "https://webaim.org/techniques/tables/data"),
+        (
+            "WebAIM: Creating Accessible Tables",
+            "https://webaim.org/techniques/tables/data",
+        ),
     ],
     "MD-EM-DASH": [],
     # --- PDF rules ---
     "PDF-TITLE": [
-        ("Adobe: Document Title", "https://helpx.adobe.com/acrobat/using/creating-accessible-pdfs.html"),
+        (
+            "Adobe: Document Title",
+            "https://helpx.adobe.com/acrobat/using/creating-accessible-pdfs.html",
+        ),
         ("WebAIM: PDF Accessibility", "https://webaim.org/techniques/acrobat/"),
     ],
     "PDF-LANGUAGE": [
-        ("Adobe: Document Language", "https://helpx.adobe.com/acrobat/using/creating-accessible-pdfs.html"),
+        (
+            "Adobe: Document Language",
+            "https://helpx.adobe.com/acrobat/using/creating-accessible-pdfs.html",
+        ),
         ("WebAIM: PDF Accessibility", "https://webaim.org/techniques/acrobat/"),
     ],
     "PDF-TAGGED": [
-        ("Adobe: Creating Accessible PDFs", "https://helpx.adobe.com/acrobat/using/creating-accessible-pdfs.html"),
+        (
+            "Adobe: Creating Accessible PDFs",
+            "https://helpx.adobe.com/acrobat/using/creating-accessible-pdfs.html",
+        ),
         ("WebAIM: PDF Accessibility", "https://webaim.org/techniques/acrobat/"),
     ],
     "PDF-FONT-SIZE": [
-        ("ACB Large Print Guidelines (PDF)", "https://www.acb.org/large-print-guidelines"),
+        (
+            "ACB Large Print Guidelines (PDF)",
+            "https://www.acb.org/large-print-guidelines",
+        ),
     ],
     "PDF-FONT-FAMILY": [
-        ("ACB Large Print Guidelines (PDF)", "https://www.acb.org/large-print-guidelines"),
+        (
+            "ACB Large Print Guidelines (PDF)",
+            "https://www.acb.org/large-print-guidelines",
+        ),
     ],
     "PDF-NO-IMAGES-OF-TEXT": [
-        ("Adobe: Scan and OCR", "https://helpx.adobe.com/acrobat/using/scan-documents-pdf.html"),
+        (
+            "Adobe: Scan and OCR",
+            "https://helpx.adobe.com/acrobat/using/scan-documents-pdf.html",
+        ),
         ("WebAIM: PDF Accessibility", "https://webaim.org/techniques/acrobat/"),
     ],
     "PDF-BOOKMARKS": [
-        ("Adobe: Creating Accessible PDFs", "https://helpx.adobe.com/acrobat/using/creating-accessible-pdfs.html"),
+        (
+            "Adobe: Creating Accessible PDFs",
+            "https://helpx.adobe.com/acrobat/using/creating-accessible-pdfs.html",
+        ),
     ],
     # --- ePub rules ---
     "EPUB-TITLE": [
         ("EPUB Accessibility 1.1", "https://www.w3.org/TR/epub-a11y-11/"),
-        ("Accessible Publishing Knowledge Base: Title", "https://kb.daisy.org/publishing/docs/epub/title.html"),
+        (
+            "Accessible Publishing Knowledge Base: Title",
+            "https://kb.daisy.org/publishing/docs/epub/title.html",
+        ),
     ],
     "EPUB-LANGUAGE": [
         ("EPUB Accessibility 1.1", "https://www.w3.org/TR/epub-a11y-11/"),
-        ("Accessible Publishing Knowledge Base: Language", "https://kb.daisy.org/publishing/docs/epub/language.html"),
+        (
+            "Accessible Publishing Knowledge Base: Language",
+            "https://kb.daisy.org/publishing/docs/epub/language.html",
+        ),
     ],
     "EPUB-NAV-DOCUMENT": [
         ("EPUB Accessibility 1.1", "https://www.w3.org/TR/epub-a11y-11/"),
-        ("Accessible Publishing Knowledge Base: Navigation", "https://kb.daisy.org/publishing/docs/navigation/toc.html"),
+        (
+            "Accessible Publishing Knowledge Base: Navigation",
+            "https://kb.daisy.org/publishing/docs/navigation/toc.html",
+        ),
     ],
     "EPUB-HEADING-HIERARCHY": [
-        ("Accessible Publishing Knowledge Base: Headings", "https://kb.daisy.org/publishing/docs/html/headings.html"),
+        (
+            "Accessible Publishing Knowledge Base: Headings",
+            "https://kb.daisy.org/publishing/docs/html/headings.html",
+        ),
         ("WebAIM: Headings", "https://webaim.org/techniques/semanticstructure/"),
     ],
     "EPUB-MISSING-ALT-TEXT": [
-        ("Accessible Publishing Knowledge Base: Images", "https://kb.daisy.org/publishing/docs/html/images.html"),
+        (
+            "Accessible Publishing Knowledge Base: Images",
+            "https://kb.daisy.org/publishing/docs/html/images.html",
+        ),
         ("WebAIM: Alternative Text", "https://webaim.org/techniques/alttext/"),
     ],
     "EPUB-TABLE-HEADERS": [
-        ("Accessible Publishing Knowledge Base: Tables", "https://kb.daisy.org/publishing/docs/html/tables.html"),
-        ("WebAIM: Creating Accessible Tables", "https://webaim.org/techniques/tables/data"),
+        (
+            "Accessible Publishing Knowledge Base: Tables",
+            "https://kb.daisy.org/publishing/docs/html/tables.html",
+        ),
+        (
+            "WebAIM: Creating Accessible Tables",
+            "https://webaim.org/techniques/tables/data",
+        ),
     ],
     "EPUB-ACCESSIBILITY-METADATA": [
-        ("EPUB Accessibility 1.1: Discovery Metadata", "https://www.w3.org/TR/epub-a11y-11/#sec-disc-package"),
-        ("Schema.org: Accessibility Properties", "https://www.w3.org/wiki/WebSchemas/Accessibility"),
+        (
+            "EPUB Accessibility 1.1: Discovery Metadata",
+            "https://www.w3.org/TR/epub-a11y-11/#sec-disc-package",
+        ),
+        (
+            "Schema.org: Accessibility Properties",
+            "https://www.w3.org/wiki/WebSchemas/Accessibility",
+        ),
     ],
     "EPUB-LINK-TEXT": [
         ("WebAIM: Links and Hypertext", "https://webaim.org/techniques/hypertext/"),
-        ("Accessible Publishing Knowledge Base: Links", "https://kb.daisy.org/publishing/docs/html/links.html"),
+        (
+            "Accessible Publishing Knowledge Base: Links",
+            "https://kb.daisy.org/publishing/docs/html/links.html",
+        ),
     ],
     "EPUB-ACCESSIBILITY-HAZARD": [
-        ("EPUB Accessibility 1.1: Discovery Metadata", "https://www.w3.org/TR/epub-a11y-11/#sec-disc-package"),
-        ("Accessible Publishing Knowledge Base: Hazards", "https://kb.daisy.org/publishing/docs/metadata/schema.org/accessibilityHazard.html"),
+        (
+            "EPUB Accessibility 1.1: Discovery Metadata",
+            "https://www.w3.org/TR/epub-a11y-11/#sec-disc-package",
+        ),
+        (
+            "Accessible Publishing Knowledge Base: Hazards",
+            "https://kb.daisy.org/publishing/docs/metadata/schema.org/accessibilityHazard.html",
+        ),
         ("DAISY Ace: EPUB Rules", "https://daisy.github.io/ace/rules/epub/"),
     ],
     "EPUB-ACCESS-MODE-SUFFICIENT": [
-        ("EPUB Accessibility 1.1: Discovery Metadata", "https://www.w3.org/TR/epub-a11y-11/#sec-disc-package"),
-        ("Accessible Publishing Knowledge Base: Access Mode", "https://kb.daisy.org/publishing/docs/metadata/schema.org/accessModeSufficient.html"),
+        (
+            "EPUB Accessibility 1.1: Discovery Metadata",
+            "https://www.w3.org/TR/epub-a11y-11/#sec-disc-package",
+        ),
+        (
+            "Accessible Publishing Knowledge Base: Access Mode",
+            "https://kb.daisy.org/publishing/docs/metadata/schema.org/accessModeSufficient.html",
+        ),
         ("DAISY Ace: EPUB Rules", "https://daisy.github.io/ace/rules/epub/"),
     ],
     "EPUB-PAGE-LIST": [
-        ("Accessible Publishing Knowledge Base: Page List", "https://kb.daisy.org/publishing/docs/navigation/pagelist.html"),
+        (
+            "Accessible Publishing Knowledge Base: Page List",
+            "https://kb.daisy.org/publishing/docs/navigation/pagelist.html",
+        ),
         ("DAISY Ace: EPUB Rules", "https://daisy.github.io/ace/rules/epub/"),
     ],
     "EPUB-PAGE-SOURCE": [
-        ("Accessible Publishing Knowledge Base: Page List", "https://kb.daisy.org/publishing/docs/navigation/pagelist.html"),
+        (
+            "Accessible Publishing Knowledge Base: Page List",
+            "https://kb.daisy.org/publishing/docs/navigation/pagelist.html",
+        ),
         ("EPUB Accessibility 1.1", "https://www.w3.org/TR/epub-a11y-11/"),
     ],
     "EPUB-MATHML-ALT": [
-        ("Accessible Publishing Knowledge Base: MathML", "https://kb.daisy.org/publishing/docs/html/mathml.html"),
+        (
+            "Accessible Publishing Knowledge Base: MathML",
+            "https://kb.daisy.org/publishing/docs/html/mathml.html",
+        ),
         ("DAISY MathCAT (Math Speech)", "https://github.com/daisy/MathCAT"),
         ("WebAIM: Alternative Text", "https://webaim.org/techniques/alttext/"),
     ],
@@ -335,7 +565,10 @@ _RULE_HELP_URLS: dict[str, list[tuple[str, str]]] = {
     ],
     "ACE-AXE-CHECK": [
         ("DAISY Ace: HTML Rules", "https://daisy.github.io/ace/rules/html/"),
-        ("Deque axe-core Rules", "https://github.com/dequelabs/axe-core/blob/develop/doc/rule-descriptions.md"),
+        (
+            "Deque axe-core Rules",
+            "https://github.com/dequelabs/axe-core/blob/develop/doc/rule-descriptions.md",
+        ),
         ("Accessible Publishing Knowledge Base", "https://kb.daisy.org/publishing/"),
     ],
 }
@@ -419,21 +652,13 @@ def get_all_rule_ids() -> set[str]:
 def get_rule_ids_by_severity(*severities: str) -> set[str]:
     """Return rule IDs matching the given severity labels."""
     sev_set = set(severities)
-    return {
-        r.rule_id
-        for r in AUDIT_RULES.values()
-        if r.severity.value in sev_set
-    }
+    return {r.rule_id for r in AUDIT_RULES.values() if r.severity.value in sev_set}
 
 
 def get_rule_ids_by_category(*categories: str) -> set[str]:
     """Return rule IDs matching the given category values ('acb', 'msac')."""
     cat_set = set(categories)
-    return {
-        r.rule_id
-        for r in AUDIT_RULES.values()
-        if r.category.value in cat_set
-    }
+    return {r.rule_id for r in AUDIT_RULES.values() if r.category.value in cat_set}
 
 
 def get_rule_ids_by_format(fmt_str: str) -> set[str]:
@@ -442,11 +667,7 @@ def get_rule_ids_by_format(fmt_str: str) -> set[str]:
         fmt = DocFormat(fmt_str)
     except ValueError:
         return set(AUDIT_RULES.keys())  # unknown format: return all
-    return {
-        r.rule_id
-        for r in AUDIT_RULES.values()
-        if fmt in r.formats
-    }
+    return {r.rule_id for r in AUDIT_RULES.values() if fmt in r.formats}
 
 
 def filter_findings(findings: list, rule_ids: set[str]) -> list:

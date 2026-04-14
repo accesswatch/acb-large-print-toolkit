@@ -62,13 +62,16 @@ def feedback_submit():
         errors.append("Invalid rating value.")
 
     if errors:
-        return render_template(
-            "feedback_form.html",
-            error=" ".join(errors),
-            rating=rating,
-            task=task,
-            message=message,
-        ), 400
+        return (
+            render_template(
+                "feedback_form.html",
+                error=" ".join(errors),
+                rating=rating,
+                task=task,
+                message=message,
+            ),
+            400,
+        )
 
     timestamp = datetime.now(timezone.utc).isoformat()
 
@@ -104,7 +107,13 @@ def feedback_review():
             "FROM feedback ORDER BY id DESC"
         )
         rows = [
-            {"id": r[0], "timestamp": r[1], "rating": r[2], "task": r[3], "message": r[4]}
+            {
+                "id": r[0],
+                "timestamp": r[1],
+                "rating": r[2],
+                "task": r[3],
+                "message": r[4],
+            }
             for r in cursor.fetchall()
         ]
         conn.close()

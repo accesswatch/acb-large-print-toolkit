@@ -11,7 +11,6 @@ import pytest
 from acb_large_print.epub_auditor import audit_epub
 from acb_large_print.reporter import generate_text_report, generate_json_report
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
@@ -35,19 +34,20 @@ def _build_epub(
     nav_item = (
         '<item id="nav" href="nav.xhtml" '
         'media-type="application/xhtml+xml" properties="nav"/>'
-        if nav else ""
+        if nav
+        else ""
     )
     opf = (
         f'<?xml version="1.0" encoding="utf-8"?>'
         f'<package xmlns="http://www.idpf.org/2007/opf" version="{version}" xml:lang="en">'
         f'<metadata xmlns:dc="http://purl.org/dc/elements/1.1/">'
-        f'{meta}'
-        f'</metadata>'
-        f'<manifest>{nav_item}'
+        f"{meta}"
+        f"</metadata>"
+        f"<manifest>{nav_item}"
         f'<item id="ch1" href="ch1.xhtml" media-type="application/xhtml+xml"/>'
-        f'</manifest>'
+        f"</manifest>"
         f'<spine><itemref idref="ch1"/></spine>'
-        f'</package>'
+        f"</package>"
     )
 
     tmp = Path(tempfile.mktemp(suffix=".epub"))
@@ -57,7 +57,9 @@ def _build_epub(
         zf.writestr("OEBPS/content.opf", opf)
         if nav:
             zf.writestr("OEBPS/nav.xhtml", "<html><body>Nav</body></html>")
-        html = content_html or "<html><body><h1>Chapter 1</h1><p>Content</p></body></html>"
+        html = (
+            content_html or "<html><body><h1>Chapter 1</h1><p>Content</p></body></html>"
+        )
         zf.writestr("OEBPS/ch1.xhtml", html)
     return tmp
 
@@ -73,11 +75,10 @@ def _cleanup(path: Path) -> None:
 # Basic audit tests
 # ---------------------------------------------------------------------------
 
+
 class TestBasicAudit:
     def test_audit_returns_result(self):
-        path = _build_epub(
-            '<dc:title>Test</dc:title><dc:language>en</dc:language>'
-        )
+        path = _build_epub("<dc:title>Test</dc:title><dc:language>en</dc:language>")
         try:
             result = audit_epub(path)
             assert result is not None
@@ -86,7 +87,7 @@ class TestBasicAudit:
             _cleanup(path)
 
     def test_missing_title_flagged(self):
-        path = _build_epub('<dc:language>en</dc:language>')
+        path = _build_epub("<dc:language>en</dc:language>")
         try:
             result = audit_epub(path)
             rule_ids = [f.rule_id for f in result.findings]
@@ -95,7 +96,7 @@ class TestBasicAudit:
             _cleanup(path)
 
     def test_missing_language_flagged(self):
-        path = _build_epub('<dc:title>Test</dc:title>')
+        path = _build_epub("<dc:title>Test</dc:title>")
         try:
             result = audit_epub(path)
             rule_ids = [f.rule_id for f in result.findings]
@@ -105,7 +106,7 @@ class TestBasicAudit:
 
     def test_missing_nav_flagged(self):
         path = _build_epub(
-            '<dc:title>Test</dc:title><dc:language>en</dc:language>',
+            "<dc:title>Test</dc:title><dc:language>en</dc:language>",
             nav=False,
         )
         try:
@@ -116,9 +117,7 @@ class TestBasicAudit:
             _cleanup(path)
 
     def test_missing_accessibility_metadata_flagged(self):
-        path = _build_epub(
-            '<dc:title>Test</dc:title><dc:language>en</dc:language>'
-        )
+        path = _build_epub("<dc:title>Test</dc:title><dc:language>en</dc:language>")
         try:
             result = audit_epub(path)
             rule_ids = [f.rule_id for f in result.findings]
@@ -127,9 +126,7 @@ class TestBasicAudit:
             _cleanup(path)
 
     def test_missing_hazard_declaration_flagged(self):
-        path = _build_epub(
-            '<dc:title>Test</dc:title><dc:language>en</dc:language>'
-        )
+        path = _build_epub("<dc:title>Test</dc:title><dc:language>en</dc:language>")
         try:
             result = audit_epub(path)
             rule_ids = [f.rule_id for f in result.findings]
@@ -138,9 +135,7 @@ class TestBasicAudit:
             _cleanup(path)
 
     def test_missing_access_mode_sufficient_flagged(self):
-        path = _build_epub(
-            '<dc:title>Test</dc:title><dc:language>en</dc:language>'
-        )
+        path = _build_epub("<dc:title>Test</dc:title><dc:language>en</dc:language>")
         try:
             result = audit_epub(path)
             rule_ids = [f.rule_id for f in result.findings]
@@ -150,8 +145,8 @@ class TestBasicAudit:
 
     def test_compliant_epub_has_fewer_findings(self):
         meta = (
-            '<dc:title>Test Book</dc:title>'
-            '<dc:language>en</dc:language>'
+            "<dc:title>Test Book</dc:title>"
+            "<dc:language>en</dc:language>"
             '<meta property="schema:accessMode">textual</meta>'
             '<meta property="schema:accessModeSufficient">textual</meta>'
             '<meta property="schema:accessibilityFeature">structuralNavigation</meta>'
@@ -184,10 +179,11 @@ class TestBasicAudit:
 # Metadata display integration
 # ---------------------------------------------------------------------------
 
+
 class TestMetadataDisplayIntegration:
     def test_metadata_display_attached(self):
         meta = (
-            '<dc:title>Test</dc:title><dc:language>en</dc:language>'
+            "<dc:title>Test</dc:title><dc:language>en</dc:language>"
             '<meta property="schema:accessMode">textual</meta>'
             '<meta property="schema:accessModeSufficient">textual</meta>'
             '<meta property="schema:accessibilityFeature">tableOfContents</meta>'
@@ -216,10 +212,11 @@ class TestMetadataDisplayIntegration:
 # Reporter integration
 # ---------------------------------------------------------------------------
 
+
 class TestReporterIntegration:
     def test_text_report_includes_metadata_section(self):
         meta = (
-            '<dc:title>Test Book</dc:title><dc:language>en</dc:language>'
+            "<dc:title>Test Book</dc:title><dc:language>en</dc:language>"
             '<meta property="schema:accessMode">textual</meta>'
             '<meta property="schema:accessModeSufficient">textual</meta>'
             '<meta property="schema:accessibilityFeature">tableOfContents</meta>'
@@ -229,7 +226,7 @@ class TestReporterIntegration:
             '<meta property="schema:accessibilityHazard">noSoundHazard</meta>'
             '<meta property="schema:accessibilitySummary">Accessible.</meta>'
             '<meta property="dcterms:conformsTo">'
-            'EPUB Accessibility 1.1 - WCAG 2.2 Level AA</meta>'
+            "EPUB Accessibility 1.1 - WCAG 2.2 Level AA</meta>"
         )
         path = _build_epub(meta)
         try:
@@ -246,11 +243,11 @@ class TestReporterIntegration:
         import json
 
         meta = (
-            '<dc:title>Test Book</dc:title><dc:language>en</dc:language>'
+            "<dc:title>Test Book</dc:title><dc:language>en</dc:language>"
             '<meta property="schema:accessibilityFeature">tableOfContents</meta>'
             '<meta property="schema:accessibilityHazard">noFlashingHazard</meta>'
             '<meta property="dcterms:conformsTo">'
-            'EPUB Accessibility 1.1 - WCAG 2.2 Level AA</meta>'
+            "EPUB Accessibility 1.1 - WCAG 2.2 Level AA</meta>"
         )
         path = _build_epub(meta)
         try:
