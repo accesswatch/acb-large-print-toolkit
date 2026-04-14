@@ -63,6 +63,10 @@ Releases are tagged in the [GitHub repository](https://github.com/accesswatch/ac
 
 ### Changed
 
+- **Fix form default heading detection enabled** (`web/src/acb_large_print_web/templates/fix_form.html`): the "Detect and convert faux headings to real heading styles" option is now checked by default for Word fix runs so faux headings are converted unless the user opts out.
+- **Fix form heading guidance note added** (`web/src/acb_large_print_web/templates/fix_form.html`): the heading detection section now explicitly states the option is enabled by default and recommended for pasted or unstructured Word documents.
+- **Fix results wording clarified** (`web/src/acb_large_print_web/templates/fix_result.html`): remaining findings are now described as "remaining after auto-fix" and "not auto-fixed in this run," avoiding an incorrect blanket claim that all remaining issues are manual-only.
+
 - **Health endpoint now reports all service states** (`web/src/acb_large_print_web/app.py`, `web/tests/test_app.py`): `/health` now returns JSON with overall status plus per-service status for `web`, `pipeline`, and `ollama`, including endpoint details and timestamp, so operators can see dependency state from one URL.
 
 - **Stress validation and lessons-learned documentation expanded** (`README.md`, `desktop/README.md`, `web/README.md`, `docs/user-guide.md`, `web/src/acb_large_print_web/templates/guide.html`, `web/src/acb_large_print_web/templates/about.html`): documentation now explains, in plain language, what heading and document-repair scenarios were stress-tested, what failures were discovered during learning, how the platform was adapted, what the final measured outcomes were, and what confidence limits still remain for cross-platform runtime proof.

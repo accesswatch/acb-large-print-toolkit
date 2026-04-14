@@ -23,7 +23,7 @@
   </div>
 
   <p>{{ total_fixes }} fix{{ "es" if total_fixes != 1 else "" }} applied.
-    {% if remaining > 0 %}{{ remaining }} issue{{ "s" if remaining != 1 else "" }} remaining (manual fix required).{% else %}All issues resolved.{% endif %}
+    {% if remaining > 0 %}{{ remaining }} issue{{ "s" if remaining != 1 else "" }} remaining after auto-fix.{% else %}All issues resolved.{% endif %}
     {% if mode_label %} Report filtered to: {{ mode_label }}.{% endif %}
   </p>
 </section>
@@ -90,7 +90,7 @@
 {% if post_findings %}
 <section aria-labelledby="remaining-heading">
   <h2 id="remaining-heading">Remaining Issues</h2>
-  <p>These issues cannot be auto-fixed and require manual attention:</p>
+  <p>These issues were not auto-fixed in this run and may require manual attention or optional fix settings:</p>
 
   <table class="findings-table">
     <caption>Issues remaining after auto-fix</caption>
