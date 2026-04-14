@@ -11,6 +11,7 @@ from pathlib import Path
 import pytest
 from flask import Flask
 
+from acb_large_print.stress_profiles import describe_stress_corpus
 from acb_large_print_web.app import create_app
 
 
@@ -146,7 +147,8 @@ class TestPageLoads:
         resp = client.get("/guide/")
         assert resp.status_code == 200
         assert b"Stress Testing and Product Learning" in resp.data
-        assert b"100000" in resp.data
+        expected_total = str(describe_stress_corpus()["total_heading_cases"]).encode()
+        assert expected_total in resp.data
 
     def test_about_mentions_stress_harness(self, client):
         resp = client.get("/about/")
