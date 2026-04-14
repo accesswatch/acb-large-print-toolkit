@@ -19,9 +19,17 @@ COMPOSE_FILE="${COMPOSE_FILE:-docker-compose.prod.yml}"
 LOG_DIR="${LOG_DIR:-$HOME/deploy-logs}"
 TS="$(date -u +%Y%m%d-%H%M%S)"
 LOG_FILE="${LOG_DIR}/post-deploy-check-${TS}.log"
+LATEST_LOG_FILE="${LOG_DIR}/post-deploy-check-latest.log"
 
 mkdir -p "$LOG_DIR"
 exec > >(tee -a "$LOG_FILE") 2>&1
+
+finalize_log() {
+    cp "$LOG_FILE" "$LATEST_LOG_FILE" 2>/dev/null || true
+    echo "Latest log pointer: $LATEST_LOG_FILE"
+}
+
+trap finalize_log EXIT
 
 compose() {
     docker compose -f "$WEB_ROOT/$COMPOSE_FILE" "$@"

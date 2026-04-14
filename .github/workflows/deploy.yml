@@ -49,6 +49,7 @@ jobs:
     environment: production # requires GitHub environment approval (optional)
     steps:
       - name: Deploy via SSH
+        id: deploy_ssh
         uses: appleboy/ssh-action@v1
         with:
           host: ${{ secrets.DEPLOY_HOST }}
@@ -65,3 +66,19 @@ jobs:
             bash scripts/deploy-app.sh
             bash scripts/post-deploy-check.sh
             echo "=== Deploy finished at $(date -u) ==="
+
+      - name: Publish deploy troubleshooting summary
+        if: always()
+        run: |
+          {
+            echo "## Deploy verification summary"
+            echo ""
+            echo "- Job status: ${{ job.status }}"
+            echo "- Workflow run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            echo "- Remote post-deploy latest log: /home/deploy/deploy-logs/post-deploy-check-latest.log"
+            echo "- Remote timestamped logs: /home/deploy/deploy-logs/post-deploy-check-*.log"
+            echo ""
+            echo "### Troubleshooting"
+            echo "- In the Deploy via SSH logs, search for: Diagnostics: pipeline, Diagnostics: web, Diagnostics: ollama"
+            echo "- Required health gates: pipeline, web, ollama must all be healthy"
+          } >> "$GITHUB_STEP_SUMMARY"
