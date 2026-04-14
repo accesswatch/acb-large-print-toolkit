@@ -54,6 +54,7 @@ No unreleased changes yet.
 
 - Added `pip-audit` to deployment requirements for continuous Python dependency vulnerability scanning. Integrated into release and deployment workflows to detect known CVEs in transitive dependencies.
 - Resolved CVE-2026-40192 (pillow) and CVE-2026-40260 (pypdf) by upgrading to fixed versions: pillow >=12.2.0, pypdf >=6.10.0. All dependencies now pass pip-audit security checks.
+- Fixed session timeout handling in web app: increased default session timeout to 4 hours for long document processing workflows, added automatic garbage collection of stale upload directories (24hr TTL by default), and improved error messages when sessions expire. Configurable via SESSION_TIMEOUT_MINUTES and UPLOAD_MAX_AGE_HOURS environment variables.
 
 ### Removed
 

@@ -382,7 +382,9 @@ def fix_confirm():
         return (
             render_template(
                 "fix_form.html",
-                error="Session expired. Please upload and fix the document again.",
+                error="Your session has expired or the uploaded file is no longer available. "
+                      "This can happen if the review took more than 24 hours or the server was restarted. "
+                      "Please upload and fix the document again.",
                 ai_available=is_ai_available(),
             ),
             400,

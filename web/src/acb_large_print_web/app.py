@@ -39,6 +39,12 @@ def create_app(config: dict | None = None) -> Flask:
         )
     app.config["SECRET_KEY"] = secret
 
+    # Session timeout: default 4 hours for long document processing workflows
+    # Users can adjust via SESSION_TIMEOUT_MINUTES env var
+    timeout_minutes = int(os.environ.get("SESSION_TIMEOUT_MINUTES", "240"))
+    app.config["PERMANENT_SESSION_LIFETIME"] = timeout_minutes * 60
+    app.config["SESSION_REFRESH_EACH_REQUEST"] = True
+
     if config:
         app.config.update(config)
 
@@ -162,6 +168,23 @@ def create_app(config: dict | None = None) -> Flask:
             "Something went wrong while processing your request. " "Please try again.",
             500,
         )
+
+    # Cleanup stale uploads on startup
+    @app.before_request
+    def cleanup_stale_uploads():
+        """Clean up old temporary uploads on each request (lightweight, once per min)."""
+        from . import upload
+        import time
+        
+        # Store last cleanup time in app config
+        now = time.time()
+        last_cleanup = app.config.get("_last_cleanup", 0)
+        
+        # Run cleanup once per minute (3600 seconds = 1 hour between full scans)
+        if now - last_cleanup > 60:
+            max_age = int(os.environ.get("UPLOAD_MAX_AGE_HOURS", "24"))
+            upload.cleanup_stale_uploads(max_age_hours=max_age)
+            app.config["_last_cleanup"] = now
 
     return app
 

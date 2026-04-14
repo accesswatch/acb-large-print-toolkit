@@ -139,3 +139,35 @@ def cleanup_tempdir(temp_dir: Path) -> None:
     """Remove a temporary directory and all its contents."""
     if temp_dir and temp_dir.exists():
         shutil.rmtree(temp_dir, ignore_errors=True)
+
+
+def cleanup_stale_uploads(max_age_hours: int = 24) -> int:
+    """Clean up old temporary upload directories.
+    
+    Args:
+        max_age_hours: Maximum age in hours for temp directories before cleanup.
+                      Default 24 hours (1 day).
+    
+    Returns:
+        Number of directories cleaned up.
+    """
+    import time
+    
+    if not UPLOAD_TEMP_BASE.exists():
+        return 0
+    
+    cleaned = 0
+    cutoff = time.time() - (max_age_hours * 3600)
+    
+    try:
+        for item in UPLOAD_TEMP_BASE.iterdir():
+            if item.is_dir():
+                # Check modification time
+                mtime = item.stat().st_mtime
+                if mtime < cutoff:
+                    cleanup_tempdir(item)
+                    cleaned += 1
+    except (OSError, PermissionError):
+        pass  # Ignore errors during cleanup
+    
+    return cleaned
