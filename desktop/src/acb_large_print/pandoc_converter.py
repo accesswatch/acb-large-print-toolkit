@@ -372,7 +372,7 @@ def weasyprint_available() -> bool:
         import weasyprint  # noqa: F401
 
         return True
-    except ImportError:
+    except (ImportError, OSError):
         return False
 
 
@@ -649,7 +649,7 @@ def convert_to_pdf(
 
     try:
         import weasyprint
-    except ImportError as exc:
+    except (ImportError, OSError) as exc:
         raise RuntimeError(
             "WeasyPrint is not installed. PDF conversion is unavailable. "
             "Install it with: pip install weasyprint"
