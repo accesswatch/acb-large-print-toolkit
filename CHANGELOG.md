@@ -11,6 +11,7 @@ Releases are tagged in the [GitHub repository](https://github.com/accesswatch/ac
 ### Fixed
 
 - Fixed the macOS DMG packaging step in `.github/workflows/build.yml` by switching directory copy commands to recursive copy (`cp -R`), resolving the GitHub Actions failure in "Create DMG (macOS)" for onedir PyInstaller outputs.
+- Fixed workflow tip banner icons rendering as literal text (`&#9758;`) in all web form pages (`audit_form.html`, `fix_form.html`, `convert_form.html`, `export_form.html`, `template_form.html`) and the `_workflow_tip.html` partial. Jinja2 auto-escaping was converting `&` to `&amp;` when HTML entity strings were stored in `{% set %}` variables and rendered via `{{ }}`. Replaced entity strings (`"&#9758;"`, `"&#9432;"`) with literal Unicode characters (`"☞"`, `"ℹ"`) which pass through auto-escaping unchanged. The `aria-hidden="true"` on the icon span remains correct and is why screen readers were not affected.
 
 ### Added
 
