@@ -16,6 +16,7 @@ APP_ROOT="${APP_ROOT:-$HOME/app}"
 WEB_ROOT="${WEB_ROOT:-$APP_ROOT/web}"
 COMPOSE_FILE="docker-compose.prod.yml"
 APP_DOMAIN="${APP_DOMAIN:-lp.csedesigns.com}"
+APP_ALIAS_DOMAIN="${APP_ALIAS_DOMAIN:-}"
 MAIN_DOMAIN="${MAIN_DOMAIN:-csedesigns.com}"
 
 # --- Pre-flight checks ---
@@ -110,6 +111,10 @@ echo ""
 echo "Test these URLs:"
 echo "  https://${APP_DOMAIN}/"
 echo "  https://${APP_DOMAIN}/health"
+if [[ -n "$APP_ALIAS_DOMAIN" ]]; then
+    echo "  https://${APP_ALIAS_DOMAIN}/"
+    echo "  https://${APP_ALIAS_DOMAIN}/health"
+fi
 echo "  https://${MAIN_DOMAIN}/"
 echo ""
 echo "View logs:"

@@ -8,7 +8,7 @@ Your newsletter doesn't have to be a guessing game about large print anymore.
 
 The Blind Information Technology Solutions (BITS) organization today launched **GLOW Accessibility Toolkit** -- a free, browser-based tool that turns the headache of accessible document formatting into a guided, almost magical experience. No software to install. No textbooks to read. No obscure formatting rules to memorize. Just open your browser, upload a document, and let GLOW show you how to make it readable for people with low vision.
 
-The web app is live now at [lp.csedesigns.com](https://lp.csedesigns.com).
+The web app is live now at [glow.bits-acb.org](https://glow.bits-acb.org).
 
 "I was a newsletter editor drowning in ACB guidelines," says a typical GLOW user. "I didn't know if my fonts were right, my spacing was right, my formatting was right. GLOW looked at my document and told me exactly what to fix in plain English. Now I actually know what large print means instead of just guessing."
 
@@ -130,9 +130,13 @@ This is an accessibility tool built by people who actually use accessibility tec
 
 "I use a screen reader," says Bishop. "If I couldn't use my own tool, it wouldn't be worth building."
 
+## Community-Driven and Improving with Your Feedback
+
+GLOW is a community-driven project, and we need your feedback to keep making it better. We know we will keep learning as more users put the platform to work in real-world chapter workflows, deadlines, and document types. Extensive testing has already shown strong and reliable results, and your feedback helps us improve clarity, coverage, and workflow fit with every release.
+
 ## Try It Right Now
 
-Visit [lp.csedesigns.com](https://lp.csedesigns.com) and upload a document. You'll see results in seconds. No sign-up. No download. No friction.
+Visit [glow.bits-acb.org](https://glow.bits-acb.org) and upload a document. You'll see results in seconds. No sign-up. No download. No friction.
 
 Your newsletter doesn't have to be a guessing game about large print anymore. Neither does your agenda, report, or ballot.
 

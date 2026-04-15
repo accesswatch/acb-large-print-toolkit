@@ -40,6 +40,24 @@ def _find_changelog() -> Path:
 _CHANGELOG_PATH = _find_changelog()
 
 
+def _slugify_heading(text: str) -> str:
+    """Create the same heading slug used by _md_to_html for anchor links."""
+    slug = re.sub(r"[^\w\s-]", "", text.lower())
+    return re.sub(r"\s+", "-", slug.strip())
+
+
+def _extract_version_links(md: str) -> list[tuple[str, str]]:
+    """Extract level-2 changelog headings to build a versions list."""
+    links: list[tuple[str, str]] = []
+    for line in md.splitlines():
+        match = re.match(r"^##\s+(.+)$", line.strip())
+        if not match:
+            continue
+        heading_text = match.group(1).strip()
+        links.append((heading_text, _slugify_heading(heading_text)))
+    return links
+
+
 def _md_to_html(md: str) -> str:
     """Minimal Markdown-to-HTML for the changelog.
 
@@ -151,4 +169,9 @@ def changelog_page():
         md_content = "# Changelog\n\nChangelog file not found."
 
     html_content = Markup(_md_to_html(md_content))
-    return render_template("changelog.html", changelog_html=html_content)
+    version_links = _extract_version_links(md_content)
+    return render_template(
+        "changelog.html",
+        changelog_html=html_content,
+        version_links=version_links,
+    )

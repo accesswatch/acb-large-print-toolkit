@@ -605,9 +605,17 @@ def _convert_faux_headings(
         if candidate.paragraph_index >= len(para_list):
             continue
         para = para_list[candidate.paragraph_index]
-        # Verify the text still matches (guard against stale indices)
-        if para.text.strip() != candidate.text.strip():
-            continue
+        # Guard against stale indices for auto-detected candidates.
+        # For user-confirmed headings from web review, trust the index selection
+        # because form round-trips can normalize whitespace and punctuation.
+        para_text = para.text.strip()
+        candidate_text = candidate.text.strip()
+        if para_text != candidate_text:
+            para_norm = " ".join(para_text.split())
+            candidate_norm = " ".join(candidate_text.split())
+            is_confirmed = candidate.confidence == "confirmed"
+            if not is_confirmed and para_norm != candidate_norm:
+                continue
 
         target_style = f"Heading {candidate.suggested_level}"
         try:

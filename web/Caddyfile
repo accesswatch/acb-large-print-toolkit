@@ -1,8 +1,4 @@
-# Caddyfile.example -- Copy to Caddyfile and replace domain names
-#
-# Usage:
-#   cp Caddyfile.example Caddyfile
-#   nano Caddyfile    # replace csedesigns.com with your domain
+# Caddyfile -- Production configuration
 #
 # This configures:
 #   - csedesigns.com / www.csedesigns.com -- static site from ./www/

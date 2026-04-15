@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from flask import Blueprint, render_template, request, send_file
+from flask import Blueprint, current_app, render_template, request, send_file
 from werkzeug.utils import secure_filename
 
 from ..rules import (
@@ -20,6 +20,51 @@ from ..upload import (
 )
 
 fix_bp = Blueprint("fix", __name__)
+
+
+_SEVERITY_DEDUCTIONS = {
+    "critical": 15,
+    "high": 10,
+    "medium": 5,
+    "low": 2,
+}
+
+
+def _severity_key(severity: object) -> str:
+    """Normalize severity from enum/string to lowercase key."""
+    value = getattr(severity, "value", severity)
+    return str(value).strip().lower()
+
+
+def _build_penalty_breakdown(findings: list) -> dict[str, int]:
+    """Summarize weighted score penalty and counts by severity."""
+    critical = high = medium = low = 0
+    for finding in findings:
+        sev = _severity_key(getattr(finding, "severity", ""))
+        if sev == "critical":
+            critical += 1
+        elif sev == "high":
+            high += 1
+        elif sev == "medium":
+            medium += 1
+        elif sev == "low":
+            low += 1
+
+    weighted_penalty = (
+        critical * _SEVERITY_DEDUCTIONS["critical"]
+        + high * _SEVERITY_DEDUCTIONS["high"]
+        + medium * _SEVERITY_DEDUCTIONS["medium"]
+        + low * _SEVERITY_DEDUCTIONS["low"]
+    )
+
+    return {
+        "critical": critical,
+        "high": high,
+        "medium": medium,
+        "low": low,
+        "total": len(findings),
+        "weighted_penalty": weighted_penalty,
+    }
 
 
 def _fix_by_extension(
@@ -242,7 +287,14 @@ def _parse_form_options(form):
     }
 
 
-def _run_fix_and_render(saved_path, token, opts, *, confirmed_headings=None):
+def _run_fix_and_render(
+    saved_path,
+    token,
+    opts,
+    *,
+    confirmed_headings=None,
+    confirmed_headings_received: int | None = None,
+):
     """Run the fixer and render fix_result.html. Shared by submit and confirm."""
     doc_format = _format_from_path(saved_path)
     pre_audit = _audit_by_extension(saved_path)
@@ -266,6 +318,19 @@ def _run_fix_and_render(saved_path, token, opts, *, confirmed_headings=None):
         heading_accuracy=opts["heading_accuracy"],
     )
 
+    applied_heading_fixes = sum(
+        1 for rec in fix_records if rec.rule_id == "ACB-FAUX-HEADING"
+    )
+
+    if confirmed_headings_received is not None:
+        current_app.logger.info(
+            "Heading review apply summary | token=%s | file=%s | received=%d | applied=%d",
+            token,
+            saved_path.name,
+            confirmed_headings_received,
+            applied_heading_fixes,
+        )
+
     categories = request.form.getlist("category") or ["acb", "msac"]
     category_rule_ids = get_rule_ids_by_category(*categories)
     format_rule_ids = get_rule_ids_by_format(doc_format)
@@ -285,6 +350,9 @@ def _run_fix_and_render(saved_path, token, opts, *, confirmed_headings=None):
 
     selected = selected & category_rule_ids & format_rule_ids
     post_findings = filter_findings(post_audit.findings, selected)
+    pre_breakdown = _build_penalty_breakdown(pre_audit.findings)
+    post_breakdown = _build_penalty_breakdown(post_audit.findings)
+    score_delta = post_audit.score - pre_audit.score
 
     return render_template(
         "fix_result.html",
@@ -292,6 +360,11 @@ def _run_fix_and_render(saved_path, token, opts, *, confirmed_headings=None):
         pre_grade=pre_audit.grade,
         post_score=post_audit.score,
         post_grade=post_audit.grade,
+        score_delta=score_delta,
+        pre_breakdown=pre_breakdown,
+        post_breakdown=post_breakdown,
+        confirmed_headings_received=confirmed_headings_received,
+        applied_heading_fixes=applied_heading_fixes,
         total_fixes=total_fixes,
         fix_records=fix_records,
         remaining=len(post_audit.findings),
@@ -450,6 +523,7 @@ def fix_confirm():
             token,
             opts,
             confirmed_headings=confirmed_headings if confirmed_headings else None,
+            confirmed_headings_received=len(confirmed_headings),
         )
 
     except Exception:

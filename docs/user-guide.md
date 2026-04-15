@@ -670,7 +670,7 @@ Yes. The [GLOW Accessibility Toolkit](https://github.com/accesswatch/acb-large-p
 
 ### Where can I read the ACB Large Print Guidelines?
 
-The full guidelines are available at [acb.org/large-print-guidelines](https://acb.org/large-print-guidelines) (revised May 6, 2025). A reference copy is included in this repository at `docs/ACB Large Print Guidelines, revised 5-6-25.docx`. The web application includes a [Guidelines page](https://lp.csedesigns.com/guidelines) with the complete rule reference and related audit rule mappings.
+The full guidelines are available at [acb.org/large-print-guidelines](https://acb.org/large-print-guidelines) (revised May 6, 2025). A reference copy is included in this repository at `docs/ACB Large Print Guidelines, revised 5-6-25.docx`. The web application includes a [Guidelines page](https://glow.bits-acb.org/guidelines) with the complete rule reference and related audit rule mappings.
 
 ---
 

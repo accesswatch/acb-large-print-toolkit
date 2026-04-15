@@ -8,7 +8,20 @@ Releases are tagged in the [GitHub repository](https://github.com/accesswatch/ac
 
 ## [Unreleased]
 
-No unreleased changes yet.
+### Fixed
+
+- Web changelog page now builds its version list dynamically from `CHANGELOG.md` headings, so release `1.0.0` and future releases appear automatically without hardcoded template updates.
+- Front page standards text now consistently references WCAG 2.2 AA (removed mixed WCAG 2.1 wording).
+- Word fix workflow now preserves user-confirmed heading conversions through the heading review step even when form round-trip text normalization alters whitespace or punctuation.
+- Added regression test coverage for confirmed heading application by paragraph index after review.
+- Added community-driven project and feedback messaging to the web announcement content, including explicit note that extensive testing is producing strong results.
+- Fix Results page now shows explicit score delta and weighted remaining-penalty breakdown (Critical/High/Medium/Low counts) to explain low grades when unresolved high-severity findings remain.
+- Added heading-review telemetry logging in the fix confirm workflow to report confirmed heading selections received vs heading fixes applied.
+- Fix Results page now displays heading review counts directly in the UI (`selected` vs `applied`) when interactive heading confirmation is used.
+- Updated documentation links from `lp.csedesigns.com` to `glow.bits-acb.org` across announcement, deployment, and user guide content.
+- Updated `web/Caddyfile.example` to support both `lp.csedesigns.com` and `glow.bits-acb.org`; operational scripts keep `lp.csedesigns.com` as the canonical default domain.
+- Added a tracked `web/Caddyfile` with dual-domain app host support (`lp.csedesigns.com`, `glow.bits-acb.org`) for direct production deployment with Docker Compose.
+- Deployment scripts now support optional alias-domain verification via `APP_ALIAS_DOMAIN` while keeping `APP_DOMAIN` defaulted to `lp.csedesigns.com`.
 
 ---
 

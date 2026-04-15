@@ -5,7 +5,7 @@
 This guide walks you through deploying the ACB Large Print web application on a single VPS. When you finish, you will have:
 
 - `csedesigns.com` and `www.csedesigns.com` serving a static website (or placeholder)
-- `lp.csedesigns.com` serving the Flask/Gunicorn application behind a reverse proxy
+- `glow.bits-acb.org` serving the Flask/Gunicorn application behind a reverse proxy
 - Caddy handling TLS certificates automatically for all hostnames
 - Automated daily backups of the feedback database
 - A hardened server with firewall, fail2ban, and automatic security updates
@@ -103,7 +103,7 @@ Replace `YOUR_SERVER_IP` with the IP address from your RackNerd welcome email.
 
 - The `@` record handles `csedesigns.com`
 - The `www` record handles `www.csedesigns.com`
-- The `lp` record handles `lp.csedesigns.com`
+- The `lp` record handles `glow.bits-acb.org`
 
 ### 1.1b Additional DNS records (recommended)
 
@@ -116,7 +116,7 @@ Beyond the three A records, add these records for TLS security and email anti-sp
 | TXT | `@` | `v=spf1 -all` | No mail servers authorized (prevents spoofing) |
 | TXT | `_dmarc` | `v=DMARC1; p=reject; sp=reject; adkim=s; aspf=s` | Reject unauthenticated mail |
 
-**Why CAA?** Without a CAA record, any certificate authority can issue certificates for your domain. The CAA record restricts issuance to Let's Encrypt only, which is what Caddy uses. Subdomains like `lp.csedesigns.com` inherit the CAA policy -- Let's Encrypt walks up the domain tree and finds the permission at `csedesigns.com`. The `issuewild ";"` entry blocks wildcard certificates (`*.csedesigns.com`), which are not needed in this deployment.
+**Why CAA?** Without a CAA record, any certificate authority can issue certificates for your domain. The CAA record restricts issuance to Let's Encrypt only, which is what Caddy uses. Subdomains like `glow.bits-acb.org` inherit the CAA policy -- Let's Encrypt walks up the domain tree and finds the permission at `csedesigns.com`. The `issuewild ";"` entry blocks wildcard certificates (`*.csedesigns.com`), which are not needed in this deployment.
 
 **Why SPF and DMARC with no mail server?** If you do not send email from this domain, attackers can still forge the `From:` address in spam. An SPF `-all` record tells receiving mail servers that no server is authorized to send mail for `csedesigns.com`, and the DMARC `reject` policy instructs receivers to discard any mail that claims to be from your domain.
 
@@ -140,12 +140,12 @@ After creating the records, wait a few minutes and verify from your local machin
 # On macOS/Linux:
 dig +short csedesigns.com
 dig +short www.csedesigns.com
-dig +short lp.csedesigns.com
+dig +short glow.bits-acb.org
 
 # On Windows PowerShell:
 Resolve-DnsName csedesigns.com
 Resolve-DnsName www.csedesigns.com
-Resolve-DnsName lp.csedesigns.com
+Resolve-DnsName glow.bits-acb.org
 ```
 
 All three should return your VPS IP address. If they do not, wait and check again. DNS propagation typically takes 5--30 minutes but can take longer depending on TTL and registrar.
@@ -707,7 +707,7 @@ Otherwise, create it from scratch:
 nano ~/app/web/Caddyfile
 ```
 
-Paste the following content. If your domains differ from `csedesigns.com` and `lp.csedesigns.com`, replace them:
+Paste the following content. If your domains differ from `csedesigns.com` and `glow.bits-acb.org`, replace them:
 
 ```
 # Main website -- static files
@@ -724,7 +724,7 @@ csedesigns.com, www.csedesigns.com {
 }
 
 # ACB Large Print web application -- reverse proxy to Flask/Gunicorn
-lp.csedesigns.com {
+glow.bits-acb.org {
     reverse_proxy web:8000
     encode gzip
 
@@ -891,7 +891,7 @@ Expected output: `ok`
 **Check through Caddy** (requires DNS to be propagated):
 
 ```bash
-curl -s https://lp.csedesigns.com/health
+curl -s https://glow.bits-acb.org/health
 ```
 
 Expected output: `ok`
@@ -923,9 +923,9 @@ Open these URLs in a browser:
 
 1. `https://csedesigns.com/` -- should show your main site (or placeholder)
 2. `https://www.csedesigns.com/` -- should show the same content
-3. `https://lp.csedesigns.com/` -- should show the ACB Large Print Tool landing page
-4. `https://lp.csedesigns.com/health` -- should show `ok`
-5. `http://lp.csedesigns.com/` -- should redirect to HTTPS automatically
+3. `https://glow.bits-acb.org/` -- should show the ACB Large Print Tool landing page
+4. `https://glow.bits-acb.org/health` -- should show `ok`
+5. `http://glow.bits-acb.org/` -- should redirect to HTTPS automatically
 
 ### Phase 5 Validation
 
@@ -951,7 +951,7 @@ When Caddy starts with real domain names in the Caddyfile:
 4. It renews certificates automatically 30 days before expiry
 5. It enables HTTP/2, HTTP/3 (QUIC), and OCSP stapling
 
-Caddy obtains separate certificates for each hostname: `csedesigns.com`, `www.csedesigns.com`, and `lp.csedesigns.com`.
+Caddy obtains separate certificates for each hostname: `csedesigns.com`, `www.csedesigns.com`, and `glow.bits-acb.org`.
 
 ### 6.2 Verify TLS is working
 
@@ -959,15 +959,15 @@ After starting the containers, wait 30--60 seconds for certificate issuance, the
 
 ```bash
 # Check certificate details
-curl -vI https://lp.csedesigns.com 2>&1 | grep -E 'subject:|expire|issuer:'
+curl -vI https://glow.bits-acb.org 2>&1 | grep -E 'subject:|expire|issuer:'
 
 # Verify HTTP-to-HTTPS redirect
-curl -sI http://lp.csedesigns.com | head -5
+curl -sI http://glow.bits-acb.org | head -5
 ```
 
 Expected: the issuer line contains "Let's Encrypt" and the HTTP request returns a `301` redirect to `https://`.
 
-To check your TLS grade externally, test at `https://www.ssllabs.com/ssltest/analyze.html?d=lp.csedesigns.com`.
+To check your TLS grade externally, test at `https://www.ssllabs.com/ssltest/analyze.html?d=glow.bits-acb.org`.
 
 ### 6.3 Using Let's Encrypt staging (for testing)
 
@@ -991,7 +991,7 @@ docker compose -f docker-compose.prod.yml restart caddy
 If you need to use a certificate from a different CA (not Let's Encrypt), update the relevant site block in your Caddyfile:
 
 ```
-lp.csedesigns.com {
+glow.bits-acb.org {
     tls /etc/caddy/certs/cert.pem /etc/caddy/certs/key.pem
     reverse_proxy web:8000
     encode gzip
@@ -1053,7 +1053,7 @@ UptimeRobot provides free external uptime monitoring with email and SMS alerts.
 1. Sign up at [uptimerobot.com](https://uptimerobot.com)
 2. Add a new monitor:
    - **Type:** HTTP(s)
-   - **URL:** `https://lp.csedesigns.com/health`
+   - **URL:** `https://glow.bits-acb.org/health`
    - **Interval:** 5 minutes
 3. Optionally add a second monitor for `https://csedesigns.com/`
 4. Configure alert contacts (email, SMS, or webhook)
@@ -1291,7 +1291,7 @@ After deploying, verify:
 
 ```bash
 docker compose -f docker-compose.prod.yml ps
-curl -s https://lp.csedesigns.com/health
+curl -s https://glow.bits-acb.org/health
 ```
 
 ### Viewing logs
@@ -1427,7 +1427,7 @@ The script validates the backup file, stops the container, copies the backup, st
 Set `FEEDBACK_PASSWORD` in your `.env` file (see Phase 4.2), then rebuild and visit:
 
 ```
-https://lp.csedesigns.com/feedback/review?key=YOUR_PASSWORD
+https://glow.bits-acb.org/feedback/review?key=YOUR_PASSWORD
 ```
 
 ### Cleaning up old Docker images
@@ -1443,7 +1443,7 @@ This removes images older than 30 days that are not in use by a running containe
 Caddy renews certificates automatically 30 days before expiry. No manual action needed. To check certificate expiry:
 
 ```bash
-curl -vI https://lp.csedesigns.com 2>&1 | grep "expire date"
+curl -vI https://glow.bits-acb.org 2>&1 | grep "expire date"
 ```
 
 ### Updating the server OS
@@ -1479,12 +1479,12 @@ sudo apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin d
 
 ### DNS not propagated
 
-**Symptom:** `curl https://lp.csedesigns.com` fails with "Could not resolve host" or Caddy logs show certificate issuance failure.
+**Symptom:** `curl https://glow.bits-acb.org` fails with "Could not resolve host" or Caddy logs show certificate issuance failure.
 
 **Diagnosis:**
 
 ```bash
-dig +short lp.csedesigns.com
+dig +short glow.bits-acb.org
 dig +short csedesigns.com
 ```
 
@@ -1597,7 +1597,7 @@ sudo truncate -s 0 /var/log/syslog
 
 ### Health endpoint failing
 
-**Symptom:** `curl https://lp.csedesigns.com/health` returns an error or times out.
+**Symptom:** `curl https://glow.bits-acb.org/health` returns an error or times out.
 
 **Step-by-step diagnosis:**
 
@@ -1707,11 +1707,11 @@ Run through this checklist after initial deployment or after a major change. Eve
 | 2 | Firewall is active | `sudo ufw status` | Active; 22, 80, 443 allowed |
 | 3 | Docker works | `docker ps` | Shows running containers |
 | 4 | Both containers healthy | `docker compose -f ~/app/web/docker-compose.prod.yml ps` | web: Up (healthy), caddy: Up |
-| 5 | HTTPS is live (app) | `curl -s https://lp.csedesigns.com/health` | `ok` |
+| 5 | HTTPS is live (app) | `curl -s https://glow.bits-acb.org/health` | `ok` |
 | 6 | HTTPS is live (main) | `curl -s https://csedesigns.com/` | HTML content |
-| 7 | HTTP redirects to HTTPS | `curl -sI http://lp.csedesigns.com` | `301` redirect to `https://` |
-| 8 | TLS certificate valid | `curl -vI https://lp.csedesigns.com 2>&1 \| grep issuer` | Contains "Let's Encrypt" |
-| 9 | App landing page loads | Open `https://lp.csedesigns.com/` in browser | Landing page with audit/fix/template links |
+| 7 | HTTP redirects to HTTPS | `curl -sI http://glow.bits-acb.org` | `301` redirect to `https://` |
+| 8 | TLS certificate valid | `curl -vI https://glow.bits-acb.org 2>&1 \| grep issuer` | Contains "Let's Encrypt" |
+| 9 | App landing page loads | Open `https://glow.bits-acb.org/` in browser | Landing page with audit/fix/template links |
 | 10 | Backup can be created | `~/app/scripts/backup-feedback.sh` | Backup file created in `~/backups/` |
 | 11 | Backup can be restored | `~/app/scripts/restore-feedback.sh ~/backups/LATEST.db` | Restores and health check passes |
 | 12 | Reboot recovery | `sudo reboot`, wait 60s, reconnect, `docker compose ps` | Both containers Up |
@@ -1953,6 +1953,7 @@ APP_ROOT="${APP_ROOT:-$HOME/app}"
 WEB_ROOT="${WEB_ROOT:-$APP_ROOT/web}"
 COMPOSE_FILE="docker-compose.prod.yml"
 APP_DOMAIN="${APP_DOMAIN:-lp.csedesigns.com}"
+APP_ALIAS_DOMAIN="${APP_ALIAS_DOMAIN:-}"
 MAIN_DOMAIN="${MAIN_DOMAIN:-csedesigns.com}"
 
 # --- Pre-flight checks ---

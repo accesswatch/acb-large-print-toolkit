@@ -73,8 +73,8 @@ class TestConvertFauxHeadings:
         assert len(records) == 1
         assert records[0].rule_id == "ACB-FAUX-HEADING"
 
-    def test_confirmed_heading_wrong_text_skipped(self, tmp_path):
-        """If paragraph text changed, the conversion is safely skipped."""
+    def test_confirmed_heading_wrong_text_still_applies(self, tmp_path):
+        """Confirmed heading selection should apply by index after review postback."""
         doc = Document()
         doc.add_paragraph("Original Title")
         path = tmp_path / "stale.docx"
@@ -85,8 +85,8 @@ class TestConvertFauxHeadings:
         confirmed = [(0, 1, "Different Title")]
         count = _convert_faux_headings(doc, records, confirmed_headings=confirmed)
 
-        assert count == 0
-        assert doc.paragraphs[0].style.name == "Normal"
+        assert count == 1
+        assert doc.paragraphs[0].style.name == "Heading 1"
 
     def test_confirmed_heading_out_of_range_skipped(self, tmp_path):
         """Paragraph index beyond document length is safely skipped."""

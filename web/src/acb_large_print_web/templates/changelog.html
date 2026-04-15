@@ -8,20 +8,17 @@
 
 <nav aria-labelledby="changelog-toc-heading">
   <h2 id="changelog-toc-heading">Versions</h2>
+  {% if version_links %}
   <ul class="guide-toc">
-    <li><a href="#unreleased">Unreleased</a></li>
-    <li><a href="#030----2026-04-12">0.3.0 -- ePub, DAISY, Help System, Directory Rename</a></li>
-    <li><a href="#023----2026-04-12">0.2.3 -- UI and Accessibility Polish</a></li>
-    <li><a href="#022----2026-04-12">0.2.2 -- Pandoc HTML Conversion</a></li>
-    <li><a href="#021----2026-04-12">0.2.1 -- Markdown and PDF Auditing</a></li>
-    <li><a href="#020----2026-04-12">0.2.0 -- Multi-Format (Excel, PowerPoint)</a></li>
-    <li><a href="#015----2026-04-11">0.1.5 -- Production Deployment</a></li>
-    <li><a href="#014----2026-04-11">0.1.4 -- Server Documentation</a></li>
-    <li><a href="#013----2026-04-11">0.1.3 -- Flask Web App, Word Add-in</a></li>
-    <li><a href="#012----2026-04-09">0.1.2 -- CLI Improvements</a></li>
-    <li><a href="#011----2026-04-09">0.1.1 -- Build System</a></li>
-    <li><a href="#010----2026-04-09">0.1.0 -- Initial Release</a></li>
+    {% for title, anchor in version_links %}
+    <li><a href="#{{ anchor }}">{{ title }}</a></li>
+    {% endfor %}
   </ul>
+  {% else %}
+  <ul class="guide-toc">
+    <li>Version list unavailable</li>
+  </ul>
+  {% endif %}
 </nav>
 
 <div class="changelog-content">

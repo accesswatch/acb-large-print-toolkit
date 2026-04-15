@@ -16,6 +16,8 @@ set -euo pipefail
 APP_ROOT="${APP_ROOT:-$HOME/app}"
 WEB_ROOT="${WEB_ROOT:-$APP_ROOT/web}"
 COMPOSE_FILE="${COMPOSE_FILE:-docker-compose.prod.yml}"
+APP_DOMAIN="${APP_DOMAIN:-lp.csedesigns.com}"
+APP_ALIAS_DOMAIN="${APP_ALIAS_DOMAIN:-}"
 LOG_DIR="${LOG_DIR:-$HOME/deploy-logs}"
 TS="$(date -u +%Y%m%d-%H%M%S)"
 LOG_FILE="${LOG_DIR}/post-deploy-check-${TS}.log"
@@ -181,8 +183,12 @@ check_url() {
 }
 
 URL_FAIL=0
-check_url "lp.csedesigns.com/health" "https://lp.csedesigns.com/health" true || URL_FAIL=1
-check_url "lp.csedesigns.com/" "https://lp.csedesigns.com/" true || URL_FAIL=1
+check_url "${APP_DOMAIN}/health" "https://${APP_DOMAIN}/health" true || URL_FAIL=1
+check_url "${APP_DOMAIN}/" "https://${APP_DOMAIN}/" true || URL_FAIL=1
+if [[ -n "$APP_ALIAS_DOMAIN" ]]; then
+    check_url "${APP_ALIAS_DOMAIN}/health" "https://${APP_ALIAS_DOMAIN}/health" true || URL_FAIL=1
+    check_url "${APP_ALIAS_DOMAIN}/" "https://${APP_ALIAS_DOMAIN}/" true || URL_FAIL=1
+fi
 check_url "csedesigns.com/" "https://csedesigns.com/"
 
 echo ""
