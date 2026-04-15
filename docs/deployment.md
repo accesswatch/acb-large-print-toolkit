@@ -1707,14 +1707,16 @@ Run through this checklist after initial deployment or after a major change. Eve
 | 2 | Firewall is active | `sudo ufw status` | Active; 22, 80, 443 allowed |
 | 3 | Docker works | `docker ps` | Shows running containers |
 | 4 | Both containers healthy | `docker compose -f ~/app/web/docker-compose.prod.yml ps` | web: Up (healthy), caddy: Up |
-| 5 | HTTPS is live (app) | `curl -s https://glow.bits-acb.org/health` | `ok` |
+| 5 | HTTPS is live (app primary) | `curl -s https://lp.csedesigns.com/health` | `ok` |
 | 6 | HTTPS is live (main) | `curl -s https://csedesigns.com/` | HTML content |
-| 7 | HTTP redirects to HTTPS | `curl -sI http://glow.bits-acb.org` | `301` redirect to `https://` |
-| 8 | TLS certificate valid | `curl -vI https://glow.bits-acb.org 2>&1 \| grep issuer` | Contains "Let's Encrypt" |
-| 9 | App landing page loads | Open `https://glow.bits-acb.org/` in browser | Landing page with audit/fix/template links |
-| 10 | Backup can be created | `~/app/scripts/backup-feedback.sh` | Backup file created in `~/backups/` |
-| 11 | Backup can be restored | `~/app/scripts/restore-feedback.sh ~/backups/LATEST.db` | Restores and health check passes |
-| 12 | Reboot recovery | `sudo reboot`, wait 60s, reconnect, `docker compose ps` | Both containers Up |
+| 7 | HTTPS is live (app alias, optional) | `curl -s https://glow.bits-acb.org/health` | `ok` |
+| 8 | HTTP redirects to HTTPS (primary) | `curl -sI http://lp.csedesigns.com` | `301` redirect to `https://` |
+| 9 | TLS certificate valid (primary) | `curl -vI https://lp.csedesigns.com 2>&1 \| grep issuer` | Contains "Let's Encrypt" |
+| 10 | App landing page loads (primary) | Open `https://lp.csedesigns.com/` in browser | Landing page with audit/fix/template links |
+| 11 | App landing page loads (alias, optional) | Open `https://glow.bits-acb.org/` in browser | Same landing page and both domains remain live |
+| 12 | Backup can be created | `~/app/scripts/backup-feedback.sh` | Backup file created in `~/backups/` |
+| 13 | Backup can be restored | `~/app/scripts/restore-feedback.sh ~/backups/LATEST.db` | Restores and health check passes |
+| 14 | Reboot recovery | `sudo reboot`, wait 60s, reconnect, `docker compose ps` | Both containers Up |
 
 ---
 
@@ -1990,8 +1992,8 @@ for F in "$WEB_ROOT/$COMPOSE_FILE" "$WEB_ROOT/.env" "$WEB_ROOT/Caddyfile" "$WEB_
     fi
 done
 
-if [[ ! -d "$APP_ROOT/desktop/src" ]]; then
-    echo "ERROR: desktop/src/ directory missing (needed for Docker build)."
+if [[ ! -d "$APP_ROOT/desktop/src/acb_large_print" ]]; then
+  echo "ERROR: desktop/src/acb_large_print/ directory missing (needed for Docker build)."
     MISSING=1
 fi
 
@@ -2048,11 +2050,60 @@ echo ""
 echo "Test these URLs:"
 echo "  https://${APP_DOMAIN}/"
 echo "  https://${APP_DOMAIN}/health"
+if [[ -n "$APP_ALIAS_DOMAIN" ]]; then
+  echo "  https://${APP_ALIAS_DOMAIN}/"
+  echo "  https://${APP_ALIAS_DOMAIN}/health"
+fi
 echo "  https://${MAIN_DOMAIN}/"
 echo ""
 echo "View logs:"
 echo "  cd $WEB_ROOT && docker compose -f $COMPOSE_FILE logs --tail 50 -f"
 ```
+
+### Dual-Domain Deployment (No Redirect Required)
+
+You can serve both hostnames at the same time without redirecting one to the other:
+
+- `APP_DOMAIN` (default primary): `lp.csedesigns.com`
+- `APP_ALIAS_DOMAIN` (optional branded alias): for example `glow.bits-acb.org`
+
+Run deploy and post-deploy checks with alias validation enabled:
+
+```bash
+APP_ALIAS_DOMAIN=glow.bits-acb.org bash ~/app/scripts/deploy-app.sh
+APP_ALIAS_DOMAIN=glow.bits-acb.org bash ~/app/scripts/post-deploy-check.sh
+```
+
+When `APP_ALIAS_DOMAIN` is set, health checks must pass for both domains.
+
+### Post-Deploy Regression Testing (Playwright)
+
+After deployment, run browser regression tests from the `web` directory:
+
+```bash
+cd ~/app/web
+npm install
+npx playwright install
+```
+
+Set a DOCX file for upload-flow tests:
+
+```bash
+export E2E_UPLOAD_DOCX=/path/to/test.docx
+```
+
+Run tests and generate issue artifacts:
+
+```bash
+npm run test:e2e:report
+```
+
+Artifacts are written to `web/e2e/artifacts/`:
+
+- `ISSUES.md` (failure summary)
+- `results.json` (machine-readable)
+- `junit.xml` (CI-friendly)
+- `html-report/index.html` (interactive report)
 
 ### backup-feedback.sh
 

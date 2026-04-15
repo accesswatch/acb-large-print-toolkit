@@ -29,6 +29,7 @@ Releases are tagged in the [GitHub repository](https://github.com/accesswatch/ac
 - Added upload-aware E2E tests using `E2E_UPLOAD_DOCX` (default `d:/code/test.docx`) for document workflow regression coverage.
 - Added issue report generation (`web/e2e/scripts/generate-issue-report.mjs`) to summarize failed Playwright tests into `e2e/artifacts/ISSUES.md` alongside HTML/JSON/JUnit artifacts.
 - Added Node test runner scaffolding in `web/package.json` and artifact ignores in `web/.gitignore` for repeatable local and CI-friendly regression execution.
+- Updated `docs/deployment.md` with dual-domain deployment instructions (`APP_DOMAIN` + `APP_ALIAS_DOMAIN`, no-redirect scenario) and post-deploy Playwright regression commands/artifact paths.
 
 ---
 
