@@ -226,6 +226,19 @@
       <legend>Heading Detection (Word only)</legend>
       <p class="help-text">Detect paragraphs formatted as headings (bold, large font) but not using real heading styles. The fixer can convert them to proper headings for better structure and accessibility.</p>
 
+      <fieldset class="nested-fieldset">
+        <legend>Allowed Heading Levels</legend>
+        <p class="help-text">Restrict detected and reviewed headings to only these levels. If a suggestion falls outside this set, it is mapped to the nearest allowed level.</p>
+        <div class="checkbox-group" role="group" aria-label="Allowed heading levels for review and conversion">
+          <label><input type="checkbox" name="allowed_heading_levels" value="1" checked> Heading 1</label>
+          <label><input type="checkbox" name="allowed_heading_levels" value="2" checked> Heading 2</label>
+          <label><input type="checkbox" name="allowed_heading_levels" value="3" checked> Heading 3</label>
+          <label><input type="checkbox" name="allowed_heading_levels" value="4" checked> Heading 4</label>
+          <label><input type="checkbox" name="allowed_heading_levels" value="5" checked> Heading 5</label>
+          <label><input type="checkbox" name="allowed_heading_levels" value="6" checked> Heading 6</label>
+        </div>
+      </fieldset>
+
       <label>
         <input type="checkbox" name="detect_headings" id="detect-headings" checked
                aria-describedby="heading-detect-help">

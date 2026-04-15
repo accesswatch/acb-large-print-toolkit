@@ -57,6 +57,19 @@
   <fieldset>
     <legend>Template Options</legend>
 
+    <fieldset class="nested-fieldset">
+      <legend>Allowed Heading Levels for Sample Content</legend>
+      <p class="help-text">Choose which heading levels to include when sample content is enabled. At least one level is always used.</p>
+      <div class="checkbox-group" role="group" aria-label="Allowed heading levels for template sample content">
+        <label><input type="checkbox" name="allowed_heading_levels" value="1" checked> Heading 1</label>
+        <label><input type="checkbox" name="allowed_heading_levels" value="2" checked> Heading 2</label>
+        <label><input type="checkbox" name="allowed_heading_levels" value="3" checked> Heading 3</label>
+        <label><input type="checkbox" name="allowed_heading_levels" value="4"> Heading 4</label>
+        <label><input type="checkbox" name="allowed_heading_levels" value="5"> Heading 5</label>
+        <label><input type="checkbox" name="allowed_heading_levels" value="6"> Heading 6</label>
+      </div>
+    </fieldset>
+
     <label>
       <input type="checkbox" name="include_sample">
       Include sample content (headings, paragraphs, lists, and a table demonstrating the correct formatting)

@@ -25,6 +25,7 @@ Everything you need to know to audit, fix, convert, and template your documents 
 - [Quick Rule Exceptions](#quick-rule-exceptions)
 - [Preserve centered headings](#preserve-centered-headings)
 - [Per-level list indentation](#per-level-list-indentation)
+- [Allowed heading levels](#allowed-heading-levels)
 - [FAQ page](/faq/) (also accessible from the web app footer)
 
 ---
@@ -231,6 +232,29 @@ This is useful when:
 
 Tip: Leave a level blank or set it to 0 if your document does not have that depth.
 
+### Allowed heading levels
+
+You can now restrict heading conversion and review to a selected subset of heading levels (for example, Heading 1 through Heading 3 only).
+
+This is useful when:
+- Your publication style intentionally uses only part of the heading ladder.
+- You want review options to match your editorial policy.
+- You want heading detection, review, and template sample content to stay aligned.
+
+**How to use in Fix:**
+
+1. In the **Heading Detection** section, select only the heading levels your workflow allows.
+2. Run Fix as normal.
+3. On the heading review page, only those allowed heading levels appear in the dropdown.
+4. Confirm and apply; out-of-range suggestions are mapped to the nearest allowed level.
+
+**How to set defaults:**
+
+1. Open **Settings**.
+2. Under **Fix Defaults**, choose allowed heading levels for review and conversion.
+3. Under **Template Defaults**, choose allowed heading levels for sample content.
+4. Save with cookie opt-in enabled.
+
 ### Heading Detection (Word documents)
 
 Many Word documents use bold, large text to simulate headings instead of using real heading styles (Heading 1, Heading 2, Heading 3). This causes accessibility problems because screen readers cannot navigate by headings, and the document has no logical structure.
@@ -384,6 +408,14 @@ Template now supports standards profiles:
 
 If your team repeatedly uses the same template profile and options, configure them once in **Settings** so Template opens pre-filled each visit.
 
+### Template heading-level defaults
+
+Template sample content can now follow your selected heading-level subset.
+
+1. In Template, choose **Allowed Heading Levels for Sample Content**.
+2. If sample content is enabled, generated example headings will only use selected levels.
+3. You can persist this in **Settings** under Template defaults.
+
 ### How to install the template in Word
 
 1. Save the downloaded .dotx file to your Templates folder:
@@ -404,7 +436,7 @@ The **Settings** tab lets you set default values once and apply them across ever
 - Standards profile defaults for **Audit**, **Fix**, and **Template**.
 - Audit defaults: mode, categories, and quick-rule suppressions.
 - Fix defaults: mode, categories, heading options, list and paragraph indentation options, and suppressions.
-- Template defaults: profile, sample content, and binding margin.
+- Template defaults: profile, sample content, binding margin, and allowed heading levels for sample content.
 - Export and Convert defaults.
 
 ### Privacy and persistence
@@ -830,6 +862,14 @@ The fix tool can now detect "faux headings" -- paragraphs that look like heading
 If false positives are common (for example names, times, "Agenda" labels), use the heading detection accuracy control and switch to **Conservative**. If valid headings are being missed, use **Thorough**.
 
 For heading hierarchy corrections (changing an H3 to an H2, for example), the fix tool corrects heading formatting (font, size, bold) but does not change heading levels. Review your heading structure manually using the report's guidance.
+
+### Can I limit heading review to only certain levels?
+
+Yes. Use the **Allowed heading levels** checkboxes in the Fix form, or set defaults in Settings.
+
+When configured, the heading review page only shows those levels in each candidate dropdown, and confirm/apply honors the same subset.
+
+Template sample content can also use the same subset so your authored examples and fix workflow stay consistent.
 
 ### Why did decorative images get flagged as missing alt text?
 

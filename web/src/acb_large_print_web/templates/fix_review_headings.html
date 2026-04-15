@@ -7,6 +7,7 @@
 <section aria-labelledby="review-intro">
   <h2 id="review-intro">Heading Candidates Found</h2>
   <p>The following {{ candidates | length }} paragraph{{ "s" if candidates | length != 1 else "" }} in <strong>{{ filename }}</strong> appear to be headings but use non-heading styles. Review each candidate below and adjust the heading level or skip it. Then click "Apply and Fix" to proceed.</p>
+  <p class="help-text">Allowed heading levels in this run: {% for level in allowed_heading_levels %}Heading {{ level }}{% if not loop.last %}, {% endif %}{% endfor %}.</p>
 </section>
 
 <form method="post" action="{{ url_for('fix.fix_confirm') }}">
@@ -68,12 +69,9 @@
         <td>
           <label for="level-{{ loop.index0 }}" class="visually-hidden">Heading level for "{{ c.text[:40] }}"</label>
           <select id="level-{{ loop.index0 }}" name="level_{{ loop.index0 }}">
-            <option value="1" {% if c.suggested_level == 1 %}selected{% endif %}>Heading 1</option>
-            <option value="2" {% if c.suggested_level == 2 %}selected{% endif %}>Heading 2</option>
-            <option value="3" {% if c.suggested_level == 3 %}selected{% endif %}>Heading 3</option>
-            <option value="4" {% if c.suggested_level == 4 %}selected{% endif %}>Heading 4</option>
-            <option value="5" {% if c.suggested_level == 5 %}selected{% endif %}>Heading 5</option>
-            <option value="6" {% if c.suggested_level == 6 %}selected{% endif %}>Heading 6</option>
+            {% for level in allowed_heading_levels %}
+            <option value="{{ level }}" {% if c.suggested_level == level %}selected{% endif %}>Heading {{ level }}</option>
+            {% endfor %}
             <option value="skip">Not a heading -- skip</option>
           </select>
         </td>

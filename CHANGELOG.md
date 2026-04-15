@@ -10,8 +10,10 @@ Releases are tagged in the [GitHub repository](https://github.com/accesswatch/ac
 
 ### Added
 
-- Placeholder for upcoming changes.
-- Expanded `docs/announcement-web-app.md` and synchronized `docs/announcement-web-app.html` with a community-origin story section crediting Washington Council of the Blind feedback as a direct driver for release 1.1 document-experience improvements (faux-heading workflow intent, quick rule exceptions, centered-heading preservation, and FAQ clarity).
+- Added heading-level restriction controls to Fix and Settings workflows so teams can constrain heading detection/review/conversion to a selected subset of levels.
+- Updated heading review UI and confirm pipeline to honor allowed heading levels end-to-end, including safe level remapping for detected suggestions outside the allowed set.
+- Added template heading-level controls (Template form + Settings defaults) and wired them into template sample generation so authored examples follow team-selected heading ladders.
+- Expanded and synchronized announcement storytelling (`docs/announcement-web-app.md`, `docs/announcement-web-app.html`, and `docs/announcement.md`) with Washington Council community voice, non-versioned narrative, and explicit coverage of heading-level controls/review/template alignment.
 
 ## [1.2.0] -- 2026-04-15
 

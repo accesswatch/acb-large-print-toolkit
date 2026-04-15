@@ -236,6 +236,33 @@ def _format_from_path(saved_path: Path) -> str:
     return saved_path.suffix.lower().lstrip(".")
 
 
+def _parse_allowed_heading_levels(form) -> list[int]:
+    """Parse allowed heading levels from form data with safe defaults."""
+    raw_levels = form.getlist("allowed_heading_levels")
+    parsed_levels: list[int] = []
+    for raw in raw_levels:
+        try:
+            level = int(raw)
+        except (TypeError, ValueError):
+            continue
+        if 1 <= level <= 6:
+            parsed_levels.append(level)
+
+    if not parsed_levels:
+        return [1, 2, 3, 4, 5, 6]
+
+    return sorted(set(parsed_levels))
+
+
+def _closest_allowed_level(level: int, allowed_levels: list[int]) -> int:
+    """Choose the nearest allowed heading level for out-of-range suggestions."""
+    if not allowed_levels:
+        return level
+    if level in allowed_levels:
+        return level
+    return min(allowed_levels, key=lambda allowed: abs(allowed - level))
+
+
 def _estimate_pre_fix_body_font_pt(saved_path: Path) -> float | None:
     """Estimate typical body font size (pt) for Word docs using run-level sizes."""
     if saved_path.suffix.lower() != ".docx":
@@ -342,6 +369,8 @@ def _parse_form_options(form):
     if heading_accuracy not in ("conservative", "balanced", "thorough"):
         heading_accuracy = "balanced"
 
+    allowed_heading_levels = _parse_allowed_heading_levels(form)
+
     return {
         "bound": bound,
         "mode": mode,
@@ -358,6 +387,7 @@ def _parse_form_options(form):
         "suppress_faux_heading": suppress_faux_heading,
         "heading_threshold": heading_threshold,
         "heading_accuracy": heading_accuracy,
+        "allowed_heading_levels": allowed_heading_levels,
     }
 
 
@@ -544,6 +574,13 @@ def fix_submit():
                 threshold=opts["heading_threshold"],
             )
 
+            allowed_levels = opts["allowed_heading_levels"]
+            for candidate in candidates:
+                candidate.suggested_level = _closest_allowed_level(
+                    candidate.suggested_level,
+                    allowed_levels,
+                )
+
             if candidates:
                 # Build hidden form fields to preserve all original options
                 form_fields = {}
@@ -556,6 +593,7 @@ def fix_submit():
                 return render_template(
                     "fix_review_headings.html",
                     candidates=candidates,
+                    allowed_heading_levels=allowed_levels,
                     token=token,
                     filename=saved_path.name,
                     form_fields=form_fields,
@@ -638,6 +676,7 @@ def fix_confirm():
 
     try:
         opts = _parse_form_options(request.form)
+        allowed_levels = set(opts["allowed_heading_levels"])
 
         # Parse confirmed headings from the review form
         confirmed_headings = []
@@ -651,6 +690,8 @@ def fix_confirm():
             except (ValueError, TypeError):
                 continue
             if not 1 <= level_int <= 6:
+                continue
+            if level_int not in allowed_levels:
                 continue
             idx = int(request.form.get(f"idx_{i}", "-1"))
             text = request.form.get(f"text_{i}", "")

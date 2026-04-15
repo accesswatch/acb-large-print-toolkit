@@ -35,6 +35,7 @@
       firstLineIndent: 0,
       headingThreshold: 50,
       headingAccuracy: "balanced",
+      allowedHeadingLevels: ["1", "2", "3", "4", "5", "6"],
       suppressLinkText: false,
       suppressMissingAltText: false,
       suppressFauxHeading: false,
@@ -43,6 +44,7 @@
       profile: "acb_2025",
       includeSample: false,
       bound: false,
+      allowedHeadingLevels: ["1", "2", "3"],
     },
     export: {
       mode: "standalone",
@@ -193,6 +195,7 @@
         setInput("first_line_indent", settings.fix.firstLineIndent);
         setInput("heading_threshold", settings.fix.headingThreshold);
         setInput("heading_accuracy", settings.fix.headingAccuracy);
+        setCheckboxGroup("allowed_heading_levels", settings.fix.allowedHeadingLevels);
         setCheckbox("suppress_link_text", settings.fix.suppressLinkText);
         setCheckbox("suppress_missing_alt_text", settings.fix.suppressMissingAltText);
         setCheckbox("suppress_faux_heading", settings.fix.suppressFauxHeading);
@@ -203,6 +206,7 @@
         setRadio("standards_profile", settings.template.profile);
         setCheckbox("include_sample", settings.template.includeSample);
         setCheckbox("bound", settings.template.bound);
+        setCheckboxGroup("allowed_heading_levels", settings.template.allowedHeadingLevels);
       }
 
       // Export form
@@ -258,6 +262,14 @@
     settings.fix.suppressLinkText = !!document.querySelector('input[name="settings_fix_suppress_link_text"]:checked');
     settings.fix.suppressMissingAltText = !!document.querySelector('input[name="settings_fix_suppress_missing_alt_text"]:checked');
     settings.fix.suppressFauxHeading = !!document.querySelector('input[name="settings_fix_suppress_faux_heading"]:checked');
+    settings.fix.allowedHeadingLevels = Array.prototype.slice
+      .call(document.querySelectorAll('input[name="settings_fix_allowed_heading_levels"]:checked'))
+      .map(function (el) {
+        return el.value;
+      });
+    if (!settings.fix.allowedHeadingLevels.length) {
+      settings.fix.allowedHeadingLevels = ["1", "2", "3", "4", "5", "6"];
+    }
 
     var listIndent = document.querySelector('input[name="settings_fix_list_indent"]');
     settings.fix.listIndent = listIndent ? parseFloat(listIndent.value || "0.5") || 0.5 : 0.5;
@@ -284,6 +296,14 @@
     settings.template.profile = templateProfile ? templateProfile.value : settings.template.profile;
     settings.template.includeSample = !!document.querySelector('input[name="settings_template_include_sample"]:checked');
     settings.template.bound = !!document.querySelector('input[name="settings_template_bound"]:checked');
+    settings.template.allowedHeadingLevels = Array.prototype.slice
+      .call(document.querySelectorAll('input[name="settings_template_allowed_heading_levels"]:checked'))
+      .map(function (el) {
+        return el.value;
+      });
+    if (!settings.template.allowedHeadingLevels.length) {
+      settings.template.allowedHeadingLevels = ["1", "2", "3"];
+    }
 
     var exportMode = document.querySelector('input[name="settings_export_mode"]:checked');
     settings.export.mode = exportMode ? exportMode.value : "standalone";
@@ -326,6 +346,7 @@
     setCheckbox("settings_fix_suppress_link_text", settings.fix.suppressLinkText);
     setCheckbox("settings_fix_suppress_missing_alt_text", settings.fix.suppressMissingAltText);
     setCheckbox("settings_fix_suppress_faux_heading", settings.fix.suppressFauxHeading);
+    setCheckboxGroup("settings_fix_allowed_heading_levels", settings.fix.allowedHeadingLevels);
     setInput("settings_fix_list_indent", settings.fix.listIndent);
     setInput("settings_fix_list_hanging", settings.fix.listHanging);
     setInput("settings_fix_list_indent_level_1", settings.fix.listIndentLevel1);
@@ -339,6 +360,7 @@
     setRadio("settings_template_profile", settings.template.profile);
     setCheckbox("settings_template_include_sample", settings.template.includeSample);
     setCheckbox("settings_template_bound", settings.template.bound);
+    setCheckboxGroup("settings_template_allowed_heading_levels", settings.template.allowedHeadingLevels);
 
     setRadio("settings_export_mode", settings.export.mode);
 

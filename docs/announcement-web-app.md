@@ -195,7 +195,7 @@ GLOW is a community-driven project. We need feedback to keep improving it. We kn
 
 ### Community Built for the Community: Washington Council of the Blind
 
-Some of the most important document-experience changes in the 1.1 release came directly from real-world feedback shared by the Washington Council of the Blind. Their notes did not come from a lab. They came from production newsletters, 100-page workflows, and the practical constraints of mailing physical large-print copies.
+Some of the most important document-experience changes came directly from real-world feedback shared by the Washington Council of the Blind. Their notes did not come from a lab. They came from production newsletters, 100-page workflows, and the practical constraints of mailing physical large-print copies.
 
 That feedback was direct, thoughtful, and deeply operational:
 
@@ -205,12 +205,17 @@ That feedback was direct, thoughtful, and deeply operational:
 - "Centering can be meaningful for titles and poems; do not flatten visual hierarchy by default."
 - "Long-document fixes can dramatically increase page count, which affects binding and mailing logistics."
 
-Those insights shaped release 1.1 document experience updates, including:
+Those insights shaped major document experience updates, including:
 
 - Better handling when heading detection is intentionally disabled, so scoring reflects user-selected workflow intent.
 - Quick rule exceptions for link text and missing alt text where policy and publishing workflows require targeted flexibility.
 - A preserve-centered-headings option for users who intentionally center specific heading/title structures.
+- New heading-level controls so teams can restrict heading conversion and review to a selected subset (for example, H1-H3 only).
+- Heading review that honors those allowed levels end to end, so the dropdown choices match the workflow a team actually uses.
+- Template generation that honors the same heading-level preferences for sample content, keeping creation and remediation workflows aligned.
 - Expanded FAQ and guidance to answer the real formatting questions teams face under deadline pressure.
+
+"As a WCB newsletter editor, this felt like the first time the tool met us where we really work," said one Washington Council of the Blind editor. "Now when GLOW finds heading candidates, it only offers the levels we actually use, and our template follows the same structure. It is like the app already knows our publishing rhythm and quietly clears the path."
 
 This is what community-driven engineering looks like in practice: members bring real document stories, and the product evolves to serve the people actually doing the work.
 

@@ -25,6 +25,18 @@ def template_submit():
         bound = request.form.get("bound") == "on"
         include_sample = request.form.get("include_sample") == "on"
         standards_profile = request.form.get("standards_profile", "acb_2025")
+        raw_allowed_levels = request.form.getlist("allowed_heading_levels")
+        allowed_heading_levels: list[int] = []
+        for raw in raw_allowed_levels:
+            try:
+                level = int(raw)
+            except (TypeError, ValueError):
+                continue
+            if 1 <= level <= 6:
+                allowed_heading_levels.append(level)
+        if not allowed_heading_levels:
+            allowed_heading_levels = [1, 2, 3]
+        allowed_heading_levels = sorted(set(allowed_heading_levels))
 
         # Create a temp dir for the output
         token = str(uuid.uuid4())
@@ -39,6 +51,7 @@ def template_submit():
             include_sample=include_sample,
             title=title,
             standards_profile=standards_profile,
+            allowed_heading_levels=allowed_heading_levels,
         )
 
         response = send_file(

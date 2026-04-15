@@ -203,9 +203,18 @@ def _set_document_language(doc: Document, lang: str = "en-US") -> None:
         lang_elem.set(qn("w:bidi"), lang)
 
 
-def _add_sample_content(doc: Document) -> None:
-    """Add sample paragraphs that demonstrate each style."""
-    doc.add_heading("ACB Large Print Template", level=1)
+def _add_sample_content(doc: Document, *, allowed_heading_levels: list[int] | None = None) -> None:
+    """Add sample paragraphs that demonstrate each style.
+
+    The sample heading ladder respects user-selected allowed heading levels.
+    """
+    levels = sorted(set(allowed_heading_levels or [1, 2, 3]))
+    levels = [level for level in levels if 1 <= level <= 6]
+    if not levels:
+        levels = [1]
+
+    top_level = levels[0]
+    doc.add_heading("ACB Large Print Template", level=top_level)
 
     p = doc.add_paragraph(
         "This template is pre-configured with all styles required by the "
@@ -214,14 +223,11 @@ def _add_sample_content(doc: Document) -> None:
     )
     p.style = doc.styles["Normal"]
 
-    doc.add_heading("Heading 2 Example", level=2)
-    doc.add_paragraph(
-        "Body text under a second-level heading. Arial 18pt, flush left, "
-        "1.15 line spacing."
-    )
-
-    doc.add_heading("Heading 3 Example", level=3)
-    doc.add_paragraph("Body text under a third-level heading.")
+    for level in levels:
+        if level == top_level:
+            continue
+        doc.add_heading(f"Heading {level} Example", level=level)
+        doc.add_paragraph(f"Body text under a level {level} heading.")
 
     # Bullet list
     doc.add_paragraph("First bullet item", style="List Bullet")
@@ -264,6 +270,7 @@ def create_template(
     list_indent_in: float = C.LIST_INDENT_IN,
     list_hanging_in: float = C.LIST_HANGING_IN,
     standards_profile: str = C.StandardsProfile.ACB_2025.value,
+    allowed_heading_levels: list[int] | None = None,
 ) -> Path:
     """Create a complete ACB Large Print .dotx template.
 
@@ -275,6 +282,7 @@ def create_template(
         list_indent_in: Left indent for list styles in inches.
         list_hanging_in: Hanging indent for list styles in inches.
         standards_profile: Standards profile for style defaults.
+        allowed_heading_levels: Heading levels to include in sample content.
 
     Returns:
         Path to the created template file.
@@ -303,7 +311,7 @@ def create_template(
     _set_document_language(doc)
 
     if include_sample:
-        _add_sample_content(doc)
+        _add_sample_content(doc, allowed_heading_levels=allowed_heading_levels)
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
 

@@ -371,6 +371,7 @@ def test_fix_form_list_indent_fields_visible_and_disabled_by_default(client):
     assert 'name="suppress_faux_heading"' in html
     assert 'name="preserve_heading_alignment"' in html
     assert 'name="use_list_levels"' in html
+    assert 'name="allowed_heading_levels"' in html
 
 
 def test_fix_result_suppresses_heading_alignment_when_preserve_enabled(app):
@@ -430,3 +431,17 @@ def test_parse_form_options_supports_per_level_list_indents(app):
         )
         opts = _parse_form_options(form)
         assert opts["list_level_indents"] == {0: 0.25, 1: 0.5, 2: 0.75}
+
+
+def test_parse_form_options_supports_allowed_heading_levels(app):
+    from acb_large_print_web.routes.fix import _parse_form_options
+    from werkzeug.datastructures import MultiDict
+
+    with app.app_context():
+        form = MultiDict(
+            {
+                "allowed_heading_levels": ["1", "3", "5"],
+            }
+        )
+        opts = _parse_form_options(form)
+        assert opts["allowed_heading_levels"] == [1, 3, 5]

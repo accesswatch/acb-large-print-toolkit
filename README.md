@@ -95,6 +95,8 @@ References:
 - **Quick Rule Exceptions** section added to Fix and Audit forms: suppress `ACB-LINK-TEXT`, `ACB-MISSING-ALT-TEXT`, and `ACB-FAUX-HEADING` rules per submission without workflow disruption.
 - **Preserve centered headings** option added to Fix form: when enabled, skips alignment override on heading paragraphs, preserving intentional heading centering.
 - **Per-level list indentation** added to Fix form: configure level-specific expected indents (Level 1, 2, 3) instead of a single uniform indent; auditor and fixer recognize paragraph list styles and apply per-level settings.
+- **Allowed heading levels** added to Fix and Settings: teams can restrict heading detection/review/conversion to selected levels only (for example, H1-H3), and heading review options now honor that subset.
+- **Template heading-level alignment** added: template sample content now honors the same selected heading-level subset so authoring and fixing workflows stay consistent.
 - **Dedicated FAQ page** available at web app `/faq/` with answers to common workflow questions including quick exceptions, heading preservation, per-level indents, and known limitations.
 
 ## Workspace structure

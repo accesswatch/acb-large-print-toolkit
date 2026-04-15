@@ -51,6 +51,7 @@ The Flask web application has been built and is ready for deployment. All core f
 | Quick Rule Exceptions (Fix and Audit) | Done | New collapsible section in Fix and Audit forms with toggles to suppress `ACB-LINK-TEXT`, `ACB-MISSING-ALT-TEXT`, or `ACB-FAUX-HEADING` per operation without entering Custom mode. |
 | Preserve centered headings option | Done | Fix form checkbox to skip alignment override for heading-styled paragraphs, preserving intentional heading center-alignment. Heading alignment findings are suppressed when option is enabled. |
 | Per-level list indentation support | Done | Fix form and backend (auditor/fixer) now support per-level list indentation: Level 1, Level 2, Level 3 with separate indent targets. Auditor detects paragraph list style level and compares against level-specific expected values. Fixer applies per-level target indents. |
+| Allowed heading-level controls (Fix/Settings/Template) | Done | Users can restrict heading detection/review/conversion to selected heading levels; heading review dropdown options and confirm/apply honor allowed levels end-to-end; template sample content follows selected allowed heading levels and can be persisted in Settings. |
 | Dedicated FAQ page | Done | New `/faq/` route with accordion-style FAQ entries covering quick exceptions, heading preservation, per-level indentation, page-count growth, decorative images, VML handling, and known limitations. Linked in main nav footer. |
 
 ### Deviations from Plan

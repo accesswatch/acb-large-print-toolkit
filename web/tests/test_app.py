@@ -418,6 +418,7 @@ class TestTemplateGeneration:
         assert b'value="acb_2025"' in resp.data
         assert b'value="aph_submission"' in resp.data
         assert b'value="combined_strict"' in resp.data
+        assert b'name="allowed_heading_levels"' in resp.data
 
     def test_generate_template_aph_profile(self, client):
         resp = client.post(
@@ -425,6 +426,17 @@ class TestTemplateGeneration:
             data={
                 "title": "APH Template",
                 "standards_profile": "aph_submission",
+            },
+        )
+        assert resp.status_code == 200
+
+    def test_generate_template_with_restricted_heading_levels(self, client):
+        resp = client.post(
+            "/template/",
+            data={
+                "title": "Restricted Levels",
+                "include_sample": "on",
+                "allowed_heading_levels": ["1", "2"],
             },
         )
         assert resp.status_code == 200
@@ -761,6 +773,8 @@ class TestSettingsIntegration:
         assert b'name="settings_fix_suppress_link_text"' in resp.data
         assert b'name="settings_fix_use_list_levels"' in resp.data
         assert b'name="settings_fix_list_indent_level_1"' in resp.data
+        assert b'name="settings_fix_allowed_heading_levels"' in resp.data
+        assert b'name="settings_template_allowed_heading_levels"' in resp.data
 
 
 class TestPdfAudit:

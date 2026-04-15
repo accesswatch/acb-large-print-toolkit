@@ -22,6 +22,8 @@ A Flask web application that provides browser-based access to the GLOW Accessibi
 - **Quick Rule Exceptions** -- new collapsible section in Fix and Audit forms with toggles for `ACB-LINK-TEXT`, `ACB-MISSING-ALT-TEXT`, and `ACB-FAUX-HEADING` to suppress these rules per operation without editing workflow settings.
 - **Preserve centered headings** -- Fix form option to skip alignment override on heading paragraphs, preserving intentional heading center-alignment.
 - **Per-level list indentation** -- Fix form now accepts level-specific indent targets (Level 1, Level 2, Level 3) instead of a single uniform indent; auditor and fixer apply per-style-level expectations.
+- **Allowed heading levels** -- Fix form and Settings now let teams restrict heading review/conversion to selected levels; heading review dropdown options and confirm-apply behavior honor that subset end-to-end.
+- **Template heading-level alignment** -- Template form and Settings defaults now include allowed heading levels for sample content, and generated sample headings follow the selected level subset.
 - **FAQ page** -- dedicated `/faq/` endpoint with answers to quick exception usage, heading preservation intent, per-level list indentation, and known limitations.
 
 ## Supported Formats
