@@ -6,14 +6,14 @@ A VS Code agent toolkit, desktop application, and web application for auditing a
 
 External APH source reference: [APH Guidelines for the Development of Documents in Large Print](https://www.aph.org/resources/large-print-guidelines/).
 
-Status note: APH guideline coverage in this toolkit is currently partial; active enforcement is primarily ACB + WCAG + Microsoft Accessibility Checker + format-specific rule sets, with APH parity expansion tracked in the 1.2.0 roadmap.
+Status note: APH alignment in this toolkit is fully integrated in Release 1.2.0 for the submission workflow, alongside existing ACB + WCAG + Microsoft Accessibility Checker + format-specific rule sets.
 
 ## Standards Profiles (Release 1.2.0)
 
 The web Audit, Fix, and Template flows now include three standards profiles:
 
 - **ACB 2025 Baseline** -- default profile. This preserves current behavior. If you select ACB, there is no workflow change and no scoring model change from the existing production experience.
-- **APH Submission (Current Coverage)** -- filters results to APH-aligned checks implemented today (font and structure checks plus core WCAG/MSAC coverage already in production). This profile is designed for APH submission preparation and explicitly reflects current implemented scope.
+- **APH Submission** -- uses the APH-aligned checks and defaults finalized in Release 1.2.0 for submission preparation and evidence packaging.
 - **Combined Strict** -- shows all currently implemented checks together (ACB + MSAC/WCAG-aligned rules) for maximum rigor in one run. Template generation keeps ACB defaults in this mode for predictable production output.
 
 Profile intent:
@@ -25,7 +25,7 @@ Profile intent:
 Template behavior by profile:
 
 - **ACB 2025 Baseline** -- unchanged template defaults (Arial + current ACB spacing baseline).
-- **APH Submission (Current Coverage)** -- APH-oriented template defaults (APHont preferred and 1.25 line spacing recommendation).
+- **APH Submission** -- APH-oriented template defaults (APHont preferred and 1.25 line spacing recommendation).
 - **Combined Strict** -- keeps ACB template defaults while using strict combined review posture in Audit/Fix.
 
 Profile reporting:
@@ -34,7 +34,7 @@ Profile reporting:
 
 ## Guideline Scope (ACB, APH, AFB)
 
-- This toolkit supports two large-print production standards: ACB (default) and APH (submission profile coverage).
+- This toolkit supports two large-print production standards: ACB (default) and APH (fully integrated submission profile in Release 1.2.0).
 - AFB JVIB style guidance is not a large-print production mode in this toolkit. It is an academic manuscript submission style for the Journal of Visual Impairment & Blindness.
 - Use ACB for consumer/member publications and APH for educational/student large-print workflows.
 - If you are preparing a JVIB manuscript, follow AFB JVIB rules directly outside the fix/audit profile selector.

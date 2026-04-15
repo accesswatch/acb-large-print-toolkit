@@ -93,7 +93,7 @@ The APH workflow is now embedded directly across the site, this user guide, and 
 Release 1.2.0 adds profile selection in Audit, Fix, and Template so teams can choose the right reporting lens and template defaults without changing the underlying remediation engine.
 
 - **ACB 2025 Baseline (default):** no impact to existing users. Selecting ACB keeps current behavior, current scoring assumptions, and the same operational workflow chapters already use.
-- **APH Submission (Current Coverage):** narrows findings to implemented APH-aligned checks for submission readiness and evidence packaging.
+- **APH Submission:** uses the APH-aligned checks and defaults finalized in Release 1.2.0 for submission readiness and evidence packaging.
 - **Combined Strict:** includes all currently implemented checks (ACB + MSAC/WCAG-aligned rules) for maximum strictness.
 
 When to use each:
@@ -403,7 +403,7 @@ A template (.dotx) is the easiest way to start compliant. Every new document you
 Template now supports standards profiles:
 
 - **ACB 2025 Baseline:** keeps the current production defaults (Arial + existing ACB spacing baseline).
-- **APH Submission (Current Coverage):** uses APH-oriented defaults (APHont preferred and 1.25 line spacing recommendation).
+- **APH Submission:** uses APH-oriented defaults (APHont preferred and 1.25 line spacing recommendation).
 - **Combined Strict:** keeps ACB template defaults while teams use strict combined review posture in Audit/Fix.
 
 If your team repeatedly uses the same template profile and options, configure them once in **Settings** so Template opens pre-filled each visit.
@@ -916,4 +916,4 @@ APH also publishes research-based large print guidance at [APH: Guidelines for t
 - **DAISY Knowledge Base** -- [remediation guidance](https://kb.daisy.org/publishing/) for ePub accessibility issues
 - **Microsoft Accessibility Checker Guide** -- [Microsoft's guide](https://support.microsoft.com/en-us/office/improve-accessibility-with-the-accessibility-checker-a16f6de0-2f39-4a2b-8bd8-5ad801426c7f) to the Office accessibility checker
 
-**Implementation note:** APH guideline coverage is not complete yet. Current enforcement focuses on ACB + WCAG + Microsoft Accessibility Checker + format-specific rules, with APH alignment work tracked under the 1.2.0 submission plan.
+**Implementation note:** APH alignment is fully integrated for the Release 1.2.0 submission workflow. Enforcement includes ACB + WCAG + Microsoft Accessibility Checker + format-specific rules with APH profile mapping finalized in this release.

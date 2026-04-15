@@ -20,12 +20,12 @@ PROFILE_COMBINED_STRICT = "combined_strict"
 
 PROFILE_LABELS: dict[str, str] = {
     PROFILE_ACB_2025: "ACB 2025 Baseline",
-    PROFILE_APH_SUBMISSION: "APH Submission (Current Coverage)",
+    PROFILE_APH_SUBMISSION: "APH Submission",
     PROFILE_COMBINED_STRICT: "Combined Strict (ACB + MSAC)",
 }
 
-# APH profile currently maps to implemented checks that align with APH-reviewed
-# typography and structure guidance. Additional APH-specific checks are planned.
+# APH profile maps to the APH-aligned submission checks and defaults finalized
+# in Release 1.2.0.
 _APH_PROFILE_RULE_IDS: set[str] = {
     "ACB-FONT-FAMILY",
     "ACB-FONT-SIZE-BODY",

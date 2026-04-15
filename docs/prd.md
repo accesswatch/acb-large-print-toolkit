@@ -176,7 +176,7 @@ Both the audit and fix pages offer three preset modes via radio buttons:
 Audit and Fix now include an explicit standards profile selector to support APH submission packaging while preserving current ACB production behavior.
 
 - **ACB 2025 Baseline (default):** no behavioral change from existing production. Selecting this profile keeps current rule scope and current operator workflow unchanged.
-- **APH Submission (Current Coverage):** limits displayed findings to APH-aligned checks implemented in this release. This is a transparency profile for submission readiness, not a claim of full APH parity.
+- **APH Submission:** surfaces the APH-aligned checks and defaults finalized in Release 1.2.0 for submission readiness and evidence packaging.
 - **Combined Strict:** includes all currently implemented checks (ACB + MSAC/WCAG-aligned) in a single strict profile for final review and evidence generation.
 
 Design guarantees:

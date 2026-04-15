@@ -59,7 +59,7 @@ Want to control what gets fixed? GLOW lets you pick. Fix only the critical issue
 GLOW now includes profile selection so teams can keep existing operations stable while preparing APH submission evidence:
 
 - **ACB 2025 Baseline** (default): no impact to existing users. If you select ACB, behavior remains the same.
-- **APH Submission (Current Coverage)**: focuses reports on APH-aligned checks that are implemented today.
+- **APH Submission**: uses the APH-aligned checks and defaults finalized in Release 1.2.0.
 - **Combined Strict**: includes all currently implemented checks together for rigorous final QA.
 
 Each report shows the selected profile so review conversations are clear and traceable.
@@ -71,7 +71,7 @@ The community asked for two things at the same time: keep existing ACB chapter w
 Think about three real-world stories we kept hearing:
 
 1. A chapter newsletter team has a monthly deadline and cannot afford surprises. They stay on **ACB 2025 Baseline** so nothing changes operationally, but they can still run APH-focused checks when needed.
-2. A state affiliate preparing a formal review packet needs APH-aligned evidence now, not "someday." They select **APH Submission (Current Coverage)** to generate traceable reports based on implemented APH-aligned checks.
+2. A state affiliate preparing a formal review packet needs APH-aligned evidence now, not "someday." They select **APH Submission** to generate traceable reports based on the finalized Release 1.2.0 APH-aligned workflow.
 3. A quality lead doing final sign-off before publication wants the strictest practical gate. They run **Combined Strict** to see all implemented checks together and catch issues before release.
 
 This is about optionality with clarity: users can choose the right standards lens for their context, while preserving trust in the default ACB workflow.
