@@ -1,197 +1,145 @@
-# BITS Launches Free Online Document Accessibility Checker -- No Software Required
+# GLOW Makes Document Accessibility Magical -- No Technical Knowledge Required
 
 **FOR IMMEDIATE RELEASE -- April 12, 2026**
 
 ***
 
-The Blind Information Technology Solutions (BITS) organization today announced the launch of the ACB Document Accessibility Web Application, a free, browser-based tool that checks and fixes Office documents for compliance with the American Council of the Blind (ACB) Large Print Guidelines and WCAG 2.2 AA accessibility standards. The web app is live now at [lp.csedesigns.com](https://lp.csedesigns.com) and requires no account, no download, and no installation.
+Your newsletter doesn't have to be a guessing game about large print anymore.
 
-"The number one piece of feedback we heard from ACB chapters was: 'I don't want to install anything,'" said **Jeff Bishop, President of BITS**. "People would see our desktop tool and say, 'That looks great, but I just need to check one document.' The web app is the answer. Open your browser, upload your file, and you are done. It works on a phone, a Chromebook, a library computer -- anywhere you have a browser."
+The Blind Information Technology Solutions (BITS) organization today launched **GLOW Accessibility Toolkit** -- a free, browser-based tool that turns the headache of accessible document formatting into a guided, almost magical experience. No software to install. No textbooks to read. No obscure formatting rules to memorize. Just open your browser, upload a document, and let GLOW show you how to make it readable for people with low vision.
 
-## How It Works: Three Steps
+The web app is live now at [lp.csedesigns.com](https://lp.csedesigns.com).
 
-The web app is designed to be usable by anyone, regardless of technical experience. The entire workflow is three steps:
+"I was a newsletter editor drowning in ACB guidelines," says a typical GLOW user. "I didn't know if my fonts were right, my spacing was right, my formatting was right. GLOW looked at my document and told me exactly what to fix in plain English. Now I actually know what large print means instead of just guessing."
 
-1. **Upload** -- drag or browse to select your document
-2. **Choose an operation** -- audit, fix, create a template, export to HTML, or convert formats
-3. **Get results** -- view the report in your browser or download the corrected file
+**Jeff Bishop, President of BITS**, explains the magic: "Document accessibility shouldn't require a degree. GLOW's job is to understand the complex standards so *you* don't have to. When you're editing a quick memo on your phone, or your chapter needs to send out a last-minute agenda, GLOW is right there in your browser, giving you answers in seconds."
 
-There is nothing to configure, nothing to log in to, and nothing to install. The tool handles the ACB specification so you do not have to memorize it.
+## The Problem: Documents Are Chaotic. Standards Are Complex.
 
-## What You Can Do
+Every ACB chapter produces documents: meeting agendas, newsletters, election ballots, board reports. Every one of those documents should be readable for people with low vision. But the formatting rules are dense. Is your font size right? Is your spacing correct? Did you accidentally use justified alignment? Should those be underlined instead of bold?
 
-The web app provides six operations, each accessible from the home page:
+Most people just hope for the best. Some copy a template and pray they didn't mess it up. A few volunteer editors spend hours learning the rules and applying them manually to every single document.
 
-### Audit a Document
+GLOW changes that. You don't have to become an accessibility expert to make accessible documents. GLOW does the thinking for you.
 
-Upload a Word, Excel, PowerPoint, Markdown, PDF, or ePub file and get a complete accessibility compliance report displayed directly in your browser. Findings are organized by severity -- Critical, High, Medium, and Low -- so you know what to fix first. Three audit modes are available:
+## How It Works: Three Simple Steps, Zero Technical Jargon
 
-- **Full Audit** checks every rule. This is the default and the best choice for first-time users.
-- **Quick Audit** checks only Critical and High severity rules for a fast overview of major issues.
-- **Custom Audit** lets you pick exactly which rules to check using grouped checkboxes.
+1. **Upload** -- drag a document or browse to select it
+2. **Choose what you want** -- check it, fix it, create a template, or convert it
+3. **Get results** -- see the answer instantly in your browser
 
-Each finding includes a description of the problem, why it matters, and a link to the relevant ACB guideline section or WCAG success criterion so you can understand the rationale behind each rule.
+No accounts. No downloads. No configuration. GLOW handles the standards so you can focus on your content.
 
-### Fix a Document
+## What GLOW Actually Does For You
 
-Upload a Word document and download a corrected version with one click. The tool automatically fixes fonts, sizes, spacing, alignment, and emphasis to meet ACB standards. A before-and-after compliance score shows exactly how much the document improved. Three fix modes let you control how much the tool changes:
+### Audit (Check Your Document)
 
-- **Full Fix** applies every auto-fixable rule for maximum compliance.
-- **Essentials Fix** applies only Critical and High severity fixes, leaving smaller issues untouched.
-- **Custom Fix** lets you select which fix categories to apply.
+Upload your Word, PDF, PowerPoint, Excel, Markdown, or ePub file. GLOW reads it like a human would and tells you what's right and what needs fixing.
 
-For Excel, PowerPoint, Markdown, PDF, and ePub files, the fix page runs a full audit and provides detailed manual-fix guidance for each finding, since those formats do not yet support automated correction.
+The results appear in your browser organized by severity -- Critical (stop!), High (fix soon), Medium (should fix), Low (nice to improve). Each finding explains what's wrong in plain English:
+
+> "Heading 2 is 16 point, but it should be 20 point for large print"
+
+not
+
+> "DOCX-ACB-H1-001: Heading level 2 font size does not match standard"
+
+You get an instant compliance score. You know where you stand.
+
+### Auto-Fix (Let GLOW Fix It)
+
+Upload a Word document. GLOW fixes fonts, sizes, spacing, alignment, emphasis, margins -- everything that can be automatically corrected. Download a corrected version with one click. A before-and-after score shows you exactly how much it improved.
+
+Want to control what gets fixed? GLOW lets you pick. Fix only the critical issues, or go the whole nine yards.
+
+### The Magic: Heading Detection
+
+Here's where GLOW gets genuinely smart. You have a document with no built-in heading levels. Maybe it's a quick note scribbled into a Word doc. Maybe it's a PDF scanned from a printed document. Most tools give up.
+
+GLOW *learns your document*. It looks at font sizes, bold formatting, positioning, spacing -- all the visual clues -- and says:
+
+> "This looks like a heading. This looks like a subheading. This is body text."
+
+When the visual clues are clear, it just works. No human judgment needed.
+
+When things get ambiguous (like a title that might or might not be a heading), GLOW can ask you: "Is this a heading?" You click yes or no, and GLOW learns and applies your answer to similar content in the document.
+
+And if even human intuition fails? GLOW can optionally use AI to learn your document's structure from the content itself, the patterns, the context. It's not magic, it's machine learning -- but to you, it *feels* like magic. You upload a chaotic document and GLOW comes back with a sensible outline. No more squinting at your document trying to figure out what's supposed to be what.
+
+(And if you're worried about privacy: GLOW never sends your document to anyone. AI learning happens locally, on your browser, on your device. No tracking. No storage. Your document is yours alone.)
 
 ### Create a Template
 
-Generate a pre-configured Word template (`.dotx`) with all ACB-compliant styles built in -- Arial 18pt body, 22pt headings, 20pt subheadings, flush left alignment, correct spacing and margins. You can set a document title, choose whether to include sample content that demonstrates each style, and optionally add binding margins for print documents. Starting from the template means every new document is compliant from the first word you type.
+Start a new document from a template that already has all the right formatting built in. Your chapter can create one template and reuse it for every newsletter, agenda, and report. New documents are compliant from the first word.
 
-### Export to HTML
+### Convert & Export
 
-Convert a Word document into accessible HTML with ACB-compliant CSS. Two output options are available:
+- **Extract to plain text** -- pull the readable content from any document (Word, PDF, Excel, PowerPoint, even scanned images) into clean Markdown. Perfect for getting the content out and reformatting it fresh.
+- **Convert to web page** -- turn a document into a web page that anyone can read on any device, with accessible HTML and proper heading structure.
+- **Convert to print-ready PDF** -- create a PDF optimized for printing in large print.
+- **Convert to EPUB** -- make an e-book for e-readers.
 
-- **Standalone** -- a complete HTML page with all styles included. Ready to host on any web server.
-- **CMS Fragment** -- an HTML snippet with embedded CSS, designed to paste directly into WordPress, Drupal, or any content management system without breaking your site theme.
+Pick the conversion that fits your workflow. The tool guides you every step.
 
-### Convert a Document
+## Built for the People Who Actually Create Documents
 
-Six conversion directions, each suited to a different purpose:
+Not for IT staff. Not for accessibility consultants. For **you** -- the newsletter editor, meeting coordinator, chapter officer, volunteer with a side gig being "the document person."
 
-- **Extract to Markdown** (via Microsoft MarkItDown) -- pull the text content from any Word, Excel (.xlsx and legacy .xls), PowerPoint, PDF, HTML, CSV, JSON, XML, or ePub document into a clean, readable Markdown file. Supports the widest range of input formats. Useful for repurposing existing content or preparing a source file for further conversion.
-- **Convert to Accessible HTML** (via Pandoc) -- transform a Markdown, Word, reStructuredText, OpenDocument, Rich Text, or ePub file into a fully accessible web page with ACB Large Print formatting, WCAG 2.2 AA compliance, and optional binding margins and print stylesheet. Pandoc produces the highest quality HTML output with proper heading hierarchy, semantic lists, tables, and footnotes. Options include ACB formatting toggle, binding margin for printed/bound documents, and a print-ready stylesheet.
-- **Convert to Word document** (via Pandoc) -- transform a Markdown, reStructuredText, OpenDocument, Rich Text, HTML, or ePub file into a .docx file editable in Microsoft Word. Useful when you need to run the toolkit's audit and auto-fix on content that started in another format.
-- **Convert to EPUB 3 e-book** (via Pandoc) -- create a lightweight EPUB 3 e-book from Markdown, Word, reStructuredText, OpenDocument, Rich Text, or HTML with ACB Large Print CSS embedded. A quick path to a portable e-book for any e-reader application.
-- **Convert to accessible PDF** (via Pandoc + WeasyPrint) -- create a print-ready PDF from Markdown, Word, reStructuredText, OpenDocument, Rich Text, ePub, or HTML with ACB BOP print rules -- Arial 18pt, 1.15 line spacing, 1-inch margins, and optional binding margin. Good for meeting agendas, newsletters, and reports that will be printed in large print.
-- **Convert to EPUB or DAISY** (via DAISY Pipeline 2) -- create accessible EPUB 3 e-books from Word or HTML files, or convert existing EPUBs to DAISY 2.02 talking book format or DAISY 3/DTBook format. Best for content destined for e-readers, refreshable braille displays, or dedicated DAISY playback devices. Powered by the DAISY Consortium's open-source Pipeline engine.
+Every page in GLOW has a help section you can expand. Every confusing option is explained in plain language. GLOW teaches you as it helps you. After a few documents, you start *understanding* large print formatting, not just following steps.
 
-The convert page includes guided help that explains when each engine is the better choice and how to chain them together (for example, extracting a PDF to Markdown first, editing the result, then converting the Markdown to an accessible web page, Word document, EPUB, or PDF for the best results).
+Want to download a user guide? It's built right into the app. Want to learn the actual ACB Large Print standard? There's a browsable, searchable reference on the site. You're never stuck wondering "why?"
 
-### Browse the Guidelines
+## Works Everywhere
 
-A dedicated Guidelines page presents the complete ACB Large Print specification and the WCAG 2.2 AA digital supplement as browsable, searchable reference content. Each guideline section expands to show the specific audit rules, severity levels, and descriptions. This page is useful for learning the standard, training staff, or settling questions about what the rules actually require.
+Windows? Mac? Linux? Chromebook? Your phone? Your tablet? If you have a web browser, you can use GLOW. 
 
-## Supported Document Formats
+Minutes before your chapter meeting, you realize the agenda isn't accessible. You're on your mobile phone. Pull out your browser. Upload the agenda. Fix it. Done. All on your phone, in 90 seconds.
 
-| Format | Audit | Auto-Fix | Template | Export | Convert |
-| --- | --- | --- | --- | --- | --- |
-| Word (.docx) | Full (30+ ACB and Microsoft Accessibility Checker rules) | Yes | Yes (.dotx) | Yes (HTML) | To Markdown, To HTML, To EPUB 3 |
-| Excel (.xlsx, .xls) | Full (sheet names, table headers, merged cells, alt text, hidden content, color-only data) | Planned | -- | -- | To Markdown |
-| PowerPoint (.pptx) | Full (slide titles, reading order, alt text, font sizes, speaker notes, charts) | Planned | -- | -- | To Markdown |
-| Markdown (.md) | ACB emphasis, headings, images, lists | Planned | -- | -- | To HTML, To Word, To EPUB 3, To PDF |
-| PDF (.pdf) | Structure, metadata, fonts, tagged content, scanned page detection | Planned | -- | -- | To Markdown |
-| HTML (.html) | -- | -- | -- | -- | To Word, To EPUB 3, To PDF, To EPUB 3 (Pipeline) |
-| reStructuredText (.rst) | -- | -- | -- | -- | To HTML, To Word, To EPUB 3, To PDF |
-| OpenDocument (.odt) | -- | -- | -- | -- | To HTML, To Word, To EPUB 3, To PDF |
-| Rich Text (.rtf) | -- | -- | -- | -- | To HTML, To Word, To EPUB 3, To PDF |
-| ePub (.epub) | Full (15 EPUB Accessibility 1.1 rules plus DAISY Ace integration) | Planned | -- | -- | To Markdown, To HTML, To PDF, To DAISY 2.02, To DAISY 3 |
+## Privacy First
 
-## Built for Everyone
+Your documents are yours alone.
 
-### No Technical Knowledge Required
+- **Uploaded files are deleted immediately** after processing. No storage. Ever.
+- **No tracking. No analytics. No cookies** except the one that keeps you logged in.
+- **No accounts to create, no email needed**. Upload and go.
+- **AI happens locally** -- if you use heading detection with AI learning, it happens on your device, in your browser, without sending anything anywhere.
 
-The web app is designed for the people who actually produce documents in ACB chapters and affiliates -- newsletter editors, meeting coordinators, chapter officers, and volunteers. Every page includes expandable help sections that explain what each operation does, what options are available, and what the results mean, all in plain language. A built-in user guide walks through every feature step by step.
+ACB chapters handle sensitive documents -- budgets, personnel matters, legal issues. GLOW is designed so documents exist on the server only for the seconds it takes to process them. There's nothing to leak because there's nothing stored.
 
-### Works on Any Device
+## Same Standards, Every Interface
 
-The web app works in any modern browser on any platform -- Windows, Mac, Linux, Chromebook, iPhone, iPad, and Android. There is no app to download and no plugin to install. If your device has a web browser, you can use the tool.
+The GLOW Accessibility Toolkit isn't just a web app. It's the same, proven engine powering:
 
-### Fully Accessible
+- **Desktop application** -- for Windows, if you prefer offline processing or batch audits
+- **Command-line tool** -- for Power users and automation
+- **VS Code Copilot agent** -- if you work in code
+- **Word Add-in** -- for checking documents right inside Word (coming soon)
 
-This is an accessibility tool, and it practices what it preaches. The web app meets WCAG 2.2 AA from day one:
+Same rules. Same scoring. Same truth. Check a document in GLOW web and get the exact same results in the desktop app. No surprises.
 
-- Full keyboard navigation with visible focus indicators on every interactive element
-- Screen reader compatible with proper landmark regions, labeled form controls, and descriptive headings
-- Works without JavaScript enabled -- every feature uses standard HTML forms and server-side processing
-- Skip navigation link on every page
-- Error messages linked to the form fields that caused them
-- Status messages use clear text prefixes (Error, Success, Warning, Note) rather than relying on color alone
-- The tool itself is styled using the same ACB Large Print CSS it enforces in documents
+## A Tool That Follows Its Own Rules
 
-"I use a screen reader every day," Bishop said. "If I can not use the tool I built, it has no business existing. Every page, every form, every report -- it is all structured text that works with assistive technology."
+This is an accessibility tool built by people who actually use accessibility technology every day. It meets WCAG accessibility standards from top to bottom:
 
-### No Account Required
+- Full keyboard navigation
+- Screen reader compatible
+- Works on any device
+- No language barrier -- help text is clear and simple
+- Status messages are color-independent
+- Built with the same large print CSS that GLOW enforces in documents
 
-There is no registration, no login, and no email address to provide. Upload a document, get results, and leave. The tool is free and open to anyone.
+"I use a screen reader," says Bishop. "If I couldn't use my own tool, it wouldn't be worth building."
 
-## Privacy and Security
+## Try It Right Now
 
-Document privacy is a core design principle:
+Visit [lp.csedesigns.com](https://lp.csedesigns.com) and upload a document. You'll see results in seconds. No sign-up. No download. No friction.
 
-- **Uploaded files are deleted immediately** after processing. No documents are stored on the server, ever.
-- **No user tracking.** There are no analytics scripts, no cookies beyond the session-level security token, and no third-party trackers.
-- **No accounts.** Nothing is stored that could associate a document with a person.
-- **CSRF protection** on every form prevents cross-site request forgery attacks.
-- **Rate limiting** prevents abuse (120 requests per minute per IP address).
-- **The server runs as a non-root user** inside a Docker container with no write access outside the temporary processing directory.
+Your newsletter doesn't have to be a guessing game about large print anymore. Neither does your agenda, report, or ballot.
 
-"ACB chapters handle sensitive organizational documents -- budgets, personnel discussions, legal correspondence," Bishop said. "We designed the system so that documents exist on the server only for the seconds it takes to process them. There is nothing to leak because there is nothing stored."
-
-## Same Engine, Zero Compromises
-
-The web application runs on the exact same Python core library that powers the desktop application and the command-line tool. When a bug is fixed or a new rule is added to the core, it appears in the web app automatically with no extra work. There is one set of rules, one set of thresholds, and one source of truth -- the `constants.py` file that defines every audit rule, severity level, and ACB reference.
-
-Document conversion is powered by three open source tools: Microsoft MarkItDown for text extraction, Pandoc for document-to-document conversion (HTML, Word, EPUB, and PDF via WeasyPrint), and DAISY Pipeline 2 for accessible EPUB and DAISY talking book production. WeasyPrint, from CourtBouillon, renders Pandoc's HTML output to PDF using a dedicated ACB print stylesheet with @page rules, Liberation Sans font (metrically identical to Arial), and proper print formatting.
-
-This also means audit results are identical across every interface. A document that scores 85% in the desktop app will score 85% in the web app. The rules do not change based on how you access the tool.
-
-## Online Help System
-
-The web app includes a comprehensive built-in help system:
-
-- **User guide** -- a 14-section walkthrough covering every feature, from getting started to advanced workflows, with tips organized by document format
-- **Contextual help** -- every form page includes expandable help sections that explain the operation, the options, and what the results mean
-- **Learn More links** -- every audit finding links to the relevant ACB guideline, WCAG success criterion, or Microsoft support article
-- **Guidelines reference** -- the complete ACB Large Print specification and WCAG 2.2 digital supplement, browsable on the site
-- **Frequently Asked Questions** -- common questions about supported formats, scoring, privacy, and recommended workflows
-
-All help content is built with native HTML `<details>` and `<summary>` elements -- no JavaScript required, fully keyboard and screen reader accessible.
-
-## Who This Is For
-
-- **ACB chapter officers and volunteers** producing meeting agendas, newsletters, reports, and correspondence
-- **Newsletter editors** who need to verify their documents meet the ACB standard before distribution
-- **Conference presenters and trainers** who want to point attendees to a URL rather than walk them through a software installation
-- **Web content managers** who need accessible HTML versions of Word documents for their chapter websites
-- **IT staff at ACB affiliates** who cannot install arbitrary software on managed systems
-- **Students, researchers, and publishers** who want to ensure their materials are readable by people with low vision
-- **Anyone on a mobile device or Chromebook** who was previously excluded by platform limitations
-
-## What the ACB Large Print Guidelines Require
-
-For readers unfamiliar with the standard, the ACB Large Print Guidelines specify formatting rules that make documents readable for people with low vision:
-
-- **Font**: Arial only, 18-point minimum for body text
-- **Headings**: 22-point bold for main headings, 20-point bold for subheadings
-- **Alignment**: Flush left, ragged right (never justified)
-- **Emphasis**: Underline only -- no italic anywhere, no bold for emphasis in body text
-- **Spacing**: 1 blank line between paragraphs, no extra space between list items
-- **Margins**: 1 inch on all sides
-- **Other**: No hyphenation, no ALL CAPS formatting, no decorative fonts
-
-For digital content, the toolkit adds WCAG 2.2 AA requirements: 4.5:1 minimum contrast ratio, support for 400% zoom without horizontal scrolling, and 1.5x line-height for screen readability.
-
-## Part of the Larger Toolkit
-
-The web app joins the existing ACB Document Accessibility Toolkit, which also includes:
-
-- **Desktop application** -- a standalone Windows program with both a graphical wizard and a command-line interface, for users who prefer offline processing or need to audit large batches of documents
-- **VS Code Copilot Chat agent** -- an AI-powered agent that audits, fixes, and generates compliant documents directly inside the code editor, with nine operating modes covering HTML, CSS, Markdown, and Word
-- **Office Add-in** -- a Microsoft Word ribbon integration (in development) for checking documents directly inside Word
-
-All four interfaces share the same core engine. A rule added to the core library is immediately enforced everywhere.
-
-## Open Source
-
-The ACB Document Accessibility Toolkit is open source and available on GitHub at [github.com/accesswatch/acb-large-print-toolkit](https://github.com/accesswatch/acb-large-print-toolkit). Contributions, bug reports, and feature requests are welcome.
-
-The project is part of [Accessibility Agents](http://www.community-access.org), an open-source ecosystem that delivers accessibility guidance and remediation across web, mobile, desktop, and document formats.
-
-## Try It Now
-
-Visit [lp.csedesigns.com](https://lp.csedesigns.com), upload a document, and see the results in seconds. No sign-up, no download. Just accessible documents.
+Let GLOW make accessibility magical.
 
 ***
 
-**About BITS:** The Blind Information Technology Solutions (BITS) is a special interest affiliate of the American Council of the Blind (ACB), dedicated to promoting the use of technology by and for people who are blind or have low vision.
+**About BITS:** The Blind Information Technology Solutions (BITS) is a special interest affiliate of the American Council of the Blind (ACB), dedicated to promoting technology access for people who are blind or have low vision.
 
 **Contact:** Jeff Bishop, President, BITS -- [bits-acb.org](https://bits-acb.org)

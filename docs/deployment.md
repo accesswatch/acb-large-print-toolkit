@@ -1791,7 +1791,7 @@ if [[ "$(id -u)" -ne 0 ]]; then
     exit 1
 fi
 
-echo "=== ACB Large Print Toolkit -- Server Bootstrap ==="
+echo "=== GLOW Accessibility Toolkit -- Server Bootstrap ==="
 echo ""
 
 # --- Step 1: Update system ---
@@ -1973,7 +1973,7 @@ if ! docker info &>/dev/null 2>&1; then
     exit 1
 fi
 
-echo "=== ACB Large Print Toolkit -- Deploy ==="
+echo "=== GLOW Accessibility Toolkit -- Deploy ==="
 echo ""
 echo "App root:     $APP_ROOT"
 echo "Web root:     $WEB_ROOT"

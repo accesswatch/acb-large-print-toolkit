@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to the ACB Document Accessibility Toolkit are documented in this file. The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
+All notable changes to the GLOW Accessibility Toolkit are documented in this file. The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 Releases are tagged in the [GitHub repository](https://github.com/accesswatch/acb-large-print-toolkit). Dates are in Pacific Time (UTC-7).
 
@@ -19,6 +19,12 @@ No unreleased changes yet.
 - Established the 1.0 release baseline across desktop and web toolchains, with synchronized rule metadata and cross-format audit/fix workflows.
 - Introduced structured fix tracking with category-level reporting to make remediation output actionable for reviewers and administrators.
 - Expanded supported workflows across Word, Excel, PowerPoint, Markdown, PDF, and ePub in a single toolkit.
+
+### Product Identity and Guided Experience
+
+- Rebranded the platform to **GLOW Accessibility Toolkit** (Guided Layout & Output Workflow) across web UI, desktop messaging, help content, and release surfaces.
+- Added a clearer product identity with guided, user-friendly "magical" language while preserving standards-first behavior and compliance rigor.
+- Kept release versioning at **1.0.0** while modernizing product naming and onboarding copy.
 
 ### Heading Intelligence and Structural Repair
 
@@ -395,7 +401,7 @@ No unreleased changes yet.
 
 ### Initial Release
 
-The first public release of the ACB Document Accessibility Toolkit.
+The first public release of the GLOW Accessibility Toolkit.
 
 #### VS Code Agent Toolkit
 

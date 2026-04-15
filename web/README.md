@@ -1,6 +1,6 @@
-# ACB Document Accessibility Web Application
+# GLOW Accessibility Web Application
 
-A Flask web application that provides browser-based access to the ACB Document Accessibility Tool. Upload a Word, Excel, PowerPoint, Markdown, PDF, or ePub document, choose an operation (audit, fix, template, export, convert), and get results immediately -- no installation required.
+A Flask web application that provides browser-based access to the GLOW Accessibility Toolkit. Upload a Word, Excel, PowerPoint, Markdown, PDF, or ePub document, choose an operation (audit, fix, template, export, convert), and get results immediately -- no installation required.
 
 ## Features
 

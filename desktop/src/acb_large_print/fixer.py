@@ -550,6 +550,7 @@ def _convert_faux_headings(
     threshold: int | None = None,
     system_prompt: str | None = None,
     confirmed_headings: list | None = None,
+    accuracy_level: str = "balanced",
 ) -> int:
     """Detect faux headings and convert them to real heading styles.
 
@@ -561,6 +562,7 @@ def _convert_faux_headings(
             ``(paragraph_index, suggested_level, text)`` tuples from an
             interactive review step.  When provided, detection is skipped
             and only the confirmed candidates are applied.
+        accuracy_level: "conservative", "balanced", or "thorough" for detection strategy.
 
     Returns:
         Number of paragraphs converted to headings.
@@ -592,6 +594,7 @@ def _convert_faux_headings(
             ai_provider=ai_provider,
             threshold=threshold,
             system_prompt=system_prompt,
+            accuracy_level=accuracy_level,
         )
     if not candidates:
         return 0
@@ -704,6 +707,7 @@ def fix_document(
     heading_threshold: int | None = None,
     system_prompt: str | None = None,
     confirmed_headings: list | None = None,
+    heading_accuracy_level: str = "balanced",
 ) -> tuple[Path, int, list[C.FixRecord], AuditResult, list[str]]:
     """Fix a Word document for ACB compliance.
 
@@ -719,6 +723,8 @@ def fix_document(
         ai_provider: Optional AI provider for heading detection refinement.
         heading_threshold: Confidence threshold for heading detection.
         system_prompt: Custom system prompt for AI heading detection.
+        heading_accuracy_level: "conservative" (heuristics only), "balanced" (default),
+                                or "thorough" (extra AI refinement).
 
     Returns:
         Tuple of (output_path, total_fixes, fix_records, post_fix_audit_result, warnings).
@@ -752,6 +758,7 @@ def fix_document(
             threshold=heading_threshold,
             system_prompt=system_prompt,
             confirmed_headings=confirmed_headings,
+            accuracy_level=heading_accuracy_level,
         )
 
     total_fixes += _normalize_heading_structure(doc, records)

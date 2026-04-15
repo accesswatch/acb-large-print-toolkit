@@ -156,6 +156,23 @@
 
   <p class="guide-tip"><strong>Tip:</strong> The fix mode controls what appears in the <em>report</em>, not what gets corrected. Your Word document always receives all available auto-fixes regardless of mode.</p>
 
+  <h3>Heading detection controls (Word)</h3>
+  <p>The Fix page includes heading-detection controls so you can balance false positives versus recall for your document style.</p>
+  <ul>
+    <li><strong>Detect and convert faux headings</strong> -- identifies heading-like paragraphs that were not styled as real headings.</li>
+    <li><strong>Refine with AI (optional)</strong> -- uses local Ollama context analysis for borderline candidates.</li>
+    <li><strong>Confidence threshold</strong> -- higher values reduce candidate count; lower values capture more possible headings.</li>
+    <li><strong>Accuracy mode</strong>:
+      <ul>
+        <li><strong>Conservative</strong> -- fewer false positives (helpful for names, times, short labels like "Agenda")</li>
+        <li><strong>Balanced</strong> -- recommended default</li>
+        <li><strong>Thorough</strong> -- catches more subtle headings and may require more review</li>
+      </ul>
+    </li>
+  </ul>
+
+  <p class="guide-tip"><strong>Tip:</strong> If names or times are being flagged, switch to <strong>Conservative</strong>. If true headings are being missed, switch to <strong>Thorough</strong>.</p>
+
   <a href="#guide-toc-heading" class="back-to-top">Back to guide contents</a>
 </section>
 
@@ -611,7 +628,8 @@ python -m pytest desktop/tests/test_heading_stress_corpus.py -q</code></pre>
 
   <details class="help-accordion" open>
     <summary>Is my document stored on the server?</summary>
-    <p>No. Documents are processed in memory and deleted immediately after your results are returned. No files are stored, and no accounts are required.</p>
+    <p>Uploaded files are kept in isolated temporary workspaces long enough to complete audit/fix/download workflows, including heading review. Temporary files are cleaned up automatically and are not retained as account data.</p>
+    <p>By default, stale upload workspaces are automatically removed after 24 hours.</p>
   </details>
 
   <details class="help-accordion">
@@ -626,7 +644,9 @@ python -m pytest desktop/tests/test_heading_stress_corpus.py -q</code></pre>
 
   <details class="help-accordion">
     <summary>Why does the fix not change my headings?</summary>
-    <p>Heading hierarchy corrections require understanding your document's intended structure, which only you can determine. The fix tool corrects heading <em>formatting</em> (font, size, bold) but does not change heading <em>levels</em>. Review your heading structure manually using the report's guidance.</p>
+    <p>Enable <strong>Detect and convert faux headings</strong> on the Fix page. The tool can detect heading-like paragraphs and then lets you confirm them before applying fixes.</p>
+    <p>If false positives are common (for example names, times, or short labels like "Agenda"), switch the heading accuracy mode to <strong>Conservative</strong>. If true headings are being missed, use <strong>Thorough</strong>.</p>
+    <p>Heading hierarchy intent is still document-specific. The report helps you verify final heading levels and structure.</p>
   </details>
 
   <details class="help-accordion">
@@ -648,7 +668,7 @@ python -m pytest desktop/tests/test_heading_stress_corpus.py -q</code></pre>
 
   <details class="help-accordion">
     <summary>Is there a desktop version?</summary>
-    <p>Yes. The <a href="https://github.com/accesswatch/acb-large-print-toolkit">ACB Large Print Toolkit</a> includes a desktop application with a graphical wizard interface, command-line tools, and batch processing support. It runs on Windows without requiring an internet connection.</p>
+    <p>Yes. The <a href="https://github.com/accesswatch/acb-large-print-toolkit">GLOW Accessibility Toolkit</a> includes a desktop application with a graphical wizard interface, command-line tools, and batch processing support. It runs on Windows without requiring an internet connection.</p>
   </details>
 
   <a href="#guide-toc-heading" class="back-to-top">Back to guide contents</a>

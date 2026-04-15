@@ -60,6 +60,21 @@ _CALLOUT_OR_SALUTATION = re.compile(
     r"^(Please\s+Note|Note|Reminder|Thanks|Sincerely|Regards|Respectfully)[:,-]?\s",
     re.IGNORECASE,
 )
+# Pattern filters for Conservative mode
+_TIME_PATTERN = re.compile(r"^\d{1,2}:\d{2}\s*(AM|PM|am|pm)?$")
+_SHORT_NAME_PATTERN = re.compile(r"^[A-Z][a-z]+(\s+[A-Z][a-z]+)?$")  # John or John Smith
+_INITIALS_PATTERN = re.compile(r"^[A-Z]\.(\s+[A-Z]\.)*$")  # J. D. M.
+
+
+def _is_likely_false_positive(text: str) -> bool:
+    """True if text matches common false positive patterns (name, time, etc)."""
+    if _TIME_PATTERN.match(text):
+        return True
+    if len(text) <= 30 and _SHORT_NAME_PATTERN.match(text):
+        return True
+    if _INITIALS_PATTERN.match(text):
+        return True
+    return False
 
 
 def _get_body_font_size(doc: Document) -> float:
@@ -311,6 +326,42 @@ def _fix_hierarchy_gaps(candidates: list[HeadingCandidate]) -> None:
         prev_level = c.suggested_level
 
 
+def _apply_accuracy_filters(
+    candidates: list[HeadingCandidate],
+    accuracy_level: str = "balanced",
+) -> list[HeadingCandidate]:
+    """Filter candidates based on accuracy_level preference.
+    
+    Args:
+        candidates: List of HeadingCandidate objects.
+        accuracy_level: "conservative", "balanced", or "thorough".
+    
+    Returns:
+        Filtered list of candidates.
+    """
+    if accuracy_level == "conservative":
+        # Strict filtering: remove short text, patterns, medium confidence
+        filtered = []
+        for c in candidates:
+            # Skip very short text (likely names, times, single words)
+            word_count = len(c.text.split())
+            if word_count < 4:
+                continue
+            # Skip obvious false positive patterns
+            if _is_likely_false_positive(c.text):
+                continue
+            # Keep only high confidence in conservative mode
+            if c.confidence == "high":
+                filtered.append(c)
+        return filtered
+    elif accuracy_level == "thorough":
+        # Minimal filtering: keep all medium + high confidence
+        return [c for c in candidates if c.confidence in ("high", "medium")]
+    else:  # balanced (default)
+        # Keep all candidates for user review
+        return candidates
+
+
 # ---------------------------------------------------------------------------
 # Context builder for AI prompts
 # ---------------------------------------------------------------------------
@@ -351,6 +402,7 @@ def detect_headings(
     ai_provider: AIProvider | None = None,
     threshold: int = C.HEADING_CONFIDENCE_THRESHOLD,
     system_prompt: str | None = None,
+    accuracy_level: str = "balanced",
 ) -> list[HeadingCandidate]:
     """Detect faux headings in a Word document.
 
@@ -358,13 +410,29 @@ def detect_headings(
         doc: An opened python-docx Document.
         ai_provider: Optional AI provider for Tier 2 refinement.
         threshold: Minimum confidence score (0--100). Default 50.
+            Ignore if accuracy_level is set (uses level-specific threshold).
         system_prompt: Custom AI prompt template.  Uses the built-in
             default when *None*.  Only relevant when *ai_provider*
             is supplied.
+        accuracy_level: "conservative" (heuristics only, no AI, high threshold),
+                        "balanced" (heuristics + optional AI, default threshold),
+                        "thorough" (heuristics + required AI if available, low threshold).
+                        Default "balanced".
 
     Returns:
         List of HeadingCandidate objects sorted by document position.
     """
+    # Map accuracy level to threshold and AI behavior
+    if accuracy_level == "conservative":
+        threshold = 70
+        use_ai = False
+    elif accuracy_level == "thorough":
+        threshold = 40
+        use_ai = True  # Try to use AI if available
+    else:  # balanced
+        threshold = C.HEADING_CONFIDENCE_THRESHOLD
+        use_ai = None  # Use AI only if available
+    
     paragraphs = list(doc.paragraphs)
     body_font_size = _get_body_font_size(doc)
 
@@ -378,8 +446,14 @@ def detect_headings(
     # Assign heading levels
     _assign_heading_levels(candidates)
 
+    # Apply accuracy-level filters
+    candidates = _apply_accuracy_filters(candidates, accuracy_level)
+
     # Tier 2: AI refinement for medium-confidence candidates
-    if ai_provider is not None:
+    # Skip AI for conservative mode; use if available for balanced/thorough
+    should_use_ai = ai_provider is not None and (use_ai is True or use_ai is None)
+    
+    if should_use_ai:
         # Pass system_prompt to the provider so it uses the user's
         # custom template (or the default) when building prompts.
         if system_prompt is not None:

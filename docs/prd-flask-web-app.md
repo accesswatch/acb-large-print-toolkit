@@ -1,4 +1,4 @@
-# PRD: ACB Document Accessibility Web Application
+# PRD: GLOW Accessibility Web Application
 
 **Status:** Implemented (v2.0)
 **Author:** Jeff Bishop, BITS

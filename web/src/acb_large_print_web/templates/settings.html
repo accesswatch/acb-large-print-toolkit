@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+
+{% block title %}Settings{% endblock %}
+{% block heading %}Settings{% endblock %}
+
+{% block content %}
+<p>Personalize how GLOW starts each workflow on this device. You can opt in to save settings in a browser cookie, or leave persistence off and use defaults each visit.</p>
+
+<div id="settings-status" class="flash-info" role="status" aria-live="polite" style="display:none;"></div>
+
+<form id="settings-form" novalidate>
+  <fieldset>
+    <legend>Privacy and Storage</legend>
+    <label>
+      <input type="checkbox" id="settings-opt-in" name="opt_in">
+      Remember my settings on this device (cookie opt-in)
+    </label>
+    <p class="help-text">When enabled, GLOW stores your selected defaults in a first-party cookie on this browser only. No account is required, and settings are not shared across devices.</p>
+  </fieldset>
+
+  <fieldset>
+    <legend>Audit Defaults</legend>
+    <div class="radio-group">
+      <label><input type="radio" name="settings_audit_mode" value="full" checked> Full Audit</label>
+      <label><input type="radio" name="settings_audit_mode" value="quick"> Quick Audit</label>
+      <label><input type="radio" name="settings_audit_mode" value="custom"> Custom Audit</label>
+    </div>
+    <div class="checkbox-group">
+      <label><input type="checkbox" name="settings_audit_category" value="acb" checked> Include ACB Large Print rules</label>
+      <label><input type="checkbox" name="settings_audit_category" value="msac" checked> Include MS Accessibility Checker rules</label>
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Fix Defaults</legend>
+    <div class="radio-group">
+      <label><input type="radio" name="settings_fix_mode" value="full" checked> Full Fix</label>
+      <label><input type="radio" name="settings_fix_mode" value="essentials"> Essentials Fix</label>
+      <label><input type="radio" name="settings_fix_mode" value="custom"> Custom Fix</label>
+    </div>
+
+    <div class="checkbox-group">
+      <label><input type="checkbox" name="settings_fix_bound"> Add binding margin by default</label>
+      <label><input type="checkbox" name="settings_fix_flush_lists" checked> Flush lists left by default</label>
+      <label><input type="checkbox" name="settings_fix_flush_paragraphs" checked> Flush paragraphs left by default</label>
+      <label><input type="checkbox" name="settings_fix_detect_headings" checked> Enable heading detection by default</label>
+      <label><input type="checkbox" name="settings_fix_use_ai"> Enable AI refinement by default when available</label>
+    </div>
+
+    <div class="form-group form-group-inline">
+      <label for="settings-fix-threshold">Heading confidence threshold:</label>
+      <input type="number" id="settings-fix-threshold" name="settings_fix_heading_threshold" value="50" min="0" max="100" step="5" class="input-narrow">
+    </div>
+
+    <div class="form-group form-group-inline">
+      <label for="settings-fix-accuracy">Heading accuracy mode:</label>
+      <select id="settings-fix-accuracy" name="settings_fix_heading_accuracy" class="input-narrow">
+        <option value="conservative">Conservative</option>
+        <option value="balanced" selected>Balanced</option>
+        <option value="thorough">Thorough</option>
+      </select>
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Template Defaults</legend>
+    <div class="checkbox-group">
+      <label><input type="checkbox" name="settings_template_include_sample"> Include sample content by default</label>
+      <label><input type="checkbox" name="settings_template_bound"> Add binding margin by default</label>
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Export Defaults</legend>
+    <div class="radio-group">
+      <label><input type="radio" name="settings_export_mode" value="standalone" checked> Standalone HTML</label>
+      <label><input type="radio" name="settings_export_mode" value="cms"> CMS Fragment</label>
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Convert Defaults</legend>
+    <div class="radio-group">
+      <label><input type="radio" name="settings_convert_direction" value="to-markdown" checked> Plain text (Markdown)</label>
+      <label><input type="radio" name="settings_convert_direction" value="to-html"> Accessible web page (HTML)</label>
+      <label><input type="radio" name="settings_convert_direction" value="to-docx"> Word document (.docx)</label>
+      <label><input type="radio" name="settings_convert_direction" value="to-epub"> EPUB 3 e-book</label>
+      <label><input type="radio" name="settings_convert_direction" value="to-pdf"> Accessible PDF</label>
+      <label><input type="radio" name="settings_convert_direction" value="to-pipeline"> EPUB or DAISY format</label>
+    </div>
+    <div class="checkbox-group">
+      <label><input type="checkbox" name="settings_convert_acb_format" checked> Apply ACB formatting by default</label>
+      <label><input type="checkbox" name="settings_convert_binding_margin"> Add binding margin by default</label>
+      <label><input type="checkbox" name="settings_convert_print_ready"> Include print stylesheet by default</label>
+    </div>
+  </fieldset>
+
+  <div class="settings-actions">
+    <button type="button" id="settings-save" class="btn-primary">Save My Settings</button>
+    <button type="button" id="settings-reset" class="btn-secondary">Reset to GLOW Defaults</button>
+  </div>
+
+  <details class="help-accordion">
+    <summary>How this guided settings experience works</summary>
+    <p>GLOW starts with standards-first defaults so every user gets a safe baseline. If your team has a repeat workflow, use this page to personalize defaults once, then GLOW automatically pre-fills forms each time.</p>
+    <p>Privacy first: nothing is saved unless you opt in. If you turn off opt-in, saved settings are removed and GLOW returns to standard defaults.</p>
+  </details>
+</form>
+{% endblock %}

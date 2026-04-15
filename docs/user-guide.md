@@ -1,4 +1,4 @@
-# ACB Document Accessibility Toolkit -- User Guide
+# GLOW Accessibility Toolkit -- User Guide
 
 Everything you need to know to audit, fix, convert, and template your documents for ACB Large Print compliance. New to accessibility? Start with the quick-start walkthrough below.
 
@@ -114,12 +114,30 @@ The fixer can detect these "faux headings" and convert them to proper heading st
 
 3. **Heading level assignment** -- Detected headings are assigned to Heading 1, 2, or 3 based on font size and document position. The first high-confidence heading is typically Heading 1, with subsequent headings assigned based on relative formatting.
 
+### Heading detection accuracy modes
+
+To balance speed and precision, the Fix workflow supports three accuracy modes:
+
+- **Conservative** -- Heuristics-only with stricter filtering. Best when you want to minimize false positives such as names, times, or single-word labels (for example, "Agenda").
+- **Balanced** (default) -- Heuristics plus optional AI refinement (when enabled). Best for most documents.
+- **Thorough** -- More inclusive candidate capture with AI refinement when available. Best when you want to catch subtle headings and are willing to review more candidates.
+
+Practical guidance:
+
+- If names, times, or short labels are being flagged too often, switch to **Conservative**.
+- If true headings are being missed, switch to **Thorough**.
+- Keep **Balanced** for routine office documents.
+
 **Using heading detection on the web:**
 
 1. On the Fix page, check "Detect and convert faux headings to real heading styles."
 2. Optionally check "Refine with AI" if Ollama is running on the server. The checkbox auto-checks when Ollama is detected.
 3. Adjust the confidence threshold if needed (higher means fewer but more certain conversions).
-4. Click Fix Document.
+4. Choose a heading detection accuracy level:
+   - Conservative (fewer false positives)
+   - Balanced (recommended default)
+   - Thorough (captures more candidates)
+5. Click Fix Document.
 5. If candidates are found, you are taken to an **interactive heading review page**. This page shows a table listing every detected heading candidate with:
    - The paragraph text along with font size and bold/caps formatting info
    - The heuristic signals that fired and their point values
@@ -134,7 +152,7 @@ If no candidates are found above the confidence threshold, the fix proceeds dire
 
 **Using heading detection on the desktop GUI:**
 
-1. Open the ACB Large Print Toolkit desktop application.
+1. Open the GLOW Accessibility Toolkit desktop application.
 2. In the fix wizard (Step 3: Options), look for the Heading Detection section.
 3. Check "Detect and convert faux headings to real heading styles."
 4. Check "Refine with AI" if you have Ollama installed locally. The checkbox auto-checks when Ollama is detected.
@@ -607,7 +625,12 @@ This tool is designed to work fully without a mouse. Here are tips for keyboard 
 
 ### Is my document stored on the server?
 
-No. Documents are processed in memory and deleted immediately after your results are returned. No files are stored, and no accounts are required.
+Uploaded files are stored in an isolated temporary workspace long enough to complete audit/fix/download flows, including interactive heading review. Temporary files are automatically cleaned up and never retained as account data.
+
+By default:
+
+- Active sessions can continue for extended review workflows.
+- Stale upload workspaces are automatically removed after 24 hours.
 
 ### What is the maximum file size?
 
@@ -620,6 +643,8 @@ The web tool processes one document at a time. For batch processing, use the [de
 ### Why does the fix not change my headings?
 
 The fix tool can now detect "faux headings" -- paragraphs that look like headings (bold, large font, short text) but use a Normal style instead of a real Heading style. Enable "Detect and convert faux headings" on the Fix page to use this feature. On the web, you review detected candidates in an interactive table before they are applied. On the CLI, use `--detect-headings`.
+
+If false positives are common (for example names, times, "Agenda" labels), use the heading detection accuracy control and switch to **Conservative**. If valid headings are being missed, use **Thorough**.
 
 For heading hierarchy corrections (changing an H3 to an H2, for example), the fix tool corrects heading formatting (font, size, bold) but does not change heading levels. Review your heading structure manually using the report's guidance.
 
@@ -641,7 +666,7 @@ Yes. The ACB formatting rules (font, size, spacing) apply regardless of language
 
 ### Is there a desktop version?
 
-Yes. The [ACB Large Print Toolkit](https://github.com/accesswatch/acb-large-print-toolkit) includes a desktop application with a graphical wizard interface, command-line tools, and batch processing support. It runs on Windows without requiring an internet connection.
+Yes. The [GLOW Accessibility Toolkit](https://github.com/accesswatch/acb-large-print-toolkit) includes a desktop application with a graphical wizard interface, command-line tools, and batch processing support. It runs on Windows without requiring an internet connection.
 
 ### Where can I read the ACB Large Print Guidelines?
 

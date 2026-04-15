@@ -1,4 +1,4 @@
-# ACB Document Accessibility Tool
+# GLOW Accessibility Toolkit
 
 A cross-platform desktop application that audits, remediates, and exports Microsoft Office documents (Word, Excel, PowerPoint) to comply with the American Council of the Blind (ACB) Large Print Guidelines, Microsoft Accessibility Checker rules, and WCAG 2.2 AA digital accessibility standards.
 

@@ -18,7 +18,7 @@ Vendored from main branch (CLI v1.4.5-alpha.1), April 2026.
 
 ## Integration
 
-The ACB Large Print Toolkit uses Ace in two ways:
+The GLOW Accessibility Toolkit uses Ace in two ways:
 
 1. **Runtime CLI** -- The web app Docker image installs `@daisy/ace` via npm (`npm install -g @daisy/ace`) for live EPUB auditing. See `web/Dockerfile`.
 2. **Vendored source** -- This directory contains the full Ace source for offline builds, auditing, and reference.

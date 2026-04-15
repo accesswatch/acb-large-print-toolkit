@@ -4,13 +4,13 @@
 
 ***
 
-The Blind Information Technology Solutions (BITS) organization today announced the release of the ACB Large Print Toolkit, an AI-powered formatting system built inside Visual Studio Code that automates compliance with the American Council of the Blind (ACB) Large Print Guidelines. The toolkit transforms what has historically been a manual, error-prone process into a one-command operation -- auditing, converting, and generating accessible documents across Markdown, HTML, CSS, and Microsoft Word.
+The Blind Information Technology Solutions (BITS) organization today announced the release of the GLOW Accessibility Toolkit, an AI-powered formatting system built inside Visual Studio Code that automates compliance with the American Council of the Blind (ACB) Large Print Guidelines. The toolkit transforms what has historically been a manual, error-prone process into a one-command operation -- auditing, converting, and generating accessible documents across Markdown, HTML, CSS, and Microsoft Word.
 
 "For decades, producing large print documents meant someone sitting with the ACB spec open in one window and their document in another, checking rules by hand," said **Jeff Bishop, President of BITS**. "We built this toolkit because that workflow doesn't scale. Organizations publish hundreds of agendas, newsletters, and reports every year, and every one of them deserves to be readable by people with low vision. AI can enforce these rules instantly and consistently in a way that human review alone never could."
 
 ## What the Toolkit Does
 
-The ACB Large Print Toolkit is a suite of AI agents, slash commands, reference stylesheets, document templates, a desktop application, and a web application that automate compliance with the American Council of the Blind Large Print Guidelines. The toolkit now offers five ways to use it:
+The GLOW Accessibility Toolkit is a suite of AI agents, slash commands, reference stylesheets, document templates, a desktop application, and a web application that automate compliance with the American Council of the Blind Large Print Guidelines. The toolkit now offers five ways to use it:
 
 ### Web Application (New -- April 2026)
 
@@ -77,9 +77,9 @@ The toolkit also integrates with external tools when available -- markdownlint f
 
 ## Merging into Accessibility Agents
 
-The ACB Large Print Toolkit is being merged into [Accessibility Agents](http://www.community-access.org), an open-source project that delivers accessibility guidance and remediation across platforms -- web, mobile, desktop, and documents. By joining that ecosystem, the large print agents gain access to a broader network of accessibility specialists covering WCAG auditing, ARIA patterns, design system tokens, CI/CD pipeline integration, and more, while contributing ACB Large Print expertise back to the community.
+The GLOW Accessibility Toolkit is being merged into [Accessibility Agents](http://www.community-access.org), an open-source project that delivers accessibility guidance and remediation across platforms -- web, mobile, desktop, and documents. By joining that ecosystem, the large print agents gain access to a broader network of accessibility specialists covering WCAG auditing, ARIA patterns, design system tokens, CI/CD pipeline integration, and more, while contributing ACB Large Print expertise back to the community.
 
-"We didn't build this to live in a silo," Bishop said. "Accessibility Agents already has dozens of specialized agents covering everything from color contrast to screen reader testing to PDF remediation. Merging the ACB Large Print Toolkit into that project means any organization using Accessibility Agents gets large print compliance out of the box -- and our agents get smarter by working alongside theirs. A Markdown file can get an ACB formatting audit and a full WCAG accessibility sweep in the same session, from agents that know how to hand off to each other. That's the value of open source: you build one thing well and it multiplies."
+"We didn't build this to live in a silo," Bishop said. "Accessibility Agents already has dozens of specialized agents covering everything from color contrast to screen reader testing to PDF remediation. Merging the GLOW Accessibility Toolkit into that project means any organization using Accessibility Agents gets large print compliance out of the box -- and our agents get smarter by working alongside theirs. A Markdown file can get an ACB formatting audit and a full WCAG accessibility sweep in the same session, from agents that know how to hand off to each other. That's the value of open source: you build one thing well and it multiplies."
 
 ## Removing the Installation Barrier
 

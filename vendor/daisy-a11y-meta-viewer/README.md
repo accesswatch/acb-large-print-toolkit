@@ -13,7 +13,7 @@ The language vocabulary files in `js/lang/` are licensed separately -- see [js/l
 
 ## Integration
 
-The ACB Large Print Toolkit includes a Python port of this algorithm in `desktop/src/acb_large_print/epub_meta_display.py`. The Python implementation follows the same W3C specification independently and is used to enhance EPUB audit reports with human-readable accessibility metadata summaries.
+The GLOW Accessibility Toolkit includes a Python port of this algorithm in `desktop/src/acb_large_print/epub_meta_display.py`. The Python implementation follows the same W3C specification independently and is used to enhance EPUB audit reports with human-readable accessibility metadata summaries.
 
 The vendored JS source is retained for:
 

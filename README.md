@@ -1,4 +1,6 @@
-# ACB Document Accessibility Toolkit
+# GLOW Accessibility Toolkit
+
+GLOW stands for **Guided Layout & Output Workflow**.
 
 A VS Code agent toolkit, desktop application, and web application for auditing and fixing Office documents for accessibility. Enforces the American Council of the Blind (ACB) Large Print Guidelines (revised May 6, 2025), Microsoft Accessibility Checker rules, and WCAG 2.2 AA digital accessibility standards.
 

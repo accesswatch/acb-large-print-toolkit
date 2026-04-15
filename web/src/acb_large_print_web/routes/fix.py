@@ -35,6 +35,7 @@ def _fix_by_extension(
     use_ai: bool = False,
     heading_threshold: int | None = None,
     confirmed_headings: list | None = None,
+    heading_accuracy: str = "balanced",
 ):
     """Dispatch to the correct fixer based on file extension.
 
@@ -134,6 +135,7 @@ def _fix_by_extension(
             ai_provider=ai_provider,
             heading_threshold=heading_threshold,
             confirmed_headings=confirmed_headings,
+            heading_accuracy_level=heading_accuracy,
         )
 
 
@@ -221,6 +223,10 @@ def _parse_form_options(form):
         heading_threshold = max(0, min(100, heading_threshold))
     except (ValueError, TypeError):
         heading_threshold = 50
+    
+    heading_accuracy = form.get("heading_accuracy", "balanced")
+    if heading_accuracy not in ("conservative", "balanced", "thorough"):
+        heading_accuracy = "balanced"
 
     return {
         "bound": bound,
@@ -232,6 +238,7 @@ def _parse_form_options(form):
         "detect_headings": detect_headings,
         "use_ai": use_ai,
         "heading_threshold": heading_threshold,
+        "heading_accuracy": heading_accuracy,
     }
 
 
@@ -256,6 +263,7 @@ def _run_fix_and_render(saved_path, token, opts, *, confirmed_headings=None):
         use_ai=opts["use_ai"],
         heading_threshold=opts["heading_threshold"],
         confirmed_headings=confirmed_headings,
+        heading_accuracy=opts["heading_accuracy"],
     )
 
     categories = request.form.getlist("category") or ["acb", "msac"]

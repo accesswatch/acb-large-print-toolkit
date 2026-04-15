@@ -176,7 +176,7 @@ class WizardFrame(wx.Frame):
         intro = wx.StaticText(
             page,
             label=(
-                "Welcome to the ACB Document Accessibility Wizard.\n\n"
+                "Welcome to the GLOW Accessibility Wizard.\n\n"
                 "This wizard will:\n"
                 "  1. Audit your document for ACB guideline violations\n"
                 "  2. Attempt to automatically fix issues found (Word only)\n"

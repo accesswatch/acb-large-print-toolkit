@@ -94,6 +94,7 @@ def create_app(config: dict | None = None) -> Flask:
     from .routes.convert import convert_bp
     from .routes.guide import guide_bp
     from .routes.changelog import changelog_bp
+    from .routes.settings import settings_bp
 
     app.register_blueprint(main_bp)
     app.register_blueprint(audit_bp, url_prefix="/audit")
@@ -104,6 +105,7 @@ def create_app(config: dict | None = None) -> Flask:
     app.register_blueprint(guidelines_bp, url_prefix="/guidelines")
     app.register_blueprint(guide_bp, url_prefix="/guide")
     app.register_blueprint(changelog_bp, url_prefix="/changelog")
+    app.register_blueprint(settings_bp, url_prefix="/settings")
     app.register_blueprint(feedback_bp, url_prefix="/feedback")
     app.register_blueprint(about_bp, url_prefix="/about")
 

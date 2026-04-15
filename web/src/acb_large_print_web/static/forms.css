@@ -477,6 +477,47 @@ details.rule-group {
   outline-offset: 2px;
 }
 
+.btn-secondary {
+  display: inline-block;
+  font-family: Arial, sans-serif;
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #ffffff;
+  background: #666666;
+  border: 2px solid #666666;
+  padding: 0.75em 1.5em;
+  border-radius: 0.25rem;
+  cursor: pointer;
+  text-decoration: none;
+  min-width: 44px;
+  min-height: 44px;
+}
+
+.btn-secondary:hover,
+.btn-secondary:focus {
+  background: #555555;
+  border-color: #555555;
+  outline: 3px solid #555555;
+  outline-offset: 2px;
+}
+
+/* --- Settings Actions Grouping --- */
+.settings-actions {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-top: 1.5rem;
+}
+
+/* --- Narrow Input Fields (for threshold numbers, etc.) --- */
+.input-narrow {
+  max-width: 8rem !important;
+}
+
+select.input-narrow {
+  max-width: 12rem !important;
+}
+
 /* --- Scores --- */
 .score-display {
   display: flex;

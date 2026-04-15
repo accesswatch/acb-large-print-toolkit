@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="csrf-token" content="{{ csrf_token() }}">
-  <title>{% block title %}ACB Document Accessibility Tool{% endblock %} -- BITS</title>
+  <title>{% block title %}GLOW Accessibility Toolkit{% endblock %} -- BITS</title>
   <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='acb-large-print.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='forms.css') }}">
@@ -16,7 +16,7 @@
     <nav aria-label="Main navigation">
       <a href="{{ url_for('main.index') }}" class="nav-brand"{% if request.blueprint == 'main' %} aria-current="page"{% endif %}>
         <span class="brand-icon" aria-hidden="true">&#9854;</span>
-        ACB Document Accessibility
+        GLOW Accessibility
       </a>
       <ul class="nav-tabs" role="tablist" aria-label="Document tools">
         <li role="none"><a href="{{ url_for('audit.audit_form') }}" role="tab" id="tab-audit" aria-controls="main"{% if request.blueprint == 'audit' %} aria-selected="true"{% else %} aria-selected="false"{% endif %}>Audit</a></li>
@@ -25,12 +25,13 @@
         <li role="none"><a href="{{ url_for('export.export_form') }}" role="tab" id="tab-export" aria-controls="main"{% if request.blueprint == 'export' %} aria-selected="true"{% else %} aria-selected="false"{% endif %}>Export</a></li>
         <li role="none"><a href="{{ url_for('convert.convert_form') }}" role="tab" id="tab-convert" aria-controls="main"{% if request.blueprint == 'convert' %} aria-selected="true"{% else %} aria-selected="false"{% endif %}>Convert</a></li>
         <li role="none"><a href="{{ url_for('guidelines.guidelines_page') }}" role="tab" id="tab-guidelines" aria-controls="main"{% if request.blueprint == 'guidelines' %} aria-selected="true"{% else %} aria-selected="false"{% endif %}>Guidelines</a></li>
+        <li role="none"><a href="{{ url_for('settings.settings_page') }}" role="tab" id="tab-settings" aria-controls="main"{% if request.blueprint == 'settings' %} aria-selected="true"{% else %} aria-selected="false"{% endif %}>Settings</a></li>
       </ul>
     </nav>
   </header>
 
   <main id="main">
-    <h1>{% block heading %}ACB Document Accessibility Tool{% endblock %}</h1>
+    <h1>{% block heading %}GLOW Accessibility Toolkit{% endblock %}</h1>
 
     {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
@@ -55,9 +56,11 @@
       </ul>
     </nav>
     <p>A <a href="https://www.bits-acb.org">BITS</a> community project. Blind Information Technology Solutions, a special interest affiliate of the American Council of the Blind.</p>
+    <p><strong>GLOW</strong> = Guided Layout &amp; Output Workflow. Magical guidance for real-world accessibility work.</p>
     <p>Supports Word (.docx), Excel (.xlsx), PowerPoint (.pptx), Markdown (.md), PDF (.pdf), and ePub (.epub) documents.</p>
     <p>Current release: {{ release_version }}</p>
   </footer>
+  <script src="{{ url_for('static', filename='preferences.js') }}"></script>
   <script src="{{ url_for('static', filename='tabs.js') }}"></script>
 </body>
 </html>

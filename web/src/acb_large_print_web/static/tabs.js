@@ -1,5 +1,5 @@
 /**
- * SPA Tab Navigation -- ACB Document Accessibility Toolkit
+ * SPA Tab Navigation -- GLOW Accessibility Toolkit
  *
  * Progressively enhances the navigation tabs into a true ARIA tab
  * control with keyboard navigation and dynamic content loading.
@@ -50,7 +50,7 @@
     var newMain = doc.getElementById("main");
     return {
       html: newMain ? newMain.innerHTML : "",
-      title: doc.title || "ACB Document Accessibility Tool -- BITS",
+      title: doc.title || "GLOW Accessibility Toolkit -- BITS",
     };
   }
 
@@ -71,6 +71,8 @@
     main.innerHTML = content.html;
     document.title = content.title;
     executeScripts();
+
+    document.dispatchEvent(new CustomEvent("glow:content-swapped"));
 
     /* Move focus to the page heading so screen readers announce context */
     var heading = main.querySelector("h1");

@@ -111,7 +111,7 @@ class TestPageLoads:
     def test_home(self, client):
         resp = client.get("/")
         assert resp.status_code == 200
-        assert b"ACB Document Accessibility Tool" in resp.data
+        assert b"GLOW Accessibility Toolkit" in resp.data
 
     def test_audit_form(self, client):
         resp = client.get("/audit/")
