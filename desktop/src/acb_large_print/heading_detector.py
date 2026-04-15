@@ -430,7 +430,7 @@ def detect_headings(
         threshold = 40
         use_ai = True  # Try to use AI if available
     else:  # balanced
-        threshold = C.HEADING_CONFIDENCE_THRESHOLD
+        # Respect caller-supplied threshold in balanced mode.
         use_ai = None  # Use AI only if available
     
     paragraphs = list(doc.paragraphs)

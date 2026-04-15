@@ -7,9 +7,11 @@ from flask import Blueprint, render_template, request
 from ..rules import (
     filter_findings,
     get_all_rule_ids,
+    get_profile_label,
     get_rule_ids_by_category,
     get_rule_ids_by_severity,
     get_rule_ids_by_format,
+    get_rule_ids_by_profile,
 )
 from ..upload import UploadError, cleanup_token, validate_upload
 
@@ -72,6 +74,8 @@ def audit_submit():
         token, saved_path = validate_upload(request.files.get("document"))
 
         mode = request.form.get("mode", "full")
+        standards_profile = request.form.get("standards_profile", "acb_2025")
+        profile_label = get_profile_label(standards_profile)
         doc_format = _format_from_path(saved_path)
 
         result = _audit_by_extension(saved_path)
@@ -105,6 +109,7 @@ def audit_submit():
 
         # Scope to rules applicable to this format
         format_rule_ids = get_rule_ids_by_format(doc_format)
+        profile_rule_ids = get_rule_ids_by_profile(standards_profile)
 
         # Determine which rules to show based on mode
         if mode == "quick":
@@ -120,7 +125,7 @@ def audit_submit():
             mode_label = "Full Audit -- all rules"
 
         # Intersect with category scope AND format scope
-        selected = selected & category_rule_ids & format_rule_ids
+        selected = selected & category_rule_ids & format_rule_ids & profile_rule_ids
 
         result.findings = filter_findings(result.findings, selected)
 
@@ -128,6 +133,7 @@ def audit_submit():
             "audit_report.html",
             result=result,
             mode_label=mode_label,
+            profile_label=profile_label,
             doc_format=doc_format,
             ace_installed=_is_ace_installed(),
             suppressed_rules=suppressed_rules,

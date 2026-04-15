@@ -15,7 +15,9 @@ The Flask web application has been built and is ready for deployment. All core f
 |---------|--------|-------|
 | Audit page (Full / Quick / Custom modes) | Done | Rule filtering by severity, severity-grouped checkboxes |
 | Fix page (Full / Essentials / Custom modes) | Done | Before/after scores, download fixed .docx, review-required warnings |
-| Template generation | Done | Title, sample content, binding margin options |
+| Standards Profiles (ACB / APH / Combined Strict) | Done | ACB default is backward-compatible (no behavior change); APH profile filters to implemented APH-aligned checks; Combined Strict shows all implemented checks |
+| Template generation | Done | Title, sample content, binding margin options, plus profile-aware defaults (ACB baseline, APH-oriented, Combined Strict behavior) |
+| Settings page | Done | Cookie opt-in preferences for default profiles/modes/options across Audit, Fix, Template, Export, and Convert |
 | HTML export (Standalone ZIP + CMS fragment) | Done | Both modes working |
 | Convert to Markdown (MarkItDown) | Done | .docx, .xlsx, .pptx, .pdf, .html, .csv, .json, .xml, .epub |
 | Convert to HTML (Pandoc) | Done | .md, .docx, .rst, .odt, .rtf, .epub -- ACB formatting, binding margin, print stylesheet options |
@@ -90,6 +92,7 @@ The web app will:
 - Deploy via Docker for hosting flexibility (RackNerd VPS, Hetzner Cloud, or any Docker host)
 - Provide rich contextual help via native HTML `<details>/<summary>` accordions on every page -- no JavaScript required, fully keyboard and screen reader accessible
 - Let users control which rules are checked (audit) and which fixes are applied (fix) via three preset modes: Full, Quick/Essentials, and Custom (individual rule checkboxes grouped by severity)
+- Provide a dedicated `/settings` page so teams can persist preferred defaults (profiles, modes, and options) with explicit cookie opt-in
 - Include a dedicated `/guidelines` page with the complete ACB Large Print specification and WCAG 2.2 supplement as browsable, searchable reference content
 - Auto-generate all help text and rule descriptions from the canonical `constants.py` rule metadata -- a single source of truth ensures the web UI stays in sync with the CLI, GUI, and VS Code agent
 
@@ -166,6 +169,20 @@ Both the audit and fix pages offer three preset modes via radio buttons:
 **Implementation:** The core library always runs all checks/fixes. The web layer:
 - **Audit:** post-filters `AuditResult.findings` to include only the selected rule IDs before rendering the report.
 - **Fix:** cannot partially fix (the core `fix_document()` applies everything). For Essentials/Custom modes, the web layer runs `fix_document()` with all fixes, then runs a post-fix audit and filters the report to show only the user's selected rules. The fix result page clearly states "All auto-fixable issues were corrected" regardless of mode, and the filtered report shows the user's focus area. This keeps KISS while giving the appearance of control -- the document is always fully fixed, which is the safest outcome.
+
+### Standards Profiles (Release 1.2.0)
+
+Audit and Fix now include an explicit standards profile selector to support APH submission packaging while preserving current ACB production behavior.
+
+- **ACB 2025 Baseline (default):** no behavioral change from existing production. Selecting this profile keeps current rule scope and current operator workflow unchanged.
+- **APH Submission (Current Coverage):** limits displayed findings to APH-aligned checks implemented in this release. This is a transparency profile for submission readiness, not a claim of full APH parity.
+- **Combined Strict:** includes all currently implemented checks (ACB + MSAC/WCAG-aligned) in a single strict profile for final review and evidence generation.
+
+Design guarantees:
+
+- Backward compatibility is anchored on **ACB 2025 Baseline** as the default profile.
+- Profile selection is visible in Audit and Fix results for evidence traceability.
+- Profile filtering is applied in the web layer; canonical audit/fix logic remains unchanged.
 
 ---
 

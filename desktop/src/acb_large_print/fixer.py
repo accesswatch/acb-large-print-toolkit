@@ -786,6 +786,18 @@ def fix_document(
     records: list[C.FixRecord] = []
 
     # Phase 4: Heading conversion pre-pass (before other fixes)
+    # Guard against stale confirmation postbacks by requiring an exact text
+    # match at the selected paragraph index.
+    if confirmed_headings:
+        para_text_by_index = {
+            idx: para.text.strip() for idx, para in enumerate(doc.paragraphs)
+        }
+        confirmed_headings = [
+            (idx, level, txt)
+            for idx, level, txt in confirmed_headings
+            if idx in para_text_by_index and para_text_by_index[idx] == (txt or "").strip()
+        ]
+
     if detect_headings or confirmed_headings:
         total_fixes += _convert_faux_headings(
             doc,

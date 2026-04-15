@@ -26,6 +26,9 @@
     {% if remaining > 0 %}{{ remaining }} issue{{ "s" if remaining != 1 else "" }} remaining after auto-fix.{% else %}All issues resolved.{% endif %}
     {% if mode_label %} Report filtered to: {{ mode_label }}.{% endif %}
   </p>
+  {% if profile_label %}
+  <p class="help-text"><strong>Standards profile:</strong> {{ profile_label }}.</p>
+  {% endif %}
 
   <div class="help-box" role="status" aria-live="polite">
     <p>

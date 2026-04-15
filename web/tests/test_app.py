@@ -148,6 +148,11 @@ class TestPageLoads:
         assert resp.status_code == 200
         assert b"Frequently Asked Questions" in resp.data
 
+    def test_settings_page(self, client):
+        resp = client.get("/settings/")
+        assert resp.status_code == 200
+        assert b"Settings" in resp.data
+
     def test_guide_mentions_stress_testing(self, client):
         resp = client.get("/guide/")
         assert resp.status_code == 200
@@ -369,6 +374,26 @@ class TestAuditIntegration:
         resp = client.post("/audit/", data=data, content_type="multipart/form-data")
         assert resp.status_code == 200
 
+    def test_audit_form_has_standards_profile_controls(self, client):
+        resp = client.get("/audit/")
+        assert resp.status_code == 200
+        assert b'name="standards_profile"' in resp.data
+        assert b'value="acb_2025"' in resp.data
+        assert b'value="aph_submission"' in resp.data
+        assert b'value="combined_strict"' in resp.data
+
+    def test_audit_profile_label_shows_in_report(self, client):
+        docx_data = _make_fake_docx()
+        data = {
+            "document": (docx_data, "test.docx"),
+            "mode": "full",
+            "standards_profile": "aph_submission",
+        }
+        resp = client.post("/audit/", data=data, content_type="multipart/form-data")
+        assert resp.status_code == 200
+        assert b"Standards profile" in resp.data
+        assert b"APH Submission" in resp.data
+
 
 # ============================================================
 # Template generation
@@ -384,6 +409,24 @@ class TestTemplateGeneration:
             },
         )
         # Should return 200 with a result page or a download
+        assert resp.status_code == 200
+
+    def test_template_form_has_standards_profile_controls(self, client):
+        resp = client.get("/template/")
+        assert resp.status_code == 200
+        assert b'name="standards_profile"' in resp.data
+        assert b'value="acb_2025"' in resp.data
+        assert b'value="aph_submission"' in resp.data
+        assert b'value="combined_strict"' in resp.data
+
+    def test_generate_template_aph_profile(self, client):
+        resp = client.post(
+            "/template/",
+            data={
+                "title": "APH Template",
+                "standards_profile": "aph_submission",
+            },
+        )
         assert resp.status_code == 200
 
 
@@ -464,6 +507,12 @@ class TestAccessibilityExtended:
         assert b"Word (.docx)" in resp.data
         assert b"Excel (.xlsx)" in resp.data
         assert b"PowerPoint (.pptx)" in resp.data
+
+    def test_home_has_settings_tile_and_tab_descriptions(self, client):
+        resp = client.get("/")
+        assert b"Settings" in resp.data
+        assert b"What Each Tab Does" in resp.data
+        assert b"Guidelines" in resp.data
 
     def test_audit_form_accepts_all_formats(self, client):
         resp = client.get("/audit/")
@@ -678,6 +727,40 @@ class TestMarkdownAudit:
         data = {"document": (md_data, "test.md")}
         resp = client.post("/fix/", data=data, content_type="multipart/form-data")
         assert resp.status_code == 200
+
+
+class TestFixIntegration:
+    def test_fix_form_has_standards_profile_controls(self, client):
+        resp = client.get("/fix/")
+        assert resp.status_code == 200
+        assert b'name="standards_profile"' in resp.data
+        assert b'value="acb_2025"' in resp.data
+        assert b'value="aph_submission"' in resp.data
+        assert b'value="combined_strict"' in resp.data
+
+    def test_fix_profile_label_shows_in_results(self, client):
+        md_data = _make_fake_md()
+        data = {
+            "document": (md_data, "test.md"),
+            "mode": "full",
+            "standards_profile": "combined_strict",
+        }
+        resp = client.post("/fix/", data=data, content_type="multipart/form-data")
+        assert resp.status_code == 200
+        assert b"Standards profile" in resp.data
+        assert b"Combined Strict" in resp.data
+
+
+class TestSettingsIntegration:
+    def test_settings_page_has_profile_and_advanced_defaults(self, client):
+        resp = client.get("/settings/")
+        assert resp.status_code == 200
+        assert b'name="settings_audit_profile"' in resp.data
+        assert b'name="settings_fix_profile"' in resp.data
+        assert b'name="settings_template_profile"' in resp.data
+        assert b'name="settings_fix_suppress_link_text"' in resp.data
+        assert b'name="settings_fix_use_list_levels"' in resp.data
+        assert b'name="settings_fix_list_indent_level_1"' in resp.data
 
 
 class TestPdfAudit:

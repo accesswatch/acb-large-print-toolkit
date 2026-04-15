@@ -24,6 +24,7 @@ def template_submit():
         title = request.form.get("title", "").strip() or "ACB Large Print Document"
         bound = request.form.get("bound") == "on"
         include_sample = request.form.get("include_sample") == "on"
+        standards_profile = request.form.get("standards_profile", "acb_2025")
 
         # Create a temp dir for the output
         token = str(uuid.uuid4())
@@ -37,6 +38,7 @@ def template_submit():
             bound=bound,
             include_sample=include_sample,
             title=title,
+            standards_profile=standards_profile,
         )
 
         response = send_file(

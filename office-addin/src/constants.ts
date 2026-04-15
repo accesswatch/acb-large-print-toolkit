@@ -14,6 +14,24 @@
 
 export const FONT_FAMILY = "Arial";
 
+// APH references (Research-Based Large Print Guidelines).
+// Arial remains the enforced ACB default in current rule logic.
+export const APH_ACCEPTED_FONT_FAMILIES = [
+    "APHont",
+    "Verdana",
+    "Tahoma",
+    "Helvetica",
+    "Antique Olive",
+    "Comic Sans",
+] as const;
+export const APH_LINE_SPACING_RECOMMENDED = 1.25;
+
+export enum StandardsProfile {
+    ACB_2025 = "acb_2025",
+    APH_SUBMISSION = "aph_submission",
+    COMBINED_STRICT = "combined_strict",
+}
+
 // Point sizes
 export const BODY_SIZE_PT = 18.0;
 export const HEADING1_SIZE_PT = 22.0;

@@ -23,6 +23,29 @@
 
 <form method="post" novalidate>
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+  <fieldset>
+    <legend>Standards Profile</legend>
+    <p class="help-text">Choose the profile for template defaults. ACB remains the current default behavior.</p>
+
+    <div class="radio-group">
+      <label>
+        <input type="radio" name="standards_profile" value="acb_2025" checked>
+        <strong>ACB 2025 Baseline</strong> -- current default template behavior (Arial, existing ACB spacing defaults).
+      </label>
+
+      <label>
+        <input type="radio" name="standards_profile" value="aph_submission">
+        <strong>APH Submission (Current Coverage)</strong> -- APH-oriented template defaults (APHont preferred, 1.25 line spacing recommendation).
+      </label>
+
+      <label>
+        <input type="radio" name="standards_profile" value="combined_strict">
+        <strong>Combined Strict</strong> -- strict combined review profile while keeping ACB template defaults.
+      </label>
+    </div>
+  </fieldset>
+
   <div class="form-group">
     <label for="title">Document title</label>
     <input type="text" id="title" name="title" value=""

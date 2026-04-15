@@ -50,7 +50,7 @@
     var newMain = doc.getElementById("main");
     return {
       html: newMain ? newMain.innerHTML : "",
-      title: doc.title || "GLOW Accessibility Toolkit -- BITS",
+      title: doc.title || "Home | GLOW (Guided Layout & Output Workflow)",
     };
   }
 

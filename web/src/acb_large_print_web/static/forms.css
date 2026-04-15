@@ -139,6 +139,8 @@ main[aria-busy="true"] {
 .card-template { border-left: 5px solid #6b3fa0; }
 .card-export { border-left: 5px solid #b8860b; }
 .card-convert { border-left: 5px solid #8b5cf6; }
+.card-guidelines { border-left: 5px solid #0a6f8f; }
+.card-settings { border-left: 5px solid #7a4f2b; }
 
 /* --- Format Pills (hero section showing supported formats) --- */
 .format-pills {

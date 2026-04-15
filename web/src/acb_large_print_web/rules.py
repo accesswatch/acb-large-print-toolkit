@@ -13,6 +13,38 @@ from acb_large_print.constants import (
     Severity,
 )
 
+# Standards profiles used by Audit/Fix workflows.
+PROFILE_ACB_2025 = "acb_2025"
+PROFILE_APH_SUBMISSION = "aph_submission"
+PROFILE_COMBINED_STRICT = "combined_strict"
+
+PROFILE_LABELS: dict[str, str] = {
+    PROFILE_ACB_2025: "ACB 2025 Baseline",
+    PROFILE_APH_SUBMISSION: "APH Submission (Current Coverage)",
+    PROFILE_COMBINED_STRICT: "Combined Strict (ACB + MSAC)",
+}
+
+# APH profile currently maps to implemented checks that align with APH-reviewed
+# typography and structure guidance. Additional APH-specific checks are planned.
+_APH_PROFILE_RULE_IDS: set[str] = {
+    "ACB-FONT-FAMILY",
+    "ACB-FONT-SIZE-BODY",
+    "ACB-FONT-SIZE-H1",
+    "ACB-FONT-SIZE-H2",
+    "ACB-NO-ITALIC",
+    "ACB-ALIGNMENT",
+    "ACB-PARA-INDENT",
+    "ACB-FIRST-LINE-INDENT",
+    "ACB-MARGINS",
+    "ACB-NO-ALLCAPS",
+    "ACB-HEADING-HIERARCHY",
+    "ACB-DOC-TITLE",
+    "ACB-DOC-LANGUAGE",
+    "ACB-MISSING-ALT-TEXT",
+    "ACB-TABLE-HEADER-ROW",
+    "ACB-LINK-TEXT",
+}
+
 # ---------------------------------------------------------------------------
 # Help URL generation -- maps every rule to authoritative learning resources
 # ---------------------------------------------------------------------------
@@ -668,6 +700,21 @@ def get_rule_ids_by_format(fmt_str: str) -> set[str]:
     except ValueError:
         return set(AUDIT_RULES.keys())  # unknown format: return all
     return {r.rule_id for r in AUDIT_RULES.values() if fmt in r.formats}
+
+
+def get_rule_ids_by_profile(profile: str) -> set[str]:
+    """Return rule IDs enabled by standards profile."""
+    normalized = (profile or PROFILE_ACB_2025).strip().lower()
+    if normalized == PROFILE_APH_SUBMISSION:
+        return set(_APH_PROFILE_RULE_IDS)
+    # ACB baseline and combined strict currently use all implemented rules.
+    return get_all_rule_ids()
+
+
+def get_profile_label(profile: str) -> str:
+    """Return user-facing standards profile label."""
+    normalized = (profile or PROFILE_ACB_2025).strip().lower()
+    return PROFILE_LABELS.get(normalized, PROFILE_LABELS[PROFILE_ACB_2025])
 
 
 def filter_findings(findings: list, rule_ids: set[str]) -> list:

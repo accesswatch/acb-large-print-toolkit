@@ -19,6 +19,39 @@
   </fieldset>
 
   <fieldset>
+    <legend>Standards Profile Defaults</legend>
+
+    <p class="help-text">These defaults pre-select profile radios in each workflow. ACB remains the baseline behavior.</p>
+
+    <div class="form-group">
+      <p><strong>Audit profile default</strong></p>
+      <div class="radio-group">
+        <label><input type="radio" name="settings_audit_profile" value="acb_2025" checked> ACB 2025 Baseline</label>
+        <label><input type="radio" name="settings_audit_profile" value="aph_submission"> APH Submission (Current Coverage)</label>
+        <label><input type="radio" name="settings_audit_profile" value="combined_strict"> Combined Strict</label>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <p><strong>Fix profile default</strong></p>
+      <div class="radio-group">
+        <label><input type="radio" name="settings_fix_profile" value="acb_2025" checked> ACB 2025 Baseline</label>
+        <label><input type="radio" name="settings_fix_profile" value="aph_submission"> APH Submission (Current Coverage)</label>
+        <label><input type="radio" name="settings_fix_profile" value="combined_strict"> Combined Strict</label>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <p><strong>Template profile default</strong></p>
+      <div class="radio-group">
+        <label><input type="radio" name="settings_template_profile" value="acb_2025" checked> ACB 2025 Baseline</label>
+        <label><input type="radio" name="settings_template_profile" value="aph_submission"> APH Submission (Current Coverage)</label>
+        <label><input type="radio" name="settings_template_profile" value="combined_strict"> Combined Strict</label>
+      </div>
+    </div>
+  </fieldset>
+
+  <fieldset>
     <legend>Audit Defaults</legend>
     <div class="radio-group">
       <label><input type="radio" name="settings_audit_mode" value="full" checked> Full Audit</label>
@@ -28,6 +61,12 @@
     <div class="checkbox-group">
       <label><input type="checkbox" name="settings_audit_category" value="acb" checked> Include ACB Large Print rules</label>
       <label><input type="checkbox" name="settings_audit_category" value="msac" checked> Include MS Accessibility Checker rules</label>
+    </div>
+
+    <div class="checkbox-group">
+      <label><input type="checkbox" name="settings_audit_suppress_link_text"> Suppress ambiguous link text by default</label>
+      <label><input type="checkbox" name="settings_audit_suppress_missing_alt_text"> Suppress missing alt text by default</label>
+      <label><input type="checkbox" name="settings_audit_suppress_faux_heading"> Suppress faux heading detection by default</label>
     </div>
   </fieldset>
 
@@ -40,11 +79,53 @@
     </div>
 
     <div class="checkbox-group">
+      <label><input type="checkbox" name="settings_fix_category" value="acb" checked> Include ACB Large Print rules in fix report by default</label>
+      <label><input type="checkbox" name="settings_fix_category" value="msac" checked> Include MS Accessibility Checker rules in fix report by default</label>
       <label><input type="checkbox" name="settings_fix_bound"> Add binding margin by default</label>
       <label><input type="checkbox" name="settings_fix_flush_lists" checked> Flush lists left by default</label>
       <label><input type="checkbox" name="settings_fix_flush_paragraphs" checked> Flush paragraphs left by default</label>
+      <label><input type="checkbox" name="settings_fix_preserve_heading_alignment"> Preserve centered headings by default</label>
       <label><input type="checkbox" name="settings_fix_detect_headings" checked> Enable heading detection by default</label>
       <label><input type="checkbox" name="settings_fix_use_ai"> Enable AI refinement by default when available</label>
+      <label><input type="checkbox" name="settings_fix_use_list_levels"> Use per-level list indentation by default</label>
+      <label><input type="checkbox" name="settings_fix_suppress_link_text"> Suppress ambiguous link text by default</label>
+      <label><input type="checkbox" name="settings_fix_suppress_missing_alt_text"> Suppress missing alt text by default</label>
+      <label><input type="checkbox" name="settings_fix_suppress_faux_heading"> Suppress faux heading detection by default</label>
+    </div>
+
+    <div class="form-group form-group-inline">
+      <label for="settings-fix-list-indent">List left indent (inches):</label>
+      <input type="number" id="settings-fix-list-indent" name="settings_fix_list_indent" value="0.50" min="0" max="2" step="0.05" class="input-narrow">
+    </div>
+
+    <div class="form-group form-group-inline">
+      <label for="settings-fix-list-hanging">List hanging indent (inches):</label>
+      <input type="number" id="settings-fix-list-hanging" name="settings_fix_list_hanging" value="0.25" min="0" max="2" step="0.05" class="input-narrow">
+    </div>
+
+    <div class="form-group form-group-inline">
+      <label for="settings-fix-list-indent-level-1">Level 1 list indent (inches):</label>
+      <input type="number" id="settings-fix-list-indent-level-1" name="settings_fix_list_indent_level_1" value="0.25" min="0" max="2" step="0.05" class="input-narrow">
+    </div>
+
+    <div class="form-group form-group-inline">
+      <label for="settings-fix-list-indent-level-2">Level 2 list indent (inches):</label>
+      <input type="number" id="settings-fix-list-indent-level-2" name="settings_fix_list_indent_level_2" value="0.50" min="0" max="2" step="0.05" class="input-narrow">
+    </div>
+
+    <div class="form-group form-group-inline">
+      <label for="settings-fix-list-indent-level-3">Level 3 list indent (inches):</label>
+      <input type="number" id="settings-fix-list-indent-level-3" name="settings_fix_list_indent_level_3" value="0.75" min="0" max="2" step="0.05" class="input-narrow">
+    </div>
+
+    <div class="form-group form-group-inline">
+      <label for="settings-fix-para-indent">Paragraph left indent (inches):</label>
+      <input type="number" id="settings-fix-para-indent" name="settings_fix_para_indent" value="0.00" min="0" max="2" step="0.05" class="input-narrow">
+    </div>
+
+    <div class="form-group form-group-inline">
+      <label for="settings-fix-first-line-indent">Paragraph first-line indent (inches):</label>
+      <input type="number" id="settings-fix-first-line-indent" name="settings_fix_first_line_indent" value="0.00" min="0" max="2" step="0.05" class="input-narrow">
     </div>
 
     <div class="form-group form-group-inline">

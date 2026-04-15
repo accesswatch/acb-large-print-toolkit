@@ -34,6 +34,29 @@
   </div>
 
   <fieldset>
+    <legend>Standards Profile</legend>
+    <p class="help-text">Choose the standards profile for this fix run and report filtering. Default ACB behavior is unchanged.</p>
+
+    <div class="radio-group">
+      <label>
+        <input type="radio" name="standards_profile" value="acb_2025" checked>
+        <strong>ACB 2025 Baseline</strong> -- default profile with no change to existing behavior.
+      </label>
+
+      <label>
+        <input type="radio" name="standards_profile" value="aph_submission">
+        <strong>APH Submission (Current Coverage)</strong> -- filters to APH-aligned checks implemented in this release.
+      </label>
+
+      <label>
+        <input type="radio" name="standards_profile" value="combined_strict">
+        <strong>Combined Strict</strong> -- includes all currently implemented checks in one strict view.
+      </label>
+    </div>
+    <p class="help-text">Use ACB for continuity, APH for submission evidence, and Combined Strict for final QA gates.</p>
+  </fieldset>
+
+  <fieldset>
     <legend>Rule Categories</legend>
     <p class="help-text">Choose which rule sets to include in the results report. Both are enabled by default. The fixer always applies all auto-fixable corrections regardless of selection.</p>
 

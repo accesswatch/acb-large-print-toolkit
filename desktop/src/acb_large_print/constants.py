@@ -18,6 +18,26 @@ from enum import Enum
 
 FONT_FAMILY = "Arial"
 
+# APH font recommendations (Research-Based Large Print Guidelines)
+# Arial remains the canonical ACB default for current enforcement.
+APH_ACCEPTED_FONT_FAMILIES: tuple[str, ...] = (
+    "APHont",
+    "Verdana",
+    "Tahoma",
+    "Helvetica",
+    "Antique Olive",
+    "Comic Sans",
+)
+APH_LINE_SPACING_RECOMMENDED = 1.25
+
+
+class StandardsProfile(str, Enum):
+    """High-level standards profile for rule selection/reporting."""
+
+    ACB_2025 = "acb_2025"
+    APH_SUBMISSION = "aph_submission"
+    COMBINED_STRICT = "combined_strict"
+
 # Point sizes
 BODY_SIZE_PT = 18.0
 HEADING1_SIZE_PT = 22.0

@@ -10,9 +10,12 @@
   <h2 id="guide-toc-heading">In This Guide</h2>
   <ol class="guide-toc">
     <li><a href="#quickstart">Quick-Start Walkthrough</a></li>
+    <li><a href="#aph-release-track">Release 1.2.0 APH Submission Track</a></li>
+    <li><a href="#profiles">Standards Profiles Explained</a></li>
     <li><a href="#how-audit">How to Audit a Document</a></li>
     <li><a href="#how-fix">How to Fix a Document</a></li>
     <li><a href="#how-template">How to Create a Template</a></li>
+    <li><a href="#how-settings">How to Use Settings</a></li>
     <li><a href="#how-export">How to Export to HTML</a></li>
     <li><a href="#how-convert">How to Convert Between Formats</a></li>
     <li><a href="#understanding-results">Understanding Your Results</a></li>
@@ -71,8 +74,77 @@
 </section>
 
 <!-- ================================================================== -->
+<section id="aph-release-track">
+  <h2>2. Release 1.2.0 APH Submission Track</h2>
+
+  <p>This is the guided implementation track for APH-aligned submission readiness. It is written as an "instructor in your pocket" workflow: follow it in order, check each gate, and collect evidence as you go.</p>
+
+  <h3>Week-by-week execution</h3>
+  <ol>
+    <li><strong>Week 1 -- Rule Mapping and Evidence Model:</strong> Map current ACB and WCAG rules to APH submission expectations, define source references, and lock acceptance criteria for the package.</li>
+    <li><strong>Week 2 -- Core Profile Implementation:</strong> Add standards profile metadata and profile-aware rule applicability in the canonical constants layer, then mirror it in all required implementations.</li>
+    <li><strong>Week 3 -- UX and Reporting:</strong> Add profile selection controls, standards source badges in results, and report sections that clearly show profile, scope, and unresolved exceptions.</li>
+    <li><strong>Week 4 -- Validation and Package Assembly:</strong> Run parity checks, finalize release tests, and produce the APH package bundle (summary report, rule matrix, test evidence, and known limitations).</li>
+  </ol>
+
+  <h3>What changed in documentation strategy</h3>
+  <p>Instead of depending on a standalone PDF workflow guide, the release path is embedded across the landing page, this user guide, and the Guidelines reference page so operators can complete all steps in one navigable system.</p>
+
+  <h3>Required outputs by week</h3>
+  <ul>
+    <li><strong>Week 1 output:</strong> approved mapping matrix and APH evidence checklist</li>
+    <li><strong>Week 2 output:</strong> merged constants/rules updates with cross-implementation sync validation</li>
+    <li><strong>Week 3 output:</strong> shipped UI/profile/report changes with accessibility review sign-off</li>
+    <li><strong>Week 4 output:</strong> submission package ZIP and release notes for 1.2.0</li>
+  </ul>
+
+  <p class="guide-tip"><strong>Operator tip:</strong> If you are leading rollout, run a short weekly readiness review. If you are implementing, follow the weekly checklist in sequence and do not skip evidence capture.</p>
+
+  <a href="#guide-toc-heading" class="back-to-top">Back to guide contents</a>
+</section>
+
+<!-- ================================================================== -->
+<section id="profiles">
+  <h2>3. Standards Profiles Explained</h2>
+
+  <p>Audit and Fix now support three standards profiles. This helps teams keep current ACB workflows stable while preparing APH submission evidence.</p>
+
+  <table>
+    <caption>Standards profile differences at a glance</caption>
+    <thead>
+      <tr>
+        <th scope="col">Profile</th>
+        <th scope="col">What Changes</th>
+        <th scope="col">Best Use</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>ACB 2025 Baseline</strong> (default)</td>
+        <td>No change to existing production behavior</td>
+        <td>Daily chapter operations and continuity</td>
+      </tr>
+      <tr>
+        <td><strong>APH Submission (Current Coverage)</strong></td>
+        <td>Filters to APH-aligned checks implemented today</td>
+        <td>Submission readiness and evidence packaging</td>
+      </tr>
+      <tr>
+        <td><strong>Combined Strict</strong></td>
+        <td>Shows all implemented checks together</td>
+        <td>Final quality gates before release/publication</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <p class="guide-tip"><strong>Key point:</strong> selecting ACB keeps the current experience exactly the same. Profiles change reporting scope and visibility, not your existing baseline workflow.</p>
+
+  <a href="#guide-toc-heading" class="back-to-top">Back to guide contents</a>
+</section>
+
+<!-- ================================================================== -->
 <section id="how-audit">
-  <h2>2. How to Audit a Document</h2>
+  <h2>4. How to Audit a Document</h2>
 
   <h3>Supported formats</h3>
   <ul>
@@ -113,7 +185,7 @@
 
 <!-- ================================================================== -->
 <section id="how-fix">
-  <h2>3. How to Fix a Document</h2>
+  <h2>5. How to Fix a Document</h2>
 
   <h3>What gets auto-fixed</h3>
   <table>
@@ -178,7 +250,7 @@
 
 <!-- ================================================================== -->
 <section id="how-template">
-  <h2>4. How to Create a Template</h2>
+  <h2>6. How to Create a Template</h2>
 
   <p>A template (<code>.dotx</code>) is the easiest way to start compliant. Every new document you create from this template inherits all ACB formatting automatically.</p>
 
@@ -207,12 +279,46 @@
     </ol>
   </details>
 
+  <h3>Template profile defaults</h3>
+  <p>Template supports the same standards profile model used elsewhere:</p>
+  <ul>
+    <li><strong>ACB 2025 Baseline:</strong> current production defaults (Arial and existing ACB spacing baseline)</li>
+    <li><strong>APH Submission (Current Coverage):</strong> APH-oriented defaults (APHont preferred and 1.25 line spacing recommendation)</li>
+    <li><strong>Combined Strict:</strong> keeps ACB template defaults while teams run strict combined review in Audit/Fix</li>
+  </ul>
+  <p class="guide-tip"><strong>Tip:</strong> If your team always uses the same template profile and options, save them on the <a href="{{ url_for('settings.settings_page') }}">Settings</a> page so Template opens pre-filled.</p>
+
+  <a href="#guide-toc-heading" class="back-to-top">Back to guide contents</a>
+</section>
+
+<!-- ================================================================== -->
+<section id="how-settings">
+  <h2>Settings</h2>
+
+  <p>The <a href="{{ url_for('settings.settings_page') }}">Settings</a> tab lets you define your default workflow values once and apply them across GLOW.</p>
+
+  <h3>What you can set as defaults</h3>
+  <ul>
+    <li>Standards profiles for Audit, Fix, and Template</li>
+    <li>Audit mode, categories, and quick-rule suppressions</li>
+    <li>Fix mode, categories, heading/list/paragraph options, and suppressions</li>
+    <li>Template sample content and binding options</li>
+    <li>Export mode and Convert options</li>
+  </ul>
+
+  <h3>Storage behavior</h3>
+  <ul>
+    <li>Defaults are only stored when cookie opt-in is enabled.</li>
+    <li>Settings are local to the current browser/device.</li>
+    <li>Turning opt-in off removes saved defaults and reverts to standard values.</li>
+  </ul>
+
   <a href="#guide-toc-heading" class="back-to-top">Back to guide contents</a>
 </section>
 
 <!-- ================================================================== -->
 <section id="how-export">
-  <h2>5. How to Export to HTML</h2>
+  <h2>7. How to Export to HTML</h2>
 
   <p>Export converts a Word document to a web page with ACB-compliant CSS already applied. Choose between two output modes:</p>
 
@@ -240,7 +346,7 @@
 
 <!-- ================================================================== -->
 <section id="how-convert">
-  <h2>6. How to Convert Between Formats</h2>
+  <h2>8. How to Convert Between Formats</h2>
 
   <p>The Convert page walks you through a guided, step-by-step process to change your document from one format to another. Two main conversion directions are available, plus optional DAISY Pipeline conversions when installed.</p>
 
@@ -278,7 +384,7 @@
 
 <!-- ================================================================== -->
 <section id="understanding-results">
-  <h2>7. Understanding Your Results</h2>
+  <h2>9. Understanding Your Results</h2>
 
   <h3>Severity levels</h3>
   <table>
@@ -329,7 +435,7 @@
 
 <!-- ================================================================== -->
 <section id="common-issues">
-  <h2>8. Common Issues and How to Fix Them</h2>
+  <h2>10. Common Issues and How to Fix Them</h2>
 
   <details class="help-accordion" open>
     <summary>"All text must use Arial font" (ACB-FONT-FAMILY)</summary>
@@ -385,7 +491,7 @@
 
 <!-- ================================================================== -->
 <section id="format-tips">
-  <h2>9. Tips by Document Format</h2>
+  <h2>10. Tips by Document Format</h2>
 
   <details class="help-accordion" open>
     <summary>Word (.docx)</summary>
@@ -460,7 +566,7 @@
 
 <!-- ================================================================== -->
 <section id="workflows">
-  <h2>10. Recommended Workflows</h2>
+  <h2>11. Recommended Workflows</h2>
 
   <details class="help-accordion" open>
     <summary>Workflow A: Fix an existing document</summary>
@@ -509,7 +615,7 @@
 
 <!-- ================================================================== -->
 <section id="daisy-tools">
-  <h2>11. DAISY Accessibility Tools</h2>
+  <h2>12. DAISY Accessibility Tools</h2>
 
   <p>This toolkit integrates with open source tools from the <a href="https://daisy.org/">DAISY Consortium</a>, an international association serving people with print disabilities. Here is how each integration works:</p>
 
@@ -542,7 +648,7 @@
 
 <!-- ================================================================== -->
 <section id="keyboard-tips">
-  <h2>12. Keyboard and Screen Reader Tips</h2>
+  <h2>13. Keyboard and Screen Reader Tips</h2>
 
   <p>This tool is designed to work fully without a mouse. Here are tips for keyboard and screen reader users:</p>
 
@@ -562,7 +668,7 @@
 
 <!-- ================================================================== -->
 <section id="stress-testing">
-  <h2>13. Stress Testing and Product Learning</h2>
+  <h2>14. Stress Testing and Product Learning</h2>
 
   <p>The heading-detection and Word-fixing pipeline is backed by a reproducible synthetic stress harness. It exists for one reason: copied-and-pasted real-world documents rarely arrive clean. The product now exercises <strong>{{ stress_summary.total_heading_cases }}</strong> randomized heading scenarios across <strong>{{ stress_summary.document_count }}</strong> generated Word documents, with <strong>{{ stress_summary.cases_per_document }}</strong> scenario blocks per document.</p>
 
@@ -624,7 +730,7 @@ python -m pytest desktop/tests/test_heading_stress_corpus.py -q</code></pre>
 
 <!-- ================================================================== -->
 <section id="faq">
-  <h2>14. Frequently Asked Questions</h2>
+  <h2>15. Frequently Asked Questions</h2>
 
   <details class="help-accordion" open>
     <summary>Is my document stored on the server?</summary>
@@ -700,16 +806,19 @@ python -m pytest desktop/tests/test_heading_stress_corpus.py -q</code></pre>
 
 <!-- ================================================================== -->
 <section id="getting-help">
-  <h2>15. Getting Help</h2>
+  <h2>16. Getting Help</h2>
 
   <ul>
     <li><a href="{{ url_for('guidelines.guidelines_page') }}">Full ACB Large Print Guidelines Reference</a> -- complete rule documentation with related audit rules</li>
+    <li><a href="https://www.aph.org/resources/large-print-guidelines/">APH Large Print Guidelines (official source)</a> -- external APH research-based guidance page with downloadable DOCX/PDF references</li>
     <li><a href="{{ url_for('feedback.feedback_form') }}">Submit Feedback</a> -- report bugs, request features, or share your experience</li>
     <li><a href="{{ url_for('about.about_page') }}">About This Project</a> -- mission, organizations, standards, and open source dependencies</li>
     <li><a href="https://github.com/accesswatch/acb-large-print-toolkit/issues">GitHub Issues</a> -- report bugs or request features on the open source repository</li>
     <li><a href="https://kb.daisy.org/publishing/">DAISY Knowledge Base</a> -- remediation guidance for ePub accessibility issues</li>
     <li><a href="https://support.microsoft.com/en-us/office/improve-accessibility-with-the-accessibility-checker-a16f6de0-2f39-4a2b-8bd8-5ad801426c7f">Microsoft Accessibility Checker Guide</a> -- Microsoft's guide to the Office accessibility checker</li>
   </ul>
+
+  <p><strong>Implementation note:</strong> APH coverage is not yet complete. This toolkit currently enforces ACB + WCAG + Microsoft Accessibility Checker rules and selected format-specific standards, with APH parity expansion tracked in the 1.2.0 roadmap.</p>
 
   <a href="#guide-toc-heading" class="back-to-top">Back to guide contents</a>
 </section>

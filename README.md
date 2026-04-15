@@ -4,6 +4,53 @@ GLOW stands for **Guided Layout & Output Workflow**.
 
 A VS Code agent toolkit, desktop application, and web application for auditing and fixing Office documents for accessibility. Enforces the American Council of the Blind (ACB) Large Print Guidelines (revised May 6, 2025), Microsoft Accessibility Checker rules, and WCAG 2.2 AA digital accessibility standards.
 
+External APH source reference: [APH Guidelines for the Development of Documents in Large Print](https://www.aph.org/resources/large-print-guidelines/).
+
+Status note: APH guideline coverage in this toolkit is currently partial; active enforcement is primarily ACB + WCAG + Microsoft Accessibility Checker + format-specific rule sets, with APH parity expansion tracked in the 1.2.0 roadmap.
+
+## Standards Profiles (Release 1.2.0)
+
+The web Audit, Fix, and Template flows now include three standards profiles:
+
+- **ACB 2025 Baseline** -- default profile. This preserves current behavior. If you select ACB, there is no workflow change and no scoring model change from the existing production experience.
+- **APH Submission (Current Coverage)** -- filters results to APH-aligned checks implemented today (font and structure checks plus core WCAG/MSAC coverage already in production). This profile is designed for APH submission preparation and explicitly reflects current implemented scope.
+- **Combined Strict** -- shows all currently implemented checks together (ACB + MSAC/WCAG-aligned rules) for maximum rigor in one run. Template generation keeps ACB defaults in this mode for predictable production output.
+
+Profile intent:
+
+- Use **ACB 2025 Baseline** for existing chapter operations and continuity.
+- Use **APH Submission** when assembling APH evidence and rollout documentation.
+- Use **Combined Strict** for final quality gates before publication.
+
+Template behavior by profile:
+
+- **ACB 2025 Baseline** -- unchanged template defaults (Arial + current ACB spacing baseline).
+- **APH Submission (Current Coverage)** -- APH-oriented template defaults (APHont preferred and 1.25 line spacing recommendation).
+- **Combined Strict** -- keeps ACB template defaults while using strict combined review posture in Audit/Fix.
+
+Profile reporting:
+
+- Audit and Fix results now display the selected profile label so exported evidence is traceable.
+
+## Guideline Scope (ACB, APH, AFB)
+
+- This toolkit supports two large-print production standards: ACB (default) and APH (submission profile coverage).
+- AFB JVIB style guidance is not a large-print production mode in this toolkit. It is an academic manuscript submission style for the Journal of Visual Impairment & Blindness.
+- Use ACB for consumer/member publications and APH for educational/student large-print workflows.
+- If you are preparing a JVIB manuscript, follow AFB JVIB rules directly outside the fix/audit profile selector.
+
+References:
+
+- ACB/BITS: https://www.bits-acb.org
+- APH large-print guidance: https://www.aph.org/resources/large-print-guidelines/
+- AFB JVIB style guidelines: https://afb.org/news-publications/publications/jvib/authors/afb-style-guidelines
+
+## Writing Conventions Used in This Toolkit
+
+- Use `large print` as a noun and `large-print` as a modifier.
+- Use em-dashes with no surrounding spaces.
+- Use person-first and neutral language in documentation and UI.
+
 ## Supported Document Formats
 
 | Format | Audit | Auto-Fix | Template | Export | Convert |
@@ -80,7 +127,7 @@ lp/
   docs/
     user-guide.md                        Complete user guide for all interfaces
     announcement.md                      Press release / announcement
-    prd-flask-web-app.md                 Web app product requirements document
+    prd.md                               Canonical web app product requirements document
     deployment.md                        Step-by-step server deployment guide
   samples/
     *.md                                 Example Markdown source files
@@ -112,10 +159,11 @@ Open the web app in any browser. Upload a Word, Excel, PowerPoint, Markdown, or 
 |------|-------------|
 | **Audit** | Check any supported document against accessibility rules (Full, Quick, or Custom mode) |
 | **Fix** | Auto-fix Word documents; get audit-based fix guidance for other formats |
-| **Template** | Generate an ACB-compliant Word template (.dotx) |
+| **Template** | Generate a profile-aware Word template (.dotx): ACB baseline defaults, APH-oriented defaults, or combined strict review posture |
 | **Export** | Convert a .docx to accessible HTML (standalone or CMS fragment) |
 | **Convert** | Transform documents between formats (Markdown, HTML, Word, EPUB 3, PDF, DAISY) |
 | **Guidelines** | Browse the full ACB specification and WCAG 2.2 supplement |
+| **Settings** | Set and save default profiles/modes/options across Audit, Fix, Template, Export, and Convert |
 | **About** | Project mission, organizations, standards, open source dependencies, and acknowledgments |
 
 ### Run the web app locally

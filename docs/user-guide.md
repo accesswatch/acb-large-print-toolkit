@@ -5,19 +5,21 @@ Everything you need to know to audit, fix, convert, and template your documents 
 ## In This Guide
 
 1. [Quick-Start Walkthrough](#1-quick-start-walkthrough)
-2. [How to Audit a Document](#2-how-to-audit-a-document)
-3. [How to Fix a Document](#3-how-to-fix-a-document)
-4. [How to Create a Template](#4-how-to-create-a-template)
-5. [How to Export to HTML](#5-how-to-export-to-html)
-6. [How to Convert Between Formats](#6-how-to-convert-between-formats)
-7. [Understanding Your Results](#7-understanding-your-results)
-8. [Common Issues and How to Fix Them](#8-common-issues-and-how-to-fix-them)
-9. [Tips by Document Format](#9-tips-by-document-format)
-10. [Recommended Workflows](#10-recommended-workflows)
-11. [DAISY Accessibility Tools](#11-daisy-accessibility-tools)
-12. [Keyboard and Screen Reader Tips](#12-keyboard-and-screen-reader-tips)
-13. [Frequently Asked Questions](#13-frequently-asked-questions)
-14. [Getting Help](#14-getting-help)
+2. [Release 1.2.0 APH Submission Track](#2-release-120-aph-submission-track)
+3. [How to Audit a Document](#3-how-to-audit-a-document)
+4. [How to Fix a Document](#4-how-to-fix-a-document)
+5. [How to Create a Template](#5-how-to-create-a-template)
+6. [How to Use Settings](#6-how-to-use-settings)
+7. [How to Export to HTML](#7-how-to-export-to-html)
+8. [How to Convert Between Formats](#8-how-to-convert-between-formats)
+9. [Understanding Your Results](#9-understanding-your-results)
+10. [Common Issues and How to Fix Them](#10-common-issues-and-how-to-fix-them)
+11. [Tips by Document Format](#11-tips-by-document-format)
+12. [Recommended Workflows](#12-recommended-workflows)
+13. [DAISY Accessibility Tools](#13-daisy-accessibility-tools)
+14. [Keyboard and Screen Reader Tips](#14-keyboard-and-screen-reader-tips)
+15. [Frequently Asked Questions](#15-frequently-asked-questions)
+16. [Getting Help](#16-getting-help)
 
 **Quick links to new features:**
 - [Quick Rule Exceptions](#quick-rule-exceptions)
@@ -55,7 +57,74 @@ If you have not written your document yet, start with Create a Template. This gi
 
 ---
 
-## 2. How to Audit a Document
+## 2. Release 1.2.0 APH Submission Track
+
+This section is the guided APH rollout workflow, written as an "instructor in your pocket" checklist. Follow each week in order and collect evidence at each gate.
+
+### Week-by-week execution
+
+1. **Week 1 -- Mapping and acceptance criteria**
+   - Build the APH mapping matrix from current ACB + WCAG rules.
+   - Define required submission artifacts and review criteria.
+2. **Week 2 -- Core profile implementation**
+   - Add standards profile metadata and profile applicability in canonical constants.
+   - Sync the same rule semantics across Python core and Office add-in.
+3. **Week 3 -- UI and reporting updates**
+   - Add standards profile controls in web workflows.
+   - Add standards source visibility in reports (ACB/WCAG/APH scope clarity).
+4. **Week 4 -- Validation and package assembly**
+   - Run full parity and regression validation.
+   - Produce the APH submission package (summary, matrix, evidence, known limitations).
+
+### Documentation strategy update
+
+The APH workflow is now embedded directly across the site, this user guide, and the guidelines reference. This replaces reliance on a standalone distribution document and keeps guidance versioned with code.
+
+### Week outputs
+
+- **Week 1 output:** approved APH rule/evidence mapping table
+- **Week 2 output:** merged profile-aware constants and synchronization checks
+- **Week 3 output:** released profile UX/report updates with accessibility review
+- **Week 4 output:** final submission bundle and release notes for 1.2.0
+
+### Standards profiles explained (ACB, APH, Combined Strict)
+
+Release 1.2.0 adds profile selection in Audit, Fix, and Template so teams can choose the right reporting lens and template defaults without changing the underlying remediation engine.
+
+- **ACB 2025 Baseline (default):** no impact to existing users. Selecting ACB keeps current behavior, current scoring assumptions, and the same operational workflow chapters already use.
+- **APH Submission (Current Coverage):** narrows findings to implemented APH-aligned checks for submission readiness and evidence packaging.
+- **Combined Strict:** includes all currently implemented checks (ACB + MSAC/WCAG-aligned rules) for maximum strictness.
+
+When to use each:
+
+1. Use **ACB 2025 Baseline** for day-to-day production and continuity.
+2. Use **APH Submission** when preparing APH rollout evidence and review packets.
+3. Use **Combined Strict** for final pre-release quality gates.
+
+Important: Profile selection changes report filtering in Audit/Fix and template defaults in Template. It does not alter the core fixed behavior for Word auto-fix.
+
+### APH source review findings (DOCX + PDF + APHont package)
+
+The APH source documents were reviewed directly (not only the landing page). Key findings used for integration planning:
+
+- APH confirms the core large-print sizing pattern: 18 body, 20 subheading, 22 heading.
+- APH recommends sans-serif fonts and provides APHont for low-vision document production.
+- APH includes line-spacing/line-length and color palette guidance that goes beyond the currently enforced ACB/WCAG/MSAC rules.
+
+Font package review result:
+
+- APHont ZIP includes TTF variants for Regular, Bold, Italic, and BoldItalic.
+- Integration should ignore packaging metadata artifacts (for example `__MACOSX` entries) and use only the actual font files.
+
+Integration approach:
+
+- Keep Arial as default for current ACB workflows.
+- Add APHont as an optional profile-specific target as APH parity expands.
+- Add fallback behavior and explicit status reporting when APHont is not available in runtime environments.
+
+---
+
+## 3. How to Audit a Document
 
 ### Supported formats
 
@@ -85,7 +154,7 @@ Tip: The audit report groups findings by severity. Tackle Critical issues first 
 
 ---
 
-## 3. How to Fix a Document
+## 4. How to Fix a Document
 
 ### What gets auto-fixed
 
@@ -292,7 +361,7 @@ What the latest validation showed:
 
 ---
 
-## 4. How to Create a Template
+## 5. How to Create a Template
 
 A template (.dotx) is the easiest way to start compliant. Every new document you create from this template inherits all ACB formatting automatically.
 
@@ -305,6 +374,16 @@ A template (.dotx) is the easiest way to start compliant. Every new document you
 5. Click Create Template and save the downloaded .dotx file.
 6. In Word, double-click the .dotx file to create a new document based on it.
 
+### Template profile defaults
+
+Template now supports standards profiles:
+
+- **ACB 2025 Baseline:** keeps the current production defaults (Arial + existing ACB spacing baseline).
+- **APH Submission (Current Coverage):** uses APH-oriented defaults (APHont preferred and 1.25 line spacing recommendation).
+- **Combined Strict:** keeps ACB template defaults while teams use strict combined review posture in Audit/Fix.
+
+If your team repeatedly uses the same template profile and options, configure them once in **Settings** so Template opens pre-filled each visit.
+
 ### How to install the template in Word
 
 1. Save the downloaded .dotx file to your Templates folder:
@@ -316,7 +395,35 @@ A template (.dotx) is the easiest way to start compliant. Every new document you
 
 ---
 
-## 5. How to Export to HTML
+## 6. How to Use Settings
+
+The **Settings** tab lets you set default values once and apply them across every workflow.
+
+### What Settings controls
+
+- Standards profile defaults for **Audit**, **Fix**, and **Template**.
+- Audit defaults: mode, categories, and quick-rule suppressions.
+- Fix defaults: mode, categories, heading options, list and paragraph indentation options, and suppressions.
+- Template defaults: profile, sample content, and binding margin.
+- Export and Convert defaults.
+
+### Privacy and persistence
+
+- Settings are saved only when you enable cookie opt-in.
+- Settings stay on the current browser/device only.
+- Turning opt-in off removes saved settings and returns GLOW to built-in defaults.
+
+### Recommended setup flow
+
+1. Open **Settings**.
+2. Enable cookie opt-in.
+3. Set your preferred defaults for each workflow.
+4. Save.
+5. Open Audit/Fix/Template/Export/Convert and verify defaults are pre-selected.
+
+---
+
+## 7. How to Export to HTML
 
 Export converts a Word document to a web page with ACB-compliant CSS already applied. Choose between two output modes:
 
@@ -335,7 +442,7 @@ Tip: If your source is Markdown instead of Word, use Convert with the "Accessibl
 
 ---
 
-## 6. How to Convert Between Formats
+## 8. How to Convert Between Formats
 
 The Convert page offers six conversion directions, each powered by a different engine. Choose the one that matches what you need to produce.
 
@@ -456,7 +563,7 @@ This two-step approach almost always produces better results than a one-step dir
 
 ---
 
-## 7. Understanding Your Results
+## 9. Understanding Your Results
 
 ### Severity levels
 
@@ -479,7 +586,7 @@ Each finding in the audit report includes:
 
 ---
 
-## 8. Common Issues and How to Fix Them
+## 10. Common Issues and How to Fix Them
 
 ### "All text must use Arial font" (ACB-FONT-FAMILY)
 
@@ -553,7 +660,7 @@ The **List Indentation** fields are always visible. They are disabled while **Fl
 
 ---
 
-## 9. Tips by Document Format
+## 11. Tips by Document Format
 
 ### Word (.docx)
 
@@ -608,7 +715,7 @@ The **List Indentation** fields are always visible. They are disabled while **Fl
 
 ---
 
-## 10. Recommended Workflows
+## 12. Recommended Workflows
 
 ### Workflow A: Fix an existing document
 
@@ -650,7 +757,7 @@ The **List Indentation** fields are always visible. They are disabled while **Fl
 
 ---
 
-## 11. DAISY Accessibility Tools
+## 13. DAISY Accessibility Tools
 
 This toolkit integrates with open source tools from the [DAISY Consortium](https://daisy.org/), an international association serving people with print disabilities. Here is how each integration works:
 
@@ -682,7 +789,7 @@ When ePub files contain MathML (mathematical markup), the audit detects it and p
 
 ---
 
-## 12. Keyboard and Screen Reader Tips
+## 14. Keyboard and Screen Reader Tips
 
 This tool is designed to work fully without a mouse. Here are tips for keyboard and screen reader users:
 
@@ -697,7 +804,7 @@ This tool is designed to work fully without a mouse. Here are tips for keyboard 
 
 ---
 
-## 13. Frequently Asked Questions
+## 15. Frequently Asked Questions
 
 ### Is my document stored on the server?
 
@@ -752,16 +859,21 @@ Yes. The [GLOW Accessibility Toolkit](https://github.com/accesswatch/acb-large-p
 
 The full guidelines are available at [acb.org/large-print-guidelines](https://acb.org/large-print-guidelines) (revised May 6, 2025). A reference copy is included in this repository at `docs/ACB Large Print Guidelines, revised 5-6-25.docx`. The web application includes a [Guidelines page](https://glow.bits-acb.org/guidelines) with the complete rule reference and related audit rule mappings.
 
+APH also publishes research-based large print guidance at [APH: Guidelines for the Development of Documents in Large Print](https://www.aph.org/resources/large-print-guidelines/), including APH-hosted DOCX and PDF versions.
+
 ---
 
-## 14. Getting Help
+## 16. Getting Help
 
 - **Full ACB Large Print Guidelines Reference** -- available on the web app Guidelines page or at [acb.org/large-print-guidelines](https://acb.org/large-print-guidelines)
+- **APH Large Print Guidelines (official source)** -- [aph.org/resources/large-print-guidelines](https://www.aph.org/resources/large-print-guidelines/)
 - **Project overview and release highlights** -- [README.md](../README.md)
 - **Web app operations and deployment notes** -- [web/README.md](../web/README.md)
-- **Web app product requirements and implementation log** -- [docs/prd-flask-web-app.md](prd-flask-web-app.md)
+- **Web app product requirements and implementation log** -- [docs/prd.md](prd.md)
 - **Submit Feedback** -- use the Feedback page in the web app to report bugs, request features, or share your experience
 - **About This Project** -- mission, organizations, standards, and open source dependencies on the web app About page
 - **GitHub Issues** -- [report bugs or request features](https://github.com/accesswatch/acb-large-print-toolkit/issues) on the open source repository
 - **DAISY Knowledge Base** -- [remediation guidance](https://kb.daisy.org/publishing/) for ePub accessibility issues
 - **Microsoft Accessibility Checker Guide** -- [Microsoft's guide](https://support.microsoft.com/en-us/office/improve-accessibility-with-the-accessibility-checker-a16f6de0-2f39-4a2b-8bd8-5ad801426c7f) to the Office accessibility checker
+
+**Implementation note:** APH guideline coverage is not complete yet. Current enforcement focuses on ACB + WCAG + Microsoft Accessibility Checker + format-specific rules, with APH alignment work tracked under the 1.2.0 submission plan.

@@ -6,6 +6,43 @@ Releases are tagged in the [GitHub repository](https://github.com/accesswatch/ac
 
 ---
 
+## [Unreleased]
+
+### Added
+
+- Placeholder for upcoming changes.
+
+## [1.2.0] -- 2026-04-15
+
+### Added
+
+- Added an embedded **Release 1.2.0 APH Submission Track** section to the web landing page (`web/src/acb_large_print_web/templates/index.html`) with explicit Week 1-4 execution milestones.
+- Added an embedded **APH execution workflow** section to the web User Guide (`web/src/acb_large_print_web/templates/guide.html`) including an "instructor in your pocket" checklist and week-based deliverables.
+- Added an **APH Submission Profile** section to the Guidelines reference page (`web/src/acb_large_print_web/templates/guidelines.html`) with profile model notes and Week 1-4 release gates.
+- Added a markdown execution playbook at `docs/aph-release-1.2.0-execution.md` documenting weekly tasks, outputs, and embedded-documentation coverage.
+- Expanded `docs/user-guide.md` with a dedicated Release 1.2.0 APH section and synchronized heading structure so the APH process is embedded directly in project documentation.
+- Added APH official source links (`https://www.aph.org/resources/large-print-guidelines/`) to web and markdown documentation surfaces, plus explicit status notes clarifying that APH guideline implementation is currently partial and tracked under the 1.2.0 roadmap.
+- Added clear Standards Profile guidance across product surfaces (README, PRD, user guide, web guide, audit/fix UI, and announcements), explicitly documenting that **ACB 2025 Baseline** is backward-compatible with no behavior change, **APH Submission (Current Coverage)** is scope-filtered for submission readiness, and **Combined Strict** provides all implemented checks in one strict reporting view.
+- Reworked `docs/announcement-web-app.md` to deeply integrate the April 14 launch narrative (problem framing, three-step workflow, heading-detection explanation, community feedback call, distribution-status note), and regenerated `docs/announcement-web-app.html` from markdown to keep web-facing announcement assets synchronized.
+- Synchronized `docs/announcement.md` to the same integrated April 14 launch narrative used by the web announcement so profile messaging and release language are consistent across announcement artifacts.
+- Expanded web Settings integration so saved defaults now cover standards profiles (Audit/Fix/Template), quick-rule suppressions, advanced fix options (list levels, paragraph indents, heading controls), template defaults, export mode, and convert defaults via `web/src/acb_large_print_web/static/preferences.js` and `web/src/acb_large_print_web/templates/settings.html`.
+- Added homepage operation tiles for **Guidelines** and **Settings** plus a "What Each Tab Does" section in `web/src/acb_large_print_web/templates/index.html` to make tab purpose discoverable for first-time users.
+- Expanded APH messaging in `docs/announcement-web-app.md` and `docs/announcement.md` with explicit "why now" rationale, real-world operator stories, and multi-standard workflow guidance (ACB continuity, APH evidence mode, Combined Strict final QA, plus Settings persistence).
+- Further enriched APH launch messaging in announcement sources with story-first day-in-the-life scenarios, explicit bridge-positioning (ACB stability plus APH expansion), and stronger user-option framing for cross-standard documentation workflows.
+
+- Added AFB scoping guidance to persistent product docs: Guidelines page now clarifies ACB/APH production usage and that AFB JVIB style is manuscript-oriented (not a fix/audit profile), and FAQ now includes AFB scope, large print vs large-print spelling, em-dash, and running-number conventions.
+
+### Changed
+
+- Standardized web page title bars to the format `Page Name | GLOW (Guided Layout & Output Workflow)` across the shared base template and tab-navigation title fallback (`web/src/acb_large_print_web/templates/base.html`, `web/src/acb_large_print_web/static/tabs.js`), and simplified page title blocks in feedback/home templates to page-name values only.
+
+### Removed
+
+- Removed `docs/prd-flask-web-app.md` from the repository; `docs/prd.md` remains the canonical PRD source.
+- Removed `docs/ollama-heading-detection-findings.md` after confirming it was unreferenced and no longer required for current release documentation.
+- Removed `docs/aph-release-1.2.0-execution.md` after consolidating the APH execution workflow into embedded documentation surfaces (web guide, markdown user guide, and site content) so teams no longer depend on a standalone execution playbook.
+- Removed `BITS-FEEDBACK-PLAN.md` after integrating retained AFB scoping and terminology actions into `README.md`, `web/src/acb_large_print_web/templates/guidelines.html`, and `web/src/acb_large_print_web/templates/faq.html`.
+
 ## [1.1.0] -- 2026-04-15
 
 ### Fixed

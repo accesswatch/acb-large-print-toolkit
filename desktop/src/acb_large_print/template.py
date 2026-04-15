@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from dataclasses import replace
 import os
 import shutil
 import tempfile
@@ -36,6 +37,20 @@ _ALIGN_MAP = {
 }
 
 
+def _resolve_profile_style_overrides(
+    standards_profile: str,
+) -> tuple[str | None, float | None]:
+    """Return (font_family_override, line_spacing_override) by standards profile."""
+    normalized = (standards_profile or C.StandardsProfile.ACB_2025.value).strip().lower()
+
+    if normalized == C.StandardsProfile.APH_SUBMISSION.value:
+        # APH profile favors APHont and recommends ~1.25 line spacing.
+        return C.APH_ACCEPTED_FONT_FAMILIES[0], C.APH_LINE_SPACING_RECOMMENDED
+
+    # ACB and combined strict use existing ACB defaults for template construction.
+    return None, None
+
+
 def _apply_paragraph_format(pf, spec: C.ParaDef) -> None:
     """Apply a ParaDef to a python-docx ParagraphFormat."""
     pf.alignment = _ALIGN_MAP[spec.alignment]
@@ -59,6 +74,8 @@ def _configure_styles(
     *,
     list_indent_in: float = C.LIST_INDENT_IN,
     list_hanging_in: float = C.LIST_HANGING_IN,
+    font_family_override: str | None = None,
+    line_spacing_override: float | None = None,
 ) -> None:
     """Set all ACB styles on a Document."""
     for style_name, style_def in C.ACB_STYLES.items():
@@ -67,8 +84,20 @@ def _configure_styles(
         except KeyError:
             # Style doesn't exist -- skip gracefully
             continue
-        _apply_font(style.font, style_def.font)
-        _apply_paragraph_format(style.paragraph_format, style_def.para)
+
+        font_spec = (
+            replace(style_def.font, name=font_family_override)
+            if font_family_override
+            else style_def.font
+        )
+        para_spec = (
+            replace(style_def.para, line_spacing=line_spacing_override)
+            if line_spacing_override is not None
+            else style_def.para
+        )
+
+        _apply_font(style.font, font_spec)
+        _apply_paragraph_format(style.paragraph_format, para_spec)
 
         # Apply user-configurable list indent to list styles
         if style_name in ("List Bullet", "List Number"):
@@ -118,7 +147,7 @@ def _disable_hyphenation(doc: Document) -> None:
     settings.append(elem)
 
 
-def _add_page_numbers(doc: Document) -> None:
+def _add_page_numbers(doc: Document, *, font_family: str = C.FONT_FAMILY) -> None:
     """Add ACB-compliant page numbers to the footer (Arial 18pt bold, right-aligned)."""
     for section in doc.sections:
         footer = section.footer
@@ -135,7 +164,7 @@ def _add_page_numbers(doc: Document) -> None:
         paragraph.alignment = WD_ALIGN_PARAGRAPH.RIGHT
 
         run = paragraph.add_run()
-        run.font.name = C.FONT_FAMILY
+        run.font.name = font_family
         run.font.size = Pt(C.FOOTER_SIZE_PT)
         run.font.bold = True
         run.font.color.rgb = RGBColor(0, 0, 0)
@@ -234,6 +263,7 @@ def create_template(
     title: str = "",
     list_indent_in: float = C.LIST_INDENT_IN,
     list_hanging_in: float = C.LIST_HANGING_IN,
+    standards_profile: str = C.StandardsProfile.ACB_2025.value,
 ) -> Path:
     """Create a complete ACB Large Print .dotx template.
 
@@ -244,6 +274,7 @@ def create_template(
         title: Document title for properties (WCAG 2.4.2).
         list_indent_in: Left indent for list styles in inches.
         list_hanging_in: Hanging indent for list styles in inches.
+        standards_profile: Standards profile for style defaults.
 
     Returns:
         Path to the created template file.
@@ -255,12 +286,20 @@ def create_template(
     doc.core_properties.title = title or "ACB Large Print Document"
     doc.core_properties.author = "ACB Large Print Tool"
 
+    font_family_override, line_spacing_override = _resolve_profile_style_overrides(
+        standards_profile
+    )
+
     _configure_styles(
-        doc, list_indent_in=list_indent_in, list_hanging_in=list_hanging_in
+        doc,
+        list_indent_in=list_indent_in,
+        list_hanging_in=list_hanging_in,
+        font_family_override=font_family_override,
+        line_spacing_override=line_spacing_override,
     )
     _configure_page_setup(doc, bound=bound)
     _disable_hyphenation(doc)
-    _add_page_numbers(doc)
+    _add_page_numbers(doc, font_family=font_family_override or C.FONT_FAMILY)
     _set_document_language(doc)
 
     if include_sample:

@@ -8,8 +8,10 @@ from werkzeug.utils import secure_filename
 from ..rules import (
     filter_findings,
     get_all_rule_ids,
+    get_profile_label,
     get_rule_ids_by_category,
     get_rule_ids_by_format,
+    get_rule_ids_by_profile,
     get_rule_ids_by_severity,
 )
 from ..upload import (
@@ -464,8 +466,11 @@ def _run_fix_and_render(
         )
 
     categories = request.form.getlist("category") or ["acb", "msac"]
+    standards_profile = request.form.get("standards_profile", "acb_2025")
+    profile_label = get_profile_label(standards_profile)
     category_rule_ids = get_rule_ids_by_category(*categories)
     format_rule_ids = get_rule_ids_by_format(doc_format)
+    profile_rule_ids = get_rule_ids_by_profile(standards_profile)
     mode = opts["mode"]
 
     if mode == "essentials":
@@ -480,7 +485,7 @@ def _run_fix_and_render(
         selected = get_all_rule_ids()
         mode_label = "Full Fix -- all rules"
 
-    selected = selected & category_rule_ids & format_rule_ids
+    selected = selected & category_rule_ids & format_rule_ids & profile_rule_ids
     post_findings = filter_findings(post_audit.findings, selected)
     pre_breakdown = _build_penalty_breakdown(pre_audit.findings)
     post_breakdown = _build_penalty_breakdown(post_audit.findings)
@@ -504,6 +509,7 @@ def _run_fix_and_render(
         warnings=warnings,
         suppressed_rules=suppressed_rules,
         mode_label=mode_label,
+        profile_label=profile_label,
         download_name=output_name,
         token=token,
     )

@@ -5,6 +5,23 @@
 
 {% block content %}
 <p>This page presents the complete ACB Large Print Guidelines (revised May 6, 2025) supplemented with WCAG 2.2 AA digital accessibility requirements. These are the rules enforced by the <a href="{{ url_for('audit.audit_form') }}">audit</a> and <a href="{{ url_for('fix.fix_form') }}">fix</a> tools.</p>
+<p>For APH source guidance, see <a href="https://www.aph.org/resources/large-print-guidelines/">APH: Guidelines for the Development of Documents in Large Print</a> (includes APH-hosted DOCX/PDF guideline downloads). APH coverage in this toolkit is currently partial and being expanded under the 1.2.0 submission track.</p>
+
+<section id="section-guideline-sets">
+  <h2>About These Guideline Sets</h2>
+  <details class="guideline-accordion" open>
+    <summary>Which standard should I use?</summary>
+    <p><strong>ACB and APH are the two large-print production standards supported in this toolkit.</strong></p>
+    <ul>
+      <li><strong>ACB:</strong> best fit for consumer and member publications. This is the default baseline in GLOW.</li>
+      <li><strong>APH:</strong> best fit for educational and student-facing large-print workflows, with current coverage shown in the APH Submission profile.</li>
+      <li><strong>AFB JVIB style:</strong> not a large-print production standard and not offered as a fix/audit mode in this toolkit. It is a manuscript submission standard for academic publishing in the <em>Journal of Visual Impairment &amp; Blindness</em>.</li>
+    </ul>
+    <p>Use AFB JVIB guidance directly when preparing an academic manuscript for JVIB submission. For large-print production output, use ACB or APH profiles in this toolkit.</p>
+    <p><strong>Reference links:</strong> <a href="https://www.bits-acb.org">BITS / ACB</a>, <a href="https://www.aph.org/resources/large-print-guidelines/">APH large-print guidelines</a>, and <a href="https://afb.org/news-publications/publications/jvib/authors/afb-style-guidelines">AFB JVIB style guidelines</a>.</p>
+  </details>
+  <a href="#toc-heading" class="back-to-top">Back to table of contents</a>
+</section>
 
 <nav aria-labelledby="toc-heading">
   <h2 id="toc-heading">Table of Contents</h2>
@@ -20,6 +37,7 @@
     <li><a href="#section-page-numbers">Page Numbers</a></li>
     <li><a href="#section-doc-properties">Document Properties (WCAG)</a></li>
     <li><a href="#section-epub">ePub Accessibility</a></li>
+    <li><a href="#section-aph-submission">APH Submission Profile (Release 1.2.0)</a></li>
     <li><a href="#section-rules-summary">All Rules by Severity</a></li>
   </ol>
 </nav>
@@ -203,8 +221,37 @@
   <a href="#toc-heading" class="back-to-top">Back to table of contents</a>
 </section>
 
+<section id="section-aph-submission">
+  <h2>12. APH Submission Profile (Release 1.2.0)</h2>
+  <details class="guideline-accordion" open>
+    <summary>How APH submission is handled in this toolkit</summary>
+    <p>Release 1.2.0 introduces an APH submission profile workflow on top of the existing ACB and WCAG rules. The goal is to keep one canonical rule engine while making submission evidence explicit and traceable.</p>
+    <p><strong>Profile model:</strong> ACB-only, APH submission, and combined strict profiles share the same core engine and differ by rule applicability and reporting scope.</p>
+    <p><strong>Evidence model:</strong> Every reported finding in APH mode should map to a source standard, rule reference, severity, and remediation status so reviewers can follow decisions without external handouts.</p>
+    <p><strong>Cross-surface parity:</strong> Rule metadata and severity behavior must remain synchronized across Python core, web UI, and Office add-in implementations before APH package generation.</p>
+    <h3>Week-by-week APH execution gates</h3>
+    <ul>
+      <li><strong>Week 1:</strong> Finalize APH mapping matrix and acceptance criteria.</li>
+      <li><strong>Week 2:</strong> Implement profile-aware constants and sync all implementations.</li>
+      <li><strong>Week 3:</strong> Ship profile controls and standards-aware reporting in the UI.</li>
+      <li><strong>Week 4:</strong> Run full validation and produce submission-ready package artifacts.</li>
+    </ul>
+    <h3>Reviewed APH source highlights (DOCX + PDF)</h3>
+    <ul>
+      <li>APH large-print baseline aligns on key sizing targets: 18pt body, 20pt subheadings, 22pt headings.</li>
+      <li>APH recommends sans-serif fonts and promotes APHont as a low-vision-focused typeface.</li>
+      <li>APH guidance includes additional recommendations on line spacing, line length, and color/palette usage that are not yet fully represented as enforceable rules in this toolkit.</li>
+    </ul>
+    <h3>Font integration note (APHont)</h3>
+    <p>APHont is being evaluated as an optional profile-specific output target. Existing ACB workflows keep Arial as the default to preserve current behavior and compatibility.</p>
+    <p><strong>Current status:</strong> Not all APH guideline items are implemented today. Current behavior is primarily ACB + WCAG + Microsoft Accessibility Checker + format-specific rule sets, with APH-specific parity tracked as release work.</p>
+    <p>Detailed operational guidance is available in the <a href="{{ url_for('guide.guide_page') }}#aph-release-track">User Guide APH track</a>.</p>
+  </details>
+  <a href="#toc-heading" class="back-to-top">Back to table of contents</a>
+</section>
+
 <section id="section-rules-summary">
-  <h2>All Rules by Severity</h2>
+  <h2>13. All Rules by Severity</h2>
   <p>The following is the complete list of audit rules, grouped by severity level. These are the same rules available in the <a href="{{ url_for('audit.audit_form') }}">audit</a> and <a href="{{ url_for('fix.fix_form') }}">fix</a> tools.</p>
 
   {% for severity in ["Critical", "High", "Medium", "Low"] %}

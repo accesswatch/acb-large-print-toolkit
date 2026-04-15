@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}GLOW Accessibility Toolkit{% endblock %}
+{% block title %}Home{% endblock %}
 {% block heading %}GLOW Accessibility Toolkit{% endblock %}
 
 {% block content %}
@@ -27,6 +27,18 @@
     </div>
   </div>
   <p>New to this tool? <a href="{{ url_for('guide.guide_page') }}">Read the full user guide</a> for step-by-step help with every feature.</p>
+</section>
+
+<section aria-labelledby="aph-track-heading">
+  <h2 id="aph-track-heading">Release 1.2.0 APH Submission Track</h2>
+  <p>We are embedding the APH submission workflow directly into the product documentation so teams can complete preparation without relying on a separate PDF handout.</p>
+  <ol>
+    <li><strong>Week 1:</strong> Rule mapping and submission evidence model</li>
+    <li><strong>Week 2:</strong> Core profile implementation and rule metadata alignment</li>
+    <li><strong>Week 3:</strong> Web UX updates for standards profile selection and report clarity</li>
+    <li><strong>Week 4:</strong> Cross-surface parity, validation, and final APH package assembly</li>
+  </ol>
+  <p><a href="{{ url_for('guide.guide_page') }}#aph-release-track">Open the guided Week 1-4 playbook</a> or review the <a href="{{ url_for('guidelines.guidelines_page') }}#section-aph-submission">APH submission profile notes</a>.</p>
 </section>
 
 <section aria-labelledby="formats-heading">
@@ -100,7 +112,36 @@
         <li class="format-tag format-misc">and more</li>
       </ul>
     </div>
+
+    <div class="card card-guidelines">
+      <h3><a href="{{ url_for('guidelines.guidelines_page') }}">Guidelines Reference</a></h3>
+      <p>Browse the full ACB, WCAG, and APH submission guidance in one place. Use this tab when you need rule rationale or standards references while reviewing findings.</p>
+      <ul class="card-formats">
+        <li class="format-tag format-misc">Reference</li>
+      </ul>
+    </div>
+
+    <div class="card card-settings">
+      <h3><a href="{{ url_for('settings.settings_page') }}">Settings</a></h3>
+      <p>Set your workflow defaults once: standards profiles, audit/fix modes, template options, export mode, and convert options. Opt in to save preferences on this device.</p>
+      <ul class="card-formats">
+        <li class="format-tag format-misc">Personalization</li>
+      </ul>
+    </div>
   </div>
+</section>
+
+<section aria-labelledby="tabs-heading">
+  <h2 id="tabs-heading">What Each Tab Does</h2>
+  <ul>
+    <li><strong>Audit:</strong> checks documents and reports findings by severity.</li>
+    <li><strong>Fix:</strong> applies available auto-fixes and shows what still needs manual work.</li>
+    <li><strong>Template:</strong> creates Word templates with profile-aware defaults.</li>
+    <li><strong>Export:</strong> turns Word documents into accessible HTML for web publishing.</li>
+    <li><strong>Convert:</strong> transforms documents across Markdown, HTML, Word, EPUB, PDF, and DAISY workflows.</li>
+    <li><strong>Guidelines:</strong> explains the standards behind each rule and profile.</li>
+    <li><strong>Settings:</strong> stores your default choices so every workflow opens the way your team prefers.</li>
+  </ul>
 </section>
 
 <section aria-labelledby="about-heading">
@@ -118,6 +159,7 @@
   </ul>
 
   <p>For Excel and PowerPoint, the tool enforces <strong>Microsoft Accessibility Checker</strong> rules aligned with WCAG 2.2 AA: sheet names, table headers, alt text, reading order, slide titles, and more. <a href="{{ url_for('guidelines.guidelines_page') }}">Read the full guidelines reference</a>.</p>
+  <p>External reference: APH also publishes research-based large print guidance at <a href="https://www.aph.org/resources/large-print-guidelines/">Guidelines for the Development of Documents in Large Print</a>. APH alignment in this toolkit is currently partial and tracked for the 1.2.0 submission workflow.</p>
 </section>
 
 <section aria-labelledby="privacy-heading">
