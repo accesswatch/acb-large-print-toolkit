@@ -19,6 +19,9 @@
   </p>
   <p>{{ result.findings | length }} finding{{ "s" if result.findings | length != 1 else "" }} detected
     {% if mode_label %} ({{ mode_label }}){% endif %}.</p>
+  {% if suppressed_rules %}
+  <p class="help-text"><strong>Suppressed by your settings:</strong> {{ suppressed_rules | join(", ") }}.</p>
+  {% endif %}
 </section>
 
 {% if result.findings %}

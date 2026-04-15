@@ -17,6 +17,13 @@ A cross-platform desktop application that audits, remediates, and exports Micros
 - Full CLI for scripting and batch processing of all three formats
 - Cross-platform: Windows, macOS, and Linux (x64 and ARM64)
 
+## Recent Fix Workflow Updates (April 2026)
+
+- Fix Results now suppresses `ACB-FAUX-HEADING` from post-fix scoring when heading detection is explicitly disabled, and shows a "Suppressed by your settings" note.
+- Fix Results now warns when source body text appears below 18pt because ACB normalization can increase page count in long documents.
+- List indentation controls are always visible for discoverability and are enabled only when "Flush all lists to the left margin" is unchecked.
+- Legacy Word VML shapes now treat explicit `alt=""` as decorative, reducing false `ACB-MISSING-ALT-TEXT` findings.
+
 ## Installation
 
 ### Pre-built executables

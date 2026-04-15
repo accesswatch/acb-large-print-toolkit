@@ -13,6 +13,17 @@ A Flask web application that provides browser-based access to the GLOW Accessibi
 - **About** -- project mission, organizations, standards, open source dependencies, and acknowledgments
 - **Feedback** -- collect user feedback with SQLite storage and password-protected review
 
+### Recently Completed Fix UX/Behavior Updates
+
+- **Heading suppression transparency** -- when users disable heading detection, `ACB-FAUX-HEADING` is suppressed from post-fix scoring and listed as suppressed in the results UI.
+- **Page growth guidance** -- fix results now warn when detected pre-fix body text is below 18pt because normalization can increase pagination.
+- **List indentation discoverability** -- list indent controls are always visible and toggle between disabled/enabled based on the "Flush all lists" setting.
+- **VML decorative image handling** -- legacy VML shapes with explicit `alt=""` are treated as decorative (no missing-alt finding).
+- **Quick Rule Exceptions** -- new collapsible section in Fix and Audit forms with toggles for `ACB-LINK-TEXT`, `ACB-MISSING-ALT-TEXT`, and `ACB-FAUX-HEADING` to suppress these rules per operation without editing workflow settings.
+- **Preserve centered headings** -- Fix form option to skip alignment override on heading paragraphs, preserving intentional heading center-alignment.
+- **Per-level list indentation** -- Fix form now accepts level-specific indent targets (Level 1, Level 2, Level 3) instead of a single uniform indent; auditor and fixer apply per-style-level expectations.
+- **FAQ page** -- dedicated `/faq/` endpoint with answers to quick exception usage, heading preservation intent, per-level list indentation, and known limitations.
+
 ## Supported Formats
 
 | Format | Audit | Auto-Fix | Template | Export | Convert |

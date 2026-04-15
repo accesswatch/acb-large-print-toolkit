@@ -139,6 +139,9 @@ class WizardFrame(wx.Frame):
         # Status bar
         self.status_bar = self.CreateStatusBar()
 
+        # Menu bar
+        self._build_menu_bar()
+
         # ── Events ────────────────────────────────────────────────────
         self.btn_next.Bind(wx.EVT_BUTTON, self._on_next)
         self.btn_back.Bind(wx.EVT_BUTTON, self._on_back)
@@ -1187,6 +1190,176 @@ class WizardFrame(wx.Frame):
         self.done_text.SetValue("\n".join(lines))
         self.done_text.SetInsertionPoint(0)
         self.done_text.SetFocus()
+
+    # ==================================================================
+    # Menu bar
+    # ==================================================================
+
+    def _build_menu_bar(self) -> None:
+        """Build the application menu bar with a Help menu."""
+        menu_bar = wx.MenuBar()
+
+        help_menu = wx.Menu()
+        self._id_guide = wx.NewIdRef()
+        self._id_changelog = wx.NewIdRef()
+        self._id_prd = wx.NewIdRef()
+        self._id_about = wx.NewIdRef()
+
+        help_menu.Append(self._id_guide, "&User Guide", "Open the user guide in your browser")
+        help_menu.Append(self._id_changelog, "&Changelog", "Open the changelog in your browser")
+        help_menu.Append(self._id_prd, "&Product Requirements Document", "Open the PRD in your browser")
+        help_menu.AppendSeparator()
+        help_menu.Append(self._id_about, "&About", f"About {__app_name__}")
+
+        menu_bar.Append(help_menu, "&Help")
+        self.SetMenuBar(menu_bar)
+
+        self.Bind(wx.EVT_MENU, self._on_help_guide, id=self._id_guide)
+        self.Bind(wx.EVT_MENU, self._on_help_changelog, id=self._id_changelog)
+        self.Bind(wx.EVT_MENU, self._on_help_prd, id=self._id_prd)
+        self.Bind(wx.EVT_MENU, self._on_help_about, id=self._id_about)
+
+    def _find_docs_file(self, filename: str) -> Path | None:
+        """Locate a file in the docs/ directory by traversing parents."""
+        p = Path(__file__).resolve().parent
+        for _ in range(10):
+            candidate = p / "docs" / filename
+            if candidate.is_file():
+                return candidate
+            candidate = p / filename
+            if candidate.is_file():
+                return candidate
+            p = p.parent
+        return None
+
+    def _open_docs_file_in_browser(self, filename: str, title: str) -> None:
+        """Find a markdown docs file, render it to temp HTML, and open in browser."""
+        from . import __version__
+
+        doc_path = self._find_docs_file(filename)
+        if doc_path is None:
+            wx.MessageBox(
+                f"Could not locate {filename}.",
+                "File Not Found",
+                wx.OK | wx.ICON_INFORMATION,
+            )
+            return
+
+        try:
+            md_text = doc_path.read_text(encoding="utf-8")
+        except OSError as exc:
+            wx.MessageBox(
+                f"Could not read {filename}:\n{exc}",
+                "Error",
+                wx.OK | wx.ICON_ERROR,
+            )
+            return
+
+        html = self._md_to_html(md_text, title)
+        tmp = Path(tempfile.mkdtemp()) / f"{doc_path.stem}.html"
+        tmp.write_text(html, encoding="utf-8")
+        webbrowser.open(tmp.as_uri())
+
+    def _md_to_html(self, md_text: str, title: str) -> str:
+        """Convert markdown to a simple accessible HTML page."""
+        import re
+
+        lines = md_text.splitlines()
+        body_parts: list[str] = []
+        i = 0
+        while i < len(lines):
+            line = lines[i]
+
+            # Headings
+            m = re.match(r'^(#{1,4})\s+(.*)', line)
+            if m:
+                level = len(m.group(1)) + 1  # h1 is the page title
+                level = min(level, 6)
+                text = m.group(2).strip()
+                body_parts.append(f'<h{level}>{text}</h{level}>')
+                i += 1
+                continue
+
+            # Horizontal rule
+            if re.match(r'^[-*_]{3,}\s*$', line):
+                body_parts.append('<hr>')
+                i += 1
+                continue
+
+            # Unordered list
+            if re.match(r'^[\-\*]\s+', line):
+                items = []
+                while i < len(lines) and re.match(r'^[\-\*]\s+', lines[i]):
+                    items.append(f'<li>{re.sub(r"^[\-\*]\s+", "", lines[i])}</li>')
+                    i += 1
+                body_parts.append('<ul>' + ''.join(items) + '</ul>')
+                continue
+
+            # Ordered list
+            if re.match(r'^\d+\.\s+', line):
+                items = []
+                while i < len(lines) and re.match(r'^\d+\.\s+', lines[i]):
+                    items.append(f'<li>{re.sub(r"^\d+\.\s+", "", lines[i])}</li>')
+                    i += 1
+                body_parts.append('<ol>' + ''.join(items) + '</ol>')
+                continue
+
+            # Blank line -> paragraph break (skip)
+            if not line.strip():
+                i += 1
+                continue
+
+            # Paragraph
+            para_lines = []
+            while i < len(lines) and lines[i].strip():
+                para_lines.append(lines[i])
+                i += 1
+            para = ' '.join(para_lines)
+            # Inline: bold, code, links
+            para = re.sub(r'\*\*(.+?)\*\*', r'<strong>\1</strong>', para)
+            para = re.sub(r'`([^`]+)`', r'<code>\1</code>', para)
+            para = re.sub(r'\[([^\]]+)\]\(([^)]+)\)', r'<a href="\2">\1</a>', para)
+            body_parts.append(f'<p>{para}</p>')
+
+        body = '\n'.join(body_parts)
+        return (
+            '<!DOCTYPE html>\n<html lang="en">\n<head>\n'
+            f'<meta charset="utf-8">\n<title>{title}</title>\n'
+            '<style>\n'
+            'body{font-family:Arial,sans-serif;font-size:18px;line-height:1.5;'
+            'max-width:900px;margin:2rem auto;padding:0 1.5rem;color:#1a1a1a}\n'
+            'h1,h2,h3{margin-top:2rem}\n'
+            'code{background:#f4f4f4;padding:.1em .3em;border-radius:3px}\n'
+            'hr{border:none;border-top:1px solid #ccc;margin:2rem 0}\n'
+            'a{color:#003da5}\n'
+            '</style>\n</head>\n<body>\n'
+            f'<h1>{title}</h1>\n'
+            f'{body}\n'
+            '</body>\n</html>'
+        )
+
+    def _on_help_guide(self, _evt: wx.CommandEvent) -> None:
+        self._open_docs_file_in_browser("user-guide.md", "GLOW User Guide")
+
+    def _on_help_changelog(self, _evt: wx.CommandEvent) -> None:
+        self._open_docs_file_in_browser("CHANGELOG.md", "GLOW Changelog")
+
+    def _on_help_prd(self, _evt: wx.CommandEvent) -> None:
+        self._open_docs_file_in_browser("prd.md", "GLOW Product Requirements Document")
+
+    def _on_help_about(self, _evt: wx.CommandEvent) -> None:
+        from . import __app_name__, __version__
+
+        wx.MessageBox(
+            f"{__app_name__} {__version__}\n\n"
+            "Audits and fixes Word, Excel, and PowerPoint documents\n"
+            "for compliance with the ACB Large Print Guidelines\n"
+            "and WCAG 2.2 Level AA.\n\n"
+            "Sponsored by Blind Information Technology Solutions (BITS),\n"
+            "a special interest affiliate of the American Council of the Blind.",
+            f"About {__app_name__}",
+            wx.OK | wx.ICON_INFORMATION,
+        )
 
     # ==================================================================
     # Shared helpers

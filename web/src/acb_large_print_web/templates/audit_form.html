@@ -87,6 +87,28 @@
     </fieldset>
   </details>
 
+  <fieldset>
+    <legend>Quick Rule Exceptions</legend>
+    <p class="help-text">Use these when specific findings are intentional for your publication workflow.</p>
+
+    <div class="checkbox-group">
+      <label>
+        <input type="checkbox" name="suppress_link_text">
+        I use raw URLs for hard-copy readers -- suppress <strong>ACB-LINK-TEXT</strong>
+      </label>
+
+      <label>
+        <input type="checkbox" name="suppress_missing_alt_text">
+        This document includes intentional decorative images -- suppress <strong>ACB-MISSING-ALT-TEXT</strong>
+      </label>
+
+      <label>
+        <input type="checkbox" name="suppress_faux_heading">
+        My headings are already correct -- suppress <strong>ACB-FAUX-HEADING</strong>
+      </label>
+    </div>
+  </fieldset>
+
   <details class="help-accordion">
     <summary>Understanding severity levels</summary>
     <dl>

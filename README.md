@@ -39,6 +39,17 @@ A VS Code agent toolkit, desktop application, and web application for auditing a
 - Produces PowerShell scripts for configuring Word document styles
 - Detects and uses external tools (markdownlint, Pandoc) when available
 
+## Recent Fix Workflow Updates (April 2026)
+
+- Fix Results now suppresses `ACB-FAUX-HEADING` from post-fix scoring when heading detection is explicitly disabled, and shows a "Suppressed by your settings" note for transparency.
+- Fix Results now warns when pre-fix body text appears below 18pt, because normalizing to the ACB minimum can increase page count in long documents.
+- Fix form list indentation fields are always visible for discoverability and are enabled only when "Flush all lists to the left margin" is unchecked.
+- Legacy Word VML shapes now treat explicit `alt=""` as decorative, reducing false `ACB-MISSING-ALT-TEXT` findings.
+- **Quick Rule Exceptions** section added to Fix and Audit forms: suppress `ACB-LINK-TEXT`, `ACB-MISSING-ALT-TEXT`, and `ACB-FAUX-HEADING` rules per submission without workflow disruption.
+- **Preserve centered headings** option added to Fix form: when enabled, skips alignment override on heading paragraphs, preserving intentional heading centering.
+- **Per-level list indentation** added to Fix form: configure level-specific expected indents (Level 1, 2, 3) instead of a single uniform indent; auditor and fixer recognize paragraph list styles and apply per-level settings.
+- **Dedicated FAQ page** available at web app `/faq/` with answers to common workflow questions including quick exceptions, heading preservation, per-level indents, and known limitations.
+
 ## Workspace structure
 
 ```

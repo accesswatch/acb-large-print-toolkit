@@ -53,6 +53,9 @@
     {% if mode_label and remaining > 0 %}
     <p class="help-text">Note: score and grade always use all remaining findings in the post-fix audit, even when the table below is filtered by fix mode.</p>
     {% endif %}
+    {% if suppressed_rules %}
+    <p class="help-text"><strong>Suppressed by your settings:</strong> {{ suppressed_rules | join(", ") }}.</p>
+    {% endif %}
   </div>
 </section>
 

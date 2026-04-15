@@ -81,6 +81,25 @@
   </details>
 
   <fieldset>
+    <legend>Quick Rule Exceptions</legend>
+    <p class="help-text">Use these when specific findings are intentional for your publication workflow.</p>
+    <div class="checkbox-group">
+      <label>
+        <input type="checkbox" name="suppress_link_text">
+        I use raw URLs for hard-copy readers -- suppress <strong>ACB-LINK-TEXT</strong>
+      </label>
+      <label>
+        <input type="checkbox" name="suppress_missing_alt_text">
+        This document includes intentional decorative images -- suppress <strong>ACB-MISSING-ALT-TEXT</strong>
+      </label>
+      <label>
+        <input type="checkbox" name="suppress_faux_heading">
+        My headings are already correct -- suppress <strong>ACB-FAUX-HEADING</strong>
+      </label>
+    </div>
+  </fieldset>
+
+  <fieldset>
     <legend>Additional Options</legend>
     <label>
       <input type="checkbox" name="bound">
@@ -96,25 +115,58 @@
                aria-describedby="flush-help">
         Flush all lists to the left margin (ACB default)
       </label>
-      <p id="flush-help" class="help-text">When checked, bullet and numbered list items start at the left margin with no indentation.</p>
+      <p id="flush-help" class="help-text">When checked, bullet and numbered list items start at the left margin with no indentation. Uncheck to set custom left and hanging indents.</p>
 
-      <div id="list-indent-fields" class="indent-fields" style="display:none;">
+      <div id="list-indent-fields" class="indent-fields">
         <div class="form-group form-group-inline">
           <label for="list-indent">Left indent (inches):</label>
           <input type="number" id="list-indent" name="list_indent"
                  value="0.50" min="0" max="2" step="0.05"
                  aria-describedby="indent-help"
-                 class="input-narrow">
+                 class="input-narrow" disabled>
         </div>
         <div class="form-group form-group-inline">
           <label for="list-hanging">Hanging indent (inches):</label>
           <input type="number" id="list-hanging" name="list_hanging"
                  value="0.25" min="0" max="2" step="0.05"
                  aria-describedby="indent-help"
-                 class="input-narrow">
+                 class="input-narrow" disabled>
         </div>
         <p id="indent-help" class="help-text">Standard Word defaults: 0.50 inch left indent, 0.25 inch hanging indent. Adjust if your style guide requires different values.</p>
+
+        <label>
+          <input type="checkbox" name="use_list_levels" id="use-list-levels">
+          Use per-level list indentation (Issue 8B)
+        </label>
+        <p class="help-text">Set separate left indents for nesting levels 1-3. Hanging indent still uses the single value above.</p>
+
+        <div id="list-level-fields" class="indent-fields">
+          <div class="form-group form-group-inline">
+            <label for="list-indent-level-1">Level 1 indent (inches):</label>
+            <input type="number" id="list-indent-level-1" name="list_indent_level_1"
+                   value="0.25" min="0" max="2" step="0.05" class="input-narrow" disabled>
+          </div>
+          <div class="form-group form-group-inline">
+            <label for="list-indent-level-2">Level 2 indent (inches):</label>
+            <input type="number" id="list-indent-level-2" name="list_indent_level_2"
+                   value="0.50" min="0" max="2" step="0.05" class="input-narrow" disabled>
+          </div>
+          <div class="form-group form-group-inline">
+            <label for="list-indent-level-3">Level 3 indent (inches):</label>
+            <input type="number" id="list-indent-level-3" name="list_indent_level_3"
+                   value="0.75" min="0" max="2" step="0.05" class="input-narrow" disabled>
+          </div>
+        </div>
       </div>
+    </fieldset>
+
+    <fieldset class="nested-fieldset">
+      <legend>Heading Alignment Handling</legend>
+      <label>
+        <input type="checkbox" name="preserve_heading_alignment" id="preserve-heading-alignment">
+        Preserve centered headings (do not force heading paragraphs to flush left)
+      </label>
+      <p class="help-text">Use for creative publications that intentionally center titles. Heading-related alignment findings are suppressed in results when this option is enabled.</p>
     </fieldset>
 
     <fieldset class="nested-fieldset">
@@ -204,10 +256,24 @@
     (function () {
       var chk = document.getElementById("flush-lists");
       var fields = document.getElementById("list-indent-fields");
+      var inputs = fields.querySelectorAll("input");
+      var useLevels = document.getElementById("use-list-levels");
+      var levelFields = document.getElementById("list-level-fields");
+      var levelInputs = levelFields.querySelectorAll("input");
       function toggle() {
-        fields.style.display = chk.checked ? "none" : "";
+        var disabled = chk.checked;
+        for (var i = 0; i < inputs.length; i++) {
+          if (inputs[i].id !== "use-list-levels") {
+            inputs[i].disabled = disabled;
+          }
+        }
+        var levelDisabled = disabled || !useLevels.checked;
+        for (var j = 0; j < levelInputs.length; j++) {
+          levelInputs[j].disabled = levelDisabled;
+        }
       }
       chk.addEventListener("change", toggle);
+      useLevels.addEventListener("change", toggle);
       toggle();
     })();
   </script>

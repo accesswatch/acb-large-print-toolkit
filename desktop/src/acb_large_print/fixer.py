@@ -25,12 +25,25 @@ def _apply_acb_font(font_obj, spec: C.FontDef) -> None:
     font_obj.color.rgb = RGBColor(0, 0, 0)
 
 
+def _list_level_from_style(style_name: str) -> int | None:
+    """Infer list nesting level from built-in Word list style names."""
+    if style_name in ("List Bullet", "List Number"):
+        return 0
+    if style_name in ("List Bullet 2", "List Number 2"):
+        return 1
+    if style_name in ("List Bullet 3", "List Number 3"):
+        return 2
+    return None
+
+
 def _fix_styles(
     doc: Document,
     records: list[C.FixRecord],
     *,
     list_indent_in: float = C.LIST_INDENT_IN,
     list_hanging_in: float = C.LIST_HANGING_IN,
+    list_level_indents: dict[int, float] | None = None,
+    preserve_heading_alignment: bool = False,
 ) -> int:
     """Fix all named styles to match ACB specs. Returns count of fixes."""
     fixes = 0
@@ -67,7 +80,9 @@ def _fix_styles(
             changed = True
 
         # Paragraph format
-        if pf.alignment != WD_ALIGN_PARAGRAPH.LEFT:
+        if pf.alignment != WD_ALIGN_PARAGRAPH.LEFT and not (
+            preserve_heading_alignment and style_name.startswith("Heading")
+        ):
             pf.alignment = WD_ALIGN_PARAGRAPH.LEFT
             details.append("alignment -> flush left")
             changed = True
@@ -80,21 +95,25 @@ def _fix_styles(
             changed = True
 
         # Apply user-configurable list indentation to list styles
-        if style_name in ("List Bullet", "List Number"):
-            target_left = Inches(list_indent_in)
+        list_level = _list_level_from_style(style_name)
+        if list_level is not None:
+            target_indent = list_indent_in
+            if list_level_indents is not None:
+                target_indent = list_level_indents.get(list_level, list_indent_in)
+            target_left = Inches(target_indent)
             if pf.left_indent is None or abs(pf.left_indent - target_left) > Inches(
                 0.05
             ):
                 pf.left_indent = target_left
                 changed = True
-            if list_indent_in > 0 and list_hanging_in > 0:
+            if target_indent > 0 and list_hanging_in > 0:
                 target_hang = Inches(-list_hanging_in)
                 if pf.first_line_indent is None or abs(
                     pf.first_line_indent - target_hang
                 ) > Inches(0.05):
                     pf.first_line_indent = target_hang
                     changed = True
-            elif list_indent_in == 0:
+            elif target_indent == 0:
                 if pf.first_line_indent is not None and pf.first_line_indent != Inches(
                     0
                 ):
@@ -212,8 +231,10 @@ def _fix_paragraph_formatting(
     *,
     list_indent_in: float = C.LIST_INDENT_IN,
     list_hanging_in: float = C.LIST_HANGING_IN,
+    list_level_indents: dict[int, float] | None = None,
     para_indent_in: float = C.PARA_INDENT_IN,
     first_line_indent_in: float = C.FIRST_LINE_INDENT_IN,
+    preserve_heading_alignment: bool = False,
 ) -> int:
     """Fix direct formatting overrides in paragraph content. Returns fix count."""
     fixes = 0
@@ -235,35 +256,40 @@ def _fix_paragraph_formatting(
         # Fix alignment
         if para.paragraph_format.alignment is not None:
             if para.paragraph_format.alignment != WD_ALIGN_PARAGRAPH.LEFT:
-                para.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.LEFT
-                fixes += 1
-                records.append(
-                    C.FixRecord(
-                        "ACB-ALIGNMENT",
-                        C.FIX_CATEGORY_ALIGNMENT,
-                        "Alignment -> flush left",
-                        loc,
+                if not (preserve_heading_alignment and is_heading):
+                    para.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.LEFT
+                    fixes += 1
+                    records.append(
+                        C.FixRecord(
+                            "ACB-ALIGNMENT",
+                            C.FIX_CATEGORY_ALIGNMENT,
+                            "Alignment -> flush left",
+                            loc,
+                        )
                     )
-                )
 
         # Fix list indentation
         if is_list:
             pf = para.paragraph_format
+            level = _list_level_from_style(style_name)
+            expected_indent = list_indent_in
+            if list_level_indents is not None and level is not None:
+                expected_indent = list_level_indents.get(level, list_indent_in)
             actual_indent = pf.left_indent.inches if pf.left_indent else 0.0
-            if abs(actual_indent - list_indent_in) > 0.05:
+            if abs(actual_indent - expected_indent) > 0.05:
                 pf.left_indent = (
-                    Inches(list_indent_in) if list_indent_in > 0 else Inches(0)
+                    Inches(expected_indent) if expected_indent > 0 else Inches(0)
                 )
-                if list_hanging_in and list_indent_in > 0:
+                if list_hanging_in and expected_indent > 0:
                     pf.first_line_indent = Inches(-list_hanging_in)
-                elif list_indent_in == 0:
+                elif expected_indent == 0:
                     pf.first_line_indent = None
                 fixes += 1
                 records.append(
                     C.FixRecord(
                         "ACB-LIST-INDENT",
                         C.FIX_CATEGORY_ALIGNMENT,
-                        f"List indent -> {list_indent_in}in",
+                        f"List indent -> {expected_indent}in",
                         loc,
                     )
                 )
@@ -708,8 +734,10 @@ def fix_document(
     bound: bool = False,
     list_indent_in: float | None = None,
     list_hanging_in: float | None = None,
+    list_level_indents: dict[int, float] | None = None,
     para_indent_in: float | None = None,
     first_line_indent_in: float | None = None,
+    preserve_heading_alignment: bool = False,
     detect_headings: bool = False,
     ai_provider: object | None = None,
     heading_threshold: int | None = None,
@@ -772,7 +800,12 @@ def fix_document(
     total_fixes += _normalize_heading_structure(doc, records)
 
     total_fixes += _fix_styles(
-        doc, records, list_indent_in=list_indent_in, list_hanging_in=list_hanging_in
+        doc,
+        records,
+        list_indent_in=list_indent_in,
+        list_hanging_in=list_hanging_in,
+        list_level_indents=list_level_indents,
+        preserve_heading_alignment=preserve_heading_alignment,
     )
     total_fixes += _fix_page_setup(doc, records, bound=bound)
     total_fixes += _fix_paragraph_formatting(
@@ -780,8 +813,10 @@ def fix_document(
         records,
         list_indent_in=list_indent_in,
         list_hanging_in=list_hanging_in,
+        list_level_indents=list_level_indents,
         para_indent_in=para_indent_in,
         first_line_indent_in=first_line_indent_in,
+        preserve_heading_alignment=preserve_heading_alignment,
     )
     total_fixes += _fix_hyphenation(doc, records)
     total_fixes += _fix_page_numbers(doc, records)
@@ -799,6 +834,7 @@ def fix_document(
     post_audit = audit_document(
         output_path,
         list_indent_in=list_indent_in,
+        list_level_indents=list_level_indents,
         para_indent_in=para_indent_in,
         first_line_indent_in=first_line_indent_in,
     )

@@ -50,7 +50,9 @@
     <nav aria-label="Additional links">
       <ul class="footer-links">
         <li><a href="{{ url_for('guide.guide_page') }}"{% if request.blueprint == 'guide' %} aria-current="page"{% endif %}>User Guide</a></li>
+        <li><a href="{{ url_for('faq.faq_page') }}"{% if request.blueprint == 'faq' %} aria-current="page"{% endif %}>FAQ</a></li>
         <li><a href="{{ url_for('about.about_page') }}"{% if request.blueprint == 'about' %} aria-current="page"{% endif %}>About</a></li>
+        <li><a href="{{ url_for('prd.prd_page') }}"{% if request.blueprint == 'prd' %} aria-current="page"{% endif %}>PRD</a></li>
         <li><a href="{{ url_for('changelog.changelog_page') }}"{% if request.blueprint == 'changelog' %} aria-current="page"{% endif %}>Changelog</a></li>
         <li><a href="{{ url_for('feedback.feedback_form') }}"{% if request.blueprint == 'feedback' %} aria-current="page"{% endif %}>Feedback</a></li>
       </ul>

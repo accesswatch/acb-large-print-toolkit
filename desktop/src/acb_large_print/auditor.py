@@ -149,6 +149,17 @@ def _heading_level(style_name: str) -> int:
     return int(match.group(1)) if match else 0
 
 
+def _list_level_from_style(style_name: str) -> int | None:
+    """Infer list nesting level from built-in Word list style names."""
+    if style_name in ("List Bullet", "List Number"):
+        return 0
+    if style_name in ("List Bullet 2", "List Number 2"):
+        return 1
+    if style_name in ("List Bullet 3", "List Number 3"):
+        return 2
+    return None
+
+
 def _check_document_properties(doc: Document, result: AuditResult) -> None:
     """Check document-level properties."""
     # Title
@@ -282,6 +293,7 @@ def _check_paragraph_content(
     result: AuditResult,
     *,
     list_indent_in: float = C.LIST_INDENT_IN,
+    list_level_indents: dict[int, float] | None = None,
     para_indent_in: float = C.PARA_INDENT_IN,
     first_line_indent_in: float = C.FIRST_LINE_INDENT_IN,
 ) -> None:
@@ -331,9 +343,12 @@ def _check_paragraph_content(
         # Direct alignment override
         if para.paragraph_format.alignment is not None:
             if para.paragraph_format.alignment != WD_ALIGN_PARAGRAPH.LEFT:
+                msg = "Direct alignment override (not flush left)"
+                if is_heading:
+                    msg = "Direct alignment override on heading paragraph"
                 result.add(
                     "ACB-ALIGNMENT",
-                    f"Direct alignment override (not flush left)",
+                    msg,
                     loc,
                 )
 
@@ -349,7 +364,10 @@ def _check_paragraph_content(
         if is_list:
             pf = para.paragraph_format
             actual_indent = pf.left_indent.inches if pf.left_indent else 0.0
+            level = _list_level_from_style(style_name)
             expected_indent = list_indent_in
+            if list_level_indents is not None and level is not None:
+                expected_indent = list_level_indents.get(level, list_indent_in)
             indent_tolerance = 0.05
             if abs(actual_indent - expected_indent) > indent_tolerance:
                 result.add(
@@ -568,9 +586,11 @@ def _check_alt_text(doc: Document, result: AuditResult) -> None:
 
     # Also check v:shape elements (legacy shapes)
     for shape in body.iter(_vml_qn("shape")):
-        alt = shape.get("alt", "").strip()
+        alt = shape.get("alt", None)
         name = shape.get("id", "unknown shape")
-        if not alt:
+        # In VML, alt="" means explicitly decorative.
+        # Missing alt means no alt text.
+        if alt is None:
             result.add(
                 "ACB-MISSING-ALT-TEXT",
                 f"Shape '{name}' has no alternative text",
@@ -794,6 +814,7 @@ def audit_document(
     file_path: str | Path,
     *,
     list_indent_in: float | None = None,
+    list_level_indents: dict[int, float] | None = None,
     para_indent_in: float | None = None,
     first_line_indent_in: float | None = None,
 ) -> AuditResult:
@@ -829,6 +850,7 @@ def audit_document(
         doc,
         result,
         list_indent_in=list_indent_in,
+        list_level_indents=list_level_indents,
         para_indent_in=para_indent_in,
         first_line_indent_in=first_line_indent_in,
     )

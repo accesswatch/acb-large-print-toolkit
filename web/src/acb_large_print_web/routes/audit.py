@@ -76,6 +76,27 @@ def audit_submit():
 
         result = _audit_by_extension(saved_path)
 
+        suppress_link_text = request.form.get("suppress_link_text") == "on"
+        suppress_missing_alt_text = (
+            request.form.get("suppress_missing_alt_text") == "on"
+        )
+        suppress_faux_heading = request.form.get("suppress_faux_heading") == "on"
+        suppressed_rules: list[str] = []
+
+        suppress_rule_ids: set[str] = set()
+        if suppress_link_text:
+            suppress_rule_ids.add("ACB-LINK-TEXT")
+        if suppress_missing_alt_text:
+            suppress_rule_ids.add("ACB-MISSING-ALT-TEXT")
+        if suppress_faux_heading:
+            suppress_rule_ids.add("ACB-FAUX-HEADING")
+
+        if suppress_rule_ids:
+            suppressed_rules = sorted(suppress_rule_ids)
+            result.findings = [
+                f for f in result.findings if f.rule_id not in suppress_rule_ids
+            ]
+
         # Determine category scope
         categories = request.form.getlist("category")
         if not categories:
@@ -109,6 +130,7 @@ def audit_submit():
             mode_label=mode_label,
             doc_format=doc_format,
             ace_installed=_is_ace_installed(),
+            suppressed_rules=suppressed_rules,
         )
     except UploadError as e:
         return (

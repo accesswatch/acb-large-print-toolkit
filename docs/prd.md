@@ -422,111 +422,16 @@ web/
         acb-large-print.css # Copy of reference CSS
         forms.css           # Form layout, details styling, cards
   tests/
-    conftest.py             # Flask test client fixture
-    test_upload.py          # Upload validation unit tests
-    test_audit_route.py     # Audit blueprint integration tests
-    test_fix_route.py       # Fix blueprint integration tests
-    test_template_route.py  # Template blueprint integration tests
-    test_export_route.py    # Export blueprint integration tests
-    test_guidelines.py      # Guidelines page rendering tests
-    test_templates.py       # HTML template rendering tests (accessibility checks)
+    __init__.py
+    test_app.py             # Smoke tests: home, about, routes exist
+    test_audit.py           # Rule filtering, Full/Quick/Custom modes
+    test_fix.py             # Before/after scores, download
+    test_template.py        # Template generation options
+    test_export.py          # Standalone and CMS exports
+    test_errors.py          # 413 (large file), 415 (wrong type), 500
+    test_accessibility.py   # WCAG checks: lang, landmarks, labels, contrast
   Dockerfile
   docker-compose.yml
-  Caddyfile
-  pyproject.toml            # Package metadata, depends on acb-large-print
   requirements.txt
-  README.md
+  pyproject.toml
 ```
-
-## Testing Decisions
-
-### What makes a good test
-
-Tests verify **external behavior** through the Flask test client, not internal implementation details. A test uploads a real `.docx` fixture, hits a route, and asserts on the HTTP response (status code, content type, response body content). Tests do not mock core library functions -- they exercise the full stack from HTTP request to HTTP response.
-
-### Modules to test
-
-| Module | Test type | What to verify |
-|--------|-----------|----------------|
-| `upload.py` | Unit tests | Rejects non-`.docx` files, rejects oversized files, rejects empty uploads, accepts valid `.docx`, cleans up temp files after use |
-| `routes/audit.py` | Integration tests | GET returns form with three mode radio buttons, POST with valid `.docx` returns HTML report containing findings, POST with Quick mode returns only Critical+High findings, POST with Custom mode filters to selected rules, POST with invalid file returns error |
-| `routes/fix.py` | Integration tests | POST returns `.docx` download, response headers correct, before/after scores displayed, mode selection respected in result display |
-| `routes/template.py` | Integration tests | POST with options returns `.dotx` download, title and bound options respected |
-| `routes/export.py` | Integration tests | POST with standalone option returns ZIP, POST with CMS option returns HTML fragment |
-| `routes/guidelines.py` | Rendering tests | GET returns 200, page contains all AUDIT_RULES rule IDs, each severity group is present, `<details>` elements are used |
-| `templates/` | Rendering tests | All pages have `lang` attribute, all forms have labels, headings in order, landmarks present, `<details>/<summary>` elements used for help, rule checkboxes rendered from constants |
-
-### Test fixtures
-
-- A small valid `.docx` file (2-3 paragraphs with known ACB violations) committed to `tests/fixtures/`.
-- A corrupt file for error handling tests.
-- An oversized file (generated in test setup, not committed).
-
-### Prior art
-
-No existing tests in the repo. The test suite established here will set the pattern for future core library tests.
-
-## Out of Scope
-
-- **User accounts and authentication** -- the tool is completely open, no login required. If auth is needed later, it can be added as middleware without changing the route logic.
-- **Batch processing (multi-file upload)** -- v2 handles one file at a time. Batch is a future enhancement.
-- **PDF support** -- the core library only handles Office formats. PDF is a separate tool.
-- **CI/CD pipeline** -- deployment is manual `docker compose up` for v2. GitHub Actions deployment can be added later.
-- **Custom domain and DNS setup** -- the PRD covers the app. Domain configuration is an ops task done at deployment time.
-- **Excel and PowerPoint auto-fix** -- audit is supported for all three formats, but auto-fix is Word-only. Excel and PowerPoint auto-fix is a future enhancement.
-
-### Previously out of scope, now implemented
-
-- **Database** -- SQLite added for feedback persistence (concurrent-safe with WAL mode).
-- **Rate limiting** -- 120 requests/minute via Flask-Limiter (configurable).
-- **CSRF protection** -- Flask-WTF CSRFProtect on all POST forms.
-- **Multi-format support** -- .xlsx and .pptx audit support added across web, CLI, and GUI.
-- **CLI and GUI multi-format support** -- CLI audit, fix, and batch commands accept .docx, .xlsx, and .pptx. GUI file picker and wizard flow updated for all three formats.
-
-## Further Notes
-
-### Why Flask over Django, FastAPI, or others
-
-- Flask is the right weight for this app. There is no database, no ORM, no admin panel, no user model. Django brings all of that for free, but it is unused baggage here.
-- FastAPI's async model adds complexity without benefit -- document processing is CPU-bound (python-docx, mammoth), not I/O-bound. Async would not improve throughput.
-- Flask's Jinja2 templates produce server-rendered HTML that works without JavaScript, which is critical for the WCAG 2.2 AA requirement.
-- The team already uses Python extensively. Flask requires no new language or paradigm.
-
-### Why Docker
-
-- Reproducible deployment regardless of hosting provider.
-- Eliminates "works on my machine" for system-level dependencies.
-- Makes hosting migration trivial -- move from RackNerd to Hetzner to Azure by changing where `docker compose up` runs.
-- Security isolation: non-root user, read-only filesystem, no host access.
-
-### Relationship to existing components
-
-```
-                        Users
-                          |
-         +-------+-------+-------+-------+
-         |       |       |       |       |
-      Web UI   CLI    GUI    VS Code   Word
-      (Flask)  (cli)  (wx)   Agent    Add-in
-         |       |       |       |       |
-         +-------+-------+-------+       |
-                 |                        |
-          acb_large_print           office-addin
-          (Python core)             (TypeScript)
-```
-
-All five interfaces share the same underlying rules and constants. Bug fixes to the core library automatically flow through to the web app with no additional work. The TypeScript Word Add-in maintains its own copy of the rules (kept in sync per the cross-implementation sync protocol documented in `copilot-instructions.md`).
-
-The web UI adds a sixth blueprint (`/guidelines`) that reads from `constants.py` to render the full specification -- this page has no upload/processing logic, just documentation generated from the canonical rule definitions.
-
-### Cost estimate
-
-| Item | Annual cost |
-|------|------------|
-| RackNerd 8 GB VPS (Black Friday promo) | $62.49 |
-| Domain (if new) | ~$10-15 (or $0 if using existing subdomain) |
-| UptimeRobot monitoring | $0 (free tier) |
-| Let's Encrypt TLS | $0 (auto via Caddy) |
-| **Total** | **$62.49 to ~$78** |
-
-At ~$5.21/month this is sustainable as an unfunded community tool indefinitely. The VPS has enough capacity to host additional BITS services without incremental cost.

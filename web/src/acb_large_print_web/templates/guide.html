@@ -650,6 +650,30 @@ python -m pytest desktop/tests/test_heading_stress_corpus.py -q</code></pre>
   </details>
 
   <details class="help-accordion">
+    <summary>I turned heading detection off. Why did my score still change?</summary>
+    <p>When <strong>Detect and convert faux headings</strong> is unchecked, the fix results now suppress <strong>ACB-FAUX-HEADING</strong> findings so you are not penalized for a rule you explicitly disabled.</p>
+    <p>The Fix Results page includes a "Suppressed by your settings" note listing any suppressed rules.</p>
+  </details>
+
+  <details class="help-accordion">
+    <summary>Why did my document get longer after fix?</summary>
+    <p>Page growth is expected when a source document uses body text below ACB minimum size. For example, converting 16pt body text to 18pt can significantly increase line count in long newsletters.</p>
+    <p>The Fix Results page now warns when pre-fix body text appears below 18pt. After downloading, review layout choices in Word (margins, spacing, and pagination) based on your print constraints.</p>
+  </details>
+
+  <details class="help-accordion">
+    <summary>How do list indentation controls work on the Fix page?</summary>
+    <p>List indentation fields are always visible under <strong>List Indentation</strong>. When <strong>Flush all lists to the left margin</strong> is checked, the fields are disabled because ACB default is zero indent.</p>
+    <p>Uncheck <strong>Flush all lists</strong> to enable custom values for left indent and hanging indent.</p>
+  </details>
+
+  <details class="help-accordion">
+    <summary>Decorative images are still flagged. What should I do?</summary>
+    <p>For Word images, use <strong>Edit Alt Text</strong> and mark purely decorative content as decorative. The auditor now correctly treats legacy VML shapes with <code>alt=""</code> as decorative.</p>
+    <p>If an imported image was not marked decorative in source markup, it will still be flagged until you set decorative intent or provide meaningful alt text.</p>
+  </details>
+
+  <details class="help-accordion">
     <summary>What is the difference between ACB and MSAC rules?</summary>
     <p><strong>ACB Large Print</strong> rules come from the American Council of the Blind's Board of Publications. They cover visual formatting: font, size, spacing, emphasis, alignment, and margins.</p>
     <p><strong>MS Accessibility Checker (MSAC)</strong> rules are aligned with the Microsoft Office Accessibility Checker and WCAG 2.1. They cover structural accessibility: alt text, table headers, reading order, hyperlink text, document properties.</p>

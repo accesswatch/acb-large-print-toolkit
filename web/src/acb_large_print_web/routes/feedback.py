@@ -83,7 +83,7 @@ def feedback_submit():
         )
         conn.commit()
         conn.close()
-    except sqlite3.Error:
+    except (sqlite3.Error, OSError):
         log.exception("Failed to save feedback")
 
     return render_template("feedback_thanks.html")
@@ -117,7 +117,7 @@ def feedback_review():
             for r in cursor.fetchall()
         ]
         conn.close()
-    except sqlite3.Error:
+    except (sqlite3.Error, OSError):
         log.exception("Failed to load feedback")
         rows = []
 

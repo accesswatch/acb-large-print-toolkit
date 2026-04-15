@@ -143,6 +143,11 @@ class TestPageLoads:
         assert resp.status_code == 200
         assert b"Feedback" in resp.data
 
+    def test_faq_page(self, client):
+        resp = client.get("/faq/")
+        assert resp.status_code == 200
+        assert b"Frequently Asked Questions" in resp.data
+
     def test_guide_mentions_stress_testing(self, client):
         resp = client.get("/guide/")
         assert resp.status_code == 200
@@ -302,6 +307,7 @@ class TestAccessibility:
             "/",
             "/audit/",
             "/fix/",
+            "/faq/",
             "/guidelines/",
             "/feedback/",
             "/about/",
@@ -315,6 +321,7 @@ class TestAccessibility:
             "/",
             "/audit/",
             "/fix/",
+            "/faq/",
             "/guidelines/",
             "/feedback/",
             "/about/",

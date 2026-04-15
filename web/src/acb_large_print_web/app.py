@@ -25,7 +25,17 @@ limiter = Limiter(
 
 def create_app(config: dict | None = None) -> Flask:
     """Create and configure the Flask application."""
-    app = Flask(__name__)
+    # Resolve instance path: honour FLASK_INSTANCE_PATH env var so the
+    # feedback SQLite database lands in the Docker volume (/app/instance)
+    # instead of Flask's default which resolves to site-packages/instance/
+    # (not writable by the container's non-root user).
+    # Default: CWD-relative "instance/" -- in Docker (WORKDIR /app) this
+    # resolves to /app/instance, which matches the compose volume mount.
+    _instance_path = os.environ.get(
+        "FLASK_INSTANCE_PATH",
+        os.path.join(os.getcwd(), "instance"),
+    )
+    app = Flask(__name__, instance_path=_instance_path)
     app.url_map.strict_slashes = False
 
     # Defaults
@@ -94,6 +104,8 @@ def create_app(config: dict | None = None) -> Flask:
     from .routes.convert import convert_bp
     from .routes.guide import guide_bp
     from .routes.changelog import changelog_bp
+    from .routes.prd import prd_bp
+    from .routes.faq import faq_bp
     from .routes.settings import settings_bp
 
     app.register_blueprint(main_bp)
@@ -105,6 +117,8 @@ def create_app(config: dict | None = None) -> Flask:
     app.register_blueprint(guidelines_bp, url_prefix="/guidelines")
     app.register_blueprint(guide_bp, url_prefix="/guide")
     app.register_blueprint(changelog_bp, url_prefix="/changelog")
+    app.register_blueprint(prd_bp, url_prefix="/prd")
+    app.register_blueprint(faq_bp, url_prefix="/faq")
     app.register_blueprint(settings_bp, url_prefix="/settings")
     app.register_blueprint(feedback_bp, url_prefix="/feedback")
     app.register_blueprint(about_bp, url_prefix="/about")

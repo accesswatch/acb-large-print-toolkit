@@ -74,8 +74,10 @@ def _fix_by_extension(
     bound: bool = False,
     list_indent_in: float = 0.0,
     list_hanging_in: float = 0.0,
+    list_level_indents: dict[int, float] | None = None,
     para_indent_in: float = 0.0,
     first_line_indent_in: float = 0.0,
+    preserve_heading_alignment: bool = False,
     detect_headings: bool = False,
     use_ai: bool = False,
     heading_threshold: int | None = None,
@@ -174,8 +176,10 @@ def _fix_by_extension(
             bound=bound,
             list_indent_in=list_indent_in,
             list_hanging_in=list_hanging_in,
+            list_level_indents=list_level_indents,
             para_indent_in=para_indent_in,
             first_line_indent_in=first_line_indent_in,
+            preserve_heading_alignment=preserve_heading_alignment,
             detect_headings=detect_headings,
             ai_provider=ai_provider,
             heading_threshold=heading_threshold,
@@ -184,7 +188,14 @@ def _fix_by_extension(
         )
 
 
-def _audit_by_extension(saved_path: Path):
+def _audit_by_extension(
+    saved_path: Path,
+    *,
+    list_indent_in: float | None = None,
+    list_level_indents: dict[int, float] | None = None,
+    para_indent_in: float | None = None,
+    first_line_indent_in: float | None = None,
+):
     """Dispatch to the correct auditor based on file extension."""
     ext = saved_path.suffix.lower()
     if ext == ".xlsx":
@@ -210,11 +221,50 @@ def _audit_by_extension(saved_path: Path):
     else:
         from acb_large_print.auditor import audit_document
 
-        return audit_document(saved_path)
+        return audit_document(
+            saved_path,
+            list_indent_in=list_indent_in,
+            list_level_indents=list_level_indents,
+            para_indent_in=para_indent_in,
+            first_line_indent_in=first_line_indent_in,
+        )
 
 
 def _format_from_path(saved_path: Path) -> str:
     return saved_path.suffix.lower().lstrip(".")
+
+
+def _estimate_pre_fix_body_font_pt(saved_path: Path) -> float | None:
+    """Estimate typical body font size (pt) for Word docs using run-level sizes."""
+    if saved_path.suffix.lower() != ".docx":
+        return None
+
+    try:
+        from docx import Document
+
+        sizes: list[float] = []
+        doc = Document(str(saved_path))
+
+        for para in doc.paragraphs:
+            if not para.text.strip():
+                continue
+            style_name = (para.style.name if para.style is not None else "").lower()
+            if "heading" in style_name:
+                continue
+
+            for run in para.runs:
+                if not run.text.strip():
+                    continue
+                if run.font.size is not None:
+                    sizes.append(float(run.font.size.pt))
+
+        if not sizes:
+            return None
+
+        sizes.sort()
+        return round(sizes[len(sizes) // 2], 1)
+    except Exception:
+        return None
 
 
 @fix_bp.route("/", methods=["GET"])
@@ -228,7 +278,12 @@ def _parse_form_options(form):
     """Extract fix options from the submitted form (used by both submit and confirm)."""
     bound = form.get("bound") == "on"
     flush_lists = form.get("flush_lists") == "on"
+    use_list_levels = form.get("use_list_levels") == "on"
     mode = form.get("mode", "full")
+    preserve_heading_alignment = form.get("preserve_heading_alignment") == "on"
+    suppress_link_text = form.get("suppress_link_text") == "on"
+    suppress_missing_alt_text = form.get("suppress_missing_alt_text") == "on"
+    suppress_faux_heading = form.get("suppress_faux_heading") == "on"
 
     if flush_lists:
         list_indent_in = 0.0
@@ -244,6 +299,18 @@ def _parse_form_options(form):
             list_hanging_in = 0.25
         list_indent_in = max(0.0, min(2.0, list_indent_in))
         list_hanging_in = max(0.0, min(2.0, list_hanging_in))
+
+    list_level_indents = None
+    if not flush_lists and use_list_levels:
+        list_level_indents = {}
+        defaults = {1: 0.25, 2: 0.50, 3: 0.75}
+        for level in (1, 2, 3):
+            key = f"list_indent_level_{level}"
+            try:
+                value = float(form.get(key, str(defaults[level])))
+            except (ValueError, TypeError):
+                value = defaults[level]
+            list_level_indents[level - 1] = max(0.0, min(2.0, value))
 
     flush_paragraphs = form.get("flush_paragraphs") == "on"
     if flush_paragraphs:
@@ -278,13 +345,27 @@ def _parse_form_options(form):
         "mode": mode,
         "list_indent_in": list_indent_in,
         "list_hanging_in": list_hanging_in,
+        "list_level_indents": list_level_indents,
         "para_indent_in": para_indent_in,
         "first_line_indent_in": first_line_indent_in,
+        "preserve_heading_alignment": preserve_heading_alignment,
         "detect_headings": detect_headings,
         "use_ai": use_ai,
+        "suppress_link_text": suppress_link_text,
+        "suppress_missing_alt_text": suppress_missing_alt_text,
+        "suppress_faux_heading": suppress_faux_heading,
         "heading_threshold": heading_threshold,
         "heading_accuracy": heading_accuracy,
     }
+
+
+def _is_heading_alignment_finding(finding) -> bool:
+    """Return True when an ACB-ALIGNMENT finding refers to heading content."""
+    if getattr(finding, "rule_id", "") != "ACB-ALIGNMENT":
+        return False
+    msg = str(getattr(finding, "message", "")).lower()
+    loc = str(getattr(finding, "location", "")).lower()
+    return "heading" in msg or "style: heading" in loc
 
 
 def _run_fix_and_render(
@@ -297,7 +378,14 @@ def _run_fix_and_render(
 ):
     """Run the fixer and render fix_result.html. Shared by submit and confirm."""
     doc_format = _format_from_path(saved_path)
-    pre_audit = _audit_by_extension(saved_path)
+    pre_audit = _audit_by_extension(
+        saved_path,
+        list_indent_in=opts["list_indent_in"],
+        list_level_indents=opts["list_level_indents"],
+        para_indent_in=opts["para_indent_in"],
+        first_line_indent_in=opts["first_line_indent_in"],
+    )
+    pre_body_font_pt = _estimate_pre_fix_body_font_pt(saved_path)
 
     ext = saved_path.suffix.lower()
     output_name = saved_path.stem + "-fixed" + ext
@@ -309,14 +397,58 @@ def _run_fix_and_render(
         bound=opts["bound"],
         list_indent_in=opts["list_indent_in"],
         list_hanging_in=opts["list_hanging_in"],
+        list_level_indents=opts["list_level_indents"],
         para_indent_in=opts["para_indent_in"],
         first_line_indent_in=opts["first_line_indent_in"],
+        preserve_heading_alignment=opts["preserve_heading_alignment"],
         detect_headings=opts["detect_headings"],
         use_ai=opts["use_ai"],
         heading_threshold=opts["heading_threshold"],
         confirmed_headings=confirmed_headings,
         heading_accuracy=opts["heading_accuracy"],
     )
+
+    warnings = list(warnings)
+
+    # Suppress findings for rules intentionally bypassed by user settings.
+    suppressed_rules: list[str] = []
+    suppress_rule_ids: set[str] = set()
+
+    if not opts["detect_headings"] or opts["suppress_faux_heading"]:
+        suppress_rule_ids.add("ACB-FAUX-HEADING")
+    if opts["suppress_link_text"]:
+        suppress_rule_ids.add("ACB-LINK-TEXT")
+    if opts["suppress_missing_alt_text"]:
+        suppress_rule_ids.add("ACB-MISSING-ALT-TEXT")
+
+    if suppress_rule_ids:
+        suppressed_rules.extend(sorted(suppress_rule_ids))
+
+    filtered_findings = []
+    heading_alignment_suppressed = False
+    for finding in post_audit.findings:
+        if finding.rule_id in suppress_rule_ids:
+            continue
+        if (
+            opts["preserve_heading_alignment"]
+            and _is_heading_alignment_finding(finding)
+        ):
+            heading_alignment_suppressed = True
+            continue
+        filtered_findings.append(finding)
+
+    post_audit.findings = filtered_findings
+    if heading_alignment_suppressed:
+        suppressed_rules.append("ACB-ALIGNMENT (headings)")
+
+    if pre_body_font_pt is not None and pre_body_font_pt < 17.5:
+        warnings.insert(
+            0,
+            "This document appears to use body text around "
+            f"{pre_body_font_pt:g}pt. Fixing to the ACB minimum of 18pt can increase "
+            "page count, especially in long newsletters. Review margins and layout "
+            "after download if page growth affects print production.",
+        )
 
     applied_heading_fixes = sum(
         1 for rec in fix_records if rec.rule_id == "ACB-FAUX-HEADING"
@@ -370,6 +502,7 @@ def _run_fix_and_render(
         remaining=len(post_audit.findings),
         post_findings=post_findings,
         warnings=warnings,
+        suppressed_rules=suppressed_rules,
         mode_label=mode_label,
         download_name=output_name,
         token=token,

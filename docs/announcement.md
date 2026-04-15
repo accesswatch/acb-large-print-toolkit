@@ -22,6 +22,19 @@ A browser-based interface at [glow.bits-acb.org](https://glow.bits-acb.org) that
 -   **Export** -- convert a .docx to accessible HTML (standalone page with CSS, or a CMS-ready fragment for WordPress/Drupal)
 -   **Guidelines** -- browse the complete ACB Large Print specification and WCAG 2.2 digital supplement as a searchable reference
 
+### Recent Quality Improvements (April 2026)
+
+Recent updates based on live user feedback improved the Fix workflow and result clarity:
+
+- Fix Results suppresses `ACB-FAUX-HEADING` from scoring when heading detection is intentionally disabled and lists suppressed rules for transparency.
+- Fix Results warns when source body text appears below 18pt so users can anticipate page-count growth after normalization.
+- List indentation controls are always visible and toggle disabled/enabled based on the flush-list option.
+- Legacy Word VML shapes with explicit `alt=""` are treated as decorative, reducing false missing-alt findings.
+- **Quick Rule Exceptions** section added to Fix and Audit forms: users can suppress `ACB-LINK-TEXT`, `ACB-MISSING-ALT-TEXT`, or `ACB-FAUX-HEADING` per operation without entering Custom mode.
+- **Preserve centered headings** option lets users skip alignment override for intentionally centered heading styles (useful for creative publications, story titles, poem titles).
+- **Per-level list indentation** support added: users can now configure different indent values for Level 1, 2, and 3 lists instead of applying one uniform value across all nesting depths.
+- **Dedicated FAQ page** at `/faq/` answers common questions about workflow exceptions, heading preservation, per-level indentation, page-count growth, and known limitations.
+
 The web app runs on a Flask server inside Docker, meets WCAG 2.2 AA from day one with no JavaScript required, and deletes all uploaded files immediately after processing.
 
 ### VS Code Copilot Chat Agent

@@ -103,7 +103,9 @@ Replace `YOUR_SERVER_IP` with the IP address from your RackNerd welcome email.
 
 - The `@` record handles `csedesigns.com`
 - The `www` record handles `www.csedesigns.com`
-- The `lp` record handles `glow.bits-acb.org`
+- The `lp` record handles `lp.csedesigns.com`
+
+> **`glow.bits-acb.org` requires a separate DNS record.** Log into the registrar for `bits-acb.org` and add an A record with host `glow` pointing to `YOUR_SERVER_IP`. This is a different DNS zone and cannot be configured through the `csedesigns.com` registrar.
 
 ### 1.1b Additional DNS records (recommended)
 

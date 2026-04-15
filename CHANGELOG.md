@@ -6,10 +6,17 @@ Releases are tagged in the [GitHub repository](https://github.com/accesswatch/ac
 
 ---
 
-## [Unreleased]
+## [1.1.0] -- 2026-04-15
 
 ### Fixed
 
+- Fix results no longer penalize users for faux-heading findings when heading detection is explicitly disabled in the Fix form; `ACB-FAUX-HEADING` is suppressed from post-fix scoring and the results page now lists suppressed rules.
+- Legacy Word VML shapes now treat explicit `alt=""` as decorative content, preventing false `ACB-MISSING-ALT-TEXT` findings when decorative intent is correctly marked.
+- Fix form list indentation controls are now always visible for discoverability and are disabled/enabled in place based on the "Flush all lists" checkbox instead of being hidden.
+- Fix workflow now adds a page-growth warning when pre-fix body text appears below the 18pt ACB minimum, helping explain expected pagination increases after remediation.
+- User guide FAQ expanded with operational guidance for heading-rule suppression behavior, page-count growth, list indentation controls, and decorative-image handling.
+
+- Feedback submission returned a 500 "Something Went Wrong" error in production because Flask's default `instance_path` resolved to a site-packages subdirectory (not writable by the container's non-root user) instead of the `/app/instance` Docker volume. Fixed by passing an explicit `instance_path` to the `Flask()` constructor — defaults to CWD-relative `instance/` (resolves to `/app/instance` in Docker) and is overridable via `FLASK_INSTANCE_PATH`. Also broadened exception handling in `feedback.py` to catch `OSError` in addition to `sqlite3.Error` so any future path/permission failures are logged rather than surfaced as 500 errors.
 - Web changelog page now builds its version list dynamically from `CHANGELOG.md` headings, so release `1.0.0` and future releases appear automatically without hardcoded template updates.
 - Front page standards text now consistently references WCAG 2.2 AA (removed mixed WCAG 2.1 wording).
 - Word fix workflow now preserves user-confirmed heading conversions through the heading review step even when form round-trip text normalization alters whitespace or punctuation.
@@ -25,11 +32,20 @@ Releases are tagged in the [GitHub repository](https://github.com/accesswatch/ac
 
 ### Added
 
+- Added a **Product Requirements Document** page at `/prd/` in the web app, rendering `docs/prd.md` as accessible HTML with a table of contents (mirrors changelog rendering pattern); linked in the web app footer navigation.
+- Added a **Documentation and References** section to the web app About page (`/about/`) linking to the PRD, Changelog, User Guide, and FAQ.
+- Added a `docs/prd.md` product requirements document (renamed and consolidated from `docs/prd-flask-web-app.md`) covering architecture, user stories, feature decisions, and implementation status.
+- Added a **Help menu** to the desktop GUI (`WizardFrame`) with four items: User Guide, Changelog, Product Requirements Document, and About; each documentation item renders the corresponding markdown file to a temporary ACB-compliant HTML page (Arial 18pt, 1.5 line-height) and opens it in the default browser.
+
 - Added a Playwright E2E regression harness under `web/e2e/` covering home, audit, fix, export, convert, template, and key static pages.
 - Added upload-aware E2E tests using `E2E_UPLOAD_DOCX` (default `d:/code/test.docx`) for document workflow regression coverage.
 - Added issue report generation (`web/e2e/scripts/generate-issue-report.mjs`) to summarize failed Playwright tests into `e2e/artifacts/ISSUES.md` alongside HTML/JSON/JUnit artifacts.
 - Added Node test runner scaffolding in `web/package.json` and artifact ignores in `web/.gitignore` for repeatable local and CI-friendly regression execution.
 - Updated `docs/deployment.md` with dual-domain deployment instructions (`APP_DOMAIN` + `APP_ALIAS_DOMAIN`, no-redirect scenario) and post-deploy Playwright regression commands/artifact paths.
+- **Quick Rule Exceptions** section added to Fix and Audit forms with per-operation toggles to suppress `ACB-LINK-TEXT`, `ACB-MISSING-ALT-TEXT`, and `ACB-FAUX-HEADING` findings without changing default settings; improves workflow friction for documents with known acceptable exceptions.
+- **Preserve centered headings** option added to Fix form to skip alignment override for heading paragraphs, preserving intentional heading center-alignment for design-driven documents.
+- **Per-level list indentation** support added to Fix form, auditor, and fixer to apply level-specific indent targets (Level 1, 2, 3) instead of uniform indents; auditor recognizes paragraph list styles and applies per-level expectations; fixer applies corresponding per-level target indents.
+- **Dedicated FAQ page** added at web app `/faq/` with answers to quick exception usage, heading preservation intent, per-level list indentation configuration, and known limitations; linked in main navigation footer.
 
 ---
 

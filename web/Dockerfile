@@ -46,6 +46,9 @@ RUN pip install --no-cache-dir ./web
 # Changelog (rendered as HTML by the /changelog route)
 COPY CHANGELOG.md ./
 
+# PRD (rendered as HTML by the /prd route)
+COPY docs/prd.md ./
+
 # Create a non-root user
 RUN addgroup --system app && adduser --system --ingroup app app
 RUN mkdir -p /app/instance /app/.gunicorn && chown -R app:app /app/instance /app/.gunicorn

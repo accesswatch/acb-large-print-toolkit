@@ -19,6 +19,12 @@ Everything you need to know to audit, fix, convert, and template your documents 
 13. [Frequently Asked Questions](#13-frequently-asked-questions)
 14. [Getting Help](#14-getting-help)
 
+**Quick links to new features:**
+- [Quick Rule Exceptions](#quick-rule-exceptions)
+- [Preserve centered headings](#preserve-centered-headings)
+- [Per-level list indentation](#per-level-list-indentation)
+- [FAQ page](/faq/) (also accessible from the web app footer)
+
 ---
 
 ## 1. Quick-Start Walkthrough
@@ -99,6 +105,62 @@ Tip: The audit report groups findings by severity. Tackle Critical issues first 
 6. For other formats: review the audit report with step-by-step manual fix instructions.
 
 Tip: The fix mode controls what appears in the report, not what gets corrected. Your Word document always receives all available auto-fixes regardless of mode.
+
+### Recent Fix workflow updates
+
+- If you uncheck **Detect and convert faux headings**, `ACB-FAUX-HEADING` is now suppressed from post-fix scoring so you are not penalized for a rule you intentionally disabled.
+- Fix Results now shows a page-growth warning when your source appears to use body text below 18pt, since normalization to the ACB minimum can increase page count.
+- List indentation controls are always visible under **List Indentation** and are disabled while **Flush all lists to the left margin** is checked.
+- Legacy Word VML shapes with `alt=""` are treated as decorative and no longer trigger missing-alt findings.
+
+### Quick Rule Exceptions
+
+On the Fix and Audit forms, a new **Quick Rule Exceptions** section lets you suppress specific findings per operation without changing your default settings. This is useful when you want to ignore certain rules for one document without affecting your usual workflow.
+
+**Available exceptions:**
+
+- **Suppress ambiguous link text** (`ACB-LINK-TEXT`) -- ignore links that are not descriptive (e.g., "click here", "more info", "read more"). Use this when you know your links are contextually clear or when you are gathering feedback and do not want link-text errors to distract from other issues.
+- **Suppress missing alt text** (`ACB-MISSING-ALT-TEXT`) -- ignore images without alt text. Use this when you are working on structural issues first and will add alt text in a later pass.
+- **Suppress faux heading detection** (`ACB-FAUX-HEADING`) -- ignore bold, large text that looks like headings but are not styled as heading styles. Use this when you intentionally want to preserve visual "pseudo-headings" for design reasons and do not want them flagged.
+
+**How to use:**
+
+1. On the Fix or Audit form, expand the **Quick Rule Exceptions** section.
+2. Check the rules you want to suppress for this operation only.
+3. Submit the form normally.
+4. The audit/fix results will not include findings for the suppressed rules, and a note will appear showing which rules were suppressed and why.
+
+### Preserve centered headings
+
+By default, the fixer normalizes all paragraph alignment to flush-left (ragged-right) per ACB requirements. However, you may want to preserve intentional heading center-alignment for design reasons.
+
+The **Preserve centered headings** option on the Fix form skips alignment override for paragraphs identified as headings (those using Heading 1, Heading 2, or Heading 3 styles). Non-heading paragraphs are still normalized to flush-left.
+
+**How to use:**
+
+1. On the Fix form, find the **Heading Alignment Handling** option.
+2. Check **Preserve centered headings** to leave heading alignment unchanged.
+3. Uncheck it (default) to normalize all paragraphs including headings to flush-left.
+4. Submit the form. Headings will retain their original alignment if the option is enabled.
+
+### Per-level list indentation
+
+By default, the fixer applies a uniform left indent to all list items regardless of their nesting depth. The new **Per-level list indentation** option lets you specify different indent values for Level 1, Level 2, and Level 3 list items.
+
+This is useful when:
+- Your document has multiple indentation levels and you want each level to use a specific indent value
+- You want tighter spacing for nested lists (e.g., Level 1 at 0.25", Level 2 at 0.50", Level 3 at 0.75")
+- You are working with bulleted or numbered lists that need consistent per-depth formatting
+
+**How to use:**
+
+1. On the Fix form, find the **List Indentation** section.
+2. Check **Use per-level list indentation**.
+3. Uncheck **Flush all lists to the left margin** if it is checked (the two options work together).
+4. Enter indent values (in inches) for Level 1, Level 2, and Level 3.
+5. Submit the form. The auditor and fixer apply per-level indents based on the paragraph's detected list style level.
+
+Tip: Leave a level blank or set it to 0 if your document does not have that depth.
 
 ### Heading Detection (Word documents)
 
@@ -451,6 +513,20 @@ Each finding in the audit report includes:
 
 **Manual fix in Word:** Right-click the image, Edit Alt Text. Describe what the image shows in 1-2 sentences. If the image is purely decorative, check "Mark as decorative."
 
+Note: For legacy Word VML shapes, explicit `alt=""` is treated as decorative by the auditor.
+
+### "I turned heading detection off. Why did my score still change?"
+
+If **Detect and convert faux headings** is unchecked, fix results now suppress `ACB-FAUX-HEADING` in post-fix scoring. The results page also lists suppressed rules so you can verify exactly what was excluded.
+
+### "Why did my document get longer after fix?"
+
+Page growth is expected when source body text is below 18pt. For example, increasing 16pt body text to 18pt can significantly increase line count in long newsletters. Fix Results now warns when this condition is detected so the pagination change is expected rather than surprising.
+
+### "Where are list indentation controls on the Fix page?"
+
+The **List Indentation** fields are always visible. They are disabled while **Flush all lists to the left margin** is checked, and enabled when you uncheck it to use custom left/hanging indents.
+
 **Manual fix in ePub:** Add an `alt` attribute to the `<img>` tag in the content document.
 
 ### "Heading levels must not skip" (ACB-HEADING-HIERARCHY / EPUB-HEADING-HIERARCHY)
@@ -648,6 +724,10 @@ If false positives are common (for example names, times, "Agenda" labels), use t
 
 For heading hierarchy corrections (changing an H3 to an H2, for example), the fix tool corrects heading formatting (font, size, bold) but does not change heading levels. Review your heading structure manually using the report's guidance.
 
+### Why did decorative images get flagged as missing alt text?
+
+Use Word's **Mark as decorative** option for non-informational visuals. The auditor now correctly treats legacy VML shapes with `alt=""` as decorative. Images without decorative intent or meaningful alt text are still reported.
+
 ### What is the difference between ACB and MSAC rules?
 
 **ACB Large Print** rules come from the American Council of the Blind's Board of Publications. They cover visual formatting: font, size, spacing, emphasis, alignment, and margins.
@@ -677,6 +757,9 @@ The full guidelines are available at [acb.org/large-print-guidelines](https://ac
 ## 14. Getting Help
 
 - **Full ACB Large Print Guidelines Reference** -- available on the web app Guidelines page or at [acb.org/large-print-guidelines](https://acb.org/large-print-guidelines)
+- **Project overview and release highlights** -- [README.md](../README.md)
+- **Web app operations and deployment notes** -- [web/README.md](../web/README.md)
+- **Web app product requirements and implementation log** -- [docs/prd-flask-web-app.md](prd-flask-web-app.md)
 - **Submit Feedback** -- use the Feedback page in the web app to report bugs, request features, or share your experience
 - **About This Project** -- mission, organizations, standards, and open source dependencies on the web app About page
 - **GitHub Issues** -- [report bugs or request features](https://github.com/accesswatch/acb-large-print-toolkit/issues) on the open source repository

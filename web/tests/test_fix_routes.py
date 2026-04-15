@@ -264,3 +264,169 @@ class TestParseFormOptions:
             opts = _parse_form_options(form)
             assert opts["detect_headings"] is True
             assert opts["use_ai"] is True
+
+
+# ---------------------------------------------------------------------------
+# Regression checks for recent Fix UX updates
+# ---------------------------------------------------------------------------
+
+
+class _FakeAuditResult:
+    def __init__(self, score=100, grade="A", findings=None):
+        self.score = score
+        self.grade = grade
+        self.findings = findings or []
+
+
+class _FakeFinding:
+    def __init__(self, rule_id: str, message: str = "", location: str = ""):
+        self.rule_id = rule_id
+        self.message = message
+        self.location = location
+
+
+def test_fix_result_shows_suppressed_rules_note(app):
+    from acb_large_print_web.routes.fix import _run_fix_and_render
+
+    pre = _FakeAuditResult(score=80, grade="B", findings=[])
+    post = _FakeAuditResult(score=90, grade="A", findings=[])
+
+    opts = {
+        "bound": False,
+        "mode": "full",
+        "list_indent_in": 0.0,
+        "list_hanging_in": 0.0,
+        "list_level_indents": None,
+        "para_indent_in": 0.0,
+        "first_line_indent_in": 0.0,
+        "preserve_heading_alignment": False,
+        "detect_headings": False,
+        "use_ai": False,
+        "suppress_link_text": False,
+        "suppress_missing_alt_text": False,
+        "suppress_faux_heading": False,
+        "heading_threshold": 50,
+        "heading_accuracy": "balanced",
+    }
+
+    with app.test_request_context("/fix/", method="POST", data={}):
+        with patch("acb_large_print_web.routes.fix._audit_by_extension", return_value=pre), patch(
+            "acb_large_print_web.routes.fix._fix_by_extension",
+            return_value=(MagicMock(), 0, [], post, []),
+        ):
+            html = _run_fix_and_render(Path("test.docx"), "tok", opts)
+
+    assert "Suppressed by your settings" in html
+    assert "ACB-FAUX-HEADING" in html
+
+
+def test_fix_result_shows_page_growth_warning_for_small_text(app):
+    from acb_large_print_web.routes.fix import _run_fix_and_render
+
+    pre = _FakeAuditResult(score=70, grade="C", findings=[])
+    post = _FakeAuditResult(score=85, grade="B", findings=[])
+
+    opts = {
+        "bound": False,
+        "mode": "full",
+        "list_indent_in": 0.0,
+        "list_hanging_in": 0.0,
+        "list_level_indents": None,
+        "para_indent_in": 0.0,
+        "first_line_indent_in": 0.0,
+        "preserve_heading_alignment": False,
+        "detect_headings": True,
+        "use_ai": False,
+        "suppress_link_text": False,
+        "suppress_missing_alt_text": False,
+        "suppress_faux_heading": False,
+        "heading_threshold": 50,
+        "heading_accuracy": "balanced",
+    }
+
+    with app.test_request_context("/fix/", method="POST", data={}):
+        with patch("acb_large_print_web.routes.fix._audit_by_extension", return_value=pre), patch(
+            "acb_large_print_web.routes.fix._fix_by_extension",
+            return_value=(MagicMock(), 0, [], post, []),
+        ), patch(
+            "acb_large_print_web.routes.fix._estimate_pre_fix_body_font_pt",
+            return_value=16.0,
+        ):
+            html = _run_fix_and_render(Path("test.docx"), "tok", opts)
+
+    assert "can increase page count" in html
+    assert "16pt" in html
+
+
+def test_fix_form_list_indent_fields_visible_and_disabled_by_default(client):
+    resp = client.get("/fix/")
+    assert resp.status_code == 200
+    html = resp.data.decode("utf-8")
+
+    assert '<div id="list-indent-fields" class="indent-fields">' in html
+    assert 'id="list-indent"' in html and "disabled" in html
+    assert 'id="list-hanging"' in html and "disabled" in html
+    assert 'name="suppress_link_text"' in html
+    assert 'name="suppress_missing_alt_text"' in html
+    assert 'name="suppress_faux_heading"' in html
+    assert 'name="preserve_heading_alignment"' in html
+    assert 'name="use_list_levels"' in html
+
+
+def test_fix_result_suppresses_heading_alignment_when_preserve_enabled(app):
+    from acb_large_print_web.routes.fix import _run_fix_and_render
+
+    pre = _FakeAuditResult(score=80, grade="B", findings=[])
+    post = _FakeAuditResult(
+        score=70,
+        grade="C",
+        findings=[_FakeFinding("ACB-ALIGNMENT", "Direct alignment override on heading paragraph")],
+    )
+
+    opts = {
+        "bound": False,
+        "mode": "full",
+        "list_indent_in": 0.0,
+        "list_hanging_in": 0.0,
+        "list_level_indents": None,
+        "para_indent_in": 0.0,
+        "first_line_indent_in": 0.0,
+        "preserve_heading_alignment": True,
+        "detect_headings": True,
+        "use_ai": False,
+        "suppress_link_text": False,
+        "suppress_missing_alt_text": False,
+        "suppress_faux_heading": False,
+        "heading_threshold": 50,
+        "heading_accuracy": "balanced",
+    }
+
+    with app.test_request_context("/fix/", method="POST", data={}):
+        with patch("acb_large_print_web.routes.fix._audit_by_extension", return_value=pre), patch(
+            "acb_large_print_web.routes.fix._fix_by_extension",
+            return_value=(MagicMock(), 0, [], post, []),
+        ):
+            html = _run_fix_and_render(Path("test.docx"), "tok", opts)
+
+    assert "Suppressed by your settings" in html
+    assert "ACB-ALIGNMENT (headings)" in html
+
+
+def test_parse_form_options_supports_per_level_list_indents(app):
+    from acb_large_print_web.routes.fix import _parse_form_options
+    from werkzeug.datastructures import MultiDict
+
+    with app.app_context():
+        form = MultiDict(
+            {
+                "flush_lists": "",
+                "use_list_levels": "on",
+                "list_indent": "0.50",
+                "list_hanging": "0.25",
+                "list_indent_level_1": "0.25",
+                "list_indent_level_2": "0.50",
+                "list_indent_level_3": "0.75",
+            }
+        )
+        opts = _parse_form_options(form)
+        assert opts["list_level_indents"] == {0: 0.25, 1: 0.5, 2: 0.75}

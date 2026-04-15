@@ -52,6 +52,22 @@ Upload a Word document. GLOW fixes fonts, sizes, spacing, alignment, emphasis, m
 
 Want to control what gets fixed? GLOW lets you pick. Fix only the critical issues, or go the whole nine yards.
 
+### Recent Improvements (April 2026)
+
+Based on production feedback from newsletter workflows, GLOW added four targeted improvements:
+
+- If heading detection is turned off, `ACB-FAUX-HEADING` is now suppressed from post-fix scoring and shown in a "Suppressed by your settings" note.
+- Fix Results now warns when source body text appears below 18pt because ACB normalization can increase page count.
+- List indentation controls are now always visible and switch disabled/enabled based on the flush-list option.
+- Legacy VML images with explicit `alt=""` are now treated as decorative, preventing false missing-alt findings.
+
+**New workflow features (April 15, 2026):**
+
+- **Quick Rule Exceptions** section on Fix and Audit forms lets you suppress `ACB-LINK-TEXT`, `ACB-MISSING-ALT-TEXT`, or `ACB-FAUX-HEADING` per operation without entering Custom mode -- useful for documents with intentional raw URLs, decorative images, or pre-correct headings.
+- **Preserve centered headings** option skips alignment override for heading styles, letting you keep titles centered for creative publications (stories, poems, newsletters with intentional design).
+- **Per-level list indentation** support: configure different indent values for Level 1, Level 2, and Level 3 lists instead of applying one uniform indent across all nesting depths. Perfect for nested bullet lists and complex outlines.
+- **Dedicated FAQ page** at `/faq/` answers common questions: when to use quick exceptions, why heading preservation matters, how per-level indents work, why page counts grow after fixing, and known limitations with workarounds.
+
 ### The Magic: Heading Detection
 
 Here's where GLOW gets genuinely smart. You have a document with no built-in heading levels. Maybe it's a quick note scribbled into a Word doc. Maybe it's a PDF scanned from a printed document. Most tools give up.
