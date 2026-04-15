@@ -193,9 +193,30 @@ This is an accessibility tool built by people who use accessibility technology e
 
 GLOW is a community-driven project. We need feedback to keep improving it. We know we will continue learning as more users put the platform to work in real chapter deadlines and document workflows.
 
-"We have spent countless hours testing accuracy, but until it is out in the wild, it is still learning," says Bishop.
+### Community Built for the Community: Washington Council of the Blind
 
-"We hope many of you will start using GLOW, learning what it can do, and most importantly sharing feedback. You can do all of this, and even learn how the app was tested, right inside the experience. We are committed to transparency and a community-driven tool."
+Some of the most important document-experience changes in the 1.1 release came directly from real-world feedback shared by the Washington Council of the Blind. Their notes did not come from a lab. They came from production newsletters, 100-page workflows, and the practical constraints of mailing physical large-print copies.
+
+That feedback was direct, thoughtful, and deeply operational:
+
+- "If faux heading detection is off, scoring should not keep penalizing us for faux headings."
+- "Some workflows require raw URLs for print and narrated audio use."
+- "Decorative images should not force unnecessary alt-text churn."
+- "Centering can be meaningful for titles and poems; do not flatten visual hierarchy by default."
+- "Long-document fixes can dramatically increase page count, which affects binding and mailing logistics."
+
+Those insights shaped release 1.1 document experience updates, including:
+
+- Better handling when heading detection is intentionally disabled, so scoring reflects user-selected workflow intent.
+- Quick rule exceptions for link text and missing alt text where policy and publishing workflows require targeted flexibility.
+- A preserve-centered-headings option for users who intentionally center specific heading/title structures.
+- Expanded FAQ and guidance to answer the real formatting questions teams face under deadline pressure.
+
+This is what community-driven engineering looks like in practice: members bring real document stories, and the product evolves to serve the people actually doing the work.
+
+"We have spent countless hours testing accuracy, but community feedback is what turns a good tool into a trusted one," says Bishop.
+
+"We hope many of you will keep sharing what happens in real workflows. That is how GLOW keeps getting better, by the community and for the community."
 
 ## Try It Right Now
 

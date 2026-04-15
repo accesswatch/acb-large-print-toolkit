@@ -11,6 +11,7 @@ Releases are tagged in the [GitHub repository](https://github.com/accesswatch/ac
 ### Added
 
 - Placeholder for upcoming changes.
+- Expanded `docs/announcement-web-app.md` and synchronized `docs/announcement-web-app.html` with a community-origin story section crediting Washington Council of the Blind feedback as a direct driver for release 1.1 document-experience improvements (faux-heading workflow intent, quick rule exceptions, centered-heading preservation, and FAQ clarity).
 
 ## [1.2.0] -- 2026-04-15
 
