@@ -69,8 +69,8 @@ jobs:
         working-directory: desktop
         run: |
           DMG_DIR=$(mktemp -d)
-          cp dist/acb-large-print-cli-macos-arm64 "$DMG_DIR/"
-          cp dist/acb-large-print-macos-arm64 "$DMG_DIR/"
+          cp -R dist/acb-large-print-cli-macos-arm64 "$DMG_DIR/"
+          cp -R dist/acb-large-print-macos-arm64 "$DMG_DIR/"
           chmod +x "$DMG_DIR/"acb-large-print*
           hdiutil create -volname "ACB Large Print Tool" \
             -srcfolder "$DMG_DIR" \

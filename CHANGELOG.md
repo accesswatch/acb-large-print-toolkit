@@ -8,6 +8,10 @@ Releases are tagged in the [GitHub repository](https://github.com/accesswatch/ac
 
 ## [Unreleased]
 
+### Fixed
+
+- Fixed the macOS DMG packaging step in `.github/workflows/build.yml` by switching directory copy commands to recursive copy (`cp -R`), resolving the GitHub Actions failure in "Create DMG (macOS)" for onedir PyInstaller outputs.
+
 ### Added
 
 - Added heading-level restriction controls to Fix and Settings workflows so teams can constrain heading detection/review/conversion to a selected subset of levels.
@@ -38,6 +42,8 @@ Releases are tagged in the [GitHub repository](https://github.com/accesswatch/ac
 ### Changed
 
 - Standardized web page title bars to the format `Page Name | GLOW (Guided Layout & Output Workflow)` across the shared base template and tab-navigation title fallback (`web/src/acb_large_print_web/templates/base.html`, `web/src/acb_large_print_web/static/tabs.js`), and simplified page title blocks in feedback/home templates to page-name values only.
+- Removed the embedded week-phased Release 1.2.0 APH execution section from the web landing page (`web/src/acb_large_print_web/templates/index.html`) now that this workflow is already integrated into the guide and guidelines documentation surfaces.
+- Added an explicit APH guidelines subheading to the homepage guidelines section (`web/src/acb_large_print_web/templates/index.html`) directly after the ACB heading area to improve standards discoverability.
 
 ### Removed
 
