@@ -13,7 +13,11 @@
 .vscode/
 
 # --- Documentation and metadata ---
-docs/
+docs/*.md
+!docs/prd.md
+docs/*.pdf
+docs/*.html
+docs/*.docx
 samples/
 reference/
 templates/
