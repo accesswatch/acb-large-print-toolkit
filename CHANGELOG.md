@@ -19,6 +19,10 @@ Releases are tagged in the [GitHub repository](https://github.com/accesswatch/ac
 - Added template heading-level controls (Template form + Settings defaults) and wired them into template sample generation so authored examples follow team-selected heading ladders.
 - Expanded and synchronized announcement storytelling (`docs/announcement-web-app.md`, `docs/announcement-web-app.html`, and `docs/announcement.md`) with Washington Council community voice, non-versioned narrative, and explicit coverage of heading-level controls/review/template alignment.
 
+### Changed
+
+- Removed remaining stale APH "not yet complete" language from web guide and guidelines templates, aligning all live-facing APH copy with Release 1.2.0 finalized submission wording.
+
 ## [1.2.0] -- 2026-04-15
 
 ### Added
