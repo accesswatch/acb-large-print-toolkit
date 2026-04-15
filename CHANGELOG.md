@@ -23,6 +23,13 @@ Releases are tagged in the [GitHub repository](https://github.com/accesswatch/ac
 - Added a tracked `web/Caddyfile` with dual-domain app host support (`lp.csedesigns.com`, `glow.bits-acb.org`) for direct production deployment with Docker Compose.
 - Deployment scripts now support optional alias-domain verification via `APP_ALIAS_DOMAIN` while keeping `APP_DOMAIN` defaulted to `lp.csedesigns.com`.
 
+### Added
+
+- Added a Playwright E2E regression harness under `web/e2e/` covering home, audit, fix, export, convert, template, and key static pages.
+- Added upload-aware E2E tests using `E2E_UPLOAD_DOCX` (default `d:/code/test.docx`) for document workflow regression coverage.
+- Added issue report generation (`web/e2e/scripts/generate-issue-report.mjs`) to summarize failed Playwright tests into `e2e/artifacts/ISSUES.md` alongside HTML/JSON/JUnit artifacts.
+- Added Node test runner scaffolding in `web/package.json` and artifact ignores in `web/.gitignore` for repeatable local and CI-friendly regression execution.
+
 ---
 
 ## [1.0.0] -- 2026-04-14
