@@ -7,6 +7,12 @@
 <section aria-labelledby="score-heading">
   <h2 id="score-heading">Before and After</h2>
 
+  {% if customization_warning %}
+  <div class="warning-box" role="status" aria-live="polite">
+    <p>{{ customization_warning | replace('\n', '<br />') }}</p>
+  </div>
+  {% endif %}
+
   <div class="score-comparison">
     <div class="score-box">
       <h3>Before</h3>

@@ -9,6 +9,11 @@
   <p>{{ email_status.message }}</p>
 </div>
 {% endif %}
+{% if customization_warning %}
+<section class="warning-box" role="status" aria-live="polite">
+  <p>{{ customization_warning | replace('\n', '<br />') }}</p>
+</section>
+{% endif %}
 <section aria-labelledby="score-heading">
   <h2 id="score-heading">Compliance Score</h2>
 

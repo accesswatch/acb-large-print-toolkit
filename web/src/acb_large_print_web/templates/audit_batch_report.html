@@ -9,7 +9,11 @@
   <p>{{ email_status.message }}</p>
 </div>
 {% endif %}
-
+{% if customization_warning %}
+<section class="warning-box" role="status" aria-live="polite">
+  <p>{{ customization_warning | replace('\n', '<br />') }}</p>
+</section>
+{% endif %}
 {% if trimmed %}
 <div class="notice-box" role="note">
   <p><strong>Note:</strong> You submitted more than {{ batch_limit }} files. Only the first {{ batch_limit }} were audited -- the remaining {{ skipped_count }} {{ "file was" if skipped_count == 1 else "files were" }} skipped. Re-submit them as a separate batch.</p>

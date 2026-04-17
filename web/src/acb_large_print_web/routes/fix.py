@@ -23,6 +23,7 @@ from ..upload import (
     validate_upload,
 )
 from ..gating import ai_gate, GatingError, RETRY_AFTER_SECONDS
+from ..customization_warning import detect_fix_customizations, generate_customization_warning
 
 fix_bp = Blueprint("fix", __name__)
 
@@ -573,6 +574,12 @@ def _run_fix_and_render(
     post_breakdown = _build_penalty_breakdown(post_audit.findings)
     score_delta = post_audit.score - pre_audit.score
 
+    # Detect and warn about customizations from ACB defaults
+    has_customizations, customization_reasons = detect_fix_customizations(opts)
+    customization_warning = ""
+    if has_customizations:
+        customization_warning = generate_customization_warning(customization_reasons)
+
     return render_template(
         "fix_result.html",
         pre_score=pre_audit.score,
@@ -596,6 +603,7 @@ def _run_fix_and_render(
         token=token,
         ai_used=ai_used,
         doc_expiry=doc_expiry,
+        customization_warning=customization_warning,
     )
 
 

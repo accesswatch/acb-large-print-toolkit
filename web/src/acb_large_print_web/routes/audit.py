@@ -19,6 +19,7 @@ from ..rules import (
     get_rule_ids_by_profile,
 )
 from ..upload import UploadError, cleanup_token, validate_upload
+from ..customization_warning import detect_audit_customizations, generate_customization_warning
 
 audit_bp = Blueprint("audit", __name__)
 
@@ -186,6 +187,12 @@ def _audit_single():
                 )
                 email_status = {"success": ok, "message": msg}
 
+        # Detect and warn about customizations from ACB defaults
+        has_customizations, customization_reasons = detect_audit_customizations(request.form)
+        customization_warning = ""
+        if has_customizations:
+            customization_warning = generate_customization_warning(customization_reasons)
+
         return render_template(
             "audit_report.html",
             result=result,
@@ -196,6 +203,7 @@ def _audit_single():
             suppressed_rules=suppressed_rules,
             email_status=email_status,
             ai_used=False,
+            customization_warning=customization_warning,
         )
     except UploadError as e:
         from ..email import email_configured as _ec
@@ -336,6 +344,12 @@ def _audit_batch():
             )
             email_status = {"success": ok, "message": msg}
 
+    # Detect and warn about customizations from ACB defaults
+    has_customizations, customization_reasons = detect_audit_customizations(request.form)
+    customization_warning = ""
+    if has_customizations:
+        customization_warning = generate_customization_warning(customization_reasons)
+
     return render_template(
         "audit_batch_report.html",
         file_results=file_results,
@@ -353,4 +367,5 @@ def _audit_batch():
         batch_limit=_BATCH_LIMIT,
         ace_installed=_is_ace_installed(),
         email_status=email_status,
+        customization_warning=customization_warning,
     )
