@@ -14,14 +14,33 @@ from ..rules import (
     get_rule_ids_by_profile,
     get_rule_ids_by_severity,
 )
+from flask import url_for
+
 from ..upload import (
     UploadError,
     cleanup_token,
     get_temp_dir,
     validate_upload,
 )
+from ..gating import ai_gate, GatingError, RETRY_AFTER_SECONDS
 
 fix_bp = Blueprint("fix", __name__)
+
+
+def _busy_response(operation: str, back_url: str):
+    """Render the 503 busy page for gating rejections."""
+    from flask import render_template as _rt, make_response
+    resp = make_response(
+        _rt(
+            "busy.html",
+            operation=operation,
+            retry_seconds=RETRY_AFTER_SECONDS,
+            back_url=back_url,
+        ),
+        503,
+    )
+    resp.headers["Retry-After"] = str(RETRY_AFTER_SECONDS)
+    return resp
 
 
 _SEVERITY_DEDUCTIONS = {
@@ -425,22 +444,40 @@ def _run_fix_and_render(
     output_name = saved_path.stem + "-fixed" + ext
     output_path = saved_path.parent / output_name
 
-    fix_result_tuple = _fix_by_extension(
-        saved_path,
-        output_path,
-        bound=opts["bound"],
-        list_indent_in=opts["list_indent_in"],
-        list_hanging_in=opts["list_hanging_in"],
-        list_level_indents=opts["list_level_indents"],
-        para_indent_in=opts["para_indent_in"],
-        first_line_indent_in=opts["first_line_indent_in"],
-        preserve_heading_alignment=opts["preserve_heading_alignment"],
-        detect_headings=opts["detect_headings"],
-        use_ai=opts["use_ai"],
-        heading_threshold=opts["heading_threshold"],
-        confirmed_headings=confirmed_headings,
-        heading_accuracy=opts["heading_accuracy"],
-    )
+    # Gate AI heading-detection sessions
+    if opts.get("use_ai"):
+        try:
+            ctx = ai_gate()
+            ctx.__enter__()
+            _ai_ctx = ctx
+        except GatingError:
+            return _busy_response(
+                "AI heading detection",
+                back_url=url_for("fix.fix_form"),
+            )
+    else:
+        _ai_ctx = None
+
+    try:
+        fix_result_tuple = _fix_by_extension(
+            saved_path,
+            output_path,
+            bound=opts["bound"],
+            list_indent_in=opts["list_indent_in"],
+            list_hanging_in=opts["list_hanging_in"],
+            list_level_indents=opts["list_level_indents"],
+            para_indent_in=opts["para_indent_in"],
+            first_line_indent_in=opts["first_line_indent_in"],
+            preserve_heading_alignment=opts["preserve_heading_alignment"],
+            detect_headings=opts["detect_headings"],
+            use_ai=opts["use_ai"],
+            heading_threshold=opts["heading_threshold"],
+            confirmed_headings=confirmed_headings,
+            heading_accuracy=opts["heading_accuracy"],
+        )
+    finally:
+        if _ai_ctx is not None:
+            _ai_ctx.__exit__(None, None, None)
     # Unpack; _fix_by_extension may return 5 or 6 elements (with ai_meta)
     if len(fix_result_tuple) == 6:
         _, total_fixes, fix_records, post_audit, warnings, ai_meta = fix_result_tuple

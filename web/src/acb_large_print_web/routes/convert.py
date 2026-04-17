@@ -7,11 +7,16 @@ Six conversion directions:
 4. To EPUB 3 (Pandoc): .md, .rst, .odt, .rtf, .docx
 5. To PDF (Pandoc + WeasyPrint): .md, .rst, .odt, .rtf, .docx, .epub
 6. To EPUB / DAISY (Pipeline): .docx, .html, .epub (when Pipeline is installed)
+
+Audio transcription has its own dedicated route at /whisperer (BITS Whisperer).
 """
 
 from flask import Blueprint, render_template, request, send_file
 
-from acb_large_print.converter import CONVERTIBLE_EXTENSIONS, convert_to_markdown
+from acb_large_print.converter import (
+    CONVERTIBLE_EXTENSIONS,
+    convert_to_markdown,
+)
 from acb_large_print.pandoc_converter import (
     PANDOC_INPUT_EXTENSIONS,
     convert_to_html,
@@ -46,7 +51,7 @@ _NO_ACB_CSS_SENTINEL = Path("__no_acb_css__")
 # Build the accept strings for the file inputs
 _MD_ACCEPT = ",".join(sorted(CONVERTIBLE_EXTENSIONS))
 _HTML_ACCEPT = ",".join(sorted(PANDOC_INPUT_EXTENSIONS))
-# Union of all for a single file input
+# Union of all for a single file input (no audio -- that's /whisperer)
 _ALL_ACCEPT = ",".join(
     sorted(CONVERTIBLE_EXTENSIONS | PANDOC_INPUT_EXTENSIONS | PIPELINE_INPUT_EXTENSIONS)
 )
@@ -298,14 +303,15 @@ def convert_submit():
                     download_name=zip_path.name,
                 )
         else:
-            # MarkItDown: document -> Markdown (default)
+            # MarkItDown: document -> Markdown (default / to-markdown direction)
             if ext not in CONVERTIBLE_EXTENSIONS:
                 raise UploadError(
                     f"File type '{ext}' cannot be converted to Markdown. "
-                    f"Supported: {', '.join(sorted(CONVERTIBLE_EXTENSIONS))}."
+                    f"Supported: {', '.join(sorted(CONVERTIBLE_EXTENSIONS))}. "
+                    "To transcribe audio, use BITS Whisperer."
                 )
             md_output = temp_dir / f"{saved_path.stem}.md"
-            output_path, text = convert_to_markdown(
+            output_path, _ = convert_to_markdown(
                 saved_path,
                 output_path=md_output,
             )

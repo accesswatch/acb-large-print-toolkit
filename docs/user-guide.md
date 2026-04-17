@@ -148,10 +148,15 @@ Integration approach:
 2. Choose your rule categories (ACB Large Print, MS Accessibility Checker, or both).
 3. Select an audit mode.
 4. Upload your file (500 MB maximum).
-5. Click Run Audit.
-6. Review the report. Each finding shows the rule ID, severity, location in the document, and a description of what is wrong.
+5. Optionally check **Email me the report and findings CSV** and enter your address (only shown when email delivery is configured for this instance).
+6. Click Run Audit.
+7. Review the report. Each finding shows the rule ID, severity, location in the document, and a description of what is wrong.
 
 Tip: The audit report groups findings by severity. Tackle Critical issues first -- these make the document unreadable for low-vision users. Then work down through High, Medium, and Low.
+
+### Email delivery
+
+When email delivery is enabled on the server, an optional **Email Report** section appears on the audit form. Check the box and enter your email address to receive the scorecard and a findings CSV attachment immediately after the audit completes. The CSV opens in Excel or any spreadsheet application and includes every finding with its rule ID, severity, WCAG criterion, and whether it can be auto-fixed. Your email address is used only to send this report and is never stored.
 
 ---
 

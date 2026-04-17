@@ -108,13 +108,19 @@ def create_app(config: dict | None = None) -> Flask:
     from .routes.faq import faq_bp
     from .routes.settings import settings_bp
     from .routes.privacy import privacy_bp
+    from .routes.whisperer import whisperer_bp
+    from .routes.consent import consent_bp, consent_required
+    from .routes.process import process_bp
 
     app.register_blueprint(main_bp)
+    app.register_blueprint(consent_bp, url_prefix="/consent")
+    app.register_blueprint(process_bp, url_prefix="/process")
     app.register_blueprint(audit_bp, url_prefix="/audit")
     app.register_blueprint(fix_bp, url_prefix="/fix")
     app.register_blueprint(template_bp, url_prefix="/template")
     app.register_blueprint(export_bp, url_prefix="/export")
     app.register_blueprint(convert_bp, url_prefix="/convert")
+    app.register_blueprint(whisperer_bp, url_prefix="/whisperer")
     app.register_blueprint(guidelines_bp, url_prefix="/guidelines")
     app.register_blueprint(guide_bp, url_prefix="/guide")
     app.register_blueprint(changelog_bp, url_prefix="/changelog")
@@ -125,14 +131,29 @@ def create_app(config: dict | None = None) -> Flask:
     app.register_blueprint(about_bp, url_prefix="/about")
     app.register_blueprint(privacy_bp, url_prefix="/privacy")
 
+    # Consent gate: redirect first-time visitors to the agreement page.
+    # Skipped in test mode so existing tests don't need consent cookies.
+    @app.before_request
+    def require_consent():
+        if app.testing:
+            return None
+        from flask import redirect, request as req, url_for as _url_for
+        if consent_required(req):
+            return redirect(
+                _url_for("consent.consent_form", next=req.full_path.rstrip("?"))
+            )
+
     # Health check
     @app.route("/health")
     def health():
+        from .gating import get_capacity_metrics
+
         pipeline_url = os.environ.get("PIPELINE_URL", "http://pipeline:8181/ws")
         ollama_url = os.environ.get("OLLAMA_HOST", "http://ollama:11434")
 
         pipeline_status = _check_tcp_endpoint(pipeline_url)
         ollama_status = _check_http_endpoint(f"{ollama_url.rstrip('/')}/api/tags")
+        capacity = get_capacity_metrics()
 
         services = {
             "web": {"status": "ok", "detail": "service responding"},
@@ -146,6 +167,7 @@ def create_app(config: dict | None = None) -> Flask:
                 {
                     "status": "ok" if all_ok else "degraded",
                     "services": services,
+                    "capacity": capacity,
                     "timestamp_utc": datetime.now(UTC).isoformat(),
                 }
             ),

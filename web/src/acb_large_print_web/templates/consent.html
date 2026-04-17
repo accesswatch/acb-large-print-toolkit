@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+
+{% block title %}Welcome to GLOW -- Please Read Before Continuing{% endblock %}
+{% block heading %}Welcome to the GLOW Accessibility Toolkit{% endblock %}
+
+{% block content %}
+<p>Before you use GLOW, please take a moment to read how this tool works and how it handles your documents. This is a short, plain-language summary -- not legal boilerplate.</p>
+
+{% if error %}
+<div class="error-box" role="alert">
+  <p><strong>{{ error }}</strong></p>
+</div>
+{% endif %}
+
+<section aria-labelledby="what-glow-does-heading">
+  <h2 id="what-glow-does-heading">What GLOW Does</h2>
+  <p>GLOW (Guided Layout and Output Workflow) is a free, open-source accessibility tool sponsored by <a href="https://www.bits-acb.org">Blind Information Technology Solutions (BITS)</a>, a special interest affiliate of the American Council of the Blind. It helps authors and organizations produce documents that meet the <a href="https://acb.org/large-print-guidelines">ACB Large Print Guidelines</a> and <a href="https://www.w3.org/TR/WCAG22/">WCAG 2.2 Level AA</a> accessibility standards.</p>
+  <p>GLOW can audit, fix, convert, and transcribe documents and audio files entirely on this server. No commercial account, subscription, or login is required.</p>
+</section>
+
+<section aria-labelledby="data-heading">
+  <h2 id="data-heading">How GLOW Handles Your Files</h2>
+
+  <h3>Documents (Word, Excel, PowerPoint, PDF, Markdown, ePub)</h3>
+  <ul>
+    <li>Your file is uploaded directly to this server over an encrypted HTTPS connection.</li>
+    <li>It is processed in a private temporary folder identified only by a random token. No filename, content, or metadata is logged.</li>
+    <li>The file and all outputs are <strong>automatically deleted within 1 hour</strong> of upload, and immediately after you download your results.</li>
+    <li>Your document is never shared with, forwarded to, or stored by any third party.</li>
+  </ul>
+
+  <h3>Audio Files (BITS Whisperer)</h3>
+  <ul>
+    <li>Audio files you upload for transcription are processed using a local copy of the <a href="https://github.com/openai/whisper">Whisper medium model</a> running on this server.</li>
+    <li><strong>Your audio never leaves this server.</strong> It is not sent to OpenAI, any cloud speech API, or any other external service.</li>
+    <li>The audio file is deleted immediately after the transcript is returned to you.</li>
+  </ul>
+
+  <h3>AI-Assisted Features (Heading Detection)</h3>
+  <ul>
+    <li>The optional AI heading-detection feature uses a locally hosted language model (<a href="https://ollama.com/">Ollama</a> with Llama 3) running on this server.</li>
+    <li>Document text sent to AI heading detection stays on this server. It is not forwarded to OpenAI, Anthropic, Google, or any external API.</li>
+    <li>AI features are always optional and clearly labelled.</li>
+  </ul>
+</section>
+
+<section aria-labelledby="cookies-heading">
+  <h2 id="cookies-heading">Cookies and Storage</h2>
+  <p>GLOW uses two types of cookies:</p>
+  <ul>
+    <li><strong>Consent cookie</strong> (<code>glow_consent_v1</code>): stores the fact that you have read and agreed to these terms. It expires after 365 days. No personal data is stored in it -- it contains only the value <code>1</code>.</li>
+    <li><strong>Session preferences</strong> (optional): if you use the Settings tab to save your defaults, those choices are stored in your browser's local storage on your device only. Nothing is sent to the server.</li>
+  </ul>
+  <p>GLOW does not use advertising cookies, tracking pixels, analytics services, or any third-party cookie. There is no Google Analytics, Meta Pixel, or similar tool on this site.</p>
+</section>
+
+<section aria-labelledby="no-account-heading">
+  <h2 id="no-account-heading">No Accounts. No Tracking. No Ads.</h2>
+  <ul>
+    <li>No user account or login is required or collected.</li>
+    <li>No IP addresses are stored or associated with your uploads.</li>
+    <li>No usage statistics, behavioral analytics, or session recordings are collected.</li>
+    <li>GLOW has no advertising. It will never be monetized through your data.</li>
+  </ul>
+  <p>GLOW is a public service tool. Your documents are your business.</p>
+</section>
+
+<section aria-labelledby="agreement-heading">
+  <h2 id="agreement-heading">Your Agreement</h2>
+  <p>By using GLOW you confirm that:</p>
+  <ul>
+    <li>You have read and understood this summary of how GLOW handles your data.</li>
+    <li>You have the right to upload any files you submit (they are your documents, or you have permission to process them).</li>
+    <li>You understand that GLOW is provided free of charge, without warranty, as an open-source community project. It is not a substitute for professional legal or accessibility consulting.</li>
+  </ul>
+  <p>For the complete data handling policy, see the <a href="{{ url_for('privacy.privacy_page') }}">Privacy Policy</a>.</p>
+</section>
+
+<form method="post" novalidate>
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <input type="hidden" name="next_url" value="{{ next_url | e }}">
+
+  <fieldset>
+    <legend>Agreement</legend>
+    <label class="checkbox-label">
+      <input type="checkbox" name="agreed" value="yes" required aria-describedby="agree-hint">
+      <span>I have read the above and agree to use GLOW on these terms.</span>
+    </label>
+    <p id="agree-hint" class="field-hint">You must check this box to continue. Your agreement is remembered on this browser for 365 days.</p>
+  </fieldset>
+
+  <button type="submit" class="btn-primary">Continue to GLOW</button>
+</form>
+{% endblock %}

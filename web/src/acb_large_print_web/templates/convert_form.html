@@ -356,6 +356,11 @@
   <button type="submit" class="btn-primary">Convert My Document</button>
 </form>
 
+<div class="info-box" role="note" aria-labelledby="whisperer-callout-heading">
+  <h2 id="whisperer-callout-heading">Have audio to transcribe?</h2>
+  <p>Use <a href="{{ url_for('whisperer.whisperer_form') }}"><strong>BITS Whisperer</strong></a> -- a dedicated tool that transcribes MP3, WAV, M4A, OGG, FLAC, and other audio formats into accessible Markdown or Word documents. Runs entirely on this server. No audio leaves GLOW.</p>
+</div>
+
 <details class="help-accordion">
   <summary>What happens to my file?</summary>
   <p>Your document is converted on the server and the result is sent back to you immediately as a download. Your original file is deleted from the server right after the conversion is complete. We do not store, read, or share your documents.</p>

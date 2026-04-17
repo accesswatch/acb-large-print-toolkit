@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block title %}Quick Start -- Upload Your File{% endblock %}
+{% block heading %}Quick Start: Upload Your Document{% endblock %}
+
+{% block content %}
+<p>Not sure which tool to use? Upload your file and we'll show you what's possible. One upload, endless possibilities.</p>
+
+{% if error %}
+<div class="error-box" role="alert">
+  <p><strong>{{ error }}</strong></p>
+</div>
+{% endif %}
+
+<form method="post" enctype="multipart/form-data" novalidate>
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+  <fieldset>
+    <legend>Upload a File</legend>
+
+    <label for="file">Choose a file</label>
+    <input
+      type="file"
+      id="file"
+      name="file"
+      required
+      aria-describedby="file-hint"
+    >
+    <p id="file-hint" class="field-hint">
+      Supported: Word, Excel, PowerPoint, PDF, Markdown, ePub, images (JPG, PNG, GIF, etc.), audio (MP3, WAV, M4A, etc.).
+      Maximum file size: 500 MB.
+    </p>
+  </fieldset>
+
+  <button type="submit" class="btn-primary">Next: Choose an Action</button>
+</form>
+
+<details class="help-accordion">
+  <summary>What can I do with my file?</summary>
+  <ul>
+    <li><strong>Audit:</strong> Check for accessibility compliance issues across Word, Excel, PowerPoint, PDF, Markdown, ePub, and image files.</li>
+    <li><strong>Fix:</strong> Auto-fix accessibility problems in Word documents (fonts, sizes, spacing, alignment, emphasis).</li>
+    <li><strong>Convert:</strong> Transform any document into Markdown, HTML, PDF, Word, ePub, or other formats. Images get alt-text descriptions powered by AI running on this server.</li>
+    <li><strong>Export:</strong> Convert a Word document to accessible HTML with built-in ACB Large Print styling.</li>
+    <li><strong>Create Template:</strong> Generate a ready-to-use Word template (.dotx) with all ACB formatting pre-configured.</li>
+    <li><strong>BITS Whisperer:</strong> Transcribe audio (MP3, WAV, M4A, OGG, FLAC) to Markdown or Word without sending your audio anywhere.</li>
+  </ul>
+</details>
+{% endblock %}

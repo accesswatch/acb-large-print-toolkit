@@ -42,6 +42,14 @@
   </ul>
 </section>
 
+<section aria-labelledby="quick-start-heading">
+  <h2 id="quick-start-heading">Not Sure Where to Start?</h2>
+  <p>Upload any document and we'll show you everything you can do with it. A guided path for beginners and a quick discovery tool for everyone.</p>
+  <form method="get" action="{{ url_for('process.process_form') }}" style="display: inline;">
+    <button type="submit" class="btn-primary" style="font-size: 1.25rem; padding: 1rem 2rem;">Quick Start: Upload & Discover</button>
+  </form>
+</section>
+
 <section aria-labelledby="ops-heading">
   <h2 id="ops-heading">Choose an Operation</h2>
 
@@ -101,6 +109,19 @@
       </ul>
     </div>
 
+    <div class="card card-whisperer">
+      <h3><a href="{{ url_for('whisperer.whisperer_form') }}">BITS Whisperer</a></h3>
+      <p>Transcribe audio recordings into accessible Markdown or Word documents -- entirely on this server, with no data sent to any external service. Powered by OpenAI Whisper (medium model) running locally via faster-whisper.</p>
+      <ul class="card-formats">
+        <li class="format-tag format-misc">MP3</li>
+        <li class="format-tag format-misc">WAV</li>
+        <li class="format-tag format-misc">M4A</li>
+        <li class="format-tag format-misc">OGG</li>
+        <li class="format-tag format-misc">FLAC</li>
+        <li class="format-tag format-misc">and more</li>
+      </ul>
+    </div>
+
     <div class="card card-guidelines">
       <h3><a href="{{ url_for('guidelines.guidelines_page') }}">Guidelines Reference</a></h3>
       <p>Browse the full ACB, WCAG, and APH submission guidance in one place. Use this tab when you need rule rationale or standards references while reviewing findings.</p>
@@ -127,6 +148,7 @@
     <li><strong>Template:</strong> creates Word templates with profile-aware defaults.</li>
     <li><strong>Export:</strong> turns Word documents into accessible HTML for web publishing.</li>
     <li><strong>Convert:</strong> transforms documents across Markdown, HTML, Word, EPUB, PDF, and DAISY workflows.</li>
+    <li><strong>BITS Whisperer:</strong> transcribes audio recordings (.mp3, .wav, .m4a, and more) to accessible Markdown or Word documents using a local Whisper medium model -- no audio leaves the server.</li>
     <li><strong>Guidelines:</strong> explains the standards behind each rule and profile.</li>
     <li><strong>Settings:</strong> stores your default choices so every workflow opens the way your team prefers.</li>
   </ul>
@@ -154,6 +176,6 @@
 
 <section aria-labelledby="privacy-heading">
   <h2 id="privacy-heading">Privacy</h2>
-  <p>Uploaded documents are processed in memory and deleted immediately after your results are returned. No files are stored on the server. No accounts or login required.</p>
+  <p>Uploaded documents and audio files are processed on this server and deleted immediately after your results are returned. No files are stored. No accounts or login required. BITS Whisperer audio transcription runs entirely on this server -- your audio is never sent to any external service or cloud API.</p>
 </section>
 {% endblock %}

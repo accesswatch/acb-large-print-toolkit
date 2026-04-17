@@ -427,6 +427,27 @@ def _build_parser() -> argparse.ArgumentParser:
         default=None,
         help="Minimum heuristic score for heading detection (0-100, default: 50)",
     )
+    batch_p.add_argument(
+        "--jobs",
+        "-j",
+        type=int,
+        default=1,
+        metavar="N",
+        help="Number of files to process in parallel (default: 1). Use 0 for auto (one per CPU core).",
+    )
+    batch_p.add_argument(
+        "--summary-only",
+        action="store_true",
+        help="Print only the aggregate summary, not per-file reports (useful for CI dashboards).",
+    )
+    batch_p.add_argument(
+        "--min-grade",
+        type=str,
+        default=None,
+        choices=["A", "B", "C", "D", "F"],
+        metavar="GRADE",
+        help="Exit with code 2 if the average score falls below this grade (A/B/C/D/F).",
+    )
 
     # ---- export ----
     export_p = sub.add_parser(
@@ -890,20 +911,15 @@ def _cmd_template(args: argparse.Namespace) -> int:
     return 0
 
 
-def _cmd_batch(args: argparse.Namespace) -> int:
-    """Execute the batch command."""
-    from .reporter import (
-        generate_fix_summary,
-        generate_json_report,
-        generate_text_report,
-    )
+_GRADE_MIN_SCORE = {"A": 90, "B": 80, "C": 70, "D": 60, "F": 0}
 
-    # Expand glob patterns and optional recursive search
+
+def _expand_batch_files(args: argparse.Namespace) -> list[Path]:
+    """Expand paths/globs/directories into a sorted, deduplicated file list."""
     files: list[Path] = []
     for pattern in args.files:
         p = Path(str(pattern))
         if p.is_dir():
-            # Directory given: find supported files
             glob_method = p.rglob if args.recursive else p.glob
             for ext in SUPPORTED_EXTENSIONS:
                 files.extend(glob_method(f"*{ext}"))
@@ -913,89 +929,201 @@ def _cmd_batch(args: argparse.Namespace) -> int:
             else:
                 files.extend(pattern.parent.glob(pattern.name))
         else:
-            files.append(pattern)
+            files.append(p)
+    # Sort and deduplicate
+    seen: set[Path] = set()
+    result: list[Path] = []
+    for f in sorted(files):
+        if f not in seen:
+            seen.add(f)
+            result.append(f)
+    return result
 
+
+def _cmd_batch(args: argparse.Namespace) -> int:
+    """Execute the batch command with optional parallel execution."""
+    import os
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+    from .reporter import (
+        generate_fix_summary,
+        generate_json_report,
+        generate_text_report,
+    )
+
+    files = _expand_batch_files(args)
     if not files:
         print("Error: No matching document files found.", file=sys.stderr)
         return 1
 
-    total_files = len(files)
-    exit_code = 0
-    total_processed = 0
-    total_issues = 0
-
-    # Resolve indent values once for all files in batch
+    # Resolve indent values once
     list_indent_in, list_hanging_in = _resolve_list_indent(args)
     para_indent_in, first_line_indent_in = _resolve_para_indent(args)
 
-    for idx, file_path in enumerate(sorted(files), 1):
-        if not file_path.exists():
-            log.warning("Skipping (not found): %s", file_path)
-            continue
-        if file_path.suffix.lower() not in SUPPORTED_EXTENSIONS:
-            log.warning("Skipping (unsupported format): %s", file_path)
-            continue
+    # Determine worker count
+    jobs = getattr(args, "jobs", 1)
+    if jobs == 0:
+        jobs = os.cpu_count() or 1
+    jobs = max(1, jobs)
+    summary_only = getattr(args, "summary_only", False)
 
-        total_processed += 1
-        log.info("Processing %d/%d: %s", idx, total_files, file_path.name)
+    total_files = len(files)
+    # Ordered results -- initialise slots so parallel results land in file order
+    ordered_reports: list[str | None] = [None] * total_files
+    audit_results: list = [None] * total_files  # AuditResult or None
+    exit_code = 0
 
-        if args.action == "audit":
+    def _process_audit(idx: int, file_path: Path) -> tuple[int, str, object | None]:
+        """Worker: audit one file. Returns (idx, report_text, result)."""
+        log.info("[%d/%d] Auditing: %s", idx + 1, total_files, file_path.name)
+        try:
             result = _audit_by_extension(file_path)
-            total_issues += len(result.findings)
-
             if args.format == "json":
                 report = generate_json_report(result)
             else:
                 report = generate_text_report(result)
-            print(report)
-            print()
+            return idx, report, result
+        except Exception as exc:
+            msg = f"ERROR auditing {file_path.name}: {exc}"
+            log.warning(msg)
+            return idx, msg, None
 
-            if not result.passed:
-                exit_code = 2
-
-        elif args.action == "fix":
+    def _process_fix(idx: int, file_path: Path) -> tuple[int, str, object | None]:
+        """Worker: fix one file. Returns (idx, report_text, post_audit_result)."""
+        log.info("[%d/%d] Fixing: %s", idx + 1, total_files, file_path.name)
+        try:
             if args.dry_run:
                 result = _audit_by_extension(file_path)
                 fixable = [f for f in result.findings if f.auto_fixable]
                 manual = [f for f in result.findings if not f.auto_fixable]
-                print(f"File: {file_path}")
-                print(f"  Auto-fixable: {len(fixable)}, Manual: {len(manual)}")
-                total_issues += len(result.findings)
-                if not result.passed:
-                    exit_code = 2
-                continue
+                txt = (
+                    f"File: {file_path}\n"
+                    f"  Auto-fixable: {len(fixable)}, Manual: {len(manual)}"
+                )
+                return idx, txt, result
 
             out = None
             if args.output_dir:
                 args.output_dir.mkdir(parents=True, exist_ok=True)
                 out = args.output_dir / file_path.name
 
-            output_path, total_fixes, _records, post_audit, warnings = (
-                _fix_by_extension(
-                    file_path,
-                    output_path=out,
-                    bound=getattr(args, "bound", False),
-                    list_indent_in=list_indent_in,
-                    list_hanging_in=list_hanging_in,
-                    para_indent_in=para_indent_in,
-                    first_line_indent_in=first_line_indent_in,
-                )
+            output_path, total_fixes, _records, post_audit, warnings = _fix_by_extension(
+                file_path,
+                output_path=out,
+                bound=getattr(args, "bound", False),
+                list_indent_in=list_indent_in,
+                list_hanging_in=list_hanging_in,
+                para_indent_in=para_indent_in,
+                first_line_indent_in=first_line_indent_in,
             )
-            report = generate_fix_summary(str(output_path), total_fixes, post_audit)
-            print(report)
+            lines = [generate_fix_summary(str(output_path), total_fixes, post_audit)]
             for w in warnings:
-                print(f"  WARNING: {w}")
-            print()
+                lines.append(f"  WARNING: {w}")
+            return idx, "\n".join(lines), post_audit
+        except Exception as exc:
+            msg = f"ERROR fixing {file_path.name}: {exc}"
+            log.warning(msg)
+            return idx, msg, None
 
-            if not post_audit.passed:
-                exit_code = 2
+    valid_files = [
+        fp for fp in files
+        if fp.exists() and fp.suffix.lower() in SUPPORTED_EXTENSIONS
+    ]
+    skipped = [fp for fp in files if fp not in valid_files]
+    for fp in skipped:
+        if not fp.exists():
+            log.warning("Skipping (not found): %s", fp)
+        else:
+            log.warning("Skipping (unsupported format): %s", fp)
 
-    # Batch summary
-    log.info(
-        "Batch complete: %d files processed%s",
-        total_processed,
-        f", {total_issues} total findings" if args.action == "audit" else "",
-    )
+    if not valid_files:
+        print("Error: No supported files to process.", file=sys.stderr)
+        return 1
+
+    worker = _process_audit if args.action == "audit" else _process_fix
+
+    if jobs == 1:
+        # Serial path -- simpler, preserves log ordering
+        for idx, fp in enumerate(valid_files):
+            ret_idx, report, result = worker(idx, fp)
+            ordered_reports[ret_idx] = report
+            audit_results[ret_idx] = result
+    else:
+        with ThreadPoolExecutor(max_workers=jobs) as pool:
+            futures = {
+                pool.submit(worker, idx, fp): idx
+                for idx, fp in enumerate(valid_files)
+            }
+            for future in as_completed(futures):
+                ret_idx, report, result = future.result()
+                ordered_reports[ret_idx] = report
+                audit_results[ret_idx] = result
+
+    # Print per-file reports in original file order (unless summary-only)
+    if not summary_only:
+        for report in ordered_reports:
+            if report is not None:
+                print(report)
+                print()
+
+    # Aggregate summary
+    all_results = [r for r in audit_results if r is not None]
+    total_processed = len(all_results)
+    total_issues = sum(len(getattr(r, "findings", [])) for r in all_results)
+    passing = sum(1 for r in all_results if getattr(r, "passed", False))
+    scores = [getattr(r, "score", None) for r in all_results if getattr(r, "score", None) is not None]
+    avg_score = round(sum(scores) / len(scores)) if scores else None
+
+    # Build severity counts
+    sev_counts: dict[str, int] = {"Critical": 0, "High": 0, "Medium": 0, "Low": 0}
+    for r in all_results:
+        for f in getattr(r, "findings", []):
+            sev = getattr(getattr(f, "severity", None), "value", str(getattr(f, "severity", "")))
+            if sev in sev_counts:
+                sev_counts[sev] += 1
+
+    sep = "-" * 60
+    print(sep)
+    print(f"Batch {args.action} complete")
+    print(f"  Files processed : {total_processed}")
+    if args.action == "audit":
+        print(f"  Passing files   : {passing}/{total_processed}")
+        if avg_score is not None:
+            print(f"  Average score   : {avg_score}/100")
+        if total_issues:
+            print(f"  Total findings  : {total_issues}")
+            for sev, count in sev_counts.items():
+                if count:
+                    print(f"    {sev:<10}: {count}")
+
+    # JSON aggregate output when --format json
+    if args.format == "json" and args.action == "audit":
+        import json
+        summary = {
+            "action": args.action,
+            "files_processed": total_processed,
+            "passing": passing,
+            "failing": total_processed - passing,
+            "avg_score": avg_score,
+            "total_findings": total_issues,
+            "by_severity": sev_counts,
+        }
+        print(json.dumps({"batch_summary": summary}, indent=2))
+
+    # Determine exit code
+    for r in all_results:
+        if not getattr(r, "passed", True):
+            exit_code = 2
+
+    # --min-grade check (audit only)
+    min_grade = getattr(args, "min_grade", None)
+    if min_grade and avg_score is not None and args.action == "audit":
+        threshold = _GRADE_MIN_SCORE.get(min_grade, 0)
+        if avg_score < threshold:
+            log.warning(
+                "Average score %d is below minimum grade %s (%d). Exiting with code 2.",
+                avg_score, min_grade, threshold,
+            )
+            exit_code = 2
 
     return exit_code
 

@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block title %}Server Busy{% endblock %}
+{% block heading %}Server Busy{% endblock %}
+
+{% block content %}
+<div class="error-box" role="alert" aria-live="assertive">
+  <p><strong>All {{ operation }} slots are currently in use.</strong></p>
+  <p>The server is processing other requests right now. Please wait about {{ retry_seconds }} seconds and try again.</p>
+</div>
+
+<p>No data was lost. Your file was not processed. You can go back and resubmit when the server has capacity.</p>
+
+<p><a href="{{ back_url }}" class="btn-primary">Go Back and Try Again</a></p>
+
+<details class="help-accordion">
+  <summary>Why does this happen?</summary>
+  <p>{{ operation }} is a resource-intensive process that uses several CPU cores and a significant amount of memory. To keep the server stable and fair for all users, only a limited number of these jobs can run at the same time.</p>
+  <p>If this message appears repeatedly, please try during off-peak hours or contact the site administrator.</p>
+</details>
+{% endblock %}

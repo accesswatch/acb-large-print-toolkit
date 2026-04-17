@@ -1,0 +1,162 @@
+{% extends "base.html" %}
+
+{% block title %}BITS Whisperer{% endblock %}
+{% block heading %}BITS Whisperer{% endblock %}
+
+{% block content %}
+<p>Transcribe audio recordings into accessible text -- entirely on this server. Your audio is never sent to any external service or cloud API. Powered by OpenAI Whisper (medium model) running locally via <a href="https://github.com/SYSTRAN/faster-whisper">faster-whisper</a>.</p>
+
+{% if not whisper_installed %}
+<div class="error-box" role="alert">
+  <p><strong>BITS Whisperer is not available on this server.</strong> The faster-whisper library is not installed. Contact the site administrator to enable audio transcription.</p>
+</div>
+{% else %}
+
+{% if error %}
+<div class="error-box" role="alert">
+  <p><strong>Error:</strong> {{ error }}</p>
+</div>
+{% endif %}
+
+<div class="info-box" role="note">
+  <p><strong>Processing time:</strong> Whisper medium runs on CPU at roughly real-time speed -- a 10-minute recording takes about 10 minutes to transcribe. Large files (over 30 minutes) may take a while. The page will wait while your audio is being processed.</p>
+</div>
+
+<form method="post" enctype="multipart/form-data" novalidate>
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+  <!-- ============================================================ -->
+  <!-- STEP 1: Upload audio                                         -->
+  <!-- ============================================================ -->
+  <fieldset>
+    <legend>Step 1: Upload your audio file</legend>
+
+    <label for="audio">Audio file</label>
+    <input
+      type="file"
+      id="audio"
+      name="audio"
+      accept="{{ audio_accept }}"
+      required
+      aria-describedby="audio-hint"
+    >
+    <p id="audio-hint" class="field-hint">
+      Accepted formats: MP3, WAV, M4A, OGG, FLAC, AAC, Opus.
+      Maximum file size: 500 MB.
+      For best results, use a clear recording with minimal background noise.
+    </p>
+  </fieldset>
+
+  <!-- ============================================================ -->
+  <!-- STEP 2: Language                                             -->
+  <!-- ============================================================ -->
+  <fieldset>
+    <legend>Step 2: Language (optional)</legend>
+
+    <label for="language">Language spoken in the recording</label>
+    <select id="language" name="language" aria-describedby="language-hint">
+      {% for code, label in language_choices %}
+      <option value="{{ code }}">{{ label }}</option>
+      {% endfor %}
+    </select>
+    <p id="language-hint" class="field-hint">
+      Auto-detect works well for most recordings. Choosing the language explicitly
+      is faster and slightly more accurate for short clips under 30 seconds.
+    </p>
+  </fieldset>
+
+  <!-- ============================================================ -->
+  <!-- STEP 3: Output format                                        -->
+  <!-- ============================================================ -->
+  <fieldset>
+    <legend>Step 3: What do you want to receive?</legend>
+
+    <div class="radio-group">
+      <label>
+        <input type="radio" name="output_format" value="markdown" checked>
+        <span>
+          <strong>Markdown transcript (.md)</strong><br>
+          A plain-text file with an H1 title and one paragraph per speech segment.
+          ACB-compliant formatting -- no italic, no bold emphasis, flush-left prose.
+          Open in any text editor, or bring it back to Convert to create an accessible
+          web page, Word document, or PDF.
+        </span>
+      </label>
+
+      <label>
+        <input type="radio" name="output_format" value="word"{% if not pandoc_installed %} disabled{% endif %}>
+        <span>
+          <strong>Word document (.docx)</strong><br>
+          The Markdown transcript is passed through Pandoc to produce an editable
+          Word document with proper heading styles. Good for sharing with people
+          who use Microsoft Word.
+          {% if not pandoc_installed %}<br><em>Pandoc is not installed on this server -- Word output is unavailable.</em>{% endif %}
+        </span>
+      </label>
+    </div>
+  </fieldset>
+
+  <!-- ============================================================ -->
+  <!-- STEP 4: Document title (optional, shown for Word output)     -->
+  <!-- ============================================================ -->
+  <fieldset>
+    <legend>Step 4: Document title (optional)</legend>
+
+    <label for="title">Title</label>
+    <input
+      type="text"
+      id="title"
+      name="title"
+      maxlength="200"
+      placeholder="Leave blank to use the filename"
+      aria-describedby="title-hint"
+    >
+    <p id="title-hint" class="field-hint">
+      Used as the H1 heading in Markdown and the document title in Word.
+      Defaults to the audio filename if left blank.
+    </p>
+  </fieldset>
+
+  <button type="submit" class="btn-primary">Transcribe Audio</button>
+</form>
+
+<details class="help-accordion">
+  <summary>Privacy: what happens to my audio?</summary>
+  <p>Your audio file is uploaded to this server, transcribed using a local copy of the Whisper model, and then <strong>deleted immediately</strong> once the transcript is sent back to you. The audio is never forwarded to OpenAI, any cloud API, or any third party. Transcription happens entirely in this server's memory using the faster-whisper library.</p>
+  <p>The transcript itself is also deleted after download. Nothing is stored.</p>
+</details>
+
+<details class="help-accordion">
+  <summary>What is Whisper medium? How accurate is it?</summary>
+  <p>Whisper is an open-source speech recognition model released by OpenAI in 2022. BITS Whisperer uses the <strong>medium</strong> size model (1.5 GB, 300M parameters), which gives the best balance of accuracy and speed for CPU inference.</p>
+  <p>Accuracy depends on audio quality. For clear speech in a quiet room, Whisper medium produces near-human-level transcription in English and performs well in over 50 other languages. Background noise, multiple speakers talking at the same time, strong accents, and technical jargon reduce accuracy.</p>
+  <p>The model runs with int8 quantization via CTranslate2, which is 4x faster than standard float32 inference with no meaningful accuracy loss.</p>
+</details>
+
+<details class="help-accordion">
+  <summary>Tips for getting the best transcript</summary>
+  <ul>
+    <li><strong>One speaker at a time.</strong> Whisper does not separate overlapping voices. Recordings where people talk over each other will produce garbled output for those sections.</li>
+    <li><strong>Minimize background noise.</strong> Music, HVAC hum, and crowd noise all reduce accuracy. Close-mic recordings (headset, lapel mic, or phone held near the speaker) work best.</li>
+    <li><strong>Specify the language</strong> for short clips. Auto-detect uses the first 30 seconds of audio to identify the language -- a very short clip may be misidentified.</li>
+    <li><strong>Review the transcript.</strong> Whisper is accurate but not perfect. Proper nouns, acronyms (like "BITS" or "ACB"), and technical terms may need correction.</li>
+    <li><strong>Use Markdown output first.</strong> Download the .md file, clean it up in a text editor, then use the Convert tab to turn it into an accessible web page, PDF, or Word document. This two-step approach gives you full control over the final result.</li>
+  </ul>
+</details>
+
+<details class="help-accordion">
+  <summary>What file formats are supported?</summary>
+  <ul>
+    <li><strong>MP3</strong> (.mp3) -- most common audio format; works well</li>
+    <li><strong>WAV</strong> (.wav) -- uncompressed; highest quality but large files</li>
+    <li><strong>M4A</strong> (.m4a) -- Apple audio format from iPhone recordings and Voice Memos</li>
+    <li><strong>OGG</strong> (.ogg) -- open-source compressed audio</li>
+    <li><strong>FLAC</strong> (.flac) -- lossless compression; good quality, smaller than WAV</li>
+    <li><strong>AAC</strong> (.aac) -- compressed audio used by many devices</li>
+    <li><strong>Opus</strong> (.opus) -- modern codec used by voice calls and video conferences</li>
+  </ul>
+  <p>Video files (MP4, MOV, WebM) are not accepted directly. Extract the audio track first using a tool like VLC or ffmpeg, then upload the audio file.</p>
+</details>
+
+{% endif %}
+{% endblock %}

@@ -30,6 +30,9 @@ services:
       - PIPELINE_URL=http://pipeline:8181/ws
       # Set FEEDBACK_PASSWORD to enable /feedback/review?key=<password>
       # - FEEDBACK_PASSWORD=change-me-in-production
+      # Postmark email notifications (optional -- email reports to users)
+      # - POSTMARK_SERVER_TOKEN=your-postmark-server-token
+      # - POSTMARK_FROM_EMAIL=reports@glow.bits-acb.org
     volumes:
       - feedback-data:/app/instance
     depends_on:

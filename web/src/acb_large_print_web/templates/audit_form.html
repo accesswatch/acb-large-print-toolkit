@@ -30,14 +30,69 @@
 </div>
 {% endif %}
 
-<form method="post" enctype="multipart/form-data" novalidate>
+<form method="post" enctype="multipart/form-data" novalidate id="audit-form">
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-  <div class="form-group">
+
+  <fieldset>
+    <legend>Upload Mode</legend>
+    <p class="help-text">Audit a single document or submit up to 3 at once for a combined or per-file report.</p>
+    <div class="radio-group">
+      <label>
+        <input type="radio" name="upload_mode" value="single" id="mode-single" checked>
+        <strong>Single File</strong> -- audit one document at a time.
+      </label>
+      <label>
+        <input type="radio" name="upload_mode" value="batch" id="mode-batch">
+        <strong>Batch (up to 3 files)</strong> -- audit multiple documents in one run.
+      </label>
+    </div>
+  </fieldset>
+
+  <!-- Single file upload -->
+  <div id="single-upload-section" class="form-group">
     <label for="document">Upload a document</label>
     <input type="file" id="document" name="document" accept=".docx,.xlsx,.pptx,.md,.pdf,.epub"
            aria-describedby="file-help"
            {% if error %}aria-invalid="true"{% endif %}>
     <p id="file-help" class="help-text">Accepted formats: Word (.docx), Excel (.xlsx), PowerPoint (.pptx), Markdown (.md), PDF (.pdf), ePub (.epub). Maximum size: 500 MB.</p>
+  </div>
+
+  <!-- Batch file upload (hidden until batch mode selected) -->
+  <div id="batch-upload-section" hidden>
+    <div class="form-group">
+      <label for="documents-picker">Add documents (up to 3)</label>
+      <input type="file" id="documents-picker"
+             accept=".docx,.xlsx,.pptx,.md,.pdf,.epub"
+             aria-describedby="batch-file-help"
+             multiple>
+      <!-- Populated by JS before submit; carries files to server -->
+      <input type="file" id="documents-submit" name="document" multiple
+             class="sr-file-input" tabindex="-1" aria-hidden="true">
+      <p id="batch-file-help" class="help-text">
+        Select up to 3 files. If you accidentally add more, only the first 3 will be audited -- no error, just a note on the report.
+        Accepted: Word (.docx), Excel (.xlsx), PowerPoint (.pptx), Markdown (.md), PDF (.pdf), ePub (.epub). Maximum 500 MB per file.
+      </p>
+    </div>
+
+    <div aria-live="polite" aria-atomic="false" id="file-list-region">
+      <p id="file-count-status" class="help-text"></p>
+      <ul id="file-list" class="file-queue-list" aria-label="Files queued for audit"></ul>
+    </div>
+
+    <fieldset>
+      <legend>Report Style</legend>
+      <p class="help-text">Choose how results are presented after the batch runs.</p>
+      <div class="radio-group">
+        <label>
+          <input type="radio" name="report_style" value="combined" checked>
+          <strong>Combined report</strong> -- one scorecard summarising all files, with per-file findings in expandable sections below.
+        </label>
+        <label>
+          <input type="radio" name="report_style" value="individual">
+          <strong>Individual reports</strong> -- a full separate report for each file, displayed one after another on the same page.
+        </label>
+      </div>
+    </fieldset>
   </div>
 
   <fieldset>
@@ -149,6 +204,181 @@
     </dl>
   </details>
 
-  <button type="submit" class="btn-primary">Run Audit</button>
+{% if email_configured %}
+  <fieldset>
+    <legend>Email Report</legend>
+    <p class="help-text">Optionally receive the scorecard and a findings CSV by email immediately after the audit. Your address is used only to deliver this report and is not stored.</p>
+    <div class="checkbox-group">
+      <label>
+        <input type="checkbox" name="email_report" id="email-report-checkbox">
+        Email me the report and findings CSV
+      </label>
+    </div>
+    <div id="email-address-group" hidden>
+      <div class="form-group">
+        <label for="report-email">Email address</label>
+        <input type="email" id="report-email" name="report_email"
+               autocomplete="email" aria-describedby="email-help"
+               aria-required="true" placeholder="you@example.com">
+        <p id="email-help" class="help-text">Required if the checkbox above is checked.</p>
+      </div>
+    </div>
+  </fieldset>
+{% endif %}
+
+  <button type="submit" class="btn-primary" id="submit-btn">Run Audit</button>
 </form>
+
+<script>
+(function () {
+  'use strict';
+
+  var MAX_FILES = 3;
+  var fileQueue = [];
+
+  var modeRadios = document.querySelectorAll('input[name="upload_mode"]');
+  var singleSection = document.getElementById('single-upload-section');
+  var batchSection = document.getElementById('batch-upload-section');
+  var picker = document.getElementById('documents-picker');
+  var submitInput = document.getElementById('documents-submit');
+  var fileListEl = document.getElementById('file-list');
+  var countStatus = document.getElementById('file-count-status');
+  var form = document.getElementById('audit-form');
+
+  /* Toggle sections on mode change */
+  function applyMode(mode) {
+    if (mode === 'batch') {
+      singleSection.hidden = true;
+      batchSection.hidden = false;
+    } else {
+      singleSection.hidden = false;
+      batchSection.hidden = true;
+    }
+  }
+
+  modeRadios.forEach(function (radio) {
+    radio.addEventListener('change', function () { applyMode(this.value); });
+  });
+
+  /* Add files from the picker */
+  picker.addEventListener('change', function () {
+    var incoming = Array.from(this.files);
+    var skipped = 0;
+    incoming.forEach(function (f) {
+      if (fileQueue.length < MAX_FILES) {
+        fileQueue.push(f);
+      } else {
+        skipped++;
+      }
+    });
+    this.value = ''; /* reset so same file can be re-added after removal */
+    renderQueue();
+    if (skipped > 0) {
+      countStatus.textContent =
+        'The queue is full (3 files maximum). ' +
+        skipped + (skipped === 1 ? ' file was' : ' files were') +
+        ' not added. Remove a file first if you want to swap it.';
+    }
+  });
+
+  /* Remove a file by index */
+  function removeFile(index) {
+    var removed = fileQueue.splice(index, 1);
+    renderQueue();
+    countStatus.textContent =
+      '\u201c' + removed[0].name + '\u201d removed. ' +
+      fileQueue.length + ' of ' + MAX_FILES + ' file' +
+      (fileQueue.length === 1 ? '' : 's') + ' queued.';
+  }
+
+  /* Render the visible queue list */
+  function renderQueue() {
+    fileListEl.innerHTML = '';
+    fileQueue.forEach(function (file, i) {
+      var li = document.createElement('li');
+      li.className = 'file-queue-item';
+
+      var nameSpan = document.createElement('span');
+      nameSpan.className = 'file-queue-name';
+      nameSpan.textContent = file.name;
+
+      var sizeSpan = document.createElement('span');
+      sizeSpan.className = 'file-queue-size';
+      sizeSpan.textContent = formatBytes(file.size);
+
+      var removeBtn = document.createElement('button');
+      removeBtn.type = 'button';
+      removeBtn.className = 'btn-remove-file';
+      removeBtn.textContent = 'Remove';
+      removeBtn.setAttribute('aria-label', 'Remove \u201c' + file.name + '\u201d from queue');
+      removeBtn.addEventListener('click', function () { removeFile(i); });
+
+      li.appendChild(nameSpan);
+      li.appendChild(sizeSpan);
+      li.appendChild(removeBtn);
+      fileListEl.appendChild(li);
+    });
+
+    if (fileQueue.length > 0) {
+      countStatus.textContent =
+        fileQueue.length + ' of ' + MAX_FILES + ' file' +
+        (fileQueue.length === 1 ? '' : 's') + ' queued.';
+    } else {
+      countStatus.textContent = '';
+    }
+  }
+
+  function formatBytes(bytes) {
+    if (bytes < 1024) return bytes + '\u00a0B';
+    if (bytes < 1048576) return (bytes / 1024).toFixed(1) + '\u00a0KB';
+    return (bytes / 1048576).toFixed(1) + '\u00a0MB';
+  }
+
+  /* Toggle email address field when checkbox changes */
+  var emailCheckbox = document.getElementById('email-report-checkbox');
+  var emailGroup = document.getElementById('email-address-group');
+  var emailInput = document.getElementById('report-email');
+  if (emailCheckbox) {
+    emailCheckbox.addEventListener('change', function () {
+      emailGroup.hidden = !this.checked;
+      emailInput.required = this.checked;
+      if (this.checked) { emailInput.focus(); }
+    });
+  }
+
+  /* On submit: wire the hidden file input via DataTransfer */
+  form.addEventListener('submit', function (e) {
+    var mode = document.querySelector('input[name="upload_mode"]:checked').value;
+
+    /* Validate email if email report requested (only when fieldset is rendered) */
+    if (emailCheckbox && emailCheckbox.checked) {
+      var addr = emailInput.value.trim();
+      if (!addr || !addr.includes('@')) {
+        e.preventDefault();
+        emailInput.focus();
+        emailInput.setAttribute('aria-invalid', 'true');
+        return;
+      }
+      emailInput.removeAttribute('aria-invalid');
+    }
+
+    if (mode !== 'batch') return; /* single mode: normal browser submit */
+
+    if (fileQueue.length === 0) {
+      e.preventDefault();
+      countStatus.textContent = 'Please add at least one file before running the audit.';
+      picker.focus();
+      return;
+    }
+
+    try {
+      var dt = new DataTransfer();
+      fileQueue.forEach(function (f) { dt.items.add(f); });
+      submitInput.files = dt.files;
+    } catch (err) {
+      /* DataTransfer not supported -- server will handle whatever the browser sends */
+    }
+  });
+}());
+</script>
 {% endblock %}

@@ -13,7 +13,11 @@ from werkzeug.utils import secure_filename
 
 ALLOWED_EXTENSIONS = {".docx", ".xlsx", ".pptx", ".md", ".pdf", ".epub"}
 
+# Audio extensions accepted by the BITS Whisperer route (/whisperer)
+AUDIO_EXTENSIONS = {".mp3", ".wav", ".m4a", ".ogg", ".flac", ".aac", ".opus"}
+
 # Additional extensions accepted by the convert route (Pandoc + MarkItDown)
+# Audio is handled separately by /whisperer -- not included here
 CONVERT_EXTENSIONS = ALLOWED_EXTENSIONS | {
     ".rst",
     ".odt",
@@ -24,6 +28,14 @@ CONVERT_EXTENSIONS = ALLOWED_EXTENSIONS | {
     ".json",
     ".xml",  # MarkItDown
     ".zip",  # MarkItDown
+    # Image files (new in MarkItDown 0.2+, with optional LLM for alt text)
+    ".jpg",
+    ".jpeg",
+    ".png",
+    ".gif",
+    ".webp",
+    ".bmp",
+    ".tiff",
 }
 
 # Human-readable format labels for error messages

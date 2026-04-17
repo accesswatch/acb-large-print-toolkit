@@ -1,0 +1,264 @@
+{% extends "base.html" %}
+
+{% block title %}Batch Audit Report{% endblock %}
+{% block heading %}Batch Audit Report{% endblock %}
+
+{% block content %}
+{% if email_status %}
+<div class="{{ 'success-box' if email_status.success else 'notice-box' }}" role="status">
+  <p>{{ email_status.message }}</p>
+</div>
+{% endif %}
+
+{% if trimmed %}
+<div class="notice-box" role="note">
+  <p><strong>Note:</strong> You submitted more than {{ batch_limit }} files. Only the first {{ batch_limit }} were audited -- the remaining {{ skipped_count }} {{ "file was" if skipped_count == 1 else "files were" }} skipped. Re-submit them as a separate batch.</p>
+</div>
+{% endif %}
+
+{% if failed %}
+<div class="notice-box" role="note">
+  <p><strong>{{ failed | length }} file{{ "s" if failed | length != 1 }} could not be processed:</strong></p>
+  <ul>
+    {%- for r in failed %}
+    <li><strong>{{ r.filename }}</strong> -- {{ r.error }}</li>
+    {%- endfor %}
+  </ul>
+</div>
+{% endif %}
+
+{% if successful %}
+
+{# ------------------------------------------------------------------ #}
+{# COMBINED SCORECARD (shown for both report styles)                   #}
+{# ------------------------------------------------------------------ #}
+<section aria-labelledby="batch-summary-heading">
+  <h2 id="batch-summary-heading">Batch Summary</h2>
+  <p>{{ successful | length }} file{{ "s" if successful | length != 1 }} audited
+    {% if mode_label %} ({{ mode_label }}){% endif %}.
+    {% if profile_label %}<strong>Profile:</strong> {{ profile_label }}.{% endif %}
+  </p>
+  {% if suppressed_rules %}
+  <p class="help-text"><strong>Suppressed by your settings:</strong> {{ suppressed_rules | join(", ") }}.</p>
+  {% endif %}
+
+  <div class="batch-scorecard">
+    <div class="batch-stat">
+      <span class="batch-stat-value">{{ avg_score }}/100</span>
+      <span class="batch-stat-label">Average score</span>
+    </div>
+    <div class="batch-stat">
+      <span class="batch-stat-value">{{ total_findings }}</span>
+      <span class="batch-stat-label">Total findings</span>
+    </div>
+    <div class="batch-stat">
+      <span class="batch-stat-value">{{ successful | selectattr("result") | selectattr("result.passed") | list | length }}</span>
+      <span class="batch-stat-label">Files passing</span>
+    </div>
+  </div>
+
+  {% if severity_totals %}
+  <ul class="severity-summary" aria-label="Combined findings by severity">
+    {%- if severity_totals.Critical %}<li><span class="severity-badge severity-critical">Critical</span> {{ severity_totals.Critical }}</li>{% endif %}
+    {%- if severity_totals.High %}<li><span class="severity-badge severity-high">High</span> {{ severity_totals.High }}</li>{% endif %}
+    {%- if severity_totals.Medium %}<li><span class="severity-badge severity-medium">Medium</span> {{ severity_totals.Medium }}</li>{% endif %}
+    {%- if severity_totals.Low %}<li><span class="severity-badge severity-low">Low</span> {{ severity_totals.Low }}</li>{% endif %}
+  </ul>
+  {% endif %}
+
+  {# Per-file score table -- shown in both styles #}
+  <table class="findings-table batch-overview-table">
+    <caption>Score summary by file</caption>
+    <thead>
+      <tr>
+        <th scope="col">File</th>
+        <th scope="col">Format</th>
+        <th scope="col">Score</th>
+        <th scope="col">Grade</th>
+        <th scope="col">Findings</th>
+        <th scope="col">Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in successful %}
+      {% set res = r.result %}
+      <tr>
+        <td>
+          {% if report_style == "combined" %}
+          <a href="#file-{{ loop.index }}">{{ r.filename }}</a>
+          {% else %}
+          {{ r.filename }}
+          {% endif %}
+        </td>
+        <td><span class="format-pill format-{{ r.doc_format }}">{{ r.doc_format | upper }}</span></td>
+        <td class="score-number grade-{{ res.grade | lower }}">{{ res.score }}/100</td>
+        <td>{{ res.grade }}</td>
+        <td>{{ res.findings | length }}</td>
+        <td>{% if res.passed %}<span class="status-pass">Pass</span>{% else %}<span class="status-fail">Needs work</span>{% endif %}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+
+{# ------------------------------------------------------------------ #}
+{# COMBINED REPORT: per-file findings in collapsible sections          #}
+{# ------------------------------------------------------------------ #}
+{% if report_style == "combined" %}
+
+<section aria-labelledby="batch-details-heading">
+  <h2 id="batch-details-heading">Findings by File</h2>
+
+  {% for r in successful %}
+  {% set res = r.result %}
+  <details class="batch-file-details" id="file-{{ loop.index }}" {% if res.findings %}open{% endif %}>
+    <summary>
+      <span class="batch-file-name">{{ r.filename }}</span>
+      <span class="batch-file-meta">
+        <span class="format-pill format-{{ r.doc_format }}">{{ r.doc_format | upper }}</span>
+        <span class="score-number grade-{{ res.grade | lower }}">{{ res.score }}/100</span>
+        <span class="severity-summary-inline">
+          {% set ns = namespace(c=0,h=0,m=0,l=0) %}
+          {% for f in res.findings %}
+            {% if f.severity.value == "Critical" %}{% set ns.c = ns.c + 1 %}
+            {% elif f.severity.value == "High" %}{% set ns.h = ns.h + 1 %}
+            {% elif f.severity.value == "Medium" %}{% set ns.m = ns.m + 1 %}
+            {% elif f.severity.value == "Low" %}{% set ns.l = ns.l + 1 %}
+            {% endif %}
+          {% endfor %}
+          {% if ns.c %}<span class="severity-badge severity-critical">{{ ns.c }} Critical</span>{% endif %}
+          {% if ns.h %}<span class="severity-badge severity-high">{{ ns.h }} High</span>{% endif %}
+          {% if ns.m %}<span class="severity-badge severity-medium">{{ ns.m }} Medium</span>{% endif %}
+          {% if ns.l %}<span class="severity-badge severity-low">{{ ns.l }} Low</span>{% endif %}
+          {% if not res.findings %}<span class="status-pass">No issues</span>{% endif %}
+        </span>
+      </span>
+    </summary>
+
+    {% if res.findings %}
+    <table class="findings-table">
+      <caption>Findings for {{ r.filename }}</caption>
+      <thead>
+        <tr>
+          <th scope="col">Severity</th>
+          <th scope="col">Rule</th>
+          <th scope="col">Description</th>
+          <th scope="col">Location</th>
+          <th scope="col">Guideline</th>
+          <th scope="col">Learn More</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for f in res.findings %}
+        <tr>
+          <td><span class="severity-badge severity-{{ f.severity.value | lower }}">{{ f.severity.value }}</span></td>
+          <td><a href="{{ url_for('guidelines.guidelines_page') }}#section-rules-summary">{{ f.rule_id }}</a></td>
+          <td>{{ f.message }}</td>
+          <td>{{ f.location or "Document-wide" }}</td>
+          <td>{{ f.acb_reference }}</td>
+          <td>{% set urls = help_urls_map.get(f.rule_id, []) %}{% include '_help_links.html' with context %}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p class="celebration-inline">No issues found for this file.</p>
+    {% endif %}
+
+    {% if r.doc_format == "docx" and res.findings %}
+    <p><a href="{{ url_for('fix.fix_form') }}" class="btn-secondary">Fix this document</a></p>
+    {% endif %}
+  </details>
+  {% endfor %}
+</section>
+
+{# ------------------------------------------------------------------ #}
+{# INDIVIDUAL REPORTS: full standalone report per file                 #}
+{# ------------------------------------------------------------------ #}
+{% else %}
+
+{% for r in successful %}
+{% set res = r.result %}
+<section aria-labelledby="file-heading-{{ loop.index }}" class="individual-file-report">
+  <h2 id="file-heading-{{ loop.index }}">{{ r.filename }}</h2>
+
+  <ul class="format-pills">
+    <li class="format-pill format-{{ r.doc_format }}">{{ r.doc_format | upper }}</li>
+  </ul>
+
+  <p class="score-display">
+    <span class="score-number grade-{{ res.grade | lower }}">{{ res.score }}/100</span>
+    <span class="score-grade">Grade: {{ res.grade }}</span>
+  </p>
+  <p>{{ res.findings | length }} finding{{ "s" if res.findings | length != 1 else "" }} detected.</p>
+
+  {% if res.findings %}
+  {% set ns = namespace(c=0,h=0,m=0,l=0) %}
+  {% for f in res.findings %}
+    {% if f.severity.value == "Critical" %}{% set ns.c = ns.c + 1 %}
+    {% elif f.severity.value == "High" %}{% set ns.h = ns.h + 1 %}
+    {% elif f.severity.value == "Medium" %}{% set ns.m = ns.m + 1 %}
+    {% elif f.severity.value == "Low" %}{% set ns.l = ns.l + 1 %}
+    {% endif %}
+  {% endfor %}
+  <ul class="severity-summary" aria-label="Findings by severity for {{ r.filename }}">
+    {%- if ns.c %}<li><span class="severity-badge severity-critical">Critical</span> {{ ns.c }}</li>{% endif %}
+    {%- if ns.h %}<li><span class="severity-badge severity-high">High</span> {{ ns.h }}</li>{% endif %}
+    {%- if ns.m %}<li><span class="severity-badge severity-medium">Medium</span> {{ ns.m }}</li>{% endif %}
+    {%- if ns.l %}<li><span class="severity-badge severity-low">Low</span> {{ ns.l }}</li>{% endif %}
+  </ul>
+
+  <table class="findings-table">
+    <caption>Accessibility findings for {{ r.filename }}</caption>
+    <thead>
+      <tr>
+        <th scope="col">Severity</th>
+        <th scope="col">Rule</th>
+        <th scope="col">Description</th>
+        <th scope="col">Location</th>
+        <th scope="col">Guideline</th>
+        <th scope="col">Learn More</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for f in res.findings %}
+      <tr>
+        <td><span class="severity-badge severity-{{ f.severity.value | lower }}">{{ f.severity.value }}</span></td>
+        <td><a href="{{ url_for('guidelines.guidelines_page') }}#section-rules-summary">{{ f.rule_id }}</a></td>
+        <td>{{ f.message }}</td>
+        <td>{{ f.location or "Document-wide" }}</td>
+        <td>{{ f.acb_reference }}</td>
+        <td>{% set urls = help_urls_map.get(f.rule_id, []) %}{% include '_help_links.html' with context %}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  {% if r.doc_format == "docx" %}
+  <p><a href="{{ url_for('fix.fix_form') }}" class="btn-secondary">Fix this document</a></p>
+  {% endif %}
+
+  {% else %}
+  <p class="celebration-inline">No issues found -- this file is fully compliant.</p>
+  {% endif %}
+
+</section>
+{% endfor %}
+
+{% endif %}{# end report_style #}
+
+{% else %}
+{# All files failed #}
+<p>No files could be audited. Please check the errors above and try again.</p>
+{% endif %}
+
+<section aria-labelledby="batch-next-heading">
+  <h2 id="batch-next-heading">What's Next?</h2>
+  <ul>
+    <li><a href="{{ url_for('audit.audit_form') }}">Audit more documents</a></li>
+    <li><a href="{{ url_for('guidelines.guidelines_page') }}">Read the full ACB guidelines</a></li>
+    <li><a href="{{ url_for('guide.guide_page') }}#understanding-results">Help understanding these results</a></li>
+  </ul>
+</section>
+
+{% endblock %}

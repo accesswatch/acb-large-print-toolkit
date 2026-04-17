@@ -43,6 +43,10 @@ services:
       - FLASK_DEBUG=0
       - PIPELINE_URL=http://pipeline:8181/ws
       - OLLAMA_HOST=http://ollama:11434
+      # Postmark email notifications (optional -- email audit reports to users)
+      # Set these in the .env file loaded via env_file above:
+      #   POSTMARK_SERVER_TOKEN=your-postmark-server-token
+      #   POSTMARK_FROM_EMAIL=reports@glow.bits-acb.org
     volumes:
       - feedback-data:/app/instance
     depends_on:

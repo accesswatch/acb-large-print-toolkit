@@ -503,6 +503,30 @@ details.rule-group {
   outline-offset: 2px;
 }
 
+/* --- Consent agreement checkbox --- */
+.checkbox-label {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  font-size: 1.125rem;
+  font-family: Arial, sans-serif;
+  cursor: pointer;
+  margin-bottom: 0.5rem;
+}
+
+.checkbox-label input[type="checkbox"] {
+  flex-shrink: 0;
+  width: 1.5rem;
+  height: 1.5rem;
+  margin-top: 0.125rem;
+  cursor: pointer;
+  accent-color: #0055cc;
+}
+
+.checkbox-label span {
+  line-height: 1.5;
+}
+
 /* --- Settings Actions Grouping --- */
 .settings-actions {
   display: flex;
@@ -772,6 +796,53 @@ footer p {
   outline-offset: 2px;
 }
 
+/* --- Action Grid (Quick Start action chooser) --- */
+.action-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+  margin: 1.5rem 0;
+}
+
+.action-card {
+  border: 2px solid #ddd;
+  border-radius: 0.5rem;
+  padding: 1.5rem;
+  background: #fafafa;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.action-card:hover {
+  border-color: #0055cc;
+  box-shadow: 0 4px 12px rgba(0, 85, 204, 0.1);
+}
+
+.action-icon {
+  font-size: 2.5rem;
+  line-height: 1;
+}
+
+.action-card h3 {
+  font-size: 1.125rem;
+  font-weight: 700;
+  margin: 0;
+  color: #000;
+}
+
+.action-card p {
+  font-size: 1rem;
+  margin: 0;
+  flex-grow: 1;
+  line-height: 1.5;
+}
+
+.action-card form {
+  align-self: flex-start;
+}
+
 /* --- Print Stylesheet --- */
 @media print {
   .skip-link,
@@ -894,6 +965,239 @@ footer p {
   column-count: 2;
   column-gap: 2rem;
   padding-left: 1.5rem;
+}
+
+/* Hidden file input used as DataTransfer target (batch mode) */
+.sr-file-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* --- Batch Upload: File Queue --- */
+.file-queue-list {
+  list-style: none;
+  padding: 0;
+  margin: 0.75rem 0 0;
+}
+
+.file-queue-item {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  margin-bottom: 0.4rem;
+  background: #f9f9f9;
+  flex-wrap: wrap;
+}
+
+.file-queue-name {
+  flex: 1 1 auto;
+  font-weight: 700;
+  word-break: break-all;
+}
+
+.file-queue-size {
+  flex: 0 0 auto;
+  font-size: 0.889rem;
+  color: #555;
+}
+
+.btn-remove-file {
+  flex: 0 0 auto;
+  padding: 0.2em 0.6em;
+  font-size: 0.889rem;
+  background: transparent;
+  border: 1px solid #c00;
+  color: #c00;
+  border-radius: 3px;
+  cursor: pointer;
+  line-height: 1.4;
+}
+
+.btn-remove-file:hover,
+.btn-remove-file:focus {
+  background: #c00;
+  color: #fff;
+  outline: 2px solid #900;
+  outline-offset: 1px;
+}
+
+/* --- Notice box (non-error informational) --- */
+.notice-box {
+  border: 2px solid #005ea2;
+  border-radius: 4px;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1.5rem;
+  background: #e8f1fa;
+}
+
+/* --- Success box (email sent confirmation) --- */
+.success-box {
+  border: 2px solid #1a6b2a;
+  border-radius: 4px;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1.5rem;
+  background: #eaf5ec;
+}
+
+/* --- Batch Scorecard Summary --- */
+.batch-scorecard {
+  display: flex;
+  gap: 2rem;
+  flex-wrap: wrap;
+  margin: 1rem 0 1.5rem;
+}
+
+.batch-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 7rem;
+  padding: 0.75rem 1rem;
+  border: 2px solid #1a1a1a;
+  border-radius: 4px;
+  text-align: center;
+}
+
+.batch-stat-value {
+  font-size: 1.778rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.batch-stat-label {
+  font-size: 0.889rem;
+  margin-top: 0.25rem;
+}
+
+/* --- Batch Per-file Details --- */
+.batch-file-details {
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  margin-bottom: 1rem;
+  padding: 0;
+}
+
+.batch-file-details > summary {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  background: #f5f5f5;
+  border-radius: 4px;
+  list-style: none;
+}
+
+.batch-file-details > summary::-webkit-details-marker {
+  display: none;
+}
+
+.batch-file-details[open] > summary {
+  border-bottom: 1px solid #ccc;
+  border-radius: 4px 4px 0 0;
+}
+
+.batch-file-details > summary::before {
+  content: "\25B6"; /* right-pointing triangle */
+  font-size: 0.75rem;
+  flex-shrink: 0;
+}
+
+.batch-file-details[open] > summary::before {
+  content: "\25BC"; /* down-pointing triangle */
+}
+
+.batch-file-details > table,
+.batch-file-details > p {
+  padding: 0.75rem 1rem;
+}
+
+.batch-file-name {
+  font-weight: 700;
+  flex: 1 1 auto;
+  word-break: break-all;
+}
+
+.batch-file-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  flex-shrink: 0;
+}
+
+.severity-summary-inline {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+/* --- Individual file report section separator --- */
+.individual-file-report {
+  border-top: 2px solid #1a1a1a;
+  padding-top: 1.5rem;
+  margin-top: 2rem;
+}
+
+.individual-file-report:first-of-type {
+  border-top: none;
+  margin-top: 0;
+}
+
+/* --- Status pass/fail inline labels --- */
+.status-pass {
+  color: #1a6600;
+  font-weight: 700;
+}
+
+.status-fail {
+  color: #8b0000;
+  font-weight: 700;
+}
+
+.celebration-inline {
+  font-weight: 700;
+  color: #1a6600;
+  padding: 0.5rem 1rem;
+}
+
+/* --- Batch overview table score column --- */
+.batch-overview-table .score-number {
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+/* --- Secondary button --- */
+.btn-secondary {
+  display: inline-block;
+  padding: 0.5em 1.25em;
+  background: transparent;
+  border: 2px solid #1a1a1a;
+  color: #1a1a1a;
+  border-radius: 3px;
+  text-decoration: none;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.btn-secondary:hover,
+.btn-secondary:focus {
+  background: #1a1a1a;
+  color: #fff;
+  outline: 2px solid #555;
+  outline-offset: 2px;
 }
 
 @media (max-width: 40em) {

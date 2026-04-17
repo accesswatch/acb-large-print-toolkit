@@ -60,4 +60,14 @@
   <p>If you have questions about this policy or how your data is handled, contact BITS through the <a href="{{ url_for('feedback.feedback_form') }}">Feedback page</a> or visit <a href="https://www.bits-acb.org">bits-acb.org</a>.</p>
   <p>This policy was last updated on April 17, 2026.</p>
 </section>
+
+<section aria-labelledby="consent-reset-heading">
+  <h2 id="consent-reset-heading">Withdraw or Reset Your Agreement</h2>
+  <p>Your agreement to these terms is stored only in a cookie named <code>glow_consent_v1</code> on your own browser. No record of your agreement is stored on the server.</p>
+  <p>To withdraw your agreement and clear the consent record, use your browser's cookie controls to delete the <code>glow_consent_v1</code> cookie, or click the button below. You will be asked to agree again on your next visit.</p>
+  <form method="post" action="{{ url_for('consent.consent_withdraw') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <button type="submit" class="btn-secondary">Clear My Consent Record</button>
+  </form>
+</section>
 {% endblock %}

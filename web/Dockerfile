@@ -18,6 +18,7 @@ WORKDIR /app
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
     pandoc nodejs npm \
+    ffmpeg \
     libpango-1.0-0 libpangocairo-1.0-0 libcairo2 libgdk-pixbuf-2.0-0 \
     libffi-dev shared-mime-info \
     fonts-liberation \
@@ -61,7 +62,7 @@ EXPOSE 8000
 # Run with gunicorn (production WSGI server)
 CMD ["gunicorn", \
     "--bind", "0.0.0.0:8000", \
-    "--workers", "2", \
-    "--timeout", "120", \
+    "--workers", "4", \
+    "--timeout", "300", \
     "--access-logfile", "-", \
     "acb_large_print_web.app:create_app()"]

@@ -24,6 +24,7 @@
         <li role="none"><a href="{{ url_for('template.template_form') }}" role="tab" id="tab-template" aria-controls="main"{% if request.blueprint == 'template' %} aria-selected="true"{% else %} aria-selected="false"{% endif %}>Template</a></li>
         <li role="none"><a href="{{ url_for('export.export_form') }}" role="tab" id="tab-export" aria-controls="main"{% if request.blueprint == 'export' %} aria-selected="true"{% else %} aria-selected="false"{% endif %}>Export</a></li>
         <li role="none"><a href="{{ url_for('convert.convert_form') }}" role="tab" id="tab-convert" aria-controls="main"{% if request.blueprint == 'convert' %} aria-selected="true"{% else %} aria-selected="false"{% endif %}>Convert</a></li>
+        <li role="none"><a href="{{ url_for('whisperer.whisperer_form') }}" role="tab" id="tab-whisperer" aria-controls="main"{% if request.blueprint == 'whisperer' %} aria-selected="true"{% else %} aria-selected="false"{% endif %}>BITS Whisperer</a></li>
         <li role="none"><a href="{{ url_for('guidelines.guidelines_page') }}" role="tab" id="tab-guidelines" aria-controls="main"{% if request.blueprint == 'guidelines' %} aria-selected="true"{% else %} aria-selected="false"{% endif %}>Guidelines</a></li>
         <li role="none"><a href="{{ url_for('settings.settings_page') }}" role="tab" id="tab-settings" aria-controls="main"{% if request.blueprint == 'settings' %} aria-selected="true"{% else %} aria-selected="false"{% endif %}>Settings</a></li>
       </ul>
@@ -56,6 +57,7 @@
         <li><a href="{{ url_for('changelog.changelog_page') }}"{% if request.blueprint == 'changelog' %} aria-current="page"{% endif %}>Changelog</a></li>
         <li><a href="{{ url_for('feedback.feedback_form') }}"{% if request.blueprint == 'feedback' %} aria-current="page"{% endif %}>Feedback</a></li>
         <li><a href="{{ url_for('privacy.privacy_page') }}"{% if request.blueprint == 'privacy' %} aria-current="page"{% endif %}>Privacy Policy</a></li>
+        <li><a href="{{ url_for('consent.consent_form') }}"{% if request.blueprint == 'consent' %} aria-current="page"{% endif %}>Terms of Use</a></li>
       </ul>
     </nav>
     <p>A <a href="https://www.bits-acb.org">BITS</a> community project. Blind Information Technology Solutions, a special interest affiliate of the American Council of the Blind.</p>

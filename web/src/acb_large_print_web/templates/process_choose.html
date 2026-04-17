@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block title %}Quick Start -- Choose an Action{% endblock %}
+{% block heading %}What Would You Like to Do?{% endblock %}
+
+{% block content %}
+<p><strong>File:</strong> {{ filename }} ({{ file_ext }})</p>
+<p>We found {{ actions|length }} action{{ 's' if actions|length != 1 else '' }} you can perform on this file:</p>
+
+<div class="action-grid">
+  {% for action_key, action_info in actions %}
+  <div class="action-card">
+    <div class="action-icon">{{ action_info.icon }}</div>
+    <h3>{{ action_info.name }}</h3>
+    <p>{{ action_info.description }}</p>
+    
+    <form method="post" action="{{ url_for('process.process_go', action=action_key) }}" style="display: inline;">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="token" value="{{ token }}">
+      <button type="submit" class="btn-secondary">Choose {{ action_info.name }}</button>
+    </form>
+  </div>
+  {% endfor %}
+</div>
+
+<p><a href="{{ url_for('process.process_form') }}">← Upload a different file</a></p>
+{% endblock %}
