@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 import pytest
 
 from acb_large_print_web.chat_handler import (
@@ -10,6 +9,11 @@ from acb_large_print_web.chat_handler import (
     ToolRegistry,
     ChatSession,
     ConversationTurn,
+    CATEGORY_COMPLIANCE,
+    CATEGORY_CONTENT,
+    CATEGORY_DOCUMENT,
+    CATEGORY_REMEDIATION,
+    CATEGORY_STRUCTURE,
 )
 
 
@@ -109,6 +113,236 @@ This is section B content.
         result = tools.extract_table("0")
         assert "Product" in result
         assert "Price" in result
+
+    def test_call_dispatcher_unknown(self, tools):
+        """Unknown tool name returns error string."""
+        result = tools.call("nonexistent_tool")
+        assert "Unknown tool" in result
+
+    def test_get_all_tools_categories(self, tools):
+        """All 24 tools are registered with category labels."""
+        all_tools = tools.get_all_tools()
+        assert len(all_tools) == 24
+        categories = {t["category"] for t in all_tools.values()}
+        assert CATEGORY_DOCUMENT in categories
+        assert CATEGORY_COMPLIANCE in categories
+        assert CATEGORY_STRUCTURE in categories
+        assert CATEGORY_CONTENT in categories
+        assert CATEGORY_REMEDIATION in categories
+
+    # ------------------------------------------------------------------
+    # Compliance Agent tools
+    # ------------------------------------------------------------------
+
+    def test_run_accessibility_audit_heuristic(self, tools):
+        """Heuristic audit runs without a doc_path."""
+        result = tools.run_accessibility_audit()
+        assert isinstance(result, str)
+        assert len(result) > 10
+
+    def test_run_accessibility_audit_italic_detected(self):
+        """Heuristic audit flags italic."""
+        text = "# Title\n\nThis is _italic text_ which violates ACB.\n"
+        ctx = DocumentContext(text, "test.md")
+        registry = ToolRegistry(ctx)
+        result = registry.run_accessibility_audit()
+        assert "italic" in result.lower() or "ACB-NO-ITALIC" in result
+
+    def test_get_compliance_score_triggers_audit(self, tools):
+        """get_compliance_score runs audit if cache is empty."""
+        result = tools.get_compliance_score()
+        assert isinstance(result, str)
+        assert len(result) > 5
+
+    def test_get_critical_findings_triggers_audit(self, tools):
+        """get_critical_findings runs audit if cache is empty."""
+        result = tools.get_critical_findings()
+        assert isinstance(result, str)
+
+    def test_get_auto_fixable_findings_triggers_audit(self, tools):
+        """get_auto_fixable_findings runs audit if cache is empty."""
+        result = tools.get_auto_fixable_findings()
+        assert isinstance(result, str)
+
+    def test_compliance_tools_via_call(self, tools):
+        """Compliance tools are reachable via call() dispatcher."""
+        assert isinstance(tools.call("run_accessibility_audit"), str)
+        assert isinstance(tools.call("get_compliance_score"), str)
+        assert isinstance(tools.call("get_critical_findings"), str)
+        assert isinstance(tools.call("get_auto_fixable_findings"), str)
+
+    # ------------------------------------------------------------------
+    # Structure Agent tools
+    # ------------------------------------------------------------------
+
+    def test_check_heading_hierarchy_no_skip(self, tools):
+        """Valid hierarchy reports no issues."""
+        result = tools.check_heading_hierarchy()
+        assert "valid" in result.lower() or "no skipped" in result.lower()
+
+    def test_check_heading_hierarchy_skip_detected(self):
+        """Skipped heading level is detected."""
+        text = "# Title\n\n### Skipped Level 2\n\n## Back To Two\n"
+        ctx = DocumentContext(text, "test.md")
+        result = ToolRegistry(ctx).check_heading_hierarchy()
+        assert "skipped" in result.lower() or "H1" in result
+
+    def test_find_faux_headings_clean(self, tools):
+        """No faux headings in clean doc."""
+        result = tools.find_faux_headings()
+        assert "No obvious" in result or "not found" in result.lower() or "faux" in result.lower()
+
+    def test_find_faux_headings_detected(self):
+        """Bold-only short paragraph flagged as faux heading."""
+        text = "# Title\n\n**This Is A Faux Heading**\n\nBody text here.\n"
+        ctx = DocumentContext(text, "test.md")
+        result = ToolRegistry(ctx).find_faux_headings()
+        assert "faux" in result.lower() or "bold" in result.lower() or "Faux Heading" in result
+
+    def test_check_list_structure(self, tools):
+        """List structure returns summary."""
+        result = tools.check_list_structure()
+        assert isinstance(result, str)
+        assert "bullet" in result.lower() or "list" in result.lower() or "numbered" in result.lower()
+
+    def test_estimate_reading_order(self, tools):
+        """Reading order returns risk assessment."""
+        result = tools.estimate_reading_order()
+        assert "reading order" in result.lower() or "risk" in result.lower()
+
+    def test_structure_tools_via_call(self, tools):
+        """Structure tools are reachable via call() dispatcher."""
+        assert isinstance(tools.call("check_heading_hierarchy"), str)
+        assert isinstance(tools.call("find_faux_headings"), str)
+        assert isinstance(tools.call("check_list_structure"), str)
+        assert isinstance(tools.call("estimate_reading_order"), str)
+
+    # ------------------------------------------------------------------
+    # Content Agent tools
+    # ------------------------------------------------------------------
+
+    def test_check_emphasis_patterns_clean(self, tools):
+        """No italic in clean doc → OK result."""
+        result = tools.check_emphasis_patterns()
+        assert "ok" in result.lower() or "no italic" in result.lower()
+
+    def test_check_emphasis_patterns_italic_detected(self):
+        """Italic marked up correctly is detected."""
+        text = "# Title\n\nThis has _italic_ and also *another* italic.\n"
+        ctx = DocumentContext(text, "test.md")
+        result = ToolRegistry(ctx).check_emphasis_patterns()
+        assert "italic" in result.lower() or "CRITICAL" in result
+
+    def test_check_link_text_clean(self, tools):
+        """No bad links in clean doc."""
+        result = tools.check_link_text()
+        assert "ok" in result.lower() or "no bare" in result.lower()
+
+    def test_check_link_text_bare_url(self):
+        """Bare URL is flagged."""
+        text = "# Title\n\nSee https://www.example.com/a-very-long-url for more info.\n"
+        ctx = DocumentContext(text, "test.md")
+        result = ToolRegistry(ctx).check_link_text()
+        assert "bare" in result.lower() or "url" in result.lower() or "ACB-LINK-TEXT" in result
+
+    def test_check_link_text_generic(self):
+        """Generic link text is flagged."""
+        text = "# Title\n\n[click here](https://example.com) to learn more.\n"
+        ctx = DocumentContext(text, "test.md")
+        result = ToolRegistry(ctx).check_link_text()
+        assert "generic" in result.lower() or "click here" in result.lower()
+
+    def test_check_reading_level(self, tools):
+        """Reading level returns a summary with average sentence length."""
+        result = tools.check_reading_level()
+        assert "average sentence" in result.lower() or "reading level" in result.lower()
+
+    def test_check_alignment_hints_clean(self, tools):
+        """No alignment overrides in clean Markdown."""
+        result = tools.check_alignment_hints()
+        assert "no explicit" in result.lower() or "alignment" in result.lower()
+
+    def test_check_alignment_hints_center_detected(self):
+        """Center tag is flagged."""
+        text = "# Title\n\n<center>Centered text</center>\n"
+        ctx = DocumentContext(text, "test.md")
+        result = ToolRegistry(ctx).check_alignment_hints()
+        assert "center" in result.lower() or "ACB-ALIGNMENT" in result
+
+    def test_content_tools_via_call(self, tools):
+        """Content tools are reachable via call() dispatcher."""
+        assert isinstance(tools.call("check_emphasis_patterns"), str)
+        assert isinstance(tools.call("check_link_text"), str)
+        assert isinstance(tools.call("check_reading_level"), str)
+        assert isinstance(tools.call("check_alignment_hints"), str)
+
+    # ------------------------------------------------------------------
+    # Remediation Agent tools
+    # ------------------------------------------------------------------
+
+    def test_explain_rule_known(self, tools):
+        """Known rule returns plain-language explanation."""
+        result = tools.explain_rule("ACB-NO-ITALIC")
+        assert "italic" in result.lower()
+        assert "fix" in result.lower() or "Fix" in result
+
+    def test_explain_rule_unknown(self, tools):
+        """Unknown rule returns helpful message."""
+        result = tools.explain_rule("ACB-MADE-UP")
+        assert "not found" in result.lower()
+
+    def test_explain_rule_case_insensitive(self, tools):
+        """Rule lookup is case-insensitive."""
+        result = tools.explain_rule("acb-no-italic")
+        assert "italic" in result.lower()
+
+    def test_suggest_fix_known(self, tools):
+        """suggest_fix returns fix instructions for known rule."""
+        result = tools.suggest_fix("ACB-ALIGNMENT")
+        assert "flush" in result.lower() or "left" in result.lower() or "ACB-ALIGNMENT" in result
+
+    def test_suggest_fix_unknown(self, tools):
+        """suggest_fix for unknown rule returns safe fallback."""
+        result = tools.suggest_fix("ACB-NONEXISTENT")
+        assert "no fix template" in result.lower() or "not found" in result.lower()
+
+    def test_prioritize_findings_heuristic(self, tools):
+        """prioritize_findings returns a ranked list even without live audit."""
+        result = tools.prioritize_findings()
+        assert isinstance(result, str)
+        assert "fix" in result.lower() or "priority" in result.lower() or "findings" in result.lower()
+
+    def test_estimate_fix_impact_heuristic(self, tools):
+        """estimate_fix_impact returns a summary."""
+        result = tools.estimate_fix_impact()
+        assert isinstance(result, str)
+
+    def test_check_image_alt_text_none(self, tools):
+        """No images → reports none found."""
+        result = tools.check_image_alt_text()
+        assert "no markdown images" in result.lower() or "no" in result.lower()
+
+    def test_check_image_alt_text_missing(self):
+        """Image with empty alt text is flagged."""
+        text = "# Title\n\n![](image.png)\n\nAnother image ![ok](other.png)\n"
+        ctx = DocumentContext(text, "test.md")
+        result = ToolRegistry(ctx).check_image_alt_text()
+        assert "empty" in result.lower() or "missing" in result.lower() or "ACB-MISSING-ALT-TEXT" in result
+
+    def test_check_image_alt_text_all_ok(self):
+        """Images with alt text pass."""
+        text = "# Title\n\n![A photo of a board](image.png)\n"
+        ctx = DocumentContext(text, "test.md")
+        result = ToolRegistry(ctx).check_image_alt_text()
+        assert "ok" in result.lower() or "all" in result.lower()
+
+    def test_remediation_tools_via_call(self, tools):
+        """Remediation tools are reachable via call() dispatcher."""
+        assert isinstance(tools.call("explain_rule", rule_id="ACB-LINK-TEXT"), str)
+        assert isinstance(tools.call("suggest_fix", rule_id="ACB-ALIGNMENT"), str)
+        assert isinstance(tools.call("prioritize_findings"), str)
+        assert isinstance(tools.call("estimate_fix_impact"), str)
+        assert isinstance(tools.call("check_image_alt_text"), str)
 
 
 class TestConversationTurn:

@@ -4,7 +4,7 @@
 {% block heading %}Ask Questions About Your Document{% endblock %}
 
 {% block content %}
-<p>Ask questions about the uploaded document. The AI will use relevant tools (search, extract tables, summarize sections) to find answers. Conversation history is organized by turn and can be exported as Markdown, Word, or PDF.</p>
+<p>Ask questions about the uploaded document in GLOW (Guided Layout &amp; Output Workflow). The AI uses accessibility-focused tools (compliance, structure, content, and remediation) to find answers. Conversation history is organized by turn and can be exported as Markdown, Word, or PDF.</p>
 
 {% if error %}
 <div class="error-box" role="alert">
@@ -92,6 +92,27 @@
 
   <details class="help-accordion">
     <summary>What can I ask?</summary>
+    <h3>Guided Question Cards</h3>
+    <ul>
+      <li><strong>Compliance card:</strong> "Run an accessibility summary and give me the top 5 issues."</li>
+      <li><strong>Critical-only card:</strong> "List critical findings only and explain the impact."</li>
+      <li><strong>Structure card:</strong> "Check heading hierarchy and show skipped levels."</li>
+      <li><strong>Faux heading card:</strong> "Find faux headings and suggest proper heading levels."</li>
+      <li><strong>Link quality card:</strong> "Find ambiguous link text and recommend replacements."</li>
+      <li><strong>Emphasis card:</strong> "Check italic and bold emphasis patterns for ACB compliance."</li>
+      <li><strong>Remediation card:</strong> "Prioritize fixes by impact and effort."</li>
+      <li><strong>Rule explainer card:</strong> "Explain rule ACB-LINK-TEXT in plain language and how to fix it."</li>
+    </ul>
+
+    <h3>Agent Categories Available</h3>
+    <ul>
+      <li><strong>Compliance Agent:</strong> score, critical findings, auto-fixability</li>
+      <li><strong>Structure Agent:</strong> heading hierarchy, faux headings, list structure</li>
+      <li><strong>Content Agent:</strong> section search, link text quality, emphasis checks</li>
+      <li><strong>Remediation Agent:</strong> rule explanations, fix suggestions, prioritization</li>
+    </ul>
+
+    <h3>Example Questions</h3>
     <ul>
       <li><strong>Search questions:</strong> "Where is the term 'accessibility' mentioned?" or "Find all prices in the document"</li>
       <li><strong>Structural questions:</strong> "List all headings" or "Show me table 2"</li>
@@ -99,13 +120,17 @@
       <li><strong>Statistics:</strong> "How many pages is this?" or "What's the reading time?"</li>
       <li><strong>Comparison:</strong> "How does the Introduction differ from the Conclusion?"</li>
     </ul>
-    <p><strong>Tools the AI can use:</strong></p>
+
+    <p><strong>Accessibility-focused tools the AI can call:</strong></p>
     <ul>
-      <li>Search for text patterns</li>
+      <li>Run compliance summary and severity analysis</li>
       <li>Extract and display tables</li>
       <li>Find specific sections by heading</li>
-      <li>List all headings (document structure)</li>
+      <li>List and validate heading hierarchy</li>
+      <li>Find faux headings and alignment risks</li>
+      <li>Evaluate link text quality and emphasis patterns</li>
       <li>Get document statistics (word count, reading time, etc.)</li>
+      <li>Prioritize fixes and explain specific ACB rules</li>
       <li>Summarize sections</li>
     </ul>
   </details>
@@ -143,7 +168,7 @@
 <!-- Privacy Notice -->
 <section aria-labelledby="privacy-heading">
   <h2 id="privacy-heading">Privacy & AI</h2>
-  <p>Your questions and the document content are processed locally on the GLOW server using an on-server Llama 3 model. Nothing is sent to any third party. Conversations are stored in your browser session and deleted when you leave the page or after 1 hour of inactivity.</p>
+  <p>Your questions and document content are processed locally on the GLOW (Guided Layout &amp; Output Workflow) server using on-server models. Nothing is sent to any third party. Conversations are stored in your browser session and deleted when you leave the page or after 1 hour of inactivity.</p>
 </section>
 
 <p><a href="{{ url_for('process.process_form') }}">← Upload a different file</a></p>

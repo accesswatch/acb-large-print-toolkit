@@ -1,6 +1,6 @@
-# GLOW Accessibility Toolkit -- User Guide
+# GLOW (Guided Layout & Output Workflow) Accessibility Toolkit -- User Guide
 
-Everything you need to know to audit, fix, convert, and template your documents for ACB Large Print compliance. New to accessibility? Start with the **Quick Start** path below.
+Everything you need to know to audit, fix, convert, and template your documents for ACB Large Print compliance using **GLOW (Guided Layout & Output Workflow)**. New to accessibility? Start with the **Quick Start** path below.
 
 ## In This Guide
 
@@ -22,11 +22,13 @@ Everything you need to know to audit, fix, convert, and template your documents 
 16. [Keyboard and Screen Reader Tips](#16-keyboard-and-screen-reader-tips)
 17. [Frequently Asked Questions](#17-frequently-asked-questions)
 18. [Getting Help](#18-getting-help)
+19. [Document Chat and Agentic Accessibility Tools](#19-document-chat-and-agentic-accessibility-tools)
 
 **Quick links to v2.0 features:**
 - [Quick Start Path](#1-quick-start-beginner-path) (for newcomers to accessibility)
 - [BITS Whisperer](#2-bits-whisperer-transcribe-audio) (transcribe audio to text)
 - [MarkItDown image descriptions](#image-descriptions-llm-generated-alt-text) (AI-powered alt text for images)
+- [Document Chat](#19-document-chat-and-agentic-accessibility-tools) (ask accessibility questions in context)
 
 **Quick links to v1.2.0 features:**
 - [Quick Rule Exceptions](#quick-rule-exceptions)
@@ -39,13 +41,13 @@ Everything you need to know to audit, fix, convert, and template your documents 
 
 ## 1. Quick Start (Beginner Path)
 
-If you're new to GLOW or unsure which tool to use, the **Quick Start** path is for you.
+If you're new to GLOW (Guided Layout & Output Workflow) or unsure which tool to use, the **Quick Start** path is for you.
 
 ### How to use Quick Start
 
-1. On the GLOW homepage, click **"Quick Start: Upload & Discover"**
+1. On the GLOW (Guided Layout & Output Workflow) homepage, click **"Quick Start: Upload & Discover"**
 2. Upload any document (Word, Excel, PowerPoint, PDF, Markdown, image, audio, or ePub)
-3. GLOW will show you **all available actions** for your file type
+3. GLOW (Guided Layout & Output Workflow) will show you **all available actions** for your file type
 4. Click the action you want (Audit, Fix, Convert, Template, Export, or BITS Whisperer)
 5. Follow the step-by-step form for that action
 
@@ -81,7 +83,7 @@ If you're new to GLOW or unsure which tool to use, the **Quick Start** path is f
 3. Optionally select a language (auto-detect is recommended for most recordings)
 4. Choose output format: **Markdown** (plain text) or **Word** (editable .docx)
 5. Click "Transcribe Audio"
-6. GLOW will process your audio (typically at real-time speed) and return the transcript
+6. GLOW (Guided Layout & Output Workflow) will process your audio (typically at real-time speed) and return the transcript
 
 ### Tips for best results
 
@@ -93,7 +95,95 @@ If you're new to GLOW or unsure which tool to use, the **Quick Start** path is f
 
 ### Privacy
 
-Your audio file is uploaded to the GLOW server, transcribed using a local copy of the Whisper model (never sent to OpenAI or any third party), and then deleted immediately. The transcript is also deleted after download. Nothing is stored.
+Your audio file is uploaded to the GLOW (Guided Layout & Output Workflow) server, transcribed using a local copy of the Whisper model (never sent to OpenAI or any third party), and then deleted immediately. The transcript is also deleted after download. Nothing is stored.
+
+---
+
+## 19. Document Chat and Agentic Accessibility Tools
+
+GLOW (Guided Layout & Output Workflow) 2.0 includes a chat experience that lets you interrogate uploaded documents in plain language.
+
+### What Document Chat does
+
+- Reads your uploaded document content
+- Uses accessibility-focused tools to answer questions
+- Returns grounded, actionable responses
+- Tracks history by turn (`Turn 1`, `Turn 2`, and so on)
+- Lets you export the session to Markdown, Word, or PDF
+
+### Agent categories and tools available in chat
+
+Document Chat has 24 callable tools across five categories.
+
+1. **Document** (7 tools)
+   - `extract_table` -- extract a table by name or index
+   - `find_section` -- return a section by heading name
+   - `search_text` -- find keyword matches with line numbers
+   - `get_document_stats` -- word count, lines, headings, reading time
+   - `summarize_section` -- return section text for summary
+   - `list_headings` -- show heading hierarchy
+   - `get_images` -- list images (vision/scanned path)
+
+2. **Compliance Agent** (4 tools)
+   - `run_accessibility_audit` -- full GLOW audit summary with severity counts
+   - `get_compliance_score` -- score out of 100 with breakdown
+   - `get_critical_findings` -- critical and high severity findings with fix type
+   - `get_auto_fixable_findings` -- findings GLOW Fix can correct automatically
+
+3. **Structure Agent** (4 tools)
+   - `check_heading_hierarchy` -- detect skipped heading levels
+   - `find_faux_headings` -- find bold body paragraphs acting as headings
+   - `check_list_structure` -- inspect list nesting and consistency
+   - `estimate_reading_order` -- reading-order risk from tables and layout signals
+
+4. **Content Agent** (4 tools)
+   - `check_emphasis_patterns` -- detect italic and bold-abuse violations
+   - `check_link_text` -- flag bare URLs and generic link phrases
+   - `check_reading_level` -- sentence and word complexity estimate
+   - `check_alignment_hints` -- detect center/right alignment overrides
+
+5. **Remediation Agent** (5 tools)
+   - `explain_rule` -- plain-language explanation and fix steps for any ACB rule ID
+   - `suggest_fix` -- targeted fix instructions for a rule
+   - `prioritize_findings` -- rank all findings by severity and auto-fixability
+   - `estimate_fix_impact` -- score improvement estimate after auto-fix
+   - `check_image_alt_text` -- check images for missing or empty alt text
+
+### Guided question cards (recommended starter prompts)
+
+Use these prompts directly in chat:
+
+- "Run an accessibility summary and tell me the top 5 issues."
+- "List critical findings only and explain why each matters."
+- "Show me where heading hierarchy is broken."
+- "Find faux headings and suggest the correct heading level."
+- "Are there any ambiguous links like 'click here' or bare URLs?"
+- "Check emphasis patterns and flag italic usage."
+- "What is auto-fixable versus manual-fix in this document?"
+- "Prioritize fixes by impact and effort."
+- "Explain rule ACB-LINK-TEXT in plain language."
+- "Summarize Section 3 for a board-ready update."
+
+### Best practices for high-quality answers
+
+- Ask one question at a time.
+- Reference section names when possible.
+- Ask for "critical only" when triaging quickly.
+- Follow with "show evidence" to get concrete lines/sections.
+- Export the session when done for audit trail and team handoff.
+
+### Accessibility behavior
+
+- Conversation history is structured with heading-based turns for screen-reader navigation.
+- All controls are keyboard accessible.
+- Help content uses native `<details>/<summary>` patterns.
+- No JavaScript is required for core chat usage.
+
+### Privacy and retention
+
+- Chat runs on local models in GLOW (Guided Layout & Output Workflow) deployment.
+- Conversation data stays in session storage.
+- Session and uploaded content follow the 1-hour retention policy.
 
 ---
 

@@ -1,15 +1,15 @@
-# PRD: GLOW Accessibility Web Application
+# PRD: GLOW (Guided Layout & Output Workflow) Accessibility Web Application
 
-**Status:** Implemented (v1.2.0 released, v2.0 in progress)
+**Status:** Implemented (v1.2.0 released, v2.0 release candidate)
 **Author:** Jeff Bishop, BITS
 **Date:** April 12, 2026
-**Target:** v2.0 release (audio transcription, consent gate, Quick Start beginner path, MarkItDown enhancements)
+**Target:** v2.0 release (BITS Whisperer, consent gate, Quick Start, MarkItDown 0.2+, vision-ready OCR path, and expanded agentic document chat)
 
 ---
 
 ## Implementation Status
 
-The Flask web application has been built and is ready for deployment. All core features described in this PRD are implemented. The following table summarizes what shipped in v0.1:
+The Flask web application has been built and is ready for deployment. All core features described in this PRD are implemented. The following table summarizes what shipped in v0.1 and subsequent v1.2.0 enhancements:
 
 | Feature | Status | Notes |
 |---------|--------|-------|
@@ -54,6 +54,21 @@ The Flask web application has been built and is ready for deployment. All core f
 | Allowed heading-level controls (Fix/Settings/Template) | Done | Users can restrict heading detection/review/conversion to selected heading levels; heading review dropdown options and confirm/apply honor allowed levels end-to-end; template sample content follows selected allowed heading levels and can be persisted in Settings. |
 | Dedicated FAQ page | Done | New `/faq/` route with accordion-style FAQ entries covering quick exceptions, heading preservation, per-level indentation, page-count growth, decorative images, VML handling, and known limitations. Linked in main nav footer. |
 
+### v2.0 Release Features (April 2026)
+
+| Feature | Status | Notes |
+|---------|--------|-------|
+| GLOW (Guided Layout & Output Workflow) Quick Start path | Done | New `/process` flow: upload first, then choose context-aware actions for the uploaded file type. |
+| BITS Whisperer audio transcription | Done | New `/whisperer` route for MP3/WAV/M4A/OGG/FLAC/AAC/Opus transcription to Markdown or Word using on-server faster-whisper. |
+| Consent and privacy gate | Done | New `/consent` route for first-visit agreement with secure consent cookie and reset controls. |
+| MarkItDown 0.2+ integration | Done | Expanded support for image inputs and broader conversion workflows. |
+| Vision-ready OCR path | Done | Local vision-model path (LLaVA + Ollama) for scanned/image-heavy interpretation. |
+| Capacity-aware protective gating | Done | AI/audio/vision concurrency protection with busy response behavior and health metrics. |
+| Expanded Document Chat | Done | New `/chat` route with heading-based conversation history, export to Markdown/Word/PDF, and accessibility-focused tool calling. |
+| Accessibility-focused agent categories in chat | Done | Compliance, Structure, Content, and Remediation tool groups for in-context Q&A and fix guidance. |
+| Chat online help + guided question cards | Done | In-page guided cards and examples for first-time chat users; keyboard and screen-reader friendly. |
+| Privacy transparency updates | Done | Privacy policy and UI language updated to reflect retention windows and local model usage. |
+
 ### Deviations from Plan
 
 - **Feedback system added** -- not in original PRD. SQLite-backed with password-protected review page.
@@ -79,7 +94,9 @@ Meanwhile, the core engine -- audit, fix, template builder, and HTML export -- i
 
 ## Solution
 
-Build a Flask web application that wraps the existing `acb_large_print` Python library in a browser-accessible interface. Users upload a `.docx`, `.xlsx`, or `.pptx` file through a web form, choose an operation (audit, fix, create template, export to HTML), and receive results in the browser or as a file download. No installation. No accounts. No login.
+Build a Flask web application that wraps the existing `acb_large_print` Python library in a browser-accessible interface. In GLOW (Guided Layout & Output Workflow), users upload a `.docx`, `.xlsx`, or `.pptx` file through a web form, choose an operation (audit, fix, create template, export to HTML), and receive results in the browser or as a file download. No installation. No accounts. No login.
+
+For v2.0, the product scope expands into **GLOW (Guided Layout & Output Workflow)** as a guided end-to-end accessibility platform: users can upload once, run the right operation, ask agentic questions in context, and export both fixed outputs and conversation artifacts.
 
 The web app will:
 
@@ -96,6 +113,9 @@ The web app will:
 - Provide a dedicated `/settings` page so teams can persist preferred defaults (profiles, modes, and options) with explicit cookie opt-in
 - Include a dedicated `/guidelines` page with the complete ACB Large Print specification and WCAG 2.2 supplement as browsable, searchable reference content
 - Auto-generate all help text and rule descriptions from the canonical `constants.py` rule metadata -- a single source of truth ensures the web UI stays in sync with the CLI, GUI, and VS Code agent
+- Provide a dedicated `/chat` experience with accessibility-focused agent categories (Compliance, Structure, Content, Remediation) so users can interrogate document content and receive actionable guidance
+- Include guided question cards and in-page examples for chat so first-time users can ask high-value questions immediately
+- Support conversation export (Markdown, Word, PDF) for training, compliance evidence, and editorial handoffs
 
 ## User Stories
 
@@ -134,6 +154,72 @@ The web app will:
 33. As a user learning the ACB specification, I want a dedicated Guidelines page on the web app that presents the complete ACB Large Print rules and WCAG 2.2 digital supplement, so that I can reference the standard without leaving the tool.
 34. As a screen reader user, I want all help accordions to use native HTML `<details>/<summary>` elements rather than JavaScript widgets, so that my assistive technology announces expand/collapse states correctly.
 35. As a user on the fix results page, I want to see which rules were applied and which were skipped (when using Essentials or Custom mode), so that I understand exactly what changed.
+36. As a user of GLOW (Guided Layout & Output Workflow), I want to ask natural-language questions about my uploaded document and get answers grounded in the actual content, so that I can understand and remediate issues faster.
+37. As a screen reader user, I want chat conversation history to be structured with clear heading hierarchy by turn, so that I can navigate long conversations efficiently.
+38. As a trainer, I want guided chat cards with example prompts, so that new users can learn what kinds of accessibility questions are most useful.
+39. As a compliance reviewer, I want to export chat sessions to Markdown, Word, or PDF, so that Q&A reasoning can be attached to review artifacts.
+40. As an operator, I want chat workloads to obey protective AI capacity gating, so that one heavy session does not degrade service for others.
+
+## v2.0 Addendum: Expanded Agentic Accessibility Experience
+
+GLOW (Guided Layout & Output Workflow) 2.0 adds a major interaction model beyond form submission: users can ask targeted questions and invoke accessibility-aware tools through chat.
+
+### Chat Route and Interaction Model
+
+- Route: `/chat`
+- Input: uploaded document token + user question
+- Output: grounded answer + list of tools called + optional exportable history
+- History model: turn-based (`Turn 1`, `Turn 2`, ...) with heading hierarchy for assistive technology navigation
+
+### Agent Categories and Tool Groups
+
+The chat layer is organized into five accessibility-first groups with 24 total callable tools:
+
+1. **Document** (7 tools)
+  - `extract_table` -- extract a table by name or 0-based index
+  - `find_section` -- find and return a section by heading keyword
+  - `search_text` -- keyword search returning matching lines with line numbers
+  - `get_document_stats` -- word count, lines, characters, headings, reading time
+  - `summarize_section` -- return section text for Llama reasoning
+  - `list_headings` -- list all headings with hierarchy indentation
+  - `get_images` -- image listing (scanned PDF / vision model path)
+
+2. **Compliance Agent** (4 tools)
+  - `run_accessibility_audit` -- run full GLOW audit engine; return severity summary and populate cache
+  - `get_compliance_score` -- score/100 with critical/high/medium/low distribution
+  - `get_critical_findings` -- critical and high findings with rule ID, description, and fix type
+  - `get_auto_fixable_findings` -- findings that GLOW Fix can correct automatically
+
+3. **Structure Agent** (4 tools)
+  - `check_heading_hierarchy` -- detect skipped heading levels (ACB-HEADING-HIERARCHY)
+  - `find_faux_headings` -- detect bold body paragraphs acting as headings (ACB-FAUX-HEADING)
+  - `check_list_structure` -- inspect list nesting depth and consistency
+  - `estimate_reading_order` -- reading-order risk from table count and layout signals
+
+4. **Content Agent** (4 tools)
+  - `check_emphasis_patterns` -- detect italic and bold-abuse (ACB-NO-ITALIC, ACB-BOLD-HEADINGS-ONLY)
+  - `check_link_text` -- flag bare URLs and generic link phrases (ACB-LINK-TEXT)
+  - `check_reading_level` -- sentence and word complexity heuristics
+  - `check_alignment_hints` -- detect center/right alignment overrides (ACB-ALIGNMENT)
+
+5. **Remediation Agent** (5 tools)
+  - `explain_rule` -- plain-language explanation with why/fix for any ACB rule ID
+  - `suggest_fix` -- targeted fix instructions for a given rule
+  - `prioritize_findings` -- rank all findings by severity and auto-fixability
+  - `estimate_fix_impact` -- score improvement estimate after auto-fix
+  - `check_image_alt_text` -- check Markdown images for missing alt text (ACB-MISSING-ALT-TEXT)
+
+### Online Help and Guided Cards
+
+The `/chat` template includes:
+
+- a "What can I ask?" help accordion
+- guided prompt cards/examples for common tasks
+- explicit tool capability listing
+- export controls
+- privacy and retention notice
+
+All help uses semantic HTML and native interaction patterns aligned to WCAG 2.2 AA.
 
 ## Implementation Decisions
 
