@@ -843,6 +843,73 @@ footer p {
   align-self: flex-start;
 }
 
+/* --- Chat Interface --- */
+.chat-turn {
+  border: 2px solid #ccc;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  margin: 1rem 0;
+  background: #fafafa;
+}
+
+.chat-turn summary {
+  cursor: pointer;
+  font-weight: 700;
+  padding: 0.5rem;
+  margin: -1rem -1rem 1rem -1rem;
+  background: #f0f0f0;
+  border-radius: 0.5rem 0.5rem 0 0;
+}
+
+.chat-turn summary:hover,
+.chat-turn summary:focus {
+  background: #e0e0e0;
+  outline: 3px solid #0055cc;
+  outline-offset: -2px;
+}
+
+.chat-turn-content {
+  margin-top: 1rem;
+}
+
+.chat-turn-content h3 {
+  font-size: 1rem;
+  font-weight: 700;
+  margin: 1rem 0 0.5rem 0;
+  color: #000;
+}
+
+.user-question {
+  border-left: 4px solid #0055cc;
+  padding-left: 1rem;
+  margin: 0.5rem 0 1rem 0;
+  font-style: italic;
+  line-height: 1.5;
+}
+
+.ai-answer {
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+.tool-list {
+  list-style-type: disc;
+  margin-left: 2rem;
+}
+
+.tool-list li {
+  margin-bottom: 0.25rem;
+}
+
+.tool-list code {
+  background: #f0f0f0;
+  padding: 0.2em 0.4em;
+  border-radius: 0.25rem;
+  font-size: 0.9em;
+  color: #d73a49;
+}
+
 /* --- Print Stylesheet --- */
 @media print {
   .skip-link,

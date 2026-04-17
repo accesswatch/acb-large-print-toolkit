@@ -1,4 +1,29 @@
 services:
+  ollama:
+    image: ollama/ollama:latest
+    expose:
+      - "11434"
+    environment:
+      # Pull models on startup (llama3 for text, llava for vision)
+      # Models persist in ollama volume across restarts
+      - OLLAMA_MODELS=/root/.ollama/models
+    volumes:
+      - ollama-models:/root/.ollama
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "5m"
+        max-file: "2"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
+    # Ensure models are pulled on first startup
+    entrypoint: /bin/sh -c "ollama pull llama3 && ollama pull llava && ollama serve"
+
   pipeline:
     image: daisyorg/pipeline:1.15.4
     environment:
@@ -38,6 +63,8 @@ services:
     depends_on:
       pipeline:
         condition: service_healthy
+      ollama:
+        condition: service_healthy
     restart: unless-stopped
     logging:
       driver: json-file
@@ -53,3 +80,4 @@ services:
 
 volumes:
   feedback-data:
+  ollama-models:

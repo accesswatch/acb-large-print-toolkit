@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+
+{% block title %}Chat -- Interrogate Document{% endblock %}
+{% block heading %}Ask Questions About Your Document{% endblock %}
+
+{% block content %}
+<p>Ask questions about the uploaded document. The AI will use relevant tools (search, extract tables, summarize sections) to find answers. Conversation history is organized by turn and can be exported as Markdown, Word, or PDF.</p>
+
+{% if error %}
+<div class="error-box" role="alert">
+  <p><strong>{{ error }}</strong></p>
+</div>
+{% endif %}
+
+<input type="hidden" id="token" value="{{ token }}">
+
+<!-- Conversation History Section -->
+{% if conversation|length > 0 %}
+<section aria-labelledby="history-heading">
+  <h2 id="history-heading">Conversation History</h2>
+  <p>{{ conversation|length }} turn{{ 's' if conversation|length != 1 else '' }} in this session. Click to expand each turn.</p>
+
+  {% for turn in conversation %}
+  <details class="chat-turn" open>
+    <summary>
+      <strong>Turn {{ turn.turn_number }}:</strong> {{ turn.question[:80] }}{% if turn.question|length > 80 %}...{% endif %}
+    </summary>
+    
+    <div class="chat-turn-content">
+      <h3>Question</h3>
+      <blockquote class="user-question">
+        {{ turn.question }}
+      </blockquote>
+
+      {% if turn.tool_calls %}
+      <h3>Tools Used</h3>
+      <ul class="tool-list">
+        {% for tool in turn.tool_calls %}
+        <li><code>{{ tool.name }}</code> - {{ tool.params }}</li>
+        {% endfor %}
+      </ul>
+      {% endif %}
+
+      {% if turn.answer %}
+      <h3>Answer</h3>
+      <div class="ai-answer">
+        {{ turn.answer }}
+      </div>
+      {% else %}
+      <p><em>Processing...</em></p>
+      {% endif %}
+    </div>
+  </details>
+  {% endfor %}
+
+  <hr>
+</section>
+{% else %}
+<section aria-labelledby="empty-heading">
+  <h2 id="empty-heading">No Conversation Yet</h2>
+  <p>Ask your first question below to begin interrogating the document.</p>
+</section>
+{% endif %}
+
+<!-- New Question Form -->
+<section aria-labelledby="ask-heading">
+  <h2 id="ask-heading">Ask a Question</h2>
+
+  <form method="post" action="{{ url_for('chat.chat_submit') }}" novalidate>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input type="hidden" name="token" value="{{ token }}">
+
+    <fieldset>
+      <legend>Question about {{ filename }}</legend>
+
+      <label for="question">Your question</label>
+      <textarea
+        id="question"
+        name="question"
+        rows="4"
+        required
+        aria-describedby="question-hint"
+        placeholder="What is the main topic of section 3? How many tables are in this document? Where is the pricing information?"
+      ></textarea>
+      <p id="question-hint" class="field-hint">
+        Tip: Use specific keywords or section names. The AI will search the document and use tools like table extraction or section summarization to answer.
+      </p>
+    </fieldset>
+
+    <button type="submit" class="btn-primary">Ask Question</button>
+  </form>
+
+  <details class="help-accordion">
+    <summary>What can I ask?</summary>
+    <ul>
+      <li><strong>Search questions:</strong> "Where is the term 'accessibility' mentioned?" or "Find all prices in the document"</li>
+      <li><strong>Structural questions:</strong> "List all headings" or "Show me table 2"</li>
+      <li><strong>Summary questions:</strong> "Summarize the Methods section" or "What's the key conclusion?"</li>
+      <li><strong>Statistics:</strong> "How many pages is this?" or "What's the reading time?"</li>
+      <li><strong>Comparison:</strong> "How does the Introduction differ from the Conclusion?"</li>
+    </ul>
+    <p><strong>Tools the AI can use:</strong></p>
+    <ul>
+      <li>Search for text patterns</li>
+      <li>Extract and display tables</li>
+      <li>Find specific sections by heading</li>
+      <li>List all headings (document structure)</li>
+      <li>Get document statistics (word count, reading time, etc.)</li>
+      <li>Summarize sections</li>
+    </ul>
+  </details>
+</section>
+
+<!-- Export Section -->
+{% if conversation|length > 0 %}
+<section aria-labelledby="export-heading">
+  <h2 id="export-heading">Export Conversation</h2>
+  <p>Save your Q&A session for later reference. Exported files include the full conversation with questions, answers, and tools used.</p>
+
+  <form method="get" action="{{ url_for('chat.chat_export', format='markdown') }}" style="display: inline;">
+    <input type="hidden" name="token" value="{{ token }}">
+    <button type="submit" class="btn-secondary">📄 Export as Markdown</button>
+  </form>
+
+  <form method="get" action="{{ url_for('chat.chat_export', format='word') }}" style="display: inline;">
+    <input type="hidden" name="token" value="{{ token }}">
+    <button type="submit" class="btn-secondary">📘 Export as Word</button>
+  </form>
+
+  <form method="get" action="{{ url_for('chat.chat_export', format='pdf') }}" style="display: inline;">
+    <input type="hidden" name="token" value="{{ token }}">
+    <button type="submit" class="btn-secondary">📕 Export as PDF</button>
+  </form>
+
+  <form method="post" action="{{ url_for('chat.chat_clear') }}" style="display: inline;">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input type="hidden" name="token" value="{{ token }}">
+    <button type="submit" class="btn-secondary" onclick="return confirm('Clear all conversation turns? This cannot be undone.');">🗑️ Clear Conversation</button>
+  </form>
+</section>
+{% endif %}
+
+<!-- Privacy Notice -->
+<section aria-labelledby="privacy-heading">
+  <h2 id="privacy-heading">Privacy & AI</h2>
+  <p>Your questions and the document content are processed locally on the GLOW server using an on-server Llama 3 model. Nothing is sent to any third party. Conversations are stored in your browser session and deleted when you leave the page or after 1 hour of inactivity.</p>
+</section>
+
+<p><a href="{{ url_for('process.process_form') }}">← Upload a different file</a></p>
+{% endblock %}

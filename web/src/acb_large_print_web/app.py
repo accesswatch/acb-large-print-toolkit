@@ -111,6 +111,7 @@ def create_app(config: dict | None = None) -> Flask:
     from .routes.whisperer import whisperer_bp
     from .routes.consent import consent_bp, consent_required
     from .routes.process import process_bp
+    from .routes.chat import chat_bp
 
     app.register_blueprint(main_bp)
     app.register_blueprint(consent_bp, url_prefix="/consent")
@@ -130,6 +131,7 @@ def create_app(config: dict | None = None) -> Flask:
     app.register_blueprint(feedback_bp, url_prefix="/feedback")
     app.register_blueprint(about_bp, url_prefix="/about")
     app.register_blueprint(privacy_bp, url_prefix="/privacy")
+    app.register_blueprint(chat_bp, url_prefix="/chat")
 
     # Consent gate: redirect first-time visitors to the agreement page.
     # Skipped in test mode so existing tests don't need consent cookies.

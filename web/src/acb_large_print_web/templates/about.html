@@ -12,13 +12,15 @@
   <a href="#main" class="back-to-top">Back to top</a>
 </section>
 
-<section aria-labelledby="documentation-heading">
-  <h2 id="documentation-heading">Documentation and References</h2>
+<section aria-labelledby="features-heading">
+  <h2 id="features-heading">v2.0 Features (April 2026)</h2>
   <ul>
-    <li><a href="{{ url_for('prd.prd_page') }}">Product Requirements Document (PRD)</a> -- Complete specification of the GLOW web application architecture, features, and implementation decisions</li>
-    <li><a href="{{ url_for('changelog.changelog_page') }}">Changelog</a> -- History of releases, features, and fixes</li>
-    <li><a href="{{ url_for('guide.guide_page') }}">User Guide</a> -- Step-by-step instructions for using the web application</li>
-    <li><a href="{{ url_for('faq.faq_page') }}">FAQ</a> -- Frequently asked questions about workflow, options, and known limitations</li>
+    <li><strong>BITS Whisperer:</strong> On-server audio transcription (MP3, WAV, M4A, OGG, FLAC, AAC, Opus) to Markdown or Word. Uses faster-whisper (Whisper medium model) with local Ollama inference — audio never leaves the server.</li>
+    <li><strong>Consent &amp; Privacy Gate:</strong> First-time visitors are shown a transparent agreement explaining data retention (1 hour), AI usage (local Ollama only), and privacy protections. HttpOnly cookies, no tracking.</li>
+    <li><strong>Quick Start Path:</strong> Universal upload form that shows contextual actions (Audit, Fix, Convert, Export, Template, BITS Whisperer) based on file type. Reduces barrier to entry for accessibility newcomers.</li>
+    <li><strong>MarkItDown 0.2+ Integration:</strong> Support for image files (JPG, PNG, GIF, WebP, BMP, TIFF), LLM-generated alt text descriptions via local Ollama/Llama3, and YouTube transcript fetching.</li>
+    <li><strong>Vision OCR for Scanned PDFs:</strong> Scanned PDFs are processed with Ollama llava (vision model) to extract text from images inside PDFs. Local processing, no third-party API.</li>
+    <li><strong>Smart Concurrency Gating:</strong> Protective semaphores for AI, vision, and audio jobs. When capacity is full, users receive a 503 Busy response with Retry-After header instead of being queued indefinitely.</li>
   </ul>
   <a href="#main" class="back-to-top">Back to top</a>
 </section>
@@ -145,9 +147,39 @@
       </tr>
       <tr>
         <td><a href="https://github.com/microsoft/markitdown">MarkItDown</a></td>
-        <td>0.1+</td>
+        <td>0.2+</td>
         <td>MIT</td>
-        <td>Convert documents and audio to Markdown (Microsoft)</td>
+        <td>Convert documents and images to Markdown. Supports image files (JPG, PNG, GIF, WebP, BMP, TIFF), LLM image descriptions via Ollama, and YouTube transcript fetching (Microsoft)</td>
+      </tr>
+      <tr>
+        <td><a href="https://github.com/openai/whisper">OpenAI Whisper</a></td>
+        <td>via faster-whisper</td>
+        <td>MIT</td>
+        <td>Speech recognition model for audio transcription. Used via faster-whisper for local CPU inference.</td>
+      </tr>
+      <tr>
+        <td><a href="https://github.com/SYSTRAN/faster-whisper">faster-whisper</a></td>
+        <td>1.0+</td>
+        <td>MIT</td>
+        <td>Fast CPU-based Whisper inference engine (CTranslate2 backend). Powers BITS Whisperer for on-server audio transcription without cloud APIs. Supports 50+ languages.</td>
+      </tr>
+      <tr>
+        <td><a href="https://ollama.ai/">Ollama</a></td>
+        <td>latest</td>
+        <td>MIT</td>
+        <td>Local LLM runtime -- runs open source models (llama3, llava) entirely on the GLOW server without cloud APIs. Used for AI heading detection, image descriptions, and vision OCR on scanned PDFs.</td>
+      </tr>
+      <tr>
+        <td><a href="https://github.com/meta-llama/llama">Llama 3</a></td>
+        <td>8B param</td>
+        <td>Meta Llama 2 Community License</td>
+        <td>Text-based large language model. Runs on local Ollama server for AI-powered accessibility tasks (heading detection, rule reasoning). ~5 GB VRAM.</td>
+      </tr>
+      <tr>
+        <td><a href="https://github.com/haotian-liu/LLaVA">LLaVA (Llama Vision Avatar)</a></td>
+        <td>1.5 or later</td>
+        <td>Apache 2.0</td>
+        <td>Multimodal vision-language model combining Llama text capability with image understanding. Runs on local Ollama server for vision OCR on scanned PDFs and LLM-generated alt text for images. ~6-7 GB VRAM.</td>
       </tr>
       <tr>
         <td><a href="https://daisy.github.io/ace/">DAISY Ace</a></td>

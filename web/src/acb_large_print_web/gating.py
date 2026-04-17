@@ -45,6 +45,7 @@ from typing import Generator
 # ---------------------------------------------------------------------------
 
 _MAX_AI: int = int(os.environ.get("GLOW_MAX_AI_SESSIONS", "3"))
+_MAX_VISION: int = int(os.environ.get("GLOW_MAX_VISION_SESSIONS", "1"))
 _MAX_AUDIO: int = int(os.environ.get("GLOW_MAX_AUDIO_SESSIONS", "2"))
 
 # Retry-After hint sent to clients when a gate is full (seconds)
@@ -57,10 +58,12 @@ RETRY_AFTER_SECONDS: int = 90
 # ---------------------------------------------------------------------------
 
 _ai_semaphore = threading.BoundedSemaphore(_MAX_AI)
+_vision_semaphore = threading.BoundedSemaphore(_MAX_VISION)
 _audio_semaphore = threading.BoundedSemaphore(_MAX_AUDIO)
 
 # Live counters for the /health endpoint
 _ai_active: int = 0
+_vision_active: int = 0
 _audio_active: int = 0
 _lock = threading.Lock()
 
@@ -114,6 +117,27 @@ def audio_gate() -> Generator[None, None, None]:
             _audio_active -= 1
 
 
+@contextmanager
+def vision_gate() -> Generator[None, None, None]:
+    """Acquire one Vision OCR slot.  Raises GatingError if none available.
+
+    Vision OCR (llava on scanned PDFs) is more resource-intensive than text AI,
+    so we limit to 1 concurrent job by default.
+    """
+    global _vision_active
+    acquired = _vision_semaphore.acquire(blocking=False)
+    if not acquired:
+        raise GatingError("Vision OCR (scanned PDF extraction)")
+    with _lock:
+        _vision_active += 1
+    try:
+        yield
+    finally:
+        _vision_semaphore.release()
+        with _lock:
+            _vision_active -= 1
+
+
 # ---------------------------------------------------------------------------
 # Metrics (consumed by /health)
 # ---------------------------------------------------------------------------
@@ -126,6 +150,11 @@ def get_capacity_metrics() -> dict:
                 "active": _ai_active,
                 "limit": _MAX_AI,
                 "available": _MAX_AI - _ai_active,
+            },
+            "vision": {
+                "active": _vision_active,
+                "limit": _MAX_VISION,
+                "available": _MAX_VISION - _vision_active,
             },
             "audio": {
                 "active": _audio_active,
