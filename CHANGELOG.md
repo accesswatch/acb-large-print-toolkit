@@ -8,27 +8,51 @@ Releases are tagged in the [GitHub repository](https://github.com/accesswatch/ac
 
 ## [Unreleased]
 
+### Added
+
+- **Web: Privacy Policy page (`/privacy`).** New `privacy.html` template and `privacy_bp` blueprint at `/privacy`. Covers document storage and retention (per workflow), AI usage and data protections, data rights (no training, no third-party sharing), accounts/cookies, and security practices. Accessible from the footer navigation on every page.
+- **Web: AI used / not used disclosure on every result page.** Audit Report, Fix Results, and Fix Review Headings pages now display a "Data and Privacy" notice section showing whether AI was or was not used during that specific transaction. When AI was used, the notice clarifies that only a local Ollama model on the GLOW server was involved and no data was sent to any third party. When AI was not used, the notice confirms rule-based analysis only.
+- **Web: Document availability expiry on Fix result pages.** Fix Results and Fix Review Headings pages now display the exact UTC date and time when the held document will be automatically deleted (approximately one hour after upload). This gives users a clear deadline to download their fixed file.
+- **Web: `get_upload_expiry()` helper in `upload.py`.** Returns the UTC `datetime` when a token's temp directory expires, computed from the directory's modification time plus the configured retention window. Used by the fix route to pass expiry time to templates.
+
+### Fixed
+
+- **Web: Expired session error message updated.** The 24-hour reference in the fix confirm expired-session error was corrected to 1 hour to match the actual retention window.
+
+### Changed
+
+- **Web: Upload retention reduced from 24 hours to 1 hour.** The `UPLOAD_MAX_AGE_HOURS` environment variable default in `app.py` and the `cleanup_stale_uploads()` function signature in `upload.py` now default to `1` hour instead of `24`. This matches the retention commitment described in the Privacy Policy and in Jeff Bishop's ACB-Conversation response to Ron Brooks.
+- **Web: Privacy Policy link added to footer navigation** in `base.html`, alongside the existing Feedback link.
+
+ The audit form now offers a radio toggle between Single File and Batch (up to 3 files) upload modes. In batch mode, users build a queue via a file picker, can remove individual files before submission, then choose between a Combined report (one scorecard summarising all files with per-file findings in collapsible sections) or Individual reports (full separate report per file on one page). Submitting more than 3 files is handled gracefully -- the first 3 are audited and a polite note explains the rest were skipped; no 400 errors.
+- **Web: `audit_batch_report.html` template.** New batch report page with aggregate scorecard (average score, total findings, pass count, severity breakdown), a per-file summary table, and either collapsible per-file findings (`<details>`) or stacked individual report sections, depending on the selected report style.
+- **Web: File queue UI with remove-before-submit.** In batch mode, a JavaScript queue shows each selected file's name and size with an accessible Remove button (`aria-label` per file). The live region (`aria-live="polite"`) announces additions, removals, and over-limit notices without disrupting screen readers. A `DataTransfer`-based submit hook populates the hidden file input from the queue so only queued files are sent.
+- **CLI: `--jobs N` flag on `batch audit/fix`.** Runs file processing in parallel using `concurrent.futures.ThreadPoolExecutor`. `--jobs 0` auto-detects CPU count. Serial mode (`--jobs 1`, default) is unchanged.
+- **CLI: aggregate summary for `batch audit`.** After processing, the CLI prints a summary block: files processed, passing/failing count, average score, total findings, and a per-severity breakdown. JSON format (`-f json`) appends a `batch_summary` object at the end.
+- **CLI: `--summary-only` flag for `batch audit`.** Suppresses per-file report output; prints only the aggregate summary. Intended for CI dashboards and scripted checks.
+- **CLI: `--min-grade GRADE` flag for `batch audit`.** Exits with code 2 if the average score across all files falls below the specified grade threshold (A=90, B=80, C=70, D=60). Enables org-wide quality gates in CI pipelines.
+- **Web: `notice-box`, file queue, batch scorecard, and individual report CSS** added to `forms.css` -- semantic colour tokens, accessible focus styles on Remove buttons, collapsible `<details>` triangles via `::before`, and responsive `flex-wrap` scorecard layout.
+- **Web: `btn-secondary` CSS class** added to `forms.css` for secondary action buttons (e.g. "Fix this document" links in batch reports).
+- **Web: Email Report option on audit form.** A new "Email Report" fieldset (visible for both single and batch audits) lets users optionally enter an email address to receive the audit scorecard and a findings CSV attachment immediately after the run. The email address is used only to deliver the report and is never stored. The checkbox reveals the email input via JavaScript; client-side validation checks for a valid address before submission. The entire fieldset is hidden unless `POSTMARK_SERVER_TOKEN` is configured -- no UI surface until the feature is ready.
+- **Web: `email.py` -- Postmark transactional email integration.** New module at `web/src/acb_large_print_web/email.py`. Provides `send_audit_report_email()` (single file) and `send_batch_audit_report_email()` (batch -- one combined email with a merged findings CSV). Follows Postmark Skills guidance: uses the `transactional` Message Stream, implements correct per-status-code error handling (200 success, 400/401 no-retry, 422 validation, 429 rate-limit, 5xx/timeout surface to user), and encodes findings as a UTF-8 BOM CSV attachment for Excel compatibility. Configurable via `POSTMARK_SERVER_TOKEN` and `POSTMARK_FROM_EMAIL` environment variables; silently disabled if token is not set.
+- **Web: email status banner on audit report pages.** `audit_report.html` and `audit_batch_report.html` display a green success banner or a blue informational notice at the top of the report page reflecting the outcome of the email send. Audit results are always visible on-screen regardless of email outcome.
+- **Web: `success-box` CSS class** added to `forms.css` -- green-tinted banner for confirmed email delivery (parallels the existing `notice-box` blue-tinted informational banner).
+- **Web: `requests>=2.32.0`** added to `web/requirements.txt` for Postmark API HTTP calls.
+- **Web: Postmark env vars documented in `docker-compose.yml` and `docker-compose.prod.yml`.** Commented-out `POSTMARK_SERVER_TOKEN` and `POSTMARK_FROM_EMAIL` lines added to both compose files for easy activation.
+- **Web: Server-side email address validation** added to `audit.py`. Submitted `report_email` values are validated against a format regex and a 254-character length cap before any Postmark API call is made. Invalid addresses produce an inline error banner on the report page without aborting the audit.
+- **Web: Per-IP rate limit (6 per minute) on audit POST.** The `/audit` POST endpoint is now decorated with a Flask-Limiter rule to prevent the email delivery path from being abused as a send-quota burner. The rate limit applies to all POST submissions regardless of whether email is requested. The audit result page is still served; the rate-limit error message is user-friendly.
+- **Web: `test_email.py` -- 24 unit tests for `email.py`.** Covers `email_configured()`, `_findings_to_csv_bytes()` (BOM, header, truncation, column values), `_send()` (all Postmark response codes, timeout, network errors), `send_audit_report_email()` (unconfigured guard, payload structure, attachment format), and `send_batch_audit_report_email()` (unconfigured guard, merged CSV file column, failed-result exclusion).
+- **Docs: `about.html` -- Postmark listed in open-source dependencies table.** Postmark row added alongside WeasyPrint with version, license (MIT client library), and privacy note.
+- **Docs: `user-guide.md` -- Email delivery section added to "How to Audit a Document".** Documents the optional email field, what is sent (scorecard + CSV), and the privacy policy (address never stored).
+
 ### Fixed
 
 - Fixed the macOS DMG packaging step in `.github/workflows/build.yml` by switching directory copy commands to recursive copy (`cp -R`), resolving the GitHub Actions failure in "Create DMG (macOS)" for onedir PyInstaller outputs.
 - Fixed workflow tip banner icons rendering as literal text (`&#9758;`) in all web form pages (`audit_form.html`, `fix_form.html`, `convert_form.html`, `export_form.html`, `template_form.html`) and the `_workflow_tip.html` partial. Jinja2 auto-escaping was converting `&` to `&amp;` when HTML entity strings were stored in `{% set %}` variables and rendered via `{{ }}`. Replaced entity strings (`"&#9758;"`, `"&#9432;"`) with literal Unicode characters (`"☞"`, `"ℹ"`) which pass through auto-escaping unchanged. The `aria-hidden="true"` on the icon span remains correct and is why screen readers were not affected.
 
-### Added
-
-- Added heading-level restriction controls to Fix and Settings workflows so teams can constrain heading detection/review/conversion to a selected subset of levels.
-- Updated heading review UI and confirm pipeline to honor allowed heading levels end-to-end, including safe level remapping for detected suggestions outside the allowed set.
-- Added template heading-level controls (Template form + Settings defaults) and wired them into template sample generation so authored examples follow team-selected heading ladders.
-- Expanded and synchronized announcement storytelling (`docs/announcement-web-app.md`, `docs/announcement-web-app.html`, and `docs/announcement.md`) with Washington Council community voice, non-versioned narrative, and explicit coverage of heading-level controls/review/template alignment.
-
 ### Changed
 
 - Removed remaining stale APH "not yet complete" language from web guide and guidelines templates, aligning all live-facing APH copy with Release 1.2.0 finalized submission wording.
-
-## [1.2.0] -- 2026-04-15
-
-### Added
-
-- Added an embedded **Release 1.2.0 APH Submission Track** section to the web landing page (`web/src/acb_large_print_web/templates/index.html`) with explicit Week 1-4 execution milestones.
 - Added an embedded **APH execution workflow** section to the web User Guide (`web/src/acb_large_print_web/templates/guide.html`) including an "instructor in your pocket" checklist and week-based deliverables.
 - Added an **APH Submission Profile** section to the Guidelines reference page (`web/src/acb_large_print_web/templates/guidelines.html`) with profile model notes and Week 1-4 release gates.
 - Added a markdown execution playbook at `docs/aph-release-1.2.0-execution.md` documenting weekly tasks, outputs, and embedded-documentation coverage.

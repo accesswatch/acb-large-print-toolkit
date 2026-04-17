@@ -10,6 +10,20 @@
   <p class="help-text">Allowed heading levels in this run: {% for level in allowed_heading_levels %}Heading {{ level }}{% if not loop.last %}, {% endif %}{% endfor %}.</p>
 </section>
 
+<section aria-labelledby="review-privacy-heading" class="notice-box">
+  <h2 id="review-privacy-heading">Data and Privacy</h2>
+  {% if doc_expiry %}
+  <p><strong>Document availability:</strong> Your document is held on the server while you complete this review.
+    It will be automatically deleted at approximately <strong>{{ doc_expiry.strftime("%I:%M %p UTC on %B %d, %Y") }}</strong>.
+    Complete this review and download your fixed document before that time.</p>
+  {% endif %}
+  {% if ai_used %}
+  <p><strong>AI was used to identify these heading candidates.</strong> Detection used a local Ollama model running on the GLOW server. Your document was never sent to any third-party service such as Google, Microsoft, or OpenAI.</p>
+  {% else %}
+  <p><strong>AI was not used during heading detection.</strong> Candidates were identified using rule-based heuristics with no AI involvement.</p>
+  {% endif %}
+</section>
+
 <form method="post" action="{{ url_for('fix.fix_confirm') }}">
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
   <input type="hidden" name="token" value="{{ token }}">

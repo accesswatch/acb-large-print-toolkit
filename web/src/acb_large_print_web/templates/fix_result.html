@@ -62,6 +62,22 @@
   </div>
 </section>
 
+<section aria-labelledby="privacy-notice-heading" class="notice-box">
+  <h2 id="privacy-notice-heading">Data and Privacy</h2>
+  {% if doc_expiry %}
+  <p><strong>Document availability:</strong> Your document is still held on the server so you can download the fixed copy.
+    It will be automatically deleted at approximately <strong>{{ doc_expiry.strftime("%I:%M %p UTC on %B %d, %Y") }}</strong>.
+    Download your fixed document now and it will be removed immediately.</p>
+  {% else %}
+  <p><strong>Document retention:</strong> Your document has already been removed from the server.</p>
+  {% endif %}
+  {% if ai_used %}
+  <p><strong>AI was used during this transaction.</strong> Heading detection used a local Ollama model running on the GLOW server. Your document was never sent to any third-party service such as Google, Microsoft, or OpenAI.</p>
+  {% else %}
+  <p><strong>AI was not used during this transaction.</strong> All fixes were applied using rule-based code with no AI involvement.</p>
+  {% endif %}
+</section>
+
 {% if warnings %}
 <section aria-labelledby="warnings-heading">
   <h2 id="warnings-heading">Review Required</h2>

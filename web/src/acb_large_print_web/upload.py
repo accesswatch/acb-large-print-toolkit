@@ -141,12 +141,35 @@ def cleanup_tempdir(temp_dir: Path) -> None:
         shutil.rmtree(temp_dir, ignore_errors=True)
 
 
-def cleanup_stale_uploads(max_age_hours: int = 24) -> int:
+def get_upload_expiry(token: str, max_age_hours: int = 1) -> "datetime | None":
+    """Return the datetime when the upload directory expires, or None if not found.
+
+    Args:
+        token: Upload token (UUID string).
+        max_age_hours: Retention window in hours (must match the cleanup setting).
+
+    Returns:
+        A timezone-aware UTC datetime, or None if the token directory is missing.
+    """
+    from datetime import datetime, timezone, timedelta
+
+    temp_dir = get_temp_dir(token)
+    if temp_dir is None:
+        return None
+    try:
+        mtime = temp_dir.stat().st_mtime
+        created = datetime.fromtimestamp(mtime, tz=timezone.utc)
+        return created + timedelta(hours=max_age_hours)
+    except OSError:
+        return None
+
+
+def cleanup_stale_uploads(max_age_hours: int = 1) -> int:
     """Clean up old temporary upload directories.
     
     Args:
         max_age_hours: Maximum age in hours for temp directories before cleanup.
-                      Default 24 hours (1 day).
+                      Default 1 hour.
     
     Returns:
         Number of directories cleaned up.

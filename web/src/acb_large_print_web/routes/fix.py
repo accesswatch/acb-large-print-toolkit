@@ -172,7 +172,7 @@ def _fix_by_extension(
                 ai_provider = get_provider()
             except Exception:
                 pass  # Fall back to heuristic-only
-        return fix_document(
+        result = fix_document(
             saved_path,
             output_path,
             bound=bound,
@@ -188,6 +188,8 @@ def _fix_by_extension(
             confirmed_headings=confirmed_headings,
             heading_accuracy_level=heading_accuracy,
         )
+        # Tag whether AI was actually used (ai_provider set and invoked)
+        return result[:5] + ({"ai_used": ai_provider is not None},) if len(result) == 5 else result
 
 
 def _audit_by_extension(
@@ -423,7 +425,7 @@ def _run_fix_and_render(
     output_name = saved_path.stem + "-fixed" + ext
     output_path = saved_path.parent / output_name
 
-    _, total_fixes, fix_records, post_audit, warnings = _fix_by_extension(
+    fix_result_tuple = _fix_by_extension(
         saved_path,
         output_path,
         bound=opts["bound"],
@@ -439,6 +441,13 @@ def _run_fix_and_render(
         confirmed_headings=confirmed_headings,
         heading_accuracy=opts["heading_accuracy"],
     )
+    # Unpack; _fix_by_extension may return 5 or 6 elements (with ai_meta)
+    if len(fix_result_tuple) == 6:
+        _, total_fixes, fix_records, post_audit, warnings, ai_meta = fix_result_tuple
+    else:
+        _, total_fixes, fix_records, post_audit, warnings = fix_result_tuple
+        ai_meta = {}
+    ai_used = ai_meta.get("ai_used", False)
 
     warnings = list(warnings)
 
@@ -485,6 +494,12 @@ def _run_fix_and_render(
     applied_heading_fixes = sum(
         1 for rec in fix_records if rec.rule_id == "ACB-FAUX-HEADING"
     )
+
+    # Compute document availability expiry for UI display
+    from ..upload import get_upload_expiry
+    import os as _os
+    _max_age = int(_os.environ.get("UPLOAD_MAX_AGE_HOURS", "1"))
+    doc_expiry = get_upload_expiry(token, max_age_hours=_max_age)
 
     if confirmed_headings_received is not None:
         current_app.logger.info(
@@ -542,6 +557,8 @@ def _run_fix_and_render(
         profile_label=profile_label,
         download_name=output_name,
         token=token,
+        ai_used=ai_used,
+        doc_expiry=doc_expiry,
     )
 
 
@@ -590,6 +607,10 @@ def fix_submit():
                         form_fields[key] = values[0]
                     else:
                         form_fields[key] = values
+                from ..upload import get_upload_expiry
+                import os as _os
+                _max_age = int(_os.environ.get("UPLOAD_MAX_AGE_HOURS", "1"))
+                doc_expiry = get_upload_expiry(token, max_age_hours=_max_age)
                 return render_template(
                     "fix_review_headings.html",
                     candidates=candidates,
@@ -597,6 +618,8 @@ def fix_submit():
                     token=token,
                     filename=saved_path.name,
                     form_fields=form_fields,
+                    ai_used=ai_provider is not None,
+                    doc_expiry=doc_expiry,
                 )
 
         return _run_fix_and_render(saved_path, token, opts)
@@ -641,7 +664,7 @@ def fix_confirm():
             render_template(
                 "fix_form.html",
                 error="Your session has expired or the uploaded file is no longer available. "
-                      "This can happen if the review took more than 24 hours or the server was restarted. "
+                      "Documents are kept for up to 1 hour after upload. "
                       "Please upload and fix the document again.",
                 ai_available=is_ai_available(),
             ),

@@ -55,6 +55,7 @@
         <li><a href="{{ url_for('prd.prd_page') }}"{% if request.blueprint == 'prd' %} aria-current="page"{% endif %}>PRD</a></li>
         <li><a href="{{ url_for('changelog.changelog_page') }}"{% if request.blueprint == 'changelog' %} aria-current="page"{% endif %}>Changelog</a></li>
         <li><a href="{{ url_for('feedback.feedback_form') }}"{% if request.blueprint == 'feedback' %} aria-current="page"{% endif %}>Feedback</a></li>
+        <li><a href="{{ url_for('privacy.privacy_page') }}"{% if request.blueprint == 'privacy' %} aria-current="page"{% endif %}>Privacy Policy</a></li>
       </ul>
     </nav>
     <p>A <a href="https://www.bits-acb.org">BITS</a> community project. Blind Information Technology Solutions, a special interest affiliate of the American Council of the Blind.</p>

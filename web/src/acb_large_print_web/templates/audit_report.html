@@ -4,6 +4,11 @@
 {% block heading %}Audit Report{% endblock %}
 
 {% block content %}
+{% if email_status %}
+<div class="{{ 'success-box' if email_status.success else 'notice-box' }}" role="status">
+  <p>{{ email_status.message }}</p>
+</div>
+{% endif %}
 <section aria-labelledby="score-heading">
   <h2 id="score-heading">Compliance Score</h2>
 
@@ -24,6 +29,16 @@
   {% endif %}
   {% if suppressed_rules %}
   <p class="help-text"><strong>Suppressed by your settings:</strong> {{ suppressed_rules | join(", ") }}.</p>
+  {% endif %}
+</section>
+
+<section aria-labelledby="privacy-notice-heading" class="notice-box">
+  <h2 id="privacy-notice-heading">Data and Privacy</h2>
+  <p><strong>Document retention:</strong> Your document was deleted from the server immediately after this audit was produced. Nothing was stored.</p>
+  {% if ai_used %}
+  <p><strong>AI was used during this transaction.</strong> Analysis was performed by a local Ollama model running on the GLOW server. Your document was never sent to any third-party service such as Google, Microsoft, or OpenAI.</p>
+  {% else %}
+  <p><strong>AI was not used during this transaction.</strong> All analysis was performed using rule-based code with no AI involvement.</p>
   {% endif %}
 </section>
 

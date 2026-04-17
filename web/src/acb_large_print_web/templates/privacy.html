@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+
+{% block title %}Data Storage, Use, and Retention Policy{% endblock %}
+{% block heading %}Data Storage, Use, and Retention Policy{% endblock %}
+
+{% block content %}
+<section aria-labelledby="policy-intro-heading">
+  <h2 id="policy-intro-heading">Overview</h2>
+  <p>GLOW Accessibility Toolkit is built to minimize data retention risk. This page explains exactly what happens to your documents and data when you use the service.</p>
+</section>
+
+<section aria-labelledby="storage-heading">
+  <h2 id="storage-heading">Document Storage and Retention</h2>
+
+  <h3>Audit workflow</h3>
+  <p>When you submit a document for audit, GLOW processes it entirely in server memory and then deletes it immediately. By the time your audit report appears in the browser, the uploaded file is gone. Nothing is written to permanent storage.</p>
+
+  <h3>Fix workflow</h3>
+  <p>The Fix workflow is multi-step. After you upload a document, GLOW holds it on the server while it produces the fixed copy and optionally presents a heading review screen for your input. Once you download the fixed document, the original and the fixed copy are both deleted immediately.</p>
+  <p>If you do not complete the fix workflow (for example, you close the browser before downloading), the document is automatically deleted after <strong>one hour</strong> from the time of upload. This limit applies even if the session is still technically active.</p>
+
+  <h3>Convert and Export workflows</h3>
+  <p>Converted and exported files follow the same pattern as the Fix workflow: the server holds your uploaded file only for the duration of processing. Once the result is delivered or the session ends, the file is deleted. Stale uploads are swept every hour.</p>
+
+  <h3>No permanent storage</h3>
+  <p>GLOW does not store documents in any database, object store, archive, or backup system. Temporary files live only in a short-lived directory on the server and are removed as described above.</p>
+</section>
+
+<section aria-labelledby="ai-heading">
+  <h2 id="ai-heading">Artificial Intelligence</h2>
+  <p>By default, artificial intelligence is never used. The only time AI is involved is if you personally enable it in Settings.</p>
+  <p>When AI is enabled, it is restricted to a local <a href="https://ollama.com">Ollama</a> instance running on the GLOW server itself. Your document is analyzed in place. It is never transmitted to Google, Microsoft, OpenAI (ChatGPT), Anthropic, or any other external AI provider.</p>
+  <p>AI is used only for one specific purpose: determining whether an ambiguous paragraph should be treated as a heading when heuristic signals alone are insufficient. The rest of the tool operates entirely on rule-based code.</p>
+  <p><strong>No training is performed on your data.</strong> The analysis is real-time and discarded when the session ends. Your documents are never used to train or fine-tune any AI model.</p>
+  <p>Every results page shows a clear statement indicating whether AI was or was not used during that specific transaction.</p>
+</section>
+
+<section aria-labelledby="rights-heading">
+  <h2 id="rights-heading">Data Rights and Use</h2>
+  <p>BITS (Blind Information Technology Solutions) does not claim any rights to the content you upload. Your documents belong to you.</p>
+  <p>GLOW does not sell, share, license, or otherwise transfer document content to any third party for any purpose, including advertising, research, or model training.</p>
+  <p>Aggregate, anonymized usage statistics (such as the number of audits run per day or which file formats are most common) may be collected for operational purposes and do not include any document content.</p>
+</section>
+
+<section aria-labelledby="accounts-heading">
+  <h2 id="accounts-heading">Accounts and Identity</h2>
+  <p>GLOW does not require an account, login, or registration. No personally identifiable information is collected as a condition of using the tool.</p>
+  <p>If you submit feedback through the Feedback page, your message is stored in an encrypted SQLite database on the server and is accessible only to BITS administrators. Feedback is retained to help improve the tool and is not shared externally.</p>
+  <p>If you opt in to cookie-based preferences (via the Settings page), your preferences are stored in a browser cookie on your device only. The cookie contains your chosen defaults (profile, mode, heading levels, and so on) and no document content.</p>
+</section>
+
+<section aria-labelledby="security-heading">
+  <h2 id="security-heading">Security</h2>
+  <p>All traffic to glow.bits-acb.org is encrypted using HTTPS (TLS). Uploaded files are validated for format integrity before processing. The application runs under a non-root container user and enforces rate limits to protect against abuse.</p>
+  <p>Temporary upload directories are stored in an isolated path on the server filesystem. Path traversal protections prevent any request from accessing files outside the designated upload area.</p>
+</section>
+
+<section aria-labelledby="contact-heading">
+  <h2 id="contact-heading">Questions and Contact</h2>
+  <p>If you have questions about this policy or how your data is handled, contact BITS through the <a href="{{ url_for('feedback.feedback_form') }}">Feedback page</a> or visit <a href="https://www.bits-acb.org">bits-acb.org</a>.</p>
+  <p>This policy was last updated on April 17, 2026.</p>
+</section>
+{% endblock %}

@@ -107,6 +107,7 @@ def create_app(config: dict | None = None) -> Flask:
     from .routes.prd import prd_bp
     from .routes.faq import faq_bp
     from .routes.settings import settings_bp
+    from .routes.privacy import privacy_bp
 
     app.register_blueprint(main_bp)
     app.register_blueprint(audit_bp, url_prefix="/audit")
@@ -122,6 +123,7 @@ def create_app(config: dict | None = None) -> Flask:
     app.register_blueprint(settings_bp, url_prefix="/settings")
     app.register_blueprint(feedback_bp, url_prefix="/feedback")
     app.register_blueprint(about_bp, url_prefix="/about")
+    app.register_blueprint(privacy_bp, url_prefix="/privacy")
 
     # Health check
     @app.route("/health")
@@ -198,7 +200,7 @@ def create_app(config: dict | None = None) -> Flask:
         
         # Run cleanup once per minute (3600 seconds = 1 hour between full scans)
         if now - last_cleanup > 60:
-            max_age = int(os.environ.get("UPLOAD_MAX_AGE_HOURS", "24"))
+            max_age = int(os.environ.get("UPLOAD_MAX_AGE_HOURS", "1"))
             upload.cleanup_stale_uploads(max_age_hours=max_age)
             app.config["_last_cleanup"] = now
 
