@@ -1,9 +1,9 @@
 # PRD: GLOW Accessibility Web Application
 
-**Status:** Implemented (v2.0)
+**Status:** Implemented (v1.2.0 released, v2.0 in progress)
 **Author:** Jeff Bishop, BITS
 **Date:** April 12, 2026
-**Target:** v2.0 release
+**Target:** v2.0 release (audio transcription, consent gate, Quick Start beginner path, MarkItDown enhancements)
 
 ---
 

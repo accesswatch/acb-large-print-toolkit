@@ -1,27 +1,34 @@
 # GLOW Accessibility Toolkit -- User Guide
 
-Everything you need to know to audit, fix, convert, and template your documents for ACB Large Print compliance. New to accessibility? Start with the quick-start walkthrough below.
+Everything you need to know to audit, fix, convert, and template your documents for ACB Large Print compliance. New to accessibility? Start with the **Quick Start** path below.
 
 ## In This Guide
 
-1. [Quick-Start Walkthrough](#1-quick-start-walkthrough)
-2. [Release 1.2.0 APH Submission Track](#2-release-120-aph-submission-track)
-3. [How to Audit a Document](#3-how-to-audit-a-document)
-4. [How to Fix a Document](#4-how-to-fix-a-document)
-5. [How to Create a Template](#5-how-to-create-a-template)
-6. [How to Use Settings](#6-how-to-use-settings)
-7. [How to Export to HTML](#7-how-to-export-to-html)
-8. [How to Convert Between Formats](#8-how-to-convert-between-formats)
-9. [Understanding Your Results](#9-understanding-your-results)
-10. [Common Issues and How to Fix Them](#10-common-issues-and-how-to-fix-them)
-11. [Tips by Document Format](#11-tips-by-document-format)
-12. [Recommended Workflows](#12-recommended-workflows)
-13. [DAISY Accessibility Tools](#13-daisy-accessibility-tools)
-14. [Keyboard and Screen Reader Tips](#14-keyboard-and-screen-reader-tips)
-15. [Frequently Asked Questions](#15-frequently-asked-questions)
-16. [Getting Help](#16-getting-help)
+1. [Quick Start (Beginner Path)](#1-quick-start-beginner-path)
+2. [BITS Whisperer: Transcribe Audio](#2-bits-whisperer-transcribe-audio)
+3. [Quick-Start Walkthrough (Expert Path)](#3-quick-start-walkthrough-expert-path)
+4. [Release 1.2.0 APH Submission Track](#4-release-120-aph-submission-track)
+5. [How to Audit a Document](#5-how-to-audit-a-document)
+6. [How to Fix a Document](#6-how-to-fix-a-document)
+7. [How to Create a Template](#7-how-to-create-a-template)
+8. [How to Use Settings](#8-how-to-use-settings)
+9. [How to Export to HTML](#9-how-to-export-to-html)
+10. [How to Convert Between Formats](#10-how-to-convert-between-formats)
+11. [Understanding Your Results](#11-understanding-your-results)
+12. [Common Issues and How to Fix Them](#12-common-issues-and-how-to-fix-them)
+13. [Tips by Document Format](#13-tips-by-document-format)
+14. [Recommended Workflows](#14-recommended-workflows)
+15. [DAISY Accessibility Tools](#15-daisy-accessibility-tools)
+16. [Keyboard and Screen Reader Tips](#16-keyboard-and-screen-reader-tips)
+17. [Frequently Asked Questions](#17-frequently-asked-questions)
+18. [Getting Help](#18-getting-help)
 
-**Quick links to new features:**
+**Quick links to v2.0 features:**
+- [Quick Start Path](#1-quick-start-beginner-path) (for newcomers to accessibility)
+- [BITS Whisperer](#2-bits-whisperer-transcribe-audio) (transcribe audio to text)
+- [MarkItDown image descriptions](#image-descriptions-llm-generated-alt-text) (AI-powered alt text for images)
+
+**Quick links to v1.2.0 features:**
 - [Quick Rule Exceptions](#quick-rule-exceptions)
 - [Preserve centered headings](#preserve-centered-headings)
 - [Per-level list indentation](#per-level-list-indentation)
@@ -30,13 +37,67 @@ Everything you need to know to audit, fix, convert, and template your documents 
 
 ---
 
-## 1. Quick-Start Walkthrough
+## 1. Quick Start (Beginner Path)
 
-If this is your first time, follow these three steps to check and fix a document in under two minutes:
+If you're new to GLOW or unsure which tool to use, the **Quick Start** path is for you.
 
-### Step 1: Audit your document
+### How to use Quick Start
 
-Go to Audit, upload your file, and click Run Audit. You will get a compliance report showing every issue found, organized by severity.
+1. On the GLOW homepage, click **"Quick Start: Upload & Discover"**
+2. Upload any document (Word, Excel, PowerPoint, PDF, Markdown, image, audio, or ePub)
+3. GLOW will show you **all available actions** for your file type
+4. Click the action you want (Audit, Fix, Convert, Template, Export, or BITS Whisperer)
+5. Follow the step-by-step form for that action
+
+### What each action does
+
+- **Audit:** Check your document for accessibility issues and get a compliance report
+- **Fix:** Auto-fix accessibility problems in Word documents
+- **Convert:** Transform your document to Markdown, HTML, PDF, Word, or ePub
+- **Export:** Convert Word to accessible HTML with built-in ACB styling
+- **Template:** Generate a Word template pre-formatted with ACB styles
+- **BITS Whisperer:** Transcribe audio files to Markdown or Word (see next section)
+
+---
+
+## 2. BITS Whisperer: Transcribe Audio
+
+**BITS Whisperer** transcribes audio files into accessible text documents without sending your audio anywhere.
+
+### Supported audio formats
+
+- MP3 (.mp3)
+- WAV (.wav)
+- M4A (.m4a)
+- OGG (.ogg)
+- FLAC (.flac)
+- AAC (.aac)
+- Opus (.opus)
+
+### How to use BITS Whisperer
+
+1. Click the **"BITS Whisperer"** tab at the top, or from Quick Start upload an audio file
+2. Upload your audio file (max 500 MB)
+3. Optionally select a language (auto-detect is recommended for most recordings)
+4. Choose output format: **Markdown** (plain text) or **Word** (editable .docx)
+5. Click "Transcribe Audio"
+6. GLOW will process your audio (typically at real-time speed) and return the transcript
+
+### Tips for best results
+
+- **One speaker at a time:** Whisper works best when one person is speaking. Multiple speakers talking at once reduces accuracy.
+- **Minimize background noise:** Close the microphone to the speaker. Loud background music, crowd noise, or HVAC hum will reduce accuracy.
+- **Specify the language for short clips:** If your audio is under 30 seconds, picking the language explicitly is faster and more accurate than auto-detect.
+- **Review the transcript:** Whisper is 95%+ accurate for clear English speech, but technical terms, proper nouns, and accents may need manual correction.
+- **Edit in Markdown first:** Download the .md file, review and fix it in any text editor, then use Convert to turn it into an accessible web page, PDF, or Word document. This two-step approach gives you full control.
+
+### Privacy
+
+Your audio file is uploaded to the GLOW server, transcribed using a local copy of the Whisper model (never sent to OpenAI or any third party), and then deleted immediately. The transcript is also deleted after download. Nothing is stored.
+
+---
+
+## 3. Quick-Start Walkthrough (Expert Path)
 
 Tip: First-time users should use Full Audit mode to see everything. You can switch to Quick Audit later once you know what to look for.
 

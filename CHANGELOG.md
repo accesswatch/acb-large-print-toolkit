@@ -10,6 +10,37 @@ Releases are tagged in the [GitHub repository](https://github.com/accesswatch/ac
 
 ### Added
 
+- **BITS Whisperer: On-server audio transcription.** New `/whisperer` route and tab. Transcribes audio files (MP3, WAV, M4A, OGG, FLAC, AAC, Opus) to Markdown (.md) or Word (.docx) using faster-whisper with the Whisper medium model and CTranslate2 int8 quantization. Audio is processed entirely on the GLOW server and never sent to any external service (no OpenAI, no cloud API). Supports language selection (auto-detect or choose from 50+ languages). Includes concurrency gating to protect CPU resources and a 503 Busy page with Retry-After headers when the inference queue is full.
+- **Web: Consent and agreement gate (`/consent`).** First-time visitors are shown a one-page agreement explaining how GLOW handles data, what AI features are available locally, privacy protections, and cookie policies before accessing any tool. Agreement is stored in a secure `glow_consent_v1` cookie (HttpOnly, Strict SameSite, 365-day expiry). The consent gate is skipped in test mode so existing tests don't require cookie fixtures. Users can withdraw consent and reset the gate via the Privacy Policy page.
+- **Web: Quick Start beginner path (`/process`).** New universal upload form + contextual action chooser. Users upload any document type and are shown available actions (Audit, Fix, Convert, Export, Template, BITS Whisperer) based on the file type. Reduces barrier to entry for accessibility newcomers while keeping the expert tab interface for power users. Both paths coexist.
+- **Web: MarkItDown 0.2+ integration with enhanced capabilities.** Upgraded from MarkItDown 0.1.5 to 0.2+. Added support for image files (JPG, JPEG, PNG, GIF, WebP, BMP, TIFF). New `convert_with_llm_descriptions()` function passes local Ollama/Llama3 instance as LLM client to generate alt text descriptions for images in PowerPoint files and standalone image uploads -- fully local, no third-party API. New `youtube_to_markdown()` function fetches YouTube video transcripts (using YouTube's own caption data) and converts them to Markdown.
+- **Web: Image file audit support.** Image files (.jpg, .jpeg, .png, .gif, .webp, .bmp, .tiff) are now accepted by Audit. Extracted EXIF metadata and any embedded text are included in the audit report.
+- **Web: `/health` capacity metrics.** The health check endpoint now exposes `capacity` object with `active_jobs` (AI and audio inference jobs in flight), `max_concurrent_jobs`, and feature availability flags (`whisper_available`, `ai_available`). Consumed by the 503 busy logic to determine when to queue or reject.
+- **Web: `convert_form.html` callout card for BITS Whisperer.** Below the standard Convert form, a prominent info card directs audio users to BITS Whisperer with a link to `/whisperer`.
+- **Web: BITS Whisperer tab in main navigation.** Added between Convert and Guidelines tabs in base.html navigation.
+- **Web: Settings link in footer.** Users can now access the Settings page (preference defaults) from the footer navigation.
+- **Web: Audio concurrency gating and semaphore.** New `gating.py` module implements audio and AI task concurrency limiting via semaphore. Prevents CPU overload during Whisper transcription. Configurable via `GLOW_MAX_AUDIO_JOBS` (default 1) and `GLOW_MAX_AI_JOBS` (default 1) environment variables. When at capacity, a 503 Busy page is returned with `Retry-After: 60` header.
+- **Web: Privacy Policy consent withdrawal controls.** New section in Privacy Policy (`/privacy`) allows users to clear their consent cookie via a button that POSTs to `/consent/withdraw`. Also documents cookie policy and the opt-in nature of consent.
+- **Desktop: Image and YouTube support in converter.** Desktop CLI and GUI inherit the new `convert_with_llm_descriptions()` and `youtube_to_markdown()` functions from the shared converter module.
+- **Dockerfile: Updated for latest MarkItDown + dependencies.** `requirements.txt` now pins `markitdown[all]>=0.2.0` (audio, image, YouTube capabilities). `Dockerfile` installs required system libraries for image/PDF processing via the updated MarkItDown dependencies.
+
+### Changed
+
+- **Web: Upload accepted file list expanded.** `CONVERT_EXTENSIONS` in `upload.py` now includes image files (`.jpg`, `.jpeg`, `.png`, `.gif`, `.webp`, `.bmp`, `.tiff`).
+- **Web: `/audit` form supports batch file upload (up to 3 files in one go).** Radio toggle between Single File and Batch modes. Queue UI with remove-before-submit. Output options: Combined Report (one scorecard with per-file collapsible findings) or Individual Reports (stacked per-file full reports).
+- **Web: `/audit` POST endpoint has per-IP rate limit.** 6 requests per minute per IP to prevent abuse of the email delivery path. Limit applies to all POST submissions, email or not.
+- **Web: Email report delivery on Audit pages (optional, Postmark integration).** Checkbox to request audit scorecard and findings CSV attachment be sent to an email address immediately after the run. Requires `POSTMARK_SERVER_TOKEN` env var. Server-side validation and graceful error handling. Email address is never stored.
+
+### Fixed
+
+- Fixed CSRF token handling in consent form so first-visit users can agree without pre-existing session.
+
+---
+
+## [Unreleased] (Previous)
+
+### Added
+
 - **Web: Privacy Policy page (`/privacy`).** New `privacy.html` template and `privacy_bp` blueprint at `/privacy`. Covers document storage and retention (per workflow), AI usage and data protections, data rights (no training, no third-party sharing), accounts/cookies, and security practices. Accessible from the footer navigation on every page.
 - **Web: AI used / not used disclosure on every result page.** Audit Report, Fix Results, and Fix Review Headings pages now display a "Data and Privacy" notice section showing whether AI was or was not used during that specific transaction. When AI was used, the notice clarifies that only a local Ollama model on the GLOW server was involved and no data was sent to any third party. When AI was not used, the notice confirms rule-based analysis only.
 - **Web: Document availability expiry on Fix result pages.** Fix Results and Fix Review Headings pages now display the exact UTC date and time when the held document will be automatically deleted (approximately one hour after upload). This gives users a clear deadline to download their fixed file.
