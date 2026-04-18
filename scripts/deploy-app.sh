@@ -9,13 +9,42 @@
 #   - Creates a pre-deploy feedback DB backup (optional)
 #   - Enables maintenance mode (users see "Under Maintenance" page)
 #   - Builds and starts Docker containers
-#   - Waits for health check
+#   - Waits for health check with per-attempt container diagnostics
+#   - Probes /health JSON and prints full readiness breakdown on pass AND fail
 #   - Disables maintenance mode on success (site goes live)
 #   - Rolls back to the previous Git revision on failed health check (when available)
+#   - Dumps tail logs from every service on health check failure
 #   - Shows status and URLs to test
+#   - Writes full deploy log to ~/deploy-logs/deploy-YYYYMMDD-HHMMSS.log
 set -euo pipefail
 
-# --- Configuration ---
+# ---------------------------------------------------------------------------
+# Logging helpers
+# ---------------------------------------------------------------------------
+LOG_DIR="${LOG_DIR:-$HOME/deploy-logs}"
+DEPLOY_TS="$(date -u +%Y%m%d-%H%M%S)"
+LOG_FILE="${LOG_DIR}/deploy-${DEPLOY_TS}.log"
+LATEST_LOG_FILE="${LOG_DIR}/deploy-latest.log"
+
+mkdir -p "$LOG_DIR"
+# Tee all stdout+stderr to the log file for the entire script run
+exec > >(tee -a "$LOG_FILE") 2>&1
+
+# Emit timestamped lines so every event is traceable in the log
+log_ts() {
+    echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] $*"
+}
+
+finalize_log() {
+    cp "$LOG_FILE" "$LATEST_LOG_FILE" 2>/dev/null || true
+    log_ts "Full deploy log: $LOG_FILE"
+    log_ts "Latest log link: $LATEST_LOG_FILE"
+}
+trap finalize_log EXIT
+
+# ---------------------------------------------------------------------------
+# Configuration
+# ---------------------------------------------------------------------------
 APP_ROOT="${APP_ROOT:-$HOME/app}"
 WEB_ROOT="${WEB_ROOT:-$APP_ROOT/web}"
 COMPOSE_FILE="docker-compose.prod.yml"
@@ -23,160 +52,284 @@ APP_DOMAIN="${APP_DOMAIN:-lp.csedesigns.com}"
 APP_ALIAS_DOMAIN="${APP_ALIAS_DOMAIN:-}"
 MAIN_DOMAIN="${MAIN_DOMAIN:-csedesigns.com}"
 ENABLE_PREDEPLOY_BACKUP="${ENABLE_PREDEPLOY_BACKUP:-1}"
+HEALTH_MAX_ATTEMPTS="${HEALTH_MAX_ATTEMPTS:-40}"
+HEALTH_SLEEP="${HEALTH_SLEEP:-3}"
 
 PRE_DEPLOY_COMMIT=""
 ROLLED_BACK=0
 MAINTENANCE_ENABLED=0
 
-# --- Pre-flight checks ---
+# ---------------------------------------------------------------------------
+# Helper: container state + health one-liner
+# ---------------------------------------------------------------------------
+container_state() {
+    local service="$1"
+    local cid
+    cid="$(docker compose -f "$COMPOSE_FILE" ps -q "$service" 2>/dev/null | head -n1)"
+    if [[ -z "$cid" ]]; then
+        echo "state=<no container>"
+        return
+    fi
+    local state health last_log
+    state="$(docker inspect --format '{{.State.Status}}' "$cid" 2>/dev/null || echo unknown)"
+    health="$(docker inspect --format '{{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}}' "$cid" 2>/dev/null || echo unknown)"
+    last_log="$(docker logs --tail 1 "$cid" 2>&1 | tr '\n' ' ' | cut -c1-120)"
+    echo "state=${state} health=${health} last_log=\"${last_log}\""
+}
+
+# ---------------------------------------------------------------------------
+# Helper: dump service log tail on failure
+# ---------------------------------------------------------------------------
+dump_service_logs() {
+    local service="$1"
+    local lines="${2:-40}"
+    log_ts "--- Log tail: $service (last $lines lines) ---"
+    docker compose -f "$COMPOSE_FILE" logs --tail "$lines" "$service" 2>&1 || true
+}
+
+# ---------------------------------------------------------------------------
+# Helper: probe /health inside the web container and print full JSON
+# ---------------------------------------------------------------------------
+probe_health_json() {
+    local label="${1:-health}"
+    log_ts "--- $label: probing /health JSON ---"
+    docker compose -f "$COMPOSE_FILE" exec -T web python -c "
+import urllib.request, json, sys
+try:
+    with urllib.request.urlopen('http://localhost:8000/health', timeout=5) as r:
+        body = r.read().decode()
+        payload = json.loads(body)
+        print(json.dumps(payload, indent=2))
+        services_ok = all(v.get('status') == 'ok' for v in payload.get('services', {}).values())
+        features_ok = all(v.get('status') == 'ready' for v in payload.get('readiness', {}).values())
+        sys.exit(0 if services_ok and features_ok else 1)
+except Exception as exc:
+    print(f'PROBE ERROR: {exc}', file=sys.stderr)
+    sys.exit(1)
+" 2>&1 || true
+}
+
+# ---------------------------------------------------------------------------
+# Helper: wait for health, with per-attempt diagnostics
+# ---------------------------------------------------------------------------
+wait_for_health() {
+    local phase="${1:-deploy}"  # "deploy" or "rollback"
+    local attempts=0
+    local healthy=0
+
+    log_ts "--- Waiting for /health (max ${HEALTH_MAX_ATTEMPTS} attempts, ${HEALTH_SLEEP}s interval) ---"
+
+    while [[ "$attempts" -lt "$HEALTH_MAX_ATTEMPTS" ]]; do
+        attempts=$((attempts + 1))
+        log_ts "  Attempt $attempts/${HEALTH_MAX_ATTEMPTS} [$phase]"
+
+        # Per-service container state
+        for svc in pipeline web ollama; do
+            log_ts "    $svc: $(container_state "$svc")"
+        done
+
+        if docker compose -f "$COMPOSE_FILE" exec -T web python -c \
+            "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=4)" 2>/dev/null; then
+            healthy=1
+            break
+        fi
+
+        log_ts "  /health not ready yet -- waiting ${HEALTH_SLEEP}s"
+        sleep "$HEALTH_SLEEP"
+    done
+
+    echo "$healthy"
+}
+
+# ---------------------------------------------------------------------------
+# Pre-flight checks
+# ---------------------------------------------------------------------------
+log_ts "=== ACB Large Print Toolkit -- Deploy (script started) ==="
+log_ts "Log file: $LOG_FILE"
+echo ""
+
 if [[ "$(whoami)" == "root" ]]; then
-    echo "ERROR: Do not run this script as root. Run as the deploy user."
+    log_ts "ERROR: Do not run this script as root. Run as the deploy user."
     exit 1
 fi
 
 if ! command -v docker &>/dev/null; then
-    echo "ERROR: Docker is not installed. Run bootstrap-server.sh first."
+    log_ts "ERROR: Docker is not installed. Run bootstrap-server.sh first."
     exit 1
 fi
 
 if ! docker info &>/dev/null 2>&1; then
-    echo "ERROR: Cannot connect to Docker. Is your user in the docker group?"
-    echo "       Run: sudo usermod -aG docker $(whoami)"
-    echo "       Then log out and back in."
+    log_ts "ERROR: Cannot connect to Docker daemon."
+    log_ts "       Ensure your user is in the docker group: sudo usermod -aG docker $(whoami)"
+    log_ts "       Then log out and back in."
     exit 1
 fi
 
-echo "=== ACB Large Print Toolkit -- Deploy ==="
-echo ""
-echo "App root:     $APP_ROOT"
-echo "Web root:     $WEB_ROOT"
-echo "Compose file: $COMPOSE_FILE"
+log_ts "App root:     $APP_ROOT"
+log_ts "Web root:     $WEB_ROOT"
+log_ts "Compose file: $COMPOSE_FILE"
+log_ts "Domain:       $APP_DOMAIN"
 echo ""
 
 # Check required files
 MISSING=0
 for F in "$WEB_ROOT/$COMPOSE_FILE" "$WEB_ROOT/.env" "$WEB_ROOT/Caddyfile" "$WEB_ROOT/Dockerfile"; do
     if [[ ! -f "$F" ]]; then
-        echo "ERROR: Required file missing: $F"
+        log_ts "ERROR: Required file missing: $F"
         MISSING=1
+    else
+        log_ts "OK: $F exists"
     fi
 done
 
 if [[ ! -d "$APP_ROOT/desktop/src/acb_large_print" ]]; then
-    echo "ERROR: desktop/src/acb_large_print/ directory missing (needed for Docker build)."
+    log_ts "ERROR: desktop/src/acb_large_print/ directory missing (needed for Docker build)."
     MISSING=1
 fi
 
 if [[ "$MISSING" -eq 1 ]]; then
     echo ""
-    echo "Fix the missing files and re-run this script."
+    log_ts "Fix the missing files and re-run this script."
     exit 1
 fi
 
-# --- Optional: pull latest from Git ---
+# ---------------------------------------------------------------------------
+# Optional: pull latest from Git
+# ---------------------------------------------------------------------------
 if [[ -d "$APP_ROOT/.git" ]]; then
     PRE_DEPLOY_COMMIT=$(cd "$APP_ROOT" && git rev-parse HEAD)
-    echo "--- Git repository detected. Pulling latest code ---"
+    log_ts "--- Git: pre-deploy commit = $PRE_DEPLOY_COMMIT ---"
+    log_ts "--- Git: pulling latest code from origin/main ---"
     cd "$APP_ROOT"
     git pull origin main
-fi
-
-# --- Optional: pre-deploy feedback DB backup ---
-if [[ "$ENABLE_PREDEPLOY_BACKUP" == "1" ]]; then
-    if [[ -x "$APP_ROOT/scripts/backup-feedback.sh" ]]; then
-        echo "--- Creating pre-deploy feedback backup ---"
-        bash "$APP_ROOT/scripts/backup-feedback.sh"
+    POST_PULL_COMMIT=$(git rev-parse HEAD)
+    log_ts "--- Git: post-pull commit  = $POST_PULL_COMMIT ---"
+    if [[ "$PRE_DEPLOY_COMMIT" == "$POST_PULL_COMMIT" ]]; then
+        log_ts "--- Git: no new commits (already up to date) ---"
     else
-        echo "--- Skipping pre-deploy backup (backup-feedback.sh not executable) ---"
+        log_ts "--- Git: $(git log --oneline "$PRE_DEPLOY_COMMIT".."$POST_PULL_COMMIT") ---"
     fi
 fi
 
-# --- Enable maintenance mode ---
-echo "--- Enabling maintenance mode (users will see 'Under Maintenance') ---"
+# ---------------------------------------------------------------------------
+# Optional: pre-deploy feedback DB backup
+# ---------------------------------------------------------------------------
+if [[ "$ENABLE_PREDEPLOY_BACKUP" == "1" ]]; then
+    if [[ -x "$APP_ROOT/scripts/backup-feedback.sh" ]]; then
+        log_ts "--- Creating pre-deploy feedback backup ---"
+        bash "$APP_ROOT/scripts/backup-feedback.sh"
+        log_ts "--- Backup complete ---"
+    else
+        log_ts "--- Skipping pre-deploy backup (backup-feedback.sh not executable) ---"
+    fi
+fi
+
+# ---------------------------------------------------------------------------
+# Enable maintenance mode
+# ---------------------------------------------------------------------------
+log_ts "--- Enabling maintenance mode (MAINTENANCE_MODE=1) ---"
 export MAINTENANCE_MODE=1
 MAINTENANCE_ENABLED=1
 
-# --- Build and start ---
+# ---------------------------------------------------------------------------
+# Build and start containers
+# ---------------------------------------------------------------------------
 cd "$WEB_ROOT"
 
-echo "--- Building and starting containers ---"
+log_ts "--- Building and starting containers (docker compose up -d --build) ---"
+log_ts "    Build output follows:"
 docker compose -f "$COMPOSE_FILE" up -d --build
+log_ts "--- docker compose up complete ---"
 
-echo "--- Waiting for containers to become healthy ---"
-ATTEMPTS=0
-MAX_ATTEMPTS=40
-HEALTHY=0
-while [[ "$ATTEMPTS" -lt "$MAX_ATTEMPTS" ]]; do
-    if docker compose -f "$COMPOSE_FILE" exec -T web python -c \
-        "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')" 2>/dev/null; then
-        HEALTHY=1
-        break
-    fi
-    ATTEMPTS=$((ATTEMPTS + 1))
-    printf "."
-    sleep 3
-done
+# Show initial container state immediately after launch
+log_ts "--- Initial container state after launch ---"
+docker compose -f "$COMPOSE_FILE" ps
+echo ""
+
+# ---------------------------------------------------------------------------
+# Wait for health check
+# ---------------------------------------------------------------------------
+HEALTHY="$(wait_for_health "deploy")"
 echo ""
 
 if [[ "$HEALTHY" -eq 1 ]]; then
-    echo "--- Health check: PASSED ---"
-    echo "--- Disabling maintenance mode (site is now live) ---"
+    log_ts "--- Health check: PASSED ---"
+    probe_health_json "Full health readiness on success"
+
+    log_ts "--- Disabling maintenance mode (site is now live) ---"
     export MAINTENANCE_MODE=0
+    MAINTENANCE_ENABLED=0
     docker compose -f "$COMPOSE_FILE" up -d --build
+    log_ts "--- Maintenance mode disabled successfully ---"
+
 else
-    echo "--- Health check: DID NOT PASS after ${MAX_ATTEMPTS} attempts ---"
-    echo "    Check logs: docker compose -f $COMPOSE_FILE logs web --tail 30"
-    echo "--- Disabling maintenance mode (reverting to previous version) ---"
+    log_ts "--- Health check: FAILED after ${HEALTH_MAX_ATTEMPTS} attempts ---"
+    probe_health_json "Partial health state on failure"
+
+    log_ts "--- Dumping recent container logs for all services ---"
+    dump_service_logs pipeline 60
+    dump_service_logs web 80
+    dump_service_logs ollama 40
+    dump_service_logs caddy 20
+
+    log_ts "--- Docker container inspect (web) ---"
+    WEB_CID="$(docker compose -f "$COMPOSE_FILE" ps -q web 2>/dev/null | head -n1)"
+    if [[ -n "$WEB_CID" ]]; then
+        docker inspect --format '
+Container: {{.Name}}
+  State:   {{.State.Status}}
+  Started: {{.State.StartedAt}}
+  Error:   {{.State.Error}}
+  Health:  {{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}}
+' "$WEB_CID" || true
+    fi
+
+    log_ts "--- Disabling maintenance mode before rollback ---"
     export MAINTENANCE_MODE=0
+    MAINTENANCE_ENABLED=0
 
-    # Best-effort rollback to previous known-good code revision when Git is available.
     if [[ -n "$PRE_DEPLOY_COMMIT" && -d "$APP_ROOT/.git" ]]; then
-        echo "--- Attempting rollback to previous commit: $PRE_DEPLOY_COMMIT ---"
+        log_ts "--- Attempting rollback to previous commit: $PRE_DEPLOY_COMMIT ---"
         cd "$APP_ROOT"
         git checkout -f "$PRE_DEPLOY_COMMIT"
+        log_ts "--- Rollback checkout complete; rebuilding containers ---"
 
         cd "$WEB_ROOT"
         docker compose -f "$COMPOSE_FILE" up -d --build
+        log_ts "--- Rollback containers started ---"
 
-        echo "--- Waiting for rollback health check ---"
-        ATTEMPTS=0
-        MAX_ATTEMPTS=40
-        while [[ "$ATTEMPTS" -lt "$MAX_ATTEMPTS" ]]; do
-            if docker compose -f "$COMPOSE_FILE" exec -T web python -c \
-                "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')" 2>/dev/null; then
-                ROLLED_BACK=1
-                break
-            fi
-            ATTEMPTS=$((ATTEMPTS + 1))
-            printf "."
-            sleep 3
-        done
+        ROLLBACK_HEALTHY="$(wait_for_health "rollback")"
         echo ""
 
-        if [[ "$ROLLED_BACK" -eq 1 ]]; then
-            echo "--- Rollback health check: PASSED ---"
+        if [[ "$ROLLBACK_HEALTHY" -eq 1 ]]; then
+            ROLLED_BACK=1
+            log_ts "--- Rollback health check: PASSED ---"
+            probe_health_json "Rollback health readiness"
         else
-            echo "--- Rollback health check: FAILED ---"
-            echo "    Manual intervention required."
+            log_ts "--- Rollback health check: FAILED ---"
+            dump_service_logs web 60
+            log_ts "    Manual intervention required."
             exit 1
         fi
     else
-        echo "--- Rollback unavailable (no Git commit baseline). ---"
+        log_ts "--- Rollback unavailable (no Git commit baseline or no .git directory). ---"
         exit 1
     fi
 fi
 
-# --- Status ---
+# ---------------------------------------------------------------------------
+# Final status
+# ---------------------------------------------------------------------------
 echo ""
-echo "--- Container status ---"
+log_ts "--- Final container status ---"
 docker compose -f "$COMPOSE_FILE" ps
 
 echo ""
-echo "=== Deployment complete ==="
+log_ts "=== Deployment complete ==="
 echo ""
 if [[ "$ROLLED_BACK" -eq 1 ]]; then
-    echo "NOTE: Deploy failed health checks and was rolled back to $PRE_DEPLOY_COMMIT."
-    echo "      Investigate the failed revision before retrying deployment."
+    log_ts "NOTE: Deploy failed and was rolled back to $PRE_DEPLOY_COMMIT."
+    log_ts "      Investigate the failed revision before retrying deployment."
     echo ""
 fi
 echo "Test these URLs:"
@@ -188,158 +341,9 @@ if [[ -n "$APP_ALIAS_DOMAIN" ]]; then
 fi
 echo "  https://${MAIN_DOMAIN}/"
 echo ""
-echo "View logs:"
+echo "Live log tail:"
 echo "  cd $WEB_ROOT && docker compose -f $COMPOSE_FILE logs --tail 50 -f"
-
-# --- Pre-flight checks ---
-if [[ "$(whoami)" == "root" ]]; then
-    echo "ERROR: Do not run this script as root. Run as the deploy user."
-    exit 1
-fi
-
-if ! command -v docker &>/dev/null; then
-    echo "ERROR: Docker is not installed. Run bootstrap-server.sh first."
-    exit 1
-fi
-
-if ! docker info &>/dev/null 2>&1; then
-    echo "ERROR: Cannot connect to Docker. Is your user in the docker group?"
-    echo "       Run: sudo usermod -aG docker $(whoami)"
-    echo "       Then log out and back in."
-    exit 1
-fi
-
-echo "=== ACB Large Print Toolkit -- Deploy ==="
 echo ""
-echo "App root:     $APP_ROOT"
-echo "Web root:     $WEB_ROOT"
-echo "Compose file: $COMPOSE_FILE"
-echo ""
-
-# Check required files
-MISSING=0
-for F in "$WEB_ROOT/$COMPOSE_FILE" "$WEB_ROOT/.env" "$WEB_ROOT/Caddyfile" "$WEB_ROOT/Dockerfile"; do
-    if [[ ! -f "$F" ]]; then
-        echo "ERROR: Required file missing: $F"
-        MISSING=1
-    fi
-done
-
-if [[ ! -d "$APP_ROOT/desktop/src/acb_large_print" ]]; then
-    echo "ERROR: desktop/src/acb_large_print/ directory missing (needed for Docker build)."
-    MISSING=1
-fi
-
-if [[ "$MISSING" -eq 1 ]]; then
-    echo ""
-    echo "Fix the missing files and re-run this script."
-    exit 1
-fi
-
-# --- Optional: pull latest from Git ---
-if [[ -d "$APP_ROOT/.git" ]]; then
-    PRE_DEPLOY_COMMIT=$(cd "$APP_ROOT" && git rev-parse HEAD)
-    echo "--- Git repository detected. Pulling latest code ---"
-    cd "$APP_ROOT"
-    git pull origin main
-fi
-
-# --- Optional: pre-deploy feedback DB backup ---
-if [[ "$ENABLE_PREDEPLOY_BACKUP" == "1" ]]; then
-    if [[ -x "$APP_ROOT/scripts/backup-feedback.sh" ]]; then
-        echo "--- Creating pre-deploy feedback backup ---"
-        bash "$APP_ROOT/scripts/backup-feedback.sh"
-    else
-        echo "--- Skipping pre-deploy backup (backup-feedback.sh not executable) ---"
-    fi
-fi
-
-# --- Build and start ---
-cd "$WEB_ROOT"
-
-echo "--- Building and starting containers ---"
-docker compose -f "$COMPOSE_FILE" up -d --build
-
-echo "--- Waiting for containers to become healthy ---"
-ATTEMPTS=0
-MAX_ATTEMPTS=40
-HEALTHY=0
-while [[ "$ATTEMPTS" -lt "$MAX_ATTEMPTS" ]]; do
-    if docker compose -f "$COMPOSE_FILE" exec -T web python -c \
-        "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')" 2>/dev/null; then
-        HEALTHY=1
-        break
-    fi
-    ATTEMPTS=$((ATTEMPTS + 1))
-    printf "."
-    sleep 3
-done
-echo ""
-
-if [[ "$HEALTHY" -eq 1 ]]; then
-    echo "--- Health check: PASSED ---"
-else
-    echo "--- Health check: DID NOT PASS after ${MAX_ATTEMPTS} attempts ---"
-    echo "    Check logs: docker compose -f $COMPOSE_FILE logs web --tail 30"
-
-    # Best-effort rollback to previous known-good code revision when Git is available.
-    if [[ -n "$PRE_DEPLOY_COMMIT" && -d "$APP_ROOT/.git" ]]; then
-        echo "--- Attempting rollback to previous commit: $PRE_DEPLOY_COMMIT ---"
-        cd "$APP_ROOT"
-        git checkout -f "$PRE_DEPLOY_COMMIT"
-
-        cd "$WEB_ROOT"
-        docker compose -f "$COMPOSE_FILE" up -d --build
-
-        echo "--- Waiting for rollback health check ---"
-        ATTEMPTS=0
-        MAX_ATTEMPTS=40
-        while [[ "$ATTEMPTS" -lt "$MAX_ATTEMPTS" ]]; do
-            if docker compose -f "$COMPOSE_FILE" exec -T web python -c \
-                "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')" 2>/dev/null; then
-                ROLLED_BACK=1
-                break
-            fi
-            ATTEMPTS=$((ATTEMPTS + 1))
-            printf "."
-            sleep 3
-        done
-        echo ""
-
-        if [[ "$ROLLED_BACK" -eq 1 ]]; then
-            echo "--- Rollback health check: PASSED ---"
-        else
-            echo "--- Rollback health check: FAILED ---"
-            echo "    Manual intervention required."
-            exit 1
-        fi
-    else
-        echo "--- Rollback unavailable (no Git commit baseline). ---"
-        exit 1
-    fi
-fi
-
-# --- Status ---
-echo ""
-echo "--- Container status ---"
-docker compose -f "$COMPOSE_FILE" ps
-
-echo ""
-echo "=== Deployment complete ==="
-echo ""
-if [[ "$ROLLED_BACK" -eq 1 ]]; then
-    echo "NOTE: Deploy failed health checks and was rolled back to $PRE_DEPLOY_COMMIT."
-    echo "      Investigate the failed revision before retrying deployment."
-    echo ""
-fi
-echo "Test these URLs:"
-echo "  https://${APP_DOMAIN}/"
-echo "  https://${APP_DOMAIN}/health"
-if [[ -n "$APP_ALIAS_DOMAIN" ]]; then
-    echo "  https://${APP_ALIAS_DOMAIN}/"
-    echo "  https://${APP_ALIAS_DOMAIN}/health"
-fi
-echo "  https://${MAIN_DOMAIN}/"
-echo ""
-echo "View logs:"
-echo "  cd $WEB_ROOT && docker compose -f $COMPOSE_FILE logs --tail 50 -f"
+echo "Deploy log:"
+echo "  cat $LOG_FILE"
+echo "  cat $LATEST_LOG_FILE   # always points to the most recent deploy"

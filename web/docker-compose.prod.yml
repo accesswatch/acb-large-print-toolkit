@@ -23,8 +23,9 @@ services:
     logging:
       driver: json-file
       options:
-        max-size: "5m"
-        max-file: "2"
+        max-size: "10m"
+        max-file: "5"
+        tag: "glow-pipeline/{{.Name}}"
     healthcheck:
       test: ["CMD-SHELL", "bash -c 'echo > /dev/tcp/localhost/8181'"]
       interval: 15s
@@ -56,14 +57,15 @@ services:
     logging:
       driver: json-file
       options:
-        max-size: "10m"
-        max-file: "3"
+        max-size: "20m"
+        max-file: "5"
+        tag: "glow-web/{{.Name}}"
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
       interval: 30s
-      timeout: 5s
-      retries: 3
-      start_period: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
 
   ollama:
     image: ollama/ollama:latest
@@ -75,8 +77,9 @@ services:
     logging:
       driver: json-file
       options:
-        max-size: "5m"
-        max-file: "2"
+        max-size: "10m"
+        max-file: "5"
+        tag: "glow-ollama/{{.Name}}"
     healthcheck:
       test: ["CMD", "ollama", "list"]
       interval: 30s
@@ -99,6 +102,12 @@ services:
     depends_on:
       web:
         condition: service_healthy
+    logging:
+      driver: json-file
+      options:
+        max-size: "5m"
+        max-file: "3"
+        tag: "glow-caddy/{{.Name}}"
 
 volumes:
   feedback-data:

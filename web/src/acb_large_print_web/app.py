@@ -65,6 +65,31 @@ def create_app(config: dict | None = None) -> Flask:
     # Logging
     _configure_logging(app)
 
+    # Request timing (set before each request so after_request can compute duration)
+    import time as _time
+
+    @app.before_request
+    def _record_request_start():
+        from flask import g as _g
+        _g._request_start = _time.monotonic()
+
+    @app.after_request
+    def _log_request(response):
+        from flask import g as _g, request as _req
+        duration_ms = round((_time.monotonic() - getattr(_g, '_request_start', _time.monotonic())) * 1000)
+        # Skip noisy health poll logs unless they fail or are slow
+        if _req.path == '/health' and response.status_code == 200 and duration_ms < 2000:
+            return response
+        app.logger.info(
+            'REQUEST %s %s -> %s (%dms) ua=%s',
+            _req.method,
+            _req.full_path.rstrip('?'),
+            response.status_code,
+            duration_ms,
+            (_req.user_agent.string or '')[:80],
+        )
+        return response
+
     # Make rule metadata available in all templates
     @app.context_processor
     def inject_rules():
@@ -219,6 +244,21 @@ def create_app(config: dict | None = None) -> Flask:
     app.register_blueprint(chat_bp, url_prefix="/chat")
     app.register_blueprint(admin_bp, url_prefix="/admin")
 
+    # Startup ready log -- emitted once per worker process launch
+    try:
+        from importlib.metadata import version as _pkg_version
+        _web_ver = _pkg_version("acb-large-print-web")
+        _core_ver = _pkg_version("acb-large-print")
+    except Exception:
+        _web_ver = _core_ver = "unknown"
+    app.logger.info(
+        "GLOW startup: web=%s core=%s maintenance=%s log_level=%s",
+        _web_ver,
+        _core_ver,
+        os.environ.get("MAINTENANCE_MODE", "0"),
+        os.environ.get("LOG_LEVEL", "INFO"),
+    )
+
     # Maintenance mode: gate all requests except /health when MAINTENANCE_MODE=1
     # This allows safe deployment-time downtime while keeping health checks working
     @app.before_request
@@ -244,12 +284,16 @@ def create_app(config: dict | None = None) -> Flask:
     @app.route("/health")
     def health():
         from .gating import get_capacity_metrics
+        from acb_large_print.converter import whisper_available
+        import time as _htime
+        _hstart = _htime.monotonic()
 
         pipeline_url = os.environ.get("PIPELINE_URL", "http://pipeline:8181/ws")
         ollama_url = os.environ.get("OLLAMA_HOST", "http://ollama:11434")
 
         pipeline_status = _check_tcp_endpoint(pipeline_url)
         ollama_status = _check_http_endpoint(f"{ollama_url.rstrip('/')}/api/tags")
+        ollama_models = _get_ollama_models(ollama_url)
         capacity = get_capacity_metrics()
 
         services = {
@@ -257,13 +301,53 @@ def create_app(config: dict | None = None) -> Flask:
             "pipeline": pipeline_status,
             "ollama": ollama_status,
         }
-        all_ok = all(service.get("status") == "ok" for service in services.values())
+
+        has_llama3 = any("llama3" in model for model in ollama_models)
+        has_llava = any("llava" in model for model in ollama_models)
+
+        whisper_ready = whisper_available()
+
+        readiness = {
+            "chat": {
+                "status": "ready" if has_llama3 else "not-ready",
+                "model_required": "llama3",
+                "model_present": has_llama3,
+            },
+            "vision": {
+                "status": "ready" if has_llava else "not-ready",
+                "model_required": "llava",
+                "model_present": has_llava,
+            },
+            "whisperer": {
+                "status": "ready" if whisper_ready else "not-ready",
+                "dependency_required": "faster-whisper",
+                "dependency_present": whisper_ready,
+            },
+        }
+
+        services_ok = all(service.get("status") == "ok" for service in services.values())
+        features_ready = all(item.get("status") == "ready" for item in readiness.values())
+        all_ok = services_ok and features_ready
+
+        _hduration_ms = round((_htime.monotonic() - _hstart) * 1000)
+        app.logger.info(
+            "HEALTH status=%s services=%s readiness=%s models=%s duration_ms=%d",
+            "ok" if all_ok else "degraded",
+            {k: v.get("status") for k, v in services.items()},
+            {k: v.get("status") for k, v in readiness.items()},
+            ollama_models,
+            _hduration_ms,
+        )
 
         return (
             jsonify(
                 {
                     "status": "ok" if all_ok else "degraded",
                     "services": services,
+                    "readiness": readiness,
+                    "models": {
+                        "ollama": ollama_models,
+                    },
                     "capacity": capacity,
                     "timestamp_utc": datetime.now(UTC).isoformat(),
                 }
@@ -394,3 +478,20 @@ def _check_http_endpoint(url: str, timeout: float = 2.0) -> dict[str, str | int]
             return {"status": "down", "url": url, "http_status": code}
     except Exception as exc:  # pragma: no cover - network/runtime dependent
         return {"status": "down", "url": url, "error": str(exc)}
+
+
+def _get_ollama_models(ollama_url: str, timeout: float = 2.0) -> list[str]:
+    """Return a normalized list of loaded Ollama model names from /api/tags."""
+    from urllib.request import Request, urlopen
+    import json
+
+    url = f"{ollama_url.rstrip('/')}/api/tags"
+    req = Request(url, method="GET")
+    try:
+        with urlopen(req, timeout=timeout) as resp:  # noqa: S310
+            body = resp.read().decode("utf-8")
+            payload = json.loads(body)
+            models = payload.get("models", [])
+            return [str(m.get("name", "")).lower() for m in models if m.get("name")]
+    except Exception:
+        return []

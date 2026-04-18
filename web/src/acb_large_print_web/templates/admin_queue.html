@@ -20,6 +20,53 @@
 <div class="error-box" role="alert"><p><strong>Error:</strong> {{ request.args.get('error') }}</p></div>
 {% endif %}
 
+<section aria-labelledby="admin-health-heading">
+  <h2 id="admin-health-heading">System Health</h2>
+  <p class="field-hint">Live status from <a href="/health">/health</a> (auto-refreshes every 20 seconds).</p>
+  <table class="findings-table" aria-describedby="admin-health-hint">
+    <caption id="admin-health-hint">Core services and feature readiness</caption>
+    <thead>
+      <tr>
+        <th scope="col">Component</th>
+        <th scope="col">Status</th>
+        <th scope="col">Details</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Web service</td>
+        <td id="health-web-status">Loading...</td>
+        <td id="health-web-detail">Loading...</td>
+      </tr>
+      <tr>
+        <td>Pipeline service</td>
+        <td id="health-pipeline-status">Loading...</td>
+        <td id="health-pipeline-detail">Loading...</td>
+      </tr>
+      <tr>
+        <td>Ollama service</td>
+        <td id="health-ollama-status">Loading...</td>
+        <td id="health-ollama-detail">Loading...</td>
+      </tr>
+      <tr>
+        <td>Chat readiness (llama3)</td>
+        <td id="health-chat-status">Loading...</td>
+        <td id="health-chat-detail">Loading...</td>
+      </tr>
+      <tr>
+        <td>Vision readiness (llava)</td>
+        <td id="health-vision-status">Loading...</td>
+        <td id="health-vision-detail">Loading...</td>
+      </tr>
+      <tr>
+        <td>Whisperer readiness</td>
+        <td id="health-whisper-status">Loading...</td>
+        <td id="health-whisper-detail">Loading...</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
 {% if rows %}
 <table class="findings-table">
   <caption>Audio conversion jobs (newest first) -- last updated <time id="queue-last-updated">just now</time></caption>
@@ -68,6 +115,54 @@
 <script>
 (function () {
   'use strict';
+  function setCell(id, value) {
+    var el = document.getElementById(id);
+    if (el) {
+      el.textContent = value;
+    }
+  }
+
+  function normalizeServiceStatus(value) {
+    return value === 'ok' ? 'OK' : String(value || 'unknown');
+  }
+
+  function normalizeReadinessStatus(value) {
+    return value === 'ready' ? 'READY' : String(value || 'not-ready').toUpperCase();
+  }
+
+  function refreshHealthPanel() {
+    fetch('/health', { method: 'GET' })
+      .then(function (r) { return r.json(); })
+      .then(function (payload) {
+        var services = payload.services || {};
+        var readiness = payload.readiness || {};
+
+        setCell('health-web-status', normalizeServiceStatus((services.web || {}).status));
+        setCell('health-web-detail', (services.web || {}).detail || 'n/a');
+
+        setCell('health-pipeline-status', normalizeServiceStatus((services.pipeline || {}).status));
+        setCell('health-pipeline-detail', ((services.pipeline || {}).host || 'n/a') + ':' + ((services.pipeline || {}).port || 'n/a'));
+
+        setCell('health-ollama-status', normalizeServiceStatus((services.ollama || {}).status));
+        setCell('health-ollama-detail', 'HTTP ' + ((services.ollama || {}).http_status || 'n/a'));
+
+        setCell('health-chat-status', normalizeReadinessStatus((readiness.chat || {}).status));
+        setCell('health-chat-detail', (readiness.chat || {}).model_required || 'llama3');
+
+        setCell('health-vision-status', normalizeReadinessStatus((readiness.vision || {}).status));
+        setCell('health-vision-detail', (readiness.vision || {}).model_required || 'llava');
+
+        setCell('health-whisper-status', normalizeReadinessStatus((readiness.whisperer || {}).status));
+        setCell('health-whisper-detail', (readiness.whisperer || {}).dependency_required || 'faster-whisper');
+      })
+      .catch(function () {
+        setCell('health-web-status', 'ERROR');
+        setCell('health-web-detail', 'Could not load /health');
+      });
+  }
+
+  refreshHealthPanel();
+
   /* Only auto-refresh when there are active (queued or processing) jobs */
   var activeRows = document.querySelectorAll('td');
   var hasActive = false;
@@ -92,6 +187,7 @@
   }
 
   function refresh() {
+    refreshHealthPanel();
     updateTimestamp();
     /* Announce to screen readers before reloading */
     var liveEl = document.createElement('p');
