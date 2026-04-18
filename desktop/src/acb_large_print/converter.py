@@ -366,16 +366,23 @@ def whisper_convert(
     )
     _emit_progress(2, "Initializing Whisper model...")
 
-    # Load model (int8 quantisation for CPU -- 4x faster than float32, same accuracy)
-    whisper = WhisperModel(resolved_model, device="cpu", compute_type="int8")
-    _emit_progress(5, "Model ready. Beginning transcription...")
-    segments, info = whisper.transcribe(
-        str(src_path),
-        language=language,
-        beam_size=5,
-        vad_filter=True,          # skip silent gaps automatically
-        vad_parameters={"min_silence_duration_ms": 500},
-    )
+    try:
+        # Load model (int8 quantisation for CPU -- 4x faster than float32, same accuracy)
+        whisper = WhisperModel(resolved_model, device="cpu", compute_type="int8")
+        _emit_progress(5, "Model ready. Beginning transcription...")
+        segments, info = whisper.transcribe(
+            str(src_path),
+            language=language,
+            beam_size=5,
+            vad_filter=True,          # skip silent gaps automatically
+            vad_parameters={"min_silence_duration_ms": 500},
+        )
+    except Exception as exc:
+        log.exception("BITS Whisperer: transcription failed for %s", src_path.name)
+        raise RuntimeError(
+            "The transcription engine failed while processing this audio file. "
+            "Please try again or use a different audio file."
+        ) from exc
 
     log.info(
         "Detected language: %s (probability %.2f)",
@@ -415,7 +422,13 @@ def whisper_convert(
         paragraphs = "\n\n".join(segment_texts)
         full_text = f"# {title}\n\n{paragraphs}\n"
 
-    output_path.write_text(full_text, encoding="utf-8")
+    try:
+        output_path.write_text(full_text, encoding="utf-8")
+    except OSError as exc:
+        log.exception("BITS Whisperer: failed writing transcript for %s", src_path.name)
+        raise RuntimeError(
+            "The transcript could not be written to temporary storage. Please try again."
+        ) from exc
     _emit_progress(100, "Transcription complete.")
     log.info(
         "BITS Whisperer: transcription complete -- %d segments, %d characters",
