@@ -17,6 +17,7 @@ Releases are tagged in the [GitHub repository](https://github.com/accesswatch/ac
 
 - **Web: Whisperer estimate endpoint URL resolution.** `whisperer_form.html` now uses explicit backend URLs (`data-estimate-url`, `data-start-url`) instead of deriving endpoints from `form.action`, preventing broken estimate/start requests caused by path/URL variations.
 - **Web: Whisperer metadata duration scaling with PyAV.** `_estimate_audio_duration_seconds()` now normalizes time-base conversion across PyAV variants so `container.duration` is interpreted in seconds correctly, avoiding extreme/invalid duration values.
+- **Web: Whisperer estimate keyboard activation reliability.** `whisperer_form.html` now handles `keydown`, `keyup`, and legacy `keypress` activation paths for Space/Enter on the estimate button with duplicate-trigger protection, improving behavior for browser and assistive-technology combinations that do not emit consistent click events.
 
 ### Changed
 

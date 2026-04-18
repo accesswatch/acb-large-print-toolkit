@@ -279,6 +279,7 @@
 
   var backgroundThresholdMinutes = Number(form.dataset.backgroundThresholdMinutes || '30');
   var estimatedDurationSeconds = null;
+  var estimateTriggeredOnKeydown = false;
   var debugMode = false;
   var debugLines = [];
 
@@ -567,13 +568,28 @@
     estimateRefresh.addEventListener('keydown', function (event) {
       if (event.key === ' ' || event.key === 'Spacebar' || event.key === 'Enter') {
         event.preventDefault();
+        estimateTriggeredOnKeydown = true;
         refreshEstimate('keydown:' + event.key);
       }
     });
 
     estimateRefresh.addEventListener('keyup', function (event) {
-      if (event.key === ' ' || event.key === 'Spacebar') {
+      if (event.key === ' ' || event.key === 'Spacebar' || event.key === 'Enter') {
         event.preventDefault();
+        if (estimateTriggeredOnKeydown) {
+          estimateTriggeredOnKeydown = false;
+          return;
+        }
+        // Fallback for environments that deliver keyup without reliable keydown click behavior.
+        refreshEstimate('keyup:' + event.key);
+      }
+    });
+
+    // Legacy fallback: some AT/browser combinations still emit keypress for Space/Enter.
+    estimateRefresh.addEventListener('keypress', function (event) {
+      if (event.key === ' ' || event.key === 'Spacebar' || event.key === 'Enter') {
+        event.preventDefault();
+        refreshEstimate('keypress:' + event.key);
       }
     });
   }
