@@ -30,6 +30,7 @@ import re
 from flask import (
     Blueprint,
     after_this_request,
+    current_app,
     jsonify,
     make_response,
     render_template,
@@ -697,8 +698,12 @@ def whisperer_estimate():
     """
     token = None
     try:
+        debug_requested = request.args.get("debug") == "1" or request.headers.get("X-Whisperer-Debug") == "1"
+        uploaded_file = request.files.get("audio")
+        uploaded_name = getattr(uploaded_file, "filename", None) or "(missing)"
+
         token, saved_path = validate_upload(
-            request.files.get("audio"),
+            uploaded_file,
             allowed_extensions=AUDIO_EXTENSIONS,
         )
 
@@ -728,16 +733,43 @@ def whisperer_estimate():
 
         expected_seconds = max(15.0, float(audio_seconds) * 1.1)
 
-        return jsonify(
-            {
-                "audio_seconds": float(audio_seconds),
-                "expected_seconds": float(expected_seconds),
-                "source": source,
-                "size_bytes": int(size_bytes),
-            }
+        current_app.logger.info(
+            "WHISPERER_ESTIMATE ok file=%s ext=%s size=%s source=%s audio_seconds=%.6f expected_seconds=%.6f",
+            uploaded_name,
+            ext,
+            int(size_bytes),
+            source,
+            float(audio_seconds),
+            float(expected_seconds),
         )
+
+        payload = {
+            "audio_seconds": float(audio_seconds),
+            "expected_seconds": float(expected_seconds),
+            "source": source,
+            "size_bytes": int(size_bytes),
+        }
+        if debug_requested:
+            payload["debug"] = {
+                "filename": uploaded_name,
+                "extension": ext,
+                "duration_probe": "metadata" if duration_seconds is not None else "fallback",
+            }
+
+        return jsonify(payload)
     except UploadError as exc:
+        current_app.logger.warning(
+            "WHISPERER_ESTIMATE upload_error file=%s error=%s",
+            getattr(request.files.get("audio"), "filename", "(missing)"),
+            str(exc),
+        )
         return jsonify({"error": str(exc)}), 400
+    except Exception as exc:
+        current_app.logger.exception(
+            "WHISPERER_ESTIMATE unexpected_error file=%s",
+            getattr(request.files.get("audio"), "filename", "(missing)"),
+        )
+        return jsonify({"error": "Unable to estimate processing time due to an unexpected server error."}), 500
     finally:
         if token:
             cleanup_token(token)

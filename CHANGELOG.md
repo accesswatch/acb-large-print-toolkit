@@ -11,6 +11,7 @@ Releases are tagged in the [GitHub repository](https://github.com/accesswatch/ac
 ### Added
 
 - **Web E2E: Whisperer sample-audio regression flow.** Added Playwright coverage in `web/e2e/tests/regression.spec.mjs` for `/whisperer`: consent handling, sample audio upload, explicit estimate refresh, proceed confirmation, transcription start, transcript download assertion, and saved artifact verification. Supports `E2E_UPLOAD_AUDIO` override and defaults to `S:/code/bw/Samples/ronaldreaganchallengeraddressatt3232.mp3`.
+- **Web: Whisperer estimate troubleshooting diagnostics.** Added optional client-side estimate diagnostics in `whisperer_form.html` (enable with `?whispererDebug=1`) with event tracing for file selection, key/click triggers, fetch status, payload handling, and fallback paths. Added structured server-side estimate diagnostics in `routes/whisperer.py` with `WHISPERER_ESTIMATE` log lines plus optional debug payload support (`?debug=1` or `X-Whisperer-Debug: 1`).
 
 ### Fixed
 

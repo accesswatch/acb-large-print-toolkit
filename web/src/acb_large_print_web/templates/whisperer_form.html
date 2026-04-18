@@ -65,11 +65,16 @@
     <legend>Step {{ ns.step }}: Review estimate and confirm</legend>
     {% set ns.step = ns.step + 1 %}
     <input type="hidden" id="estimate-source" name="estimate_source" value="unknown">
-    <p id="estimate-hint" class="field-hint">
+    <p id="estimate-hint" class="field-hint" role="status" aria-live="polite" aria-atomic="true">
       Select an audio file to calculate an estimated processing time.
     </p>
-    <p id="estimate-value" class="field-hint"><strong>Estimated conversion time:</strong> Not available yet.</p>
+    <p id="estimate-value" class="field-hint" role="status" aria-live="polite" aria-atomic="true"><strong>Estimated conversion time:</strong> Not available yet.</p>
     <button type="button" id="estimate-refresh" class="btn-secondary">Calculate estimate now</button>
+    <p class="field-hint">Troubleshooting: add <strong>?whispererDebug=1</strong> to the URL to show live estimate diagnostics on this page.</p>
+    <details id="estimate-debug-panel" class="help-accordion" hidden>
+      <summary>Estimate diagnostics</summary>
+      <pre id="estimate-debug-log" class="field-hint" aria-live="polite" aria-atomic="false">(no events yet)</pre>
+    </details>
 
     <div id="estimate-risk-warning" class="warning-box" role="alert" hidden>
       <p><strong>Estimate warning:</strong> Exact audio duration could not be determined for this file. The estimate shown is based on file size and may be inaccurate.</p>
@@ -269,9 +274,25 @@
   var notifyEmail = document.getElementById('notify-email');
   var retrievalPassword = document.getElementById('retrieval-password');
   var retrievalPasswordConfirm = document.getElementById('retrieval-password-confirm');
+  var estimateDebugPanel = document.getElementById('estimate-debug-panel');
+  var estimateDebugLog = document.getElementById('estimate-debug-log');
 
   var backgroundThresholdMinutes = Number(form.dataset.backgroundThresholdMinutes || '30');
   var estimatedDurationSeconds = null;
+  var debugMode = false;
+  var debugLines = [];
+
+  try {
+    var params = new URLSearchParams(window.location.search || '');
+    debugMode = params.get('whispererDebug') === '1';
+  } catch (e) {
+    debugMode = false;
+  }
+
+  if (debugMode && estimateDebugPanel) {
+    estimateDebugPanel.hidden = false;
+    estimateDebugPanel.open = true;
+  }
 
   if (!form || !submitButton || !progressSection || !progressBar || !progressValue || !statusNode || !audioInput) {
     return;
@@ -293,6 +314,35 @@
     if (mins < 1) return 'under 1 minute';
     if (mins < 10) return mins.toFixed(1) + ' minutes';
     return Math.round(mins) + ' minutes';
+  }
+
+  function logEstimateDebug(message, payload) {
+    if (!debugMode) {
+      return;
+    }
+
+    var stamp = new Date().toISOString();
+    var line = '[' + stamp + '] ' + message;
+    if (typeof payload !== 'undefined') {
+      try {
+        line += ' ' + JSON.stringify(payload);
+      } catch (e) {
+        line += ' [payload-unserializable]';
+      }
+    }
+
+    debugLines.push(line);
+    if (debugLines.length > 80) {
+      debugLines.shift();
+    }
+
+    if (estimateDebugLog) {
+      estimateDebugLog.textContent = debugLines.join('\n');
+    }
+
+    if (typeof console !== 'undefined' && typeof console.info === 'function') {
+      console.info('WHISPERER_ESTIMATE_DEBUG', message, payload || {});
+    }
   }
 
   function syncBackgroundControls() {
@@ -331,8 +381,15 @@
 
   function updateEstimateFromFile(file) {
     if (!file || typeof URL === 'undefined') {
+      logEstimateDebug('updateEstimateFromFile aborted: missing file or URL API');
       return;
     }
+
+    logEstimateDebug('estimate requested', {
+      name: file.name,
+      size: file.size,
+      type: file.type || '(unknown)'
+    });
 
     if (estimateValue) {
       estimateValue.innerHTML = '<strong>Estimated conversion time:</strong> Calculating...';
@@ -352,18 +409,26 @@
       }
 
       var estimateUrl = form.dataset.estimateUrl || '{{ url_for("whisperer.whisperer_estimate") }}';
+      if (debugMode) {
+        estimateUrl += (estimateUrl.indexOf('?') === -1 ? '?' : '&') + 'debug=1';
+      }
+
+      logEstimateDebug('server estimate request', { url: estimateUrl });
 
       fetch(estimateUrl, {
         method: 'POST',
         body: estimatePayload,
-        credentials: 'same-origin'
+        credentials: 'same-origin',
+        headers: debugMode ? { 'X-Whisperer-Debug': '1' } : undefined
       })
         .then(function (resp) {
+          logEstimateDebug('server estimate response status', { ok: resp.ok, status: resp.status });
           return resp.json().then(function (data) {
             return { ok: resp.ok, data: data };
           });
         })
         .then(function (result) {
+          logEstimateDebug('server estimate payload', result.data || {});
           if (!result.ok) {
             throw new Error(result.data && result.data.error ? result.data.error : 'Unable to estimate processing time.');
           }
@@ -385,18 +450,23 @@
           }
           throw new Error('No estimate data was returned for this file.');
         })
-        .catch(function () {
+        .catch(function (err) {
+          logEstimateDebug('server estimate failed, using client fallback', {
+            error: err && err.message ? err.message : '(unknown error)'
+          });
           // Fall back to client-side estimate if server estimate fails.
           updateEstimateFromFileClientFallback(file);
         });
       return;
     }
 
+    logEstimateDebug('FormData/fetch unavailable, using client fallback');
     updateEstimateFromFileClientFallback(file);
   }
 
   function updateEstimateFromFileClientFallback(file) {
     if (!file || typeof URL === 'undefined') {
+      logEstimateDebug('client fallback aborted: missing file or URL API');
       return;
     }
     var objectUrl = URL.createObjectURL(file);
@@ -412,6 +482,7 @@
       settled = true;
       URL.revokeObjectURL(objectUrl);
       var roughSeconds = file.size / 16000;
+      logEstimateDebug('client size fallback used', { roughSeconds: roughSeconds, size: file.size });
       estimatedDurationSeconds = roughSeconds;
       setEstimateSource('client-size-fallback');
       var expected = Math.max(15, roughSeconds * 1.1);
@@ -428,6 +499,7 @@
       if (settled) { return; }
       settled = true;
       URL.revokeObjectURL(objectUrl);
+      logEstimateDebug('client metadata loaded', { duration: probe.duration });
       if (isFinite(probe.duration) && probe.duration > 0) {
         var realtime = probe.duration;
         estimatedDurationSeconds = realtime;
@@ -457,6 +529,10 @@
   }
 
   audioInput.addEventListener('change', function () {
+    logEstimateDebug('audio input changed', {
+      fileCount: audioInput.files ? audioInput.files.length : 0,
+      firstName: (audioInput.files && audioInput.files[0]) ? audioInput.files[0].name : null
+    });
     if (!audioInput.files || !audioInput.files.length) {
       if (estimateValue) {
         estimatedDurationSeconds = null;
@@ -469,15 +545,36 @@
     updateEstimateFromFile(audioInput.files[0]);
   });
 
+  function refreshEstimate(trigger) {
+    logEstimateDebug('refreshEstimate called', { trigger: trigger || 'unknown' });
+    if (!audioInput.files || !audioInput.files.length) {
+      if (estimateHint) {
+        estimateHint.textContent = 'Please select an audio file first.';
+      }
+      logEstimateDebug('refreshEstimate ignored: no file selected');
+      return;
+    }
+    updateEstimateFromFile(audioInput.files[0]);
+  }
+
   if (estimateRefresh) {
     estimateRefresh.addEventListener('click', function () {
-      if (!audioInput.files || !audioInput.files.length) {
-        if (estimateHint) {
-          estimateHint.textContent = 'Please select an audio file first.';
-        }
-        return;
+      refreshEstimate('click');
+    });
+
+    // Some screen-reader/browser combos do not dispatch click for Space/Enter
+    // on custom interaction modes. Handle keys explicitly for reliability.
+    estimateRefresh.addEventListener('keydown', function (event) {
+      if (event.key === ' ' || event.key === 'Spacebar' || event.key === 'Enter') {
+        event.preventDefault();
+        refreshEstimate('keydown:' + event.key);
       }
-      updateEstimateFromFile(audioInput.files[0]);
+    });
+
+    estimateRefresh.addEventListener('keyup', function (event) {
+      if (event.key === ' ' || event.key === 'Spacebar') {
+        event.preventDefault();
+      }
     });
   }
 
