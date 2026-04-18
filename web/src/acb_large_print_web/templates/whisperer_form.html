@@ -289,8 +289,31 @@
     var objectUrl = URL.createObjectURL(file);
     var probe = document.createElement('audio');
     probe.preload = 'metadata';
+    var settled = false;
+
+    // Fallback: estimate from file size when browser cannot decode the codec
+    // (common with Opus, FLAC, OGG, M4A on Firefox). Assumes ~128 kbps average
+    // for compressed audio (16000 bytes/sec). WAV/FLAC will be under-estimated.
+    function useSizeFallback() {
+      if (settled) { return; }
+      settled = true;
+      URL.revokeObjectURL(objectUrl);
+      var roughSeconds = file.size / 16000;
+      estimatedDurationSeconds = roughSeconds;
+      var expected = Math.max(15, roughSeconds * 1.1);
+      if (estimateValue) {
+        estimateValue.innerHTML = '<strong>Estimated conversion time:</strong> about ' + formatMinutes(expected) + ' (rough estimate from file size \u2014 actual time may vary for WAV or FLAC files).';
+      }
+      if (estimateHint) {
+        estimateHint.textContent = 'Your browser could not read audio metadata for this format. The estimate above is based on file size only.';
+      }
+      syncBackgroundControls();
+    }
 
     probe.onloadedmetadata = function () {
+      if (settled) { return; }
+      settled = true;
+      URL.revokeObjectURL(objectUrl);
       if (isFinite(probe.duration) && probe.duration > 0) {
         var realtime = probe.duration;
         estimatedDurationSeconds = realtime;
@@ -301,22 +324,19 @@
         if (estimateHint) {
           estimateHint.textContent = 'Estimate is based on audio metadata and server load. Actual time can vary.';
         }
-      } else if (estimateValue) {
-        estimatedDurationSeconds = null;
-        estimateValue.innerHTML = '<strong>Estimated conversion time:</strong> Unable to estimate from this file metadata.';
+        syncBackgroundControls();
+      } else {
+        // Duration is Infinity or NaN -- fall through to size-based estimate
+        settled = false;
+        useSizeFallback();
       }
-      syncBackgroundControls();
-      URL.revokeObjectURL(objectUrl);
     };
 
-    probe.onerror = function () {
-      estimatedDurationSeconds = null;
-      if (estimateValue) {
-        estimateValue.innerHTML = '<strong>Estimated conversion time:</strong> Unable to estimate from this file metadata.';
-      }
-      syncBackgroundControls();
-      URL.revokeObjectURL(objectUrl);
-    };
+    probe.onerror = useSizeFallback;
+
+    // If neither event fires within 3 s (codec unsupported, slow disk, etc.),
+    // fall back to the size-based estimate so the user is never left waiting.
+    setTimeout(useSizeFallback, 3000);
 
     probe.src = objectUrl;
   }
