@@ -11,9 +11,26 @@ Audio is never sent to any external service.
 from __future__ import annotations
 
 import logging
+import os
 from pathlib import Path
 
 log = logging.getLogger("acb_large_print")
+
+
+def _resolve_whisper_cache_dir() -> Path:
+    """Return a writable cache directory for Whisper/Hugging Face assets."""
+    cache_root = (
+        os.environ.get("HUGGINGFACE_HUB_CACHE")
+        or os.environ.get("HF_HOME")
+        or os.environ.get("XDG_CACHE_HOME")
+    )
+    if cache_root:
+        cache_dir = Path(cache_root)
+    else:
+        cache_dir = Path.home() / ".cache" / "huggingface" / "hub"
+
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    return cache_dir
 
 # File extensions MarkItDown can convert (no audio -- handled by whisper_convert)
 CONVERTIBLE_EXTENSIONS = {
@@ -315,7 +332,6 @@ def whisper_convert(
         ValueError: If the extension is not an audio format.
         RuntimeError: If faster-whisper is not installed or transcription fails.
     """
-    import os
     from typing import Callable
 
     callback: Callable[[int, str], None] | None = progress_callback
@@ -368,7 +384,12 @@ def whisper_convert(
 
     try:
         # Load model (int8 quantisation for CPU -- 4x faster than float32, same accuracy)
-        whisper = WhisperModel(resolved_model, device="cpu", compute_type="int8")
+        whisper = WhisperModel(
+            resolved_model,
+            device="cpu",
+            compute_type="int8",
+            download_root=str(_resolve_whisper_cache_dir()),
+        )
         _emit_progress(5, "Model ready. Beginning transcription...")
         segments, info = whisper.transcribe(
             str(src_path),
