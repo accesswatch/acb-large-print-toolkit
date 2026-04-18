@@ -159,8 +159,9 @@ class TestPageLoads:
         resp = client.get("/guide/")
         assert resp.status_code == 200
         assert b"Stress Testing and Product Learning" in resp.data
-        expected_total = str(describe_stress_corpus()["total_heading_cases"]).encode()
-        assert expected_total in resp.data
+        # Guide is now static markdown; the corpus count is written as "1,000" (with comma)
+        total = describe_stress_corpus()["total_heading_cases"]
+        assert f"{total:,}".encode() in resp.data
 
     def test_about_mentions_stress_harness(self, client):
         resp = client.get("/about/")

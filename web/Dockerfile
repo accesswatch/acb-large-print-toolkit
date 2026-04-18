@@ -44,11 +44,8 @@ COPY web/pyproject.toml web/requirements.txt web/
 COPY web/src/ web/src/
 RUN pip install --no-cache-dir ./web
 
-# Changelog (rendered as HTML by the /changelog route)
-COPY CHANGELOG.md ./
-
-# PRD (rendered as HTML by the /prd route)
-COPY docs/prd.md ./
+# Long-form docs are pre-rendered locally into template partials by
+# scripts/build-doc-pages.py and committed under web/src/.../templates/partials.
 
 # Create a non-root user
 RUN addgroup --system app && adduser --system --ingroup app app

@@ -1,0 +1,111 @@
+# Frequently Asked Questions
+
+## Fix and Audit Workflow FAQ
+
+<details class="help-accordion" open markdown="1">
+<summary>I turned heading detection off. Why did my score still change?</summary>
+
+Fix Results suppresses **ACB-FAUX-HEADING** when heading detection is disabled, so you are not penalized for a rule you intentionally bypassed.
+
+The results page lists every suppressed rule in a "Suppressed by your settings" note.
+
+</details>
+
+<details class="help-accordion" markdown="1">
+<summary>Can I preserve centered titles and headings?</summary>
+
+Yes. On the Fix page, enable **Preserve centered headings** under Heading Alignment Handling.
+
+This keeps centered heading paragraphs unchanged and suppresses heading-specific alignment findings in the fix results.
+
+</details>
+
+<details class="help-accordion" markdown="1">
+<summary>Can I suppress raw URL link warnings for print workflows?</summary>
+
+Yes. Use **Quick Rule Exceptions** on the Audit or Fix page and check "I use raw URLs for hard-copy readers."
+
+This suppresses **ACB-LINK-TEXT** in the current run and documents the suppression in results.
+
+</details>
+
+<details class="help-accordion" markdown="1">
+<summary>How do decorative image exceptions work?</summary>
+
+Use Word's "Mark as decorative" for non-informational images. The auditor now handles legacy VML `alt=""` as decorative.
+
+If you still need a workflow override, use Quick Rule Exceptions to suppress **ACB-MISSING-ALT-TEXT** for the run.
+
+</details>
+
+<details class="help-accordion" markdown="1">
+<summary>Why did my document grow in page count after fix?</summary>
+
+When source body text is below 18pt, normalizing to ACB minimum increases line count. This is expected, especially in long newsletters.
+
+Fix Results now warns when pre-fix body text appears below 18pt so pagination growth is expected.
+
+</details>
+
+<details class="help-accordion" markdown="1">
+<summary>What is per-level list indentation (Issue 8B)?</summary>
+
+On the Fix page, under List Indentation, enable **Use per-level list indentation** to set level 1, 2, and 3 indents separately.
+
+This supports multi-level list formatting without flattening all nesting levels to one indent value.
+
+</details>
+
+<details class="help-accordion" markdown="1">
+<summary>Can I limit heading review to only certain levels (for example H1-H3)?</summary>
+
+Yes. In Fix, use **Allowed heading levels** to select the subset your workflow permits.
+
+The heading review page only offers those levels in each candidate dropdown, and confirm/apply honors the same subset. Template sample content can use the same preference through Template and Settings defaults.
+
+</details>
+
+<details class="help-accordion" markdown="1">
+<summary>Known limitation: soft-return title + author in one heading paragraph</summary>
+
+If a single heading paragraph combines title and byline using Shift+Enter, fixer normalization may unify formatting across runs in that heading.
+
+Recommended workaround: separate title and author into distinct styled paragraphs or review these headings manually after fix.
+
+</details>
+
+<details class="help-accordion" markdown="1">
+<summary>Is the AFB style guide the same as a large-print standard?</summary>
+
+No. AFB guidance for JVIB is an academic manuscript submission style (for example, 12pt Calibri and journal-focused formatting), not a large-print production standard.
+
+For large-print production in this toolkit, use ACB (default) or APH profiles.
+
+</details>
+
+<details class="help-accordion" markdown="1">
+<summary>Which guideline standards does this tool follow?</summary>
+
+GLOW follows ACB by default and includes APH submission profile support for APH-aligned workflows.
+
+AFB JVIB style guidance is referenced for terminology and writing conventions, but it is not a selectable fix/audit mode.
+
+</details>
+
+<details class="help-accordion" markdown="1">
+<summary>What is the correct spelling: large print or large-print?</summary>
+
+Use **large print** as a noun ("This document is in large print") and **large-print** as a modifier ("a large-print edition").
+
+</details>
+
+<details class="help-accordion" markdown="1">
+<summary>How should I format em-dashes and numbers in running text?</summary>
+
+Use em-dashes with no spaces before or after. In Word, insert an em-dash symbol or use two hyphens with no spaces.
+
+For numbers in prose, spell out one through nine, use numerals for 10 and above, write "percent" instead of "%", and use decades without apostrophes (for example, 1990s).
+
+</details>
+
+See also: [User Guide FAQ section](./user-guide.md#11-frequently-asked-questions).

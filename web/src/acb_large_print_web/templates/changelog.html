@@ -6,24 +6,5 @@
 {% block content %}
 <p>Complete history of changes to the GLOW Accessibility Toolkit. See also the <a href="https://github.com/accesswatch/acb-large-print-toolkit">source repository</a> for commit-level details.</p>
 
-<nav aria-labelledby="changelog-toc-heading">
-  <h2 id="changelog-toc-heading">Versions</h2>
-  {% if version_links %}
-  <ul class="guide-toc">
-    {% for title, anchor in version_links %}
-    <li><a href="#{{ anchor }}">{{ title }}</a></li>
-    {% endfor %}
-  </ul>
-  {% else %}
-  <ul class="guide-toc">
-    <li>Version list unavailable</li>
-  </ul>
-  {% endif %}
-</nav>
-
-<div class="changelog-content">
-  {{ changelog_html }}
-</div>
-
-<a href="#changelog-toc-heading" class="back-to-top">Back to version list</a>
+{% include "partials/changelog_body.html" %}
 {% endblock %}

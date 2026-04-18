@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Rebuild committed HTML partials from markdown sources before commit.
+python scripts/build-doc-pages.py
+
+# Ensure generated docs are part of the commit.
+git add \
+  web/src/acb_large_print_web/templates/partials/guide_body.html \
+  web/src/acb_large_print_web/templates/partials/changelog_body.html \
+  web/src/acb_large_print_web/templates/partials/prd_body.html \
+  web/src/acb_large_print_web/templates/partials/faq_body.html

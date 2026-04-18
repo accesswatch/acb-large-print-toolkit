@@ -6,24 +6,5 @@
 {% block content %}
 <p>Complete product specification for the GLOW Accessibility Toolkit web application, including architecture, implementation status, and feature details.</p>
 
-<nav aria-labelledby="prd-toc-heading">
-  <h2 id="prd-toc-heading">Sections</h2>
-  {% if section_links %}
-  <ul class="guide-toc">
-    {% for title, anchor in section_links %}
-    <li><a href="#{{ anchor }}">{{ title }}</a></li>
-    {% endfor %}
-  </ul>
-  {% else %}
-  <ul class="guide-toc">
-    <li>Section list unavailable</li>
-  </ul>
-  {% endif %}
-</nav>
-
-<div class="prd-content">
-  {{ prd_html }}
-</div>
-
-<a href="#prd-toc-heading" class="back-to-top">Back to sections</a>
+{% include "partials/prd_body.html" %}
 {% endblock %}

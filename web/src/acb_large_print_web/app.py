@@ -211,10 +211,7 @@ def create_app(config: dict | None = None) -> Flask:
     from .routes.feedback import feedback_bp
     from .routes.about import about_bp
     from .routes.convert import convert_bp
-    from .routes.guide import guide_bp
-    from .routes.changelog import changelog_bp
-    from .routes.prd import prd_bp
-    from .routes.faq import faq_bp
+    from .routes.docs_pages import guide_bp, changelog_bp, prd_bp, faq_bp
     from .routes.settings import settings_bp
     from .routes.privacy import privacy_bp
     from .routes.whisperer import whisperer_bp

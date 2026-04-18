@@ -1522,6 +1522,8 @@ acb-lp detect-headings document.docx
 acb-lp detect-headings document.docx --ai --ai-prompt my-prompt.txt --threshold 75
 ```
 
+### Stress Testing and Product Learning
+
 ### How We Tested This Feature And What We Learned
 
 We did not rely on a few hand-made examples. We built a synthetic Word-document stress harness to imitate the kinds of files people actually upload.
