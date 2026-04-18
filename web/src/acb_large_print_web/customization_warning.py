@@ -5,6 +5,16 @@ this module detects those deviations and provides appropriate messaging.
 """
 
 
+def _getlist(form_data, key: str) -> list:
+    """Return a list for *key* from either a Flask ImmutableMultiDict or a plain dict."""
+    if hasattr(form_data, "getlist"):
+        return form_data.getlist(key)
+    val = form_data.get(key)
+    if val is None:
+        return []
+    return val if isinstance(val, list) else [val]
+
+
 def detect_audit_customizations(form_data) -> tuple[bool, list[str]]:
     """
     Detect if audit form deviates from ACB defaults.
@@ -27,7 +37,7 @@ def detect_audit_customizations(form_data) -> tuple[bool, list[str]]:
         reasons.append(f"Standards profile changed to {standards_profile}")
     
     # Check categories (default: acb, msac)
-    categories = form_data.getlist("category") or ["acb", "msac"]
+    categories = _getlist(form_data, "category") or ["acb", "msac"]
     if set(categories) != {"acb", "msac"}:
         reasons.append(f"Audit categories changed to: {', '.join(sorted(categories))}")
     
@@ -68,7 +78,7 @@ def detect_fix_customizations(form_data) -> tuple[bool, list[str]]:
         reasons.append(f"Standards profile changed to {standards_profile}")
     
     # Check categories (default: acb, msac)
-    categories = form_data.getlist("category") or ["acb", "msac"]
+    categories = _getlist(form_data, "category") or ["acb", "msac"]
     if set(categories) != {"acb", "msac"}:
         reasons.append(f"Audit categories changed to: {', '.join(sorted(categories))}")
     

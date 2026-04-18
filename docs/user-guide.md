@@ -80,10 +80,42 @@ If you're new to GLOW (Guided Layout & Output Workflow) or unsure which tool to 
 
 1. Click the **"BITS Whisperer"** tab at the top, or from Quick Start upload an audio file
 2. Upload your audio file (max 500 MB)
-3. Optionally select a language (auto-detect is recommended for most recordings)
-4. Choose output format: **Markdown** (plain text) or **Word** (editable .docx)
-5. Click "Transcribe Audio"
-6. GLOW (Guided Layout & Output Workflow) will process your audio (typically at real-time speed) and return the transcript
+3. Review the estimated conversion time shown after file selection
+4. Check the confirmation box to acknowledge you want to proceed
+5. Optionally select a language (auto-detect is recommended for most recordings)
+6. Choose output format: **Markdown** (plain text) or **Word** (editable .docx)
+7. Click "Transcribe Audio"
+8. Keep the page open while progress updates run. When progress reaches 100%, download starts automatically.
+
+### Optional background mode for long recordings
+
+For recordings estimated at 30 minutes or longer (server-configurable), Whisperer can run in background mode:
+
+1. Enable **Process in background** on the Whisperer form.
+2. Enter a notification email address.
+3. Create and confirm a retrieval password.
+4. Submit the job.
+
+When enabled, GLOW sends lifecycle emails (queued, started, completed). The completed email contains a single-use secure retrieval link. You must use both the link and the retrieval password to download the transcript.
+
+If the transcript is not retrieved within the configured window (default 4 hours after completion), GLOW clears it and sends a final email confirming removal.
+
+### Long recordings and session behavior
+
+- The web app session lifetime defaults to 4 hours (`SESSION_TIMEOUT_MINUTES=240`), which is typically enough for long jobs.
+- Active transcription jobs keep their temporary workspace alive while running, so cleanup does not remove in-progress jobs.
+- Files are retained for the time required to complete conversion successfully, then removed after download.
+- If your browser is closed before download, stale files are still cleaned up by retention policy.
+
+### Audio limits and graceful handling
+
+- Audio file size limit is configurable with `WHISPER_MAX_AUDIO_MB` (default 500 MB).
+- Maximum audio length is configurable with `WHISPER_MAX_AUDIO_MINUTES` (default 120 minutes).
+- Background queue depth is configurable with `GLOW_MAX_AUDIO_QUEUE_DEPTH` (default 5).
+- Background eligibility threshold is configurable with `WHISPER_BACKGROUND_THRESHOLD_MINUTES` (default 30).
+- Secure retrieval retention window is configurable with `WHISPER_RETRIEVAL_HOURS` (default 4).
+- If a file exceeds limits, GLOW returns a clear message and guidance to split or compress the recording.
+- For very long meetings, split audio into smaller segments (for example 20-30 minutes each) for more reliable turnaround and easier review.
 
 ### Tips for best results
 
@@ -95,7 +127,7 @@ If you're new to GLOW (Guided Layout & Output Workflow) or unsure which tool to 
 
 ### Privacy
 
-Your audio file is uploaded to the GLOW (Guided Layout & Output Workflow) server, transcribed using a local copy of the Whisper model (never sent to OpenAI or any third party), and then deleted immediately. The transcript is also deleted after download. Nothing is stored.
+Your audio file is uploaded to the GLOW (Guided Layout & Output Workflow) server, transcribed using a local copy of the Whisper model (never sent to OpenAI or any third party), and retained only as long as needed to complete conversion and deliver your download. After download, temporary files are deleted. Nothing is stored as permanent account data.
 
 ---
 
@@ -1059,7 +1091,19 @@ APH also publishes research-based large print guidance at [APH: Guidelines for t
 
 ---
 
-## 16. Getting Help
+## 16. Admin Access (Administrative Use Only)
+
+GLOW includes an admin-only sign-in and approval workflow for operational dashboards.
+
+- **No general user accounts in this release.** Admin authentication is restricted to approved administrative accounts only.
+- **Email configuration required.** Admin sign-in features are enabled only when email delivery is configured.
+- **Sign-in options:** Email magic link, Google, Apple, GitHub, Microsoft, Auth0, and WordPress (providers appear only when configured).
+- **Approval required:** A user may request admin access, but an existing approved admin must approve before sign-in succeeds.
+- **Admin dashboard:** Approved admins can view the audio conversion queue, cancel queued jobs, and re-queue failed jobs.
+
+---
+
+## 17. Getting Help
 
 - **Full ACB Large Print Guidelines Reference** -- available on the web app Guidelines page or at [acb.org/large-print-guidelines](https://acb.org/large-print-guidelines)
 - **APH Large Print Guidelines (official source)** -- [aph.org/resources/large-print-guidelines](https://www.aph.org/resources/large-print-guidelines/)

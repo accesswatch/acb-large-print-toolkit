@@ -1,5 +1,12 @@
 This repository contains the GLOW Accessibility Toolkit -- a VS Code agent toolkit, desktop application, and web application for auditing and fixing Office documents (Word, Excel, PowerPoint) for accessibility. Enforces the American Council of the Blind Large Print Guidelines (revised May 6, 2025), Microsoft Accessibility Checker rules, and WCAG 2.2 AA digital accessibility standards.
 
+## Deployment
+
+- **Automated Deployment:** `bash ~/app/scripts/deploy-app.sh` (safe, automatic rollback on failure)
+- **Maintenance Mode:** `bash ~/app/scripts/maintenance-mode.sh {on|off|status}` (toggle maintenance page without code deployment)
+- **Strategy & Troubleshooting:** See `docs/deployment-strategy.md` for complete deployment workflow, failsafe features, and manual intervention procedures
+- **Health Check:** `/health` endpoint responds with `200 OK` (even during maintenance mode) to support orchestration and monitoring
+
 ## Repository layout
 
 - `.github/agents/large-print-formatter.agent.md` -- Main agent (9 operating modes for audit, generate, convert, template, CSS embed, Word setup, Markdown audit, Markdown fix, Markdown-to-HTML)

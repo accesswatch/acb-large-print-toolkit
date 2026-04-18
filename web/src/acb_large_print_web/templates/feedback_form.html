@@ -56,6 +56,18 @@
         Export to HTML
       </label>
       <label>
+        <input type="radio" name="task" value="convert"{% if task == 'convert' %} checked{% endif %}>
+        Convert a document
+      </label>
+      <label>
+        <input type="radio" name="task" value="whisperer"{% if task == 'whisperer' %} checked{% endif %}>
+        Transcribe audio (BITS Whisperer)
+      </label>
+      <label>
+        <input type="radio" name="task" value="chat"{% if task == 'chat' %} checked{% endif %}>
+        Ask questions about a document (Chat)
+      </label>
+      <label>
         <input type="radio" name="task" value="guidelines"{% if task == 'guidelines' %} checked{% endif %}>
         Read the guidelines
       </label>
@@ -72,6 +84,21 @@
     <p class="help-text" id="message-help">Describe what worked, what did not, or what you would like to see improved. Maximum 5,000 characters.</p>
   </div>
 
-  <button type="submit" class="btn-primary">Submit Feedback</button>
+  <button type="submit" class="btn-primary" id="feedback-submit-btn">Submit Feedback</button>
+  <p id="feedback-status" class="field-hint" aria-live="polite" aria-atomic="true"></p>
 </form>
+
+<script>
+(function () {
+  'use strict';
+  var form = document.querySelector('form[method="post"]');
+  if (!form) return;
+  form.addEventListener('submit', function () {
+    var btn = document.getElementById('feedback-submit-btn');
+    var statusEl = document.getElementById('feedback-status');
+    if (statusEl) statusEl.textContent = 'Submitting\u2026';
+    if (btn) { btn.disabled = true; btn.textContent = 'Submitting\u2026'; }
+  });
+}());
+</script>
 {% endblock %}

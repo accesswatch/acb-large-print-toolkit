@@ -16,9 +16,28 @@ Route:
 
 from __future__ import annotations
 
+import os
+import threading
+import uuid
+import secrets
+import hmac
+from dataclasses import dataclass
+from datetime import datetime, timedelta, UTC
 from pathlib import Path
+from collections import deque
+import re
 
-from flask import Blueprint, make_response, render_template, request, send_file, url_for
+from flask import (
+    Blueprint,
+    after_this_request,
+    jsonify,
+    make_response,
+    render_template,
+    request,
+    send_file,
+    url_for,
+)
+from werkzeug.security import check_password_hash, generate_password_hash
 
 from acb_large_print.converter import (
     AUDIO_EXTENSIONS,
@@ -29,8 +48,48 @@ from acb_large_print.pandoc_converter import convert_to_docx, pandoc_available
 
 from ..gating import RETRY_AFTER_SECONDS, GatingError, audio_gate
 from ..upload import UploadError, cleanup_token, get_temp_dir, validate_upload
+from ..email import email_configured, send_whisperer_status_email
 
 whisperer_bp = Blueprint("whisperer", __name__)
+
+
+@dataclass
+class _WhisperJob:
+    job_id: str
+    token: str
+    saved_path: Path
+    language: str | None
+    output_format: str
+    title: str | None
+    status: str = "queued"  # queued | running | complete | failed
+    progress: int = 0
+    message: str = "Queued..."
+    error: str | None = None
+    output_path: Path | None = None
+    mimetype: str | None = None
+    download_name: str | None = None
+    queued_at: datetime | None = None
+    started_at: datetime | None = None
+    completed_at: datetime | None = None
+    is_background: bool = False
+    notify_email: str | None = None
+    retrieval_token: str | None = None
+    retrieval_password_hash: str | None = None
+    retrieval_expires_at: datetime | None = None
+    retrieved: bool = False
+    cleanup_timer_set: bool = False
+
+
+_jobs: dict[str, _WhisperJob] = {}
+_jobs_lock = threading.Lock()
+_audio_queue: deque[str] = deque()
+
+_MAX_AUDIO_MB = int(os.environ.get("WHISPER_MAX_AUDIO_MB", "500"))
+_MAX_AUDIO_MINUTES = int(os.environ.get("WHISPER_MAX_AUDIO_MINUTES", "120"))
+_MAX_AUDIO_QUEUE_DEPTH = int(os.environ.get("GLOW_MAX_AUDIO_QUEUE_DEPTH", "5"))
+_BACKGROUND_THRESHOLD_MINUTES = int(os.environ.get("WHISPER_BACKGROUND_THRESHOLD_MINUTES", "30"))
+_RETRIEVAL_HOURS = int(os.environ.get("WHISPER_RETRIEVAL_HOURS", "4"))
+_EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
 # Accept string for the file input
 _AUDIO_ACCEPT = ",".join(sorted(AUDIO_EXTENSIONS))
@@ -66,6 +125,8 @@ def _template_context(**extra):
         audio_accept=_AUDIO_ACCEPT,
         whisper_installed=whisper_available(),
         pandoc_installed=pandoc_available(),
+        email_enabled=email_configured(),
+        background_threshold_minutes=_BACKGROUND_THRESHOLD_MINUTES,
         language_choices=_LANGUAGE_CHOICES,
         **extra,
     )
@@ -85,6 +146,468 @@ def _busy_response():
     return resp
 
 
+def _touch_token_dir(token: str) -> None:
+    """Refresh token dir mtime so active jobs are not removed by stale cleanup."""
+    temp_dir = get_temp_dir(token)
+    if temp_dir is None:
+        return
+    try:
+        os.utime(temp_dir, None)
+    except OSError:
+        pass
+
+
+def _estimate_audio_duration_seconds(audio_path: Path) -> float | None:
+    """Estimate audio length using PyAV metadata; returns None if unavailable."""
+    try:
+        import av  # type: ignore[import-untyped]
+
+        with av.open(str(audio_path)) as container:
+            if container.duration is not None:
+                return float(container.duration * av.time_base)
+
+            audio_streams = [s for s in container.streams if getattr(s, "type", "") == "audio"]
+            if audio_streams:
+                stream = audio_streams[0]
+                if stream.duration is not None and stream.time_base is not None:
+                    return float(stream.duration * stream.time_base)
+    except Exception:
+        return None
+
+    return None
+
+
+def _enforce_audio_limits(saved_path: Path, duration_seconds: float | None) -> None:
+    """Enforce file-size and duration caps with user-friendly errors."""
+    try:
+        size_bytes = saved_path.stat().st_size
+    except OSError:
+        size_bytes = 0
+
+    max_bytes = _MAX_AUDIO_MB * 1024 * 1024
+    if max_bytes > 0 and size_bytes > max_bytes:
+        raise UploadError(
+            f"This audio file is too large for transcription on this server ({_MAX_AUDIO_MB} MB limit). "
+            "Please compress or split the recording and try again."
+        )
+
+    if duration_seconds is not None and _MAX_AUDIO_MINUTES > 0:
+        if duration_seconds > (_MAX_AUDIO_MINUTES * 60):
+            raise UploadError(
+                "This recording exceeds the maximum supported length "
+                f"({_MAX_AUDIO_MINUTES} minutes). "
+                "Please split it into shorter sections and transcribe each section."
+            )
+
+
+def _require_estimate_acknowledgement() -> None:
+    """Require explicit user acknowledgment before starting transcription."""
+    if request.form.get("confirm_estimate") != "yes":
+        raise UploadError(
+            "Please review the estimated processing time and check the confirmation box "
+            "before starting transcription."
+        )
+
+
+def _set_job(job: _WhisperJob) -> None:
+    with _jobs_lock:
+        _jobs[job.job_id] = job
+
+
+def _get_job(job_id: str) -> _WhisperJob | None:
+    with _jobs_lock:
+        return _jobs.get(job_id)
+
+
+def _delete_job(job_id: str) -> None:
+    with _jobs_lock:
+        _jobs.pop(job_id, None)
+
+
+def _queue_position(job_id: str) -> int | None:
+    with _jobs_lock:
+        try:
+            return list(_audio_queue).index(job_id) + 1
+        except ValueError:
+            return None
+
+
+def _update_job(
+    job_id: str,
+    *,
+    status: str | None = None,
+    progress: int | None = None,
+    message: str | None = None,
+    error: str | None = None,
+    output_path: Path | None = None,
+    mimetype: str | None = None,
+    download_name: str | None = None,
+    started_at: datetime | None = None,
+    completed_at: datetime | None = None,
+    retrieval_expires_at: datetime | None = None,
+    retrieved: bool | None = None,
+) -> None:
+    with _jobs_lock:
+        job = _jobs.get(job_id)
+        if job is None:
+            return
+        if status is not None:
+            job.status = status
+        if progress is not None:
+            job.progress = max(0, min(100, int(progress)))
+        if message is not None:
+            job.message = message
+        if error is not None:
+            job.error = error
+        if output_path is not None:
+            job.output_path = output_path
+        if mimetype is not None:
+            job.mimetype = mimetype
+        if download_name is not None:
+            job.download_name = download_name
+        if started_at is not None:
+            job.started_at = started_at
+        if completed_at is not None:
+            job.completed_at = completed_at
+        if retrieval_expires_at is not None:
+            job.retrieval_expires_at = retrieval_expires_at
+        if retrieved is not None:
+            job.retrieved = retrieved
+
+
+def _validate_email_address(address: str) -> None:
+    value = (address or "").strip()
+    if not value:
+        raise UploadError("Please provide an email address for background processing.")
+    if len(value) > 254 or not _EMAIL_RE.match(value):
+        raise UploadError("Please provide a valid email address.")
+
+
+def _validate_retrieval_password(password: str, confirm: str) -> None:
+    if not password:
+        raise UploadError("Please create a retrieval password for secure access.")
+    if password != confirm:
+        raise UploadError("Retrieval password and confirmation do not match.")
+    if len(password) < 8:
+        raise UploadError("Retrieval password must be at least 8 characters.")
+    has_digit = any(ch.isdigit() for ch in password)
+    has_symbol = any(not ch.isalnum() for ch in password)
+    if not (has_digit or has_symbol):
+        raise UploadError("Retrieval password must include at least one number or symbol.")
+
+
+def _send_job_email(job: _WhisperJob, phase: str) -> None:
+    if not job.notify_email:
+        return
+
+    if phase == "queued":
+        position = _queue_position(job.job_id)
+        subject = "GLOW BITS Whisperer job queued"
+        text = (
+            "Your audio transcription request is queued.\n\n"
+            f"Queue position: {position if position is not None else 'processing soon'}\n"
+            "You will receive another email when transcription starts."
+        )
+        html = (
+            "<p>Your audio transcription request is queued.</p>"
+            f"<p><strong>Queue position:</strong> {position if position is not None else 'processing soon'}</p>"
+            "<p>You will receive another email when transcription starts.</p>"
+        )
+    elif phase == "started":
+        subject = "GLOW BITS Whisperer job started"
+        text = "Your queued audio transcription has started on the server."
+        html = "<p>Your queued audio transcription has started on the server.</p>"
+    elif phase == "completed":
+        subject = "GLOW BITS Whisperer job complete"
+        path = f"/whisperer/retrieve/{job.retrieval_token}"
+        base_url = os.environ.get("GLOW_PUBLIC_BASE_URL", "").rstrip("/")
+        if base_url:
+            link = f"{base_url}{path}"
+        else:
+            try:
+                link = url_for("whisperer.whisperer_retrieve", token=job.retrieval_token, _external=True)
+            except RuntimeError:
+                link = path
+        expiry = job.retrieval_expires_at.isoformat() if job.retrieval_expires_at else "4 hours"
+        text = (
+            "Your audio transcription is ready.\n\n"
+            f"Retrieve link: {link}\n"
+            "Use the retrieval password you created at submission.\n"
+            f"This link is single-use and expires at: {expiry}."
+        )
+        html = (
+            "<p>Your audio transcription is ready.</p>"
+            f"<p><a href=\"{link}\">Open secure retrieval link</a></p>"
+            "<p>Use the retrieval password you created at submission.</p>"
+            f"<p>This link is single-use and expires at: <strong>{expiry}</strong>.</p>"
+        )
+    elif phase == "cleared":
+        subject = "GLOW BITS Whisperer content cleared"
+        text = (
+            "Your completed audio transcription was not retrieved within the retention window.\n"
+            "The content has been cleared from the server.\n"
+            "Please upload and process the file again if needed."
+        )
+        html = (
+            "<p>Your completed audio transcription was not retrieved within the retention window.</p>"
+            "<p>The content has been cleared from the server.</p>"
+            "<p>Please upload and process the file again if needed.</p>"
+        )
+    else:
+        return
+
+    send_whisperer_status_email(job.notify_email, subject, html, text)
+
+
+def _cleanup_unretrieved_job(job_id: str) -> None:
+    job = _get_job(job_id)
+    if job is None:
+        return
+    if job.status != "complete" or job.retrieved:
+        return
+    _send_job_email(job, "cleared")
+    cleanup_token(job.token)
+    _delete_job(job.job_id)
+
+
+def _dispatch_queued_jobs() -> None:
+    """Start queued jobs while audio gate capacity is available."""
+    from ..gating import get_capacity_metrics
+
+    capacity = get_capacity_metrics().get("audio", {}).get("available", 0)
+    if capacity <= 0:
+        return
+
+    for _ in range(int(capacity)):
+        with _jobs_lock:
+            if not _audio_queue:
+                return
+            job_id = _audio_queue.popleft()
+            job = _jobs.get(job_id)
+            if job is None:
+                continue
+            job.status = "running"
+            job.progress = 1
+            job.message = "Initializing transcription..."
+            job.started_at = datetime.now(UTC)
+
+        if job.notify_email:
+            _send_job_email(job, "started")
+
+        thread = threading.Thread(target=_run_whisper_job, args=(job_id,), daemon=True)
+        thread.start()
+
+
+def get_admin_queue_snapshot(limit_recent: int = 100) -> list[dict]:
+    """Return queue/running/completed/failed snapshot for admin dashboard."""
+    with _jobs_lock:
+        queue_order = list(_audio_queue)
+        rows: list[dict] = []
+        for job in _jobs.values():
+            queue_position = None
+            if job.job_id in queue_order:
+                queue_position = queue_order.index(job.job_id) + 1
+
+            rows.append(
+                {
+                    "job_id": job.job_id,
+                    "status": job.status,
+                    "progress": job.progress,
+                    "message": job.message,
+                    "queued_at": job.queued_at,
+                    "started_at": job.started_at,
+                    "completed_at": job.completed_at,
+                    "is_background": job.is_background,
+                    "notify_email": job.notify_email,
+                    "queue_position": queue_position,
+                }
+            )
+
+    def _sort_key(row: dict):
+        return row.get("queued_at") or datetime.min.replace(tzinfo=UTC)
+
+    rows.sort(key=_sort_key, reverse=True)
+    return rows[:limit_recent]
+
+
+def admin_cancel_queued_job(job_id: str) -> tuple[bool, str]:
+    """Cancel a queued job (admin operation)."""
+    with _jobs_lock:
+        job = _jobs.get(job_id)
+        if job is None:
+            return False, "Job not found."
+        if job_id not in _audio_queue:
+            return False, "Only queued jobs can be canceled."
+        _audio_queue.remove(job_id)
+        job.status = "failed"
+        job.progress = 0
+        job.message = "Canceled by admin before processing."
+        job.error = "Canceled by admin."
+
+    cleanup_token(job.token)
+    return True, "Queued job canceled."
+
+
+def admin_requeue_failed_job(job_id: str) -> tuple[bool, str]:
+    """Requeue a failed job when source upload still exists."""
+    with _jobs_lock:
+        job = _jobs.get(job_id)
+        if job is None:
+            return False, "Job not found."
+        if job.status != "failed":
+            return False, "Only failed jobs can be re-queued."
+        if job_id in _audio_queue:
+            return False, "Job is already queued."
+        if len(_audio_queue) >= _MAX_AUDIO_QUEUE_DEPTH:
+            return False, "Queue is full."
+
+        temp_dir = get_temp_dir(job.token)
+        if temp_dir is None or not job.saved_path.exists():
+            return False, "Cannot re-queue because source audio is no longer available."
+
+        job.status = "queued"
+        job.progress = 0
+        job.message = "Queued..."
+        job.error = None
+        job.started_at = None
+        job.completed_at = None
+        _audio_queue.append(job_id)
+
+    _dispatch_queued_jobs()
+    return True, "Failed job re-queued."
+
+
+def _run_whisper_job(job_id: str) -> None:
+    job = _get_job(job_id)
+    if job is None:
+        return
+
+    try:
+        ext = job.saved_path.suffix.lower()
+        if ext not in AUDIO_EXTENSIONS:
+            raise UploadError(
+                f"'{ext}' is not a supported audio format. "
+                f"Supported: {', '.join(sorted(AUDIO_EXTENSIONS))}."
+            )
+
+        temp_dir = get_temp_dir(job.token)
+        if temp_dir is None:
+            raise UploadError("Upload session expired. Please upload the audio again.")
+
+        _touch_token_dir(job.token)
+
+        md_output = temp_dir / f"{job.saved_path.stem}.md"
+
+        try:
+            with audio_gate():
+                transcript_path, _ = whisper_convert(
+                    job.saved_path,
+                    output_path=md_output,
+                    language=job.language,
+                    progress_callback=lambda p, m: _update_job(
+                        job_id,
+                        status="running",
+                        progress=p,
+                        message=m,
+                    ),
+                )
+                _touch_token_dir(job.token)
+        except GatingError:
+            with _jobs_lock:
+                _audio_queue.appendleft(job_id)
+                job = _jobs.get(job_id)
+                if job is not None:
+                    job.status = "queued"
+                    job.progress = 0
+                    job.message = "Queued... waiting for audio capacity."
+            return
+
+        if job.output_format == "word":
+            if not pandoc_available():
+                raise UploadError(
+                    "Pandoc is not installed on this server. "
+                    "Audio-to-Word conversion requires Pandoc for the final step. "
+                    "Choose Markdown output instead."
+                )
+
+            _update_job(
+                job_id,
+                status="running",
+                progress=97,
+                message="Transcription complete. Building Word document...",
+            )
+            _touch_token_dir(job.token)
+            user_title = (job.title or "").strip()
+            title = user_title or job.saved_path.stem.replace("-", " ").replace("_", " ")
+            docx_output = temp_dir / f"{job.saved_path.stem}.docx"
+            output_path, _ = convert_to_docx(
+                transcript_path,
+                output_path=docx_output,
+                title=title,
+            )
+            _touch_token_dir(job.token)
+            _update_job(
+                job_id,
+                status="complete",
+                progress=100,
+                message="Complete. Your file is ready to download.",
+                output_path=output_path,
+                mimetype=(
+                    "application/vnd.openxmlformats-officedocument"
+                    ".wordprocessingml.document"
+                ),
+                download_name=f"{job.saved_path.stem}.docx",
+            )
+            job = _get_job(job_id)
+            if job and job.is_background and job.notify_email:
+                expiry = datetime.now(UTC) + timedelta(hours=_RETRIEVAL_HOURS)
+                _update_job(job_id, retrieval_expires_at=expiry, completed_at=datetime.now(UTC))
+                _send_job_email(job, "completed")
+                if not job.cleanup_timer_set:
+                    timer = threading.Timer(_RETRIEVAL_HOURS * 3600, _cleanup_unretrieved_job, args=(job_id,))
+                    timer.daemon = True
+                    timer.start()
+                    with _jobs_lock:
+                        if _jobs.get(job_id):
+                            _jobs[job_id].cleanup_timer_set = True
+            _dispatch_queued_jobs()
+            return
+
+        _update_job(
+            job_id,
+            status="complete",
+            progress=100,
+            message="Complete. Your file is ready to download.",
+            output_path=transcript_path,
+            mimetype="text/markdown; charset=utf-8",
+            download_name=f"{job.saved_path.stem}.md",
+            completed_at=datetime.now(UTC),
+        )
+        job = _get_job(job_id)
+        if job and job.is_background and job.notify_email:
+            expiry = datetime.now(UTC) + timedelta(hours=_RETRIEVAL_HOURS)
+            _update_job(job_id, retrieval_expires_at=expiry)
+            _send_job_email(job, "completed")
+            if not job.cleanup_timer_set:
+                timer = threading.Timer(_RETRIEVAL_HOURS * 3600, _cleanup_unretrieved_job, args=(job_id,))
+                timer.daemon = True
+                timer.start()
+                with _jobs_lock:
+                    if _jobs.get(job_id):
+                        _jobs[job_id].cleanup_timer_set = True
+        _dispatch_queued_jobs()
+    except (UploadError, RuntimeError, FileNotFoundError, ValueError) as exc:
+        _update_job(
+            job_id,
+            status="failed",
+            progress=0,
+            message=str(exc),
+            error=str(exc),
+        )
+        cleanup_token(job.token)
+        _dispatch_queued_jobs()
+
+
 @whisperer_bp.route("/", methods=["GET"])
 def whisperer_form():
     return render_template("whisperer_form.html", **_template_context())
@@ -98,6 +621,7 @@ def whisperer_submit():
             request.files.get("audio"),
             allowed_extensions=AUDIO_EXTENSIONS,
         )
+        _require_estimate_acknowledgement()
         ext = saved_path.suffix.lower()
 
         if not whisper_available():
@@ -111,6 +635,9 @@ def whisperer_submit():
                 f"'{ext}' is not a supported audio format. "
                 f"Supported: {', '.join(sorted(AUDIO_EXTENSIONS))}."
             )
+
+        duration_seconds = _estimate_audio_duration_seconds(saved_path)
+        _enforce_audio_limits(saved_path, duration_seconds)
 
         temp_dir = get_temp_dir(token)
         language = request.form.get("language") or None
@@ -182,3 +709,243 @@ def whisperer_submit():
     finally:
         if token:
             cleanup_token(token)
+
+
+@whisperer_bp.route("/start", methods=["POST"])
+def whisperer_start_job():
+    """Start a background Whisper transcription job and return a job id."""
+    token = None
+    try:
+        if not whisper_available():
+            raise UploadError(
+                "BITS Whisperer (faster-whisper) is not installed on this server. "
+                "Audio transcription is unavailable."
+            )
+
+        token, saved_path = validate_upload(
+            request.files.get("audio"),
+            allowed_extensions=AUDIO_EXTENSIONS,
+        )
+        _require_estimate_acknowledgement()
+
+        ext = saved_path.suffix.lower()
+        if ext not in AUDIO_EXTENSIONS:
+            raise UploadError(
+                f"'{ext}' is not a supported audio format. "
+                f"Supported: {', '.join(sorted(AUDIO_EXTENSIONS))}."
+            )
+
+        duration_seconds = _estimate_audio_duration_seconds(saved_path)
+        _enforce_audio_limits(saved_path, duration_seconds)
+
+        background_opt_in = request.form.get("background_opt_in") == "yes"
+        notify_email = (request.form.get("notify_email") or "").strip()
+        retrieval_password = request.form.get("retrieval_password") or ""
+        retrieval_password_confirm = request.form.get("retrieval_password_confirm") or ""
+
+        if background_opt_in:
+            if not email_configured():
+                raise UploadError(
+                    "Background transcription with secure retrieval requires email service to be configured by the administrator."
+                )
+            _validate_email_address(notify_email)
+            _validate_retrieval_password(retrieval_password, retrieval_password_confirm)
+
+        output_format = request.form.get("output_format", "markdown")
+        if output_format not in {"markdown", "word"}:
+            raise UploadError("Invalid output format selected.")
+
+        if output_format == "word" and not pandoc_available():
+            raise UploadError(
+                "Pandoc is not installed on this server. "
+                "Audio-to-Word conversion requires Pandoc for the final step. "
+                "Choose Markdown output instead."
+            )
+
+        job_id = str(uuid.uuid4())
+        job = _WhisperJob(
+            job_id=job_id,
+            token=token,
+            saved_path=saved_path,
+            language=request.form.get("language") or None,
+            output_format=output_format,
+            title=request.form.get("title") or None,
+            status="queued",
+            progress=0,
+            message=(
+                "Queued..."
+                if duration_seconds is None
+                else f"Queued... estimated audio length: {round(duration_seconds / 60, 1)} minutes."
+            ),
+            queued_at=datetime.now(UTC),
+            is_background=background_opt_in,
+            notify_email=notify_email if background_opt_in else None,
+            retrieval_token=secrets.token_urlsafe(32) if background_opt_in else None,
+            retrieval_password_hash=generate_password_hash(retrieval_password) if background_opt_in else None,
+        )
+        _set_job(job)
+
+        with _jobs_lock:
+            if len(_audio_queue) >= _MAX_AUDIO_QUEUE_DEPTH:
+                _delete_job(job_id)
+                cleanup_token(token)
+                return jsonify({
+                    "error": (
+                        "The audio queue is currently full. Please try again in a few minutes."
+                    )
+                }), 503
+            _audio_queue.append(job_id)
+
+        if job.notify_email:
+            _send_job_email(job, "queued")
+
+        _dispatch_queued_jobs()
+
+        return (
+            jsonify(
+                {
+                    "job_id": job_id,
+                    "status": "queued",
+                    "progress": 0,
+                    "message": "Queued...",
+                    "progress_url": url_for("whisperer.whisperer_job_progress", job_id=job_id),
+                    "download_url": url_for("whisperer.whisperer_job_download", job_id=job_id),
+                    "background_opt_in": background_opt_in,
+                }
+            ),
+            202,
+        )
+    except UploadError as exc:
+        if token:
+            cleanup_token(token)
+        return jsonify({"error": str(exc)}), 400
+    except RuntimeError as exc:
+        if token:
+            cleanup_token(token)
+        return jsonify({"error": str(exc)}), 500
+
+
+@whisperer_bp.route("/progress/<job_id>", methods=["GET"])
+def whisperer_job_progress(job_id: str):
+    """Return JSON progress for a running or completed Whisper job."""
+    job = _get_job(job_id)
+    if job is None:
+        return jsonify({"error": "Job not found or expired."}), 404
+
+    payload = {
+        "job_id": job.job_id,
+        "status": job.status,
+        "progress": job.progress,
+        "message": job.message,
+        "background_opt_in": job.is_background,
+    }
+    if job.status == "queued":
+        payload["queue_position"] = _queue_position(job.job_id)
+    if job.error:
+        payload["error"] = job.error
+    if job.status == "complete":
+        payload["download_url"] = url_for("whisperer.whisperer_job_download", job_id=job.job_id)
+
+    return jsonify(payload)
+
+
+@whisperer_bp.route("/download/<job_id>", methods=["GET"])
+def whisperer_job_download(job_id: str):
+    """Download the completed Whisper output and clean up job resources."""
+    job = _get_job(job_id)
+    if job is None:
+        return render_template("whisperer_form.html", error="Job not found or expired.", **_template_context()), 404
+
+    if job.status != "complete" or job.output_path is None:
+        return (
+            render_template(
+                "whisperer_form.html",
+                error="Transcription is not complete yet. Please wait for 100% progress.",
+                **_template_context(),
+            ),
+            409,
+        )
+
+    path = Path(job.output_path)
+    if not path.exists():
+        cleanup_token(job.token)
+        _delete_job(job.job_id)
+        return (
+            render_template(
+                "whisperer_form.html",
+                error="The output file is no longer available. Please run transcription again.",
+                **_template_context(),
+            ),
+            404,
+        )
+
+    @after_this_request
+    def _cleanup_after_download(response):
+        cleanup_token(job.token)
+        _delete_job(job.job_id)
+        return response
+
+    return send_file(
+        str(path),
+        mimetype=job.mimetype or "application/octet-stream",
+        as_attachment=True,
+        download_name=job.download_name or path.name,
+    )
+
+
+@whisperer_bp.route("/retrieve/<token>", methods=["GET", "POST"])
+def whisperer_retrieve(token: str):
+    """Secure retrieval endpoint for background jobs (link + password)."""
+    job = None
+    with _jobs_lock:
+        for _job in _jobs.values():
+            if _job.retrieval_token and hmac.compare_digest(_job.retrieval_token, token):
+                job = _job
+                break
+
+    if job is None or not job.is_background:
+        return render_template("whisperer_form.html", error="Secure retrieval link is invalid or expired.", **_template_context()), 404
+
+    if request.method == "GET":
+        return render_template(
+            "whisperer_retrieve.html",
+            token=token,
+            retrieval_hours=_RETRIEVAL_HOURS,
+            expired=bool(job.retrieval_expires_at and datetime.now(UTC) > job.retrieval_expires_at),
+        )
+
+    if job.retrieval_expires_at and datetime.now(UTC) > job.retrieval_expires_at:
+        cleanup_token(job.token)
+        _delete_job(job.job_id)
+        return render_template("whisperer_retrieve.html", token=token, expired=True, error="This retrieval link has expired."), 410
+
+    password = request.form.get("retrieval_password", "")
+    if not job.retrieval_password_hash or not check_password_hash(job.retrieval_password_hash, password):
+        return render_template("whisperer_retrieve.html", token=token, error="Invalid retrieval password."), 403
+
+    if job.retrieved:
+        return render_template("whisperer_retrieve.html", token=token, expired=True, error="This retrieval link has already been used."), 410
+
+    if job.status != "complete" or job.output_path is None:
+        return render_template("whisperer_retrieve.html", token=token, error="Your transcription is not ready yet. Please check email updates and try again."), 409
+
+    path = Path(job.output_path)
+    if not path.exists():
+        cleanup_token(job.token)
+        _delete_job(job.job_id)
+        return render_template("whisperer_retrieve.html", token=token, expired=True, error="The transcript is no longer available."), 404
+
+    _update_job(job.job_id, retrieved=True)
+
+    @after_this_request
+    def _cleanup_after_secure_download(response):
+        cleanup_token(job.token)
+        _delete_job(job.job_id)
+        return response
+
+    return send_file(
+        str(path),
+        mimetype=job.mimetype or "application/octet-stream",
+        as_attachment=True,
+        download_name=job.download_name or path.name,
+    )

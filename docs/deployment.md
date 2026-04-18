@@ -2,6 +2,16 @@
 
 > **Version 2** -- April 2026. Production deployment on a RackNerd Ubuntu VPS with Docker Compose and Caddy.
 
+## Quick Reference
+
+- **Automated Deployment Script:** `bash ~/app/scripts/deploy-app.sh`
+- **Manual Maintenance Toggle:** `bash ~/app/scripts/maintenance-mode.sh {on|off|status}`
+- **Complete Strategy & Troubleshooting:** See [deployment-strategy.md](deployment-strategy.md)
+
+---
+
+## Overview
+
 This guide walks you through deploying the ACB Large Print web application on a single VPS. When you finish, you will have:
 
 - `csedesigns.com` and `www.csedesigns.com` serving a static website (or placeholder)
@@ -1287,6 +1297,15 @@ ssh deploy@YOUR_SERVER_IP
 ~/app/scripts/deploy-app.sh
 ```
 
+`deploy-app.sh` now performs a pre-deploy feedback backup by default and runs a health-check-gated rollback to the previous Git commit when the new revision fails to become healthy.
+
+Control flags:
+
+```bash
+# Skip the automatic pre-deploy backup
+ENABLE_PREDEPLOY_BACKUP=0 ~/app/scripts/deploy-app.sh
+```
+
 The build takes 30--90 seconds. There is a brief downtime (a few seconds) during container restart.
 
 After deploying, verify:
@@ -1731,6 +1750,29 @@ These variables are set in `~/app/web/.env` and injected into the container via 
 | `SECRET_KEY` | **Yes** | Random per-start | Flask session and CSRF secret. **Set a fixed value in production** or sessions and CSRF tokens will not survive container restarts. |
 | `FEEDBACK_PASSWORD` | No | (unset) | Set to enable feedback review at `/feedback/review?key=<password>`. When unset, the review endpoint is disabled. |
 | `LOG_LEVEL` | No | `INFO` | Python logging level: DEBUG, INFO, WARNING, ERROR. |
+| `SESSION_TIMEOUT_MINUTES` | No | `240` | Session lifetime in minutes. Increase for very long interactive workflows. |
+| `UPLOAD_MAX_AGE_HOURS` | No | `1` | Retention window for abandoned upload workspaces before cleanup. Active Whisper jobs keep their workspace alive while running. |
+| `WHISPER_MAX_AUDIO_MB` | No | `500` | Maximum accepted audio file size for BITS Whisperer uploads. |
+| `WHISPER_MAX_AUDIO_MINUTES` | No | `120` | Maximum accepted audio duration for BITS Whisperer. Longer recordings are rejected with guidance to split files. |
+| `GLOW_MAX_AUDIO_QUEUE_DEPTH` | No | `5` | Maximum number of queued Whisperer jobs waiting for audio capacity. New requests are rejected gracefully when full. |
+| `WHISPER_BACKGROUND_THRESHOLD_MINUTES` | No | `30` | Minimum estimated audio length required before background mode is offered in the UI. |
+| `WHISPER_RETRIEVAL_HOURS` | No | `4` | Secure retrieval window after background job completion. Unretrieved content is cleared after this period. |
+| `ADMIN_BOOTSTRAP_EMAILS` | No | (unset) | Comma-separated emails automatically approved as admin accounts on first sign-in flow. |
+| `ADMIN_MAGIC_LINK_TTL_MINUTES` | No | `20` | Admin email magic-link expiration window in minutes. |
+| `ADMIN_AUTH0_DOMAIN` | No | (unset) | Auth0 tenant domain used to derive authorize/token/userinfo endpoints for admin SSO. |
+| `ADMIN_OAUTH_GOOGLE_CLIENT_ID` | No | (unset) | Google OAuth client ID for admin-only SSO. |
+| `ADMIN_OAUTH_GOOGLE_CLIENT_SECRET` | No | (unset) | Google OAuth client secret for admin-only SSO. |
+| `ADMIN_OAUTH_GITHUB_CLIENT_ID` | No | (unset) | GitHub OAuth client ID for admin-only SSO. |
+| `ADMIN_OAUTH_GITHUB_CLIENT_SECRET` | No | (unset) | GitHub OAuth client secret for admin-only SSO. |
+| `ADMIN_OAUTH_MICROSOFT_CLIENT_ID` | No | (unset) | Microsoft OAuth client ID for admin-only SSO. |
+| `ADMIN_OAUTH_MICROSOFT_CLIENT_SECRET` | No | (unset) | Microsoft OAuth client secret for admin-only SSO. |
+| `ADMIN_OAUTH_APPLE_CLIENT_ID` | No | (unset) | Apple OAuth client ID for admin-only SSO. |
+| `ADMIN_OAUTH_APPLE_CLIENT_SECRET` | No | (unset) | Apple OAuth client secret for admin-only SSO. |
+| `ADMIN_OAUTH_WORDPRESS_CLIENT_ID` | No | (unset) | WordPress OAuth/OIDC client ID for admin-only SSO. |
+| `ADMIN_OAUTH_WORDPRESS_CLIENT_SECRET` | No | (unset) | WordPress OAuth/OIDC client secret for admin-only SSO. |
+| `ADMIN_OAUTH_WORDPRESS_AUTH_URL` | No | (unset) | WordPress authorize endpoint for generic OIDC/OAuth configuration. |
+| `ADMIN_OAUTH_WORDPRESS_TOKEN_URL` | No | (unset) | WordPress token endpoint for generic OIDC/OAuth configuration. |
+| `ADMIN_OAUTH_WORDPRESS_USERINFO_URL` | No | (unset) | WordPress userinfo endpoint for generic OIDC/OAuth configuration. |
 
 These are set directly in the compose file `environment:` block (not secrets):
 
@@ -1947,8 +1989,10 @@ Run this as the deploy user to build and start (or update) the application.
 # This script:
 #   - Validates that required files exist
 #   - Optionally pulls latest code from Git (if .git directory exists)
+#   - Creates a pre-deploy feedback DB backup (optional)
 #   - Builds and starts Docker containers
 #   - Waits for health check
+#   - Rolls back to the previous Git revision on failed health check (when available)
 #   - Shows status and URLs to test
 set -euo pipefail
 
@@ -1959,6 +2003,10 @@ COMPOSE_FILE="docker-compose.prod.yml"
 APP_DOMAIN="${APP_DOMAIN:-lp.csedesigns.com}"
 APP_ALIAS_DOMAIN="${APP_ALIAS_DOMAIN:-}"
 MAIN_DOMAIN="${MAIN_DOMAIN:-csedesigns.com}"
+ENABLE_PREDEPLOY_BACKUP="${ENABLE_PREDEPLOY_BACKUP:-1}"
+
+PRE_DEPLOY_COMMIT=""
+ROLLED_BACK=0
 
 # --- Pre-flight checks ---
 if [[ "$(whoami)" == "root" ]]; then
@@ -2007,9 +2055,20 @@ fi
 
 # --- Optional: pull latest from Git ---
 if [[ -d "$APP_ROOT/.git" ]]; then
+  PRE_DEPLOY_COMMIT=$(cd "$APP_ROOT" && git rev-parse HEAD)
     echo "--- Git repository detected. Pulling latest code ---"
     cd "$APP_ROOT"
     git pull origin main
+fi
+
+# --- Optional: pre-deploy feedback DB backup ---
+if [[ "$ENABLE_PREDEPLOY_BACKUP" == "1" ]]; then
+  if [[ -x "$APP_ROOT/scripts/backup-feedback.sh" ]]; then
+    echo "--- Creating pre-deploy feedback backup ---"
+    bash "$APP_ROOT/scripts/backup-feedback.sh"
+  else
+    echo "--- Skipping pre-deploy backup (backup-feedback.sh not executable) ---"
+  fi
 fi
 
 # --- Build and start ---
@@ -2039,6 +2098,42 @@ if [[ "$HEALTHY" -eq 1 ]]; then
 else
     echo "--- Health check: DID NOT PASS after ${MAX_ATTEMPTS} attempts ---"
     echo "    Check logs: docker compose -f $COMPOSE_FILE logs web --tail 30"
+
+  # Best-effort rollback to previous known-good code revision when Git is available.
+  if [[ -n "$PRE_DEPLOY_COMMIT" && -d "$APP_ROOT/.git" ]]; then
+    echo "--- Attempting rollback to previous commit: $PRE_DEPLOY_COMMIT ---"
+    cd "$APP_ROOT"
+    git checkout -f "$PRE_DEPLOY_COMMIT"
+
+    cd "$WEB_ROOT"
+    docker compose -f "$COMPOSE_FILE" up -d --build
+
+    echo "--- Waiting for rollback health check ---"
+    ATTEMPTS=0
+    MAX_ATTEMPTS=40
+    while [[ "$ATTEMPTS" -lt "$MAX_ATTEMPTS" ]]; do
+      if docker compose -f "$COMPOSE_FILE" exec -T web python -c \
+        "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')" 2>/dev/null; then
+        ROLLED_BACK=1
+        break
+      fi
+      ATTEMPTS=$((ATTEMPTS + 1))
+      printf "."
+      sleep 3
+    done
+    echo ""
+
+    if [[ "$ROLLED_BACK" -eq 1 ]]; then
+      echo "--- Rollback health check: PASSED ---"
+    else
+      echo "--- Rollback health check: FAILED ---"
+      echo "    Manual intervention required."
+      exit 1
+    fi
+  else
+    echo "--- Rollback unavailable (no Git commit baseline). ---"
+    exit 1
+  fi
 fi
 
 # --- Status ---
@@ -2049,6 +2144,11 @@ docker compose -f "$COMPOSE_FILE" ps
 echo ""
 echo "=== Deployment complete ==="
 echo ""
+if [[ "$ROLLED_BACK" -eq 1 ]]; then
+  echo "NOTE: Deploy failed health checks and was rolled back to $PRE_DEPLOY_COMMIT."
+  echo "      Investigate the failed revision before retrying deployment."
+  echo ""
+fi
 echo "Test these URLs:"
 echo "  https://${APP_DOMAIN}/"
 echo "  https://${APP_DOMAIN}/health"

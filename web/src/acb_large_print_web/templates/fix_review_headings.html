@@ -95,9 +95,27 @@
   </table>
 
   <div class="button-group">
-    <button type="submit" class="btn-primary">Apply and Fix Document</button>
+    <button type="submit" class="btn-primary" id="apply-fix-btn">Apply and Fix Document</button>
+    <p id="apply-fix-status" class="field-hint" aria-live="polite" aria-atomic="true"></p>
   </div>
+  {% if doc_expiry %}
+  <p class="help-text"><strong>Session expires at {{ doc_expiry.strftime("%I:%M %p UTC") }}.</strong> If your session expires before you submit, re-upload the document and run Fix again to restart heading review.</p>
+  {% endif %}
 </form>
+
+<script>
+(function () {
+  'use strict';
+  var form = document.querySelector('form[method="post"]');
+  if (!form) return;
+  form.addEventListener('submit', function () {
+    var statusEl = document.getElementById('apply-fix-status');
+    var btn = document.getElementById('apply-fix-btn');
+    if (statusEl) statusEl.textContent = 'Applying fixes\u2026 This may take up to a minute for large documents.';
+    if (btn) { btn.disabled = true; btn.textContent = 'Fixing\u2026'; }
+  });
+}());
+</script>
 
 <details class="help-accordion">
   <summary>How does heading review work?</summary>

@@ -55,7 +55,9 @@ If a chapter records a meeting, an interview, or a training session, they can no
 
 This is especially powerful for teams with limited time: less retyping, less delay, faster access to information.
 
-"We wanted transcription to be practical for chapter work, not a separate technical project," said **Jeff Bishop, President of Blind Information Technology Solutions (BITS)**. "BITS Whisperer gives teams a real-world way to move from recorded content to accessible written content in one guided path."
+For longer recordings -- a full board meeting, a two-hour training session -- GLOW now offers a background processing option. Submit the audio, close the browser, and go about your day. When transcription is complete, GLOW sends an email notification with a secure private link to retrieve the result. No waiting at the screen. No lost work. The transcript is held securely for retrieval and then cleared automatically.
+
+"We wanted transcription to be practical for chapter work, not a separate technical project," said **Jeff Bishop, President of Blind Information Technology Solutions (BITS)**. "BITS Whisperer gives teams a real-world way to move from recorded content to accessible written content in one guided path. With background processing, a chapter volunteer can submit a full meeting recording in the morning and have a clean transcript waiting when they sit down after lunch."
 
 ### 4. Consent and Privacy Gate
 

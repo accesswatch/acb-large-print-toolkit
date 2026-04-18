@@ -89,6 +89,20 @@
     <p id="agree-hint" class="field-hint">You must check this box to continue. Your agreement is remembered on this browser for 365 days.</p>
   </fieldset>
 
-  <button type="submit" class="btn-primary">Continue to GLOW</button>
+  <button type="submit" class="btn-primary" id="consent-continue-btn">Continue to GLOW</button>
+  <p id="consent-status" class="field-hint" aria-live="polite" aria-atomic="true"></p>
 </form>
+<script>
+(function () {
+  'use strict';
+  var form = document.querySelector('form[method="post"]');
+  if (!form) return;
+  form.addEventListener('submit', function () {
+    var btn = document.getElementById('consent-continue-btn');
+    var statusEl = document.getElementById('consent-status');
+    if (statusEl) statusEl.textContent = 'Saving your agreement\u2026';
+    if (btn) { btn.disabled = true; btn.textContent = 'Continuing\u2026'; }
+  });
+}());
+</script>
 {% endblock %}

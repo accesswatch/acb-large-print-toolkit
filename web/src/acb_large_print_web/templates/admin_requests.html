@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Access Requests{% endblock %}
+{% block heading %}Admin Access Requests{% endblock %}
+
+{% block content %}
+<p><strong>Signed in as:</strong> {{ admin_email }}</p>
+<p><a href="{{ url_for('admin.admin_queue') }}">Back to queue dashboard</a></p>
+
+{% if rows %}
+<table class="findings-table">
+  <caption>Admin access requests</caption>
+  <thead>
+    <tr>
+      <th scope="col">ID</th>
+      <th scope="col">Email</th>
+      <th scope="col">Name</th>
+      <th scope="col">Reason</th>
+      <th scope="col">Status</th>
+      <th scope="col">Requested</th>
+      <th scope="col">Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for row in rows %}
+    <tr>
+      <td>{{ row.id }}</td>
+      <td>{{ row.email }}</td>
+      <td>{{ row.display_name or '---' }}</td>
+      <td>{{ row.reason or '---' }}</td>
+      <td>{{ row.status }}</td>
+      <td>{{ row.requested_at[:10] }}</td>
+      <td>
+        {% if row.status == 'pending' %}
+        <form method="post" action="{{ url_for('admin.admin_approve_request', req_id=row.id) }}" class="inline-form">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" class="btn-secondary" onclick="return confirm('Approve access for ' + {{ row.email | tojson }} + '?');">Approve</button>
+        </form>
+        <form method="post" action="{{ url_for('admin.admin_deny_request', req_id=row.id) }}" class="inline-form">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" class="btn-secondary" onclick="return confirm('Deny access for ' + {{ row.email | tojson }} + '? This cannot be undone.');">Deny</button>
+        </form>
+        {% else %}
+        ---
+        {% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p>No access requests recorded.</p>
+{% endif %}
+{% endblock %}

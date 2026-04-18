@@ -65,6 +65,21 @@
     </dl>
   </details>
 
-  <button type="submit" class="btn-primary">Export</button>
+  <button type="submit" class="btn-primary" id="export-submit-btn">Export</button>
+  <p id="export-processing-status" class="field-hint" aria-live="polite" aria-atomic="true"></p>
 </form>
+
+<script>
+(function () {
+  'use strict';
+  var form = document.querySelector('form[method="post"]');
+  if (!form) return;
+  form.addEventListener('submit', function () {
+    var statusEl = document.getElementById('export-processing-status');
+    var btn = document.getElementById('export-submit-btn');
+    if (statusEl) statusEl.textContent = 'Exporting your document\u2026 This may take up to a minute.';
+    if (btn) { btn.disabled = true; btn.textContent = 'Exporting\u2026'; }
+  });
+}());
+</script>
 {% endblock %}

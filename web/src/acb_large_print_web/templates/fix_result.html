@@ -99,9 +99,29 @@
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <input type="hidden" name="token" value="{{ token }}">
     <input type="hidden" name="download_name" value="{{ download_name }}">
-    <button type="submit" class="btn-primary">Download {{ download_name }}</button>
+    <button type="submit" class="btn-primary" id="fix-download-btn">Download {{ download_name }}</button>
+    <p id="fix-download-status" class="field-hint" aria-live="polite" aria-atomic="true"></p>
   </form>
 </section>
+
+<script>
+(function () {
+  'use strict';
+  var form = document.querySelector('form[action*="fix_download"]');
+  if (!form) return;
+  form.addEventListener('submit', function () {
+    var btn = document.getElementById('fix-download-btn');
+    var statusEl = document.getElementById('fix-download-status');
+    if (statusEl) statusEl.textContent = 'Preparing your download\u2026';
+    if (btn) { btn.disabled = true; }
+    /* Re-enable after 4 s -- browser will have started the download by then */
+    setTimeout(function () {
+      if (btn) { btn.disabled = false; }
+      if (statusEl) { statusEl.textContent = ''; }
+    }, 4000);
+  });
+}());
+</script>
 
 {% if fix_records %}
 <section aria-labelledby="fix-details-heading">

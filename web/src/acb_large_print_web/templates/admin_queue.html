@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Queue{% endblock %}
+{% block heading %}Admin Queue Dashboard{% endblock %}
+
+{% block content %}
+<p><strong>Signed in as:</strong> {{ admin_email }}</p>
+<p>This dashboard is for administrative operations only. It refreshes automatically every 20 seconds while jobs are active.</p>
+
+<form method="post" action="{{ url_for('admin.admin_logout') }}" class="inline-form">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <button type="submit" class="btn-secondary">Sign Out</button>
+</form>
+<p><a href="{{ url_for('admin.admin_requests') }}">Review admin access requests</a></p>
+
+{% if request.args.get('notice') %}
+<div class="success-box" role="status"><p>{{ request.args.get('notice') }}</p></div>
+{% endif %}
+{% if request.args.get('error') %}
+<div class="error-box" role="alert"><p><strong>Error:</strong> {{ request.args.get('error') }}</p></div>
+{% endif %}
+
+{% if rows %}
+<table class="findings-table">
+  <caption>Audio conversion jobs (newest first) -- last updated <time id="queue-last-updated">just now</time></caption>
+  <thead>
+    <tr>
+      <th scope="col">Job</th>
+      <th scope="col">Status</th>
+      <th scope="col">Progress</th>
+      <th scope="col">Queue Pos</th>
+      <th scope="col">Mode</th>
+      <th scope="col">Notify Email</th>
+      <th scope="col">Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for row in rows %}
+    <tr>
+      <td><code>{{ row.job_id[:8] }}</code></td>
+      <td>{{ row.status }}</td>
+      <td>{{ row.progress }}%</td>
+      <td>{{ row.queue_position or '---' }}</td>
+      <td>{{ 'Background' if row.is_background else 'Foreground' }}</td>
+      <td>{{ row.notify_email or '---' }}</td>
+      <td>
+        {% if row.status == 'queued' %}
+        <form method="post" action="{{ url_for('admin.admin_queue_cancel', job_id=row.job_id) }}" class="inline-form">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" class="btn-secondary" onclick="return confirm('Cancel this queued job? It will be removed from the queue.');">Cancel</button>
+        </form>
+        {% endif %}
+        {% if row.status == 'failed' %}
+        <form method="post" action="{{ url_for('admin.admin_queue_requeue', job_id=row.job_id) }}" class="inline-form">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" class="btn-secondary" onclick="return confirm('Re-queue this failed job?');">Re-Queue</button>
+        </form>
+        {% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p>No audio jobs available.</p>
+{% endif %}
+
+<script>
+(function () {
+  'use strict';
+  /* Only auto-refresh when there are active (queued or processing) jobs */
+  var activeRows = document.querySelectorAll('td');
+  var hasActive = false;
+  activeRows.forEach(function (td) {
+    if (td.textContent.trim() === 'queued' || td.textContent.trim() === 'processing') {
+      hasActive = true;
+    }
+  });
+  if (!hasActive) return;
+
+  var INTERVAL_MS = 20000;
+  var lastUpdatedEl = document.getElementById('queue-last-updated');
+
+  function pad(n) { return n < 10 ? '0' + n : String(n); }
+
+  function updateTimestamp() {
+    if (!lastUpdatedEl) return;
+    var now = new Date();
+    lastUpdatedEl.textContent =
+      pad(now.getHours()) + ':' + pad(now.getMinutes()) + ':' + pad(now.getSeconds());
+    lastUpdatedEl.setAttribute('datetime', now.toISOString());
+  }
+
+  function refresh() {
+    updateTimestamp();
+    /* Announce to screen readers before reloading */
+    var liveEl = document.createElement('p');
+    liveEl.setAttribute('aria-live', 'polite');
+    liveEl.setAttribute('aria-atomic', 'true');
+    liveEl.className = 'field-hint';
+    liveEl.textContent = 'Refreshing queue status\u2026';
+    document.getElementById('main').appendChild(liveEl);
+    setTimeout(function () { window.location.reload(); }, 400);
+  }
+
+  var timer = setInterval(refresh, INTERVAL_MS);
+
+  /* Stop auto-refresh if admin navigates away or the page is hidden */
+  document.addEventListener('visibilitychange', function () {
+    if (document.hidden) {
+      clearInterval(timer);
+    } else {
+      timer = setInterval(refresh, INTERVAL_MS);
+    }
+  });
+}());
+</script>
+{% endblock %}

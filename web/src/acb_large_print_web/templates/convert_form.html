@@ -353,8 +353,23 @@
     {% endif %}
   </details>
 
-  <button type="submit" class="btn-primary">Convert My Document</button>
+  <button type="submit" class="btn-primary" id="convert-submit-btn">Convert My Document</button>
+  <p id="convert-processing-status" class="field-hint" aria-live="polite" aria-atomic="true"></p>
 </form>
+
+<script>
+(function () {
+  'use strict';
+  var form = document.querySelector('form[method="post"]');
+  if (!form) return;
+  form.addEventListener('submit', function () {
+    var statusEl = document.getElementById('convert-processing-status');
+    var btn = document.getElementById('convert-submit-btn');
+    if (statusEl) statusEl.textContent = 'Converting your document\u2026 This may take up to a minute for large files.';
+    if (btn) { btn.disabled = true; btn.textContent = 'Converting\u2026'; }
+  });
+}());
+</script>
 
 <div class="info-box" role="note" aria-labelledby="whisperer-callout-heading">
   <h2 id="whisperer-callout-heading">Have audio to transcribe?</h2>

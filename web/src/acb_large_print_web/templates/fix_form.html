@@ -339,6 +339,21 @@
     <p>For Excel and PowerPoint, the tool runs a full audit and provides a detailed remediation guide. Auto-fix support for these formats is planned for a future release.</p>
   </details>
 
-  <button type="submit" class="btn-primary">Fix Document</button>
+  <button type="submit" class="btn-primary" id="fix-submit-btn">Fix Document</button>
+  <p id="fix-processing-status" class="field-hint" aria-live="polite" aria-atomic="true"></p>
 </form>
+
+<script>
+(function () {
+  'use strict';
+  var form = document.querySelector('form[method="post"]');
+  if (!form) return;
+  form.addEventListener('submit', function () {
+    var statusEl = document.getElementById('fix-processing-status');
+    var btn = document.getElementById('fix-submit-btn');
+    if (statusEl) statusEl.textContent = 'Processing your document\u2026 This may take up to a minute for large files.';
+    if (btn) { btn.disabled = true; btn.textContent = 'Processing\u2026'; }
+  });
+}());
+</script>
 {% endblock %}

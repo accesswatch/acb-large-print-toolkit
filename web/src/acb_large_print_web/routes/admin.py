@@ -1,0 +1,724 @@
+"""Admin authentication and queue management routes.
+
+Admin access is intentionally separate from end-user workflows.
+Current scope: admin-only sign-in and approval workflow.
+Future scope may introduce non-admin user accounts.
+"""
+
+from __future__ import annotations
+
+import base64
+import hashlib
+import hmac
+import html as html_mod
+import os
+import secrets
+import sqlite3
+from dataclasses import dataclass
+from datetime import UTC, datetime, timedelta
+from pathlib import Path
+from typing import Any
+from urllib.parse import urlencode
+
+import requests
+from flask import (
+    Blueprint,
+    abort,
+    current_app,
+    redirect,
+    render_template,
+    request,
+    session,
+    url_for,
+)
+
+from ..app import limiter
+from ..email import email_configured, send_whisperer_status_email
+from .whisperer import (
+    admin_cancel_queued_job,
+    admin_requeue_failed_job,
+    get_admin_queue_snapshot,
+)
+
+admin_bp = Blueprint("admin", __name__)
+
+_MAGIC_LINK_TTL_MINUTES = int(os.environ.get("ADMIN_MAGIC_LINK_TTL_MINUTES", "20"))
+
+
+@dataclass
+class _ProviderConfig:
+    key: str
+    label: str
+    client_id: str
+    client_secret: str
+    auth_url: str
+    token_url: str
+    userinfo_url: str
+    scope: str
+    email_field: str
+
+
+def _db_path() -> Path:
+    instance_path = Path(current_app.instance_path)
+    instance_path.mkdir(parents=True, exist_ok=True)
+    return instance_path / "admin_auth.db"
+
+
+def _db() -> sqlite3.Connection:
+    conn = sqlite3.connect(str(_db_path()))
+    conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA journal_mode=WAL")
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS admin_accounts ("
+        "  email TEXT PRIMARY KEY,"
+        "  display_name TEXT,"
+        "  approved INTEGER NOT NULL DEFAULT 0,"
+        "  created_at TEXT NOT NULL,"
+        "  approved_at TEXT,"
+        "  approved_by TEXT"
+        ")"
+    )
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS admin_requests ("
+        "  id INTEGER PRIMARY KEY AUTOINCREMENT,"
+        "  email TEXT NOT NULL,"
+        "  display_name TEXT,"
+        "  reason TEXT,"
+        "  status TEXT NOT NULL DEFAULT 'pending',"
+        "  requested_at TEXT NOT NULL,"
+        "  reviewed_at TEXT,"
+        "  reviewed_by TEXT"
+        ")"
+    )
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS admin_magic_links ("
+        "  token_hash TEXT PRIMARY KEY,"
+        "  email TEXT NOT NULL,"
+        "  expires_at TEXT NOT NULL,"
+        "  created_at TEXT NOT NULL,"
+        "  used_at TEXT"
+        ")"
+    )
+    conn.commit()
+    return conn
+
+
+def _utc_now() -> str:
+    return datetime.now(UTC).isoformat()
+
+
+def _normalize_email(value: str) -> str:
+    return (value or "").strip().lower()
+
+
+def _bootstrap_admins() -> None:
+    raw = os.environ.get("ADMIN_BOOTSTRAP_EMAILS", "").strip()
+    if not raw:
+        return
+
+    emails = [_normalize_email(item) for item in raw.split(",") if item.strip()]
+    if not emails:
+        return
+
+    conn = _db()
+    now = _utc_now()
+    for email in emails:
+        conn.execute(
+            "INSERT INTO admin_accounts (email, display_name, approved, created_at, approved_at, approved_by) "
+            "VALUES (?, ?, 1, ?, ?, 'bootstrap') "
+            "ON CONFLICT(email) DO UPDATE SET approved=1",
+            (email, email, now, now),
+        )
+    conn.commit()
+    conn.close()
+
+
+def _account(email: str) -> sqlite3.Row | None:
+    conn = _db()
+    row = conn.execute(
+        "SELECT email, display_name, approved FROM admin_accounts WHERE email=?",
+        (email,),
+    ).fetchone()
+    conn.close()
+    return row
+
+
+def _is_approved_admin(email: str) -> bool:
+    row = _account(email)
+    return bool(row and int(row["approved"]) == 1)
+
+
+def _current_admin_email() -> str | None:
+    value = session.get("admin_email")
+    return _normalize_email(value) if value else None
+
+
+def _require_admin() -> str:
+    _bootstrap_admins()
+    email = _current_admin_email()
+    if not email or not _is_approved_admin(email):
+        abort(403)
+    return email
+
+
+def _provider_env(prefix: str, name: str) -> str:
+    return os.environ.get(f"ADMIN_OAUTH_{prefix}_{name}", "").strip()
+
+
+def _provider_configs() -> list[_ProviderConfig]:
+    providers: list[_ProviderConfig] = []
+
+    def add_provider(
+        key: str,
+        label: str,
+        default_auth: str,
+        default_token: str,
+        default_userinfo: str,
+        default_scope: str,
+        default_email_field: str,
+    ) -> None:
+        prefix = key.upper()
+        client_id = _provider_env(prefix, "CLIENT_ID")
+        client_secret = _provider_env(prefix, "CLIENT_SECRET")
+        auth_url = _provider_env(prefix, "AUTH_URL") or default_auth
+        token_url = _provider_env(prefix, "TOKEN_URL") or default_token
+        userinfo_url = _provider_env(prefix, "USERINFO_URL") or default_userinfo
+        scope = _provider_env(prefix, "SCOPE") or default_scope
+        email_field = _provider_env(prefix, "EMAIL_FIELD") or default_email_field
+
+        if not client_id or not client_secret or not auth_url or not token_url or not userinfo_url:
+            return
+
+        providers.append(
+            _ProviderConfig(
+                key=key,
+                label=label,
+                client_id=client_id,
+                client_secret=client_secret,
+                auth_url=auth_url,
+                token_url=token_url,
+                userinfo_url=userinfo_url,
+                scope=scope,
+                email_field=email_field,
+            )
+        )
+
+    add_provider(
+        "google",
+        "Google",
+        "https://accounts.google.com/o/oauth2/v2/auth",
+        "https://oauth2.googleapis.com/token",
+        "https://openidconnect.googleapis.com/v1/userinfo",
+        "openid email profile",
+        "email",
+    )
+
+    add_provider(
+        "github",
+        "GitHub",
+        "https://github.com/login/oauth/authorize",
+        "https://github.com/login/oauth/access_token",
+        "https://api.github.com/user",
+        "read:user user:email",
+        "email",
+    )
+
+    add_provider(
+        "microsoft",
+        "Microsoft",
+        "https://login.microsoftonline.com/common/oauth2/v2.0/authorize",
+        "https://login.microsoftonline.com/common/oauth2/v2.0/token",
+        "https://graph.microsoft.com/v1.0/me",
+        "openid email profile",
+        "mail",
+    )
+
+    auth0_domain = os.environ.get("ADMIN_AUTH0_DOMAIN", "").strip()
+    if auth0_domain:
+        auth0_domain = auth0_domain.rstrip("/")
+        add_provider(
+            "auth0",
+            "Auth0",
+            f"{auth0_domain}/authorize",
+            f"{auth0_domain}/oauth/token",
+            f"{auth0_domain}/userinfo",
+            "openid email profile",
+            "email",
+        )
+
+    add_provider(
+        "apple",
+        "Apple",
+        "https://appleid.apple.com/auth/authorize",
+        "https://appleid.apple.com/auth/token",
+        _provider_env("APPLE", "USERINFO_URL"),
+        "name email",
+        "email",
+    )
+
+    add_provider(
+        "wordpress",
+        "WordPress",
+        _provider_env("WORDPRESS", "AUTH_URL"),
+        _provider_env("WORDPRESS", "TOKEN_URL"),
+        _provider_env("WORDPRESS", "USERINFO_URL"),
+        "openid email profile",
+        "email",
+    )
+
+    return providers
+
+
+def _send_admin_email(to_email: str, subject: str, html: str, text: str) -> None:
+    if not email_configured():
+        return
+    send_whisperer_status_email(to_email, subject, html, text)
+
+
+def _pending_requests() -> list[sqlite3.Row]:
+    conn = _db()
+    rows = conn.execute(
+        "SELECT id, email, display_name, reason, status, requested_at, reviewed_at, reviewed_by "
+        "FROM admin_requests ORDER BY id DESC"
+    ).fetchall()
+    conn.close()
+    return rows
+
+
+def _make_magic_link(email: str) -> str:
+    token = secrets.token_urlsafe(32)
+    token_hash = hashlib.sha256(token.encode("utf-8")).hexdigest()
+    expires_at = (datetime.now(UTC) + timedelta(minutes=_MAGIC_LINK_TTL_MINUTES)).isoformat()
+
+    conn = _db()
+    conn.execute(
+        "INSERT INTO admin_magic_links (token_hash, email, expires_at, created_at, used_at) "
+        "VALUES (?, ?, ?, ?, NULL)",
+        (token_hash, email, expires_at, _utc_now()),
+    )
+    conn.commit()
+    conn.close()
+    return token
+
+
+def _decode_jwt_email(id_token: str) -> str:
+    try:
+        parts = id_token.split(".")
+        if len(parts) < 2:
+            return ""
+        payload = parts[1]
+        padded = payload + "=" * (-len(payload) % 4)
+        raw = base64.urlsafe_b64decode(padded.encode("utf-8"))
+        import json
+
+        obj = json.loads(raw.decode("utf-8"))
+        return _normalize_email(obj.get("email", ""))
+    except Exception:
+        return ""
+
+
+@admin_bp.route("/login", methods=["GET"])
+def admin_login() -> Any:
+    _bootstrap_admins()
+    providers = _provider_configs() if email_configured() else []
+    return render_template(
+        "admin_login.html",
+        providers=providers,
+        email_enabled=email_configured(),
+        ttl_minutes=_MAGIC_LINK_TTL_MINUTES,
+    )
+
+
+@admin_bp.route("/logout", methods=["POST"])
+def admin_logout() -> Any:
+    session.pop("admin_email", None)
+    return redirect(url_for("admin.admin_login"))
+
+
+@admin_bp.route("/request-access", methods=["GET", "POST"])
+@limiter.limit("5 per minute", methods=["POST"])
+def admin_request_access() -> Any:
+    _bootstrap_admins()
+    if not email_configured():
+        return (
+            render_template(
+                "admin_request_access.html",
+                submitted=False,
+                error="Admin access requests are unavailable until email delivery is configured.",
+            ),
+            503,
+        )
+
+    if request.method == "GET":
+        return render_template("admin_request_access.html", submitted=False)
+
+    email = _normalize_email(request.form.get("email", ""))
+    name = (request.form.get("display_name", "") or "").strip()
+    reason = (request.form.get("reason", "") or "").strip()
+
+    if not email:
+        return render_template("admin_request_access.html", submitted=False, error="Email is required."), 400
+
+    conn = _db()
+    pending = conn.execute(
+        "SELECT id FROM admin_requests WHERE email=? AND status='pending'",
+        (email,),
+    ).fetchone()
+    if pending:
+        conn.close()
+        return render_template("admin_request_access.html", submitted=True)
+
+    conn.execute(
+        "INSERT INTO admin_requests (email, display_name, reason, status, requested_at, reviewed_at, reviewed_by) "
+        "VALUES (?, ?, ?, 'pending', ?, NULL, NULL)",
+        (email, name, reason, _utc_now()),
+    )
+    conn.commit()
+    conn.close()
+
+    if email_configured():
+        bootstrap = os.environ.get("ADMIN_BOOTSTRAP_EMAILS", "")
+        admins = [_normalize_email(item) for item in bootstrap.split(",") if item.strip()]
+        safe_email = html_mod.escape(email)
+        safe_name = html_mod.escape(name or "N/A")
+        safe_reason = html_mod.escape(reason or "N/A")
+        for admin_email in admins:
+            _send_admin_email(
+                admin_email,
+                "GLOW admin access request",
+                (
+                    f"<p>New admin access request from <strong>{safe_email}</strong>.</p>"
+                    f"<p>Name: {safe_name}</p><p>Reason: {safe_reason}</p>"
+                    f"<p>Review requests: <a href=\"{url_for('admin.admin_login', _external=True)}\">Admin login</a></p>"
+                ),
+                (
+                    f"New admin access request from {email}.\n"
+                    f"Name: {name or 'N/A'}\nReason: {reason or 'N/A'}\n"
+                    f"Review at: {url_for('admin.admin_login', _external=True)}"
+                ),
+            )
+
+    return render_template("admin_request_access.html", submitted=True)
+
+
+@admin_bp.route("/login/email", methods=["POST"])
+@limiter.limit("5 per minute")
+def admin_login_email() -> Any:
+    _bootstrap_admins()
+    if not email_configured():
+        return render_template("admin_login.html", providers=[], email_enabled=False, error="Email authentication is not available."), 400
+
+    email = _normalize_email(request.form.get("email", ""))
+    if not email:
+        return render_template("admin_login.html", providers=_provider_configs(), email_enabled=True, error="Email is required."), 400
+
+    if not _is_approved_admin(email):
+        return render_template(
+            "admin_login.html",
+            providers=_provider_configs(),
+            email_enabled=True,
+            error="This account is not approved for admin access. Please request access.",
+            ttl_minutes=_MAGIC_LINK_TTL_MINUTES,
+        ), 403
+
+    token = _make_magic_link(email)
+    link = url_for("admin.admin_magic_link_consume", token=token, _external=True)
+    _send_admin_email(
+        email,
+        "GLOW admin sign-in link",
+        (
+            "<p>Your admin sign-in link is ready.</p>"
+            f"<p><a href=\"{link}\">Sign in to admin</a></p>"
+            f"<p>This link expires in {_MAGIC_LINK_TTL_MINUTES} minutes.</p>"
+        ),
+        (
+            f"Your admin sign-in link: {link}\n"
+            f"This link expires in {_MAGIC_LINK_TTL_MINUTES} minutes."
+        ),
+    )
+    return render_template(
+        "admin_login.html",
+        providers=_provider_configs(),
+        email_enabled=True,
+        notice="A secure admin sign-in link was sent to your email.",
+        ttl_minutes=_MAGIC_LINK_TTL_MINUTES,
+    )
+
+
+@admin_bp.route("/magic-link/consume", methods=["GET"])
+def admin_magic_link_consume() -> Any:
+    _bootstrap_admins()
+    token = request.args.get("token", "")
+    if not token:
+        abort(400)
+
+    token_hash = hashlib.sha256(token.encode("utf-8")).hexdigest()
+    conn = _db()
+    row = conn.execute(
+        "SELECT token_hash, email, expires_at, used_at FROM admin_magic_links WHERE token_hash=?",
+        (token_hash,),
+    ).fetchone()
+
+    if row is None:
+        conn.close()
+        return render_template("admin_login.html", providers=_provider_configs(), email_enabled=email_configured(), error="Magic link is invalid."), 403
+
+    if row["used_at"]:
+        conn.close()
+        return render_template("admin_login.html", providers=_provider_configs(), email_enabled=email_configured(), error="Magic link was already used."), 403
+
+    if datetime.fromisoformat(row["expires_at"]) < datetime.now(UTC):
+        conn.close()
+        return render_template("admin_login.html", providers=_provider_configs(), email_enabled=email_configured(), error="Magic link has expired."), 403
+
+    email = _normalize_email(row["email"])
+    if not _is_approved_admin(email):
+        conn.close()
+        return render_template("admin_login.html", providers=_provider_configs(), email_enabled=email_configured(), error="Admin approval is required."), 403
+
+    conn.execute(
+        "UPDATE admin_magic_links SET used_at=? WHERE token_hash=?",
+        (_utc_now(), token_hash),
+    )
+    conn.commit()
+    conn.close()
+
+    session.clear()
+    session.clear()
+    session["admin_email"] = email
+    return redirect(url_for("admin.admin_queue"))
+
+
+def _oauth_provider_by_key(key: str) -> _ProviderConfig | None:
+    for provider in _provider_configs():
+        if provider.key == key:
+            return provider
+    return None
+
+
+@admin_bp.route("/oauth/start/<provider_key>", methods=["GET"])
+def admin_oauth_start(provider_key: str) -> Any:
+    _bootstrap_admins()
+    if not email_configured():
+        return redirect(url_for("admin.admin_login"))
+
+    provider = _oauth_provider_by_key(provider_key)
+    if provider is None:
+        abort(404)
+
+    state = secrets.token_urlsafe(24)
+    session["admin_oauth_state"] = {"state": state, "provider": provider.key}
+
+    params = {
+        "client_id": provider.client_id,
+        "redirect_uri": url_for("admin.admin_oauth_callback", provider_key=provider.key, _external=True),
+        "response_type": "code",
+        "scope": provider.scope,
+        "state": state,
+    }
+
+    return redirect(f"{provider.auth_url}?{urlencode(params)}")
+
+
+@admin_bp.route("/oauth/callback/<provider_key>", methods=["GET"])
+def admin_oauth_callback(provider_key: str) -> Any:
+    _bootstrap_admins()
+    provider = _oauth_provider_by_key(provider_key)
+    if provider is None:
+        abort(404)
+
+    state_payload = session.get("admin_oauth_state") or {}
+    expected_state = state_payload.get("state", "")
+    expected_provider = state_payload.get("provider", "")
+    given_state = request.args.get("state", "")
+    if not expected_state or not hmac.compare_digest(given_state, expected_state) or expected_provider != provider.key:
+        return render_template("admin_login.html", providers=_provider_configs(), email_enabled=email_configured(), error="OAuth state mismatch. Please try again."), 403
+
+    code = request.args.get("code", "")
+    if not code:
+        return render_template("admin_login.html", providers=_provider_configs(), email_enabled=email_configured(), error="OAuth callback did not include a code."), 400
+
+    token_resp = requests.post(
+        provider.token_url,
+        data={
+            "grant_type": "authorization_code",
+            "code": code,
+            "client_id": provider.client_id,
+            "client_secret": provider.client_secret,
+            "redirect_uri": url_for("admin.admin_oauth_callback", provider_key=provider.key, _external=True),
+        },
+        headers={"Accept": "application/json"},
+        timeout=10,
+    )
+    if token_resp.status_code >= 400:
+        return render_template("admin_login.html", providers=_provider_configs(), email_enabled=email_configured(), error="OAuth token exchange failed."), 403
+
+    try:
+        token_payload = token_resp.json()
+    except Exception:
+        return render_template("admin_login.html", providers=_provider_configs(), email_enabled=email_configured(), error="OAuth provider returned an unexpected response."), 502
+
+    access_token = token_payload.get("access_token", "")
+    id_token = token_payload.get("id_token", "")
+
+    email = ""
+    if access_token and provider.userinfo_url:
+        user_resp = requests.get(
+            provider.userinfo_url,
+            headers={"Authorization": f"Bearer {access_token}", "Accept": "application/json"},
+            timeout=10,
+        )
+        if user_resp.status_code < 400:
+            try:
+                user_data = user_resp.json()
+            except Exception:
+                user_data = {}
+            email = _normalize_email(user_data.get(provider.email_field, ""))
+
+            if provider.key == "github" and not email:
+                email_resp = requests.get(
+                    "https://api.github.com/user/emails",
+                    headers={"Authorization": f"Bearer {access_token}", "Accept": "application/json"},
+                    timeout=10,
+                )
+                if email_resp.status_code < 400:
+                    try:
+                        email_list = email_resp.json()
+                    except Exception:
+                        email_list = []
+                    for item in email_list:
+                        if item.get("primary") and item.get("verified"):
+                            email = _normalize_email(item.get("email", ""))
+                            break
+
+    if not email and id_token:
+        email = _decode_jwt_email(id_token)
+
+    if not email:
+        return render_template("admin_login.html", providers=_provider_configs(), email_enabled=email_configured(), error="Could not determine account email from OAuth provider."), 403
+
+    if not _is_approved_admin(email):
+        return render_template(
+            "admin_login.html",
+            providers=_provider_configs(),
+            email_enabled=email_configured(),
+            error="This account is not approved for admin access. Please request access.",
+            ttl_minutes=_MAGIC_LINK_TTL_MINUTES,
+        ), 403
+
+    session["admin_email"] = email
+    return redirect(url_for("admin.admin_queue"))
+
+
+@admin_bp.route("/queue", methods=["GET"])
+def admin_queue() -> Any:
+    email = _require_admin()
+    rows = get_admin_queue_snapshot()
+    return render_template("admin_queue.html", admin_email=email, rows=rows)
+
+
+@admin_bp.route("/queue/cancel/<job_id>", methods=["POST"])
+def admin_queue_cancel(job_id: str) -> Any:
+    _require_admin()
+    ok, msg = admin_cancel_queued_job(job_id)
+    return redirect(url_for("admin.admin_queue", notice=msg if ok else None, error=None if ok else msg))
+
+
+@admin_bp.route("/queue/requeue/<job_id>", methods=["POST"])
+def admin_queue_requeue(job_id: str) -> Any:
+    _require_admin()
+    ok, msg = admin_requeue_failed_job(job_id)
+    return redirect(url_for("admin.admin_queue", notice=msg if ok else None, error=None if ok else msg))
+
+
+@admin_bp.route("/requests", methods=["GET"])
+def admin_requests() -> Any:
+    email = _require_admin()
+    rows = _pending_requests()
+    return render_template("admin_requests.html", admin_email=email, rows=rows)
+
+
+def _ensure_account(email: str, display_name: str | None = None) -> None:
+    conn = _db()
+    conn.execute(
+        "INSERT INTO admin_accounts (email, display_name, approved, created_at, approved_at, approved_by) "
+        "VALUES (?, ?, 0, ?, NULL, NULL) "
+        "ON CONFLICT(email) DO NOTHING",
+        (email, display_name or email, _utc_now()),
+    )
+    conn.commit()
+    conn.close()
+
+
+@admin_bp.route("/requests/approve/<int:req_id>", methods=["POST"])
+def admin_approve_request(req_id: int) -> Any:
+    reviewer = _require_admin()
+    conn = _db()
+    row = conn.execute(
+        "SELECT id, email, display_name, status FROM admin_requests WHERE id=?",
+        (req_id,),
+    ).fetchone()
+    if row is None:
+        conn.close()
+        abort(404)
+
+    if row["status"] != "pending":
+        conn.close()
+        return redirect(url_for("admin.admin_requests"))
+
+    _ensure_account(_normalize_email(row["email"]), row["display_name"])
+    now = _utc_now()
+    conn.execute(
+        "UPDATE admin_accounts SET approved=1, approved_at=?, approved_by=? WHERE email=?",
+        (now, reviewer, _normalize_email(row["email"])),
+    )
+    conn.execute(
+        "UPDATE admin_requests SET status='approved', reviewed_at=?, reviewed_by=? WHERE id=?",
+        (now, reviewer, req_id),
+    )
+    conn.commit()
+    conn.close()
+
+    if email_configured():
+        _send_admin_email(
+            _normalize_email(row["email"]),
+            "GLOW admin access approved",
+            (
+                "<p>Your admin access request has been approved.</p>"
+                f"<p>Sign in here: <a href=\"{url_for('admin.admin_login', _external=True)}\">Admin login</a></p>"
+            ),
+            f"Your admin access request has been approved. Sign in at {url_for('admin.admin_login', _external=True)}",
+        )
+
+    return redirect(url_for("admin.admin_requests"))
+
+
+@admin_bp.route("/requests/deny/<int:req_id>", methods=["POST"])
+def admin_deny_request(req_id: int) -> Any:
+    reviewer = _require_admin()
+    conn = _db()
+    row = conn.execute(
+        "SELECT id, email, status FROM admin_requests WHERE id=?",
+        (req_id,),
+    ).fetchone()
+    if row is None:
+        conn.close()
+        abort(404)
+
+    if row["status"] == "pending":
+        conn.execute(
+            "UPDATE admin_requests SET status='denied', reviewed_at=?, reviewed_by=? WHERE id=?",
+            (_utc_now(), reviewer, req_id),
+        )
+        conn.commit()
+    conn.close()
+
+    if row["status"] == "pending" and email_configured():
+        _send_admin_email(
+            _normalize_email(row["email"]),
+            "GLOW admin access request update",
+            "<p>Your admin access request was reviewed and is not approved at this time.</p>",
+            "Your admin access request was reviewed and is not approved at this time.",
+        )
+
+    return redirect(url_for("admin.admin_requests"))

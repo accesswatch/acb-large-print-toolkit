@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block title %}Request Admin Access{% endblock %}
+{% block heading %}Request Admin Access{% endblock %}
+
+{% block content %}
+<p>This form submits an admin access request for review.</p>
+
+{% if error %}
+<div class="error-box" role="alert"><p><strong>Error:</strong> {{ error }}</p></div>
+{% endif %}
+
+{% if submitted %}
+<div class="success-box" role="status">
+  <p>Your request was submitted. An existing admin must approve access before you can sign in.</p>
+</div>
+<p><a href="{{ url_for('admin.admin_login') }}">Return to admin sign-in</a></p>
+{% else %}
+<form method="post" novalidate>
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+  <label for="email">Email</label>
+  <input type="email" id="email" name="email" required autocomplete="email">
+
+  <label for="display_name">Display name (optional)</label>
+  <input type="text" id="display_name" name="display_name" maxlength="120" autocomplete="name">
+
+  <label for="reason">Why do you need admin access? (optional)</label>
+  <textarea id="reason" name="reason" rows="4" maxlength="2000"></textarea>
+
+  <button type="submit" class="btn-primary" id="access-request-btn">Submit Request</button>
+  <p id="access-request-status" class="field-hint" aria-live="polite" aria-atomic="true"></p>
+</form>
+<script>
+(function () {
+  'use strict';
+  var form = document.querySelector('form[method="post"]');
+  if (!form) return;
+  form.addEventListener('submit', function () {
+    var btn = document.getElementById('access-request-btn');
+    var statusEl = document.getElementById('access-request-status');
+    if (statusEl) statusEl.textContent = 'Submitting request\u2026';
+    if (btn) { btn.disabled = true; btn.textContent = 'Submitting\u2026'; }
+  });
+}());
+</script>
+{% endif %}
+{% endblock %}

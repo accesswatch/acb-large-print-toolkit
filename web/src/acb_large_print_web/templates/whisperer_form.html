@@ -20,16 +20,19 @@
 
 <div class="info-box" role="note">
   <p><strong>Processing time:</strong> Whisper medium runs on CPU at roughly real-time speed -- a 10-minute recording takes about 10 minutes to transcribe. Large files (over 30 minutes) may take a while. The page will wait while your audio is being processed.</p>
+  <p><strong>Progress indicator:</strong> After you click <em>Transcribe Audio</em>, this page shows real server-reported conversion progress from the active Whisper job.</p>
 </div>
 
-<form method="post" enctype="multipart/form-data" novalidate>
+{% set ns = namespace(step=1) %}
+<form id="whisperer-form" method="post" enctype="multipart/form-data" novalidate data-background-threshold-minutes="{{ background_threshold_minutes }}">
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
   <!-- ============================================================ -->
-  <!-- STEP 1: Upload audio                                         -->
+  <!-- STEP: Upload audio                                           -->
   <!-- ============================================================ -->
   <fieldset>
-    <legend>Step 1: Upload your audio file</legend>
+    <legend>Step {{ ns.step }}: Upload your audio file</legend>
+    {% set ns.step = ns.step + 1 %}
 
     <label for="audio">Audio file</label>
     <input
@@ -47,11 +50,61 @@
     </p>
   </fieldset>
 
+  <fieldset>
+    <legend>Step {{ ns.step }}: Review estimate and confirm</legend>
+    {% set ns.step = ns.step + 1 %}
+    <p id="estimate-hint" class="field-hint">
+      Select an audio file to calculate an estimated processing time.
+    </p>
+    <p id="estimate-value" class="field-hint"><strong>Estimated conversion time:</strong> Not available yet.</p>
+    <label>
+      <input type="checkbox" name="confirm_estimate" value="yes" required>
+      I reviewed the estimated processing time and want to proceed.
+    </label>
+    <p class="field-hint">
+      Long recordings can take significant time. Keep this page open until conversion reaches 100% and your download begins.
+    </p>
+  </fieldset>
+
+  {% if email_enabled %}
+  <fieldset id="background-processing-fieldset">
+    <legend>Step {{ ns.step }}: Background notification (optional)</legend>
+    {% set ns.step = ns.step + 1 %}
+    <label>
+      <input type="checkbox" id="background-opt-in" name="background_opt_in" value="yes">
+      Email me a secure link when my transcript is ready, so I can close this page and come back later.
+    </label>
+    <p class="field-hint">
+      Recommended for any recording if the server is busy or you do not want to wait on this page.
+      Especially useful for long recordings. You will receive a queued, started, and completed notification.
+    </p>
+
+    <div id="background-details" hidden>
+      <label for="notify-email">Notification email</label>
+      <input type="email" id="notify-email" name="notify_email" autocomplete="email" aria-describedby="notify-email-hint">
+      <p id="notify-email-hint" class="field-hint">
+        You will receive queued, started, and completed notifications.
+      </p>
+
+      <label for="retrieval-password">Create retrieval password</label>
+      <input type="password" id="retrieval-password" name="retrieval_password" minlength="8" aria-describedby="retrieval-password-hint">
+      <p id="retrieval-password-hint" class="field-hint">
+        Minimum 8 characters and include at least one number or symbol.
+      </p>
+
+      <label for="retrieval-password-confirm">Confirm retrieval password</label>
+      <input type="password" id="retrieval-password-confirm" name="retrieval_password_confirm" minlength="8" aria-describedby="retrieval-confirm-hint">
+      <p id="retrieval-confirm-hint" class="field-hint">Re-enter your retrieval password to confirm.</p>
+    </div>
+  </fieldset>
+  {% endif %}
+
   <!-- ============================================================ -->
-  <!-- STEP 2: Language                                             -->
+  <!-- STEP: Language                                               -->
   <!-- ============================================================ -->
   <fieldset>
-    <legend>Step 2: Language (optional)</legend>
+    <legend>Step {{ ns.step }}: Language (optional)</legend>
+    {% set ns.step = ns.step + 1 %}
 
     <label for="language">Language spoken in the recording</label>
     <select id="language" name="language" aria-describedby="language-hint">
@@ -66,10 +119,11 @@
   </fieldset>
 
   <!-- ============================================================ -->
-  <!-- STEP 3: Output format                                        -->
+  <!-- STEP: Output format                                          -->
   <!-- ============================================================ -->
   <fieldset>
-    <legend>Step 3: What do you want to receive?</legend>
+    <legend>Step {{ ns.step }}: What do you want to receive?</legend>
+    {% set ns.step = ns.step + 1 %}
 
     <div class="radio-group">
       <label>
@@ -97,10 +151,10 @@
   </fieldset>
 
   <!-- ============================================================ -->
-  <!-- STEP 4: Document title (optional, shown for Word output)     -->
+  <!-- STEP: Document title (optional, shown for Word output)       -->
   <!-- ============================================================ -->
   <fieldset>
-    <legend>Step 4: Document title (optional)</legend>
+    <legend>Step {{ ns.step }}: Document title (optional)</legend>
 
     <label for="title">Title</label>
     <input
@@ -119,6 +173,16 @@
 
   <button type="submit" class="btn-primary">Transcribe Audio</button>
 </form>
+
+<section id="transcribe-progress" class="transcribe-progress" aria-labelledby="transcribe-progress-heading" hidden>
+  <h2 id="transcribe-progress-heading">Transcription Progress</h2>
+  <p id="transcribe-status" class="field-hint" role="status" aria-live="polite">
+    Preparing upload...
+  </p>
+  <label for="transcribe-progress-bar">Conversion completion</label>
+  <progress id="transcribe-progress-bar" value="0" max="100" aria-describedby="transcribe-progress-value"></progress>
+  <p id="transcribe-progress-value" class="field-hint">0%</p>
+</section>
 
 <details class="help-accordion">
   <summary>Privacy: what happens to my audio?</summary>
@@ -157,6 +221,217 @@
   </ul>
   <p>Video files (MP4, MOV, WebM) are not accepted directly. Extract the audio track first using a tool like VLC or ffmpeg, then upload the audio file.</p>
 </details>
+
+<script>
+(function () {
+  var form = document.getElementById('whisperer-form');
+  var submitButton = form ? form.querySelector('button[type="submit"]') : null;
+  var progressSection = document.getElementById('transcribe-progress');
+  var progressBar = document.getElementById('transcribe-progress-bar');
+  var progressValue = document.getElementById('transcribe-progress-value');
+  var statusNode = document.getElementById('transcribe-status');
+  var audioInput = document.getElementById('audio');
+  var estimateHint = document.getElementById('estimate-hint');
+  var estimateValue = document.getElementById('estimate-value');
+  var backgroundFieldset = document.getElementById('background-processing-fieldset');
+  var backgroundOptIn = document.getElementById('background-opt-in');
+  var backgroundDetails = document.getElementById('background-details');
+  var notifyEmail = document.getElementById('notify-email');
+  var retrievalPassword = document.getElementById('retrieval-password');
+  var retrievalPasswordConfirm = document.getElementById('retrieval-password-confirm');
+
+  var backgroundThresholdMinutes = Number(form.dataset.backgroundThresholdMinutes || '30');
+  var estimatedDurationSeconds = null;
+
+  if (!form || !submitButton || !progressSection || !progressBar || !progressValue || !statusNode || !audioInput) {
+    return;
+  }
+
+  function setProgress(percent, message) {
+    var safePercent = Math.max(0, Math.min(100, Math.round(percent)));
+    progressBar.value = safePercent;
+    progressValue.textContent = String(safePercent) + '%';
+    if (message) {
+      statusNode.textContent = message;
+    }
+  }
+
+  var pollTimer = null;
+
+  function formatMinutes(seconds) {
+    var mins = Math.max(0, seconds / 60);
+    if (mins < 1) return 'under 1 minute';
+    if (mins < 10) return mins.toFixed(1) + ' minutes';
+    return Math.round(mins) + ' minutes';
+  }
+
+  function syncBackgroundControls() {
+    if (!backgroundFieldset) {
+      return;
+    }
+    // Always visible -- background mode is available for any recording length.
+    backgroundFieldset.hidden = false;
+
+    var enabled = !!(backgroundOptIn && backgroundOptIn.checked);
+    if (backgroundDetails) {
+      backgroundDetails.hidden = !enabled;
+    }
+
+    if (notifyEmail) notifyEmail.required = enabled;
+    if (retrievalPassword) retrievalPassword.required = enabled;
+    if (retrievalPasswordConfirm) retrievalPasswordConfirm.required = enabled;
+  }
+
+  function updateEstimateFromFile(file) {
+    if (!file || typeof URL === 'undefined') {
+      return;
+    }
+    var objectUrl = URL.createObjectURL(file);
+    var probe = document.createElement('audio');
+    probe.preload = 'metadata';
+
+    probe.onloadedmetadata = function () {
+      if (isFinite(probe.duration) && probe.duration > 0) {
+        var realtime = probe.duration;
+        estimatedDurationSeconds = realtime;
+        var expected = Math.max(15, realtime * 1.1);
+        if (estimateValue) {
+          estimateValue.innerHTML = '<strong>Estimated conversion time:</strong> about ' + formatMinutes(expected) + ' (audio length: ' + formatMinutes(realtime) + ').';
+        }
+        if (estimateHint) {
+          estimateHint.textContent = 'Estimate is based on audio metadata and server load. Actual time can vary.';
+        }
+      } else if (estimateValue) {
+        estimatedDurationSeconds = null;
+        estimateValue.innerHTML = '<strong>Estimated conversion time:</strong> Unable to estimate from this file metadata.';
+      }
+      syncBackgroundControls();
+      URL.revokeObjectURL(objectUrl);
+    };
+
+    probe.onerror = function () {
+      estimatedDurationSeconds = null;
+      if (estimateValue) {
+        estimateValue.innerHTML = '<strong>Estimated conversion time:</strong> Unable to estimate from this file metadata.';
+      }
+      syncBackgroundControls();
+      URL.revokeObjectURL(objectUrl);
+    };
+
+    probe.src = objectUrl;
+  }
+
+  audioInput.addEventListener('change', function () {
+    if (!audioInput.files || !audioInput.files.length) {
+      if (estimateValue) {
+        estimatedDurationSeconds = null;
+        estimateValue.innerHTML = '<strong>Estimated conversion time:</strong> Not available yet.';
+      }
+      syncBackgroundControls();
+      return;
+    }
+    updateEstimateFromFile(audioInput.files[0]);
+  });
+
+  if (backgroundOptIn) {
+    backgroundOptIn.addEventListener('change', syncBackgroundControls);
+  }
+
+  function stopPolling() {
+    if (pollTimer) {
+      window.clearInterval(pollTimer);
+      pollTimer = null;
+    }
+  }
+
+  function startPolling(progressUrl, downloadUrl) {
+    var fetchStatus = function () {
+      fetch(progressUrl, {
+        method: 'GET',
+        credentials: 'same-origin'
+      })
+        .then(function (resp) {
+          if (!resp.ok) {
+            throw new Error('Unable to read job progress.');
+          }
+          return resp.json();
+        })
+        .then(function (data) {
+          var percent = typeof data.progress === 'number' ? data.progress : 0;
+          setProgress(percent, data.message || 'Processing...');
+
+          if (data.status === 'complete') {
+            stopPolling();
+            setProgress(100, 'Complete. Your transcript download is starting.');
+            if (data.background_opt_in) {
+              setProgress(100, 'Complete. Check your email for the secure retrieval link.');
+            } else {
+              window.location.href = data.download_url || downloadUrl;
+            }
+            submitButton.disabled = false;
+            return;
+          }
+
+          if (data.status === 'failed') {
+            stopPolling();
+            submitButton.disabled = false;
+            setProgress(0, data.error || data.message || 'Transcription failed. Please try again.');
+          }
+        })
+        .catch(function (err) {
+          stopPolling();
+          submitButton.disabled = false;
+          setProgress(0, err && err.message ? err.message : 'Error while checking transcription status.');
+        });
+    };
+
+    fetchStatus();
+    pollTimer = window.setInterval(fetchStatus, 1000);
+  }
+
+  form.addEventListener('submit', function (event) {
+    if (typeof FormData === 'undefined' || typeof fetch === 'undefined') {
+      return;
+    }
+
+    event.preventDefault();
+    var payload = new FormData(form);
+    var startUrl = form.action.replace(/\/$/, '') + '/start';
+
+    submitButton.disabled = true;
+    progressSection.hidden = false;
+    setProgress(0, 'Starting transcription job...');
+
+    fetch(startUrl, {
+      method: 'POST',
+      body: payload,
+      credentials: 'same-origin'
+    })
+      .then(function (resp) {
+        return resp.json().then(function (data) {
+          return { ok: resp.ok, status: resp.status, data: data };
+        });
+      })
+      .then(function (result) {
+        if (!result.ok) {
+          throw new Error(result.data.error || 'Unable to start transcription.');
+        }
+        if (result.data.background_opt_in) {
+          setProgress(1, 'Job accepted. You will receive queued, started, and completed emails with a secure retrieval link.');
+        } else {
+          setProgress(1, 'Job accepted. Waiting for server progress updates...');
+        }
+        startPolling(result.data.progress_url, result.data.download_url);
+      })
+      .catch(function (err) {
+        submitButton.disabled = false;
+        setProgress(0, err && err.message ? err.message : 'An unexpected error occurred.');
+      });
+  });
+
+  syncBackgroundControls();
+})();
+</script>
 
 {% endif %}
 {% endblock %}

@@ -32,8 +32,23 @@
     </p>
   </fieldset>
 
-  <button type="submit" class="btn-primary">Next: Choose an Action</button>
+  <button type="submit" class="btn-primary" id="process-submit-btn">Next: Choose an Action</button>
+  <p id="process-processing-status" class="field-hint" aria-live="polite" aria-atomic="true"></p>
 </form>
+
+<script>
+(function () {
+  'use strict';
+  var form = document.querySelector('form[method="post"]');
+  if (!form) return;
+  form.addEventListener('submit', function () {
+    var statusEl = document.getElementById('process-processing-status');
+    var btn = document.getElementById('process-submit-btn');
+    if (statusEl) statusEl.textContent = 'Uploading your file\u2026 Please wait.';
+    if (btn) { btn.disabled = true; btn.textContent = 'Uploading\u2026'; }
+  });
+}());
+</script>
 
 <details class="help-accordion">
   <summary>What can I do with my file?</summary>

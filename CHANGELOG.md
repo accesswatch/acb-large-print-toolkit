@@ -6,10 +6,47 @@ Releases are tagged in the [GitHub repository](https://github.com/accesswatch/ac
 
 ---
 
-## [Unreleased]
+## [2.0.0] - 2026-04-17
 
 ### Added
 
+- **Web: Submit-state feedback on all long-running forms.** `process_form.html`, `template_form.html`, `fix_review_headings.html`, `admin_login.html`, `chat_form.html`, `feedback_form.html`, `admin_request_access.html`, `consent.html`, and `whisperer_retrieve.html` now disable their submit button and display a polite `aria-live` status paragraph immediately on submit. Prevents double-submission and gives screen readers and sighted users clear progress feedback.
+- **Web: Download processing state on fix_result.** The "Download Fixed Document" button in `fix_result.html` shows "Preparing your download…" and disables for 4 seconds on click, preventing double-submission on slow connections.
+- **Web: Document Chat card on home page.** `index.html` now includes Document Chat in the card grid and "What Each Tab Does" section. Users no longer need to discover Chat only by accident.
+- **Web: Format-specific CTAs in batch audit report.** `audit_batch_report.html` per-file sections now show actionable next steps for every supported format (xlsx/pptx manual-fix guide, md convert flow, pdf Acrobat note, epub source-fix hint). "What's Next?" section expanded.
+- **Web: Whisperer step numbering with Jinja namespace counter.** Step labels in `whisperer_form.html` use a `namespace(step=1)` counter so numbers stay sequential when the email background-notification fieldset is hidden.
+- **Web: Settings page noscript fallback.** `settings.html` includes a `<noscript>` notice informing users that Settings requires JavaScript.
+- **Web: Admin queue auto-refresh.** `admin_queue.html` auto-reloads every 20 seconds when any row shows `queued` or `processing` status. Refresh stops when the tab is hidden. Polite `aria-live` announcement precedes each reload with a timestamped caption.
+- **Web: Fix review headings -- session expiry recovery hint.** `fix_review_headings.html` shows the session expiry time and recovery instructions near the submit button.
+- **Web: Chat Ask Question submit state.** The Ask Question button disables and announces "Asking the AI… This can take up to 30 seconds" via `aria-live` during AI inference.
+- **Web: Chat export emoji aria-hidden.** Decorative emoji on Export and Clear Conversation buttons are wrapped in `<span aria-hidden="true">`.
+- **Web: process_choose empty-state fallback.** When no actions are available for a file type, `process_choose.html` shows a descriptive notice listing supported formats.
+- **Web: process_choose action icon aria-hidden.** Decorative emoji icons on action cards in `process_choose.html` are wrapped with `aria-hidden="true"`.
+- **Web: Admin request confirmation dialogs.** Approve and Deny buttons in `admin_requests.html` include `onclick="return confirm(…)"` guards naming the target email to prevent accidental approvals or denials.
+- **Web: Admin queue action confirmation dialogs.** Cancel and Re-Queue buttons in `admin_queue.html` include confirm dialogs to prevent accidental queue operations.
+- **Web: Privacy page consent-clear confirmation dialog.** The "Clear My Consent Record" button in `privacy.html` requires user confirmation before posting.
+- **Web: `aria-describedby` on whisperer retrieve password input.** The retrieval password field in `whisperer_retrieve.html` now references its hint paragraph via `aria-describedby`.
+- **Web: `aria-describedby` on whisperer password-confirm input.** The confirm password field in `whisperer_form.html` now has its own hint paragraph and `aria-describedby`.
+- **Web: `autocomplete="name"` on display_name in admin_request_access.** Assists password managers and autofill.
+- **Web: Styled `:disabled` state for `btn-primary` and `btn-secondary`.** `forms.css` now explicitly styles `button:disabled` and `[aria-disabled="true"]` for both button classes, providing consistent visual feedback across browsers rather than relying on browser defaults.
+- **Web: HTTP 403 error handler.** `app.py` now registers a `@errorhandler(403)` that renders the styled `error.html` template (matching 404/500 behavior) instead of Flask's default unstyled 403 page. Triggered by `abort(403)` in feedback review, admin access checks, and OAuth flows.
+
+### Changed
+
+- **Web: fix_review_headings Apply button** now has an `id` and processing-state JS to prevent accidental double-submission.
+
+## [2.0.0] - 2026-04-17
+
+### Added
+
+- **Web: Real-time BITS Whisperer progress reporting.** Whisper transcription now runs as a background job with dedicated status and download endpoints (`/whisperer/start`, `/whisperer/progress/<job_id>`, `/whisperer/download/<job_id>`). The Whisperer page shows true server-reported conversion percentage instead of only elapsed-time estimates, including live status announcements for screen reader users.
+- **Web: Whisperer preflight estimate + proceed confirmation.** Before transcription starts, the Whisperer form now shows an estimated conversion time from uploaded audio metadata and requires explicit user confirmation to proceed.
+- **Web: Whisperer graceful length/size limits.** Added configurable guardrails (`WHISPER_MAX_AUDIO_MB`, `WHISPER_MAX_AUDIO_MINUTES`) with clear user-facing guidance to split/compress oversized recordings instead of failing silently.
+- **Web: Active Whisperer job retention hardening.** In-progress audio jobs now refresh their temp workspace timestamps so stale-upload cleanup does not remove files needed for long-running conversions.
+- **Web: Whisperer background queue + secure retrieval lifecycle.** Any audio job (any length) can opt into background processing with queueing, queued/started/completed lifecycle notifications, single-use secure retrieval links, retrieval password verification, and a final content-cleared email when unretrieved results expire. The background option is always visible when email is configured -- not gated on recording length -- so users are never stranded on a busy-server 503 without a queue path.
+- **Ops: Deploy script backup + rollback safety.** `scripts/deploy-app.sh` now creates a pre-deploy feedback backup (by default) and performs a health-check-gated rollback to the previous Git commit when the new revision fails to become healthy.
+- **Admin: Authentication and approval hub.** Added admin-only login and approval routes (`/admin/login`, `/admin/request-access`, `/admin/queue`, `/admin/requests`) with email magic-link login, configured SSO providers (Google, Apple, GitHub, Microsoft, Auth0, WordPress), bootstrap admin seeding, and approval-required access control.
+- **Admin: Audio queue operations UI.** Added admin dashboard controls to inspect audio conversion queue state, cancel queued jobs, and re-queue failed jobs.
 - **BITS Whisperer: On-server audio transcription.** New `/whisperer` route and tab. Transcribes audio files (MP3, WAV, M4A, OGG, FLAC, AAC, Opus) to Markdown (.md) or Word (.docx) using faster-whisper with the Whisper medium model and CTranslate2 int8 quantization. Audio is processed entirely on the GLOW server and never sent to any external service (no OpenAI, no cloud API). Supports language selection (auto-detect or choose from 50+ languages). Includes concurrency gating to protect CPU resources and a 503 Busy page with Retry-After headers when the inference queue is full.
 - **Web: Consent and agreement gate (`/consent`).** First-time visitors are shown a one-page agreement explaining how GLOW handles data, what AI features are available locally, privacy protections, and cookie policies before accessing any tool. Agreement is stored in a secure `glow_consent_v1` cookie (HttpOnly, Strict SameSite, 365-day expiry). The consent gate is skipped in test mode so existing tests don't require cookie fixtures. Users can withdraw consent and reset the gate via the Privacy Policy page.
 - **Web: Quick Start beginner path (`/process`).** New universal upload form + contextual action chooser. Users upload any document type and are shown available actions (Audit, Fix, Convert, Export, Template, BITS Whisperer) based on the file type. Reduces barrier to entry for accessibility newcomers while keeping the expert tab interface for power users. Both paths coexist.
@@ -23,6 +60,10 @@ Releases are tagged in the [GitHub repository](https://github.com/accesswatch/ac
 - **Web: Privacy Policy consent withdrawal controls.** New section in Privacy Policy (`/privacy`) allows users to clear their consent cookie via a button that POSTs to `/consent/withdraw`. Also documents cookie policy and the opt-in nature of consent.
 - **Desktop: Image and YouTube support in converter.** Desktop CLI and GUI inherit the new `convert_with_llm_descriptions()` and `youtube_to_markdown()` functions from the shared converter module.
 - **Dockerfile: Updated for latest MarkItDown + dependencies.** `requirements.txt` now pins `markitdown[all]>=0.2.0` (audio, image, YouTube capabilities). `Dockerfile` installs required system libraries for image/PDF processing via the updated MarkItDown dependencies.
+- **Web: Vision-ready OCR path.** New `vision_gate()` context manager in `gating.py` serializes LLaVA vision-model sessions for scanned PDF and image-heavy document extraction via a local Ollama instance. Configurable via `GLOW_MAX_VISION_SESSIONS` (default 1). When at capacity the 503 Busy response is returned with `Retry-After: 60`. Vision capacity is reported in `/health` alongside audio and AI slots.
+- **Web: Expanded Document Chat (`/chat`).** New multi-turn conversational interface for uploaded documents. Llama 3 running on-server drives 24 tool calls across five agent categories (Document, Compliance, Structure, Content, Remediation). Conversation history is organized by turn. Export to Markdown, Word, or PDF is available at any point in the session. All processing is local -- no data leaves the GLOW server.
+- **Web: Accessibility-focused agent categories in Document Chat.** Tool registry exposes five named agent groups: Document (extract tables, search text, list headings, stats, summaries), Compliance Agent (run_accessibility_audit, get_compliance_score, critical/auto-fixable findings), Structure Agent (check_heading_hierarchy, find_faux_headings, check_list_structure, estimate_reading_order), Content Agent (check_emphasis_patterns, check_link_text, check_reading_level, check_alignment_hints), Remediation Agent (explain_rule, suggest_fix, prioritize_findings, estimate_fix_impact, check_image_alt_text).
+- **Web: Chat Guided Question Cards and example prompts.** The chat page includes a Guided Question Cards section and Example Questions section for first-time users, covering compliance, structure, content, and remediation use cases. Cards are keyboard and screen-reader accessible. Conversation privacy notice informs users that sessions are local and deleted after one hour of inactivity.
 
 ### Changed
 
@@ -34,10 +75,6 @@ Releases are tagged in the [GitHub repository](https://github.com/accesswatch/ac
 ### Fixed
 
 - Fixed CSRF token handling in consent form so first-visit users can agree without pre-existing session.
-
----
-
-## [Unreleased] (Previous)
 
 ### Added
 
