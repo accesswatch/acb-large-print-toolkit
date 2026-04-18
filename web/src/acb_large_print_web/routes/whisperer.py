@@ -90,6 +90,8 @@ _MAX_AUDIO_QUEUE_DEPTH = int(os.environ.get("GLOW_MAX_AUDIO_QUEUE_DEPTH", "5"))
 _BACKGROUND_THRESHOLD_MINUTES = int(os.environ.get("WHISPER_BACKGROUND_THRESHOLD_MINUTES", "30"))
 _RETRIEVAL_HOURS = int(os.environ.get("WHISPER_RETRIEVAL_HOURS", "4"))
 _EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+_ESTIMATE_BYTES_PER_SECOND = 16000  # ~128 kbps compressed audio
+_MIN_PLAUSIBLE_BYTES_PER_SECOND = 500  # guardrail for bogus long metadata durations
 
 # Accept string for the file input
 _AUDIO_ACCEPT = ",".join(sorted(AUDIO_EXTENSIONS))
@@ -200,12 +202,48 @@ def _enforce_audio_limits(saved_path: Path, duration_seconds: float | None) -> N
             )
 
 
+def _sanitize_duration_estimate(saved_path: Path, duration_seconds: float | None) -> float | None:
+    """Return a trustworthy duration estimate, or None when metadata looks implausible.
+
+    Some files contain broken duration metadata (for example wildly large values).
+    If the implied bytes/second is unrealistically low, treat the duration as unknown
+    so we can fall back to size-based estimation instead of false >120 minute errors.
+    """
+    if duration_seconds is None:
+        return None
+
+    if duration_seconds <= 0:
+        return None
+
+    try:
+        size_bytes = saved_path.stat().st_size
+    except OSError:
+        size_bytes = 0
+
+    if size_bytes > 0:
+        implied_bytes_per_second = size_bytes / duration_seconds
+        if implied_bytes_per_second < _MIN_PLAUSIBLE_BYTES_PER_SECOND:
+            return None
+
+    return duration_seconds
+
+
 def _require_estimate_acknowledgement() -> None:
     """Require explicit user acknowledgment before starting transcription."""
     if request.form.get("confirm_estimate") != "yes":
         raise UploadError(
             "Please review the estimated processing time and check the confirmation box "
             "before starting transcription."
+        )
+
+
+def _require_uncertain_estimate_acknowledgement() -> None:
+    """Require explicit acknowledgment when only a rough size-based estimate is available."""
+    source = (request.form.get("estimate_source") or "").strip().lower()
+    if source == "size-fallback" and request.form.get("confirm_uncertain_estimate") != "yes":
+        raise UploadError(
+            "This file's exact duration could not be determined. Please acknowledge the "
+            "rough estimate warning before starting transcription."
         )
 
 
@@ -613,6 +651,61 @@ def whisperer_form():
     return render_template("whisperer_form.html", **_template_context())
 
 
+@whisperer_bp.route("/estimate", methods=["POST"])
+def whisperer_estimate():
+    """Return a best-effort transcription time estimate for an uploaded audio file.
+
+    Uses PyAV metadata when available; falls back to file-size-based estimate.
+    This endpoint is intentionally lightweight and always cleans up the temp token.
+    """
+    token = None
+    try:
+        token, saved_path = validate_upload(
+            request.files.get("audio"),
+            allowed_extensions=AUDIO_EXTENSIONS,
+        )
+
+        ext = saved_path.suffix.lower()
+        if ext not in AUDIO_EXTENSIONS:
+            raise UploadError(
+                f"'{ext}' is not a supported audio format. "
+                f"Supported: {', '.join(sorted(AUDIO_EXTENSIONS))}."
+            )
+
+        duration_seconds = _sanitize_duration_estimate(
+            saved_path,
+            _estimate_audio_duration_seconds(saved_path),
+        )
+        _enforce_audio_limits(saved_path, duration_seconds)
+
+        try:
+            size_bytes = saved_path.stat().st_size
+        except OSError:
+            size_bytes = 0
+
+        source = "metadata"
+        audio_seconds = duration_seconds
+        if audio_seconds is None or audio_seconds <= 0:
+            source = "size-fallback"
+            audio_seconds = max(1.0, size_bytes / _ESTIMATE_BYTES_PER_SECOND)
+
+        expected_seconds = max(15.0, float(audio_seconds) * 1.1)
+
+        return jsonify(
+            {
+                "audio_seconds": float(audio_seconds),
+                "expected_seconds": float(expected_seconds),
+                "source": source,
+                "size_bytes": int(size_bytes),
+            }
+        )
+    except UploadError as exc:
+        return jsonify({"error": str(exc)}), 400
+    finally:
+        if token:
+            cleanup_token(token)
+
+
 @whisperer_bp.route("/", methods=["POST"])
 def whisperer_submit():
     token = None
@@ -636,8 +729,12 @@ def whisperer_submit():
                 f"Supported: {', '.join(sorted(AUDIO_EXTENSIONS))}."
             )
 
-        duration_seconds = _estimate_audio_duration_seconds(saved_path)
+        duration_seconds = _sanitize_duration_estimate(
+            saved_path,
+            _estimate_audio_duration_seconds(saved_path),
+        )
         _enforce_audio_limits(saved_path, duration_seconds)
+        _require_uncertain_estimate_acknowledgement()
 
         temp_dir = get_temp_dir(token)
         language = request.form.get("language") or None
@@ -735,8 +832,12 @@ def whisperer_start_job():
                 f"Supported: {', '.join(sorted(AUDIO_EXTENSIONS))}."
             )
 
-        duration_seconds = _estimate_audio_duration_seconds(saved_path)
+        duration_seconds = _sanitize_duration_estimate(
+            saved_path,
+            _estimate_audio_duration_seconds(saved_path),
+        )
         _enforce_audio_limits(saved_path, duration_seconds)
+        _require_uncertain_estimate_acknowledgement()
 
         background_opt_in = request.form.get("background_opt_in") == "yes"
         notify_email = (request.form.get("notify_email") or "").strip()

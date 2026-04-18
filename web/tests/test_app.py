@@ -180,6 +180,44 @@ class TestPageLoads:
 
 
 class TestWhispererProgress:
+    def test_whisperer_estimate_uses_metadata_when_available(self, client, monkeypatch):
+        import acb_large_print_web.routes.whisperer as whisperer_route
+
+        monkeypatch.setattr(whisperer_route, "_estimate_audio_duration_seconds", lambda _p: 120.0)
+
+        resp = client.post(
+            "/whisperer/estimate",
+            # Use a realistic compressed size so metadata remains plausible.
+            data={"audio": (io.BytesIO(b"x" * (3 * 1024 * 1024)), "meeting.mp3")},
+            content_type="multipart/form-data",
+        )
+
+        assert resp.status_code == 200
+        payload = resp.get_json()
+        assert payload is not None
+        assert payload["source"] == "metadata"
+        assert payload["audio_seconds"] == 120.0
+        assert payload["expected_seconds"] >= 120.0
+
+    def test_whisperer_estimate_falls_back_to_size(self, client, monkeypatch):
+        import acb_large_print_web.routes.whisperer as whisperer_route
+
+        monkeypatch.setattr(whisperer_route, "_estimate_audio_duration_seconds", lambda _p: None)
+
+        # 16000 bytes ~= 1 second using the fallback heuristic.
+        resp = client.post(
+            "/whisperer/estimate",
+            data={"audio": (io.BytesIO(b"x" * 16000), "meeting.mp3")},
+            content_type="multipart/form-data",
+        )
+
+        assert resp.status_code == 200
+        payload = resp.get_json()
+        assert payload is not None
+        assert payload["source"] == "size-fallback"
+        assert payload["audio_seconds"] >= 1.0
+        assert payload["expected_seconds"] >= 15.0
+
     def test_whisperer_background_progress_and_download(self, client, monkeypatch):
         import acb_large_print_web.routes.whisperer as whisperer_route
 
@@ -264,6 +302,7 @@ class TestWhispererProgress:
 
         monkeypatch.setattr(whisperer_route, "whisper_available", lambda: True)
         monkeypatch.setattr(whisperer_route, "_estimate_audio_duration_seconds", lambda _p: 3 * 60 * 60)
+        monkeypatch.setattr(whisperer_route, "_sanitize_duration_estimate", lambda _p, d: d)
         monkeypatch.setattr(whisperer_route, "_MAX_AUDIO_MINUTES", 120)
 
         resp = client.post(

@@ -30,6 +30,7 @@
   <!-- ============================================================ -->
   <!-- STEP: Upload audio                                           -->
   <!-- ============================================================ -->
+  <h3 id="whisperer-step-upload">Step {{ ns.step }}: Upload your audio file</h3>
   <fieldset>
     <legend>Step {{ ns.step }}: Upload your audio file</legend>
     {% set ns.step = ns.step + 1 %}
@@ -50,13 +51,25 @@
     </p>
   </fieldset>
 
+  <h3 id="whisperer-step-estimate">Step {{ ns.step }}: Review estimate and confirm</h3>
   <fieldset>
     <legend>Step {{ ns.step }}: Review estimate and confirm</legend>
     {% set ns.step = ns.step + 1 %}
+    <input type="hidden" id="estimate-source" name="estimate_source" value="unknown">
     <p id="estimate-hint" class="field-hint">
       Select an audio file to calculate an estimated processing time.
     </p>
     <p id="estimate-value" class="field-hint"><strong>Estimated conversion time:</strong> Not available yet.</p>
+    <button type="button" id="estimate-refresh" class="btn-secondary">Calculate estimate now</button>
+
+    <div id="estimate-risk-warning" class="warning-box" role="alert" hidden>
+      <p><strong>Estimate warning:</strong> Exact audio duration could not be determined for this file. The estimate shown is based on file size and may be inaccurate.</p>
+      <label>
+        <input type="checkbox" id="confirm-uncertain-estimate" name="confirm_uncertain_estimate" value="yes">
+        I understand this is a rough estimate and processing could take significantly longer.
+      </label>
+    </div>
+
     <label>
       <input type="checkbox" name="confirm_estimate" value="yes" required>
       I reviewed the estimated processing time and want to proceed.
@@ -67,6 +80,7 @@
   </fieldset>
 
   {% if email_enabled %}
+  <h3 id="whisperer-step-background">Step {{ ns.step }}: Background notification (optional)</h3>
   <fieldset id="background-processing-fieldset">
     <legend>Step {{ ns.step }}: Background notification (optional)</legend>
     {% set ns.step = ns.step + 1 %}
@@ -102,6 +116,7 @@
   <!-- ============================================================ -->
   <!-- STEP: Language                                               -->
   <!-- ============================================================ -->
+  <h3 id="whisperer-step-language">Step {{ ns.step }}: Language (optional)</h3>
   <fieldset>
     <legend>Step {{ ns.step }}: Language (optional)</legend>
     {% set ns.step = ns.step + 1 %}
@@ -121,6 +136,7 @@
   <!-- ============================================================ -->
   <!-- STEP: Output format                                          -->
   <!-- ============================================================ -->
+  <h3 id="whisperer-step-output">Step {{ ns.step }}: What do you want to receive?</h3>
   <fieldset>
     <legend>Step {{ ns.step }}: What do you want to receive?</legend>
     {% set ns.step = ns.step + 1 %}
@@ -153,6 +169,7 @@
   <!-- ============================================================ -->
   <!-- STEP: Document title (optional, shown for Word output)       -->
   <!-- ============================================================ -->
+  <h3 id="whisperer-step-title">Step {{ ns.step }}: Document title (optional)</h3>
   <fieldset>
     <legend>Step {{ ns.step }}: Document title (optional)</legend>
 
@@ -233,6 +250,10 @@
   var audioInput = document.getElementById('audio');
   var estimateHint = document.getElementById('estimate-hint');
   var estimateValue = document.getElementById('estimate-value');
+  var estimateRefresh = document.getElementById('estimate-refresh');
+  var estimateSourceInput = document.getElementById('estimate-source');
+  var estimateRiskWarning = document.getElementById('estimate-risk-warning');
+  var confirmUncertainEstimate = document.getElementById('confirm-uncertain-estimate');
   var backgroundFieldset = document.getElementById('background-processing-fieldset');
   var backgroundOptIn = document.getElementById('background-opt-in');
   var backgroundDetails = document.getElementById('background-details');
@@ -282,7 +303,88 @@
     if (retrievalPasswordConfirm) retrievalPasswordConfirm.required = enabled;
   }
 
+  function setEstimateSource(source) {
+    var value = source || 'unknown';
+    if (estimateSourceInput) {
+      estimateSourceInput.value = value;
+    }
+    var uncertain = value === 'size-fallback' || value === 'client-size-fallback';
+    if (estimateRiskWarning) {
+      estimateRiskWarning.hidden = !uncertain;
+    }
+    if (confirmUncertainEstimate) {
+      confirmUncertainEstimate.required = uncertain;
+      if (!uncertain) {
+        confirmUncertainEstimate.checked = false;
+      }
+    }
+  }
+
   function updateEstimateFromFile(file) {
+    if (!file || typeof URL === 'undefined') {
+      return;
+    }
+
+    if (estimateValue) {
+      estimateValue.innerHTML = '<strong>Estimated conversion time:</strong> Calculating...';
+    }
+    if (estimateHint) {
+      estimateHint.textContent = 'Checking audio length using server-side metadata...';
+    }
+
+    // Primary path: ask the server to probe metadata with Python (PyAV).
+    // This is robust across browser codec differences.
+    if (typeof FormData !== 'undefined' && typeof fetch !== 'undefined') {
+      var estimatePayload = new FormData();
+      estimatePayload.append('audio', file);
+      var csrf = form.querySelector('input[name="csrf_token"]');
+      if (csrf && csrf.value) {
+        estimatePayload.append('csrf_token', csrf.value);
+      }
+
+      fetch(form.action.replace(/\/$/, '') + '/estimate', {
+        method: 'POST',
+        body: estimatePayload,
+        credentials: 'same-origin'
+      })
+        .then(function (resp) {
+          return resp.json().then(function (data) {
+            return { ok: resp.ok, data: data };
+          });
+        })
+        .then(function (result) {
+          if (!result.ok) {
+            throw new Error(result.data && result.data.error ? result.data.error : 'Unable to estimate processing time.');
+          }
+          var realtime = Number(result.data.audio_seconds || 0);
+          var expected = Number(result.data.expected_seconds || 0);
+          if (realtime > 0 && expected > 0 && estimateValue) {
+            estimatedDurationSeconds = realtime;
+            setEstimateSource(result.data.source || 'metadata');
+            estimateValue.innerHTML = '<strong>Estimated conversion time:</strong> about ' + formatMinutes(expected) + ' (audio length: ' + formatMinutes(realtime) + ').';
+            if (estimateHint) {
+              if (result.data.source === 'size-fallback') {
+                estimateHint.textContent = 'Server could not read exact audio metadata for this file. Estimate is based on file size.';
+              } else {
+                estimateHint.textContent = 'Estimate is based on server-side audio metadata and current load. Actual time can vary.';
+              }
+            }
+            syncBackgroundControls();
+            return;
+          }
+          throw new Error('No estimate data was returned for this file.');
+        })
+        .catch(function () {
+          // Fall back to client-side estimate if server estimate fails.
+          updateEstimateFromFileClientFallback(file);
+        });
+      return;
+    }
+
+    updateEstimateFromFileClientFallback(file);
+  }
+
+  function updateEstimateFromFileClientFallback(file) {
     if (!file || typeof URL === 'undefined') {
       return;
     }
@@ -300,6 +402,7 @@
       URL.revokeObjectURL(objectUrl);
       var roughSeconds = file.size / 16000;
       estimatedDurationSeconds = roughSeconds;
+      setEstimateSource('client-size-fallback');
       var expected = Math.max(15, roughSeconds * 1.1);
       if (estimateValue) {
         estimateValue.innerHTML = '<strong>Estimated conversion time:</strong> about ' + formatMinutes(expected) + ' (rough estimate from file size \u2014 actual time may vary for WAV or FLAC files).';
@@ -317,6 +420,7 @@
       if (isFinite(probe.duration) && probe.duration > 0) {
         var realtime = probe.duration;
         estimatedDurationSeconds = realtime;
+        setEstimateSource('metadata');
         var expected = Math.max(15, realtime * 1.1);
         if (estimateValue) {
           estimateValue.innerHTML = '<strong>Estimated conversion time:</strong> about ' + formatMinutes(expected) + ' (audio length: ' + formatMinutes(realtime) + ').';
@@ -347,11 +451,24 @@
         estimatedDurationSeconds = null;
         estimateValue.innerHTML = '<strong>Estimated conversion time:</strong> Not available yet.';
       }
+      setEstimateSource('unknown');
       syncBackgroundControls();
       return;
     }
     updateEstimateFromFile(audioInput.files[0]);
   });
+
+  if (estimateRefresh) {
+    estimateRefresh.addEventListener('click', function () {
+      if (!audioInput.files || !audioInput.files.length) {
+        if (estimateHint) {
+          estimateHint.textContent = 'Please select an audio file first.';
+        }
+        return;
+      }
+      updateEstimateFromFile(audioInput.files[0]);
+    });
+  }
 
   if (backgroundOptIn) {
     backgroundOptIn.addEventListener('change', syncBackgroundControls);
@@ -448,6 +565,15 @@
     }
 
     event.preventDefault();
+
+    if ((estimateSourceInput && estimateSourceInput.value === 'size-fallback') ||
+        (estimateSourceInput && estimateSourceInput.value === 'client-size-fallback')) {
+      if (confirmUncertainEstimate && !confirmUncertainEstimate.checked) {
+        setProgress(0, 'Please acknowledge the rough estimate warning before starting transcription.');
+        return;
+      }
+    }
+
     var payload = new FormData(form);
     var startUrl = form.action.replace(/\/$/, '') + '/start';
 
