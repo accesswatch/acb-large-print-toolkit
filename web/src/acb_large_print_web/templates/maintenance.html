@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Under Maintenance</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg, #0055cc 0%, #003d99 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 1rem;
+    }
+    
+    .maintenance-container {
+      background: #ffffff;
+      border-radius: 0.5rem;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+      max-width: 600px;
+      padding: 3rem;
+      text-align: center;
+    }
+    
+    h1 {
+      font-size: 2.5rem;
+      color: #0055cc;
+      margin-bottom: 1rem;
+      font-weight: 700;
+    }
+    
+    .icon {
+      font-size: 4rem;
+      margin-bottom: 1.5rem;
+      line-height: 1;
+    }
+    
+    .message {
+      font-size: 1.25rem;
+      color: #333333;
+      margin-bottom: 1rem;
+      line-height: 1.5;
+    }
+    
+    .details {
+      font-size: 1rem;
+      color: #666666;
+      margin-bottom: 2rem;
+      line-height: 1.6;
+    }
+    
+    .info-box {
+      background: #f0f4f8;
+      border-left: 4px solid #0055cc;
+      padding: 1rem;
+      text-align: left;
+      margin-bottom: 2rem;
+      border-radius: 0.25rem;
+    }
+    
+    .info-box p {
+      margin: 0.5rem 0;
+      font-size: 0.95rem;
+    }
+    
+    .info-box strong {
+      color: #0055cc;
+    }
+    
+    .status-indicator {
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      background: #ffa500;
+      border-radius: 50%;
+      margin-right: 0.5rem;
+      animation: pulse 2s infinite;
+    }
+    
+    @keyframes pulse {
+      0%, 100% {
+        opacity: 1;
+      }
+      50% {
+        opacity: 0.5;
+      }
+    }
+    
+    .footer {
+      font-size: 0.875rem;
+      color: #999999;
+      margin-top: 2rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid #eeeeee;
+    }
+    
+    @media (max-width: 600px) {
+      .maintenance-container {
+        padding: 2rem;
+      }
+      
+      h1 {
+        font-size: 2rem;
+      }
+      
+      .message {
+        font-size: 1.1rem;
+      }
+      
+      .icon {
+        font-size: 3rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="maintenance-container">
+    <div class="icon">🔧</div>
+    
+    <h1>Under Maintenance</h1>
+    
+    <p class="message">
+      <span class="status-indicator" aria-hidden="true"></span>
+      We're performing essential system maintenance.
+    </p>
+    
+    <div class="details">
+      <p>The GLOW Accessibility Toolkit is temporarily unavailable while we apply important updates and improvements.</p>
+    </div>
+    
+    <div class="info-box">
+      <p><strong>What to expect:</strong></p>
+      <p>We are making security patches, deploying new features, and optimizing performance. This typically takes 15–30 minutes.</p>
+      
+      <p style="margin-top: 1rem;"><strong>No data is affected:</strong></p>
+      <p>Your documents, feedback, and audit history are safe. They will be available when we come back online.</p>
+    </div>
+    
+    <div class="details">
+      <p>Thank you for your patience. We appreciate your interest in accessible document compliance.</p>
+    </div>
+    
+    <div class="footer">
+      <p>If you believe this is an error, please contact <a href="mailto:support@bits-acb.org" style="color: #0055cc; text-decoration: underline;">support@bits-acb.org</a></p>
+    </div>
+  </div>
+</body>
+</html>

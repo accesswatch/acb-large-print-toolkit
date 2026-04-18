@@ -8,7 +8,7 @@ import socket
 from datetime import UTC, datetime
 from urllib.parse import urlparse
 
-from flask import Flask, jsonify
+from flask import Flask, jsonify, render_template
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from flask_wtf.csrf import CSRFError, CSRFProtect
@@ -92,6 +92,90 @@ def create_app(config: dict | None = None) -> Flask:
             "release_version": release_ver,
         }
 
+    # Jinja2 filter: render lightweight Markdown to safe HTML for AI answers.
+    # Covers the subset Ollama/Llama3 actually produces: headings, bold,
+    # inline code, unordered/ordered lists, horizontal rules, and paragraphs.
+    # Uses markupsafe (already a Flask dependency) for escaping.
+    import re as _re
+    from markupsafe import Markup, escape as _esc
+
+    def _markdown_to_html(text: str) -> Markup:
+        if not text:
+            return Markup("")
+        lines = text.splitlines()
+        out: list[str] = []
+        in_ul = in_ol = False
+        ol_counter = 0
+
+        def close_lists():
+            nonlocal in_ul, in_ol, ol_counter
+            if in_ul:
+                out.append("</ul>")
+                in_ul = False
+            if in_ol:
+                out.append("</ol>")
+                in_ol = False
+                ol_counter = 0
+
+        def inline(s: str) -> str:
+            # Bold (**text** or __text__)
+            s = _re.sub(r"\*\*(.+?)\*\*", lambda m: f"<strong>{_esc(m.group(1))}</strong>", str(_esc(s)))
+            s = _re.sub(r"__(.+?)__", lambda m: f"<strong>{m.group(1)}</strong>", s)
+            # Inline code
+            s = _re.sub(r"`([^`]+)`", lambda m: f"<code>{m.group(1)}</code>", s)
+            return s
+
+        for line in lines:
+            raw = line.rstrip()
+            # ATX headings
+            m = _re.match(r"^(#{1,6})\s+(.*)", raw)
+            if m:
+                close_lists()
+                level = len(m.group(1))
+                out.append(f"<h{level}>{inline(m.group(2))}</h{level}>")
+                continue
+            # Horizontal rule
+            if _re.match(r"^[-*_]{3,}\s*$", raw):
+                close_lists()
+                out.append("<hr>")
+                continue
+            # Unordered list item
+            m = _re.match(r"^[-*+]\s+(.*)", raw)
+            if m:
+                if in_ol:
+                    out.append("</ol>")
+                    in_ol = False
+                    ol_counter = 0
+                if not in_ul:
+                    out.append("<ul>")
+                    in_ul = True
+                out.append(f"<li>{inline(m.group(1))}</li>")
+                continue
+            # Ordered list item
+            m = _re.match(r"^\d+\.\s+(.*)", raw)
+            if m:
+                if in_ul:
+                    out.append("</ul>")
+                    in_ul = False
+                if not in_ol:
+                    out.append("<ol>")
+                    in_ol = True
+                out.append(f"<li>{inline(m.group(1))}</li>")
+                continue
+            # Blank line
+            if not raw:
+                close_lists()
+                out.append("")
+                continue
+            # Normal paragraph line
+            close_lists()
+            out.append(f"<p>{inline(raw)}</p>")
+
+        close_lists()
+        return Markup("\n".join(out))
+
+    app.jinja_env.filters["markdown"] = _markdown_to_html
+
     # Register blueprints
     from .routes.main import main_bp
     from .routes.audit import audit_bp
@@ -112,6 +196,7 @@ def create_app(config: dict | None = None) -> Flask:
     from .routes.consent import consent_bp, consent_required
     from .routes.process import process_bp
     from .routes.chat import chat_bp
+    from .routes.admin import admin_bp
 
     app.register_blueprint(main_bp)
     app.register_blueprint(consent_bp, url_prefix="/consent")
@@ -132,6 +217,16 @@ def create_app(config: dict | None = None) -> Flask:
     app.register_blueprint(about_bp, url_prefix="/about")
     app.register_blueprint(privacy_bp, url_prefix="/privacy")
     app.register_blueprint(chat_bp, url_prefix="/chat")
+    app.register_blueprint(admin_bp, url_prefix="/admin")
+
+    # Maintenance mode: gate all requests except /health when MAINTENANCE_MODE=1
+    # This allows safe deployment-time downtime while keeping health checks working
+    @app.before_request
+    def check_maintenance_mode():
+        from flask import request as req
+        maintenance_mode = os.environ.get("MAINTENANCE_MODE", "0") == "1"
+        if maintenance_mode and req.path != "/health":
+            return render_template("maintenance.html"), 503
 
     # Consent gate: redirect first-time visitors to the agreement page.
     # Skipped in test mode so existing tests don't need consent cookies.
@@ -201,6 +296,14 @@ def create_app(config: dict | None = None) -> Flask:
             "Page Not Found",
             "The page you requested does not exist.",
             404,
+        )
+
+    @app.errorhandler(403)
+    def forbidden(e):
+        return _render_error(
+            "Access Denied",
+            "You do not have permission to access this page.",
+            403,
         )
 
     @app.errorhandler(500)

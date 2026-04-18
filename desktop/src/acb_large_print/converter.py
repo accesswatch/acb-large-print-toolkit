@@ -281,6 +281,7 @@ def whisper_convert(
     model: str | None = None,
     language: str | None = None,
     output_format: str = "markdown",
+    progress_callback: "Callable[[int, str], None] | None" = None,
 ) -> tuple[Path, str]:
     """Transcribe an audio file to Markdown (or plain text) using BITS Whisperer.
 
@@ -315,6 +316,18 @@ def whisper_convert(
         RuntimeError: If faster-whisper is not installed or transcription fails.
     """
     import os
+    from typing import Callable
+
+    callback: Callable[[int, str], None] | None = progress_callback
+
+    def _emit_progress(percent: int, message: str) -> None:
+        if callback is None:
+            return
+        try:
+            callback(max(0, min(100, int(percent))), message)
+        except Exception:
+            # Progress reporting must never break transcription.
+            pass
 
     src_path = Path(src_path)
     if not src_path.exists():
@@ -351,9 +364,11 @@ def whisper_convert(
         resolved_model,
         language or "auto-detect",
     )
+    _emit_progress(2, "Initializing Whisper model...")
 
     # Load model (int8 quantisation for CPU -- 4x faster than float32, same accuracy)
     whisper = WhisperModel(resolved_model, device="cpu", compute_type="int8")
+    _emit_progress(5, "Model ready. Beginning transcription...")
     segments, info = whisper.transcribe(
         str(src_path),
         language=language,
@@ -370,10 +385,25 @@ def whisper_convert(
 
     # Collect segments into paragraphs
     segment_texts: list[str] = []
+    last_progress = 5
+    duration = float(getattr(info, "duration", 0.0) or 0.0)
     for seg in segments:
         text = seg.text.strip()
         if text:
             segment_texts.append(text)
+
+        # Use Whisper's decoded segment end time against total duration for
+        # real model progress. Falls back to incremental updates if duration is
+        # unavailable.
+        if duration > 0:
+            seg_end = float(getattr(seg, "end", 0.0) or 0.0)
+            progress = max(last_progress, min(95, int((seg_end / duration) * 95)))
+        else:
+            progress = min(95, last_progress + 1)
+
+        if progress > last_progress:
+            last_progress = progress
+            _emit_progress(progress, f"Transcribing audio... {progress}%")
 
     title = src_path.stem.replace("-", " ").replace("_", " ").title()
 
@@ -386,6 +416,7 @@ def whisper_convert(
         full_text = f"# {title}\n\n{paragraphs}\n"
 
     output_path.write_text(full_text, encoding="utf-8")
+    _emit_progress(100, "Transcription complete.")
     log.info(
         "BITS Whisperer: transcription complete -- %d segments, %d characters",
         len(segment_texts),

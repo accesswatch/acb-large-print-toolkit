@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Sign-In{% endblock %}
+{% block heading %}Admin Sign-In{% endblock %}
+
+{% block content %}
+<p>This area is for administrative users only. End-user account login is not enabled in this release.</p>
+
+{% if error %}
+<div class="error-box" role="alert"><p><strong>Error:</strong> {{ error }}</p></div>
+{% endif %}
+{% if notice %}
+<div class="success-box" role="status"><p>{{ notice }}</p></div>
+{% endif %}
+
+{% if not email_enabled %}
+<div class="notice-box" role="status">
+  <p>Admin authentication is unavailable because email delivery is not configured on this server.</p>
+</div>
+{% else %}
+<section aria-labelledby="email-magic-heading">
+  <h2 id="email-magic-heading">Email Magic Link</h2>
+  <form method="post" action="{{ url_for('admin.admin_login_email') }}" novalidate>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <label for="email">Admin email</label>
+    <input type="email" id="email" name="email" required autocomplete="email">
+    <p class="field-hint">A one-time sign-in link expires in {{ ttl_minutes }} minutes.</p>
+    <button type="submit" class="btn-primary" id="admin-login-btn">Send Sign-In Link</button>
+    <p id="admin-login-status" class="field-hint" aria-live="polite" aria-atomic="true"></p>
+  </form>
+  <script>
+  (function () {
+    'use strict';
+    var form = document.querySelector('form[action*="admin_login_email"]');
+    if (!form) return;
+    form.addEventListener('submit', function () {
+      var btn = document.getElementById('admin-login-btn');
+      var statusEl = document.getElementById('admin-login-status');
+      if (statusEl) statusEl.textContent = 'Sending sign-in link\u2026';
+      if (btn) { btn.disabled = true; btn.textContent = 'Sending\u2026'; }
+    });
+  }());
+  </script>
+</section>
+
+<section aria-labelledby="oauth-heading">
+  <h2 id="oauth-heading">Single Sign-On Providers</h2>
+  <p>Only configured providers are shown below. Approval is still required for admin access.</p>
+  {% if providers %}
+    <div class="oauth-provider-list" role="list">
+    {% for p in providers %}
+      <p role="listitem"><a class="btn-secondary" href="{{ url_for('admin.admin_oauth_start', provider_key=p.key) }}">Sign in with {{ p.label }}</a></p>
+    {% endfor %}
+    </div>
+  {% else %}
+    <p>No SSO providers are configured yet.</p>
+  {% endif %}
+</section>
+
+<section aria-labelledby="request-access-heading">
+  <h2 id="request-access-heading">Need Admin Access?</h2>
+  <p><a href="{{ url_for('admin.admin_request_access') }}">Request admin approval</a></p>
+</section>
+{% endif %}
+{% endblock %}

@@ -64,10 +64,18 @@ The Flask web application has been built and is ready for deployment. All core f
 | MarkItDown 0.2+ integration | Done | Expanded support for image inputs and broader conversion workflows. |
 | Vision-ready OCR path | Done | Local vision-model path (LLaVA + Ollama) for scanned/image-heavy interpretation. |
 | Capacity-aware protective gating | Done | AI/audio/vision concurrency protection with busy response behavior and health metrics. |
+| Whisperer preflight estimate + confirmation | Done | Audio metadata estimate shown before transcription starts; users explicitly confirm before proceeding. |
+| Whisperer background queue mode | Done | Long audio jobs can opt into background mode with queueing, position-aware processing, and shared audio capacity gating. |
+| Whisperer secure retrieval (link + password) | Done | Completed background jobs are retrieved through single-use secure links protected by user-created retrieval passwords. |
+| Whisperer lifecycle email notifications | Done | Queued, started, completed, and content-cleared notifications are sent when email service is configured. |
+| Admin-only authentication hub | Done | New `/admin/login` flow supports email magic links and configured SSO providers (Google, Apple, GitHub, Microsoft, Auth0, WordPress) with provider visibility gated by configuration. |
+| Admin request/approval workflow | Done | Users can request admin access; approval/denial is controlled by existing approved admins via admin UI. |
+| Admin audio queue dashboard | Done | Approved admins can inspect queue/running/failed audio jobs and perform cancel/re-queue operations. |
 | Expanded Document Chat | Done | New `/chat` route with heading-based conversation history, export to Markdown/Word/PDF, and accessibility-focused tool calling. |
 | Accessibility-focused agent categories in chat | Done | Compliance, Structure, Content, and Remediation tool groups for in-context Q&A and fix guidance. |
 | Chat online help + guided question cards | Done | In-page guided cards and examples for first-time chat users; keyboard and screen-reader friendly. |
 | Privacy transparency updates | Done | Privacy policy and UI language updated to reflect retention windows and local model usage. |
+| Long-job retention reliability | Done | Active audio transcription jobs keep temporary workspace alive until completion so stale cleanup does not interrupt long-running conversions. |
 
 ### Deviations from Plan
 
@@ -116,6 +124,8 @@ The web app will:
 - Provide a dedicated `/chat` experience with accessibility-focused agent categories (Compliance, Structure, Content, Remediation) so users can interrogate document content and receive actionable guidance
 - Include guided question cards and in-page examples for chat so first-time users can ask high-value questions immediately
 - Support conversation export (Markdown, Word, PDF) for training, compliance evidence, and editorial handoffs
+- Support optional Whisperer background processing for long recordings using explicit user opt-in, secure retrieval links, and password verification
+- Use shared audio gating for both foreground and background Whisperer jobs so background work is counted as active server workload
 
 ## User Stories
 
@@ -159,6 +169,13 @@ The web app will:
 38. As a trainer, I want guided chat cards with example prompts, so that new users can learn what kinds of accessibility questions are most useful.
 39. As a compliance reviewer, I want to export chat sessions to Markdown, Word, or PDF, so that Q&A reasoning can be attached to review artifacts.
 40. As an operator, I want chat workloads to obey protective AI capacity gating, so that one heavy session does not degrade service for others.
+41. As a user transcribing a long meeting recording, I want to opt into background processing and receive status emails, so that I do not have to keep the browser open.
+42. As a privacy-conscious user, I want background transcription retrieval to require both a secure link and a password I set at submission time, so that transcript access remains controlled.
+43. As an operator, I want foreground and background audio transcription to share the same concurrency gate, so that queued jobs cannot bypass server capacity limits.
+44. As a user, I want to be notified when unretrieved background transcription content has been cleared after retention expiry, so I understand I must upload and process again.
+45. As an administrator, I want an admin-only sign-in entry point with configurable SSO providers and email magic-link fallback, so operations can be secured without enabling public user accounts.
+46. As an organization owner, I want admin access requests to require explicit approval by an existing admin, so privileged access is controlled and auditable.
+47. As an operations admin, I want a queue dashboard that shows audio conversion states and allows cancel/re-queue actions, so I can manage long-running background conversions.
 
 ## v2.0 Addendum: Expanded Agentic Accessibility Experience
 

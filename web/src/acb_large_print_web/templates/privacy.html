@@ -22,6 +22,11 @@
   <h3>Convert and Export workflows</h3>
   <p>Converted and exported files follow the same pattern as the Fix workflow: the server holds your uploaded file only for the duration of processing. Once the result is delivered or the session ends, the file is deleted. Stale uploads are swept every hour.</p>
 
+  <h3>BITS Whisperer audio workflow</h3>
+  <p>For audio transcription, GLOW keeps the uploaded recording and generated transcript only for the time required to complete conversion and deliver the download. Active in-progress transcription jobs are kept alive so long recordings can finish reliably. After download, temporary files are deleted. If the flow is abandoned before download, stale files are removed by retention cleanup.</p>
+  <p>For eligible long recordings, users may opt into background processing. In that mode, GLOW can send lifecycle emails (queued, started, completed, and cleared) when email delivery is configured. Completed background jobs are retrieved via a single-use secure link plus a retrieval password set by the user at submission time.</p>
+  <p>If a completed background transcript is not retrieved within the secure retrieval window (default 4 hours), GLOW clears the content and can send a final notification confirming removal.</p>
+
   <h3>No permanent storage</h3>
   <p>GLOW does not store documents in any database, object store, archive, or backup system. Temporary files live only in a short-lived directory on the server and are removed as described above.</p>
 </section>
@@ -42,9 +47,25 @@
   <p>Aggregate, anonymized usage statistics (such as the number of audits run per day or which file formats are most common) may be collected for operational purposes and do not include any document content.</p>
 </section>
 
+{% if email_configured %}
+<section aria-labelledby="email-heading">
+  <h2 id="email-heading">Email Report Delivery</h2>
+  <p>GLOW offers an optional email delivery feature on the Audit page. If you choose to enter an email address and request a report, GLOW sends your audit scorecard and a findings CSV attachment to that address using <a href="https://postmarkapp.com">Postmark</a>, a transactional email service.</p>
+  <h3>What is sent</h3>
+  <p>The email contains your audit score, a summary of findings by severity, and a CSV attachment listing each finding with its rule, severity, and recommended fix. No document content is included in the email -- only the analysis results.</p>
+  <h3>How your email address is used</h3>
+  <p>Your email address is used solely to deliver the report for that single request. It is <strong>not stored</strong> in any database, log file, or analytics system on the GLOW server. It is not used for marketing, follow-up, or any other purpose. Once the email is sent, GLOW discards the address.</p>
+  <h3>Postmark's role</h3>
+  <p>Postmark receives your email address and the report content in order to deliver the message. Postmark's own privacy policy governs how they handle this data. GLOW transmits only the minimum information required to deliver the report: recipient address, subject line, and report body.</p>
+  <h3>This feature is optional</h3>
+  <p>Email delivery is entirely opt-in. If you do not enter an address, nothing is sent and no third-party service is contacted. The audit results are always shown in your browser regardless of whether you request email delivery.</p>
+</section>
+{% endif %}
+
 <section aria-labelledby="accounts-heading">
   <h2 id="accounts-heading">Accounts and Identity</h2>
-  <p>GLOW does not require an account, login, or registration. No personally identifiable information is collected as a condition of using the tool.</p>
+  <p>GLOW does not require an account, login, or registration for standard document workflows. No personally identifiable information is collected as a condition of using the core tool.</p>
+  <p>Administrative dashboards use a separate admin-only authentication flow. Admin sign-in options (email magic link and configured OAuth providers) are only enabled when email delivery is configured. Admin access requests require approval by an existing approved admin.</p>
   <p>If you submit feedback through the Feedback page, your message is stored in an encrypted SQLite database on the server and is accessible only to BITS administrators. Feedback is retained to help improve the tool and is not shared externally.</p>
   <p>If you opt in to cookie-based preferences (via the Settings page), your preferences are stored in a browser cookie on your device only. The cookie contains your chosen defaults (profile, mode, heading levels, and so on) and no document content.</p>
 </section>
@@ -67,7 +88,7 @@
   <p>To withdraw your agreement and clear the consent record, use your browser's cookie controls to delete the <code>glow_consent_v1</code> cookie, or click the button below. You will be asked to agree again on your next visit.</p>
   <form method="post" action="{{ url_for('consent.consent_withdraw') }}">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-    <button type="submit" class="btn-secondary">Clear My Consent Record</button>
+    <button type="submit" class="btn-secondary" onclick="return confirm('Clear your consent record? You will be asked to agree again on your next visit.');">Clear My Consent Record</button>
   </form>
 </section>
 {% endblock %}

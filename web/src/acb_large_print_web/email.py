@@ -437,6 +437,32 @@ def send_batch_audit_report_email(
     return _send(payload, to_email)
 
 
+def send_whisperer_status_email(
+    to_email: str,
+    subject: str,
+    html_body: str,
+    text_body: str,
+) -> tuple[bool, str]:
+    """Send a lifecycle status email for BITS Whisperer jobs.
+
+    Used for queued/started/completed/cleared notifications in background
+    transcription flows.
+    """
+    if not email_configured():
+        log.warning("POSTMARK_SERVER_TOKEN not set -- whisperer email send skipped")
+        return False, "Email service is not configured. Contact the site administrator."
+
+    payload = {
+        "From": _from_address(),
+        "To": to_email,
+        "Subject": subject,
+        "HtmlBody": html_body,
+        "TextBody": text_body,
+        "MessageStream": _POSTMARK_STREAM,
+    }
+    return _send(payload, to_email)
+
+
 # ---------------------------------------------------------------------------
 # Internal send helper
 # ---------------------------------------------------------------------------

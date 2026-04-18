@@ -2,15 +2,35 @@
 
 from __future__ import annotations
 
+import html
+import os
 from pathlib import Path
 
-from flask import Blueprint, render_template, request, redirect, url_for, session
+from flask import Blueprint, make_response, render_template, request, redirect, url_for, session
+from werkzeug.utils import secure_filename
 
+from ..app import limiter
 from ..chat_handler import ChatSession, DocumentContext, ToolRegistry
 from ..gating import ai_gate, GatingError
 from ..upload import get_temp_dir, UploadError
 
 chat_bp = Blueprint("chat", __name__)
+
+_MAX_QUESTION_LENGTH = 2000
+_OLLAMA_HOST = os.environ.get("OLLAMA_HOST", "http://localhost:11434").rstrip("/")
+
+
+def _ollama_available() -> bool:
+    """Return True if Ollama is reachable and llama3 is loaded."""
+    import requests as _req
+    try:
+        r = _req.get(f"{_OLLAMA_HOST}/api/tags", timeout=3)
+        if not r.ok:
+            return False
+        models = [m.get("name", "") for m in r.json().get("models", [])]
+        return any("llama3" in m for m in models)
+    except Exception:
+        return False
 
 
 def _load_document_text(token: str) -> str:
@@ -101,7 +121,7 @@ General document questions → Document tools"""
     # Call Ollama
     try:
         response = requests.post(
-            "http://localhost:11434/api/generate",
+            f"{_OLLAMA_HOST}/api/generate",
             json={
                 "model": "llama3",
                 "prompt": question,
@@ -169,6 +189,7 @@ def chat_form():
             token=token,
             filename=chat_session.filename,
             conversation=chat_session.turns,
+            ollama_available=_ollama_available(),
         )
 
     except Exception as e:
@@ -176,6 +197,7 @@ def chat_form():
 
 
 @chat_bp.route("/", methods=["POST"])
+@limiter.limit("10 per minute")
 def chat_submit():
     """Process a user question and return answer."""
     token = request.form.get("token")
@@ -183,6 +205,13 @@ def chat_submit():
 
     if not token or not question:
         return redirect(url_for("chat.chat_form", token=token))
+
+    if len(question) > _MAX_QUESTION_LENGTH:
+        return render_template(
+            "chat_form.html",
+            error=f"Question is too long. Please keep it under {_MAX_QUESTION_LENGTH} characters.",
+            token=token,
+        ), 400
 
     try:
         # Load chat session from session storage
@@ -212,12 +241,19 @@ def chat_submit():
                         f"Q: {t.question}\nA: {t.answer}" for t in chat_session.turns[:-1]
                     ),
                 )
-        except GatingError as e:
-            return render_template(
-                "busy.html",
-                operation="Document chat (AI interrogation)",
-                retry_after=90,
-            ), 503
+        except GatingError:
+            resp = make_response(
+                render_template(
+                    "busy.html",
+                    operation="Document chat (AI interrogation)",
+                    retry_seconds=90,
+                    back_url=url_for("chat.chat_form", token=token),
+                ),
+                503,
+            )
+            from ..gating import RETRY_AFTER_SECONDS
+            resp.headers["Retry-After"] = str(RETRY_AFTER_SECONDS)
+            return resp
 
         turn.answer = answer
         turn.tool_calls = tool_calls
@@ -230,8 +266,8 @@ def chat_submit():
 
     except UploadError as e:
         return render_template("chat_form.html", error=str(e), token=token), 400
-    except Exception as e:
-        return render_template("chat_form.html", error=f"Error: {e}", token=token), 500
+    except Exception:
+        return render_template("chat_form.html", error="An unexpected error occurred. Please try again.", token=token), 500
 
 
 @chat_bp.route("/export/<format>", methods=["GET"])
@@ -251,6 +287,9 @@ def chat_export(format: str):
 
         chat_session = ChatSession.from_dict(chat_data)
 
+        # Sanitize filename for use in Content-Disposition header
+        safe_stem = secure_filename(chat_session.filename) or "document"
+
         if format == "markdown":
             md_content = chat_session.export_markdown()
             return (
@@ -258,7 +297,7 @@ def chat_export(format: str):
                 200,
                 {
                     "Content-Type": "text/markdown; charset=utf-8",
-                    "Content-Disposition": f"attachment; filename={chat_session.filename}_chat.md",
+                    "Content-Disposition": f'attachment; filename="{safe_stem}_chat.md"',
                 },
             )
 
@@ -280,7 +319,7 @@ def chat_export(format: str):
                 200,
                 {
                     "Content-Type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                    "Content-Disposition": f"attachment; filename={chat_session.filename}_chat.docx",
+                    "Content-Disposition": f'attachment; filename="{safe_stem}_chat.docx"',
                 },
             )
 
@@ -302,17 +341,29 @@ def chat_export(format: str):
                     200,
                     {
                         "Content-Type": "application/pdf",
-                        "Content-Disposition": f"attachment; filename={chat_session.filename}_chat.pdf",
+                        "Content-Disposition": f'attachment; filename="{safe_stem}_chat.pdf"',
                     },
                 )
             else:
-                return "PDF generation failed", 500
+                return render_template(
+                    "error.html",
+                    title="Export Failed",
+                    message="PDF generation failed. Please try Markdown or Word export instead.",
+                ), 500
 
         else:
-            return "Unknown format", 400
+            return render_template(
+                "error.html",
+                title="Unknown Export Format",
+                message="The requested export format is not supported.",
+            ), 400
 
-    except Exception as e:
-        return f"Export error: {e}", 500
+    except Exception:
+        return render_template(
+            "error.html",
+            title="Export Error",
+            message="An error occurred while exporting the conversation. Please try again.",
+        ), 500
 
 
 @chat_bp.route("/clear", methods=["POST"])

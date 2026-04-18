@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block title %}Secure Retrieval{% endblock %}
+{% block heading %}Secure Retrieval{% endblock %}
+
+{% block content %}
+<p>This page is for background transcription retrieval. Enter the password you created when submitting the job.</p>
+
+{% if error %}
+<div class="error-box" role="alert">
+  <p><strong>Error:</strong> {{ error }}</p>
+</div>
+{% endif %}
+
+{% if expired %}
+<div class="notice-box" role="status">
+  <p>This retrieval link is expired or already used. Please upload and process the audio again.</p>
+</div>
+{% else %}
+<form method="post" novalidate>
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+  <fieldset>
+    <legend>Unlock transcript</legend>
+    <label for="retrieval-password">Retrieval password</label>
+    <input type="password" id="retrieval-password" name="retrieval_password" required aria-describedby="retrieval-hint">
+    <p id="retrieval-hint" class="field-hint">This link is single-use. After a successful download it is invalidated. If you enter the wrong password, the link remains valid so you can try again -- but the link expires {{ retrieval_hours if retrieval_hours is defined else 4 }} hours after the job completed, or sooner if already used.</p>
+  </fieldset>
+
+  <button type="submit" class="btn-primary" id="retrieve-btn">Download Transcript</button>
+  <p id="retrieve-status" class="field-hint" aria-live="polite" aria-atomic="true"></p>
+</form>
+<script>
+(function () {
+  'use strict';
+  var form = document.querySelector('form[method="post"]');
+  if (!form) return;
+  form.addEventListener('submit', function () {
+    var btn = document.getElementById('retrieve-btn');
+    var statusEl = document.getElementById('retrieve-status');
+    if (statusEl) statusEl.textContent = 'Verifying password and preparing download\u2026';
+    if (btn) { btn.disabled = true; btn.textContent = 'Downloading\u2026'; }
+  });
+}());
+</script>
+{% endif %}
+{% endblock %}

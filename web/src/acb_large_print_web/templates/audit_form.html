@@ -227,6 +227,7 @@
 {% endif %}
 
   <button type="submit" class="btn-primary" id="submit-btn">Run Audit</button>
+  <p id="audit-processing-status" class="field-hint" aria-live="polite" aria-atomic="true"></p>
 </form>
 
 <script>
@@ -362,7 +363,14 @@
       emailInput.removeAttribute('aria-invalid');
     }
 
-    if (mode !== 'batch') return; /* single mode: normal browser submit */
+    if (mode !== 'batch') {
+      /* single mode: show processing state then allow normal submit */
+      var statusEl = document.getElementById('audit-processing-status');
+      var submitBtn = document.getElementById('submit-btn');
+      if (statusEl) statusEl.textContent = 'Processing your document\u2026 This may take up to a minute for large files.';
+      if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Processing\u2026'; }
+      return;
+    }
 
     if (fileQueue.length === 0) {
       e.preventDefault();
@@ -370,6 +378,11 @@
       picker.focus();
       return;
     }
+
+    var statusEl2 = document.getElementById('audit-processing-status');
+    var submitBtn2 = document.getElementById('submit-btn');
+    if (statusEl2) statusEl2.textContent = 'Processing your documents\u2026 This may take up to a minute for large files.';
+    if (submitBtn2) { submitBtn2.disabled = true; submitBtn2.textContent = 'Processing\u2026'; }
 
     try {
       var dt = new DataTransfer();

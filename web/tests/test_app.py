@@ -5,7 +5,9 @@ from __future__ import annotations
 import io
 import json
 import sqlite3
+import time
 import zipfile
+from contextlib import nullcontext
 from pathlib import Path
 
 import pytest
@@ -174,6 +176,240 @@ class TestPageLoads:
         assert payload["status"] in {"ok", "degraded"}
         assert "services" in payload
         assert set(payload["services"].keys()) == {"web", "pipeline", "ollama"}
+
+
+class TestWhispererProgress:
+    def test_whisperer_background_progress_and_download(self, client, monkeypatch):
+        import acb_large_print_web.routes.whisperer as whisperer_route
+
+        monkeypatch.setattr(whisperer_route, "whisper_available", lambda: True)
+        monkeypatch.setattr(whisperer_route, "audio_gate", lambda: nullcontext())
+
+        def _fake_whisper_convert(
+            src_path,
+            output_path=None,
+            *,
+            model=None,
+            language=None,
+            output_format="markdown",
+            progress_callback=None,
+        ):
+            if output_path is None:
+                output_path = Path(src_path).with_suffix(".md")
+            if progress_callback:
+                progress_callback(10, "Transcribing audio... 10%")
+                progress_callback(70, "Transcribing audio... 70%")
+                progress_callback(100, "Transcription complete.")
+            output_path.write_text("# Test Transcript\n\nHello world.\n", encoding="utf-8")
+            return output_path, "# Test Transcript\n\nHello world.\n"
+
+        monkeypatch.setattr(whisperer_route, "whisper_convert", _fake_whisper_convert)
+
+        start = client.post(
+            "/whisperer/start",
+            data={
+                "audio": (io.BytesIO(b"fake audio bytes"), "meeting.mp3"),
+                "output_format": "markdown",
+                "language": "en",
+                "confirm_estimate": "yes",
+            },
+            content_type="multipart/form-data",
+        )
+        assert start.status_code == 202
+        payload = start.get_json()
+        assert payload is not None
+        job_id = payload["job_id"]
+
+        final_payload = None
+        for _ in range(20):
+            prog = client.get(f"/whisperer/progress/{job_id}")
+            assert prog.status_code == 200
+            final_payload = prog.get_json()
+            if final_payload and final_payload.get("status") == "complete":
+                break
+            time.sleep(0.02)
+
+        assert final_payload is not None
+        assert final_payload["status"] == "complete"
+        assert final_payload["progress"] == 100
+        assert "download_url" in final_payload
+
+        download = client.get(final_payload["download_url"])
+        assert download.status_code == 200
+        assert b"Test Transcript" in download.data
+
+    def test_whisperer_requires_estimate_ack(self, client, monkeypatch):
+        import acb_large_print_web.routes.whisperer as whisperer_route
+
+        monkeypatch.setattr(whisperer_route, "whisper_available", lambda: True)
+
+        resp = client.post(
+            "/whisperer/start",
+            data={
+                "audio": (io.BytesIO(b"fake audio bytes"), "meeting.mp3"),
+                "output_format": "markdown",
+                # Intentionally omit confirm_estimate
+            },
+            content_type="multipart/form-data",
+        )
+
+        assert resp.status_code == 400
+        payload = resp.get_json()
+        assert payload is not None
+        assert "check the confirmation box" in payload["error"]
+
+    def test_whisperer_rejects_audio_above_duration_limit(self, client, monkeypatch):
+        import acb_large_print_web.routes.whisperer as whisperer_route
+
+        monkeypatch.setattr(whisperer_route, "whisper_available", lambda: True)
+        monkeypatch.setattr(whisperer_route, "_estimate_audio_duration_seconds", lambda _p: 3 * 60 * 60)
+        monkeypatch.setattr(whisperer_route, "_MAX_AUDIO_MINUTES", 120)
+
+        resp = client.post(
+            "/whisperer/start",
+            data={
+                "audio": (io.BytesIO(b"fake audio bytes"), "meeting.mp3"),
+                "output_format": "markdown",
+                "confirm_estimate": "yes",
+            },
+            content_type="multipart/form-data",
+        )
+
+        assert resp.status_code == 400
+        payload = resp.get_json()
+        assert payload is not None
+        assert "maximum supported length" in payload["error"]
+
+    def test_background_opt_in_requires_email_service(self, client, monkeypatch):
+        import acb_large_print_web.routes.whisperer as whisperer_route
+
+        monkeypatch.setattr(whisperer_route, "whisper_available", lambda: True)
+        monkeypatch.setattr(whisperer_route, "email_configured", lambda: False)
+        monkeypatch.setattr(whisperer_route, "_estimate_audio_duration_seconds", lambda _p: 45 * 60)
+
+        resp = client.post(
+            "/whisperer/start",
+            data={
+                "audio": (io.BytesIO(b"fake audio bytes"), "meeting.mp3"),
+                "output_format": "markdown",
+                "confirm_estimate": "yes",
+                "background_opt_in": "yes",
+                "notify_email": "user@example.com",
+                "retrieval_password": "secret123!",
+                "retrieval_password_confirm": "secret123!",
+            },
+            content_type="multipart/form-data",
+        )
+
+        assert resp.status_code == 400
+        payload = resp.get_json()
+        assert payload is not None
+        assert "requires email service" in payload["error"]
+
+    def test_background_secure_retrieve_requires_password(self, client, monkeypatch):
+        import acb_large_print_web.routes.whisperer as whisperer_route
+
+        monkeypatch.setattr(whisperer_route, "whisper_available", lambda: True)
+        monkeypatch.setattr(whisperer_route, "email_configured", lambda: True)
+        monkeypatch.setattr(whisperer_route, "send_whisperer_status_email", lambda *a, **k: (True, "ok"))
+        monkeypatch.setattr(whisperer_route, "audio_gate", lambda: nullcontext())
+        monkeypatch.setattr(whisperer_route, "_estimate_audio_duration_seconds", lambda _p: 45 * 60)
+
+        def _fake_whisper_convert(
+            src_path,
+            output_path=None,
+            *,
+            model=None,
+            language=None,
+            output_format="markdown",
+            progress_callback=None,
+        ):
+            if output_path is None:
+                output_path = Path(src_path).with_suffix(".md")
+            if progress_callback:
+                progress_callback(100, "Transcription complete.")
+            output_path.write_text("# Secure Transcript\n\nHello world.\n", encoding="utf-8")
+            return output_path, "# Secure Transcript\n\nHello world.\n"
+
+        monkeypatch.setattr(whisperer_route, "whisper_convert", _fake_whisper_convert)
+
+        start = client.post(
+            "/whisperer/start",
+            data={
+                "audio": (io.BytesIO(b"fake audio bytes"), "meeting.mp3"),
+                "output_format": "markdown",
+                "confirm_estimate": "yes",
+                "background_opt_in": "yes",
+                "notify_email": "user@example.com",
+                "retrieval_password": "secret123!",
+                "retrieval_password_confirm": "secret123!",
+            },
+            content_type="multipart/form-data",
+        )
+        assert start.status_code == 202
+        job_id = start.get_json()["job_id"]
+
+        # Wait for completion
+        final_payload = None
+        for _ in range(20):
+            prog = client.get(f"/whisperer/progress/{job_id}")
+            assert prog.status_code == 200
+            final_payload = prog.get_json()
+            if final_payload and final_payload.get("status") == "complete":
+                break
+            time.sleep(0.02)
+
+        assert final_payload is not None
+        assert final_payload["status"] == "complete"
+        assert final_payload["background_opt_in"] is True
+
+        # Find retrieval token from in-memory job registry
+        job = whisperer_route._get_job(job_id)
+        assert job is not None
+        token = job.retrieval_token
+        assert token
+
+        bad = client.post(f"/whisperer/retrieve/{token}", data={"retrieval_password": "wrong"})
+        assert bad.status_code == 403
+
+        good = client.post(f"/whisperer/retrieve/{token}", data={"retrieval_password": "secret123!"})
+        assert good.status_code == 200
+        assert b"Secure Transcript" in good.data
+
+
+class TestAdminAuth:
+    def test_admin_login_page_loads(self, client):
+        resp = client.get("/admin/login")
+        assert resp.status_code == 200
+        assert b"Admin Sign-In" in resp.data
+
+    def test_admin_request_access_requires_email_config(self, client):
+        resp = client.get("/admin/request-access")
+        assert resp.status_code == 503
+        assert b"unavailable until email delivery is configured" in resp.data
+
+    def test_admin_magic_link_sign_in_for_bootstrap_admin(self, app, client, monkeypatch):
+        import acb_large_print_web.routes.admin as admin_route
+
+        monkeypatch.setenv("ADMIN_BOOTSTRAP_EMAILS", "admin@example.com")
+        monkeypatch.setattr(admin_route, "email_configured", lambda: True)
+        monkeypatch.setattr(admin_route, "_send_admin_email", lambda *a, **k: None)
+        monkeypatch.setattr(admin_route.secrets, "token_urlsafe", lambda _n: "admintoken")
+
+        send_resp = client.post(
+            "/admin/login/email",
+            data={"email": "admin@example.com"},
+        )
+        assert send_resp.status_code == 200
+        assert b"sign-in link" in send_resp.data
+
+        consume_resp = client.get("/admin/magic-link/consume?token=admintoken")
+        assert consume_resp.status_code == 302
+        assert "/admin/queue" in consume_resp.location
+
+        queue_resp = client.get("/admin/queue")
+        assert queue_resp.status_code == 200
+        assert b"Admin Queue Dashboard" in queue_resp.data
 
 
 # ============================================================

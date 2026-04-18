@@ -91,6 +91,21 @@
     </details>
   </fieldset>
 
-  <button type="submit" class="btn-primary">Create Template</button>
+  <button type="submit" class="btn-primary" id="template-submit-btn">Create Template</button>
+  <p id="template-processing-status" class="field-hint" aria-live="polite" aria-atomic="true"></p>
 </form>
+
+<script>
+(function () {
+  'use strict';
+  var form = document.querySelector('form[method="post"]');
+  if (!form) return;
+  form.addEventListener('submit', function () {
+    var statusEl = document.getElementById('template-processing-status');
+    var btn = document.getElementById('template-submit-btn');
+    if (statusEl) statusEl.textContent = 'Building your template\u2026 This usually takes a few seconds.';
+    if (btn) { btn.disabled = true; btn.textContent = 'Building\u2026'; }
+  });
+}());
+</script>
 {% endblock %}
