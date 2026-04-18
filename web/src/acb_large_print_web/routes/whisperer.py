@@ -129,6 +129,7 @@ def _template_context(**extra):
         whisper_installed=whisper_available(),
         pandoc_installed=pandoc_available(),
         email_enabled=email_configured(),
+        max_audio_mb=_MAX_AUDIO_MB,
         background_threshold_minutes=_BACKGROUND_THRESHOLD_MINUTES,
         language_choices=_LANGUAGE_CHOICES,
         **extra,
@@ -283,6 +284,37 @@ def _require_uncertain_estimate_acknowledgement() -> None:
             "This file's exact duration could not be determined. Please acknowledge the "
             "rough estimate warning before starting transcription."
         )
+
+
+def _resolve_audio_upload(
+    uploaded_file,
+    existing_token: str | None = None,
+) -> tuple[str, Path, bool, str]:
+    """Resolve audio source from fresh upload or previously uploaded token.
+
+    Returns:
+        token, saved_path, created_new_token, filename
+    """
+    if uploaded_file is not None and getattr(uploaded_file, "filename", ""):
+        token, saved_path = validate_upload(
+            uploaded_file,
+            allowed_extensions=AUDIO_EXTENSIONS,
+        )
+        return token, saved_path, True, saved_path.name
+
+    token = (existing_token or "").strip()
+    if not token:
+        raise UploadError("No file selected. Please choose an audio file to upload.")
+
+    temp_dir = get_temp_dir(token)
+    if temp_dir is None:
+        raise UploadError("Your uploaded audio is no longer available. Please select the file again.")
+
+    for candidate in temp_dir.iterdir():
+        if candidate.is_file() and candidate.suffix.lower() in AUDIO_EXTENSIONS:
+            return token, candidate, False, candidate.name
+
+    raise UploadError("Your uploaded audio could not be found. Please select the file again.")
 
 
 def _set_job(job: _WhisperJob) -> None:
@@ -779,11 +811,11 @@ def whisperer_estimate():
 def whisperer_estimate_page():
     """Server-side estimate flow that re-renders the form with estimate values."""
     token = None
+    created_new_token = False
     try:
-        uploaded_file = request.files.get("audio")
-        token, saved_path = validate_upload(
-            uploaded_file,
-            allowed_extensions=AUDIO_EXTENSIONS,
+        token, saved_path, created_new_token, uploaded_name = _resolve_audio_upload(
+            request.files.get("audio"),
+            existing_token=request.form.get("existing_token"),
         )
 
         ext = saved_path.suffix.lower()
@@ -818,25 +850,31 @@ def whisperer_estimate_page():
                 estimate_audio_seconds=float(audio_seconds),
                 estimate_expected_seconds=float(expected_seconds),
                 estimate_source=source,
+                existing_token=token,
+                uploaded_filename=uploaded_name,
             ),
         )
     except UploadError as exc:
+        if token and created_new_token:
+            cleanup_token(token)
         return render_template(
             "whisperer_form.html",
-            **_template_context(estimate_error=str(exc)),
+            **_template_context(
+                estimate_error=str(exc),
+                existing_token=request.form.get("existing_token"),
+                uploaded_filename=request.form.get("uploaded_filename"),
+            ),
         ), 400
-    finally:
-        if token:
-            cleanup_token(token)
 
 
 @whisperer_bp.route("/", methods=["POST"])
 def whisperer_submit():
     token = None
+    created_new_token = False
     try:
-        token, saved_path = validate_upload(
+        token, saved_path, created_new_token, uploaded_name = _resolve_audio_upload(
             request.files.get("audio"),
-            allowed_extensions=AUDIO_EXTENSIONS,
+            existing_token=request.form.get("existing_token"),
         )
         _require_estimate_acknowledgement()
         ext = saved_path.suffix.lower()
@@ -914,7 +952,10 @@ def whisperer_submit():
             render_template(
                 "whisperer_form.html",
                 error=str(exc),
-                **_template_context(),
+                **_template_context(
+                    existing_token=request.form.get("existing_token"),
+                    uploaded_filename=request.form.get("uploaded_filename") or uploaded_name if 'uploaded_name' in locals() else request.form.get("uploaded_filename"),
+                ),
             ),
             400,
         )
@@ -928,7 +969,7 @@ def whisperer_submit():
             500,
         )
     finally:
-        if token:
+        if token and created_new_token:
             cleanup_token(token)
 
 
@@ -936,6 +977,7 @@ def whisperer_submit():
 def whisperer_start_job():
     """Start a background Whisper transcription job and return a job id."""
     token = None
+    created_new_token = False
     try:
         if not whisper_available():
             raise UploadError(
@@ -943,9 +985,9 @@ def whisperer_start_job():
                 "Audio transcription is unavailable."
             )
 
-        token, saved_path = validate_upload(
+        token, saved_path, created_new_token, uploaded_name = _resolve_audio_upload(
             request.files.get("audio"),
-            allowed_extensions=AUDIO_EXTENSIONS,
+            existing_token=request.form.get("existing_token"),
         )
         _require_estimate_acknowledgement()
 
@@ -1041,11 +1083,11 @@ def whisperer_start_job():
             202,
         )
     except UploadError as exc:
-        if token:
+        if token and created_new_token:
             cleanup_token(token)
         return jsonify({"error": str(exc)}), 400
     except RuntimeError as exc:
-        if token:
+        if token and created_new_token:
             cleanup_token(token)
         return jsonify({"error": str(exc)}), 500
 

@@ -30,11 +30,14 @@
   action="{{ url_for('whisperer.whisperer_form') }}"
   enctype="multipart/form-data"
   novalidate
+  data-max-audio-mb="{{ max_audio_mb }}"
   data-background-threshold-minutes="{{ background_threshold_minutes }}"
   data-estimate-url="{{ url_for('whisperer.whisperer_estimate') }}"
   data-start-url="{{ url_for('whisperer.whisperer_start_job') }}"
 >
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <input type="hidden" name="existing_token" value="{{ existing_token or '' }}">
+  <input type="hidden" name="uploaded_filename" value="{{ uploaded_filename or '' }}">
 
   <!-- ============================================================ -->
   <!-- STEP: Upload audio                                           -->
@@ -50,14 +53,20 @@
       id="audio"
       name="audio"
       accept="{{ audio_accept }}"
-      required
+      {% if not uploaded_filename %}required{% endif %}
       aria-describedby="audio-hint"
     >
     <p id="audio-hint" class="field-hint">
       Accepted formats: MP3, WAV, M4A, OGG, FLAC, AAC, Opus.
-      Maximum file size: 500 MB.
+      Maximum file size: {{ max_audio_mb }} MB.
       For best results, use a clear recording with minimal background noise.
     </p>
+    <div id="audio-size-warning" class="warning-box" role="alert" hidden>
+      <p><strong>File too large:</strong> This file exceeds the {{ max_audio_mb }} MB limit. Please choose a smaller file before continuing.</p>
+    </div>
+    {% if uploaded_filename %}
+    <p class="field-hint"><strong>Uploaded file ready:</strong> {{ uploaded_filename }}</p>
+    {% endif %}
   </fieldset>
 
   <h3 id="whisperer-step-estimate">Step {{ ns.step }}: Review estimate and confirm</h3>
@@ -88,7 +97,7 @@
       {% endif %}
     </p>
     <button type="button" id="estimate-refresh" class="btn-secondary">Calculate estimate now</button>
-    <button type="submit" class="btn-secondary" formaction="{{ url_for('whisperer.whisperer_estimate_page') }}" formmethod="post" formnovalidate>Next: calculate estimate on server</button>
+    <button type="submit" id="estimate-next-server" class="btn-secondary" formaction="{{ url_for('whisperer.whisperer_estimate_page') }}" formmethod="post" formnovalidate>Next: calculate estimate on server</button>
     <p class="field-hint">Troubleshooting: add <strong>?whispererDebug=1</strong> to the URL to show live estimate diagnostics on this page.</p>
     <details id="estimate-debug-panel" class="help-accordion" hidden>
       <summary>Estimate diagnostics</summary>
@@ -221,7 +230,7 @@
     </p>
   </fieldset>
 
-  <button type="submit" class="btn-primary">Transcribe Audio</button>
+  <button type="submit" id="transcribe-submit" class="btn-primary">Transcribe Audio</button>
 </form>
 
 <section id="transcribe-progress" class="transcribe-progress" aria-labelledby="transcribe-progress-heading" hidden>
@@ -280,7 +289,7 @@
   }
 
   var form = document.getElementById('whisperer-form');
-  var submitButton = form ? form.querySelector('button[type="submit"]') : null;
+  var submitButton = document.getElementById('transcribe-submit');
   var progressSection = document.getElementById('transcribe-progress');
   var progressBar = document.getElementById('transcribe-progress-bar');
   var progressValue = document.getElementById('transcribe-progress-value');
@@ -289,6 +298,8 @@
   var estimateHint = document.getElementById('estimate-hint');
   var estimateValue = document.getElementById('estimate-value');
   var estimateRefresh = document.getElementById('estimate-refresh');
+  var estimateNextServer = document.getElementById('estimate-next-server');
+  var audioSizeWarning = document.getElementById('audio-size-warning');
   var estimateSourceInput = document.getElementById('estimate-source');
   var estimateRiskWarning = document.getElementById('estimate-risk-warning');
   var confirmUncertainEstimate = document.getElementById('confirm-uncertain-estimate');
@@ -313,6 +324,8 @@
   }
 
   var backgroundThresholdMinutes = Number(form.dataset.backgroundThresholdMinutes || '30');
+  var maxAudioMb = Number(form.dataset.maxAudioMb || '0');
+  var maxAudioBytes = maxAudioMb > 0 ? maxAudioMb * 1024 * 1024 : 0;
   var estimatedDurationSeconds = null;
   var estimateTriggeredOnKeydown = false;
   var debugMode = false;
@@ -398,6 +411,51 @@
     if (retrievalPasswordConfirm) retrievalPasswordConfirm.required = enabled;
   }
 
+  function setEstimateButtonsEnabled(enabled) {
+    if (estimateRefresh) {
+      estimateRefresh.disabled = !enabled;
+      if (enabled && estimateRefresh.textContent === 'Calculating...') {
+        estimateRefresh.textContent = 'Calculate estimate now';
+      }
+    }
+    if (estimateNextServer) {
+      estimateNextServer.disabled = !enabled;
+    }
+  }
+
+  function handleAudioSizeLimit(file) {
+    if (!file || maxAudioBytes <= 0) {
+      if (audioSizeWarning) {
+        audioSizeWarning.hidden = true;
+      }
+      setEstimateButtonsEnabled(true);
+      return false;
+    }
+
+    if (file.size > maxAudioBytes) {
+      if (audioSizeWarning) {
+        audioSizeWarning.hidden = false;
+      }
+      if (estimateHint) {
+        estimateHint.textContent = 'This file is larger than the maximum allowed size (' + maxAudioMb + ' MB). Please select a smaller file.';
+      }
+      if (estimateValue) {
+        estimateValue.innerHTML = '<strong>Estimated conversion time:</strong> Not available for oversized files.';
+      }
+      if (estimateSourceInput) {
+        estimateSourceInput.value = 'oversize';
+      }
+      setEstimateButtonsEnabled(false);
+      return true;
+    }
+
+    if (audioSizeWarning) {
+      audioSizeWarning.hidden = true;
+    }
+    setEstimateButtonsEnabled(true);
+    return false;
+  }
+
   function setEstimateSource(source) {
     var value = source || 'unknown';
     if (estimateSourceInput) {
@@ -422,6 +480,10 @@
         estimateRefresh.disabled = false;
         estimateRefresh.textContent = 'Calculate estimate now';
       }
+      return;
+    }
+
+    if (handleAudioSizeLimit(file)) {
       return;
     }
 
@@ -543,10 +605,12 @@
       }
       if (estimateHint) {
         estimateHint.textContent = 'Your browser could not read audio metadata for this format. The estimate above is based on file size only.';
-      }      if (estimateRefresh) {
+      }
+      if (estimateRefresh) {
         estimateRefresh.disabled = false;
         estimateRefresh.textContent = 'Calculate estimate now';
-      }      syncBackgroundControls();
+      }
+      syncBackgroundControls();
     }
 
     probe.onloadedmetadata = function () {
@@ -605,6 +669,9 @@
       syncBackgroundControls();
       return;
     }
+    if (handleAudioSizeLimit(audioInput.files[0])) {
+      return;
+    }
     updateEstimateFromFile(audioInput.files[0]);
   });
 
@@ -628,6 +695,9 @@
         estimateRefresh.disabled = false;
         estimateRefresh.textContent = 'Calculate estimate now';
       }
+      return;
+    }
+    if (handleAudioSizeLimit(audioInput.files[0])) {
       return;
     }
     
@@ -801,11 +871,25 @@
   }
 
   form.addEventListener('submit', function (event) {
+    var submitter = event.submitter || null;
+    if (submitter && submitter.id === 'estimate-next-server') {
+      // Allow native form submit for server-side estimate fallback path.
+      if (audioInput && audioInput.files && audioInput.files.length && handleAudioSizeLimit(audioInput.files[0])) {
+        event.preventDefault();
+      }
+      return;
+    }
+
     if (typeof FormData === 'undefined' || typeof fetch === 'undefined') {
       return;
     }
 
     event.preventDefault();
+
+    if (audioInput && audioInput.files && audioInput.files.length && handleAudioSizeLimit(audioInput.files[0])) {
+      setProgress(0, 'File is too large. Please select a smaller file before starting transcription.');
+      return;
+    }
 
     if ((estimateSourceInput && estimateSourceInput.value === 'size-fallback') ||
         (estimateSourceInput && estimateSourceInput.value === 'client-size-fallback')) {

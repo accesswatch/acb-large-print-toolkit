@@ -218,6 +218,74 @@ class TestWhispererProgress:
         assert payload["audio_seconds"] >= 1.0
         assert payload["expected_seconds"] >= 15.0
 
+    def test_whisperer_estimate_page_preserves_token_for_start(self, client, monkeypatch):
+        import acb_large_print_web.routes.whisperer as whisperer_route
+
+        monkeypatch.setattr(whisperer_route, "whisper_available", lambda: True)
+        monkeypatch.setattr(whisperer_route, "audio_gate", lambda: nullcontext())
+        monkeypatch.setattr(whisperer_route, "_estimate_audio_duration_seconds", lambda _p: 120.0)
+
+        def _fake_whisper_convert(
+            src_path,
+            output_path=None,
+            *,
+            model=None,
+            language=None,
+            output_format="markdown",
+            progress_callback=None,
+        ):
+            if output_path is None:
+                output_path = Path(src_path).with_suffix(".md")
+            if progress_callback:
+                progress_callback(100, "Transcription complete.")
+            output_path.write_text("# Token Test Transcript\n", encoding="utf-8")
+            return output_path, "# Token Test Transcript\n"
+
+        monkeypatch.setattr(whisperer_route, "whisper_convert", _fake_whisper_convert)
+
+        estimate_page = client.post(
+            "/whisperer/estimate-page",
+            data={"audio": (io.BytesIO(b"x" * (2 * 1024 * 1024)), "meeting.mp3")},
+            content_type="multipart/form-data",
+        )
+        assert estimate_page.status_code == 200
+        html = estimate_page.get_data(as_text=True)
+
+        import re
+
+        token_match = re.search(r'name="existing_token" value="([^"]+)"', html)
+        assert token_match is not None
+        token = token_match.group(1)
+
+        start = client.post(
+            "/whisperer/start",
+            data={
+                "existing_token": token,
+                "uploaded_filename": "meeting.mp3",
+                "output_format": "markdown",
+                "confirm_estimate": "yes",
+                "estimate_source": "metadata",
+            },
+            content_type="multipart/form-data",
+        )
+        assert start.status_code == 202
+        payload = start.get_json()
+        assert payload is not None
+        job_id = payload["job_id"]
+
+        final_payload = None
+        for _ in range(20):
+            prog = client.get(f"/whisperer/progress/{job_id}")
+            assert prog.status_code == 200
+            final_payload = prog.get_json()
+            if final_payload and final_payload.get("status") == "complete":
+                break
+            time.sleep(0.02)
+
+        assert final_payload is not None
+        assert final_payload["status"] == "complete"
+        assert final_payload["progress"] == 100
+
     def test_whisperer_background_progress_and_download(self, client, monkeypatch):
         import acb_large_print_web.routes.whisperer as whisperer_route
 
