@@ -604,21 +604,37 @@
   }
 
   if (estimateRefresh) {
-    estimateRefresh.addEventListener('click', function () {
-      refreshEstimate('click');
+    // Exhaustive keyboard telemetry to understand why keyboard events might not fire
+    function logKeyEvent(eventType, event) {
+      var msg = 'KEYBOARD_EVENT ' + eventType + ' key=' + (event.key || '(unknown)') + ' code=' + (event.code || '(unknown)') + ' ctrlKey=' + event.ctrlKey + ' shiftKey=' + event.shiftKey;
+      logEstimateDebug(msg);
+      if (typeof console !== 'undefined' && typeof console.warn === 'function') {
+        console.warn('ESTIMATE_BUTTON_' + msg);
+      }
+    }
+
+    estimateRefresh.addEventListener('focus', function() {
+      logEstimateDebug('estimate button received focus');
+      console.warn('ESTIMATE_BUTTON_FOCUS');
     });
 
-    // Some screen-reader/browser combos do not dispatch click for Space/Enter
-    // on custom interaction modes. Handle keys explicitly for reliability.
+    estimateRefresh.addEventListener('blur', function() {
+      logEstimateDebug('estimate button lost focus');
+      console.warn('ESTIMATE_BUTTON_BLUR');
+    });
+
+    // Capture ALL keyboard events on the button, even if we don't handle them
     estimateRefresh.addEventListener('keydown', function (event) {
+      logKeyEvent('keydown', event);
       if (event.key === ' ' || event.key === 'Spacebar' || event.key === 'Enter') {
         event.preventDefault();
         estimateTriggeredOnKeydown = true;
         refreshEstimate('keydown:' + event.key);
       }
-    });
+    }, true); // Use capture phase to catch events early
 
     estimateRefresh.addEventListener('keyup', function (event) {
+      logKeyEvent('keyup', event);
       if (event.key === ' ' || event.key === 'Spacebar' || event.key === 'Enter') {
         event.preventDefault();
         if (estimateTriggeredOnKeydown) {
@@ -628,14 +644,20 @@
         // Fallback for environments that deliver keyup without reliable keydown click behavior.
         refreshEstimate('keyup:' + event.key);
       }
-    });
+    }, true);
 
     // Legacy fallback: some AT/browser combinations still emit keypress for Space/Enter.
     estimateRefresh.addEventListener('keypress', function (event) {
+      logKeyEvent('keypress', event);
       if (event.key === ' ' || event.key === 'Spacebar' || event.key === 'Enter') {
         event.preventDefault();
         refreshEstimate('keypress:' + event.key);
       }
+    }, true);
+
+    estimateRefresh.addEventListener('click', function () {
+      logEstimateDebug('estimate button clicked');
+      refreshEstimate('click');
     });
   }
 
