@@ -10,7 +10,13 @@ Releases are tagged in the [GitHub repository](https://github.com/accesswatch/ac
 
 ### Added
 
-- **Web: Submit-state feedback on all long-running forms.** `process_form.html`, `template_form.html`, `fix_review_headings.html`, `admin_login.html`, `chat_form.html`, `feedback_form.html`, `admin_request_access.html`, `consent.html`, and `whisperer_retrieve.html` now disable their submit button and display a polite `aria-live` status paragraph immediately on submit. Prevents double-submission and gives screen readers and sighted users clear progress feedback.
+- **Ops: Deep deployment logging.** `scripts/deploy-app.sh` now writes every phase of a deployment to a timestamped log file in `~/deploy-logs/` (always teed to stdout). Each step emits an ISO-8601 timestamp. The health-wait loop logs per-attempt container `state=` / `health=` / `last_log=` for all four services at every interval. On health check failure the script dumps the last 40-80 lines from each service log, runs `docker inspect` to show container error and restart state, and probes `/health` JSON to print the full service + readiness breakdown. Rollback attempts are logged the same way. A `deploy-latest.log` symlink always points to the most recent run.
+- **Web: `/health` deep readiness checks.** The `/health` endpoint now returns a `readiness` object alongside `services`. `readiness.chat` reports whether the Llama 3 model is loaded in Ollama. `readiness.vision` reports whether LLaVA is available. `readiness.whisperer` reports whether faster-whisper is installed. The top-level `status` field is `"degraded"` if any service is down or any readiness check is `"not-ready"`. The `models.ollama` array lists all currently loaded model names.
+- **Web: `/health` probe logs service + readiness summary at INFO.** Every `/health` call now emits a structured log line: `HEALTH status=... services=... readiness=... models=... duration_ms=...`. Health poll calls that return 200 in under 2 seconds are suppressed to avoid log noise; slow or failing calls always log.
+- **Web: Flask startup ready log.** On worker startup the app emits `GLOW startup: web=X core=Y maintenance=Z log_level=W` so deployment logs confirm the correct package versions are loaded.
+- **Web: Per-request logging middleware.** Every request logs `REQUEST METHOD /path -> STATUS (Xms) ua=...` at INFO after the response is sent. Silent for fast successful `/health` polls.
+- **Admin: Live System Health panel on admin queue dashboard.** `admin_queue.html` now shows a "System Health" table that fetches `/health` JSON on load and refreshes every 20 seconds alongside the queue refresh. Rows show web / pipeline / Ollama service status plus chat (Llama 3), vision (LLaVA), and Whisperer readiness.
+- **Docker: Service log labels and increased retention.** All four Compose services now include a `tag` label (`glow-web/{{.Name}}`, `glow-pipeline/{{.Name}}`, `glow-ollama/{{.Name}}`, `glow-caddy/{{.Name}}`) for `docker logs` filtering. Log caps raised: web 5 files x 20 MB; pipeline and Ollama 5 files x 10 MB; Caddy 3 files x 5 MB (was 2 files x 5-10 MB). Web healthcheck timeout raised to 10 s and retries to 5 to accommodate slower starts. `process_form.html`, `template_form.html`, `fix_review_headings.html`, `admin_login.html`, `chat_form.html`, `feedback_form.html`, `admin_request_access.html`, `consent.html`, and `whisperer_retrieve.html` now disable their submit button and display a polite `aria-live` status paragraph immediately on submit. Prevents double-submission and gives screen readers and sighted users clear progress feedback.
 - **Web: Download processing state on fix_result.** The "Download Fixed Document" button in `fix_result.html` shows "Preparing your download…" and disables for 4 seconds on click, preventing double-submission on slow connections.
 - **Web: Document Chat card on home page.** `index.html` now includes Document Chat in the card grid and "What Each Tab Does" section. Users no longer need to discover Chat only by accident.
 - **Web: Format-specific CTAs in batch audit report.** `audit_batch_report.html` per-file sections now show actionable next steps for every supported format (xlsx/pptx manual-fix guide, md convert flow, pdf Acrobat note, epub source-fix hint). "What's Next?" section expanded.
@@ -34,8 +40,6 @@ Releases are tagged in the [GitHub repository](https://github.com/accesswatch/ac
 ### Changed
 
 - **Web: fix_review_headings Apply button** now has an `id` and processing-state JS to prevent accidental double-submission.
-
-## [2.0.0] - 2026-04-17
 
 ### Added
 
@@ -67,6 +71,7 @@ Releases are tagged in the [GitHub repository](https://github.com/accesswatch/ac
 
 ### Changed
 
+- **Docs: Complete rewrite of `docs/user-guide.md`.** Restructured from 9 inconsistently numbered sections to 17 sections with a corrected TOC. Expanded Quick Start with eight real-world scenarios and a step-by-step upload flow. Fully written BITS Whisperer section (standard mode, background mode, limits table, audio tips, privacy statement). Fully written Document Chat section (all five agent categories, 24 tools, starter prompts, conversation tips, export and privacy guidance). Removed version numbers embedded throughout; standardised language. All tables use proper accessible headers.
 - **Web: Upload accepted file list expanded.** `CONVERT_EXTENSIONS` in `upload.py` now includes image files (`.jpg`, `.jpeg`, `.png`, `.gif`, `.webp`, `.bmp`, `.tiff`).
 - **Web: `/audit` form supports batch file upload (up to 3 files in one go).** Radio toggle between Single File and Batch modes. Queue UI with remove-before-submit. Output options: Combined Report (one scorecard with per-file collapsible findings) or Individual Reports (stacked per-file full reports).
 - **Web: `/audit` POST endpoint has per-IP rate limit.** 6 requests per minute per IP to prevent abuse of the email delivery path. Limit applies to all POST submissions, email or not.

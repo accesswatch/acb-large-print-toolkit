@@ -1,9 +1,9 @@
 # PRD: GLOW (Guided Layout & Output Workflow) Accessibility Web Application
 
-**Status:** Implemented (v1.2.0 released, v2.0 release candidate)
+**Status:** Implemented (v2.0.0 released)
 **Author:** Jeff Bishop, BITS
-**Date:** April 12, 2026
-**Target:** v2.0 release (BITS Whisperer, consent gate, Quick Start, MarkItDown 0.2+, vision-ready OCR path, and expanded agentic document chat)
+**Date:** April 17, 2026
+**Target:** v2.0.0 (BITS Whisperer, consent gate, Quick Start, MarkItDown 0.2+, vision-ready OCR path, expanded agentic document chat, maintenance mode, deep deployment logging)
 
 ---
 

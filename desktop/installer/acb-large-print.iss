@@ -3,7 +3,7 @@
 ; All text descriptions are clear and descriptive for non-visual users
 
 #define MyAppName "ACB Large Print Tool"
-#define MyAppVersion "1.1.0"
+#define MyAppVersion "2.0.0"
 #define MyAppPublisher "BITS - Blind Information Technology Solutions"
 #define MyAppURL "https://www.bitsonline.org"
 #define MyAppExeName "acb-large-print-win-x64.exe"
