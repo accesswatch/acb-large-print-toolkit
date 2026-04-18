@@ -977,12 +977,13 @@ def whisperer_submit():
             ),
             500,
         )
-    except Exception:
+    except Exception as exc:
         current_app.logger.exception("WHISPERER_SUBMIT unexpected_error")
+        error_message = str(exc) if str(exc) else "Something went wrong while processing this transcription request. Please try again."
         return (
             render_template(
                 "whisperer_form.html",
-                error="Something went wrong while processing this transcription request. Please try again.",
+                error=error_message,
                 **_template_context(
                     existing_token=request.form.get("existing_token"),
                     uploaded_filename=request.form.get("uploaded_filename") or uploaded_name if 'uploaded_name' in locals() else request.form.get("uploaded_filename"),
