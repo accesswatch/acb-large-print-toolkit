@@ -959,6 +959,7 @@ def whisperer_submit():
                 **_template_context(
                     existing_token=request.form.get("existing_token"),
                     uploaded_filename=request.form.get("uploaded_filename") or uploaded_name if 'uploaded_name' in locals() else request.form.get("uploaded_filename"),
+                    estimate_ready=bool(request.form.get("existing_token")),
                 ),
             ),
             400,
@@ -971,6 +972,7 @@ def whisperer_submit():
                 **_template_context(
                     existing_token=request.form.get("existing_token"),
                     uploaded_filename=request.form.get("uploaded_filename") or uploaded_name if 'uploaded_name' in locals() else request.form.get("uploaded_filename"),
+                    estimate_ready=bool(request.form.get("existing_token")),
                 ),
             ),
             500,
@@ -984,6 +986,7 @@ def whisperer_submit():
                 **_template_context(
                     existing_token=request.form.get("existing_token"),
                     uploaded_filename=request.form.get("uploaded_filename") or uploaded_name if 'uploaded_name' in locals() else request.form.get("uploaded_filename"),
+                    estimate_ready=bool(request.form.get("existing_token")),
                 ),
             ),
             500,
@@ -1110,6 +1113,11 @@ def whisperer_start_job():
         if token and created_new_token:
             cleanup_token(token)
         return jsonify({"error": str(exc)}), 500
+    except Exception:
+        current_app.logger.exception("WHISPERER_START unexpected_error")
+        if token and created_new_token:
+            cleanup_token(token)
+        return jsonify({"error": "Something went wrong starting this transcription job. Please try again."}), 500
 
 
 @whisperer_bp.route("/progress/<job_id>", methods=["GET"])

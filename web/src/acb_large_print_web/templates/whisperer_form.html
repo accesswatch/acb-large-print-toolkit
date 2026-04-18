@@ -901,6 +901,15 @@
       return;
     }
 
+    // Validate the required estimate-acknowledgement checkbox before posting.
+    var confirmEstimate = form.querySelector('input[name="confirm_estimate"]');
+    if (confirmEstimate && !confirmEstimate.checked) {
+      setProgress(0, 'Please check the box confirming you have reviewed the estimated processing time before starting transcription.');
+      if (progressSection) { progressSection.hidden = false; }
+      confirmEstimate.focus();
+      return;
+    }
+
     if ((estimateSourceInput && estimateSourceInput.value === 'size-fallback') ||
         (estimateSourceInput && estimateSourceInput.value === 'client-size-fallback')) {
       if (confirmUncertainEstimate && !confirmUncertainEstimate.checked) {
