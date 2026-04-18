@@ -35,9 +35,31 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install -e ./desktop
-          pip install -e ./web
-          pip install pytest
+          python -m pip install --upgrade pip
+
+          install_with_retry() {
+            local max_attempts="$1"
+            shift
+            local attempt=1
+            local delay=5
+            while true; do
+              if "$@"; then
+                return 0
+              fi
+              if [ "$attempt" -ge "$max_attempts" ]; then
+                echo "Command failed after ${attempt} attempts: $*"
+                return 1
+              fi
+              echo "Attempt ${attempt} failed. Retrying in ${delay}s: $*"
+              sleep "$delay"
+              attempt=$((attempt + 1))
+              delay=$((delay * 2))
+            done
+          }
+
+          install_with_retry 4 python -m pip install -e ./desktop
+          install_with_retry 4 python -m pip install -e ./web
+          install_with_retry 4 python -m pip install pytest
 
       - name: Run web tests
         run: python -m pytest web/tests/ -x -q
