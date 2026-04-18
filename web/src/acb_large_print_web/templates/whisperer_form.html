@@ -365,11 +365,30 @@
   }
 
   function startPolling(progressUrl, downloadUrl) {
+    var pollInFlight = false;
+    var consecutivePollErrors = 0;
+
     var fetchStatus = function () {
-      fetch(progressUrl, {
+      if (pollInFlight) {
+        return;
+      }
+      pollInFlight = true;
+
+      var fetchOptions = {
         method: 'GET',
         credentials: 'same-origin'
-      })
+      };
+
+      var timeoutId = null;
+      if (typeof AbortController !== 'undefined') {
+        var controller = new AbortController();
+        fetchOptions.signal = controller.signal;
+        timeoutId = window.setTimeout(function () {
+          controller.abort();
+        }, 8000);
+      }
+
+      fetch(progressUrl, fetchOptions)
         .then(function (resp) {
           if (!resp.ok) {
             throw new Error('Unable to read job progress.');
@@ -377,6 +396,7 @@
           return resp.json();
         })
         .then(function (data) {
+          consecutivePollErrors = 0;
           var percent = typeof data.progress === 'number' ? data.progress : 0;
           setProgress(percent, data.message || 'Processing...');
 
@@ -399,9 +419,22 @@
           }
         })
         .catch(function (err) {
-          stopPolling();
-          submitButton.disabled = false;
-          setProgress(0, err && err.message ? err.message : 'Error while checking transcription status.');
+          consecutivePollErrors += 1;
+          // Transient network errors are common on mobile/VPN; retry a few
+          // times before surfacing a hard failure to the user.
+          if (consecutivePollErrors >= 5) {
+            stopPolling();
+            submitButton.disabled = false;
+            setProgress(0, err && err.message ? err.message : 'Error while checking transcription status.');
+          } else {
+            setProgress(progressBar.value || 1, 'Connection hiccup while checking progress. Retrying...');
+          }
+        })
+        .finally(function () {
+          pollInFlight = false;
+          if (timeoutId !== null) {
+            window.clearTimeout(timeoutId);
+          }
         });
     };
 
