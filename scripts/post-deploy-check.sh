@@ -168,9 +168,17 @@ check_url() {
     local label="$1"
     local url="$2"
     local required="${3:-false}"
+    local allow_redirect="${4:-false}"
     local code
     code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 10 "$url" 2>/dev/null || echo "000")
+    local ok=0
     if [[ "$code" == "200" ]]; then
+        ok=1
+    elif [[ "$allow_redirect" == "true" && "$code" =~ ^3[0-9][0-9]$ ]]; then
+        ok=1
+    fi
+
+    if [[ "$ok" -eq 1 ]]; then
         echo "  $label: OK ($code)"
         return 0
     else
@@ -184,12 +192,12 @@ check_url() {
 
 URL_FAIL=0
 check_url "${APP_DOMAIN}/health" "https://${APP_DOMAIN}/health" true || URL_FAIL=1
-check_url "${APP_DOMAIN}/" "https://${APP_DOMAIN}/" true || URL_FAIL=1
+check_url "${APP_DOMAIN}/" "https://${APP_DOMAIN}/" true true || URL_FAIL=1
 if [[ -n "$APP_ALIAS_DOMAIN" ]]; then
     check_url "${APP_ALIAS_DOMAIN}/health" "https://${APP_ALIAS_DOMAIN}/health" true || URL_FAIL=1
-    check_url "${APP_ALIAS_DOMAIN}/" "https://${APP_ALIAS_DOMAIN}/" true || URL_FAIL=1
+    check_url "${APP_ALIAS_DOMAIN}/" "https://${APP_ALIAS_DOMAIN}/" true true || URL_FAIL=1
 fi
-check_url "csedesigns.com/" "https://csedesigns.com/"
+check_url "csedesigns.com/" "https://csedesigns.com/" false true
 
 echo ""
 echo "--- Container status ---"
