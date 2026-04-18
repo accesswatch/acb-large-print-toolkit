@@ -291,6 +291,7 @@ def create_app(config: dict | None = None) -> Flask:
         pipeline_status = _check_tcp_endpoint(pipeline_url)
         ollama_status = _check_http_endpoint(f"{ollama_url.rstrip('/')}/api/tags")
         ollama_models = _get_ollama_models(ollama_url)
+        ollama_running = _get_ollama_running_models(ollama_url)
         capacity = get_capacity_metrics()
 
         services = {
@@ -301,24 +302,31 @@ def create_app(config: dict | None = None) -> Flask:
 
         has_llama3 = any("llama3" in model for model in ollama_models)
         has_llava = any("llava" in model for model in ollama_models)
+        llama3_warm = any("llama3" in model for model in ollama_running)
+        llava_warm = any("llava" in model for model in ollama_running)
 
-        whisper_ready = whisper_available()
+        whisper_installed = whisper_available()
+        whisper_present = _whisper_model_present()
+        whisper_ready = whisper_installed and whisper_present
 
         readiness = {
             "chat": {
                 "status": "ready" if has_llama3 else "not-ready",
                 "model_required": "llama3",
                 "model_present": has_llama3,
+                "model_warm": llama3_warm,
             },
             "vision": {
                 "status": "ready" if has_llava else "not-ready",
                 "model_required": "llava",
                 "model_present": has_llava,
+                "model_warm": llava_warm,
             },
             "whisperer": {
                 "status": "ready" if whisper_ready else "not-ready",
                 "dependency_required": "faster-whisper",
-                "dependency_present": whisper_ready,
+                "dependency_present": whisper_installed,
+                "model_present": whisper_present,
             },
         }
 
@@ -328,11 +336,12 @@ def create_app(config: dict | None = None) -> Flask:
 
         _hduration_ms = round((_htime.monotonic() - _hstart) * 1000)
         app.logger.info(
-            "HEALTH status=%s services=%s readiness=%s models=%s duration_ms=%d",
+            "HEALTH status=%s services=%s readiness=%s models=%s running=%s duration_ms=%d",
             "ok" if all_ok else "degraded",
             {k: v.get("status") for k, v in services.items()},
             {k: v.get("status") for k, v in readiness.items()},
             ollama_models,
+            ollama_running,
             _hduration_ms,
         )
 
@@ -344,6 +353,7 @@ def create_app(config: dict | None = None) -> Flask:
                     "readiness": readiness,
                     "models": {
                         "ollama": ollama_models,
+                        "ollama_running": ollama_running,
                     },
                     "capacity": capacity,
                     "timestamp_utc": datetime.now(UTC).isoformat(),
@@ -478,7 +488,7 @@ def _check_http_endpoint(url: str, timeout: float = 2.0) -> dict[str, str | int]
 
 
 def _get_ollama_models(ollama_url: str, timeout: float = 2.0) -> list[str]:
-    """Return a normalized list of loaded Ollama model names from /api/tags."""
+    """Return a normalized list of pulled Ollama model names from /api/tags."""
     from urllib.request import Request, urlopen
     import json
 
@@ -492,3 +502,47 @@ def _get_ollama_models(ollama_url: str, timeout: float = 2.0) -> list[str]:
             return [str(m.get("name", "")).lower() for m in models if m.get("name")]
     except Exception:
         return []
+
+
+def _get_ollama_running_models(ollama_url: str, timeout: float = 2.0) -> list[str]:
+    """Return normalized names of Ollama models currently loaded in memory (/api/ps)."""
+    from urllib.request import Request, urlopen
+    import json
+
+    url = f"{ollama_url.rstrip('/')}/api/ps"
+    req = Request(url, method="GET")
+    try:
+        with urlopen(req, timeout=timeout) as resp:  # noqa: S310
+            body = resp.read().decode("utf-8")
+            payload = json.loads(body)
+            models = payload.get("models", [])
+            return [str(m.get("name", "")).lower() for m in models if m.get("name")]
+    except Exception:
+        return []
+
+
+def _whisper_model_present() -> bool:
+    """Return True if Whisper model files exist in the configured cache directory.
+
+    This checks the on-disk cache rather than attempting to load the model,
+    so it is cheap and safe to call from the health endpoint.
+    """
+    import os
+    from pathlib import Path
+
+    model_name = os.environ.get("WHISPER_MODEL", "medium")
+
+    cache_root = (
+        os.environ.get("HUGGINGFACE_HUB_CACHE")
+        or os.environ.get("HF_HOME")
+        or os.environ.get("XDG_CACHE_HOME")
+    )
+    if cache_root:
+        cache_dir = Path(cache_root)
+    else:
+        cache_dir = Path.home() / ".cache" / "huggingface" / "hub"
+
+    # faster-whisper stores models under:
+    #   <cache>/models--Systran--faster-whisper-<model>/snapshots/<hash>/
+    model_dir = cache_dir / f"models--Systran--faster-whisper-{model_name}"
+    return model_dir.is_dir() and any(model_dir.rglob("model.bin"))

@@ -217,7 +217,56 @@ for svc in pipeline web ollama; do
 done
 
 echo ""
-if [[ "$URL_FAIL" -ne 0 || "$SERVICE_FAIL" -ne 0 ]]; then
+echo "--- Model readiness check via /health ---"
+READINESS_FAIL=0
+HEALTH_JSON="$(curl -sf --max-time 10 "https://${APP_DOMAIN}/health" 2>/dev/null || echo '{}')"
+if command -v python3 &>/dev/null; then
+    python3 - <<'PYEOF'
+import json, sys, os
+raw = sys.stdin.read()
+try:
+    data = json.loads(raw)
+except Exception:
+    print("  WARN: could not parse /health response")
+    sys.exit(0)
+readiness = data.get("readiness", {})
+models    = data.get("models", {})
+fail      = False
+labels = {
+    "chat":      "Ollama llama3 (chat)",
+    "vision":    "Ollama llava (vision)",
+    "whisperer": "Whisper model",
+}
+for key, label in labels.items():
+    r = readiness.get(key, {})
+    status        = r.get("status", "unknown")
+    present       = r.get("model_present", r.get("dependency_present", None))
+    warm          = r.get("model_warm", None)
+    parts = [f"status={status}"]
+    if present is not None:
+        parts.append(f"present={present}")
+    if warm is not None:
+        parts.append(f"warm={warm}")
+    detail = ", ".join(parts)
+    if status == "ready":
+        print(f"  {label}: OK ({detail})")
+    else:
+        print(f"  {label}: NOT READY ({detail})")
+        fail = True
+running = models.get("ollama_running", [])
+if running:
+    print(f"  Ollama models loaded in memory: {', '.join(running)}")
+else:
+    print("  Ollama models loaded in memory: none")
+sys.exit(1 if fail else 0)
+PYEOF
+    READINESS_FAIL=$?
+else
+    echo "  WARN: python3 not available -- skipping readiness JSON parse"
+fi <<< "$HEALTH_JSON"
+
+echo ""
+if [[ "$URL_FAIL" -ne 0 || "$SERVICE_FAIL" -ne 0 || "$READINESS_FAIL" -ne 0 ]]; then
     echo "=== Post-deploy verification FAILED ==="
     echo "See log file: $LOG_FILE"
     exit 1

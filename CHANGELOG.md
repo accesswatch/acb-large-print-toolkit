@@ -33,6 +33,12 @@ Releases are tagged in the [GitHub repository](https://github.com/accesswatch/ac
 - **Web: Whisperer client-side oversized-file precheck.** The form now uses the server-configured maximum audio size to warn and block oversized files immediately after selection (before upload), disabling estimate/proceed controls until a valid file is chosen.
 - **Web: Whisperer progress UX clarity improvements.** The transcribe page now shows an explicit phase label (queued/model warm-up/transcribing/building/complete), an elapsed-time counter, queue position in status text, automatic scroll to the progress panel after submit, and a "still working" message when progress appears stalled during long model warm-up or processing.
 
+### Added
+
+- **Web: `/health` Ollama warm-model tracking.** `_get_ollama_running_models()` now queries `/api/ps` to list models currently loaded in Ollama memory. The `readiness.chat` and `readiness.vision` blocks each expose a new `model_warm` boolean, and `models.ollama_running` is included in the response and health log line so operators can tell instantly whether `llama3`/`llava` are warm (in memory) vs merely pulled (on disk).
+- **Web: `/health` Whisper model-present check.** `_whisper_model_present()` inspects the configured Hugging Face cache directory for `model.bin` to distinguish "faster-whisper installed" from "Whisper model actually downloaded". `readiness.whisperer` now exposes `model_present` separately from `dependency_present`, so the health endpoint surfaces the full warm-up state of the Whisperer pipeline.
+- **Ops: Post-deploy readiness gate for models.** `scripts/post-deploy-check.sh` now curls `/health` after all containers pass their Docker health gates and parses the `readiness` JSON with Python. If any feature (`chat`, `vision`, `whisperer`) is `not-ready`, the script prints the status/present/warm details and fails the deployment verification, preventing a deploy from being marked PASSED when required models have not been downloaded or loaded.
+
 ### Changed
 
 - **Web: Whisperer duration probe now prefers Mutagen metadata.** `_estimate_audio_duration_seconds()` now uses `mutagen` as the primary duration source and falls back to PyAV for additional codec/container coverage. Added `mutagen>=1.47.0` to `web/pyproject.toml` and `web/requirements.txt`.
