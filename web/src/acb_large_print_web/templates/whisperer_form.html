@@ -64,19 +64,38 @@
   <fieldset>
     <legend>Step {{ ns.step }}: Review estimate and confirm</legend>
     {% set ns.step = ns.step + 1 %}
-    <input type="hidden" id="estimate-source" name="estimate_source" value="unknown">
+    {% set estimate_source_value = estimate_source if estimate_source else 'unknown' %}
+    <input type="hidden" id="estimate-source" name="estimate_source" value="{{ estimate_source_value }}">
     <p id="estimate-hint" class="field-hint" role="status" aria-live="polite" aria-atomic="true">
+      {% if estimate_error %}
+      {{ estimate_error }}
+      {% elif estimate_expected_seconds and estimate_audio_seconds %}
+        {% if estimate_source_value == 'size-fallback' %}
+      Server could not read exact audio metadata for this file. Estimate is based on file size.
+        {% else %}
+      Estimate is based on server-side audio metadata and current load. Actual time can vary.
+        {% endif %}
+      {% else %}
       Select an audio file to calculate an estimated processing time.
+      {% endif %}
     </p>
-    <p id="estimate-value" class="field-hint" role="status" aria-live="polite" aria-atomic="true"><strong>Estimated conversion time:</strong> Not available yet.</p>
+    <p id="estimate-value" class="field-hint" role="status" aria-live="polite" aria-atomic="true">
+      <strong>Estimated conversion time:</strong>
+      {% if estimate_expected_seconds and estimate_audio_seconds %}
+      about {{ (estimate_expected_seconds / 60)|round(1) }} minutes (audio length: {{ (estimate_audio_seconds / 60)|round(1) }} minutes).
+      {% else %}
+      Not available yet.
+      {% endif %}
+    </p>
     <button type="button" id="estimate-refresh" class="btn-secondary">Calculate estimate now</button>
+    <button type="submit" class="btn-secondary" formaction="{{ url_for('whisperer.whisperer_estimate_page') }}" formmethod="post" formnovalidate>Next: calculate estimate on server</button>
     <p class="field-hint">Troubleshooting: add <strong>?whispererDebug=1</strong> to the URL to show live estimate diagnostics on this page.</p>
     <details id="estimate-debug-panel" class="help-accordion" hidden>
       <summary>Estimate diagnostics</summary>
       <pre id="estimate-debug-log" class="field-hint" aria-live="polite" aria-atomic="false">(no events yet)</pre>
     </details>
 
-    <div id="estimate-risk-warning" class="warning-box" role="alert" hidden>
+    <div id="estimate-risk-warning" class="warning-box" role="alert"{% if estimate_source_value != 'size-fallback' and estimate_source_value != 'client-size-fallback' %} hidden{% endif %}>
       <p><strong>Estimate warning:</strong> Exact audio duration could not be determined for this file. The estimate shown is based on file size and may be inaccurate.</p>
       <label>
         <input type="checkbox" id="confirm-uncertain-estimate" name="confirm_uncertain_estimate" value="yes">
@@ -830,6 +849,9 @@
       });
   });
 
+  if (estimateSourceInput) {
+    setEstimateSource(estimateSourceInput.value || 'unknown');
+  }
   syncBackgroundControls();
 })();
 </script>

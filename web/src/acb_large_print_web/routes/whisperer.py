@@ -775,6 +775,61 @@ def whisperer_estimate():
             cleanup_token(token)
 
 
+@whisperer_bp.route("/estimate-page", methods=["POST"])
+def whisperer_estimate_page():
+    """Server-side estimate flow that re-renders the form with estimate values."""
+    token = None
+    try:
+        uploaded_file = request.files.get("audio")
+        token, saved_path = validate_upload(
+            uploaded_file,
+            allowed_extensions=AUDIO_EXTENSIONS,
+        )
+
+        ext = saved_path.suffix.lower()
+        if ext not in AUDIO_EXTENSIONS:
+            raise UploadError(
+                f"'{ext}' is not a supported audio format. "
+                f"Supported: {', '.join(sorted(AUDIO_EXTENSIONS))}."
+            )
+
+        duration_seconds = _sanitize_duration_estimate(
+            saved_path,
+            _estimate_audio_duration_seconds(saved_path),
+        )
+        _enforce_audio_limits(saved_path, duration_seconds)
+
+        try:
+            size_bytes = saved_path.stat().st_size
+        except OSError:
+            size_bytes = 0
+
+        source = "metadata"
+        audio_seconds = duration_seconds
+        if audio_seconds is None or audio_seconds <= 0:
+            source = "size-fallback"
+            audio_seconds = max(1.0, size_bytes / _ESTIMATE_BYTES_PER_SECOND)
+
+        expected_seconds = max(15.0, float(audio_seconds) * 1.1)
+
+        return render_template(
+            "whisperer_form.html",
+            **_template_context(
+                estimate_audio_seconds=float(audio_seconds),
+                estimate_expected_seconds=float(expected_seconds),
+                estimate_source=source,
+            ),
+        )
+    except UploadError as exc:
+        return render_template(
+            "whisperer_form.html",
+            **_template_context(estimate_error=str(exc)),
+        ), 400
+    finally:
+        if token:
+            cleanup_token(token)
+
+
 @whisperer_bp.route("/", methods=["POST"])
 def whisperer_submit():
     token = None
