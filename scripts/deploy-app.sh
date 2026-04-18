@@ -54,6 +54,8 @@ MAIN_DOMAIN="${MAIN_DOMAIN:-csedesigns.com}"
 ENABLE_PREDEPLOY_BACKUP="${ENABLE_PREDEPLOY_BACKUP:-1}"
 HEALTH_MAX_ATTEMPTS="${HEALTH_MAX_ATTEMPTS:-40}"
 HEALTH_SLEEP="${HEALTH_SLEEP:-3}"
+WHISPER_WARMUP_ON_DEPLOY="${WHISPER_WARMUP_ON_DEPLOY:-1}"
+WHISPER_WARMUP_TIMEOUT="${WHISPER_WARMUP_TIMEOUT:-1200}"
 
 PRE_DEPLOY_COMMIT=""
 ROLLED_BACK=0
@@ -142,6 +144,41 @@ wait_for_health() {
     done
 
     echo "$healthy"
+}
+
+# ---------------------------------------------------------------------------
+# Helper: warm up Whisper model in web container (best effort)
+# ---------------------------------------------------------------------------
+warmup_whisper_model() {
+    if [[ "$WHISPER_WARMUP_ON_DEPLOY" != "1" ]]; then
+        log_ts "--- Whisper warm-up: skipped (WHISPER_WARMUP_ON_DEPLOY=$WHISPER_WARMUP_ON_DEPLOY) ---"
+        return 0
+    fi
+
+    log_ts "--- Whisper warm-up: starting (timeout=${WHISPER_WARMUP_TIMEOUT}s) ---"
+
+    local py_cmd
+    py_cmd="import os; from pathlib import Path; from faster_whisper import WhisperModel; "
+    py_cmd+="model=os.environ.get('WHISPER_MODEL','medium'); "
+    py_cmd+="cache=os.environ.get('HUGGINGFACE_HUB_CACHE') or os.environ.get('HF_HOME') or os.environ.get('XDG_CACHE_HOME') or str(Path.home()/'.cache'/'huggingface'/'hub'); "
+    py_cmd+="Path(cache).mkdir(parents=True, exist_ok=True); "
+    py_cmd+="WhisperModel(model, device='cpu', compute_type='int8', download_root=cache); "
+    py_cmd+="print(f'Whisper warm-up complete: model={model} cache={cache}')"
+
+    if command -v timeout >/dev/null 2>&1; then
+        if timeout "${WHISPER_WARMUP_TIMEOUT}s" docker compose -f "$COMPOSE_FILE" exec -T web python -c "$py_cmd"; then
+            log_ts "--- Whisper warm-up: success ---"
+        else
+            log_ts "--- WARNING: Whisper warm-up failed or timed out; deploy will continue ---"
+        fi
+    else
+        log_ts "--- WARNING: 'timeout' command not found; running Whisper warm-up without timeout ---"
+        if docker compose -f "$COMPOSE_FILE" exec -T web python -c "$py_cmd"; then
+            log_ts "--- Whisper warm-up: success ---"
+        else
+            log_ts "--- WARNING: Whisper warm-up failed; deploy will continue ---"
+        fi
+    fi
 }
 
 # ---------------------------------------------------------------------------
@@ -258,6 +295,10 @@ echo ""
 if [[ "$HEALTHY" -eq 1 ]]; then
     log_ts "--- Health check: PASSED ---"
     probe_health_json "Full health readiness on success"
+
+    # Preload Whisper model before traffic resumes, so first user request
+    # doesn't pay model download/init cost.
+    warmup_whisper_model
 
     log_ts "--- Disabling maintenance mode (site is now live) ---"
     export MAINTENANCE_MODE=0
