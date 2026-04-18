@@ -4,12 +4,40 @@ import { test, expect } from '@playwright/test';
 
 const uploadDocx = process.env.E2E_UPLOAD_DOCX || 'd:/code/test.docx';
 const hasUploadDocx = fs.existsSync(uploadDocx);
+const uploadAudio = process.env.E2E_UPLOAD_AUDIO || 'S:/code/bw/Samples/ronaldreaganchallengeraddressatt3232.mp3';
+const hasUploadAudio = fs.existsSync(uploadAudio);
 
 function skipIfMissingUploadFile() {
   test.skip(
     !hasUploadDocx,
     `Upload regression tests require a DOCX file. Set E2E_UPLOAD_DOCX or place a file at ${uploadDocx}`,
   );
+}
+
+function skipIfMissingAudioFile() {
+  test.skip(
+    !hasUploadAudio,
+    `Whisperer regression test requires an audio file. Set E2E_UPLOAD_AUDIO or place a file at ${uploadAudio}`,
+  );
+}
+
+async function ensureConsent(page) {
+  if (!page.url().includes('/consent')) {
+    return;
+  }
+
+  const agree = page.locator('input[name="agreed"][value="yes"]');
+  if (await agree.count()) {
+    await agree.check();
+  }
+
+  const continueBtn = page.getByRole('button', { name: /Continue to GLOW/i });
+  if (await continueBtn.count()) {
+    await Promise.all([
+      page.waitForURL((url) => !url.pathname.startsWith('/consent'), { timeout: 15000 }),
+      continueBtn.click(),
+    ]);
+  }
 }
 
 test.describe('GLOW web regression suite', () => {
@@ -104,5 +132,47 @@ test.describe('GLOW web regression suite', () => {
       await page.goto(url);
       await expect(page.locator('h1', { hasText: headingPattern }).first()).toBeVisible();
     }
+  });
+
+  test('whisperer flow uploads sample audio and downloads transcript', async ({ page }) => {
+    skipIfMissingAudioFile();
+    test.setTimeout(16 * 60 * 1000);
+
+    await page.goto('/whisperer/');
+    await ensureConsent(page);
+    await expect(page.getByRole('heading', { level: 1, name: /BITS Whisperer/i })).toBeVisible();
+
+    const unavailableBanner = page.getByText(/BITS Whisperer is not available on this server/i);
+    test.skip(await unavailableBanner.count(), 'Whisperer is not installed in this test environment.');
+
+    await page.locator('#audio').setInputFiles(uploadAudio);
+
+    // Auto-estimate runs on file selection, but click refresh for explicit regression coverage.
+    await page.getByRole('button', { name: /Calculate estimate now/i }).click();
+    await expect(page.locator('#estimate-value')).toContainText(/about|under 1 minute/i, {
+      timeout: 30000,
+    });
+
+    const roughEstimateConfirm = page.locator('#confirm-uncertain-estimate');
+    if (await roughEstimateConfirm.count()) {
+      const required = await roughEstimateConfirm.evaluate((el) => el.required);
+      if (required) {
+        await roughEstimateConfirm.check();
+      }
+    }
+
+    await page.locator('input[name="confirm_estimate"][value="yes"]').check();
+
+    const downloadPromise = page.waitForEvent('download', { timeout: 15 * 60 * 1000 });
+    await page.getByRole('button', { name: /Transcribe Audio/i }).click();
+    const download = await downloadPromise;
+
+    const suggested = download.suggestedFilename().toLowerCase();
+    expect(suggested).toContain('.md');
+
+    const savePath = path.join('artifacts', `whisperer-${Date.now()}.md`);
+    await download.saveAs(savePath);
+    const content = fs.readFileSync(savePath, 'utf8');
+    expect(content.trim().length).toBeGreaterThan(20);
   });
 });

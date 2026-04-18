@@ -30,6 +30,7 @@ dependencies = [
     "markitdown[pdf,docx,xlsx,pptx]>=0.1.5",
     "weasyprint>=62.0",
     "faster-whisper>=1.0.3",
+    "mutagen>=1.47.0",
 ]
 
 [project.optional-dependencies]

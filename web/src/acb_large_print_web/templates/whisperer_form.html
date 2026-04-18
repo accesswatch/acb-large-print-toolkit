@@ -24,7 +24,16 @@
 </div>
 
 {% set ns = namespace(step=1) %}
-<form id="whisperer-form" method="post" enctype="multipart/form-data" novalidate data-background-threshold-minutes="{{ background_threshold_minutes }}">
+<form
+  id="whisperer-form"
+  method="post"
+  action="{{ url_for('whisperer.whisperer_form') }}"
+  enctype="multipart/form-data"
+  novalidate
+  data-background-threshold-minutes="{{ background_threshold_minutes }}"
+  data-estimate-url="{{ url_for('whisperer.whisperer_estimate') }}"
+  data-start-url="{{ url_for('whisperer.whisperer_start_job') }}"
+>
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
   <!-- ============================================================ -->
@@ -342,7 +351,9 @@
         estimatePayload.append('csrf_token', csrf.value);
       }
 
-      fetch(form.action.replace(/\/$/, '') + '/estimate', {
+      var estimateUrl = form.dataset.estimateUrl || '{{ url_for("whisperer.whisperer_estimate") }}';
+
+      fetch(estimateUrl, {
         method: 'POST',
         body: estimatePayload,
         credentials: 'same-origin'
@@ -575,7 +586,7 @@
     }
 
     var payload = new FormData(form);
-    var startUrl = form.action.replace(/\/$/, '') + '/start';
+    var startUrl = form.dataset.startUrl || '{{ url_for("whisperer.whisperer_start_job") }}';
 
     submitButton.disabled = true;
     progressSection.hidden = false;

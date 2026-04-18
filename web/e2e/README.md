@@ -12,6 +12,7 @@ The suite in [e2e/tests/regression.spec.mjs](e2e/tests/regression.spec.mjs) cove
 - Export upload flow with file download (`/export`)
 - Convert upload flow with file download (`/convert`)
 - Template generation download (`/template`)
+- BITS Whisperer sample-audio transcription flow (`/whisperer`)
 - Static pages smoke checks (`/guidelines`, `/guide`, `/about`, `/changelog`, `/feedback`)
 
 ## Prerequisites
@@ -29,6 +30,16 @@ Override with:
 
 ```powershell
 $env:E2E_UPLOAD_DOCX="D:/path/to/your/file.docx"
+```
+
+The Whisperer regression test requires an audio file path. By default it uses:
+
+- `S:/code/bw/Samples/ronaldreaganchallengeraddressatt3232.mp3`
+
+Override with:
+
+```powershell
+$env:E2E_UPLOAD_AUDIO="S:/path/to/your/audio.mp3"
 ```
 
 ## Run

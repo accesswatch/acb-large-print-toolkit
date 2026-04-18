@@ -160,19 +160,56 @@ def _touch_token_dir(token: str) -> None:
 
 
 def _estimate_audio_duration_seconds(audio_path: Path) -> float | None:
-    """Estimate audio length using PyAV metadata; returns None if unavailable."""
+    """Estimate audio length from metadata; returns None if unavailable.
+
+    Uses Mutagen first for a simple, format-agnostic metadata duration value,
+    then falls back to PyAV for broader codec/container coverage.
+    """
+
+    try:
+        from mutagen import File as MutagenFile  # type: ignore[import-untyped]
+
+        audio = MutagenFile(str(audio_path))
+        length = getattr(getattr(audio, "info", None), "length", None)
+        if length is not None:
+            seconds = float(length)
+            if seconds > 0:
+                return seconds
+    except Exception:
+        pass
+
+    def _to_seconds(duration: int | float, time_base: object) -> float | None:
+        """Normalize duration and time base to seconds across PyAV variants."""
+        try:
+            tb = float(time_base)
+        except (TypeError, ValueError, OverflowError):
+            return None
+
+        if tb <= 0:
+            return None
+
+        # Some PyAV builds expose av.time_base as 1_000_000 instead of 1/1_000_000.
+        # Detect that case and divide so container.duration is interpreted as seconds.
+        if tb > 1:
+            return float(duration) / tb
+        return float(duration) * tb
+
     try:
         import av  # type: ignore[import-untyped]
 
         with av.open(str(audio_path)) as container:
             if container.duration is not None:
-                return float(container.duration * av.time_base)
+                seconds = _to_seconds(container.duration, av.time_base)
+                if seconds is not None:
+                    return seconds
 
             audio_streams = [s for s in container.streams if getattr(s, "type", "") == "audio"]
             if audio_streams:
                 stream = audio_streams[0]
                 if stream.duration is not None and stream.time_base is not None:
-                    return float(stream.duration * stream.time_base)
+                    seconds = _to_seconds(stream.duration, stream.time_base)
+                    if seconds is not None:
+                        return seconds
     except Exception:
         return None
 

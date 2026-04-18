@@ -8,6 +8,19 @@ Releases are tagged in the [GitHub repository](https://github.com/accesswatch/ac
 
 ## [Unreleased]
 
+### Added
+
+- **Web E2E: Whisperer sample-audio regression flow.** Added Playwright coverage in `web/e2e/tests/regression.spec.mjs` for `/whisperer`: consent handling, sample audio upload, explicit estimate refresh, proceed confirmation, transcription start, transcript download assertion, and saved artifact verification. Supports `E2E_UPLOAD_AUDIO` override and defaults to `S:/code/bw/Samples/ronaldreaganchallengeraddressatt3232.mp3`.
+
+### Fixed
+
+- **Web: Whisperer estimate endpoint URL resolution.** `whisperer_form.html` now uses explicit backend URLs (`data-estimate-url`, `data-start-url`) instead of deriving endpoints from `form.action`, preventing broken estimate/start requests caused by path/URL variations.
+- **Web: Whisperer metadata duration scaling with PyAV.** `_estimate_audio_duration_seconds()` now normalizes time-base conversion across PyAV variants so `container.duration` is interpreted in seconds correctly, avoiding extreme/invalid duration values.
+
+### Changed
+
+- **Web: Whisperer duration probe now prefers Mutagen metadata.** `_estimate_audio_duration_seconds()` now uses `mutagen` as the primary duration source and falls back to PyAV for additional codec/container coverage. Added `mutagen>=1.47.0` to `web/pyproject.toml` and `web/requirements.txt`.
+
 ## [2.0.0] - 2026-04-17
 
 ### Added
