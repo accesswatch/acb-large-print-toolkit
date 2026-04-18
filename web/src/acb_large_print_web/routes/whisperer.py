@@ -718,7 +718,7 @@ def _run_whisper_job(job_id: str) -> None:
 
 @whisperer_bp.route("/", methods=["GET"])
 def whisperer_form():
-    return render_template("whisperer_form.html", **_template_context())
+    return render_template("whisperer_form.html", **_template_context(estimate_ready=False))
 
 
 @whisperer_bp.route("/estimate", methods=["POST"])
@@ -852,6 +852,7 @@ def whisperer_estimate_page():
                 estimate_source=source,
                 existing_token=token,
                 uploaded_filename=uploaded_name,
+                estimate_ready=True,
             ),
         )
     except UploadError as exc:
@@ -863,6 +864,7 @@ def whisperer_estimate_page():
                 estimate_error=str(exc),
                 existing_token=request.form.get("existing_token"),
                 uploaded_filename=request.form.get("uploaded_filename"),
+                estimate_ready=False,
             ),
         ), 400
 
@@ -899,6 +901,8 @@ def whisperer_submit():
         _require_uncertain_estimate_acknowledgement()
 
         temp_dir = get_temp_dir(token)
+        if temp_dir is None:
+            raise UploadError("Upload session expired. Please upload the audio again.")
         language = request.form.get("language") or None
         output_format = request.form.get("output_format", "markdown")
 
@@ -964,7 +968,23 @@ def whisperer_submit():
             render_template(
                 "whisperer_form.html",
                 error=str(exc),
-                **_template_context(),
+                **_template_context(
+                    existing_token=request.form.get("existing_token"),
+                    uploaded_filename=request.form.get("uploaded_filename") or uploaded_name if 'uploaded_name' in locals() else request.form.get("uploaded_filename"),
+                ),
+            ),
+            500,
+        )
+    except Exception:
+        current_app.logger.exception("WHISPERER_SUBMIT unexpected_error")
+        return (
+            render_template(
+                "whisperer_form.html",
+                error="Something went wrong while processing this transcription request. Please try again.",
+                **_template_context(
+                    existing_token=request.form.get("existing_token"),
+                    uploaded_filename=request.form.get("uploaded_filename") or uploaded_name if 'uploaded_name' in locals() else request.form.get("uploaded_filename"),
+                ),
             ),
             500,
         )

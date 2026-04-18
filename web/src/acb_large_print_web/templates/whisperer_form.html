@@ -23,6 +23,7 @@
   <p><strong>Progress indicator:</strong> After you click <em>Transcribe Audio</em>, this page shows real server-reported conversion progress from the active Whisper job.</p>
 </div>
 
+{% set estimate_ready_value = estimate_ready if estimate_ready is defined else false %}
 {% set ns = namespace(step=1) %}
 <form
   id="whisperer-form"
@@ -47,6 +48,10 @@
     <legend>Step {{ ns.step }}: Upload your audio file</legend>
     {% set ns.step = ns.step + 1 %}
 
+    {% if estimate_ready_value and uploaded_filename %}
+    <p class="field-hint"><strong>Uploaded file ready:</strong> {{ uploaded_filename }}</p>
+    <p class="field-hint">If you want to choose a different file, use <a href="{{ url_for('whisperer.whisperer_form') }}">Start over</a>.</p>
+    {% else %}
     <label for="audio">Audio file</label>
     <input
       type="file"
@@ -64,8 +69,6 @@
     <div id="audio-size-warning" class="warning-box" role="alert" hidden>
       <p><strong>File too large:</strong> This file exceeds the {{ max_audio_mb }} MB limit. Please choose a smaller file before continuing.</p>
     </div>
-    {% if uploaded_filename %}
-    <p class="field-hint"><strong>Uploaded file ready:</strong> {{ uploaded_filename }}</p>
     {% endif %}
   </fieldset>
 
@@ -96,14 +99,16 @@
       Not available yet.
       {% endif %}
     </p>
-    <button type="button" id="estimate-refresh" class="btn-secondary">Calculate estimate now</button>
+    {% if not estimate_ready_value %}
     <button type="submit" id="estimate-next-server" class="btn-secondary" formaction="{{ url_for('whisperer.whisperer_estimate_page') }}" formmethod="post" formnovalidate>Next: calculate estimate on server</button>
+    {% endif %}
     <p class="field-hint">Troubleshooting: add <strong>?whispererDebug=1</strong> to the URL to show live estimate diagnostics on this page.</p>
     <details id="estimate-debug-panel" class="help-accordion" hidden>
       <summary>Estimate diagnostics</summary>
       <pre id="estimate-debug-log" class="field-hint" aria-live="polite" aria-atomic="false">(no events yet)</pre>
     </details>
 
+    {% if estimate_ready_value %}
     <div id="estimate-risk-warning" class="warning-box" role="alert"{% if estimate_source_value != 'size-fallback' and estimate_source_value != 'client-size-fallback' %} hidden{% endif %}>
       <p><strong>Estimate warning:</strong> Exact audio duration could not be determined for this file. The estimate shown is based on file size and may be inaccurate.</p>
       <label>
@@ -119,8 +124,12 @@
     <p class="field-hint">
       Long recordings can take significant time. Keep this page open until conversion reaches 100% and your download begins.
     </p>
+    {% else %}
+    <p class="field-hint">After you click Next, this page will show your estimate and the remaining options to proceed.</p>
+    {% endif %}
   </fieldset>
 
+  {% if estimate_ready_value %}
   {% if email_enabled %}
   <h3 id="whisperer-step-background">Step {{ ns.step }}: Background notification (optional)</h3>
   <fieldset id="background-processing-fieldset">
@@ -231,6 +240,7 @@
   </fieldset>
 
   <button type="submit" id="transcribe-submit" class="btn-primary">Transcribe Audio</button>
+  {% endif %}
 </form>
 
 <section id="transcribe-progress" class="transcribe-progress" aria-labelledby="transcribe-progress-heading" hidden>
@@ -775,9 +785,9 @@
       console.warn('ESTIMATE_BUTTON_HANDLERS_ATTACHED', { listenerCount: 5 });
     }
   } else {
-    // Button element not found - log this critical issue
-    if (typeof console !== 'undefined' && typeof console.error === 'function') {
-      console.error('ESTIMATE_BUTTON_NOT_FOUND - getElementById("estimate-refresh") returned null');
+    // In server-first step mode, estimate button may be intentionally omitted.
+    if (typeof console !== 'undefined' && typeof console.info === 'function') {
+      console.info('ESTIMATE_BUTTON_NOT_RENDERED (server-step mode or template variant)');
     }
   }
 
