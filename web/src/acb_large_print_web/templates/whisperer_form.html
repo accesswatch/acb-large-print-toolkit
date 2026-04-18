@@ -965,6 +965,10 @@
   }
 
   form.addEventListener('submit', function (event) {
+    try {
+      console.warn('WHISPERER_SUBMIT_EVENT', {submitter: (event.submitter && event.submitter.id) || 'none'});
+    } catch (e) {}
+    
     var submitter = event.submitter || null;
     if (submitter && submitter.id === 'estimate-next-server') {
       // Allow native form submit for server-side estimate fallback path.
