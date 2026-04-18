@@ -607,6 +607,15 @@ def _run_whisper_job(job_id: str) -> None:
         md_output = temp_dir / f"{job.saved_path.stem}.md"
 
         try:
+            _update_job(
+                job_id,
+                status="running",
+                progress=1,
+                message=(
+                    "Preparing Whisper model. First-time startup may take a few minutes "
+                    "while model files are initialized/downloaded."
+                ),
+            )
             with audio_gate():
                 transcript_path, _ = whisper_convert(
                     job.saved_path,

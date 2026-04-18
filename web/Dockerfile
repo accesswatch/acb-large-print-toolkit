@@ -64,6 +64,6 @@ EXPOSE 8000
 CMD ["gunicorn", \
     "--bind", "0.0.0.0:8000", \
     "--workers", "4", \
-    "--timeout", "300", \
+    "--timeout", "1800", \
     "--access-logfile", "-", \
     "acb_large_print_web.app:create_app()"]

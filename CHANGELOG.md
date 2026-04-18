@@ -31,6 +31,7 @@ Releases are tagged in the [GitHub repository](https://github.com/accesswatch/ac
 - **Deploy: Whisper model warm-up before maintenance is lifted.** `scripts/deploy-app.sh` now preloads the Whisper model inside the web container after health passes and before disabling maintenance mode, so first-user requests do not stall on model initialization/download. Controlled via `WHISPER_WARMUP_ON_DEPLOY` (default `1`) and `WHISPER_WARMUP_TIMEOUT` (default `1200` seconds).
 - **Deploy: Ollama model warm-up before maintenance is lifted.** `scripts/deploy-app.sh` now optionally pre-pulls Ollama models used by chat/vision (`llama3`, `llava` by default) before maintenance mode is disabled, reducing first-request delays and improving readiness status. Controlled via `OLLAMA_WARMUP_ON_DEPLOY` (default `1`), `OLLAMA_WARMUP_MODELS` (default `llama3 llava`), and `OLLAMA_WARMUP_TIMEOUT_PER_MODEL` (default `900` seconds).
 - **Web: Whisperer client-side oversized-file precheck.** The form now uses the server-configured maximum audio size to warn and block oversized files immediately after selection (before upload), disabling estimate/proceed controls until a valid file is chosen.
+- **Web: Whisperer progress UX clarity improvements.** The transcribe page now shows an explicit phase label (queued/model warm-up/transcribing/building/complete), an elapsed-time counter, queue position in status text, automatic scroll to the progress panel after submit, and a "still working" message when progress appears stalled during long model warm-up or processing.
 
 ### Changed
 

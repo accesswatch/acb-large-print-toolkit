@@ -248,6 +248,8 @@
   <p id="transcribe-status" class="field-hint" role="status" aria-live="polite">
     Preparing upload...
   </p>
+  <p id="transcribe-phase" class="field-hint" aria-live="polite">Phase: Waiting to start</p>
+  <p id="transcribe-elapsed" class="field-hint" aria-live="off">Elapsed: 0s</p>
   <label for="transcribe-progress-bar">Conversion completion</label>
   <progress id="transcribe-progress-bar" value="0" max="100" aria-describedby="transcribe-progress-value"></progress>
   <p id="transcribe-progress-value" class="field-hint">0%</p>
@@ -304,6 +306,8 @@
   var progressBar = document.getElementById('transcribe-progress-bar');
   var progressValue = document.getElementById('transcribe-progress-value');
   var statusNode = document.getElementById('transcribe-status');
+  var phaseNode = document.getElementById('transcribe-phase');
+  var elapsedNode = document.getElementById('transcribe-elapsed');
   var audioInput = document.getElementById('audio');
   var estimateHint = document.getElementById('estimate-hint');
   var estimateValue = document.getElementById('estimate-value');
@@ -357,13 +361,73 @@
     return;
   }
 
+  var runStartedAt = null;
+  var elapsedTimer = null;
+  var lastProgressAt = null;
+  var lastServerMessage = '';
+
+  function formatElapsed(ms) {
+    var totalSeconds = Math.max(0, Math.floor(ms / 1000));
+    var minutes = Math.floor(totalSeconds / 60);
+    var seconds = totalSeconds % 60;
+    if (minutes <= 0) {
+      return String(seconds) + 's';
+    }
+    return String(minutes) + 'm ' + String(seconds) + 's';
+  }
+
+  function derivePhase(percent, message, status) {
+    var msg = (message || '').toLowerCase();
+    if (status === 'queued') {
+      return 'Queued';
+    }
+    if (msg.indexOf('preparing whisper model') !== -1 || msg.indexOf('initializing whisper model') !== -1 || msg.indexOf('model') !== -1) {
+      return 'Model warm-up';
+    }
+    if (msg.indexOf('transcrib') !== -1 || percent < 97) {
+      return 'Transcribing audio';
+    }
+    if (msg.indexOf('word document') !== -1 || msg.indexOf('building word') !== -1) {
+      return 'Building Word document';
+    }
+    if (status === 'complete' || percent >= 100) {
+      return 'Complete';
+    }
+    return 'Processing';
+  }
+
+  function startElapsedTimer() {
+    if (elapsedTimer) {
+      window.clearInterval(elapsedTimer);
+    }
+    runStartedAt = Date.now();
+    if (elapsedNode) {
+      elapsedNode.textContent = 'Elapsed: 0s';
+    }
+    elapsedTimer = window.setInterval(function () {
+      if (!runStartedAt || !elapsedNode) {
+        return;
+      }
+      elapsedNode.textContent = 'Elapsed: ' + formatElapsed(Date.now() - runStartedAt);
+
+      // Keep users informed during long warm-up/transcription periods.
+      if (lastProgressAt && (Date.now() - lastProgressAt) > 45000 && progressBar.value < 100) {
+        if (statusNode && lastServerMessage) {
+          statusNode.textContent = lastServerMessage + ' Still working... this can take a few minutes on first run.';
+        }
+      }
+    }, 1000);
+  }
+
   function setProgress(percent, message) {
     var safePercent = Math.max(0, Math.min(100, Math.round(percent)));
     progressBar.value = safePercent;
     progressValue.textContent = String(safePercent) + '%';
     if (message) {
       statusNode.textContent = message;
+      lastServerMessage = message;
     }
+    lastProgressAt = Date.now();
   }
 
   var pollTimer = null;
@@ -800,6 +864,10 @@
       window.clearInterval(pollTimer);
       pollTimer = null;
     }
+    if (elapsedTimer) {
+      window.clearInterval(elapsedTimer);
+      elapsedTimer = null;
+    }
   }
 
   function startPolling(progressUrl, downloadUrl) {
@@ -836,11 +904,21 @@
         .then(function (data) {
           consecutivePollErrors = 0;
           var percent = typeof data.progress === 'number' ? data.progress : 0;
-          setProgress(percent, data.message || 'Processing...');
+          var statusMessage = data.message || 'Processing...';
+          if (data.status === 'queued' && typeof data.queue_position === 'number') {
+            statusMessage = statusMessage + ' Queue position: ' + String(data.queue_position + 1) + '.';
+          }
+          setProgress(percent, statusMessage);
+          if (phaseNode) {
+            phaseNode.textContent = 'Phase: ' + derivePhase(percent, statusMessage, data.status);
+          }
 
           if (data.status === 'complete') {
             stopPolling();
             setProgress(100, 'Complete. Your transcript download is starting.');
+            if (phaseNode) {
+              phaseNode.textContent = 'Phase: Complete';
+            }
             if (data.background_opt_in) {
               setProgress(100, 'Complete. Check your email for the secure retrieval link.');
             } else {
@@ -853,6 +931,9 @@
           if (data.status === 'failed') {
             stopPolling();
             submitButton.disabled = false;
+            if (phaseNode) {
+              phaseNode.textContent = 'Phase: Failed';
+            }
             setProgress(0, data.error || data.message || 'Transcription failed. Please try again.');
           }
         })
@@ -863,6 +944,9 @@
           if (consecutivePollErrors >= 5) {
             stopPolling();
             submitButton.disabled = false;
+            if (phaseNode) {
+              phaseNode.textContent = 'Phase: Connection issue';
+            }
             setProgress(0, err && err.message ? err.message : 'Error while checking transcription status.');
           } else {
             setProgress(progressBar.value || 1, 'Connection hiccup while checking progress. Retrying...');
@@ -922,8 +1006,14 @@
     var startUrl = form.dataset.startUrl || '{{ url_for("whisperer.whisperer_start_job") }}';
 
     submitButton.disabled = true;
+    form.setAttribute('aria-busy', 'true');
     progressSection.hidden = false;
+    progressSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
     setProgress(0, 'Starting transcription job...');
+    if (phaseNode) {
+      phaseNode.textContent = 'Phase: Starting job';
+    }
+    startElapsedTimer();
 
     fetch(startUrl, {
       method: 'POST',
@@ -941,13 +1031,24 @@
         }
         if (result.data.background_opt_in) {
           setProgress(1, 'Job accepted. You will receive queued, started, and completed emails with a secure retrieval link.');
+          if (phaseNode) {
+            phaseNode.textContent = 'Phase: Background queue';
+          }
         } else {
-          setProgress(1, 'Job accepted. Waiting for server progress updates...');
+          setProgress(1, 'Job accepted. Waiting for server progress updates. If this is the first run, model warm-up may take a few minutes.');
+          if (phaseNode) {
+            phaseNode.textContent = 'Phase: Waiting for server updates';
+          }
         }
         startPolling(result.data.progress_url, result.data.download_url);
       })
       .catch(function (err) {
         submitButton.disabled = false;
+        form.removeAttribute('aria-busy');
+        stopPolling();
+        if (phaseNode) {
+          phaseNode.textContent = 'Phase: Failed to start';
+        }
         setProgress(0, err && err.message ? err.message : 'An unexpected error occurred.');
       });
   });
