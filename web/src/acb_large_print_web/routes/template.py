@@ -78,7 +78,7 @@ def template_submit():
         return (
             render_template(
                 "template_form.html",
-                error="An error occurred while creating the template. Please try again.",
+                error=str(exc) or "An error occurred while creating the template. Please try again.",
             ),
             500,
         )

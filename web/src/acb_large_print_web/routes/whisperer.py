@@ -1114,11 +1114,11 @@ def whisperer_start_job():
         if token and created_new_token:
             cleanup_token(token)
         return jsonify({"error": str(exc)}), 500
-    except Exception:
+    except Exception as exc:
         current_app.logger.exception("WHISPERER_START unexpected_error")
         if token and created_new_token:
             cleanup_token(token)
-        return jsonify({"error": "Something went wrong starting this transcription job. Please try again."}), 500
+        return jsonify({"error": str(exc) or "Something went wrong starting this transcription job. Please try again."}), 500
 
 
 @whisperer_bp.route("/progress/<job_id>", methods=["GET"])

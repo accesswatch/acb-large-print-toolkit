@@ -379,10 +379,23 @@ def whisper_convert(
         )
     except Exception as exc:
         log.exception("BITS Whisperer: transcription failed for %s", src_path.name)
-        raise RuntimeError(
-            "The transcription engine failed while processing this audio file. "
-            "Please try again or use a different audio file."
-        ) from exc
+        exc_text = str(exc).lower()
+        if (
+            "not enough space on the disk" in exc_text
+            or "no space left on device" in exc_text
+            or "os error 112" in exc_text
+        ):
+            raise RuntimeError(
+                "The server does not have enough free disk space to load the Whisper model right now. "
+                "Please try again later or contact the administrator."
+            ) from exc
+        if "snapshot_download" in exc_text or "huggingface" in exc_text or "cas service error" in exc_text:
+            raise RuntimeError(
+                "The server could not load the Whisper model required for transcription. "
+                "Please try again later or contact the administrator."
+            ) from exc
+        # Pass through the actual exception message for any other transcription failure
+        raise RuntimeError(str(exc)) from exc
 
     log.info(
         "Detected language: %s (probability %.2f)",

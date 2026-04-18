@@ -340,12 +340,12 @@ def convert_submit():
             ),
             500,
         )
-    except Exception:
+    except Exception as exc:
         current_app.logger.exception("CONVERT_SUBMIT unexpected_error")
         return (
             render_template(
                 "convert_form.html",
-                error="An error occurred while converting the document. Please try again.",
+                error=str(exc) or "An error occurred while converting the document. Please try again.",
                 **_template_context(),
             ),
             500,
