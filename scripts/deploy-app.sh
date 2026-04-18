@@ -56,6 +56,9 @@ HEALTH_MAX_ATTEMPTS="${HEALTH_MAX_ATTEMPTS:-40}"
 HEALTH_SLEEP="${HEALTH_SLEEP:-3}"
 WHISPER_WARMUP_ON_DEPLOY="${WHISPER_WARMUP_ON_DEPLOY:-1}"
 WHISPER_WARMUP_TIMEOUT="${WHISPER_WARMUP_TIMEOUT:-1200}"
+OLLAMA_WARMUP_ON_DEPLOY="${OLLAMA_WARMUP_ON_DEPLOY:-1}"
+OLLAMA_WARMUP_MODELS="${OLLAMA_WARMUP_MODELS:-llama3 llava}"
+OLLAMA_WARMUP_TIMEOUT_PER_MODEL="${OLLAMA_WARMUP_TIMEOUT_PER_MODEL:-900}"
 
 PRE_DEPLOY_COMMIT=""
 ROLLED_BACK=0
@@ -182,6 +185,42 @@ warmup_whisper_model() {
 }
 
 # ---------------------------------------------------------------------------
+# Helper: warm up Ollama models (best effort)
+# ---------------------------------------------------------------------------
+warmup_ollama_models() {
+    if [[ "$OLLAMA_WARMUP_ON_DEPLOY" != "1" ]]; then
+        log_ts "--- Ollama warm-up: skipped (OLLAMA_WARMUP_ON_DEPLOY=$OLLAMA_WARMUP_ON_DEPLOY) ---"
+        return 0
+    fi
+
+    if [[ -z "$OLLAMA_WARMUP_MODELS" ]]; then
+        log_ts "--- Ollama warm-up: skipped (OLLAMA_WARMUP_MODELS is empty) ---"
+        return 0
+    fi
+
+    log_ts "--- Ollama warm-up: starting for models: $OLLAMA_WARMUP_MODELS ---"
+
+    local model
+    for model in $OLLAMA_WARMUP_MODELS; do
+        log_ts "--- Ollama warm-up: pulling model '$model' (timeout=${OLLAMA_WARMUP_TIMEOUT_PER_MODEL}s) ---"
+        if command -v timeout >/dev/null 2>&1; then
+            if timeout "${OLLAMA_WARMUP_TIMEOUT_PER_MODEL}s" docker compose -f "$COMPOSE_FILE" exec -T ollama ollama pull "$model"; then
+                log_ts "--- Ollama warm-up: model '$model' ready ---"
+            else
+                log_ts "--- WARNING: Ollama warm-up failed or timed out for model '$model'; deploy will continue ---"
+            fi
+        else
+            log_ts "--- WARNING: 'timeout' command not found; pulling model '$model' without timeout ---"
+            if docker compose -f "$COMPOSE_FILE" exec -T ollama ollama pull "$model"; then
+                log_ts "--- Ollama warm-up: model '$model' ready ---"
+            else
+                log_ts "--- WARNING: Ollama warm-up failed for model '$model'; deploy will continue ---"
+            fi
+        fi
+    done
+}
+
+# ---------------------------------------------------------------------------
 # Pre-flight checks
 # ---------------------------------------------------------------------------
 log_ts "=== ACB Large Print Toolkit -- Deploy (script started) ==="
@@ -299,6 +338,10 @@ if [[ "$HEALTHY" -eq 1 ]]; then
     # Preload Whisper model before traffic resumes, so first user request
     # doesn't pay model download/init cost.
     warmup_whisper_model
+
+    # Pre-pull Ollama models used by chat/vision so readiness is "ready"
+    # before maintenance mode is disabled.
+    warmup_ollama_models
 
     log_ts "--- Disabling maintenance mode (site is now live) ---"
     export MAINTENANCE_MODE=0
