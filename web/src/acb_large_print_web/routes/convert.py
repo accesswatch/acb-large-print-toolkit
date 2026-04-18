@@ -11,7 +11,7 @@ Six conversion directions:
 Audio transcription has its own dedicated route at /whisperer (BITS Whisperer).
 """
 
-from flask import Blueprint, render_template, request, send_file
+from flask import Blueprint, current_app, render_template, request, send_file
 
 from acb_large_print.converter import (
     CONVERTIBLE_EXTENSIONS,
@@ -336,6 +336,16 @@ def convert_submit():
             render_template(
                 "convert_form.html",
                 error=str(exc),
+                **_template_context(),
+            ),
+            500,
+        )
+    except Exception:
+        current_app.logger.exception("CONVERT_SUBMIT unexpected_error")
+        return (
+            render_template(
+                "convert_form.html",
+                error="An error occurred while converting the document. Please try again.",
                 **_template_context(),
             ),
             500,
