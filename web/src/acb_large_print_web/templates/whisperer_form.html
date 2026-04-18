@@ -383,6 +383,10 @@
   function updateEstimateFromFile(file) {
     if (!file || typeof URL === 'undefined') {
       logEstimateDebug('updateEstimateFromFile aborted: missing file or URL API');
+      if (estimateRefresh) {
+        estimateRefresh.disabled = false;
+        estimateRefresh.textContent = 'Calculate estimate now';
+      }
       return;
     }
 
@@ -430,6 +434,10 @@
         })
         .then(function (result) {
           logEstimateDebug('server estimate payload', result.data || {});
+          if (estimateRefresh) {
+            estimateRefresh.disabled = false;
+            estimateRefresh.textContent = 'Calculate estimate now';
+          }
           if (!result.ok) {
             throw new Error(result.data && result.data.error ? result.data.error : 'Unable to estimate processing time.');
           }
@@ -455,6 +463,10 @@
           logEstimateDebug('server estimate failed, using client fallback', {
             error: err && err.message ? err.message : '(unknown error)'
           });
+          if (estimateRefresh) {
+            estimateRefresh.disabled = false;
+            estimateRefresh.textContent = 'Calculate estimate now';
+          }
           // Fall back to client-side estimate if server estimate fails.
           updateEstimateFromFileClientFallback(file);
         });
@@ -462,6 +474,10 @@
     }
 
     logEstimateDebug('FormData/fetch unavailable, using client fallback');
+    if (estimateRefresh) {
+      estimateRefresh.disabled = false;
+      estimateRefresh.textContent = 'Calculate estimate now';
+    }
     updateEstimateFromFileClientFallback(file);
   }
 
@@ -492,8 +508,10 @@
       }
       if (estimateHint) {
         estimateHint.textContent = 'Your browser could not read audio metadata for this format. The estimate above is based on file size only.';
-      }
-      syncBackgroundControls();
+      }      if (estimateRefresh) {
+        estimateRefresh.disabled = false;
+        estimateRefresh.textContent = 'Calculate estimate now';
+      }      syncBackgroundControls();
     }
 
     probe.onloadedmetadata = function () {
@@ -512,6 +530,10 @@
         if (estimateHint) {
           estimateHint.textContent = 'Estimate is based on audio metadata and server load. Actual time can vary.';
         }
+        if (estimateRefresh) {
+          estimateRefresh.disabled = false;
+          estimateRefresh.textContent = 'Calculate estimate now';
+        }
         syncBackgroundControls();
       } else {
         // Duration is Infinity or NaN -- fall through to size-based estimate
@@ -521,6 +543,7 @@
     };
 
     probe.onerror = useSizeFallback;
+    probe.onended = useSizeFallback;
 
     // If neither event fires within 3 s (codec unsupported, slow disk, etc.),
     // fall back to the size-based estimate so the user is never left waiting.
@@ -534,6 +557,10 @@
       fileCount: audioInput.files ? audioInput.files.length : 0,
       firstName: (audioInput.files && audioInput.files[0]) ? audioInput.files[0].name : null
     });
+    if (estimateRefresh) {
+      estimateRefresh.disabled = false;
+      estimateRefresh.textContent = 'Calculate estimate now';
+    }
     if (!audioInput.files || !audioInput.files.length) {
       if (estimateValue) {
         estimatedDurationSeconds = null;
@@ -548,13 +575,31 @@
 
   function refreshEstimate(trigger) {
     logEstimateDebug('refreshEstimate called', { trigger: trigger || 'unknown' });
+    
+    if (estimateRefresh) {
+      estimateRefresh.disabled = true;
+      estimateRefresh.textContent = 'Calculating...';
+      if (estimateHint) {
+        estimateHint.textContent = 'Button pressed. Checking for audio file...';
+      }
+    }
+    
     if (!audioInput.files || !audioInput.files.length) {
       if (estimateHint) {
         estimateHint.textContent = 'Please select an audio file first.';
       }
       logEstimateDebug('refreshEstimate ignored: no file selected');
+      if (estimateRefresh) {
+        estimateRefresh.disabled = false;
+        estimateRefresh.textContent = 'Calculate estimate now';
+      }
       return;
     }
+    
+    if (estimateHint) {
+      estimateHint.textContent = 'Contacting server...';
+    }
+    
     updateEstimateFromFile(audioInput.files[0]);
   }
 
