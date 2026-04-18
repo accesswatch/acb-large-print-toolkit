@@ -142,6 +142,9 @@
   <p>EPUB remediation typically requires editing the source document and re-exporting. If you have the original Markdown or Word source, <a href="{{ url_for('convert.convert_form') }}">convert it to EPUB</a> with accessibility formatting already built in.</p>
   {% endif %}
   {% endif %}
+  {% if chat_token %}
+  <p><a href="{{ url_for('chat.chat_form', token=chat_token) }}">Chat about this document</a> -- ask plain-English questions using the local AI model without re-uploading.</p>
+  {% endif %}
   <ul>
     <li><a href="{{ url_for('audit.audit_form') }}">Audit another document</a></li>
     <li><a href="{{ url_for('guidelines.guidelines_page') }}">Read the full ACB guidelines</a></li>

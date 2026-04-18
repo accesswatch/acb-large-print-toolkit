@@ -117,15 +117,18 @@ wait_for_health() {
     local attempts=0
     local healthy=0
 
-    log_ts "--- Waiting for /health (max ${HEALTH_MAX_ATTEMPTS} attempts, ${HEALTH_SLEEP}s interval) ---"
+    # All log output goes to stderr so callers can capture stdout safely:
+    #   HEALTHY="$(wait_for_health "deploy")"
+    # captures only the final "0" or "1", not the log lines.
+    log_ts "--- Waiting for /health (max ${HEALTH_MAX_ATTEMPTS} attempts, ${HEALTH_SLEEP}s interval) ---" >&2
 
     while [[ "$attempts" -lt "$HEALTH_MAX_ATTEMPTS" ]]; do
         attempts=$((attempts + 1))
-        log_ts "  Attempt $attempts/${HEALTH_MAX_ATTEMPTS} [$phase]"
+        log_ts "  Attempt $attempts/${HEALTH_MAX_ATTEMPTS} [$phase]" >&2
 
         # Per-service container state
         for svc in pipeline web ollama; do
-            log_ts "    $svc: $(container_state "$svc")"
+            log_ts "    $svc: $(container_state "$svc")" >&2
         done
 
         if docker compose -f "$COMPOSE_FILE" exec -T web python -c \
@@ -134,7 +137,7 @@ wait_for_health() {
             break
         fi
 
-        log_ts "  /health not ready yet -- waiting ${HEALTH_SLEEP}s"
+        log_ts "  /health not ready yet -- waiting ${HEALTH_SLEEP}s" >&2
         sleep "$HEALTH_SLEEP"
     done
 

@@ -198,6 +198,9 @@
 
 <section aria-labelledby="next-heading">
   <h2 id="next-heading">What's Next?</h2>
+  {% if token %}
+  <p><a href="{{ url_for('chat.chat_form', token=token) }}">Chat about this document</a> -- ask plain-English questions about the fixed document using the local AI model without re-uploading.</p>
+  {% endif %}
   <ul>
     <li><a href="{{ url_for('audit.audit_form') }}">Audit the fixed document</a> to verify compliance</li>
     <li><a href="{{ url_for('fix.fix_form') }}">Fix another document</a></li>

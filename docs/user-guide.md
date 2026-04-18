@@ -583,8 +583,16 @@ Document Chat lets you ask questions about an uploaded document in plain languag
 
 ### Step-by-step
 
-1. Click the **Chat** tab.
-2. Upload your document.
+Document Chat requires an uploaded document. There are two ways to reach it:
+
+**From Quick Start (recommended for new documents):**
+1. Go to **Quick Start: Upload and Discover** on the homepage.
+2. Upload your document and click **Next: Choose an Action**.
+3. Select **Chat** from the action menu.
+
+**From Audit or Fix results (no re-upload needed):**
+1. Run an Audit or Fix on your document.
+2. On the results page, click **Chat about this document**.
 3. Type your question in the text field and press Enter or click Ask.
 4. GLOW reads the document, calls the relevant tools, and returns a grounded answer.
 5. Continue asking follow-up questions. Each turn is tracked in conversation history.

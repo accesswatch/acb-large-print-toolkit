@@ -193,6 +193,12 @@ def _audit_single():
         if has_customizations:
             customization_warning = generate_customization_warning(customization_reasons)
 
+        # Preserve the uploaded file for a potential Chat pivot.
+        # Nulling token prevents the finally block from deleting it;
+        # the temp dir is reclaimed by OS TTL or the next audit/chat cleanup.
+        chat_token = token
+        token = None
+
         return render_template(
             "audit_report.html",
             result=result,
@@ -204,6 +210,7 @@ def _audit_single():
             email_status=email_status,
             ai_used=False,
             customization_warning=customization_warning,
+            chat_token=chat_token,
         )
     except UploadError as e:
         from ..email import email_configured as _ec

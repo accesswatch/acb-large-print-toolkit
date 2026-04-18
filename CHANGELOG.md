@@ -6,6 +6,8 @@ Releases are tagged in the [GitHub repository](https://github.com/accesswatch/ac
 
 ---
 
+## [Unreleased]
+
 ## [2.0.0] - 2026-04-17
 
 ### Added
@@ -80,6 +82,10 @@ Releases are tagged in the [GitHub repository](https://github.com/accesswatch/ac
 ### Fixed
 
 - Fixed CSRF token handling in consent form so first-visit users can agree without pre-existing session.
+- **Ops: `wait_for_health` bash syntax error caused rollback health check to crash.** `log_ts` writes to stdout; capturing `ROLLBACK_HEALTHY="$(wait_for_health "rollback")"` included all log lines in the variable, causing `[[ "$ROLLBACK_HEALTHY" -eq 1 ]]` to fail with `syntax error: operand expected`. Fixed by redirecting all `log_ts` calls inside `wait_for_health` to stderr so command substitution captures only the final `0` or `1`.
+- **Web: `faster-whisper` missing from Docker image.** `faster-whisper>=1.0.3` was listed in `web/requirements.txt` but not in `web/pyproject.toml` `dependencies`. The Dockerfile installs via `pip install ./web` (pyproject.toml) and never runs `pip install -r requirements.txt`, so `faster-whisper` was never present in the image. BITS Whisperer transcription and the `/health` `readiness.whisperer` check always reported `not-ready` as a result. Fixed by adding `faster-whisper>=1.0.3` to `web/pyproject.toml`.
+- **Web: Document Chat accessible from Audit and Fix result pages.** After running Audit, the uploaded file was immediately deleted by the `finally` cleanup before the user could pivot to Chat. The audit route now preserves the temp file and passes a `chat_token` to the result template. A "Chat about this document" link appears in the What's Next section on both `audit_report.html` and `fix_result.html` when the token is available.
+- **Docs: User guide incorrectly instructed users to click a "Chat" tab.** No Chat tab exists in the navigation; Chat is token-gated and requires an uploaded document. Updated `docs/user-guide.md` Section 8 with the correct two-path instructions: via Quick Start, or from Audit/Fix result pages.
 
 ### Added
 
