@@ -255,6 +255,11 @@
 
 <script>
 (function () {
+  // Log immediately to ensure script is running
+  if (typeof console !== 'undefined' && typeof console.warn === 'function') {
+    console.warn('WHISPERER_FORM_SCRIPT_STARTED');
+  }
+
   var form = document.getElementById('whisperer-form');
   var submitButton = form ? form.querySelector('button[type="submit"]') : null;
   var progressSection = document.getElementById('transcribe-progress');
@@ -276,6 +281,17 @@
   var retrievalPasswordConfirm = document.getElementById('retrieval-password-confirm');
   var estimateDebugPanel = document.getElementById('estimate-debug-panel');
   var estimateDebugLog = document.getElementById('estimate-debug-log');
+
+  // Log which elements were found
+  if (typeof console !== 'undefined' && typeof console.warn === 'function') {
+    console.warn('WHISPERER_ELEMENTS_LOADED', {
+      form: !!form,
+      audioInput: !!audioInput,
+      estimateRefresh: !!estimateRefresh,
+      estimateHint: !!estimateHint,
+      estimateValue: !!estimateValue
+    });
+  }
 
   var backgroundThresholdMinutes = Number(form.dataset.backgroundThresholdMinutes || '30');
   var estimatedDurationSeconds = null;
@@ -604,6 +620,11 @@
   }
 
   if (estimateRefresh) {
+    // Log that we're about to set up button handlers
+    if (typeof console !== 'undefined' && typeof console.warn === 'function') {
+      console.warn('ESTIMATE_BUTTON_SETUP_STARTING', { buttonId: estimateRefresh.id });
+    }
+
     // Exhaustive keyboard telemetry to understand why keyboard events might not fire
     function logKeyEvent(eventType, event) {
       var msg = 'KEYBOARD_EVENT ' + eventType + ' key=' + (event.key || '(unknown)') + ' code=' + (event.code || '(unknown)') + ' ctrlKey=' + event.ctrlKey + ' shiftKey=' + event.shiftKey;
@@ -659,6 +680,16 @@
       logEstimateDebug('estimate button clicked');
       refreshEstimate('click');
     });
+
+    // Log that button handlers are now attached
+    if (typeof console !== 'undefined' && typeof console.warn === 'function') {
+      console.warn('ESTIMATE_BUTTON_HANDLERS_ATTACHED', { listenerCount: 5 });
+    }
+  } else {
+    // Button element not found - log this critical issue
+    if (typeof console !== 'undefined' && typeof console.error === 'function') {
+      console.error('ESTIMATE_BUTTON_NOT_FOUND - getElementById("estimate-refresh") returned null');
+    }
   }
 
   if (backgroundOptIn) {
