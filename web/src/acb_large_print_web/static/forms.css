@@ -261,6 +261,62 @@ main[aria-busy="true"] {
   display: inline;
 }
 
+/* --- Consent modal --- */
+.consent-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  z-index: 1000;
+}
+
+.consent-modal {
+  width: min(64rem, 100%);
+  max-height: calc(100vh - 2rem);
+  background: #ffffff;
+  border: 3px solid #1a1a1a;
+  border-radius: 0.375rem;
+  padding: 1rem 1.25rem;
+  overflow: hidden;
+}
+
+.consent-modal-scroll {
+  max-height: 52vh;
+  overflow-y: auto;
+  padding-right: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.consent-modal h2,
+.consent-modal h3,
+.consent-modal h4 {
+  margin-top: 1rem;
+}
+
+.consent-modal form {
+  border-top: 2px solid #1a1a1a;
+  padding-top: 0.75rem;
+}
+
+.consent-modal button[disabled] {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+@media (max-width: 48rem) {
+  .consent-modal {
+    max-height: calc(100vh - 1rem);
+    padding: 0.875rem;
+  }
+
+  .consent-modal-scroll {
+    max-height: 48vh;
+  }
+}
+
 /* --- Whisperer progress indicator --- */
 .transcribe-progress {
   margin-top: 1.5rem;

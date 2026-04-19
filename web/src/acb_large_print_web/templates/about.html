@@ -5,14 +5,14 @@
 
 {% block content %}
 
-<section aria-labelledby="mission-heading">
+<section>
   <h2 id="mission-heading">Mission</h2>
   <p>The GLOW Accessibility Toolkit helps authors, publishers, and organizations produce documents that comply with the <a href="https://acb.org/large-print-guidelines">American Council of the Blind Large Print Guidelines</a> and <a href="https://www.w3.org/TR/WCAG22/">WCAG 2.2 Level AA</a>. The toolkit audits, fixes, and templates Word, Excel, PowerPoint, Markdown, PDF, and ePub documents for accessibility.</p>
   <p><strong>GLOW</strong> stands for <strong>Guided Layout &amp; Output Workflow</strong> -- a guided, confidence-building accessibility experience built for real publishing workflows.</p>
   <a href="#main" class="back-to-top">Back to top</a>
 </section>
 
-<section aria-labelledby="features-heading">
+<section>
   <h2 id="features-heading">v2.0 Features (April 2026)</h2>
   <ul>
     <li><strong>BITS Whisperer:</strong> On-server audio transcription (MP3, WAV, M4A, OGG, FLAC, AAC, Opus) to Markdown or Word. Uses faster-whisper (Whisper medium model) with local Ollama inference — audio never leaves the server.</li>
@@ -25,7 +25,7 @@
   <a href="#main" class="back-to-top">Back to top</a>
 </section>
 
-<section aria-labelledby="documentation-heading">
+<section>
   <h2 id="documentation-heading">Documentation and References</h2>
   <ul>
     <li><a href="{{ url_for('prd.prd_page') }}">Product Requirements Document (PRD)</a> -- Complete specification of the GLOW web application architecture, features, and implementation decisions</li>
@@ -36,7 +36,7 @@
   <a href="#main" class="back-to-top">Back to top</a>
 </section>
 
-<section aria-labelledby="orgs-heading">
+<section>
   <h2 id="orgs-heading">Organizations</h2>
 
   <dl>
@@ -55,7 +55,7 @@
   <a href="#main" class="back-to-top">Back to top</a>
 </section>
 
-<section aria-labelledby="standards-heading">
+<section>
   <h2 id="standards-heading">Standards and References</h2>
 
   <ul>
@@ -69,7 +69,7 @@
   <a href="#main" class="back-to-top">Back to top</a>
 </section>
 
-<section aria-labelledby="deps-heading">
+<section>
   <h2 id="deps-heading">Open Source Dependencies</h2>
   <p>This project is built with open source software. We gratefully acknowledge the following projects:</p>
 
@@ -290,7 +290,7 @@
   <a href="#main" class="back-to-top">Back to top</a>
 </section>
 
-<section aria-labelledby="project-heading">
+<section>
   <h2 id="project-heading">Project Information</h2>
 
   <dl>
@@ -321,7 +321,7 @@
   <a href="#main" class="back-to-top">Back to top</a>
 </section>
 
-<section aria-labelledby="stress-heading">
+<section>
   <h2 id="stress-heading">Stress Testing</h2>
   <p>The toolkit includes a reproducible synthetic Word-document stress harness for the heading-detection and fixing pipeline. The current corpus covers <strong>{{ stress_summary.total_heading_cases }}</strong> heading scenarios across <strong>{{ stress_summary.document_count }}</strong> generated documents.</p>
   <p>These generated documents deliberately mix ACB-conformant content with failure patterns such as centered titles, justified paragraphs, hanging indents, faux headings, signature blocks, copied web formatting, and body-text emphasis drift. Each failure that proves useful is folded back into the audit rules, fixer behavior, or online help so the product learns from the corpus instead of letting that knowledge stay trapped in tests.</p>
@@ -337,7 +337,7 @@
   <a href="#main" class="back-to-top">Back to top</a>
 </section>
 
-<section aria-labelledby="acknowledgments-heading">
+<section>
   <h2 id="acknowledgments-heading">Acknowledgments</h2>
   <p>This project would not be possible without the tireless advocacy of the American Council of the Blind and the volunteers who authored and maintain the <a href="https://acb.org/large-print-guidelines">ACB Large Print Guidelines</a>. Special thanks to the <a href="https://acb.org/board-publications">ACB Board of Publications</a> for establishing clear, enforceable standards that make printed and digital materials accessible to people who are blind or have low vision.</p>
   <p>We gratefully acknowledge the <a href="https://daisy.org/">DAISY Consortium</a> for their leadership in accessible publishing. This toolkit relies on three DAISY projects: <a href="https://daisy.github.io/ace/">DAISY Ace</a> for EPUB accessibility validation, the <a href="https://github.com/daisy/a11y-meta-viewer">DAISY Accessibility Metadata Viewer</a> for human-readable display of EPUB accessibility metadata per the <a href="https://w3c.github.io/publ-a11y/a11y-meta-display-guide/2.0/draft/techniques/epub-metadata/">W3C Accessibility Metadata Display Guide 2.0</a>, and <a href="https://daisy.github.io/pipeline/">DAISY Pipeline 2</a> for advanced document-to-EPUB and EPUB-to-DAISY conversions that produce accessible publications for e-readers, refreshable braille displays, and DAISY players.</p>

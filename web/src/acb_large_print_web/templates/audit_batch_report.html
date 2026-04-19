@@ -36,7 +36,7 @@
 {# ------------------------------------------------------------------ #}
 {# COMBINED SCORECARD (shown for both report styles)                   #}
 {# ------------------------------------------------------------------ #}
-<section aria-labelledby="batch-summary-heading">
+<section>
   <h2 id="batch-summary-heading">Batch Summary</h2>
   <p>{{ successful | length }} file{{ "s" if successful | length != 1 }} audited
     {% if mode_label %} ({{ mode_label }}){% endif %}.
@@ -110,7 +110,7 @@
 {# ------------------------------------------------------------------ #}
 {% if report_style == "combined" %}
 
-<section aria-labelledby="batch-details-heading">
+<section>
   <h2 id="batch-details-heading">Findings by File</h2>
 
   {% for r in successful %}
@@ -191,7 +191,7 @@
 
 {% for r in successful %}
 {% set res = r.result %}
-<section aria-labelledby="file-heading-{{ loop.index }}" class="individual-file-report">
+<section class="individual-file-report">
   <h2 id="file-heading-{{ loop.index }}">{{ r.filename }}</h2>
 
   <ul class="format-pills">
@@ -272,7 +272,7 @@
 <p>No files could be audited. Please check the errors above and try again.</p>
 {% endif %}
 
-<section aria-labelledby="batch-next-heading">
+<section>
   <h2 id="batch-next-heading">What's Next?</h2>
   <ul>
     <li><a href="{{ url_for('audit.audit_form') }}">Audit more documents</a></li>

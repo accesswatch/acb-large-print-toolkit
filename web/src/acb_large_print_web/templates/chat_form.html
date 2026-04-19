@@ -22,7 +22,7 @@
 
 <!-- Conversation History Section -->
 {% if conversation|length > 0 %}
-<section aria-labelledby="history-heading">
+<section>
   <h2 id="history-heading">Conversation History</h2>
   <p>{{ conversation|length }} turn{{ 's' if conversation|length != 1 else '' }} in this session. Click to expand each turn.</p>
 
@@ -62,14 +62,14 @@
   <hr>
 </section>
 {% else %}
-<section aria-labelledby="empty-heading">
+<section>
   <h2 id="empty-heading">No Conversation Yet</h2>
   <p>Ask your first question below to begin interrogating the document.</p>
 </section>
 {% endif %}
 
 <!-- New Question Form -->
-<section aria-labelledby="ask-heading">
+<section>
   <h2 id="ask-heading">Ask a Question</h2>
 
   <form method="post" action="{{ url_for('chat.chat_submit') }}" novalidate>
@@ -88,9 +88,8 @@
         aria-describedby="question-hint"
         maxlength="2000"
         placeholder="What is the main topic of section 3? How many tables are in this document? Where is the pricing information?"
-        oninput="document.getElementById('question-char-count').textContent = (2000 - this.value.length) + ' characters remaining';"
-      ></textarea>
-      <p id="question-char-count" class="field-hint" aria-hidden="true">2000 characters remaining.</p>
+        oninput="document.getElementById('question-char-count').textContent = (2000 - this.value.length) + ' characters remaining';"></textarea>
+      <p id="question-char-count" class="field-hint" aria-live="polite" aria-atomic="true">2000 characters remaining.</p>
       <p id="question-hint" class="field-hint">
         Tip: Use specific keywords or section names. The AI will search the document and use tools like table extraction or section summarization to answer.
       </p>
@@ -162,7 +161,7 @@
 
 <!-- Export Section -->
 {% if conversation|length > 0 %}
-<section aria-labelledby="export-heading">
+<section>
   <h2 id="export-heading">Export Conversation</h2>
   <p>Save your Q&A session for later reference. Exported files include the full conversation with questions, answers, and tools used.</p>
 
@@ -190,7 +189,7 @@
 {% endif %}
 
 <!-- Privacy Notice -->
-<section aria-labelledby="privacy-heading">
+<section>
   <h2 id="privacy-heading">Privacy & AI</h2>
   <p>Your questions and document content are processed locally on the GLOW (Guided Layout &amp; Output Workflow) server using on-server models. Nothing is sent to any third party. Conversations are stored in your browser session and deleted when you leave the page or after 1 hour of inactivity.</p>
 </section>

@@ -93,10 +93,16 @@
         opacity: 0.5;
       }
     }
+
+    @media (prefers-reduced-motion: reduce) {
+      .status-indicator {
+        animation: none;
+      }
+    }
     
     .footer {
       font-size: 0.875rem;
-      color: #999999;
+      color: #767676;
       margin-top: 2rem;
       padding-top: 1.5rem;
       border-top: 1px solid #eeeeee;
@@ -123,7 +129,7 @@
 </head>
 <body>
   <div class="maintenance-container">
-    <div class="icon">🔧</div>
+    <div class="icon" aria-hidden="true">🔧</div>
     
     <h1>Under Maintenance</h1>
     

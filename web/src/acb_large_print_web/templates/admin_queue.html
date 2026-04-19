@@ -20,10 +20,10 @@
 <div class="error-box" role="alert"><p><strong>Error:</strong> {{ request.args.get('error') }}</p></div>
 {% endif %}
 
-<section aria-labelledby="admin-health-heading">
+<section>
   <h2 id="admin-health-heading">System Health</h2>
   <p class="field-hint">Live status from <a href="/health">/health</a> (auto-refreshes every 20 seconds).</p>
-  <table class="findings-table" aria-describedby="admin-health-hint">
+  <table class="findings-table">
     <caption id="admin-health-hint">Core services and feature readiness</caption>
     <thead>
       <tr>

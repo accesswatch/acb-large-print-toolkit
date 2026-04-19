@@ -4,12 +4,12 @@
 {% block heading %}Data Storage, Use, and Retention Policy{% endblock %}
 
 {% block content %}
-<section aria-labelledby="policy-intro-heading">
+<section>
   <h2 id="policy-intro-heading">Overview</h2>
   <p>GLOW Accessibility Toolkit is built to minimize data retention risk. This page explains exactly what happens to your documents and data when you use the service.</p>
 </section>
 
-<section aria-labelledby="storage-heading">
+<section>
   <h2 id="storage-heading">Document Storage and Retention</h2>
 
   <h3>Audit workflow</h3>
@@ -31,7 +31,7 @@
   <p>GLOW does not store documents in any database, object store, archive, or backup system. Temporary files live only in a short-lived directory on the server and are removed as described above.</p>
 </section>
 
-<section aria-labelledby="ai-heading">
+<section>
   <h2 id="ai-heading">Artificial Intelligence</h2>
   <p>By default, artificial intelligence is never used. The only time AI is involved is if you personally enable it in Settings.</p>
   <p>When AI is enabled, it is restricted to a local <a href="https://ollama.com">Ollama</a> instance running on the GLOW server itself. Your document is analyzed in place. It is never transmitted to Google, Microsoft, OpenAI (ChatGPT), Anthropic, or any other external AI provider.</p>
@@ -40,7 +40,7 @@
   <p>Every results page shows a clear statement indicating whether AI was or was not used during that specific transaction.</p>
 </section>
 
-<section aria-labelledby="rights-heading">
+<section>
   <h2 id="rights-heading">Data Rights and Use</h2>
   <p>BITS (Blind Information Technology Solutions) does not claim any rights to the content you upload. Your documents belong to you.</p>
   <p>GLOW does not sell, share, license, or otherwise transfer document content to any third party for any purpose, including advertising, research, or model training.</p>
@@ -48,7 +48,7 @@
 </section>
 
 {% if email_configured %}
-<section aria-labelledby="email-heading">
+<section>
   <h2 id="email-heading">Email Report Delivery</h2>
   <p>GLOW offers an optional email delivery feature on the Audit page. If you choose to enter an email address and request a report, GLOW sends your audit scorecard and a findings CSV attachment to that address using <a href="https://postmarkapp.com">Postmark</a>, a transactional email service.</p>
   <h3>What is sent</h3>
@@ -62,7 +62,7 @@
 </section>
 {% endif %}
 
-<section aria-labelledby="accounts-heading">
+<section>
   <h2 id="accounts-heading">Accounts and Identity</h2>
   <p>GLOW does not require an account, login, or registration for standard document workflows. No personally identifiable information is collected as a condition of using the core tool.</p>
   <p>Administrative dashboards use a separate admin-only authentication flow. Admin sign-in options (email magic link and configured OAuth providers) are only enabled when email delivery is configured. Admin access requests require approval by an existing approved admin.</p>
@@ -70,19 +70,19 @@
   <p>If you opt in to cookie-based preferences (via the Settings page), your preferences are stored in a browser cookie on your device only. The cookie contains your chosen defaults (profile, mode, heading levels, and so on) and no document content.</p>
 </section>
 
-<section aria-labelledby="security-heading">
+<section>
   <h2 id="security-heading">Security</h2>
   <p>All traffic to glow.bits-acb.org is encrypted using HTTPS (TLS). Uploaded files are validated for format integrity before processing. The application runs under a non-root container user and enforces rate limits to protect against abuse.</p>
   <p>Temporary upload directories are stored in an isolated path on the server filesystem. Path traversal protections prevent any request from accessing files outside the designated upload area.</p>
 </section>
 
-<section aria-labelledby="contact-heading">
+<section>
   <h2 id="contact-heading">Questions and Contact</h2>
   <p>If you have questions about this policy or how your data is handled, contact BITS through the <a href="{{ url_for('feedback.feedback_form') }}">Feedback page</a> or visit <a href="https://www.bits-acb.org">bits-acb.org</a>.</p>
   <p>This policy was last updated on April 17, 2026.</p>
 </section>
 
-<section aria-labelledby="consent-reset-heading">
+<section>
   <h2 id="consent-reset-heading">Withdraw or Reset Your Agreement</h2>
   <p>Your agreement to these terms is stored only in a cookie named <code>glow_consent_v1</code> on your own browser. No record of your agreement is stored on the server.</p>
   <p>To withdraw your agreement and clear the consent record, use your browser's cookie controls to delete the <code>glow_consent_v1</code> cookie, or click the button below. You will be asked to agree again on your next visit.</p>

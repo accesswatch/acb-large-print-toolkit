@@ -47,7 +47,7 @@
     {% block content %}{% endblock %}
   </main>
 
-  <footer role="contentinfo">
+  <footer>
     <nav aria-label="Additional links">
       <ul class="footer-links">
         <li><a href="{{ url_for('guide.guide_page') }}"{% if request.blueprint == 'guide' %} aria-current="page"{% endif %}>User Guide</a></li>

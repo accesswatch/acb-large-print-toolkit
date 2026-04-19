@@ -18,7 +18,7 @@
   <p>Admin authentication is unavailable because email delivery is not configured on this server.</p>
 </div>
 {% else %}
-<section aria-labelledby="email-magic-heading">
+<section>
   <h2 id="email-magic-heading">Email Magic Link</h2>
   <form method="post" action="{{ url_for('admin.admin_login_email') }}" novalidate>
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -43,7 +43,7 @@
   </script>
 </section>
 
-<section aria-labelledby="oauth-heading">
+<section>
   <h2 id="oauth-heading">Single Sign-On Providers</h2>
   <p>Only configured providers are shown below. Approval is still required for admin access.</p>
   {% if providers %}
@@ -57,7 +57,7 @@
   {% endif %}
 </section>
 
-<section aria-labelledby="request-access-heading">
+<section>
   <h2 id="request-access-heading">Need Admin Access?</h2>
   <p><a href="{{ url_for('admin.admin_request_access') }}">Request admin approval</a></p>
 </section>

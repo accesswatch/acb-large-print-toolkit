@@ -4,13 +4,13 @@
 {% block heading %}Review Detected Headings{% endblock %}
 
 {% block content %}
-<section aria-labelledby="review-intro">
+<section>
   <h2 id="review-intro">Heading Candidates Found</h2>
   <p>The following {{ candidates | length }} paragraph{{ "s" if candidates | length != 1 else "" }} in <strong>{{ filename }}</strong> appear to be headings but use non-heading styles. Review each candidate below and adjust the heading level or skip it. Then click "Apply and Fix" to proceed.</p>
   <p class="help-text">Allowed heading levels in this run: {% for level in allowed_heading_levels %}Heading {{ level }}{% if not loop.last %}, {% endif %}{% endfor %}.</p>
 </section>
 
-<section aria-labelledby="review-privacy-heading" class="notice-box">
+<section class="notice-box">
   <h2 id="review-privacy-heading">Data and Privacy</h2>
   {% if doc_expiry %}
   <p><strong>Document availability:</strong> Your document is held on the server while you complete this review.

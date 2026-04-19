@@ -14,7 +14,7 @@
   <p>{{ customization_warning | replace('\n', '<br />') }}</p>
 </section>
 {% endif %}
-<section aria-labelledby="score-heading">
+<section>
   <h2 id="score-heading">Compliance Score</h2>
 
   {% if doc_format %}
@@ -37,7 +37,7 @@
   {% endif %}
 </section>
 
-<section aria-labelledby="privacy-notice-heading" class="notice-box">
+<section class="notice-box">
   <h2 id="privacy-notice-heading">Data and Privacy</h2>
   <p><strong>Document retention:</strong> Your document was deleted from the server immediately after this audit was produced. Nothing was stored.</p>
   {% if ai_used %}
@@ -48,7 +48,7 @@
 </section>
 
 {% if result.findings %}
-<section aria-labelledby="findings-heading">
+<section>
   <h2 id="findings-heading">Findings</h2>
 
   {% set ns = namespace(critical=0, high=0, medium=0, low=0) %}
@@ -93,7 +93,7 @@
   </table>
 </section>
 {% else %}
-<section class="celebration" aria-labelledby="perfect-heading">
+<section class="celebration">
   <h2 id="perfect-heading">No Issues Found</h2>
   <p class="score-number grade-a">100/100</p>
   <p>This document fully complies with the checked rules. Well done.</p>
@@ -101,7 +101,7 @@
 {% endif %}
 
 {% if result.metadata_display and result.metadata_display.has_any_metadata %}
-<section aria-labelledby="metadata-heading">
+<section>
   <h2 id="metadata-heading">Accessibility Metadata</h2>
   <p>Human-readable accessibility metadata extracted from this EPUB per the
     <a href="https://w3c.github.io/publ-a11y/a11y-meta-display-guide/2.0/draft/techniques/epub-metadata/">W3C Accessibility Metadata Display Guide 2.0</a>.</p>
@@ -119,7 +119,7 @@
   {% endfor %}
 </section>
 {% elif doc_format == "epub" %}
-<section aria-labelledby="metadata-heading">
+<section>
   <h2 id="metadata-heading">Accessibility Metadata</h2>
   <p>This EPUB does not contain machine-readable accessibility metadata. Publishers should include
     <a href="https://www.w3.org/wiki/WebSchemas/Accessibility">schema.org accessibility properties</a>
@@ -127,7 +127,7 @@
 </section>
 {% endif %}
 
-<section aria-labelledby="next-heading">
+<section>
   <h2 id="next-heading">What's Next?</h2>
   {% if result.findings %}
   {% if doc_format == "docx" %}

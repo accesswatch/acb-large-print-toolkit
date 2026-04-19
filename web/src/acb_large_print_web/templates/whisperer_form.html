@@ -34,8 +34,7 @@
   data-max-audio-mb="{{ max_audio_mb }}"
   data-background-threshold-minutes="{{ background_threshold_minutes }}"
   data-estimate-url="{{ url_for('whisperer.whisperer_estimate') }}"
-  data-start-url="{{ url_for('whisperer.whisperer_start_job') }}"
->
+  data-start-url="{{ url_for('whisperer.whisperer_start_job') }}">
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
   <input type="hidden" name="existing_token" value="{{ existing_token or '' }}">
   <input type="hidden" name="uploaded_filename" value="{{ uploaded_filename or '' }}">
@@ -43,7 +42,7 @@
   <!-- ============================================================ -->
   <!-- STEP: Upload audio                                           -->
   <!-- ============================================================ -->
-  <h3 id="whisperer-step-upload">Step {{ ns.step }}: Upload your audio file</h3>
+  <h2 id="whisperer-step-upload">Step {{ ns.step }}: Upload your audio file</h2>
   <fieldset>
     <legend>Step {{ ns.step }}: Upload your audio file</legend>
     {% set ns.step = ns.step + 1 %}
@@ -59,8 +58,7 @@
       name="audio"
       accept="{{ audio_accept }}"
       {% if not uploaded_filename %}required{% endif %}
-      aria-describedby="audio-hint"
-    >
+      aria-describedby="audio-hint">
     <p id="audio-hint" class="field-hint">
       Accepted formats: MP3, WAV, M4A, OGG, FLAC, AAC, Opus.
       Maximum file size: {{ max_audio_mb }} MB.
@@ -72,7 +70,7 @@
     {% endif %}
   </fieldset>
 
-  <h3 id="whisperer-step-estimate">Step {{ ns.step }}: Review estimate and confirm</h3>
+  <h2 id="whisperer-step-estimate">Step {{ ns.step }}: Review estimate and confirm</h2>
   <fieldset>
     <legend>Step {{ ns.step }}: Review estimate and confirm</legend>
     {% set ns.step = ns.step + 1 %}
@@ -118,10 +116,10 @@
     </div>
 
     <label>
-      <input type="checkbox" name="confirm_estimate" value="yes" required>
+      <input type="checkbox" id="confirm-estimate-checkbox" name="confirm_estimate" value="yes" required aria-describedby="confirm-estimate-hint">
       I reviewed the estimated processing time and want to proceed.
     </label>
-    <p class="field-hint">
+    <p id="confirm-estimate-hint" class="field-hint">
       Long recordings can take significant time. Keep this page open until conversion reaches 100% and your download begins.
     </p>
     {% else %}
@@ -131,7 +129,7 @@
 
   {% if estimate_ready_value %}
   {% if email_enabled %}
-  <h3 id="whisperer-step-background">Step {{ ns.step }}: Background notification (optional)</h3>
+  <h2 id="whisperer-step-background">Step {{ ns.step }}: Background notification (optional)</h2>
   <fieldset id="background-processing-fieldset">
     <legend>Step {{ ns.step }}: Background notification (optional)</legend>
     {% set ns.step = ns.step + 1 %}
@@ -167,7 +165,7 @@
   <!-- ============================================================ -->
   <!-- STEP: Language                                               -->
   <!-- ============================================================ -->
-  <h3 id="whisperer-step-language">Step {{ ns.step }}: Language (optional)</h3>
+  <h2 id="whisperer-step-language">Step {{ ns.step }}: Language (optional)</h2>
   <fieldset>
     <legend>Step {{ ns.step }}: Language (optional)</legend>
     {% set ns.step = ns.step + 1 %}
@@ -187,7 +185,7 @@
   <!-- ============================================================ -->
   <!-- STEP: Output format                                          -->
   <!-- ============================================================ -->
-  <h3 id="whisperer-step-output">Step {{ ns.step }}: What do you want to receive?</h3>
+  <h2 id="whisperer-step-output">Step {{ ns.step }}: What do you want to receive?</h2>
   <fieldset>
     <legend>Step {{ ns.step }}: What do you want to receive?</legend>
     {% set ns.step = ns.step + 1 %}
@@ -220,7 +218,7 @@
   <!-- ============================================================ -->
   <!-- STEP: Document title (optional, shown for Word output)       -->
   <!-- ============================================================ -->
-  <h3 id="whisperer-step-title">Step {{ ns.step }}: Document title (optional)</h3>
+  <h2 id="whisperer-step-title">Step {{ ns.step }}: Document title (optional)</h2>
   <fieldset>
     <legend>Step {{ ns.step }}: Document title (optional)</legend>
 
@@ -231,19 +229,18 @@
       name="title"
       maxlength="200"
       placeholder="Leave blank to use the filename"
-      aria-describedby="title-hint"
-    >
+      aria-describedby="title-hint">
     <p id="title-hint" class="field-hint">
       Used as the H1 heading in Markdown and the document title in Word.
       Defaults to the audio filename if left blank.
     </p>
   </fieldset>
 
-  <button type="submit" id="transcribe-submit" class="btn-primary">Transcribe Audio</button>
+  <button type="submit" id="transcribe-submit" class="btn-primary" disabled aria-disabled="true">Transcribe Audio</button>
   {% endif %}
 </form>
 
-<section id="transcribe-progress" class="transcribe-progress" aria-labelledby="transcribe-progress-heading" hidden>
+<section id="transcribe-progress" class="transcribe-progress" hidden>
   <h2 id="transcribe-progress-heading">Transcription Progress</h2>
   <p id="transcribe-status" class="field-hint" role="status" aria-live="polite">
     Preparing upload...
@@ -317,6 +314,7 @@
   var estimateSourceInput = document.getElementById('estimate-source');
   var estimateRiskWarning = document.getElementById('estimate-risk-warning');
   var confirmUncertainEstimate = document.getElementById('confirm-uncertain-estimate');
+  var confirmEstimateCheckbox = document.getElementById('confirm-estimate-checkbox');
   var backgroundFieldset = document.getElementById('background-processing-fieldset');
   var backgroundOptIn = document.getElementById('background-opt-in');
   var backgroundDetails = document.getElementById('background-details');
@@ -357,9 +355,27 @@
     estimateDebugPanel.open = true;
   }
 
-  if (!form || !submitButton || !progressSection || !progressBar || !progressValue || !statusNode || !audioInput) {
+  if (!form || !submitButton || !progressSection || !progressBar || !progressValue || !statusNode) {
     return;
   }
+
+  function syncConfirmButton() {
+    if (!submitButton || !confirmEstimateCheckbox) { return; }
+    var estimateChecked = confirmEstimateCheckbox.checked;
+    var riskVisible = estimateRiskWarning && !estimateRiskWarning.hidden;
+    var uncertainChecked = !riskVisible || (confirmUncertainEstimate && confirmUncertainEstimate.checked);
+    var allowed = estimateChecked && uncertainChecked;
+    submitButton.disabled = !allowed;
+    submitButton.setAttribute('aria-disabled', allowed ? 'false' : 'true');
+  }
+
+  if (confirmEstimateCheckbox) {
+    confirmEstimateCheckbox.addEventListener('change', syncConfirmButton);
+  }
+  if (confirmUncertainEstimate) {
+    confirmUncertainEstimate.addEventListener('change', syncConfirmButton);
+  }
+  syncConfirmButton();
 
   var runStartedAt = null;
   var elapsedTimer = null;
@@ -545,6 +561,7 @@
         confirmUncertainEstimate.checked = false;
       }
     }
+    syncConfirmButton();
   }
 
   function updateEstimateFromFile(file) {
@@ -725,29 +742,31 @@
     probe.src = objectUrl;
   }
 
-  audioInput.addEventListener('change', function () {
-    logEstimateDebug('audio input changed', {
-      fileCount: audioInput.files ? audioInput.files.length : 0,
-      firstName: (audioInput.files && audioInput.files[0]) ? audioInput.files[0].name : null
-    });
-    if (estimateRefresh) {
-      estimateRefresh.disabled = false;
-      estimateRefresh.textContent = 'Calculate estimate now';
-    }
-    if (!audioInput.files || !audioInput.files.length) {
-      if (estimateValue) {
-        estimatedDurationSeconds = null;
-        estimateValue.innerHTML = '<strong>Estimated conversion time:</strong> Not available yet.';
+  if (audioInput) {
+    audioInput.addEventListener('change', function () {
+      logEstimateDebug('audio input changed', {
+        fileCount: audioInput.files ? audioInput.files.length : 0,
+        firstName: (audioInput.files && audioInput.files[0]) ? audioInput.files[0].name : null
+      });
+      if (estimateRefresh) {
+        estimateRefresh.disabled = false;
+        estimateRefresh.textContent = 'Calculate estimate now';
       }
-      setEstimateSource('unknown');
-      syncBackgroundControls();
-      return;
-    }
-    if (handleAudioSizeLimit(audioInput.files[0])) {
-      return;
-    }
-    updateEstimateFromFile(audioInput.files[0]);
-  });
+      if (!audioInput.files || !audioInput.files.length) {
+        if (estimateValue) {
+          estimatedDurationSeconds = null;
+          estimateValue.innerHTML = '<strong>Estimated conversion time:</strong> Not available yet.';
+        }
+        setEstimateSource('unknown');
+        syncBackgroundControls();
+        return;
+      }
+      if (handleAudioSizeLimit(audioInput.files[0])) {
+        return;
+      }
+      updateEstimateFromFile(audioInput.files[0]);
+    });
+  }
 
   function refreshEstimate(trigger) {
     logEstimateDebug('refreshEstimate called', { trigger: trigger || 'unknown' });
@@ -906,7 +925,7 @@
           var percent = typeof data.progress === 'number' ? data.progress : 0;
           var statusMessage = data.message || 'Processing...';
           if (data.status === 'queued' && typeof data.queue_position === 'number') {
-            statusMessage = statusMessage + ' Queue position: ' + String(data.queue_position + 1) + '.';
+            statusMessage = statusMessage + ' Queue position: ' + String(data.queue_position) + '.';
           }
           setProgress(percent, statusMessage);
           if (phaseNode) {
@@ -1019,13 +1038,35 @@
     }
     startElapsedTimer();
 
-    fetch(startUrl, {
+    var startFetchOptions = {
       method: 'POST',
       body: payload,
       credentials: 'same-origin'
-    })
+    };
+
+    var startTimeoutId = null;
+    if (typeof AbortController !== 'undefined') {
+      var startController = new AbortController();
+      startFetchOptions.signal = startController.signal;
+      // Starting a job should be quick even for large files when using existing token.
+      startTimeoutId = window.setTimeout(function () {
+        startController.abort();
+      }, 15000);
+    }
+
+    fetch(startUrl, startFetchOptions)
       .then(function (resp) {
-        return resp.json().then(function (data) {
+        return resp.text().then(function (rawText) {
+          var data = {};
+          try {
+            data = rawText ? JSON.parse(rawText) : {};
+          } catch (e) {
+            data = {
+              error: resp.ok
+                ? 'Unexpected server response while starting transcription.'
+                : 'Server returned an unexpected error response while starting transcription.'
+            };
+          }
           return { ok: resp.ok, status: resp.status, data: data };
         });
       })
@@ -1053,7 +1094,16 @@
         if (phaseNode) {
           phaseNode.textContent = 'Phase: Failed to start';
         }
-        setProgress(0, err && err.message ? err.message : 'An unexpected error occurred.');
+        if (err && err.name === 'AbortError') {
+          setProgress(0, 'Starting the transcription job timed out. Please try again. If this persists, reload the page and check server logs for WHISPERER_START errors.');
+        } else {
+          setProgress(0, err && err.message ? err.message : 'An unexpected error occurred.');
+        }
+      })
+      .finally(function () {
+        if (startTimeoutId !== null) {
+          window.clearTimeout(startTimeoutId);
+        }
       });
   });
 

@@ -4,7 +4,7 @@
 {% block heading %}Fix Results{% endblock %}
 
 {% block content %}
-<section aria-labelledby="score-heading">
+<section>
   <h2 id="score-heading">Before and After</h2>
 
   {% if customization_warning %}
@@ -68,7 +68,7 @@
   </div>
 </section>
 
-<section aria-labelledby="privacy-notice-heading" class="notice-box">
+<section class="notice-box">
   <h2 id="privacy-notice-heading">Data and Privacy</h2>
   {% if doc_expiry %}
   <p><strong>Document availability:</strong> Your document is still held on the server so you can download the fixed copy.
@@ -85,7 +85,7 @@
 </section>
 
 {% if warnings %}
-<section aria-labelledby="warnings-heading">
+<section>
   <h2 id="warnings-heading">Review Required</h2>
   {% for warning in warnings %}
   <p><strong>Warning:</strong> {{ warning }}</p>
@@ -93,7 +93,7 @@
 </section>
 {% endif %}
 
-<section aria-labelledby="download-heading">
+<section>
   <h2 id="download-heading">Download Fixed Document</h2>
   <form method="post" action="{{ url_for('fix.fix_download') }}">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -124,7 +124,7 @@
 </script>
 
 {% if fix_records %}
-<section aria-labelledby="fix-details-heading">
+<section>
   <h2 id="fix-details-heading">Fix Details</h2>
   <p>{{ fix_records | length }} individual fixes applied, grouped by category:</p>
 
@@ -164,7 +164,7 @@
 {% endif %}
 
 {% if post_findings %}
-<section aria-labelledby="remaining-heading">
+<section>
   <h2 id="remaining-heading">Remaining Issues</h2>
   <p>These issues were not auto-fixed in this run and may require manual attention or optional fix settings:</p>
 
@@ -196,7 +196,7 @@
 </section>
 {% endif %}
 
-<section aria-labelledby="next-heading">
+<section>
   <h2 id="next-heading">What's Next?</h2>
   {% if token %}
   <p><a href="{{ url_for('chat.chat_form', token=token) }}">Chat about this document</a> -- ask plain-English questions about the fixed document using the local AI model without re-uploading.</p>
