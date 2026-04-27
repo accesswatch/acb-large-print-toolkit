@@ -1,0 +1,8 @@
+No unguarded AI test usages detected.
+
+Scanned patterns: openrouter, whisperer, ai_gateway, OPENROUTER_API_KEY,
+ai_chat_enabled, ai_whisperer_enabled, /whisperer, /chat
+
+If you want automatic edits to add markers to specific files, instruct me
+and I will apply conservative, per-file patches instead of changing tests
+globally.
