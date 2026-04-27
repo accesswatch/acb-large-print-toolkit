@@ -1,0 +1,6 @@
+Expected behavior once OpenRouter audio credits are available:
+- The direct audio transcription endpoint should return HTTP 200 or another non-5xx success response.
+- The fallback input_audio path should return a non-empty English transcript.
+- The transcript should correspond to the first 30 seconds of tests/openrouter-probe/reagan-30s.mp3.
+- Because punctuation and exact capitalization may vary by model/provider, reviewers should compare semantic content rather than exact formatting.
+- Actual outputs should be written to audio/latest_direct_response.json, audio/latest_direct_transcript.txt, audio/latest_fallback_response.json, and audio/latest_fallback_transcript.txt.

@@ -109,7 +109,14 @@ def _configure_styles(
                 pf.first_line_indent = None
 
     # Remove theme color from headings (Word defaults to blue)
-    for heading in ("Heading 1", "Heading 2", "Heading 3"):
+    for heading in (
+        "Heading 1",
+        "Heading 2",
+        "Heading 3",
+        "Heading 4",
+        "Heading 5",
+        "Heading 6",
+    ):
         try:
             style = doc.styles[heading]
             rPr = style.element.find(qn("w:rPr"))

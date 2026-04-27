@@ -1,0 +1,15 @@
+=== GLOW Document Analysis (pre-flight tool results) ===
+
+[run_accessibility_audit]
+Heuristic compliance summary (no live audit available):
+• Possible bold-emphasis abuse (ACB-BOLD-HEADINGS-ONLY)
+• Possible italic usage (ACB-NO-ITALIC — critical violation)
+• Possible bare URLs used as link text (ACB-LINK-TEXT)
+
+[get_critical_findings]
+No audit data available.
+
+[check_heading_hierarchy]
+Heading hierarchy is valid. 12 headings, no skipped levels.
+
+=== Use the above analysis to give a grounded, specific answer. ===

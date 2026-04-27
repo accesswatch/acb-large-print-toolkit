@@ -24,7 +24,9 @@
         <li role="none"><a href="{{ url_for('template.template_form') }}" role="tab" id="tab-template" aria-controls="main"{% if request.blueprint == 'template' %} aria-selected="true"{% else %} aria-selected="false"{% endif %}>Template</a></li>
         <li role="none"><a href="{{ url_for('export.export_form') }}" role="tab" id="tab-export" aria-controls="main"{% if request.blueprint == 'export' %} aria-selected="true"{% else %} aria-selected="false"{% endif %}>Export</a></li>
         <li role="none"><a href="{{ url_for('convert.convert_form') }}" role="tab" id="tab-convert" aria-controls="main"{% if request.blueprint == 'convert' %} aria-selected="true"{% else %} aria-selected="false"{% endif %}>Convert</a></li>
+        {% if ai_whisperer_enabled %}
         <li role="none"><a href="{{ url_for('whisperer.whisperer_form') }}" role="tab" id="tab-whisperer" aria-controls="main"{% if request.blueprint == 'whisperer' %} aria-selected="true"{% else %} aria-selected="false"{% endif %}>BITS Whisperer</a></li>
+        {% endif %}
         <li role="none"><a href="{{ url_for('guidelines.guidelines_page') }}" role="tab" id="tab-guidelines" aria-controls="main"{% if request.blueprint == 'guidelines' %} aria-selected="true"{% else %} aria-selected="false"{% endif %}>Guidelines</a></li>
         <li role="none"><a href="{{ url_for('settings.settings_page') }}" role="tab" id="tab-settings" aria-controls="main"{% if request.blueprint == 'settings' %} aria-selected="true"{% else %} aria-selected="false"{% endif %}>Settings</a></li>
       </ul>

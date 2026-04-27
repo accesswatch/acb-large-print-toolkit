@@ -1,0 +1,7 @@
+Document: board-minutes.md
+Words: 404
+Lines: 86
+Characters: 2816
+Reading time: ~2 minutes
+Headings: 12
+Tables: 1

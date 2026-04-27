@@ -405,7 +405,7 @@
 <p><strong>Convert</strong> -- Transforms your document into a different format. A Word document can become a web page. A Markdown file can become a PDF. An ePub can become a DAISY talking book. You choose the direction that fits your publishing workflow.</p>
 <p><strong>Export</strong> -- Converts a Word document to an accessible HTML web page with ACB styling already applied. Choose Standalone (a complete web page you upload to a server) or CMS Fragment (a scoped snippet you paste into WordPress, Drupal, or any content management system).</p>
 <p><strong>Template</strong> -- Generates a Word template (.dotx) with all ACB styles pre-configured. Open it in Word and every document you create from it inherits compliant formatting from the first keystroke.</p>
-<p><strong>BITS Whisperer</strong> -- Transcribes an audio file to Markdown or Word. Transcription runs entirely on the GLOW server using a local Whisper model. Your audio is never sent to OpenAI or any external service.</p>
+<p><strong>BITS Whisperer</strong> -- Transcribes an audio file to Markdown or Word. GLOW may normalize some audio formats locally, then send the file to the Whisper API for transcription. Temporary files are cleaned up after processing.</p>
 <h3 id="step-4-follow-the-form">Step 4: Follow the form</h3>
 <p>Each action has its own form with step-by-step fields. Every field has a label and a description. If you are not sure what an option means, expand the help section below it.</p>
 <h3 id="what-to-do-when-you-are-done">What to do when you are done</h3>
@@ -508,7 +508,7 @@
 <h3 id="email-delivery">Email delivery</h3>
 <p>When email delivery is configured on the server, an <strong>Email Report</strong> section appears on the form. Check the box and enter your email address to receive the scorecard and a findings CSV file immediately after the audit completes. The CSV opens in Excel and includes every finding with rule ID, severity, WCAG criterion, location, and whether it can be auto-fixed. Your address is used only to deliver the report and is never stored.</p>
 <h3 id="ai-disclosure">AI disclosure</h3>
-<p>Every audit result shows a data and privacy notice. When AI was not involved, the notice says rule-based analysis only. When AI was used (for example, heading detection with Ollama), it names the local model and confirms no data was sent to any external service.</p>
+<p>Every audit result shows a data and privacy notice. When AI was not involved, the notice says rule-based analysis only. When AI was used, the notice explains which cloud-powered path was used and points you to the privacy policy.</p>
 <hr />
 <h2 id="3-how-to-fix-a-document">3. How to Fix a Document</h2>
 <h3 id="what-gets-auto-fixed">What gets auto-fixed</h3>
@@ -561,10 +561,10 @@
 <p>The tool scores each paragraph on ten signals: font size, bold formatting, paragraph length, capitalization patterns, position in the document, and surrounding context. Paragraphs above the confidence threshold are flagged as candidates.</p>
 </li>
 <li>
-<p>When Ollama is running on the server, borderline candidates are optionally sent to a local AI model (phi4-mini) for a second opinion based on surrounding context. No text leaves the server.</p>
+<p>When AI-assisted heading refinement is enabled by the operator, borderline candidates may be sent through the configured AI path for a second opinion based on surrounding context.</p>
 </li>
 <li>
-<p>Detected headings are assigned to Heading 1, Heading 2, or Heading 3 based on font size and document position.</p>
+<p>Detected headings are assigned across Heading 1 through Heading 6 based on font size, document position, and the heading levels you allow for the run. Heading 1 uses the 22pt primary heading treatment; deeper levels are normalized to the 20pt subheading pattern.</p>
 </li>
 </ol>
 <p><strong>Accuracy modes:</strong></p>
@@ -576,7 +576,7 @@
 <p><strong>Using heading detection on the web:</strong></p>
 <ol>
 <li>On the Fix page, check <strong>Detect and convert faux headings to real heading styles</strong>.</li>
-<li>Optionally check <strong>Refine with AI</strong> (auto-enables when Ollama is detected on the server).</li>
+<li>Optionally check <strong>Refine with AI</strong> if that feature is enabled on your deployment.</li>
 <li>Adjust the confidence threshold if needed. Default is 50 out of 100. Higher means fewer, more certain conversions.</li>
 <li>Choose an accuracy level.</li>
 <li>Click <strong>Fix Document</strong>.</li>
@@ -604,6 +604,7 @@ acb-lp detect-headings document.docx --ai --ai-prompt prompt.txt --threshold 75
 </code></pre>
 <h3 id="preserve-centered-headings">Preserve centered headings</h3>
 <p>By default, Fix normalizes all paragraph alignment to flush-left per ACB requirements. Check <strong>Preserve centered headings</strong> on the Fix form to leave heading alignment as-is while still normalizing non-heading paragraphs.</p>
+<p>Fix also enforces paragraph spacing through Word's <strong>paragraph format</strong> settings (<code>Space Before</code> / <code>Space After</code>) rather than by inserting blank paragraphs. That means body text is normalized to the configured paragraph spacing without adding extra empty lines to the document.</p>
 <h3 id="per-level-list-indentation">Per-level list indentation</h3>
 <p>By default, Fix applies a uniform left indent to all list items. <strong>Per-level list indentation</strong> lets you specify different indent values for each nesting depth -- useful for documents with multi-level lists where each depth should use a specific measurement.</p>
 <ol>
@@ -675,7 +676,7 @@ acb-lp detect-headings document.docx --ai --ai-prompt prompt.txt --threshold 75
 <p>Extracts readable text from any supported file. Good for feeding documents into AI tools, creating editable starting points, or getting content you can clean up and re-convert.</p>
 <p><strong>Accepts:</strong> Word (.docx), Excel (.xlsx, .xls), PowerPoint (.pptx), PDF (.pdf), HTML, CSV, JSON, XML, ePub (.epub), ZIP, and image files.</p>
 <p><strong>You get back:</strong> a <code>.md</code> file -- plain text with Markdown formatting marks for headings, lists, and links.</p>
-<p><strong>AI image descriptions:</strong> when Ollama is running on the server, MarkItDown can use a local LLaVA vision model to generate descriptive alt text for images embedded in PowerPoint files or uploaded as standalone image files. No image data leaves the server.</p>
+<p><strong>AI image descriptions:</strong> some deployments may enable AI-assisted image description generation for supported conversion paths. Check your local deployment policy before using AI-powered image workflows.</p>
 <p><strong>When to use:</strong> you need the raw content out of a file in any format. Also the right first step before a chain conversion -- extract to Markdown, edit, then convert to HTML, Word, EPUB, or PDF.</p>
 <h3 id="to-accessible-web-page-html">To accessible web page (HTML)</h3>
 <p><strong>Engine:</strong> Pandoc</p>
@@ -772,7 +773,7 @@ acb-lp detect-headings document.docx --ai --ai-prompt prompt.txt --threshold 75
 <p>You review and improve the content between steps. The final output reflects that care.</p>
 <hr />
 <h2 id="7-bits-whisperer-transcribe-audio">7. BITS Whisperer: Transcribe Audio</h2>
-<p>BITS Whisperer transcribes audio files into accessible text documents. Transcription runs entirely on the GLOW server using a local Whisper model. Your audio is never sent to OpenAI or any external service.</p>
+<p>BITS Whisperer transcribes audio files into accessible text documents using the Whisper API. GLOW may normalize OGG, FLAC, AAC, or Opus uploads into a more compatible temporary format before sending them for transcription.</p>
 <h3 id="when-to-use-bits-whisperer">When to use BITS Whisperer</h3>
 <ul>
 <li>You have a recorded meeting, presentation, or phone call and need a text transcript.</li>
@@ -850,10 +851,10 @@ acb-lp detect-headings document.docx --ai --ai-prompt prompt.txt --threshold 75
 <p><strong>Edit in Markdown first.</strong> Download the .md file, correct it in any text editor, then convert it to your target format using the Convert page. This two-step approach gives you full control.</p>
 <p><strong>Split very long meetings.</strong> Recordings over two hours are better split into 20 to 30 minute segments. Each segment transcribes faster, errors are easier to find, and you can publish sections independently.</p>
 <h3 id="privacy">Privacy</h3>
-<p>Your audio is uploaded to the GLOW server, transcribed using a local Whisper model, and held only as long as needed to complete conversion and deliver your download. After download, temporary files are removed. Nothing is stored as permanent account data.</p>
+<p>Your audio is uploaded to GLOW, optionally normalized for compatibility, sent to the Whisper transcription service, and held only as long as needed to complete conversion and deliver your download. After download or expiry, temporary files are removed. Nothing is stored as permanent account data.</p>
 <hr />
 <h2 id="8-document-chat">8. Document Chat</h2>
-<p>Document Chat lets you ask questions about an uploaded document in plain language. A local Llama 3 model answers using 24 accessibility-focused tools across five categories. All processing runs on the GLOW server -- no document content is sent to any external service.</p>
+<p>Document Chat lets you ask questions about an uploaded document in plain language. An OpenRouter-backed AI gateway answers using accessibility-focused tools across compliance, structure, content, and remediation. Core workflows remain available without AI if you prefer not to use it.</p>
 <h3 id="when-to-use-document-chat">When to use Document Chat</h3>
 <ul>
 <li>You want to know what the most critical issues are without reading a full audit report.</li>
@@ -904,7 +905,7 @@ acb-lp detect-headings document.docx --ai --ai-prompt prompt.txt --threshold 75
 <li>Export the session when finished. The export becomes an audit trail you can share with your team.</li>
 </ul>
 <h3 id="accessibility-and-privacy">Accessibility and privacy</h3>
-<p>Conversation history is organized by heading-based turns for screen reader navigation. All controls are keyboard accessible. No JavaScript is required for core chat usage. Sessions use local model inference -- your document content stays on the GLOW server. Sessions and uploaded documents follow the 1-hour retention policy.</p>
+<p>Conversation history is organized by heading-based turns for screen reader navigation. All controls are keyboard accessible. No JavaScript is required for core chat usage. Sessions use GLOW's AI gateway and follow the same 1-hour retention policy for uploaded documents.</p>
 <hr />
 <h2 id="9-settings">9. Settings</h2>
 <p>The <strong>Settings</strong> tab lets you configure default values once and apply them across every workflow.</p>
@@ -1312,7 +1313,7 @@ acb-lp detect-headings document.docx --ai --ai-prompt prompt.txt --threshold 75
 <li><strong>Edit in Markdown first:</strong> Download the .md file, review and fix it in any text editor, then use Convert to turn it into an accessible web page, PDF, or Word document. This two-step approach gives you full control.</li>
 </ul>
 <h3 id="privacy_1">Privacy</h3>
-<p>Your audio file is uploaded to the GLOW (Guided Layout &amp; Output Workflow) server, transcribed using a local copy of the Whisper model (never sent to OpenAI or any third party), and retained only as long as needed to complete conversion and deliver your download. After download, temporary files are deleted. Nothing is stored as permanent account data.</p>
+<p>Your audio file is uploaded to GLOW, optionally normalized for compatibility, sent to the configured Whisper transcription service, and retained only as long as needed to complete conversion and deliver your download. After download or expiry, temporary files are deleted from GLOW. Nothing is stored as permanent account data.</p>
 <hr />
 <h2 id="19-document-chat-and-agentic-accessibility-tools">19. Document Chat and Agentic Accessibility Tools</h2>
 <p>GLOW (Guided Layout &amp; Output Workflow) 2.0 includes a chat experience that lets you interrogate uploaded documents in plain language.</p>
@@ -1404,7 +1405,7 @@ acb-lp detect-headings document.docx --ai --ai-prompt prompt.txt --threshold 75
 </ul>
 <h3 id="privacy-and-retention">Privacy and retention</h3>
 <ul>
-<li>Chat runs on local models in GLOW (Guided Layout &amp; Output Workflow) deployment.</li>
+<li>Chat runs through GLOW's configured AI gateway in supported deployments.</li>
 <li>Conversation data stays in session storage.</li>
 <li>Session and uploaded content follow the 1-hour retention policy.</li>
 </ul>
@@ -1571,7 +1572,7 @@ acb-lp detect-headings document.docx --ai --ai-prompt prompt.txt --threshold 75
 </ol>
 <h3 id="preserve-centered-headings_1">Preserve centered headings</h3>
 <p>By default, the fixer normalizes all paragraph alignment to flush-left (ragged-right) per ACB requirements. However, you may want to preserve intentional heading center-alignment for design reasons.</p>
-<p>The <strong>Preserve centered headings</strong> option on the Fix form skips alignment override for paragraphs identified as headings (those using Heading 1, Heading 2, or Heading 3 styles). Non-heading paragraphs are still normalized to flush-left.</p>
+<p>The <strong>Preserve centered headings</strong> option on the Fix form skips alignment override for paragraphs identified as headings (those using Heading 1 through Heading 6 styles). Non-heading paragraphs are still normalized to flush-left.</p>
 <p><strong>How to use:</strong></p>
 <ol>
 <li>On the Fix form, find the <strong>Heading Alignment Handling</strong> option.</li>
@@ -1595,7 +1596,7 @@ acb-lp detect-headings document.docx --ai --ai-prompt prompt.txt --threshold 75
 </ol>
 <p>Tip: Leave a level blank or set it to 0 if your document does not have that depth.</p>
 <h3 id="allowed-heading-levels_1">Allowed heading levels</h3>
-<p>You can now restrict heading conversion and review to a selected subset of heading levels (for example, Heading 1 through Heading 3 only).</p>
+<p>You can now restrict heading conversion and review to a selected subset of heading levels (for example, only Heading 1 through Heading 3, or include deeper levels when the document uses them).</p>
 <p>This is useful when:<br />
 - Your publication style intentionally uses only part of the heading ladder.<br />
 - You want review options to match your editorial policy.<br />
@@ -1623,10 +1624,10 @@ acb-lp detect-headings document.docx --ai --ai-prompt prompt.txt --threshold 75
 <p><strong>Heuristic detection</strong> -- The tool scores each paragraph on 10 signals: font size, bold formatting, short length, capitalization patterns, position in the document, and more. Paragraphs scoring above the confidence threshold (default 50 out of 100) are identified as likely headings.</p>
 </li>
 <li>
-<p><strong>AI refinement (optional)</strong> -- If Ollama is available, the tool can send borderline candidates to a local AI model (phi4-mini) for a second opinion. The AI considers surrounding context to improve accuracy. No data leaves your machine.</p>
+<p><strong>AI refinement (optional)</strong> -- If AI-assisted heading refinement is enabled in your deployment, the tool can send borderline candidates for a second opinion. The AI considers surrounding context to improve accuracy.</p>
 </li>
 <li>
-<p><strong>Heading level assignment</strong> -- Detected headings are assigned to Heading 1, 2, or 3 based on font size and document position. The first high-confidence heading is typically Heading 1, with subsequent headings assigned based on relative formatting.</p>
+<p><strong>Heading level assignment</strong> -- Detected headings can be assigned across Heading 1 through Heading 6 based on font size, document position, and the heading levels enabled for the run. Heading 1 is typically the first primary heading; deeper levels are normalized to the lower-level subheading pattern when selected.</p>
 </li>
 </ol>
 <h3 id="heading-detection-accuracy-modes">Heading detection accuracy modes</h3>
@@ -1645,7 +1646,7 @@ acb-lp detect-headings document.docx --ai --ai-prompt prompt.txt --threshold 75
 <p><strong>Using heading detection on the web:</strong></p>
 <ol>
 <li>On the Fix page, check "Detect and convert faux headings to real heading styles."</li>
-<li>Optionally check "Refine with AI" if Ollama is running on the server. The checkbox auto-checks when Ollama is detected.</li>
+<li>Optionally check "Refine with AI" if that feature is enabled in your deployment.</li>
 <li>Adjust the confidence threshold if needed (higher means fewer but more certain conversions).</li>
 <li>Choose a heading detection accuracy level:</li>
 <li>Conservative (fewer false positives)</li>
@@ -1668,7 +1669,7 @@ acb-lp detect-headings document.docx --ai --ai-prompt prompt.txt --threshold 75
 <li>Open the GLOW Accessibility Toolkit desktop application.</li>
 <li>In the fix wizard (Step 3: Options), look for the Heading Detection section.</li>
 <li>Check "Detect and convert faux headings to real heading styles."</li>
-<li>Check "Refine with AI" if you have Ollama installed locally. The checkbox auto-checks when Ollama is detected.</li>
+<li>Check "Refine with AI" if that feature is enabled in your deployment.</li>
 <li>Adjust the confidence threshold using the slider or spin control.</li>
 <li>Complete the wizard to run the fix. Detected headings are converted before other fixes are applied.</li>
 </ol>

@@ -9,7 +9,7 @@
 
   {% if customization_warning %}
   <div class="warning-box" role="status" aria-live="polite">
-    <p>{{ customization_warning | replace('\n', '<br />') }}</p>
+    <p class="warning-message">{{ customization_warning }}</p>
   </div>
   {% endif %}
 
@@ -78,7 +78,7 @@
   <p><strong>Document retention:</strong> Your document has already been removed from the server.</p>
   {% endif %}
   {% if ai_used %}
-  <p><strong>AI was used during this transaction.</strong> Heading detection used a local Ollama model running on the GLOW server. Your document was never sent to any third-party service such as Google, Microsoft, or OpenAI.</p>
+  <p><strong>AI was used during this transaction.</strong> Heading detection was performed by GLOW's AI service. Your document content was transmitted only to the configured AI provider and is not stored or used for training.</p>
   {% else %}
   <p><strong>AI was not used during this transaction.</strong> All fixes were applied using rule-based code with no AI involvement.</p>
   {% endif %}
@@ -198,8 +198,8 @@
 
 <section>
   <h2 id="next-heading">What's Next?</h2>
-  {% if token %}
-  <p><a href="{{ url_for('chat.chat_form', token=token) }}">Chat about this document</a> -- ask plain-English questions about the fixed document using the local AI model without re-uploading.</p>
+  {% if token and ai_chat_enabled %}
+  <p><a href="{{ url_for('chat.chat_form', token=token) }}">Chat about this document</a> -- ask plain-English questions about the fixed document using the AI-assisted document tools without re-uploading.</p>
   {% endif %}
   <ul>
     <li><a href="{{ url_for('audit.audit_form') }}">Audit the fixed document</a> to verify compliance</li>

@@ -1,0 +1,3 @@
+Lists: 5 bullet items, 0 numbered items.
+Issues:
+  • Deep list nesting detected (2 items, >2 levels)

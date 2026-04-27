@@ -1,0 +1,13 @@
+<!-- Slide number: 1 -->
+# BITS Annual Report 2026
+Membership: 1,204 active members
+Revenue: $616,000 annual
+Website: WCAG 2.2 AA compliant
+
+<!-- Slide number: 2 -->
+# Technology Committee
+Website audit: 14 missing alt text.
+3 color-only violations.
+2 form fields without labels.
+
+<!-- Slide number: 

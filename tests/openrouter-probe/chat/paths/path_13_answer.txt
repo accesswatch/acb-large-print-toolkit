@@ -1,0 +1,4 @@
+Possible faux headings (2 found):
+  Line 3: **This Is A Faux Heading**
+  Line 7: **Another Fake Section Title**
+Fix: apply a proper heading style instead of bold body text.

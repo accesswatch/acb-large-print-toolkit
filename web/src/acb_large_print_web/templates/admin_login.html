@@ -62,4 +62,19 @@
   <p><a href="{{ url_for('admin.admin_request_access') }}">Request admin approval</a></p>
 </section>
 {% endif %}
+
+{% if local_password_enabled %}
+<section>
+  <h2 id="local-password-heading">Local Password Sign-In</h2>
+  <p class="field-hint">For bootstrap/emergency admin access only. Use a strong secret and rotate regularly.</p>
+  <form method="post" action="{{ url_for('admin.admin_login_password') }}" novalidate>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <label for="local-admin-email">Admin email</label>
+    <input type="email" id="local-admin-email" name="email" required autocomplete="username">
+    <label for="local-admin-password">Password</label>
+    <input type="password" id="local-admin-password" name="password" required autocomplete="current-password">
+    <button type="submit" class="btn-secondary">Sign In with Password</button>
+  </form>
+</section>
+{% endif %}
 {% endblock %}

@@ -1,0 +1,7 @@
+Rule: ACB-ALIGNMENT
+
+What it means: All text must be flush left (left-aligned). Justified, centered, and right-aligned text are violations.
+
+Why it matters: Justified text creates uneven word spacing ('rivers of white space') that makes reading harder for people with low vision and dyslexia.
+
+How to fix: Select all text and apply Left alignment (Ctrl+L).

@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+
+{% block title %}Feature Flags{% endblock %}
+{% block heading %}Feature Flags and Visibility Controls{% endblock %}
+
+{% block content %}
+<p><strong>Signed in as:</strong> {{ admin_email }}</p>
+<p>Toggle server-side feature flags. Changes apply immediately and persist to the instance folder.</p>
+<p><strong>Flags backend:</strong> {{ flags_backend }}</p>
+<p><a href="{{ url_for('admin.admin_queue') }}">Back to admin queue dashboard</a></p>
+
+{% if notice %}
+<div class="success-box" role="status"><p>{{ notice }}</p></div>
+{% endif %}
+{% if error %}
+<div class="error-box" role="alert"><p><strong>Error:</strong> {{ error }}</p></div>
+{% endif %}
+
+<form method="post" action="{{ url_for('admin.admin_flags') }}">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+  <nav class="tabs" role="tablist" aria-label="Feature flag sections">
+    <button type="button" role="tab" aria-selected="true" data-tab="ai">AI Features</button>
+    <button type="button" role="tab" aria-selected="false" data-tab="core">Core Features</button>
+    <button type="button" role="tab" aria-selected="false" data-tab="advanced">Advanced</button>
+  </nav>
+
+  <section class="tab-panel" id="tab-ai" role="tabpanel">
+    <h3>AI feature visibility</h3>
+    <label class="master"><input id="master-ai" type="checkbox" name="GLOW_ENABLE_AI" {% if flags.GLOW_ENABLE_AI %}checked{% endif %}> Master AI enable (global)</label>
+    <div class="field-meta">Last modified: {{ flag_meta.GLOW_ENABLE_AI.updated_at or 'unknown' }}</div>
+
+    <details open class="accordion">
+      <summary>Document Chat & Whisperer</summary>
+      <label><input class="ai-child" type="checkbox" name="GLOW_ENABLE_AI_CHAT" {% if flags.GLOW_ENABLE_AI_CHAT %}checked{% endif %}> Document Chat</label>
+      <div class="field-meta">Last modified: {{ flag_meta.GLOW_ENABLE_AI_CHAT.updated_at or 'unknown' }}</div>
+      <label><input class="ai-child" type="checkbox" name="GLOW_ENABLE_AI_WHISPERER" {% if flags.GLOW_ENABLE_AI_WHISPERER %}checked{% endif %}> BITS Whisperer</label>
+      <div class="field-meta">Last modified: {{ flag_meta.GLOW_ENABLE_AI_WHISPERER.updated_at or 'unknown' }}</div>
+    </details>
+
+    <details class="accordion">
+      <summary>Content helpers</summary>
+      <label><input class="ai-child" type="checkbox" name="GLOW_ENABLE_AI_HEADING_FIX" {% if flags.GLOW_ENABLE_AI_HEADING_FIX %}checked{% endif %}> Heading-fix helpers</label>
+      <div class="field-meta">Last modified: {{ flag_meta.GLOW_ENABLE_AI_HEADING_FIX.updated_at or 'unknown' }}</div>
+      <label><input class="ai-child" type="checkbox" name="GLOW_ENABLE_AI_ALT_TEXT" {% if flags.GLOW_ENABLE_AI_ALT_TEXT %}checked{% endif %}> Alt-text helpers</label>
+      <div class="field-meta">Last modified: {{ flag_meta.GLOW_ENABLE_AI_ALT_TEXT.updated_at or 'unknown' }}</div>
+      <label><input class="ai-child" type="checkbox" name="GLOW_ENABLE_AI_MARKITDOWN_LLM" {% if flags.GLOW_ENABLE_AI_MARKITDOWN_LLM %}checked{% endif %}> MarkItDown LLM features</label>
+      <div class="field-meta">Last modified: {{ flag_meta.GLOW_ENABLE_AI_MARKITDOWN_LLM.updated_at or 'unknown' }}</div>
+    </details>
+  </section>
+
+  <section class="tab-panel" id="tab-core" role="tabpanel" hidden>
+    <h3>Core GLOW features</h3>
+    <details open class="accordion">
+      <summary>Audit & Checker</summary>
+      <label><input type="checkbox" name="GLOW_ENABLE_AUDIT" {% if flags.GLOW_ENABLE_AUDIT %}checked{% endif %}> Audit workflows</label>
+      <div class="field-meta">Last modified: {{ flag_meta.GLOW_ENABLE_AUDIT.updated_at or 'unknown' }}</div>
+      <label><input type="checkbox" name="GLOW_ENABLE_CHECKER" {% if flags.GLOW_ENABLE_CHECKER %}checked{% endif %}> Accessibility checker</label>
+      <div class="field-meta">Last modified: {{ flag_meta.GLOW_ENABLE_CHECKER.updated_at or 'unknown' }}</div>
+    </details>
+
+    <details class="accordion">
+      <summary>Conversion & Templates</summary>
+      <label><input type="checkbox" name="GLOW_ENABLE_CONVERTER" {% if flags.GLOW_ENABLE_CONVERTER %}checked{% endif %}> Converter (MarkItDown/Pandoc)</label>
+      <div class="field-meta">Last modified: {{ flag_meta.GLOW_ENABLE_CONVERTER.updated_at or 'unknown' }}</div>
+      <label><input type="checkbox" name="GLOW_ENABLE_TEMPLATE_BUILDER" {% if flags.GLOW_ENABLE_TEMPLATE_BUILDER %}checked{% endif %}> Template builder</label>
+      <div class="field-meta">Last modified: {{ flag_meta.GLOW_ENABLE_TEMPLATE_BUILDER.updated_at or 'unknown' }}</div>
+      <label><input type="checkbox" name="GLOW_ENABLE_WORD_SETUP" {% if flags.GLOW_ENABLE_WORD_SETUP %}checked{% endif %}> Word setup helpers</label>
+      <div class="field-meta">Last modified: {{ flag_meta.GLOW_ENABLE_WORD_SETUP.updated_at or 'unknown' }}</div>
+      <label><input type="checkbox" name="GLOW_ENABLE_MARKDOWN_AUDIT" {% if flags.GLOW_ENABLE_MARKDOWN_AUDIT %}checked{% endif %}> Markdown audit assistant</label>
+      <div class="field-meta">Last modified: {{ flag_meta.GLOW_ENABLE_MARKDOWN_AUDIT.updated_at or 'unknown' }}</div>
+    </details>
+  </section>
+
+  <section class="tab-panel" id="tab-advanced" role="tabpanel" hidden>
+    <h3>Advanced</h3>
+    <label><input type="checkbox" name="reset_defaults"> Reset to recommended defaults</label>
+    <p class="field-hint">Check to reset stored flags to the recommended defaults.</p>
+    {% if flags_backend == 'sqlite' %}
+    <form method="post" action="{{ url_for('admin.admin_flags_migrate') }}" style="margin-top:0.5rem;">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit" class="btn-secondary" onclick="return confirm('Migrate JSON flags into SQLite? This is idempotent.');">Migrate JSON → SQLite</button>
+    </form>
+    {% endif %}
+  </section>
+
+  <button type="submit" class="btn-primary">Save flags</button>
+</form>
+
+<style>
+.tabs { display:flex; gap:0.5rem; margin-bottom:0.75rem; }
+.tabs button[aria-selected="true"]{ font-weight:600; }
+.tab-panel{ border:1px solid #e6e6e6; padding:0.75rem; border-radius:4px; }
+.accordion summary{ cursor:pointer; font-weight:600; }
+.field-meta{ font-size:0.85rem; color:#666; margin-bottom:0.5rem }
+.master{ display:block; margin-bottom:0.5rem }
+.ai-disabled{ opacity:0.55 }
+</style>
+
+<script>
+// Tab switching
+document.querySelectorAll('.tabs button').forEach(function(btn){
+  btn.addEventListener('click', function(){
+    document.querySelectorAll('.tabs button').forEach(b=>b.setAttribute('aria-selected','false'));
+    btn.setAttribute('aria-selected','true');
+    var tab = btn.getAttribute('data-tab');
+    document.querySelectorAll('.tab-panel').forEach(p=>p.hidden=true);
+    document.getElementById('tab-'+tab).hidden = false;
+  });
+});
+
+// Master AI cascade: disable/enable children when master toggled
+function updateAICascade(){
+  var master = document.getElementById('master-ai');
+  document.querySelectorAll('.ai-child').forEach(function(cb){
+    cb.disabled = !master.checked;
+    if(!master.checked){ cb.closest('label').classList.add('ai-disabled'); }
+    else { cb.closest('label').classList.remove('ai-disabled'); }
+  });
+}
+var m = document.getElementById('master-ai');
+if(m){ m.addEventListener('change', updateAICascade); updateAICascade(); }
+</script>
+
+{% endblock %}

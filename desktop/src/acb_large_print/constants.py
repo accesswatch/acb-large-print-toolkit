@@ -160,6 +160,30 @@ ACB_STYLES: dict[str, StyleDef] = {
             keep_with_next=True,
         ),
     ),
+    "Heading 4": StyleDef(
+        font=FontDef(size_pt=HEADING3_SIZE_PT, bold=True),
+        para=ParaDef(
+            space_before_pt=SPACE_BEFORE_H3_PT,
+            space_after_pt=SPACE_AFTER_H3_PT,
+            keep_with_next=True,
+        ),
+    ),
+    "Heading 5": StyleDef(
+        font=FontDef(size_pt=HEADING3_SIZE_PT, bold=True),
+        para=ParaDef(
+            space_before_pt=SPACE_BEFORE_H3_PT,
+            space_after_pt=SPACE_AFTER_H3_PT,
+            keep_with_next=True,
+        ),
+    ),
+    "Heading 6": StyleDef(
+        font=FontDef(size_pt=HEADING3_SIZE_PT, bold=True),
+        para=ParaDef(
+            space_before_pt=SPACE_BEFORE_H3_PT,
+            space_after_pt=SPACE_AFTER_H3_PT,
+            keep_with_next=True,
+        ),
+    ),
     "List Bullet": StyleDef(
         font=FontDef(size_pt=LIST_SIZE_PT),
         para=ParaDef(

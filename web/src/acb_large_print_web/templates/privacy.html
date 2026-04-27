@@ -33,17 +33,16 @@
 
 <section>
   <h2 id="ai-heading">Artificial Intelligence</h2>
-  <p>By default, artificial intelligence is never used. The only time AI is involved is if you personally enable it in Settings.</p>
-  <p>When AI is enabled, it is restricted to a local <a href="https://ollama.com">Ollama</a> instance running on the GLOW server itself. Your document is analyzed in place. It is never transmitted to Google, Microsoft, OpenAI (ChatGPT), Anthropic, or any other external AI provider.</p>
-  <p>AI is used only for one specific purpose: determining whether an ambiguous paragraph should be treated as a heading when heuristic signals alone are insufficient. The rest of the tool operates entirely on rule-based code.</p>
-  <p><strong>No training is performed on your data.</strong> The analysis is real-time and discarded when the session ends. Your documents are never used to train or fine-tune any AI model.</p>
+  <p>GLOW uses artificial intelligence only in features that explicitly require it, such as Document Chat and BITS Whisperer. The core audit, fix, template, export, and many conversion workflows remain rule-based and can be used without AI.</p>
+  <p>For text reasoning features, GLOW uses an OpenRouter-based gateway with provider privacy controls. Requests are routed with privacy-aware settings designed to prefer providers that do not retain prompts or use them for training. For audio transcription, GLOW sends audio to the Whisper API only for the transcription request.</p>
+  <p>GLOW itself does not use your documents, prompts, or transcripts to train any model. GLOW stores only minimal metadata needed for quota, cost, and operational reporting. You should still avoid submitting highly sensitive information to AI-powered workflows unless your organization's policy permits it.</p>
   <p>Every results page shows a clear statement indicating whether AI was or was not used during that specific transaction.</p>
 </section>
 
 <section>
   <h2 id="rights-heading">Data Rights and Use</h2>
   <p>BITS (Blind Information Technology Solutions) does not claim any rights to the content you upload. Your documents belong to you.</p>
-  <p>GLOW does not sell, share, license, or otherwise transfer document content to any third party for any purpose, including advertising, research, or model training.</p>
+  <p>GLOW does not sell, share, license, or otherwise transfer document content to any third party for advertising or independent product training. When you use an AI-powered workflow, GLOW transmits only the content required to complete that request to the configured AI provider.</p>
   <p>Aggregate, anonymized usage statistics (such as the number of audits run per day or which file formats are most common) may be collected for operational purposes and do not include any document content.</p>
 </section>
 

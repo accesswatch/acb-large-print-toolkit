@@ -1,0 +1,3 @@
+{
+  "raw": "Heuristic compliance summary (no live audit available):\n\u2022 Possible bold-emphasis abuse (ACB-BOLD-HEADINGS-ONLY)\n\u2022 Possible italic usage (ACB-NO-ITALIC \u2014 critical violation)\n\u2022 Possible bare URLs used as link text (ACB-LINK-TEXT)"
+}

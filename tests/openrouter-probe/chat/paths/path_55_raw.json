@@ -1,0 +1,6 @@
+{
+  "tools_fired": [
+    "check_list_structure"
+  ],
+  "question": "Check all bullet lists and numbered lists for deep nesting."
+}

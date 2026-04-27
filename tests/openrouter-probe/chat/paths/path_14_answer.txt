@@ -1,0 +1,1 @@
+No obvious faux headings found in Markdown analysis. For Word documents, upload to Fix for full faux-heading detection.

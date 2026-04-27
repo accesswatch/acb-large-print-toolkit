@@ -54,11 +54,7 @@ MAIN_DOMAIN="${MAIN_DOMAIN:-csedesigns.com}"
 ENABLE_PREDEPLOY_BACKUP="${ENABLE_PREDEPLOY_BACKUP:-1}"
 HEALTH_MAX_ATTEMPTS="${HEALTH_MAX_ATTEMPTS:-40}"
 HEALTH_SLEEP="${HEALTH_SLEEP:-3}"
-WHISPER_WARMUP_ON_DEPLOY="${WHISPER_WARMUP_ON_DEPLOY:-1}"
-WHISPER_WARMUP_TIMEOUT="${WHISPER_WARMUP_TIMEOUT:-1200}"
-OLLAMA_WARMUP_ON_DEPLOY="${OLLAMA_WARMUP_ON_DEPLOY:-1}"
-OLLAMA_WARMUP_MODELS="${OLLAMA_WARMUP_MODELS:-llama3 llava}"
-OLLAMA_WARMUP_TIMEOUT_PER_MODEL="${OLLAMA_WARMUP_TIMEOUT_PER_MODEL:-900}"
+
 
 PRE_DEPLOY_COMMIT=""
 ROLLED_BACK=0
@@ -106,7 +102,12 @@ try:
         payload = json.loads(body)
         print(json.dumps(payload, indent=2))
         services_ok = all(v.get('status') == 'ok' for v in payload.get('services', {}).values())
-        features_ok = all(v.get('status') == 'ready' for v in payload.get('readiness', {}).values())
+        # budget uses 'ok'/'exhausted'; chat/vision/whisperer use 'ready'/'not-ready'/'not-configured'
+        readiness = payload.get('readiness', {})
+        features_ok = all(
+            v.get('status') in ('ready', 'ok', 'not-configured')
+            for v in readiness.values()
+        )
         sys.exit(0 if services_ok and features_ok else 1)
 except Exception as exc:
     print(f'PROBE ERROR: {exc}', file=sys.stderr)
@@ -132,7 +133,7 @@ wait_for_health() {
         log_ts "  Attempt $attempts/${HEALTH_MAX_ATTEMPTS} [$phase]" >&2
 
         # Per-service container state
-        for svc in pipeline web ollama; do
+        for svc in pipeline web; do
             log_ts "    $svc: $(container_state "$svc")" >&2
         done
 
@@ -149,76 +150,7 @@ wait_for_health() {
     echo "$healthy"
 }
 
-# ---------------------------------------------------------------------------
-# Helper: warm up Whisper model in web container (best effort)
-# ---------------------------------------------------------------------------
-warmup_whisper_model() {
-    if [[ "$WHISPER_WARMUP_ON_DEPLOY" != "1" ]]; then
-        log_ts "--- Whisper warm-up: skipped (WHISPER_WARMUP_ON_DEPLOY=$WHISPER_WARMUP_ON_DEPLOY) ---"
-        return 0
-    fi
 
-    log_ts "--- Whisper warm-up: starting (timeout=${WHISPER_WARMUP_TIMEOUT}s) ---"
-
-    local py_cmd
-    py_cmd="import os; from pathlib import Path; from faster_whisper import WhisperModel; "
-    py_cmd+="model=os.environ.get('WHISPER_MODEL','medium'); "
-    py_cmd+="cache=os.environ.get('HUGGINGFACE_HUB_CACHE') or os.environ.get('HF_HOME') or os.environ.get('XDG_CACHE_HOME') or str(Path.home()/'.cache'/'huggingface'/'hub'); "
-    py_cmd+="Path(cache).mkdir(parents=True, exist_ok=True); "
-    py_cmd+="WhisperModel(model, device='cpu', compute_type='int8', download_root=cache); "
-    py_cmd+="print(f'Whisper warm-up complete: model={model} cache={cache}')"
-
-    if command -v timeout >/dev/null 2>&1; then
-        if timeout "${WHISPER_WARMUP_TIMEOUT}s" docker compose -f "$COMPOSE_FILE" exec -T web python -c "$py_cmd"; then
-            log_ts "--- Whisper warm-up: success ---"
-        else
-            log_ts "--- WARNING: Whisper warm-up failed or timed out; deploy will continue ---"
-        fi
-    else
-        log_ts "--- WARNING: 'timeout' command not found; running Whisper warm-up without timeout ---"
-        if docker compose -f "$COMPOSE_FILE" exec -T web python -c "$py_cmd"; then
-            log_ts "--- Whisper warm-up: success ---"
-        else
-            log_ts "--- WARNING: Whisper warm-up failed; deploy will continue ---"
-        fi
-    fi
-}
-
-# ---------------------------------------------------------------------------
-# Helper: warm up Ollama models (best effort)
-# ---------------------------------------------------------------------------
-warmup_ollama_models() {
-    if [[ "$OLLAMA_WARMUP_ON_DEPLOY" != "1" ]]; then
-        log_ts "--- Ollama warm-up: skipped (OLLAMA_WARMUP_ON_DEPLOY=$OLLAMA_WARMUP_ON_DEPLOY) ---"
-        return 0
-    fi
-
-    if [[ -z "$OLLAMA_WARMUP_MODELS" ]]; then
-        log_ts "--- Ollama warm-up: skipped (OLLAMA_WARMUP_MODELS is empty) ---"
-        return 0
-    fi
-
-    log_ts "--- Ollama warm-up: starting for models: $OLLAMA_WARMUP_MODELS ---"
-
-    local model
-    for model in $OLLAMA_WARMUP_MODELS; do
-        log_ts "--- Ollama warm-up: pulling model '$model' (timeout=${OLLAMA_WARMUP_TIMEOUT_PER_MODEL}s) ---"
-        if command -v timeout >/dev/null 2>&1; then
-            if timeout "${OLLAMA_WARMUP_TIMEOUT_PER_MODEL}s" docker compose -f "$COMPOSE_FILE" exec -T ollama ollama pull "$model"; then
-                log_ts "--- Ollama warm-up: model '$model' ready ---"
-            else
-                log_ts "--- WARNING: Ollama warm-up failed or timed out for model '$model'; deploy will continue ---"
-            fi
-        else
-            log_ts "--- WARNING: 'timeout' command not found; pulling model '$model' without timeout ---"
-            if docker compose -f "$COMPOSE_FILE" exec -T ollama ollama pull "$model"; then
-                log_ts "--- Ollama warm-up: model '$model' ready ---"
-            else
-                log_ts "--- WARNING: Ollama warm-up failed for model '$model'; deploy will continue ---"
-            fi
-        fi
-    done
-}
 
 # ---------------------------------------------------------------------------
 # Pre-flight checks
@@ -335,14 +267,6 @@ if [[ "$HEALTHY" -eq 1 ]]; then
     log_ts "--- Health check: PASSED ---"
     probe_health_json "Full health readiness on success"
 
-    # Preload Whisper model before traffic resumes, so first user request
-    # doesn't pay model download/init cost.
-    warmup_whisper_model
-
-    # Pre-pull Ollama models used by chat/vision so readiness is "ready"
-    # before maintenance mode is disabled.
-    warmup_ollama_models
-
     log_ts "--- Disabling maintenance mode (site is now live) ---"
     export MAINTENANCE_MODE=0
     MAINTENANCE_ENABLED=0
@@ -356,7 +280,6 @@ else
     log_ts "--- Dumping recent container logs for all services ---"
     dump_service_logs pipeline 60
     dump_service_logs web 80
-    dump_service_logs ollama 40
     dump_service_logs caddy 20
 
     log_ts "--- Docker container inspect (web) ---"

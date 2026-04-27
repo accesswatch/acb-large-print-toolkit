@@ -16,9 +16,10 @@ Tool calling flow:
   5. Answer + tool calls are stored in conversation history
   6. History can be exported as Markdown, Word, or PDF
 
-Original document tools (7):
-  extract_table, find_section, search_text, get_document_stats,
-  summarize_section, list_headings, get_images
+Original document tools (11):
+  extract_table, find_section, get_section_content, search_text, get_document_stats,
+  get_document_summary, get_decisions_and_actions, summarize_section, list_headings,
+  get_images, get_what_passes
 
 Compliance Agent tools (4):
   run_accessibility_audit, get_compliance_score,
@@ -39,9 +40,7 @@ Remediation Agent tools (5):
 
 from __future__ import annotations
 
-import json
 import logging
-import math
 import re
 from datetime import UTC, datetime
 from pathlib import Path
@@ -305,10 +304,179 @@ class ToolRegistry:
         return "\n".join(headings_list)
 
     def get_images(self) -> str:
-        """Return list of images (stub for scanned PDFs via Llava)."""
+        """Return list of images embedded in the document."""
         return (
-            "Image extraction requires Llava vision model. "
-            "Images are automatically analyzed during scanned PDF processing."
+            "Inline image extraction is not available in this version. "
+            "If image alt text or figure captions are important, use the Audit tab "
+            "to check for missing alt text findings."
+        )
+
+    def get_document_summary(self) -> str:
+        """Return a plain-language overview of what the document is and what it covers."""
+        text = self.context.text
+        headings = self.context.headings
+        stats = self.context.stats
+
+        # Derive top-level title and top-level sections
+        title = headings[0]["text"] if headings else self.context.filename
+        h2s = [h["text"] for h in headings if h["level"] == 2][:6]
+        h2_list = ", ".join(h2s) if h2s else "(no top-level sections detected)"
+
+        # Detect document type keywords
+        lower = text.lower()
+        doc_type_hints: list[str] = []
+        if any(kw in lower for kw in ("agenda", "minutes", "action item", "attendance")):
+            doc_type_hints.append("meeting document (agenda or minutes)")
+        if any(kw in lower for kw in ("budget", "revenue", "expenses", "reserve", "grant")):
+            doc_type_hints.append("contains financial data")
+        if any(kw in lower for kw in ("policy", "guideline", "procedure", "standard")):
+            doc_type_hints.append("policy or procedure document")
+        if any(kw in lower for kw in ("report", "findings", "recommendation")):
+            doc_type_hints.append("report with findings or recommendations")
+        type_str = "; ".join(doc_type_hints) if doc_type_hints else "general document"
+
+        return (
+            f"Document: {title}\n"
+            f"Type: {type_str}\n"
+            f"Length: {stats['words']} words across {len(headings)} headings\n"
+            f"Main sections: {h2_list}\n"
+            f"Tables: {len(self.context.tables)}"
+        )
+
+    def get_section_content(self, section_name: str) -> str:
+        """Return the full text content of a named section (not just its existence)."""
+        if not section_name:
+            return "Please provide a section name."
+        for heading in self.context.headings:
+            if section_name.lower() in heading["text"].lower():
+                lines = self.context.text.split("\n")
+                start = heading["line"]
+                end = len(lines)
+                for h in self.context.headings:
+                    if h["line"] > start:
+                        end = h["line"]
+                        break
+                content = "\n".join(lines[start:end]).strip()
+                # Cap at 1500 chars so it doesn't swamp the context
+                if len(content) > 1500:
+                    content = content[:1500] + "\n...[section truncated]"
+                return f"Section: {heading['text']}\n\n{content}"
+        # Fuzzy fallback: search for heading-like text anywhere
+        return f"Section '{section_name}' not found. Available sections: " + ", ".join(
+            f"\"{h['text']}\"" for h in self.context.headings[:12]
+        )
+
+    def get_decisions_and_actions(self) -> str:
+        """Extract voted decisions, motions, and action items from meeting documents."""
+        text = self.context.text
+        lines = text.split("\n")
+        decisions: list[str] = []
+        actions: list[str] = []
+
+        for line in lines:
+            stripped = line.strip()
+            low = stripped.lower()
+            # Voted motions / resolutions
+            if any(kw in low for kw in (
+                "voted", "motion", "resolved", "unanimously", "seconded",
+                "approved", "passed", "agreed", "board approved", "board voted",
+            )):
+                if len(stripped) > 15:
+                    decisions.append(f"  • {stripped}")
+            # Action items: assigned tasks / owners / deadlines
+            elif any(kw in low for kw in (
+                "action item", "action:", "will ", "assigned to", "responsible",
+                "by q", "by april", "by may", "by june", "by july",
+                "deadline", "owner:", "follow up", "follow-up",
+            )):
+                if len(stripped) > 10:
+                    actions.append(f"  • {stripped}")
+
+        parts: list[str] = []
+        if decisions:
+            parts.append(f"Decisions / motions ({len(decisions)} found):")
+            parts.extend(decisions[:10])
+        else:
+            parts.append("No voted motions or decisions detected.")
+
+        if actions:
+            parts.append(f"\nAction items ({len(actions)} found):")
+            parts.extend(actions[:10])
+        else:
+            parts.append("\nNo explicit action items detected.")
+
+        if not decisions and not actions:
+            parts.append(
+                "\nTip: this tool is most useful for meeting minutes and board documents."
+            )
+        return "\n".join(parts)
+
+    def get_what_passes(self) -> str:
+        """Return what the document already does correctly to balance the audit picture."""
+        context = self.context
+        passes: list[str] = []
+
+        # Heading hierarchy
+        headings = context.headings
+        if headings:
+            has_skips = False
+            prev = 0
+            for h in headings:
+                if h["level"] - prev > 1 and prev != 0:
+                    has_skips = True
+                    break
+                prev = h["level"]
+            if not has_skips:
+                passes.append(
+                    f"Heading hierarchy: PASS — {len(headings)} headings, no skipped levels."
+                )
+
+        # No italic
+        text = context.text
+        italic_matches = re.findall(r"(?<!\*)\*[^*\n]{3,60}\*(?!\*)|_[^_\n]{3,60}_", text)
+        if not italic_matches:
+            passes.append("Italic usage: PASS — no italic text detected.")
+
+        # Link text
+        bare_urls = re.findall(r"(?<!\()(https?://\S{10,})", text)
+        generic = re.findall(
+            r"\[(click here|here|read more|more|learn more|this link|link)\]\(",
+            text, re.IGNORECASE,
+        )
+        if not bare_urls and not generic:
+            passes.append("Link text: PASS — no bare URLs or generic link text detected.")
+
+        # Alt text
+        all_images = re.findall(r"!\[([^\]]*)\]\([^)]+\)", text)
+        if all_images:
+            missing = [img for img in all_images if not img.strip()]
+            if not missing:
+                passes.append(
+                    f"Alt text: PASS — all {len(all_images)} image(s) have alt text."
+                )
+        else:
+            passes.append("Alt text: N/A — no images in document.")
+
+        # Faux headings
+        faux = [line.strip() for line in text.split("\n")
+                if not line.strip().startswith("#")
+                and re.fullmatch(r"\*\*[^*]{3,60}\*\*", line.strip())]
+        if not faux:
+            passes.append("Faux headings: PASS — no bold-body-text fake headings detected.")
+
+        # List structure
+        bullet_lines = [l for l in text.split("\n") if re.match(r"^\s*[-*+] ", l)]
+        deeply_nested = [l for l in bullet_lines if l.startswith("      ")]
+        if bullet_lines and not deeply_nested:
+            passes.append(
+                f"List structure: PASS — {len(bullet_lines)} list items, no excessive nesting."
+            )
+
+        if not passes:
+            return "No passing checks could be confirmed from plain-text analysis."
+        return (
+            f"What the document already does correctly ({len(passes)} checks passing):\n"
+            + "\n".join(f"  {p}" for p in passes)
         )
 
     # ------------------------------------------------------------------
@@ -321,7 +489,6 @@ class ToolRegistry:
             return self._heuristic_compliance_summary()
         try:
             from acb_large_print.auditor import audit_document
-            from acb_large_print.reporter import format_text_report
 
             result = audit_document(str(self.context.doc_path))
             self.context._audit_cache = {
@@ -485,7 +652,6 @@ class ToolRegistry:
         deeply_nested = [l for l in bullet_lines if l.startswith("      ")]
         if deeply_nested:
             issues.append(f"Deep list nesting detected ({len(deeply_nested)} items, >2 levels)")
-        total = len(bullet_lines) + len(numbered_lines)
         summary = (
             f"Lists: {len(bullet_lines)} bullet items, {len(numbered_lines)} numbered items."
         )
@@ -706,7 +872,12 @@ class ToolRegistry:
             },
             "find_section": {
                 "category": CATEGORY_DOCUMENT,
-                "description": "Find and return a section by heading name or keyword",
+                "description": "Confirm whether a named section exists (use get_section_content for full text)",
+                "parameters": {"section_name": "str"},
+            },
+            "get_section_content": {
+                "category": CATEGORY_DOCUMENT,
+                "description": "Return the full paragraph text of a named section",
                 "parameters": {"section_name": "str"},
             },
             "search_text": {
@@ -719,9 +890,19 @@ class ToolRegistry:
                 "description": "Return word count, line count, headings, tables, reading time",
                 "parameters": {},
             },
+            "get_document_summary": {
+                "category": CATEGORY_DOCUMENT,
+                "description": "Return a plain-language overview of the document type, title, and main sections",
+                "parameters": {},
+            },
+            "get_decisions_and_actions": {
+                "category": CATEGORY_DOCUMENT,
+                "description": "Extract voted motions, decisions, and action items from meeting or board documents",
+                "parameters": {},
+            },
             "summarize_section": {
                 "category": CATEGORY_DOCUMENT,
-                "description": "Return the text of a named section for Llama to summarize",
+                "description": "Return the text of a named section for the model to summarize",
                 "parameters": {"section_name": "str"},
             },
             "list_headings": {
@@ -732,6 +913,11 @@ class ToolRegistry:
             "get_images": {
                 "category": CATEGORY_DOCUMENT,
                 "description": "List images (scanned PDF / vision model path)",
+                "parameters": {},
+            },
+            "get_what_passes": {
+                "category": CATEGORY_COMPLIANCE,
+                "description": "Return what the document already does correctly (heading hierarchy, links, alt text, etc.)",
                 "parameters": {},
             },
             # Compliance Agent
@@ -831,11 +1017,15 @@ class ToolRegistry:
             # Document
             "extract_table": lambda: self.extract_table(kwargs.get("table_name", "")),
             "find_section": lambda: self.find_section(kwargs.get("section_name", "")),
+            "get_section_content": lambda: self.get_section_content(kwargs.get("section_name", "")),
             "search_text": lambda: self.search_text(kwargs.get("keyword", "")),
             "get_document_stats": self.get_document_stats,
+            "get_document_summary": self.get_document_summary,
+            "get_decisions_and_actions": self.get_decisions_and_actions,
             "summarize_section": lambda: self.summarize_section(kwargs.get("section_name", "")),
             "list_headings": self.list_headings,
             "get_images": self.get_images,
+            "get_what_passes": self.get_what_passes,
             # Compliance Agent
             "run_accessibility_audit": self.run_accessibility_audit,
             "get_compliance_score": self.get_compliance_score,
@@ -862,6 +1052,125 @@ class ToolRegistry:
         if fn is None:
             return f"Unknown tool: {tool_name}"
         return fn()
+
+    # ------------------------------------------------------------------
+    # Pre-flight keyword dispatcher (cloud-first: no LLM function-calling
+    # needed — tools run locally and results are injected into the prompt)
+    # ------------------------------------------------------------------
+
+    def dispatch_for_question(self, question: str) -> str:
+        """Select and run 1–3 relevant tools based on keyword analysis of the question.
+
+        Returns a formatted block suitable for injection into the LLM system prompt,
+        grounding the answer in real document facts rather than hallucinated content.
+        This pattern works with any OpenRouter model regardless of whether it supports
+        JSON function-calling.
+        """
+        q = question.lower()
+        results: list[tuple[str, str]] = []  # (tool_name, result)
+
+        # Rule explanation (must be first — most specific)
+        acb_rule = re.search(r"acb-[a-z\-]+", q, re.IGNORECASE)
+        if acb_rule:
+            rule_id = acb_rule.group(0).upper()
+            results.append(("explain_rule", self.explain_rule(rule_id)))
+
+        # Compliance / audit questions
+        if any(kw in q for kw in ("audit", "score", "compliance", "pass", "fail", "violation", "violation", "findings")):
+            results.append(("run_accessibility_audit", self.run_accessibility_audit()))
+            if len(results) < 3:
+                results.append(("get_critical_findings", self.get_critical_findings()))
+
+        # Fix / remediation questions
+        elif any(kw in q for kw in ("fix", "repair", "correct", "remediat", "auto-fix", "auto fix")):
+            results.append(("prioritize_findings", self.prioritize_findings()))
+            if len(results) < 3:
+                results.append(("estimate_fix_impact", self.estimate_fix_impact()))
+
+        # Heading structure questions
+        if any(kw in q for kw in ("heading", "headings", "structure", "hierarchy", "h1", "h2", "h3", "outline")):
+            if not any(n == "check_heading_hierarchy" for n, _ in results):
+                results.append(("check_heading_hierarchy", self.check_heading_hierarchy()))
+            if len(results) < 3:
+                results.append(("list_headings", self.list_headings()))
+
+        # Emphasis / formatting
+        if any(kw in q for kw in ("italic", "bold", "emphasis", "formatting", "font", "underline")):
+            if not any(n == "check_emphasis_patterns" for n, _ in results):
+                results.append(("check_emphasis_patterns", self.check_emphasis_patterns()))
+
+        # Link text
+        if any(kw in q for kw in ("link", "url", "click here", "hyperlink", "href")):
+            if not any(n == "check_link_text" for n, _ in results):
+                results.append(("check_link_text", self.check_link_text()))
+
+        # Image / alt text
+        if any(kw in q for kw in ("image", "img", "alt text", "alt-text", "picture", "photo", "figure")):
+            if not any(n == "check_image_alt_text" for n, _ in results):
+                results.append(("check_image_alt_text", self.check_image_alt_text()))
+
+        # List structure
+        if any(kw in q for kw in ("list", "bullet", "numbered", "ordered", "unordered")):
+            if not any(n == "check_list_structure" for n, _ in results):
+                results.append(("check_list_structure", self.check_list_structure()))
+
+        # Reading level
+        if any(kw in q for kw in ("reading level", "complexity", "plain language", "readability", "sentence")):
+            if not any(n == "check_reading_level" for n, _ in results):
+                results.append(("check_reading_level", self.check_reading_level()))
+
+        # Section / content search
+        section_match = re.search(r"section [\"']?([a-z0-9 ]{3,40})[\"']?", q)
+        if section_match and not any(n == "find_section" for n, _ in results):
+            results.append(("find_section", self.find_section(section_match.group(1))))
+
+        keyword_match = re.search(r"(?:search|find|look for|where is)[^\w]*\"?([a-z][a-z0-9 ]{2,40})\"?", q)
+        if keyword_match and not any(n == "search_text" for n, _ in results):
+            results.append(("search_text", self.search_text(keyword_match.group(1))))
+
+        # Table questions — extract_table first, fall back to reading order
+        if any(kw in q for kw in ("table", "column", "row", "data")):
+            if not any(n == "extract_table" for n, _ in results):
+                # Try to extract the first table; if none found, assess reading order
+                table_result = self.extract_table("0")
+                if "not found" in table_result:
+                    results.append(("estimate_reading_order", self.estimate_reading_order()))
+                else:
+                    results.append(("extract_table", table_result))
+
+        # Section content questions ("what does X say", "what is in X", etc.)
+        section_content_match = re.search(
+            r"(?:what (?:does|is|did|are)|tell me about|show me|details? (?:on|about)|content of)"
+            r"[^\w]*[\"']?([a-z0-9 ]{3,50})[\"']?",
+            q,
+        )
+        if section_content_match and not any(n == "get_section_content" for n, _ in results):
+            results.append(("get_section_content", self.get_section_content(section_content_match.group(1))))
+
+        # Decisions, motions, action items
+        if any(kw in q for kw in ("decision", "voted", "motion", "action item", "approved", "resolved", "assigned")):
+            if not any(n == "get_decisions_and_actions" for n, _ in results):
+                results.append(("get_decisions_and_actions", self.get_decisions_and_actions()))
+
+        # What's good / what passes
+        if any(kw in q for kw in ("what passes", "what's good", "what is good", "what works", "passing", "correct", "compliant")):
+            if not any(n == "get_what_passes" for n, _ in results):
+                results.append(("get_what_passes", self.get_what_passes()))
+
+        # Default fallback: stats + heading summary + emphasis check
+        if not results:
+            results.append(("get_document_stats", self.get_document_stats()))
+            results.append(("check_heading_hierarchy", self.check_heading_hierarchy()))
+            results.append(("check_emphasis_patterns", self.check_emphasis_patterns()))
+
+        # Cap at 3 tool results to keep prompt size manageable
+        results = results[:3]
+
+        lines = ["=== GLOW Document Analysis (pre-flight tool results) ==="]
+        for name, output in results:
+            lines.append(f"\n[{name}]\n{output}")
+        lines.append("\n=== Use the above analysis to give a grounded, specific answer. ===")
+        return "\n".join(lines)
 
 
 class ConversationTurn:
@@ -948,8 +1257,6 @@ class ChatSession:
     def export_word(self, output_path: Path) -> None:
         """Export conversation to Word document."""
         from docx import Document
-        from docx.shared import Pt, RGBColor
-
         doc = Document()
         doc.add_heading(f"Chat Session: {self.filename}", 0)
         doc.add_paragraph(f"Created: {self.created_at.isoformat()}").runs[0].italic = True
@@ -959,7 +1266,7 @@ class ChatSession:
             doc.add_paragraph(turn.question).runs[0].bold = True
 
             if turn.tool_calls:
-                p = doc.add_paragraph("Tools used:")
+                doc.add_paragraph("Tools used:")
                 for call in turn.tool_calls:
                     doc.add_paragraph(call.get("name", "unknown"), style="List Bullet")
 

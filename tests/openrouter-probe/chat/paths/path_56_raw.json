@@ -1,0 +1,7 @@
+{
+  "tools_fired": [
+    "check_reading_level",
+    "get_section_content"
+  ],
+  "question": "What is the reading level and sentence complexity of this document?"
+}

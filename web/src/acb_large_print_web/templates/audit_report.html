@@ -11,7 +11,7 @@
 {% endif %}
 {% if customization_warning %}
 <section class="warning-box" role="status" aria-live="polite">
-  <p>{{ customization_warning | replace('\n', '<br />') }}</p>
+  <p class="warning-message">{{ customization_warning }}</p>
 </section>
 {% endif %}
 <section>
@@ -41,7 +41,7 @@
   <h2 id="privacy-notice-heading">Data and Privacy</h2>
   <p><strong>Document retention:</strong> Your document was deleted from the server immediately after this audit was produced. Nothing was stored.</p>
   {% if ai_used %}
-  <p><strong>AI was used during this transaction.</strong> Analysis was performed by a local Ollama model running on the GLOW server. Your document was never sent to any third-party service such as Google, Microsoft, or OpenAI.</p>
+  <p><strong>AI was used during this transaction.</strong> Analysis was performed by GLOW's AI service. Your document content was transmitted only to the configured AI provider and is not stored or used for training.</p>
   {% else %}
   <p><strong>AI was not used during this transaction.</strong> All analysis was performed using rule-based code with no AI involvement.</p>
   {% endif %}
@@ -142,8 +142,8 @@
   <p>EPUB remediation typically requires editing the source document and re-exporting. If you have the original Markdown or Word source, <a href="{{ url_for('convert.convert_form') }}">convert it to EPUB</a> with accessibility formatting already built in.</p>
   {% endif %}
   {% endif %}
-  {% if chat_token %}
-  <p><a href="{{ url_for('chat.chat_form', token=chat_token) }}">Chat about this document</a> -- ask plain-English questions using the local AI model without re-uploading.</p>
+  {% if chat_token and ai_chat_enabled %}
+  <p><a href="{{ url_for('chat.chat_form', token=chat_token) }}">Chat about this document</a> -- ask plain-English questions using the AI-assisted document tools without re-uploading.</p>
   {% endif %}
   <ul>
     <li><a href="{{ url_for('audit.audit_form') }}">Audit another document</a></li>

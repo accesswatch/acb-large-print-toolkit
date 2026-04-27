@@ -29,7 +29,7 @@ dependencies = [
     "acb-large-print",
     "markitdown[pdf,docx,xlsx,pptx]>=0.1.5",
     "weasyprint>=62.0",
-    "faster-whisper>=1.0.3",
+    "requests>=2.32.0",
     "mutagen>=1.47.0",
 ]
 
@@ -44,3 +44,36 @@ where = ["src"]
 
 [tool.setuptools.package-data]
 acb_large_print_web = ["templates/*.html", "templates/partials/*.html", "static/**/*"]
+
+# ---------------------------------------------------------------------------
+# Ruff -- fast Python linter + formatter
+# ---------------------------------------------------------------------------
+
+[tool.ruff]
+line-length = 120
+target-version = "py313"
+src = ["src"]
+
+[tool.ruff.lint]
+# F = pyflakes, E/W = pycodestyle, I = isort, UP = pyupgrade, B = bugbear
+select = ["F", "E", "W", "I", "UP", "B"]
+# Ignore:
+#   E501  line too long (handled by formatter)
+#   B008  function calls in default args (common Flask/FastAPI pattern)
+#   UP007 X | Y union syntax (readability preference)
+ignore = ["E501", "B008", "UP007"]
+
+[tool.ruff.lint.per-file-ignores]
+# Tests use assert statements and broad exceptions freely
+"tests/**/*.py" = ["B"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["acb_large_print_web"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]

@@ -1,0 +1,2 @@
+Heuristic compliance summary (no live audit available):
+• Possible bare URLs used as link text (ACB-LINK-TEXT)

@@ -18,7 +18,7 @@
     Complete this review and download your fixed document before that time.</p>
   {% endif %}
   {% if ai_used %}
-  <p><strong>AI was used to identify these heading candidates.</strong> Detection used a local Ollama model running on the GLOW server. Your document was never sent to any third-party service such as Google, Microsoft, or OpenAI.</p>
+  <p><strong>AI was used to identify these heading candidates.</strong> Detection was performed by GLOW's AI service. Your document content was transmitted only to the configured AI provider for this analysis and is not stored or used for training.</p>
   {% else %}
   <p><strong>AI was not used during heading detection.</strong> Candidates were identified using rule-based heuristics with no AI involvement.</p>
   {% endif %}

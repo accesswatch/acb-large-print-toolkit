@@ -1,6 +1,5 @@
 """Feedback route -- collect and review user feedback (SQLite-backed)."""
 
-import hashlib
 import hmac
 import logging
 import os

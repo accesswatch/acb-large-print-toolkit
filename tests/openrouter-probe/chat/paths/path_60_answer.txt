@@ -1,0 +1,16 @@
+=== GLOW Document Analysis (pre-flight tool results) ===
+
+[explain_rule]
+Rule: ACB-NO-ITALIC
+
+What it means: Italic formatting is completely prohibited. This is a critical violation.
+
+Why it matters: Italic text is harder to read for people with dyslexia and low vision. ACB requires underline for emphasis instead.
+
+How to fix: Remove all italic formatting. Use underline (Ctrl+U) for emphasis instead.
+
+[prioritize_findings]
+Priority order (no live audit available):
+  1. Fix ACB-NO-ITALIC (critical — remove all italic)
+  2. Fix ACB-FAUX-HEADING (high — apply real heading styles)
+  3. Fix ACB-LIN

@@ -21,6 +21,17 @@
 <li><a href="#online-help-and-guided-cards">Online Help and Guided Cards</a></li>
 </ul>
 </li>
+<li><a href="#v20-cloud-ai-implementation-plan">v2.0 Cloud AI Implementation Plan</a><ul>
+<li><a href="#principles">Principles</a></li>
+<li><a href="#implemented-cloud-architecture">Implemented cloud architecture</a></li>
+<li><a href="#openrouter-production-roadmap-now-adopted-for-glow">OpenRouter production roadmap now adopted for GLOW</a></li>
+<li><a href="#roadmap">Roadmap</a><ul>
+<li><a href="#near-term-roadmap-within-v20-maintenance-releases">Near-term roadmap (within v2.0 maintenance releases)</a></li>
+<li><a href="#medium-term-roadmap">Medium-term roadmap</a></li>
+</ul>
+</li>
+</ul>
+</li>
 <li><a href="#implementation-decisions">Implementation Decisions</a><ul>
 <li><a href="#architecture">Architecture</a></li>
 <li><a href="#help-text-and-documentation-strategy">Help Text and Documentation Strategy</a></li>
@@ -52,7 +63,7 @@
 <p><strong>Status:</strong> Implemented (v2.0.0 released)<br />
 <strong>Author:</strong> Jeff Bishop, BITS<br />
 <strong>Date:</strong> April 17, 2026<br />
-<strong>Target:</strong> v2.0.0 (BITS Whisperer, consent gate, Quick Start, MarkItDown 0.2+, vision-ready OCR path, expanded agentic document chat, maintenance mode, deep deployment logging)</p>
+<strong>Target:</strong> v2.0.0 (BITS Whisperer, consent gate, Quick Start, MarkItDown 0.2+, cloud-based document chat, cloud-based Whisperer, maintenance mode, deep deployment logging)</p>
 <hr />
 <h2 id="implementation-status">Implementation Status</h2>
 <p>The Flask web application has been built and is ready for deployment. All core features described in this PRD are implemented. The following table summarizes what shipped in v0.1 and subsequent v1.2.0 enhancements:</p>
@@ -198,7 +209,7 @@
 <tr>
 <td>AI heading detection (fix page)</td>
 <td>Done</td>
-<td>Two-tier faux heading detection: heuristic scoring (10 signals) + optional Ollama AI refinement. Web form fieldset with enable, AI toggle, confidence threshold. Ollama Docker service added.</td>
+<td>Two-tier faux heading detection: heuristic scoring (10 signals) + optional AI refinement via GLOW's cloud AI service. Web form fieldset with enable, AI toggle, confidence threshold.</td>
 </tr>
 <tr>
 <td>Interactive heading review (fix page)</td>
@@ -208,12 +219,12 @@
 <tr>
 <td>AI auto-detection (fix page + desktop GUI)</td>
 <td>Done</td>
-<td><code>is_ai_available()</code> probes Ollama at localhost:11434. Web form and desktop GUI auto-check the AI checkbox when Ollama is reachable.</td>
+<td><code>ai_heading_fix_enabled()</code> checks the configured AI gateway. Web form auto-checks the AI checkbox when the service is enabled; desktop GUI checks the local Ollama probe.</td>
 </tr>
 <tr>
 <td>Desktop GUI heading detection</td>
 <td>Done</td>
-<td>Step 3 Options panel in wxPython wizard adds paragraph indent, heading detection, and AI toggle controls. AI checkbox auto-checks when Ollama is available.</td>
+<td>Step 3 Options panel in wxPython wizard adds paragraph indent, heading detection, and AI toggle controls. AI checkbox auto-checks when local Ollama is available (desktop-only feature).</td>
 </tr>
 <tr>
 <td>Detailed fix records (fix page)</td>
@@ -285,7 +296,7 @@
 <tr>
 <td>BITS Whisperer audio transcription</td>
 <td>Done</td>
-<td>New <code>/whisperer</code> route for MP3/WAV/M4A/OGG/FLAC/AAC/Opus transcription to Markdown or Word using on-server faster-whisper.</td>
+<td>New <code>/whisperer</code> route for MP3/WAV/M4A/OGG/FLAC/AAC/Opus transcription to Markdown or Word using the Whisper API with server-side normalization and cleanup.</td>
 </tr>
 <tr>
 <td>Consent and privacy gate</td>
@@ -300,7 +311,7 @@
 <tr>
 <td>Vision-ready OCR path</td>
 <td>Done</td>
-<td>Local vision-model path (LLaVA + Ollama) for scanned/image-heavy interpretation.</td>
+<td>Cloud-ready path reserved for future multimodal interpretation; v2.0 keeps core document workflows stable first.</td>
 </tr>
 <tr>
 <td>Capacity-aware protective gating</td>
@@ -360,7 +371,7 @@
 <tr>
 <td>Privacy transparency updates</td>
 <td>Done</td>
-<td>Privacy policy and UI language updated to reflect retention windows and local model usage.</td>
+<td>Privacy policy and UI language updated to reflect retention windows, cloud AI usage, and non-AI opt-out paths.</td>
 </tr>
 <tr>
 <td>Long-job retention reliability</td>
@@ -464,7 +475,7 @@
 <li>As an operations admin, I want a queue dashboard that shows audio conversion states and allows cancel/re-queue actions, so I can manage long-running background conversions.</li>
 </ol>
 <h2 id="v20-addendum-expanded-agentic-accessibility-experience">v2.0 Addendum: Expanded Agentic Accessibility Experience</h2>
-<p>GLOW (Guided Layout &amp; Output Workflow) 2.0 adds a major interaction model beyond form submission: users can ask targeted questions and invoke accessibility-aware tools through chat.</p>
+<p>GLOW (Guided Layout &amp; Output Workflow) 2.0 adds a major interaction model beyond form submission: users can ask targeted questions and invoke accessibility-aware tools through chat. In v2.0 this runs through a centralized OpenRouter gateway with privacy-aware provider controls and budget enforcement.</p>
 <h3 id="chat-route-and-interaction-model">Chat Route and Interaction Model</h3>
 <ul>
 <li>Route: <code>/chat</code></li>
@@ -531,6 +542,47 @@
 <li>privacy and retention notice</li>
 </ul>
 <p>All help uses semantic HTML and native interaction patterns aligned to WCAG 2.2 AA.</p>
+<h2 id="v20-cloud-ai-implementation-plan">v2.0 Cloud AI Implementation Plan</h2>
+<p>The cloud transition planning that previously lived in separate working documents is now part of the PRD. The product direction is intentionally conservative: keep the rule-based core intact, move only the AI-dependent features to cloud services, and preserve clear non-AI paths for users who do not want AI involved.</p>
+<h3 id="principles">Principles</h3>
+<ul>
+<li>No public account requirement for end users</li>
+<li>AI use only where it adds clear value: Document Chat and Whisperer</li>
+<li>Rule-based workflows remain available without AI</li>
+<li>Privacy-aware routing and short retention by default</li>
+<li>Hard monthly budget and per-session quota enforcement</li>
+</ul>
+<h3 id="implemented-cloud-architecture">Implemented cloud architecture</h3>
+<ul>
+<li><strong>Document Chat:</strong> OpenRouter-backed gateway with grounded pre-flight tool dispatch, quota tracking, and health checks</li>
+<li><strong>BITS Whisperer:</strong> Whisper API transcription with server-side format normalization, background queueing, and secure retrieval</li>
+<li><strong>Large-workload resilience:</strong> bounded AI queue wait windows for heavy requests plus transient retry/backoff on OpenRouter rate-limit and 5xx failures</li>
+<li><strong>Budget controls:</strong> monthly spend ledger, daily chat limits, monthly audio-minute limits</li>
+<li><strong>Operational visibility:</strong> <code>/health</code> exposes provider reachability and budget readiness</li>
+</ul>
+<h3 id="openrouter-production-roadmap-now-adopted-for-glow">OpenRouter production roadmap now adopted for GLOW</h3>
+<ol>
+<li>Use explicit privacy-reviewed model lists before broadening router choices.</li>
+<li>Apply provider privacy controls per request where supported.</li>
+<li>Prefer deterministic fallback lists over random free-model routing for document-sensitive workloads.</li>
+<li>Add dynamic model discovery from the OpenRouter models API for future admin tooling.</li>
+<li>Preserve non-AI alternatives for users and organizations that opt out of AI processing.</li>
+</ol>
+<h3 id="roadmap">Roadmap</h3>
+<h4 id="near-term-roadmap-within-v20-maintenance-releases">Near-term roadmap (within v2.0 maintenance releases)</h4>
+<ul>
+<li>Add explicit OpenRouter provider routing preferences for privacy, latency, and parameter support.</li>
+<li>Add admin-facing visibility into resolved OpenRouter model/provider usage.</li>
+<li>Add stronger cloud-side retry and fallback telemetry for chat and vision.</li>
+<li>Expand Whisperer compatibility normalization and operator diagnostics.</li>
+</ul>
+<h4 id="medium-term-roadmap">Medium-term roadmap</h4>
+<ul>
+<li>Introduce privacy-reviewed multimodal document assistance through the same AI gateway.</li>
+<li>Add dynamic model catalog filtering for ZDR/privacy-safe providers.</li>
+<li>Offer opt-in economy mode for low-risk workloads while preserving the privacy-first default.</li>
+<li>Add richer structured-output/tool-calling flows for remediation suggestions.</li>
+</ul>
 <h2 id="implementation-decisions">Implementation Decisions</h2>
 <h3 id="architecture">Architecture</h3>
 <ul>
@@ -890,9 +942,9 @@
 </tr>
 <tr>
 <td>AI inference</td>
-<td>Ollama</td>
-<td>Latest</td>
-<td>Local LLM inference for heading detection refinement (phi4-mini 3.8B). Runs as Docker service, no data leaves the machine</td>
+<td>OpenRouter</td>
+<td>API</td>
+<td>Cloud LLM inference for chat, heading detection, and AI-assisted workflows. Privacy-aware provider routing (<code>dataCollection: deny</code>). Desktop tool uses local Ollama (optional).</td>
 </tr>
 <tr>
 <td>Process manager</td>

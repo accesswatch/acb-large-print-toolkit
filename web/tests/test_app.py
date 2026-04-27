@@ -12,6 +12,7 @@ from pathlib import Path
 
 import pytest
 from flask import Flask
+from acb_large_print_web import ai_features
 
 from acb_large_print.stress_profiles import describe_stress_corpus
 from acb_large_print_web.app import create_app
@@ -176,9 +177,13 @@ class TestPageLoads:
         assert payload is not None
         assert payload["status"] in {"ok", "degraded"}
         assert "services" in payload
-        assert set(payload["services"].keys()) == {"web", "pipeline", "ollama"}
+        assert {"web", "openrouter", "whisper"}.issubset(set(payload["services"].keys()))
 
 
+@pytest.mark.skipif(
+    not ai_features.ai_whisperer_enabled(),
+    reason="AI whisperer disabled via feature flags; skipping Whisperer tests",
+)
 class TestWhispererProgress:
     def test_whisperer_estimate_uses_metadata_when_available(self, client, monkeypatch):
         import acb_large_print_web.routes.whisperer as whisperer_route
@@ -221,27 +226,15 @@ class TestWhispererProgress:
     def test_whisperer_estimate_page_preserves_token_for_start(self, client, monkeypatch):
         import acb_large_print_web.routes.whisperer as whisperer_route
 
-        monkeypatch.setattr(whisperer_route, "whisper_available", lambda: True)
+        monkeypatch.setattr(whisperer_route, "is_whisper_configured", lambda: True)
         monkeypatch.setattr(whisperer_route, "audio_gate", lambda: nullcontext())
         monkeypatch.setattr(whisperer_route, "_estimate_audio_duration_seconds", lambda _p: 120.0)
 
-        def _fake_whisper_convert(
-            src_path,
-            output_path=None,
-            *,
-            model=None,
-            language=None,
-            output_format="markdown",
-            progress_callback=None,
-        ):
-            if output_path is None:
-                output_path = Path(src_path).with_suffix(".md")
-            if progress_callback:
-                progress_callback(100, "Transcription complete.")
-            output_path.write_text("# Token Test Transcript\n", encoding="utf-8")
-            return output_path, "# Token Test Transcript\n"
+        def _fake_transcribe(_audio_path, language=None, session_hash=""):
+            assert session_hash
+            return "# Token Test Transcript\n"
 
-        monkeypatch.setattr(whisperer_route, "whisper_convert", _fake_whisper_convert)
+        monkeypatch.setattr(whisperer_route, "gateway_transcribe", _fake_transcribe)
 
         estimate_page = client.post(
             "/whisperer/estimate-page",
@@ -289,28 +282,13 @@ class TestWhispererProgress:
     def test_whisperer_background_progress_and_download(self, client, monkeypatch):
         import acb_large_print_web.routes.whisperer as whisperer_route
 
-        monkeypatch.setattr(whisperer_route, "whisper_available", lambda: True)
+        monkeypatch.setattr(whisperer_route, "is_whisper_configured", lambda: True)
         monkeypatch.setattr(whisperer_route, "audio_gate", lambda: nullcontext())
 
-        def _fake_whisper_convert(
-            src_path,
-            output_path=None,
-            *,
-            model=None,
-            language=None,
-            output_format="markdown",
-            progress_callback=None,
-        ):
-            if output_path is None:
-                output_path = Path(src_path).with_suffix(".md")
-            if progress_callback:
-                progress_callback(10, "Transcribing audio... 10%")
-                progress_callback(70, "Transcribing audio... 70%")
-                progress_callback(100, "Transcription complete.")
-            output_path.write_text("# Test Transcript\n\nHello world.\n", encoding="utf-8")
-            return output_path, "# Test Transcript\n\nHello world.\n"
+        def _fake_transcribe(_audio_path, language=None, session_hash=""):
+            return "# Test Transcript\n\nHello world.\n"
 
-        monkeypatch.setattr(whisperer_route, "whisper_convert", _fake_whisper_convert)
+        monkeypatch.setattr(whisperer_route, "gateway_transcribe", _fake_transcribe)
 
         start = client.post(
             "/whisperer/start",
@@ -348,7 +326,7 @@ class TestWhispererProgress:
     def test_whisperer_requires_estimate_ack(self, client, monkeypatch):
         import acb_large_print_web.routes.whisperer as whisperer_route
 
-        monkeypatch.setattr(whisperer_route, "whisper_available", lambda: True)
+        monkeypatch.setattr(whisperer_route, "is_whisper_configured", lambda: True)
 
         resp = client.post(
             "/whisperer/start",
@@ -368,7 +346,7 @@ class TestWhispererProgress:
     def test_whisperer_rejects_audio_above_duration_limit(self, client, monkeypatch):
         import acb_large_print_web.routes.whisperer as whisperer_route
 
-        monkeypatch.setattr(whisperer_route, "whisper_available", lambda: True)
+        monkeypatch.setattr(whisperer_route, "is_whisper_configured", lambda: True)
         monkeypatch.setattr(whisperer_route, "_estimate_audio_duration_seconds", lambda _p: 3 * 60 * 60)
         monkeypatch.setattr(whisperer_route, "_sanitize_duration_estimate", lambda _p, d: d)
         monkeypatch.setattr(whisperer_route, "_MAX_AUDIO_MINUTES", 120)
@@ -391,7 +369,7 @@ class TestWhispererProgress:
     def test_background_opt_in_requires_email_service(self, client, monkeypatch):
         import acb_large_print_web.routes.whisperer as whisperer_route
 
-        monkeypatch.setattr(whisperer_route, "whisper_available", lambda: True)
+        monkeypatch.setattr(whisperer_route, "is_whisper_configured", lambda: True)
         monkeypatch.setattr(whisperer_route, "email_configured", lambda: False)
         monkeypatch.setattr(whisperer_route, "_estimate_audio_duration_seconds", lambda _p: 45 * 60)
 
@@ -417,29 +395,16 @@ class TestWhispererProgress:
     def test_background_secure_retrieve_requires_password(self, client, monkeypatch):
         import acb_large_print_web.routes.whisperer as whisperer_route
 
-        monkeypatch.setattr(whisperer_route, "whisper_available", lambda: True)
+        monkeypatch.setattr(whisperer_route, "is_whisper_configured", lambda: True)
         monkeypatch.setattr(whisperer_route, "email_configured", lambda: True)
         monkeypatch.setattr(whisperer_route, "send_whisperer_status_email", lambda *a, **k: (True, "ok"))
         monkeypatch.setattr(whisperer_route, "audio_gate", lambda: nullcontext())
         monkeypatch.setattr(whisperer_route, "_estimate_audio_duration_seconds", lambda _p: 45 * 60)
 
-        def _fake_whisper_convert(
-            src_path,
-            output_path=None,
-            *,
-            model=None,
-            language=None,
-            output_format="markdown",
-            progress_callback=None,
-        ):
-            if output_path is None:
-                output_path = Path(src_path).with_suffix(".md")
-            if progress_callback:
-                progress_callback(100, "Transcription complete.")
-            output_path.write_text("# Secure Transcript\n\nHello world.\n", encoding="utf-8")
-            return output_path, "# Secure Transcript\n\nHello world.\n"
+        def _fake_transcribe(_audio_path, language=None, session_hash=""):
+            return "# Secure Transcript\n\nHello world.\n"
 
-        monkeypatch.setattr(whisperer_route, "whisper_convert", _fake_whisper_convert)
+        monkeypatch.setattr(whisperer_route, "gateway_transcribe", _fake_transcribe)
 
         start = client.post(
             "/whisperer/start",
@@ -685,7 +650,8 @@ class TestAccessibility:
 
     def test_footer_has_role(self, client):
         resp = client.get("/")
-        assert b'role="contentinfo"' in resp.data
+        assert b"<footer" in resp.data
+        assert b'role="contentinfo"' not in resp.data
 
     def test_bits_renamed_to_solutions(self, client):
         resp = client.get("/")

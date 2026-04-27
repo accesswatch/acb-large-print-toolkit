@@ -109,9 +109,10 @@
       </ul>
     </div>
 
+    {% if ai_whisperer_enabled %}
     <div class="card card-whisperer">
       <h3><a href="{{ url_for('whisperer.whisperer_form') }}">BITS Whisperer</a></h3>
-      <p>Transcribe audio recordings into accessible Markdown or Word documents -- entirely on this server, with no data sent to any external service. Powered by OpenAI Whisper (medium model) running locally via faster-whisper.</p>
+      <p>Transcribe audio recordings into accessible Markdown or Word documents using the OpenAI Whisper API with strict short-lived retention and server-side cleanup. Audio is sent only for transcription and is deleted from GLOW after processing.</p>
       <ul class="card-formats">
         <li class="format-tag format-misc">MP3</li>
         <li class="format-tag format-misc">WAV</li>
@@ -121,10 +122,12 @@
         <li class="format-tag format-misc">and more</li>
       </ul>
     </div>
+    {% endif %}
 
+    {% if ai_chat_enabled %}
     <div class="card card-chat">
       <h3>Document Chat</h3>
-      <p>Ask plain-English questions about any uploaded document -- powered by a local AI model running on this server. Reachable through the <a href="{{ url_for('process.process_form') }}">Quick Start: Upload and Discover</a> flow. Your document is never sent to any external service.</p>
+      <p>Ask plain-English questions about any uploaded document through a privacy-aware OpenRouter gateway with grounded accessibility tooling. Reachable through the <a href="{{ url_for('process.process_form') }}">Quick Start: Upload and Discover</a> flow. Core workflows remain available without AI.</p>
       <ul class="card-formats">
         <li class="format-tag format-docx">Word</li>
         <li class="format-tag format-pdf">PDF</li>
@@ -132,6 +135,7 @@
         <li class="format-tag format-misc">and more</li>
       </ul>
     </div>
+    {% endif %}
 
     <div class="card card-guidelines">
       <h3><a href="{{ url_for('guidelines.guidelines_page') }}">Guidelines Reference</a></h3>
@@ -159,8 +163,12 @@
     <li><strong>Template:</strong> creates Word templates with profile-aware defaults.</li>
     <li><strong>Export:</strong> turns Word documents into accessible HTML for web publishing.</li>
     <li><strong>Convert:</strong> transforms documents across Markdown, HTML, Word, EPUB, PDF, and DAISY workflows.</li>
-    <li><strong>BITS Whisperer:</strong> transcribes audio recordings (.mp3, .wav, .m4a, and more) to accessible Markdown or Word documents using a local Whisper medium model -- no audio leaves the server.</li>
-    <li><strong>Document Chat:</strong> lets you ask plain-English questions about any uploaded document using a locally hosted AI model. Available from the <a href="{{ url_for('process.process_form') }}">Quick Start</a> flow -- upload your file and choose "Chat" from the actions menu.</li>
+    {% if ai_whisperer_enabled %}
+    <li><strong>BITS Whisperer:</strong> transcribes audio recordings (.mp3, .wav, .m4a, and more) to accessible Markdown or Word documents using the OpenAI Whisper API with explicit retention controls.</li>
+    {% endif %}
+    {% if ai_chat_enabled %}
+    <li><strong>Document Chat:</strong> lets you ask plain-English questions about any uploaded document through a privacy-aware OpenRouter gateway. Available from the <a href="{{ url_for('process.process_form') }}">Quick Start</a> flow -- upload your file and choose "Chat" from the actions menu.</li>
+    {% endif %}
     <li><strong>Guidelines:</strong> explains the standards behind each rule and profile.</li>
     <li><strong>Settings:</strong> stores your default choices so every workflow opens the way your team prefers.</li>
   </ul>
@@ -188,6 +196,6 @@
 
 <section>
   <h2 id="privacy-heading">Privacy</h2>
-  <p>Uploaded documents and audio files are processed on this server and deleted immediately after your results are returned. No files are stored. No accounts or login required. BITS Whisperer audio transcription runs entirely on this server -- your audio is never sent to any external service or cloud API.</p>
+  <p>Uploaded documents and audio files are held only long enough to complete processing and are then deleted on GLOW's retention schedule. No public account is required. Core audit, fix, template, export, and many convert paths are rule-based. AI features use cloud providers only for the specific requests that need them, with explicit privacy controls and transparent disclosure.</p>
 </section>
 {% endblock %}

@@ -1,0 +1,15 @@
+=== GLOW Document Analysis (pre-flight tool results) ===
+
+[run_accessibility_audit]
+Heuristic compliance summary (no live audit available):
+• Possible bold-emphasis abuse (ACB-BOLD-HEADINGS-ONLY)
+• Possible italic usage (ACB-NO-ITALIC — critical violation)
+• Possible bare URLs used as link text (ACB-LINK-TEXT)
+
+[get_critical_findings]
+No audit data available.
+
+[check_emphasis_patterns]
+Emphasis issues found:
+  • CRITICAL — 2 italic instance(s) found (ACB-NO-ITALIC). Example: *Minutes recorded by the Secretary*
+  • HIGH — 2 long bold phrase(s) that may be body emphasis (ACB-BOLD-HEADINGS-ONLY).

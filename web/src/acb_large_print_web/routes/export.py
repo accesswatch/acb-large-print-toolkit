@@ -1,13 +1,12 @@
 """Export route -- convert a .docx to ACB-compliant HTML."""
 
+import zipfile
+
 from flask import Blueprint, render_template, request, send_file
 
 from acb_large_print.exporter import export_cms_fragment, export_standalone_html
 
 from ..upload import UploadError, cleanup_token, get_temp_dir, validate_upload
-
-import zipfile
-from pathlib import Path
 
 export_bp = Blueprint("export", __name__)
 

@@ -12,6 +12,8 @@
   <button type="submit" class="btn-secondary">Sign Out</button>
 </form>
 <p><a href="{{ url_for('admin.admin_requests') }}">Review admin access requests</a></p>
+<p><a href="{{ url_for('admin.admin_ai_settings') }}">AI settings and budget controls</a></p>
+<p><a href="{{ url_for('admin.admin_flags') }}">Feature flags</a></p>
 
 {% if request.args.get('notice') %}
 <div class="success-box" role="status"><p>{{ request.args.get('notice') }}</p></div>
@@ -44,17 +46,17 @@
         <td id="health-pipeline-detail">Loading...</td>
       </tr>
       <tr>
-        <td>Ollama service</td>
-        <td id="health-ollama-status">Loading...</td>
-        <td id="health-ollama-detail">Loading...</td>
+        <td>OpenRouter service</td>
+        <td id="health-openrouter-status">Loading...</td>
+        <td id="health-openrouter-detail">Loading...</td>
       </tr>
       <tr>
-        <td>Chat readiness (llama3)</td>
+        <td>Chat readiness</td>
         <td id="health-chat-status">Loading...</td>
         <td id="health-chat-detail">Loading...</td>
       </tr>
       <tr>
-        <td>Vision readiness (llava)</td>
+        <td>Vision readiness</td>
         <td id="health-vision-status">Loading...</td>
         <td id="health-vision-detail">Loading...</td>
       </tr>
@@ -143,17 +145,17 @@
         setCell('health-pipeline-status', normalizeServiceStatus((services.pipeline || {}).status));
         setCell('health-pipeline-detail', ((services.pipeline || {}).host || 'n/a') + ':' + ((services.pipeline || {}).port || 'n/a'));
 
-        setCell('health-ollama-status', normalizeServiceStatus((services.ollama || {}).status));
-        setCell('health-ollama-detail', 'HTTP ' + ((services.ollama || {}).http_status || 'n/a'));
+        setCell('health-openrouter-status', normalizeServiceStatus((services.openrouter || {}).status));
+        setCell('health-openrouter-detail', (services.openrouter || {}).detail || 'n/a');
 
         setCell('health-chat-status', normalizeReadinessStatus((readiness.chat || {}).status));
-        setCell('health-chat-detail', (readiness.chat || {}).model_required || 'llama3');
+        setCell('health-chat-detail', (readiness.chat || {}).provider_required || 'openrouter');
 
         setCell('health-vision-status', normalizeReadinessStatus((readiness.vision || {}).status));
-        setCell('health-vision-detail', (readiness.vision || {}).model_required || 'llava');
+        setCell('health-vision-detail', (readiness.vision || {}).provider_required || 'openrouter');
 
         setCell('health-whisper-status', normalizeReadinessStatus((readiness.whisperer || {}).status));
-        setCell('health-whisper-detail', (readiness.whisperer || {}).dependency_required || 'faster-whisper');
+        setCell('health-whisper-detail', (readiness.whisperer || {}).provider_required || 'openai-whisper-api');
       })
       .catch(function () {
         setCell('health-web-status', 'ERROR');

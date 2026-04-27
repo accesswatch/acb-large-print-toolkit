@@ -7,25 +7,31 @@
 <div class="toc">
 <ul>
 <li><a href="#changelog">Changelog</a><ul>
-<li><a href="#unreleased">[Unreleased]</a></li>
-<li><a href="#200---2026-04-17">[2.0.0] - 2026-04-17</a><ul>
+<li><a href="#unreleased">[Unreleased]</a><ul>
 <li><a href="#added">Added</a></li>
-<li><a href="#changed">Changed</a></li>
-<li><a href="#added_1">Added</a></li>
-<li><a href="#changed_1">Changed</a></li>
 <li><a href="#fixed">Fixed</a></li>
+<li><a href="#added_1">Added</a></li>
+<li><a href="#changed">Changed</a></li>
+</ul>
+</li>
+<li><a href="#200---2026-04-17">[2.0.0] - 2026-04-17</a><ul>
 <li><a href="#added_2">Added</a></li>
-<li><a href="#fixed_1">Fixed</a></li>
+<li><a href="#changed_1">Changed</a></li>
+<li><a href="#added_3">Added</a></li>
 <li><a href="#changed_2">Changed</a></li>
+<li><a href="#fixed_1">Fixed</a></li>
+<li><a href="#added_4">Added</a></li>
 <li><a href="#fixed_2">Fixed</a></li>
 <li><a href="#changed_3">Changed</a></li>
+<li><a href="#fixed_3">Fixed</a></li>
 <li><a href="#changed_4">Changed</a></li>
+<li><a href="#changed_5">Changed</a></li>
 <li><a href="#removed">Removed</a></li>
 </ul>
 </li>
 <li><a href="#110----2026-04-15">[1.1.0] -- 2026-04-15</a><ul>
-<li><a href="#fixed_3">Fixed</a></li>
-<li><a href="#added_3">Added</a></li>
+<li><a href="#fixed_4">Fixed</a></li>
+<li><a href="#added_5">Added</a></li>
 </ul>
 </li>
 <li><a href="#100----2026-04-14">[1.0.0] -- 2026-04-14</a><ul>
@@ -126,8 +132,66 @@
 <p>Releases are tagged in the <a href="https://github.com/accesswatch/acb-large-print-toolkit">GitHub repository</a>. Dates are in Pacific Time (UTC-7).</p>
 <hr />
 <h2 id="unreleased">[Unreleased]</h2>
-<h2 id="200---2026-04-17">[2.0.0] - 2026-04-17</h2>
 <h3 id="added">Added</h3>
+<ul>
+<li><strong>Docs: Cloud AI implementation plan consolidated into core documentation.</strong> Merged the standalone cloud transition and implementation backlog content into <code>docs/prd.md</code> and <code>docs/deployment.md</code>, including the adopted OpenRouter production roadmap, provider-privacy strategy, environment wiring, and admin bootstrap guidance.</li>
+<li><strong>Web: Privacy-aware OpenRouter routing foundation.</strong> <code>web/src/acb_large_print_web/ai_gateway.py</code> now supports comma-separated model fallback lists and sends OpenRouter provider preferences for privacy-sensitive routing (<code>dataCollection: deny</code>, <code>zdr: true</code>, fallbacks enabled, latency sort).</li>
+<li><strong>Web: Secure local admin bootstrap path.</strong> Added <code>web/src/acb_large_print_web/credentials.py</code> for environment-first secret loading with optional local <code>server.credentials</code> fallback for development, plus password-based bootstrap admin login support in <code>web/src/acb_large_print_web/routes/admin.py</code> and <code>admin_login.html</code>.</li>
+<li><strong>Web: AI queue/backpressure controls for large workloads.</strong> <code>web/src/acb_large_print_web/gating.py</code> now supports bounded queue waits and queued-capacity telemetry for AI, vision, and audio gates via <code>GLOW_AI_QUEUE_WAIT_SECONDS</code>, <code>GLOW_VISION_QUEUE_WAIT_SECONDS</code>, and <code>GLOW_AUDIO_QUEUE_WAIT_SECONDS</code>.</li>
+<li><strong>Web: OpenRouter transient retry/backoff controls.</strong> <code>web/src/acb_large_print_web/ai_gateway.py</code> now retries transient OpenRouter failures (<code>429</code>, <code>5xx</code>) using configurable backoff (<code>OPENROUTER_MAX_RETRIES</code>, <code>OPENROUTER_RETRY_BASE_SECONDS</code>).</li>
+<li>
+<p><strong>Web: Chat usage transparency improvements.</strong> <code>web/src/acb_large_print_web/templates/chat_form.html</code> now surfaces per-session chat remaining count and queue behavior guidance for long/complex requests.</p>
+</li>
+<li>
+<p><strong>Web E2E: Whisperer sample-audio regression flow.</strong> Added Playwright coverage in <code>web/e2e/tests/regression.spec.mjs</code> for <code>/whisperer</code>: consent handling, sample audio upload, explicit estimate refresh, proceed confirmation, transcription start, transcript download assertion, and saved artifact verification. Supports <code>E2E_UPLOAD_AUDIO</code> override and defaults to <code>S:/code/bw/Samples/ronaldreaganchallengeraddressatt3232.mp3</code>.</p>
+</li>
+<li><strong>Web: Whisperer estimate troubleshooting diagnostics.</strong> Added optional client-side estimate diagnostics in <code>whisperer_form.html</code> (enable with <code>?whispererDebug=1</code>) with event tracing for file selection, key/click triggers, fetch status, payload handling, and fallback paths. Added structured server-side estimate diagnostics in <code>routes/whisperer.py</code> with <code>WHISPERER_ESTIMATE</code> log lines plus optional debug payload support (<code>?debug=1</code> or <code>X-Whisperer-Debug: 1</code>).</li>
+</ul>
+<h3 id="fixed">Fixed</h3>
+<ul>
+<li><strong>Web: Chat tool dispatch now actually grounds responses.</strong> <code>web/src/acb_large_print_web/routes/chat.py</code> now runs the local pre-flight keyword tool dispatcher before calling the model and injects those results into the system prompt, so Document Chat uses the accessibility toolset rather than leaving it disconnected.</li>
+<li><strong>Web: Whisperer cloud compatibility normalization.</strong> <code>web/src/acb_large_print_web/routes/whisperer.py</code> now normalizes cloud-incompatible audio formats (OGG, FLAC, AAC, Opus) to temporary MP3 via <code>ffmpeg</code> before Whisper API upload, improving reliability across common chapter recordings.</li>
+<li><strong>Web: Health check and runtime probes scrubbed of old local-model assumptions.</strong> <code>web/src/acb_large_print_web/app.py</code> now probes OpenRouter and Whisper directly and no longer reports Ollama or local Whisper readiness.</li>
+<li><strong>Web: Deployment stack scrubbed of stale local AI services.</strong> Removed <code>ollama</code> and <code>faster-whisper</code> from the web deployment definitions and updated core templates (<code>index.html</code>, <code>chat_form.html</code>, <code>whisperer_form.html</code>, <code>about.html</code>, <code>privacy.html</code>) to reflect cloud-based AI usage accurately.</li>
+<li><strong>Docs: Remaining stale local-Whisper wording removed.</strong> Updated <code>docs/user-guide.md</code> to consistently describe cloud transcription with temporary retention and cleanup.</li>
+<li>
+<p><strong>Tests: Cloud architecture alignment.</strong> Updated web tests to validate OpenRouter/Whisper health service keys and cloud Whisperer mocks, added queue/retry-focused tests in <code>web/tests/test_gating_ai_gateway.py</code>, and refreshed upload extension coverage for new audio formats.</p>
+</li>
+<li>
+<p><strong>Web: Accessibility audit sweep (18 templates + 2 static files).</strong> Corrected multiple WCAG 2.2 AA issues across the web application templates. Changes: removed redundant <code>aria-labelledby</code> from <code>&lt;section&gt;</code> elements that already contain a headed <code>&lt;h2&gt;</code> (redundant landmark name per ARIA 1.2 implicit section semantics); removed <code>role="contentinfo"</code> from <code>&lt;footer&gt;</code> (native landmark, explicit role not required); fixed <code>consent.html</code> to use a proper <code>role="dialog" aria-modal="true"</code> modal with backdrop (users with low vision using screen magnification were seeing inline content instead of a blocking consent gate); promoted step headings in <code>whisperer_form.html</code> and <code>convert_form.html</code> from <code>&lt;h3&gt;</code> to <code>&lt;h2&gt;</code> to match their position as top-level steps within the tabpanel's content hierarchy; added <code>type="button"</code> to the Go Back button in <code>feedback_thanks.html</code> (implicit type was <code>submit</code>, risking accidental form submission); moved character-count paragraph in <code>chat_form.html</code> from <code>aria-hidden="true"</code> to <code>aria-live="polite" aria-atomic="true"</code> so screen readers announce remaining characters; removed <code>aria-describedby</code> from <code>admin_queue.html</code> System Health table (the <code>&lt;caption&gt;</code> already provides the description — <code>aria-describedby</code> pointing to a caption ID is redundant); fixed <code>maintenance.html</code> footer color from <code>#999999</code> (fails WCAG 1.4.3 at 3.2:1) to <code>#767676</code> (passes at 4.5:1), added <code>aria-hidden="true"</code> to decorative 🔧 emoji, and added <code>prefers-reduced-motion: reduce</code> rule to stop the status-indicator animation; added <code>id="confirm-estimate-hint"</code> to the <code>&lt;p class="field-hint"&gt;</code> in <code>whisperer_form.html</code> that the confirm-estimate checkbox references via <code>aria-describedby</code> (was a dangling reference); disabled submit button with <code>aria-disabled="true"</code> until both acknowledge-checkboxes are checked, with JS <code>syncConfirmButton()</code> keeping disabled state in sync; wrapped <code>audioInput.addEventListener</code> in an <code>if (audioInput)</code> guard; added AbortController timeout (15 s) on Whisperer start-job fetch; improved JSON parse error handling for start-job response; improved queue-position display (1-indexed); added forms.css consent modal styles (<code>consent-modal-backdrop</code>, <code>consent-modal</code>, <code>consent-modal-scroll</code>) for the dialog layout.</p>
+</li>
+<li>
+<p><strong>Web: Whisperer estimate endpoint URL resolution.</strong> <code>whisperer_form.html</code> now uses explicit backend URLs (<code>data-estimate-url</code>, <code>data-start-url</code>) instead of deriving endpoints from <code>form.action</code>, preventing broken estimate/start requests caused by path/URL variations.</p>
+</li>
+<li><strong>Web: Whisperer metadata duration scaling with PyAV.</strong> <code>_estimate_audio_duration_seconds()</code> now normalizes time-base conversion across PyAV variants so <code>container.duration</code> is interpreted in seconds correctly, avoiding extreme/invalid duration values.</li>
+<li><strong>Web: Whisperer estimate button keyboard activation reliability.</strong> <code>whisperer_form.html</code> now handles <code>keydown</code>, <code>keyup</code>, and legacy <code>keypress</code> activation paths for Space/Enter on the estimate button with duplicate-trigger protection, improving behavior for browser and assistive-technology combinations that do not emit consistent click events.</li>
+<li><strong>Web: Whisperer estimate button real-time feedback.</strong> The Calculate estimate button now shows "Calculating..." and disables during the estimate request, with live progress messaging ("Button pressed. Checking for audio file...", "Contacting server...") so users and screen-reader users get clear status updates about what the button is doing. Added exhaustive keyboard event telemetry to the button: logs all keydown/keyup/keypress events plus focus/blur state to the diagnostics panel and browser console for troubleshooting keyboard activation issues.</li>
+<li><strong>Web: Whisperer server-side estimate fallback step.</strong> Added a no-JavaScript server-first flow using "Next: calculate estimate on server" and <code>/whisperer/estimate-page</code>, with two-stage rendering: initial page shows upload+Next only; after estimate, the same page shows estimate-confirmation and remaining transcription steps.</li>
+<li><strong>Web: Whisperer client-side confirm-estimate checkbox validation.</strong> The JS submit handler now validates the required acknowledgement checkbox before posting to the server, showing a focused, accessible inline message and moving focus to the checkbox so users never reach the server with that input missing.</li>
+<li><strong>Web: Whisperer stage-2 error re-renders stay in stage 2.</strong> When <code>whisperer_submit</code> catches a validation or runtime error it now preserves <code>estimate_ready=True</code> (when an <code>existing_token</code> is present), keeping the user on the estimate+options page so they can correct their input without re-uploading.</li>
+<li><strong>Web: Whisperer catch-all exception handler on both submit routes.</strong> Unexpected exceptions in <code>whisperer_submit</code> and <code>whisperer_start_job</code> are now caught, logged with full tracebacks, and returned as user-friendly messages (HTML form re-render and JSON respectively) instead of propagating to the generic 500 error page.</li>
+<li><strong>Web: Whisperer model-load failure now reports the real cause.</strong> <code>whisper_convert()</code> now maps common engine startup failures to specific user-facing errors, including insufficient disk space while downloading/loading the Whisper model and general model-load failures, instead of collapsing everything into a generic transcription-engine message.</li>
+<li><strong>Web: Additional route catch-alls now pass through real exception text.</strong> Unexpected exceptions in <code>convert_submit</code>, <code>export_submit</code>, <code>template_form</code>, and <code>whisperer_start_job</code> now surface the actual exception message to the user instead of replacing it with a generic placeholder, improving diagnosis of production-only failures.</li>
+<li><strong>Desktop: Whisper transcription fallback now preserves real engine errors.</strong> <code>whisper_convert()</code> no longer replaces unknown transcription failures with a fixed generic message; after specific model-load and disk-space cases are handled, the original exception text is propagated so the web app can display the actual cause.</li>
+<li><strong>Web: Whisperer cache path is now writable in containers.</strong> The web Docker image now creates and owns a dedicated Hugging Face cache directory under <code>/app/.cache</code>, sets <code>XDG_CACHE_HOME</code>, <code>HF_HOME</code>, and <code>HUGGINGFACE_HUB_CACHE</code>, and <code>whisper_convert()</code> passes that writable cache path explicitly to <code>WhisperModel</code>. This fixes production failures like <code>[Errno 13] Permission denied: '/app/.cache'</code>.</li>
+<li><strong>Web: Increased Gunicorn request timeout for long Whisper runs.</strong> The container now runs Gunicorn with a 30-minute timeout (up from 5 minutes) to prevent <code>WORKER TIMEOUT</code> / HTTP 502 errors while first-time model warm-up or long audio transcription is in progress.</li>
+<li><strong>Deploy: Whisper model warm-up before maintenance is lifted.</strong> <code>scripts/deploy-app.sh</code> now preloads the Whisper model inside the web container after health passes and before disabling maintenance mode, so first-user requests do not stall on model initialization/download. Controlled via <code>WHISPER_WARMUP_ON_DEPLOY</code> (default <code>1</code>) and <code>WHISPER_WARMUP_TIMEOUT</code> (default <code>1200</code> seconds).</li>
+<li><strong>Deploy: Ollama model warm-up before maintenance is lifted.</strong> <code>scripts/deploy-app.sh</code> now optionally pre-pulls Ollama models used by chat/vision (<code>llama3</code>, <code>llava</code> by default) before maintenance mode is disabled, reducing first-request delays and improving readiness status. Controlled via <code>OLLAMA_WARMUP_ON_DEPLOY</code> (default <code>1</code>), <code>OLLAMA_WARMUP_MODELS</code> (default <code>llama3 llava</code>), and <code>OLLAMA_WARMUP_TIMEOUT_PER_MODEL</code> (default <code>900</code> seconds).</li>
+<li><strong>Web: Whisperer client-side oversized-file precheck.</strong> The form now uses the server-configured maximum audio size to warn and block oversized files immediately after selection (before upload), disabling estimate/proceed controls until a valid file is chosen.</li>
+<li><strong>Web: Whisperer progress UX clarity improvements.</strong> The transcribe page now shows an explicit phase label (queued/model warm-up/transcribing/building/complete), an elapsed-time counter, queue position in status text, automatic scroll to the progress panel after submit, and a "still working" message when progress appears stalled during long model warm-up or processing.</li>
+</ul>
+<h3 id="added_1">Added</h3>
+<ul>
+<li><strong>Web: <code>/health</code> Ollama warm-model tracking.</strong> <code>_get_ollama_running_models()</code> now queries <code>/api/ps</code> to list models currently loaded in Ollama memory. The <code>readiness.chat</code> and <code>readiness.vision</code> blocks each expose a new <code>model_warm</code> boolean, and <code>models.ollama_running</code> is included in the response and health log line so operators can tell instantly whether <code>llama3</code>/<code>llava</code> are warm (in memory) vs merely pulled (on disk).</li>
+<li><strong>Web: <code>/health</code> Whisper model-present check.</strong> <code>_whisper_model_present()</code> inspects the configured Hugging Face cache directory for <code>model.bin</code> to distinguish "faster-whisper installed" from "Whisper model actually downloaded". <code>readiness.whisperer</code> now exposes <code>model_present</code> separately from <code>dependency_present</code>, so the health endpoint surfaces the full warm-up state of the Whisperer pipeline.</li>
+<li><strong>Ops: Post-deploy readiness gate for models.</strong> <code>scripts/post-deploy-check.sh</code> now curls <code>/health</code> after all containers pass their Docker health gates and parses the <code>readiness</code> JSON with Python. If any feature (<code>chat</code>, <code>vision</code>, <code>whisperer</code>) is <code>not-ready</code>, the script prints the status/present/warm details and fails the deployment verification, preventing a deploy from being marked PASSED when required models have not been downloaded or loaded.</li>
+</ul>
+<h3 id="changed">Changed</h3>
+<ul>
+<li><strong>Web: Whisperer duration probe now prefers Mutagen metadata.</strong> <code>_estimate_audio_duration_seconds()</code> now uses <code>mutagen</code> as the primary duration source and falls back to PyAV for additional codec/container coverage. Added <code>mutagen&gt;=1.47.0</code> to <code>web/pyproject.toml</code> and <code>web/requirements.txt</code>.</li>
+</ul>
+<h2 id="200---2026-04-17">[2.0.0] - 2026-04-17</h2>
+<h3 id="added_2">Added</h3>
 <ul>
 <li><strong>Ops: Deep deployment logging.</strong> <code>scripts/deploy-app.sh</code> now writes every phase of a deployment to a timestamped log file in <code>~/deploy-logs/</code> (always teed to stdout). Each step emits an ISO-8601 timestamp. The health-wait loop logs per-attempt container <code>state=</code> / <code>health=</code> / <code>last_log=</code> for all four services at every interval. On health check failure the script dumps the last 40-80 lines from each service log, runs <code>docker inspect</code> to show container error and restart state, and probes <code>/health</code> JSON to print the full service + readiness breakdown. Rollback attempts are logged the same way. A <code>deploy-latest.log</code> symlink always points to the most recent run.</li>
 <li><strong>Web: <code>/health</code> deep readiness checks.</strong> The <code>/health</code> endpoint now returns a <code>readiness</code> object alongside <code>services</code>. <code>readiness.chat</code> reports whether the Llama 3 model is loaded in Ollama. <code>readiness.vision</code> reports whether LLaVA is available. <code>readiness.whisperer</code> reports whether faster-whisper is installed. The top-level <code>status</code> field is <code>"degraded"</code> if any service is down or any readiness check is <code>"not-ready"</code>. The <code>models.ollama</code> array lists all currently loaded model names.</li>
@@ -156,11 +220,11 @@
 <li><strong>Web: Styled <code>:disabled</code> state for <code>btn-primary</code> and <code>btn-secondary</code>.</strong> <code>forms.css</code> now explicitly styles <code>button:disabled</code> and <code>[aria-disabled="true"]</code> for both button classes, providing consistent visual feedback across browsers rather than relying on browser defaults.</li>
 <li><strong>Web: HTTP 403 error handler.</strong> <code>app.py</code> now registers a <code>@errorhandler(403)</code> that renders the styled <code>error.html</code> template (matching 404/500 behavior) instead of Flask's default unstyled 403 page. Triggered by <code>abort(403)</code> in feedback review, admin access checks, and OAuth flows.</li>
 </ul>
-<h3 id="changed">Changed</h3>
+<h3 id="changed_1">Changed</h3>
 <ul>
 <li><strong>Web: fix_review_headings Apply button</strong> now has an <code>id</code> and processing-state JS to prevent accidental double-submission.</li>
 </ul>
-<h3 id="added_1">Added</h3>
+<h3 id="added_3">Added</h3>
 <ul>
 <li><strong>Web: Real-time BITS Whisperer progress reporting.</strong> Whisper transcription now runs as a background job with dedicated status and download endpoints (<code>/whisperer/start</code>, <code>/whisperer/progress/&lt;job_id&gt;</code>, <code>/whisperer/download/&lt;job_id&gt;</code>). The Whisperer page shows true server-reported conversion percentage instead of only elapsed-time estimates, including live status announcements for screen reader users.</li>
 <li><strong>Web: Whisperer preflight estimate + proceed confirmation.</strong> Before transcription starts, the Whisperer form now shows an estimated conversion time from uploaded audio metadata and requires explicit user confirmation to proceed.</li>
@@ -188,7 +252,7 @@
 <li><strong>Web: Accessibility-focused agent categories in Document Chat.</strong> Tool registry exposes five named agent groups: Document (extract tables, search text, list headings, stats, summaries), Compliance Agent (run_accessibility_audit, get_compliance_score, critical/auto-fixable findings), Structure Agent (check_heading_hierarchy, find_faux_headings, check_list_structure, estimate_reading_order), Content Agent (check_emphasis_patterns, check_link_text, check_reading_level, check_alignment_hints), Remediation Agent (explain_rule, suggest_fix, prioritize_findings, estimate_fix_impact, check_image_alt_text).</li>
 <li><strong>Web: Chat Guided Question Cards and example prompts.</strong> The chat page includes a Guided Question Cards section and Example Questions section for first-time users, covering compliance, structure, content, and remediation use cases. Cards are keyboard and screen-reader accessible. Conversation privacy notice informs users that sessions are local and deleted after one hour of inactivity.</li>
 </ul>
-<h3 id="changed_1">Changed</h3>
+<h3 id="changed_2">Changed</h3>
 <ul>
 <li><strong>Docs: Complete rewrite of <code>docs/user-guide.md</code>.</strong> Restructured from 9 inconsistently numbered sections to 17 sections with a corrected TOC. Expanded Quick Start with eight real-world scenarios and a step-by-step upload flow. Fully written BITS Whisperer section (standard mode, background mode, limits table, audio tips, privacy statement). Fully written Document Chat section (all five agent categories, 24 tools, starter prompts, conversation tips, export and privacy guidance). Removed version numbers embedded throughout; standardised language. All tables use proper accessible headers.</li>
 <li><strong>Web: Upload accepted file list expanded.</strong> <code>CONVERT_EXTENSIONS</code> in <code>upload.py</code> now includes image files (<code>.jpg</code>, <code>.jpeg</code>, <code>.png</code>, <code>.gif</code>, <code>.webp</code>, <code>.bmp</code>, <code>.tiff</code>).</li>
@@ -196,7 +260,7 @@
 <li><strong>Web: <code>/audit</code> POST endpoint has per-IP rate limit.</strong> 6 requests per minute per IP to prevent abuse of the email delivery path. Limit applies to all POST submissions, email or not.</li>
 <li><strong>Web: Email report delivery on Audit pages (optional, Postmark integration).</strong> Checkbox to request audit scorecard and findings CSV attachment be sent to an email address immediately after the run. Requires <code>POSTMARK_SERVER_TOKEN</code> env var. Server-side validation and graceful error handling. Email address is never stored.</li>
 </ul>
-<h3 id="fixed">Fixed</h3>
+<h3 id="fixed_1">Fixed</h3>
 <ul>
 <li>Fixed CSRF token handling in consent form so first-visit users can agree without pre-existing session.</li>
 <li><strong>Ops: <code>wait_for_health</code> bash syntax error caused rollback health check to crash.</strong> <code>log_ts</code> writes to stdout; capturing <code>ROLLBACK_HEALTHY="$(wait_for_health "rollback")"</code> included all log lines in the variable, causing <code>[[ "$ROLLBACK_HEALTHY" -eq 1 ]]</code> to fail with <code>syntax error: operand expected</code>. Fixed by redirecting all <code>log_ts</code> calls inside <code>wait_for_health</code> to stderr so command substitution captures only the final <code>0</code> or <code>1</code>.</li>
@@ -204,18 +268,18 @@
 <li><strong>Web: Document Chat accessible from Audit and Fix result pages.</strong> After running Audit, the uploaded file was immediately deleted by the <code>finally</code> cleanup before the user could pivot to Chat. The audit route now preserves the temp file and passes a <code>chat_token</code> to the result template. A "Chat about this document" link appears in the What's Next section on both <code>audit_report.html</code> and <code>fix_result.html</code> when the token is available.</li>
 <li><strong>Docs: User guide incorrectly instructed users to click a "Chat" tab.</strong> No Chat tab exists in the navigation; Chat is token-gated and requires an uploaded document. Updated <code>docs/user-guide.md</code> Section 8 with the correct two-path instructions: via Quick Start, or from Audit/Fix result pages.</li>
 </ul>
-<h3 id="added_2">Added</h3>
+<h3 id="added_4">Added</h3>
 <ul>
 <li><strong>Web: Privacy Policy page (<code>/privacy</code>).</strong> New <code>privacy.html</code> template and <code>privacy_bp</code> blueprint at <code>/privacy</code>. Covers document storage and retention (per workflow), AI usage and data protections, data rights (no training, no third-party sharing), accounts/cookies, and security practices. Accessible from the footer navigation on every page.</li>
 <li><strong>Web: AI used / not used disclosure on every result page.</strong> Audit Report, Fix Results, and Fix Review Headings pages now display a "Data and Privacy" notice section showing whether AI was or was not used during that specific transaction. When AI was used, the notice clarifies that only a local Ollama model on the GLOW server was involved and no data was sent to any third party. When AI was not used, the notice confirms rule-based analysis only.</li>
 <li><strong>Web: Document availability expiry on Fix result pages.</strong> Fix Results and Fix Review Headings pages now display the exact UTC date and time when the held document will be automatically deleted (approximately one hour after upload). This gives users a clear deadline to download their fixed file.</li>
 <li><strong>Web: <code>get_upload_expiry()</code> helper in <code>upload.py</code>.</strong> Returns the UTC <code>datetime</code> when a token's temp directory expires, computed from the directory's modification time plus the configured retention window. Used by the fix route to pass expiry time to templates.</li>
 </ul>
-<h3 id="fixed_1">Fixed</h3>
+<h3 id="fixed_2">Fixed</h3>
 <ul>
 <li><strong>Web: Expired session error message updated.</strong> The 24-hour reference in the fix confirm expired-session error was corrected to 1 hour to match the actual retention window.</li>
 </ul>
-<h3 id="changed_2">Changed</h3>
+<h3 id="changed_3">Changed</h3>
 <ul>
 <li><strong>Web: Upload retention reduced from 24 hours to 1 hour.</strong> The <code>UPLOAD_MAX_AGE_HOURS</code> environment variable default in <code>app.py</code> and the <code>cleanup_stale_uploads()</code> function signature in <code>upload.py</code> now default to <code>1</code> hour instead of <code>24</code>. This matches the retention commitment described in the Privacy Policy and in Jeff Bishop's ACB-Conversation response to Ron Brooks.</li>
 <li><strong>Web: Privacy Policy link added to footer navigation</strong> in <code>base.html</code>, alongside the existing Feedback link.</li>
@@ -240,12 +304,12 @@
 - <strong>Web: <code>test_email.py</code> -- 24 unit tests for <code>email.py</code>.</strong> Covers <code>email_configured()</code>, <code>_findings_to_csv_bytes()</code> (BOM, header, truncation, column values), <code>_send()</code> (all Postmark response codes, timeout, network errors), <code>send_audit_report_email()</code> (unconfigured guard, payload structure, attachment format), and <code>send_batch_audit_report_email()</code> (unconfigured guard, merged CSV file column, failed-result exclusion).<br />
 - <strong>Docs: <code>about.html</code> -- Postmark listed in open-source dependencies table.</strong> Postmark row added alongside WeasyPrint with version, license (MIT client library), and privacy note.<br />
 - <strong>Docs: <code>user-guide.md</code> -- Email delivery section added to "How to Audit a Document".</strong> Documents the optional email field, what is sent (scorecard + CSV), and the privacy policy (address never stored).</p>
-<h3 id="fixed_2">Fixed</h3>
+<h3 id="fixed_3">Fixed</h3>
 <ul>
 <li>Fixed the macOS DMG packaging step in <code>.github/workflows/build.yml</code> by switching directory copy commands to recursive copy (<code>cp -R</code>), resolving the GitHub Actions failure in "Create DMG (macOS)" for onedir PyInstaller outputs.</li>
 <li>Fixed workflow tip banner icons rendering as literal text (<code>&amp;#9758;</code>) in all web form pages (<code>audit_form.html</code>, <code>fix_form.html</code>, <code>convert_form.html</code>, <code>export_form.html</code>, <code>template_form.html</code>) and the <code>_workflow_tip.html</code> partial. Jinja2 auto-escaping was converting <code>&amp;</code> to <code>&amp;amp;</code> when HTML entity strings were stored in <code>{% set %}</code> variables and rendered via <code>{{ }}</code>. Replaced entity strings (<code>"&amp;#9758;"</code>, <code>"&amp;#9432;"</code>) with literal Unicode characters (<code>"☞"</code>, <code>"ℹ"</code>) which pass through auto-escaping unchanged. The <code>aria-hidden="true"</code> on the icon span remains correct and is why screen readers were not affected.</li>
 </ul>
-<h3 id="changed_3">Changed</h3>
+<h3 id="changed_4">Changed</h3>
 <ul>
 <li>Removed remaining stale APH "not yet complete" language from web guide and guidelines templates, aligning all live-facing APH copy with Release 1.2.0 finalized submission wording.</li>
 <li>Added an embedded <strong>APH execution workflow</strong> section to the web User Guide (<code>web/src/acb_large_print_web/templates/guide.html</code>) including an "instructor in your pocket" checklist and week-based deliverables.</li>
@@ -266,7 +330,7 @@
 <p>Added AFB scoping guidance to persistent product docs: Guidelines page now clarifies ACB/APH production usage and that AFB JVIB style is manuscript-oriented (not a fix/audit profile), and FAQ now includes AFB scope, large print vs large-print spelling, em-dash, and running-number conventions.</p>
 </li>
 </ul>
-<h3 id="changed_4">Changed</h3>
+<h3 id="changed_5">Changed</h3>
 <ul>
 <li>Standardized web page title bars to the format <code>Page Name | GLOW (Guided Layout &amp; Output Workflow)</code> across the shared base template and tab-navigation title fallback (<code>web/src/acb_large_print_web/templates/base.html</code>, <code>web/src/acb_large_print_web/static/tabs.js</code>), and simplified page title blocks in feedback/home templates to page-name values only.</li>
 <li>Removed the embedded week-phased Release 1.2.0 APH execution section from the web landing page (<code>web/src/acb_large_print_web/templates/index.html</code>) now that this workflow is already integrated into the guide and guidelines documentation surfaces.</li>
@@ -281,7 +345,7 @@
 <li>Removed <code>BITS-FEEDBACK-PLAN.md</code> after integrating retained AFB scoping and terminology actions into <code>README.md</code>, <code>web/src/acb_large_print_web/templates/guidelines.html</code>, and <code>web/src/acb_large_print_web/templates/faq.html</code>.</li>
 </ul>
 <h2 id="110----2026-04-15">[1.1.0] -- 2026-04-15</h2>
-<h3 id="fixed_3">Fixed</h3>
+<h3 id="fixed_4">Fixed</h3>
 <ul>
 <li>Fix results no longer penalize users for faux-heading findings when heading detection is explicitly disabled in the Fix form; <code>ACB-FAUX-HEADING</code> is suppressed from post-fix scoring and the results page now lists suppressed rules.</li>
 <li>Legacy Word VML shapes now treat explicit <code>alt=""</code> as decorative content, preventing false <code>ACB-MISSING-ALT-TEXT</code> findings when decorative intent is correctly marked.</li>
@@ -306,7 +370,7 @@
 <li>Added a tracked <code>web/Caddyfile</code> with dual-domain app host support (<code>lp.csedesigns.com</code>, <code>glow.bits-acb.org</code>) for direct production deployment with Docker Compose.</li>
 <li>Deployment scripts now support optional alias-domain verification via <code>APP_ALIAS_DOMAIN</code> while keeping <code>APP_DOMAIN</code> defaulted to <code>lp.csedesigns.com</code>.</li>
 </ul>
-<h3 id="added_3">Added</h3>
+<h3 id="added_5">Added</h3>
 <ul>
 <li>Added a <strong>Product Requirements Document</strong> page at <code>/prd/</code> in the web app, rendering <code>docs/prd.md</code> as accessible HTML with a table of contents (mirrors changelog rendering pattern); linked in the web app footer navigation.</li>
 <li>Added a <strong>Documentation and References</strong> section to the web app About page (<code>/about/</code>) linking to the PRD, Changelog, User Guide, and FAQ.</li>

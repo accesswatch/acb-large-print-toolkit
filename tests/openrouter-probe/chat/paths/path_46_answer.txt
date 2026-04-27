@@ -1,0 +1,3 @@
+Alt text issues (ACB-MISSING-ALT-TEXT):
+  2 of 3 image(s) have empty alt text.
+Fix: add a meaningful description inside the brackets: ![Description](image.png)

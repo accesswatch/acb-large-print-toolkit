@@ -1,0 +1,1 @@
+WCAG 2.2 AA is a set of web accessibility guidelines that aim to make digital content more accessible to people with disabilities, focusing on enhancing usability and inclusivity.

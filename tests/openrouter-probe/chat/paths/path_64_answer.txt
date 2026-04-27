@@ -1,0 +1,13 @@
+Based on the pre-flight analysis of your document, here are the prioritized accessibility fixes, along with details on which ones can be auto-fixed:
+
+1. **Fix ACB-NO-ITALIC (critical)**: Remove all italic text. This is a critical issue that needs to be addressed to ensure readability for individuals with visual impairments. **(Auto-fix not available)**
+
+2. **Fix ACB-FONT-SIZE-BODY (critical)**: Raise body text to at least 18pt. This is also a critical requirement for accessibility. **(Auto-fix not available)**
+
+3. **Fix ACB-FAUX-HEADING (high)**: Apply real heading styles instead of using bold or other formatting to indicate headings. This helps screen readers navigate the document more effectively. **(Auto-fix not available)**
+
+4. **Fix ACB-LINK-TEXT (high)**: Replace generic or bare-URL links with descriptive link text. This enhances usability and clarity for all users. **(Auto-fix not available)**
+
+5. **Fix ACB-MISSING-ALT-TEXT (high)**: Add alt text to images. This is essential for users who rely on screen readers to understand the content of images. **(Auto-fix not available)**
+
+None of the identified issues can be auto-fixed, and all require manual intervention to ensure compliance with accessibility standards.

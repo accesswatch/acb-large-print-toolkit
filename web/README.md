@@ -143,6 +143,37 @@ docker compose up --build
 
 The app is served on port 8000. For production deployment with Caddy (auto-TLS), see [docs/deployment.md](../docs/deployment.md).
 
+### WSL Staging Before Production Deploy
+
+On a Windows workstation with WSL 2, you can stage the Docker stack in your Ubuntu distro and run the current regression gate before touching the main server.
+
+Prerequisites:
+
+- Docker Desktop WSL integration must be enabled for the target distro.
+- The repo `.venv` must exist for the focused pytest lane.
+- `web/node_modules` and Playwright browsers must already be installed for the browser lane.
+
+Run:
+
+```powershell
+pwsh -File .\scripts\wsl-stage-regression.ps1
+```
+
+What it does:
+
+- Starts `web/docker-compose.yml` with the WSL override `web/docker-compose.wsl.yml`
+- Waits for `/health` on `http://127.0.0.1:8000`
+- Runs the focused web pytest regression set used for the current rollout
+- Runs the Playwright regression suite against the running WSL-hosted container stack
+- Defaults all AI feature flags to `0` so non-AI release validation matches the planned production rollout
+
+Useful switches:
+
+- `-KeepRunning` leaves the WSL containers up after tests finish
+- `-SkipPytest` or `-SkipE2E` narrows the lane when debugging
+- `-EnableAI` stages the stack with all AI feature flags enabled
+- `-AudioPath` supplies a Whisperer sample when AI staging is enabled
+
 ## Environment Variables
 
 | Variable | Default | Description |
@@ -151,6 +182,12 @@ The app is served on port 8000. For production deployment with Caddy (auto-TLS),
 | `FEEDBACK_PASSWORD` | (unset) | Set to enable `/feedback/review?key=<password>`. Disabled when unset. |
 | `LOG_LEVEL` | `INFO` | Python logging level (DEBUG, INFO, WARNING, ERROR). |
 | `MAX_CONTENT_LENGTH` | 500 MB | Maximum upload file size. |
+| `GLOW_ENABLE_AI` | `1` | Master switch for all web AI features. Set to `0` to deploy the site with AI paths hidden and disabled while still shipping non-AI fixes. |
+| `GLOW_ENABLE_AI_CHAT` | `1` | Gate Document Chat independently. |
+| `GLOW_ENABLE_AI_WHISPERER` | `1` | Gate BITS Whisperer independently. |
+| `GLOW_ENABLE_AI_HEADING_FIX` | `1` | Gate AI refinement in the Fix workflow while keeping heuristic heading detection available. |
+| `GLOW_ENABLE_AI_ALT_TEXT` | `1` | Gate AI-assisted alt-text helpers independently. |
+| `GLOW_ENABLE_AI_MARKITDOWN_LLM` | `1` | Gate MarkItDown LLM enhancements independently. |
 
 ## Security
 

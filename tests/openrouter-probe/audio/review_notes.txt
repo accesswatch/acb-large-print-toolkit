@@ -1,0 +1,6 @@
+Review notes:
+- reagan-30s.mp3 is the source audio artifact.
+- intent_prompt.txt records both the direct endpoint parameters and the fallback input_audio prompt.
+- expected_behavior.txt explains what success should look like once credits are available.
+- latest_direct_transcript.txt / latest_direct_response.json capture the direct endpoint outcome.
+- latest_fallback_transcript.txt / latest_fallback_response.json capture the input_audio fallback outcome.

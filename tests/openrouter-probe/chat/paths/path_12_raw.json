@@ -1,0 +1,3 @@
+{
+  "raw": "Heading hierarchy issues found (1):\n  Skipped heading level: H2 \u2192 H4 at \"Detailed Findings\"\nFix: do not skip heading levels (e.g. H1 \u2192 H3). Use consecutive levels."
+}

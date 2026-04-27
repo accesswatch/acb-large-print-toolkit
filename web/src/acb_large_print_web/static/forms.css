@@ -1224,6 +1224,10 @@ footer p {
   line-height: 1.5;
 }
 
+.warning-box .warning-message {
+  white-space: pre-line;
+}
+
 /* --- Batch Scorecard Summary --- */
 .batch-scorecard {
   display: flex;

@@ -1,0 +1,11 @@
+Here is the extracted text from the image:
+
+```
+GLOW OpenRouter Vision Test
+
+This image contains visible text for OCR.
+
+ACB Large Printcheck: Arial-like sans serif layout.
+
+Expected marker: VISION_TEXT_OK
+```

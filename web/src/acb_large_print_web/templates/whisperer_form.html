@@ -4,11 +4,11 @@
 {% block heading %}BITS Whisperer{% endblock %}
 
 {% block content %}
-<p>Transcribe audio recordings into accessible text -- entirely on this server. Your audio is never sent to any external service or cloud API. Powered by OpenAI Whisper (medium model) running locally via <a href="https://github.com/SYSTRAN/faster-whisper">faster-whisper</a>.</p>
+<p>Transcribe audio recordings into accessible text using the OpenAI Whisper API with server-side cleanup, clear retention limits, and optional secure retrieval for background jobs. GLOW sends audio only for transcription and removes temporary files after processing.</p>
 
 {% if not whisper_installed %}
 <div class="error-box" role="alert">
-  <p><strong>BITS Whisperer is not available on this server.</strong> The faster-whisper library is not installed. Contact the site administrator to enable audio transcription.</p>
+  <p><strong>BITS Whisperer is not available on this server.</strong> The OpenRouter API key is not configured. Contact the site administrator to enable AI features.</p>
 </div>
 {% else %}
 
@@ -19,8 +19,8 @@
 {% endif %}
 
 <div class="info-box" role="note">
-  <p><strong>Processing time:</strong> Whisper medium runs on CPU at roughly real-time speed -- a 10-minute recording takes about 10 minutes to transcribe. Large files (over 30 minutes) may take a while. The page will wait while your audio is being processed.</p>
-  <p><strong>Progress indicator:</strong> After you click <em>Transcribe Audio</em>, this page shows real server-reported conversion progress from the active Whisper job.</p>
+  <p><strong>Processing time:</strong> Completion time depends on file length, current server load, and upstream API response time. Large files can still take a while, especially during busy periods.</p>
+  <p><strong>Progress indicator:</strong> After you click <em>Transcribe Audio</em>, this page polls for job status. Progress will hold at 1% while the cloud transcription service is processing your audio (the Whisper API does not stream incremental progress), then jump to 80% when transcription completes and formatting begins.</p>
 </div>
 
 {% set estimate_ready_value = estimate_ready if estimate_ready is defined else false %}
@@ -60,9 +60,9 @@
       {% if not uploaded_filename %}required{% endif %}
       aria-describedby="audio-hint">
     <p id="audio-hint" class="field-hint">
-      Accepted formats: MP3, WAV, M4A, OGG, FLAC, AAC, Opus.
+      Accepted formats: MP3, WAV, M4A, OGG, FLAC, AAC, Opus, WebM, MP4, MPEG, MPGA.
       Maximum file size: {{ max_audio_mb }} MB.
-      For best results, use a clear recording with minimal background noise.
+      For best results, use a clear recording with minimal background noise. OGG, FLAC, AAC, and Opus files may be normalized to MP3 on the server before transcription.
     </p>
     <div id="audio-size-warning" class="warning-box" role="alert" hidden>
       <p><strong>File too large:</strong> This file exceeds the {{ max_audio_mb }} MB limit. Please choose a smaller file before continuing.</p>
@@ -254,15 +254,14 @@
 
 <details class="help-accordion">
   <summary>Privacy: what happens to my audio?</summary>
-  <p>Your audio file is uploaded to this server, transcribed using a local copy of the Whisper model, and then <strong>deleted immediately</strong> once the transcript is sent back to you. The audio is never forwarded to OpenAI, any cloud API, or any third party. Transcription happens entirely in this server's memory using the faster-whisper library.</p>
-  <p>The transcript itself is also deleted after download. Nothing is stored.</p>
+  <p>Your audio file is uploaded to GLOW, optionally normalized on the server for compatibility, sent to the Whisper transcription API, and then <strong>deleted on GLOW's retention schedule</strong> after the result is delivered or expires. Background jobs use the same short-lived retention window described in the privacy policy.</p>
+  <p>The transcript itself is also temporary. GLOW does not keep a permanent transcript archive. If you do not want AI processing, simply avoid BITS Whisperer and use the non-AI workflows elsewhere in the product.</p>
 </details>
 
 <details class="help-accordion">
   <summary>What is Whisper medium? How accurate is it?</summary>
-  <p>Whisper is an open-source speech recognition model released by OpenAI in 2022. BITS Whisperer uses the <strong>medium</strong> size model (1.5 GB, 300M parameters), which gives the best balance of accuracy and speed for CPU inference.</p>
-  <p>Accuracy depends on audio quality. For clear speech in a quiet room, Whisper medium produces near-human-level transcription in English and performs well in over 50 other languages. Background noise, multiple speakers talking at the same time, strong accents, and technical jargon reduce accuracy.</p>
-  <p>The model runs with int8 quantization via CTranslate2, which is 4x faster than standard float32 inference with no meaningful accuracy loss.</p>
+  <p>Whisper is OpenAI's speech recognition model family. GLOW uses the Whisper API for transcription because it provides strong multilingual accuracy, consistent output quality, and simpler server operations than hosting the full model stack locally.</p>
+  <p>Accuracy depends on audio quality. Clear recordings in quiet environments perform best. Background noise, multiple simultaneous speakers, and domain-specific terminology still require review.</p>
 </details>
 
 <details class="help-accordion">
@@ -286,6 +285,8 @@
     <li><strong>FLAC</strong> (.flac) -- lossless compression; good quality, smaller than WAV</li>
     <li><strong>AAC</strong> (.aac) -- compressed audio used by many devices</li>
     <li><strong>Opus</strong> (.opus) -- modern codec used by voice calls and video conferences</li>
+    <li><strong>WebM</strong> (.webm) -- common web/browser recording container</li>
+    <li><strong>MP4 audio</strong> (.mp4, .mpeg, .mpga) -- accepted where audio-only tracks are present</li>
   </ul>
   <p>Video files (MP4, MOV, WebM) are not accepted directly. Extract the audio track first using a tool like VLC or ffmpeg, then upload the audio file.</p>
 </details>

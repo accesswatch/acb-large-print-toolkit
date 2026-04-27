@@ -1,0 +1,5 @@
+Reading level estimate: LOW (plain language)
+Average sentence length: 7.4 words
+Long sentences (>30 words): 0
+Long words (>12 chars): 0
+Total sentences analyzed: 5

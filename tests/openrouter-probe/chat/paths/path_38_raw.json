@@ -1,0 +1,3 @@
+{
+  "raw": "Rule: ACB-NO-ITALIC\n\nWhat it means: Italic formatting is completely prohibited. This is a critical violation.\n\nWhy it matters: Italic text is harder to read for people with dyslexia and low vision. ACB requires underline for emphasis instead.\n\nHow to fix: Remove all italic formatting. Use underline (Ctrl+U) for emphasis instead."
+}

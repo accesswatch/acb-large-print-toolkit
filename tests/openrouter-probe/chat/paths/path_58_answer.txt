@@ -1,0 +1,11 @@
+=== GLOW Document Analysis (pre-flight tool results) ===
+
+[check_emphasis_patterns]
+Emphasis issues found:
+  • CRITICAL — 2 italic instance(s) found (ACB-NO-ITALIC). Example: *Minutes recorded by the Secretary*
+  • HIGH — 2 long bold phrase(s) that may be body emphasis (ACB-BOLD-HEADINGS-ONLY). Bold is permitted for headings only.
+
+[search_text]
+No matches found for 'for all places where italic appears in th'.
+
+=== Use the above analysis to give a grounded, specific answer. ===

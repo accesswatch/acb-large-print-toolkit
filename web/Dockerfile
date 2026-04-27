@@ -49,13 +49,10 @@ RUN pip install --no-cache-dir ./web
 
 # Create a non-root user
 RUN addgroup --system app && adduser --system --ingroup app app
-RUN mkdir -p /app/instance /app/.gunicorn /app/.cache/huggingface/hub \
-    && chown -R app:app /app/instance /app/.gunicorn /app/.cache
+RUN mkdir -p /app/instance /app/.gunicorn \
+    && chown -R app:app /app/instance /app/.gunicorn
 
-ENV HOME=/app \
-    XDG_CACHE_HOME=/app/.cache \
-    HF_HOME=/app/.cache/huggingface \
-    HUGGINGFACE_HUB_CACHE=/app/.cache/huggingface/hub
+ENV HOME=/app
 USER app
 
 EXPOSE 8000

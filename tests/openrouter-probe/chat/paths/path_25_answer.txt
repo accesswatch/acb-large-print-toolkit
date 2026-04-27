@@ -1,0 +1,4 @@
+Heuristic compliance summary (no live audit available):
+• Possible bold-emphasis abuse (ACB-BOLD-HEADINGS-ONLY)
+• Possible italic usage (ACB-NO-ITALIC — critical violation)
+• Possible bare URLs used as link text (ACB-LINK-TEXT)

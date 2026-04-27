@@ -43,7 +43,14 @@ services:
     environment:
       - FLASK_DEBUG=0
       - PIPELINE_URL=http://pipeline:8181/ws
-      - OLLAMA_HOST=http://ollama:11434
+      # AI rollout defaults: keep AI disabled in production until each feature
+      # has been validated, then override these in web/.env as needed.
+      - GLOW_ENABLE_AI=${GLOW_ENABLE_AI:-0}
+      - GLOW_ENABLE_AI_CHAT=${GLOW_ENABLE_AI_CHAT:-0}
+      - GLOW_ENABLE_AI_WHISPERER=${GLOW_ENABLE_AI_WHISPERER:-0}
+      - GLOW_ENABLE_AI_HEADING_FIX=${GLOW_ENABLE_AI_HEADING_FIX:-0}
+      - GLOW_ENABLE_AI_ALT_TEXT=${GLOW_ENABLE_AI_ALT_TEXT:-0}
+      - GLOW_ENABLE_AI_MARKITDOWN_LLM=${GLOW_ENABLE_AI_MARKITDOWN_LLM:-0}
       # Postmark email notifications (optional -- email audit reports to users)
       # Set these in the .env file loaded via env_file above:
       #   POSTMARK_SERVER_TOKEN=your-postmark-server-token
@@ -67,33 +74,13 @@ services:
       retries: 5
       start_period: 30s
 
-  ollama:
-    image: ollama/ollama:latest
-    expose:
-      - "11434"
-    volumes:
-      - ollama_data:/root/.ollama
-    restart: unless-stopped
-    logging:
-      driver: json-file
-      options:
-        max-size: "10m"
-        max-file: "5"
-        tag: "glow-ollama/{{.Name}}"
-    healthcheck:
-      test: ["CMD", "ollama", "list"]
-      interval: 30s
-      timeout: 5s
-      retries: 5
-      start_period: 30s
-
   caddy:
     image: caddy:2-alpine
     restart: unless-stopped
     ports:
-      - "80:80"
-      - "443:443"
-      - "443:443/udp"
+      - "8080:80"
+      - "8443:443"
+      - "8443:443/udp"
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - ./www:/srv/www:ro
@@ -113,4 +100,3 @@ volumes:
   feedback-data:
   caddy_data:
   caddy_config:
-  ollama_data:

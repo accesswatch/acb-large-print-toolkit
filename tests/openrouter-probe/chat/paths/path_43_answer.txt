@@ -1,0 +1,2 @@
+Fix for ACB-FONT-SIZE-BODY:
+Select all body paragraphs and set font size to 18pt.

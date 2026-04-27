@@ -26,7 +26,7 @@
       required
       aria-describedby="file-hint">
     <p id="file-hint" class="field-hint">
-      Supported: Word, Excel, PowerPoint, PDF, Markdown, ePub, images (JPG, PNG, GIF, etc.), audio (MP3, WAV, M4A, etc.).
+      Supported: Word, Excel, PowerPoint, PDF, Markdown, ePub, images (JPG, PNG, GIF, etc.){% if ai_whisperer_enabled %}, audio (MP3, WAV, M4A, OGG, FLAC, AAC, Opus, WebM, MP4, MPEG, MPGA){% endif %}.
       Maximum file size: 500 MB.
     </p>
   </fieldset>
@@ -54,10 +54,15 @@
   <ul>
     <li><strong>Audit:</strong> Check for accessibility compliance issues across Word, Excel, PowerPoint, PDF, Markdown, ePub, and image files.</li>
     <li><strong>Fix:</strong> Auto-fix accessibility problems in Word documents (fonts, sizes, spacing, alignment, emphasis).</li>
-    <li><strong>Convert:</strong> Transform any document into Markdown, HTML, PDF, Word, ePub, or other formats. Images get alt-text descriptions powered by AI running on this server.</li>
+    <li><strong>Convert:</strong> Transform documents into Markdown, HTML, PDF, Word, ePub, DAISY, and other formats. Supported image flows can use AI-assisted descriptions when enabled.</li>
+    {% if ai_chat_enabled %}
+    <li><strong>Document Chat:</strong> Ask grounded questions about uploaded document content using accessibility-aware tooling and OpenRouter-backed reasoning.</li>
+    {% endif %}
     <li><strong>Export:</strong> Convert a Word document to accessible HTML with built-in ACB Large Print styling.</li>
     <li><strong>Create Template:</strong> Generate a ready-to-use Word template (.dotx) with all ACB formatting pre-configured.</li>
-    <li><strong>BITS Whisperer:</strong> Transcribe audio (MP3, WAV, M4A, OGG, FLAC) to Markdown or Word without sending your audio anywhere.</li>
+    {% if ai_whisperer_enabled %}
+    <li><strong>BITS Whisperer:</strong> Transcribe audio (MP3, WAV, M4A, OGG, FLAC, AAC, Opus, WebM, MP4, MPEG, MPGA) to Markdown or Word with retention controls and secure cleanup.</li>
+    {% endif %}
   </ul>
 </details>
 {% endblock %}

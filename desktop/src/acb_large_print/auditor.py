@@ -138,6 +138,32 @@ def _effective_font_size(run) -> float | None:
     return None
 
 
+def _add_capped_font_family_findings(
+    result: AuditResult,
+    font_locations: dict[str, list[str]],
+    *,
+    max_examples: int = 3,
+) -> None:
+    """Add capped document findings for repeated non-Arial font usage."""
+    for font_name, locations in sorted(font_locations.items()):
+        for location in locations[:max_examples]:
+            result.add(
+                "ACB-FONT-FAMILY",
+                f"Non-Arial font '{font_name}'",
+                location,
+            )
+        if len(locations) > max_examples:
+            result.add(
+                "ACB-FONT-FAMILY",
+                (
+                    f"Non-Arial font '{font_name}' also appears in "
+                    f"{len(locations) - max_examples} additional paragraph(s); "
+                    f"showing the first {max_examples} locations only"
+                ),
+                "Document-wide",
+            )
+
+
 def _is_heading_style(style_name: str) -> bool:
     """Check if a style name is a heading style."""
     return bool(re.match(r"^Heading \d+$", style_name))
@@ -301,11 +327,13 @@ def _check_paragraph_content(
     prev_heading_level = 0
     paragraphs_since_heading = 0
     heading_texts: dict[int, list[str]] = {}  # level -> list of heading texts
+    non_arial_font_locations: dict[str, list[str]] = {}
 
     for i, para in enumerate(doc.paragraphs):
         result.total_paragraphs += 1
         loc = f"Paragraph {i + 1}"
         style_name = para.style.name if para.style else "Normal"
+        para_style_font = para.style.font.name if para.style is not None else None
         text_preview = para.text[:60].strip()
         if text_preview:
             loc = (
@@ -410,6 +438,8 @@ def _check_paragraph_content(
                     loc,
                 )
 
+        paragraph_non_arial_fonts: set[str] = set()
+
         # Check each run
         for run in para.runs:
             result.total_runs += 1
@@ -433,12 +463,19 @@ def _check_paragraph_content(
                     )
 
             # Font family override at run level
-            if run.font.name and run.font.name != C.FONT_FAMILY:
-                result.add(
-                    "ACB-FONT-FAMILY",
-                    f"Non-Arial font '{run.font.name}' in: '{run.text[:40]}'",
-                    loc,
+            effective_font_name = _effective_font_name(run)
+            if effective_font_name and effective_font_name != C.FONT_FAMILY:
+                style_covers_font = (
+                    style_name in C.ACB_STYLES
+                    and para_style_font == effective_font_name
+                    and para_style_font != C.FONT_FAMILY
                 )
+                if (
+                    not style_covers_font
+                    and effective_font_name not in paragraph_non_arial_fonts
+                ):
+                    paragraph_non_arial_fonts.add(effective_font_name)
+                    non_arial_font_locations.setdefault(effective_font_name, []).append(loc)
 
             # Font size below minimum at run level
             if run.font.size and run.font.size.pt < C.MIN_SIZE_PT - 0.5:
@@ -512,6 +549,8 @@ def _check_paragraph_content(
                     f"20+ paragraphs without a heading (last heading was before paragraph {i + 1 - 20})",
                     loc,
                 )
+
+    _add_capped_font_family_findings(result, non_arial_font_locations)
 
 
 def _check_hyphenation(doc: Document, result: AuditResult) -> None:

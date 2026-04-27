@@ -1,0 +1,3 @@
+{
+  "raw": "Rule: ACB-TABLE-HEADERS\n\nWhat it means: Tables must have defined header rows.\n\nWhy it matters: Screen readers announce column headers for each data cell in a table. Without headers, table data is meaningless to blind users.\n\nHow to fix: Click in the first row of the table, go to Table Design, and check 'Header Row'."
+}

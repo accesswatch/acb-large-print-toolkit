@@ -1,0 +1,3 @@
+{
+  "raw": "Rule: ACB-ALIGNMENT\n\nWhat it means: All text must be flush left (left-aligned). Justified, centered, and right-aligned text are violations.\n\nWhy it matters: Justified text creates uneven word spacing ('rivers of white space') that makes reading harder for people with low vision and dyslexia.\n\nHow to fix: Select all text and apply Left alignment (Ctrl+L)."
+}

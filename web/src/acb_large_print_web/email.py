@@ -359,7 +359,6 @@ def send_batch_audit_report_email(
         return False, "Email service is not configured. Contact the site administrator."
 
     # Build merged CSV with a File column prepended
-    buf = io.BytesIO()
     text_buf = io.StringIO()
     writer = csv.writer(text_buf, quoting=csv.QUOTE_MINIMAL)
     writer.writerow([

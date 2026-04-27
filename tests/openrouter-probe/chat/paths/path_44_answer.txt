@@ -1,0 +1,7 @@
+Priority order (no live audit available):
+  1. Fix ACB-NO-ITALIC (critical — remove all italic)
+  2. Fix ACB-FAUX-HEADING (high — apply real heading styles)
+  3. Fix ACB-LINK-TEXT (high — replace generic/bare-URL links)
+  4. Fix ACB-FONT-SIZE-BODY (critical — raise body text to 18pt)
+  5. Fix ACB-MISSING-ALT-TEXT (high — add alt text to images)
+Upload to GLOW Fix for full auto-fix.

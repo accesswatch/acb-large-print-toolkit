@@ -1,0 +1,9 @@
+=== GLOW Document Analysis (pre-flight tool results) ===
+
+[check_link_text]
+Link text issues (ACB-LINK-TEXT):
+  • Bare URLs (1 found): https://internal.bits-acb.org/financials
+  • Generic link text (1 found): click here
+Fix: replace with descriptive text like 'ACB Large Print Guidelines'.
+
+=== Use the above analysis to give a grounded, specific answer. ===

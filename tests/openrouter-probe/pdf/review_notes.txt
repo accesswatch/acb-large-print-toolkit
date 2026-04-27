@@ -1,0 +1,6 @@
+Review notes:
+- vision_text.pdf is the source PDF artifact.
+- run_pdf_app.py renders the first page to rendered_first_page.png before sending that image to OpenRouter.
+- intent_prompt.txt is the exact OCR prompt.
+- expected_visible_text.txt is the target recognized text.
+- latest_ocr_text.txt and latest_response.json will be created/overwritten when run_pdf_app.py is executed.

@@ -167,6 +167,30 @@ export const ACB_STYLES: Record<string, StyleDef> = {
             keepWithNext: true,
         }),
     },
+    "Heading 4": {
+        font: fontDef({ sizePt: HEADING3_SIZE_PT, bold: true }),
+        para: paraDef({
+            spaceBeforePt: SPACE_BEFORE_H3_PT,
+            spaceAfterPt: SPACE_AFTER_H3_PT,
+            keepWithNext: true,
+        }),
+    },
+    "Heading 5": {
+        font: fontDef({ sizePt: HEADING3_SIZE_PT, bold: true }),
+        para: paraDef({
+            spaceBeforePt: SPACE_BEFORE_H3_PT,
+            spaceAfterPt: SPACE_AFTER_H3_PT,
+            keepWithNext: true,
+        }),
+    },
+    "Heading 6": {
+        font: fontDef({ sizePt: HEADING3_SIZE_PT, bold: true }),
+        para: paraDef({
+            spaceBeforePt: SPACE_BEFORE_H3_PT,
+            spaceAfterPt: SPACE_AFTER_H3_PT,
+            keepWithNext: true,
+        }),
+    },
     "List Bullet": {
         font: fontDef({ sizePt: LIST_SIZE_PT }),
         para: paraDef({

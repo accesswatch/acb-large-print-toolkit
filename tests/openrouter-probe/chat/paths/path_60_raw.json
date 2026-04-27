@@ -1,0 +1,8 @@
+{
+  "tools_fired": [
+    "explain_rule",
+    "prioritize_findings",
+    "estimate_fix_impact"
+  ],
+  "question": "Explain ACB-NO-ITALIC and the steps to fix it in my document."
+}

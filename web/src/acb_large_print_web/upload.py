@@ -6,6 +6,7 @@ import re
 import shutil
 import tempfile
 import uuid
+from datetime import datetime
 from pathlib import Path
 
 from werkzeug.datastructures import FileStorage
@@ -14,7 +15,20 @@ from werkzeug.utils import secure_filename
 ALLOWED_EXTENSIONS = {".docx", ".xlsx", ".pptx", ".md", ".pdf", ".epub"}
 
 # Audio extensions accepted by the BITS Whisperer route (/whisperer)
-AUDIO_EXTENSIONS = {".mp3", ".wav", ".m4a", ".ogg", ".flac", ".aac", ".opus"}
+# Includes Whisper API direct formats and formats that are normalized server-side.
+AUDIO_EXTENSIONS = {
+    ".mp3",
+    ".wav",
+    ".m4a",
+    ".ogg",
+    ".flac",
+    ".aac",
+    ".opus",
+    ".webm",
+    ".mp4",
+    ".mpeg",
+    ".mpga",
+}
 
 # Additional extensions accepted by the convert route (Pandoc + MarkItDown)
 # Audio is handled separately by /whisperer -- not included here
@@ -163,7 +177,7 @@ def get_upload_expiry(token: str, max_age_hours: int = 1) -> "datetime | None":
     Returns:
         A timezone-aware UTC datetime, or None if the token directory is missing.
     """
-    from datetime import datetime, timezone, timedelta
+    from datetime import timezone, timedelta
 
     temp_dir = get_temp_dir(token)
     if temp_dir is None:

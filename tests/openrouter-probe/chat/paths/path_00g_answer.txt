@@ -1,0 +1,15 @@
+# BITS Newsletter -- Spring 2026
+
+## President's Message
+
+Welcome to the spring 2026 edition of the BITS newsletter.
+
+Membership has grown to 1,204 members this quarter.
+
+## Technology Updates
+
+The GLOW toolkit now supports Word, Excel, PowerPoint, PDF, and ePub.
+
+## Upcoming Events
+
+* Annual Confer

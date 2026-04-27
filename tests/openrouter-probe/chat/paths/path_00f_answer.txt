@@ -1,0 +1,17 @@
+**Title:** BITS Report 2026
+**Language:** en
+**Identifier:** bits-report-2026
+
+# BITS Board Report 2026
+
+## Financial Summary
+
+Annual revenue reached $616,000 in 2026. The organization is stable.
+
+## Technology Committee
+
+The website audit found 14 images missing alt text.
+
+## Membership
+
+Total acti

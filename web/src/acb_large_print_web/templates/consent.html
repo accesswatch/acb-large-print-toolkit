@@ -34,16 +34,16 @@
 
         <h4>Audio Files (BITS Whisperer)</h4>
         <ul>
-          <li>Audio files you upload for transcription are processed using a local copy of the <a href="https://github.com/openai/whisper">Whisper model</a> running on this server.</li>
-          <li><strong>Your audio never leaves this server.</strong> It is not sent to OpenAI, any cloud speech API, or any other external service.</li>
-          <li>The audio file is deleted immediately after the transcript is returned to you.</li>
+           <li>Audio files you upload for transcription are sent to the <a href="https://openai.com/research/whisper">Whisper API</a> for high-quality speech recognition and then immediately deleted from the GLOW server.</li>
+           <li>Transcripts are processed locally and never stored beyond your session (deleted within 1 hour).</li>
+           <li>The audio file is deleted from GLOW immediately after the transcript is received from the API.</li>
         </ul>
 
         <h4>AI-Assisted Features</h4>
         <ul>
-          <li>Optional AI features use locally hosted models running on this server.</li>
-          <li>Document content stays on this server and is not forwarded to external AI APIs.</li>
-          <li>AI-assisted options are always optional and clearly labelled.</li>
+           <li>Optional AI features route requests through GLOW's configured AI provider (OpenRouter). Only the content required to complete a request is transmitted.</li>
+           <li>Transmitted content is not sold, shared, or used for advertising or independent product training by GLOW.</li>
+           <li>AI-assisted options are always optional, clearly labelled, and can be skipped entirely.</li>
         </ul>
       </section>
 

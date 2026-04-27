@@ -138,7 +138,9 @@ test.describe('GLOW web regression suite', () => {
     skipIfMissingAudioFile();
     test.setTimeout(16 * 60 * 1000);
 
-    await page.goto('/whisperer/');
+    const response = await page.goto('/whisperer/');
+    test.skip(response && response.status() === 404, 'Whisperer is gated off in this environment.');
+
     await ensureConsent(page);
     await expect(page.getByRole('heading', { level: 1, name: /BITS Whisperer/i })).toBeVisible();
 

@@ -4,6 +4,71 @@
 
 This document describes the safe, failsafe deployment process for the GLOW Accessibility Toolkit web application. The strategy prioritizes **zero data loss**, **automatic rollback on failure**, and **transparent user communication** during maintenance.
 
+Before production deployment, the preferred workstation gate is a WSL-hosted Docker staging run plus focused regressions. That catches container/runtime differences earlier while keeping the production server deploy script narrow and predictable.
+
+### Recommended Pre-Production WSL Gate
+
+From Windows PowerShell on the development workstation:
+
+```powershell
+pwsh -File .\scripts\wsl-stage-regression.ps1
+```
+
+This staging lane:
+
+1. Starts the web stack in the target Ubuntu WSL distro using `web/docker-compose.yml` plus `web/docker-compose.wsl.yml`
+2. Waits for `/health` on `http://127.0.0.1:8000`
+3. Runs the focused pytest regression suite for current web changes
+4. Runs the Playwright browser regression suite against the running WSL-hosted Docker stack
+5. Defaults AI feature flags to off so the staged behavior matches the intended non-AI production rollout
+
+Prerequisite:
+
+- Docker Desktop WSL integration must be enabled for the Ubuntu distro you target. If `docker` is missing inside WSL, fix that first; the staging script intentionally stops there rather than silently falling back to Windows Docker.
+
+## WSL: Local replication and port notes
+
+For developers who want to reproduce the exact WSL environment used for pre-production staging (including a system Apache + WordPress install side-by-side with Docker), we maintain a companion repository `wsl-BishopLink` under `D:\code\wsl-BishopLink`.
+
+- Run the bootstrap to replicate the workstation environment (install packages, shell tooling, Playwright dependencies, etc):
+
+```bash
+# inside WSL
+bash /mnt/d/code/wsl-BishopLink/bootstrap-wsl.sh
+```
+
+- The replication repo includes an interactive helper `install_apache_wordpress.sh` that installs `apache2`, `mariadb`, PHP, and drops a WordPress copy into `/var/www/html` for local development. Run it with `sudo` and follow prompts:
+
+```bash
+sudo /mnt/d/code/wsl-BishopLink/install_apache_wordpress.sh
+```
+
+- Important port note: on developer machines the system Apache in WSL frequently binds host ports `80`/`443`. To avoid collisions the GLOW compose files and this replication guidance bind Caddy to host ports `8080` (HTTP) and `8443` (HTTPS) by default. Use `http://localhost:8080` and `https://localhost:8443` to access the local site when running the Docker stack.
+
+- If you want Docker/Caddy to use `80`/`443` instead, stop and disable the system Apache inside WSL (requires `sudo`):
+
+```bash
+sudo systemctl stop apache2
+sudo systemctl disable apache2
+# then restart Docker/Caddy with the original compose ports
+```
+
+- The bootstrap avoids forcing an `npm` user prefix if `nvm` is detected, to prevent startup warnings and prefix/globalconfig conflicts with `nvm`.
+
+- WP-CLI: The bootstrap installs WP-CLI (`wp`) for local WordPress management. Run `wp --info` to verify. When operating on files under `/var/www/html/wordpress` run commands as the `www-data` user to keep file ownership correct (for example: `sudo -u www-data wp plugin update --all`).
+
+- Exporting WordPress for replication: to create portable artifacts that can be committed or archived into the replication repo, run the following from inside WSL (adjust filenames as desired):
+
+```bash
+# archive the WordPress files (preserves ownership when restored using sudo)
+sudo tar -czf /mnt/d/code/wsl-BishopLink/wordpress-files-$(date +%F).tar.gz -C /var/www/html wordpress
+
+# dump the WordPress database (you will be prompted for the MariaDB root password)
+sudo mysqldump -u root -p --databases wordpress > /mnt/d/code/wsl-BishopLink/wordpress-db-$(date +%F).sql
+
+# If you prefer a single, permission-preserving snapshot you can run as root and copy the artifacts into D: from WSL
+```
+
 ---
 
 ## Deployment Workflow
@@ -28,7 +93,7 @@ This document describes the safe, failsafe deployment process for the GLOW Acces
 
 4. **Build and start Docker containers**
    - `docker compose -f docker-compose.prod.yml up -d --build`
-   - Web app, Pipeline (DAISY), and Ollama (AI) services start
+   - Web app and Pipeline (DAISY) services start
    - Containers restart automatically on failure (`restart: unless-stopped`)
 
 5. **Wait for health check** (up to 40 attempts × 3 seconds = ~2 minutes)
@@ -107,7 +172,7 @@ If the health check fails:
 ┌─────────────────────────────────────┐
 │  [BUILD & START]                    │
 │  docker compose up -d --build       │
-│  (Web, Pipeline, Ollama services)   │
+│  (Web and Pipeline services)        │
 └──────────────┬──────────────────────┘
                │
                ▼
@@ -314,3 +379,4 @@ curl -I https://lp.csedesigns.com/health
 - **Docker Compose:** `/app/web/docker-compose.prod.yml`
 - **Health Check Endpoint:** `GET /health` (returns `{"status": "healthy"}`)
 - **Last Updated:** April 17, 2026
+- **Last Updated:** April 27, 2026

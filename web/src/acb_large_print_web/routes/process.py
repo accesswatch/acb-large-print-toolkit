@@ -11,27 +11,27 @@ Routes:
 
 from __future__ import annotations
 
-from pathlib import Path
-
 from flask import Blueprint, render_template, request, redirect, url_for
 
-from acb_large_print.converter import CONVERTIBLE_EXTENSIONS, AUDIO_EXTENSIONS
-
+from ..ai_features import ai_chat_enabled, ai_whisperer_enabled
 from ..upload import (
+    AUDIO_EXTENSIONS,
+    CONVERT_EXTENSIONS,
+    ALLOWED_EXTENSIONS,
     UploadError,
-    cleanup_token,
     get_temp_dir,
     validate_upload,
 )
 
 process_bp = Blueprint("process", __name__)
 
-# All file types that can be processed (union of all routes)
-_ALL_PROCESSABLE = (
-    CONVERTIBLE_EXTENSIONS
-    | AUDIO_EXTENSIONS
-    | {".docx", ".xlsx", ".pptx", ".md", ".pdf", ".epub"}
-)
+
+def _all_processable_extensions() -> set[str]:
+    """Return the currently allowed upload extensions for Quick Start."""
+    allowed = set(CONVERT_EXTENSIONS)
+    if ai_whisperer_enabled():
+        allowed.update(AUDIO_EXTENSIONS)
+    return allowed
 
 
 def _get_available_actions(file_ext: str) -> dict[str, dict]:
@@ -44,6 +44,8 @@ def _get_available_actions(file_ext: str) -> dict[str, dict]:
       - "enabled": True if available for this file type
     """
     ext = file_ext.lower()
+    chat_enabled = ai_chat_enabled()
+    whisperer_enabled = ai_whisperer_enabled()
 
     actions = {
         "audit": {
@@ -66,7 +68,14 @@ def _get_available_actions(file_ext: str) -> dict[str, dict]:
             "route": "convert.convert_form",
             "icon": "📄",
             "description": "Transform to Markdown, HTML, PDF, Word, ePub, or other formats",
-            "enabled": ext in CONVERTIBLE_EXTENSIONS,
+            "enabled": ext in CONVERT_EXTENSIONS,
+        },
+        "chat": {
+            "name": "Document Chat",
+            "route": "chat.chat_form",
+            "icon": "💬",
+            "description": "Ask questions about this document with accessibility-focused AI assistance",
+            "enabled": chat_enabled and ext in (CONVERT_EXTENSIONS | ALLOWED_EXTENSIONS),
         },
         "export": {
             "name": "Export",
@@ -91,8 +100,8 @@ def _get_available_actions(file_ext: str) -> dict[str, dict]:
                 "name": "BITS Whisperer",
                 "route": "whisperer.whisperer_form",
                 "icon": "🎤",
-                "description": "Transcribe to Markdown or Word document (local, no cloud upload)",
-                "enabled": True,
+                "description": "Transcribe to Markdown or Word document using secure cloud transcription",
+                "enabled": whisperer_enabled,
             }
         }
 
@@ -112,7 +121,7 @@ def process_submit():
         # Validate and save
         token, saved_path = validate_upload(
             request.files.get("file"),
-            allowed_extensions=_ALL_PROCESSABLE,
+            allowed_extensions=_all_processable_extensions(),
         )
         # Redirect to action chooser
         return redirect(url_for("process.process_choose", token=token))
@@ -200,6 +209,7 @@ def process_go(action: str):
         "convert": "convert.convert_form",
         "export": "export.export_form",
         "template": "template.template_form",
+        "chat": "chat.chat_form",
         "whisperer": "whisperer.whisperer_form",
     }
 

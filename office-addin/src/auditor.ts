@@ -73,6 +73,7 @@ function gradeFromScore(score: number): string {
 export async function auditDocument(): Promise<AuditResult> {
     const findings: Finding[] = [];
     let totalParagraphs = 0;
+    const nonArialFontLocations = new Map<string, string[]>();
 
     await Word.run(async (context) => {
         // ----- Document properties -----
@@ -179,7 +180,9 @@ export async function auditDocument(): Promise<AuditResult> {
 
             // Paragraph-level font checks
             if (paraFont.name && paraFont.name !== FONT_FAMILY && paraFont.name !== "mixed") {
-                addFinding(findings, "ACB-FONT-FAMILY", `Non-Arial font '${paraFont.name}'`, loc);
+                const existing = nonArialFontLocations.get(paraFont.name) ?? [];
+                existing.push(loc);
+                nonArialFontLocations.set(paraFont.name, existing);
             }
 
             if (paraFont.size && paraFont.size < MIN_SIZE_PT - 0.5) {
@@ -208,6 +211,20 @@ export async function auditDocument(): Promise<AuditResult> {
             }
         }
     });
+
+    for (const [fontName, locations] of Array.from(nonArialFontLocations.entries()).sort()) {
+        for (const location of locations.slice(0, 3)) {
+            addFinding(findings, "ACB-FONT-FAMILY", `Non-Arial font '${fontName}'`, location);
+        }
+        if (locations.length > 3) {
+            addFinding(
+                findings,
+                "ACB-FONT-FAMILY",
+                `Non-Arial font '${fontName}' also appears in ${locations.length - 3} additional paragraph(s); showing the first 3 locations only`,
+                "Document-wide",
+            );
+        }
+    }
 
     // Sort findings by severity
     const severityOrder = { [Severity.CRITICAL]: 0, [Severity.HIGH]: 1, [Severity.MEDIUM]: 2, [Severity.LOW]: 3 };

@@ -1,0 +1,8 @@
+{
+  "tools_fired": [
+    "check_heading_hierarchy",
+    "list_headings",
+    "get_section_content"
+  ],
+  "question": "What is the heading structure and hierarchy of this document?"
+}

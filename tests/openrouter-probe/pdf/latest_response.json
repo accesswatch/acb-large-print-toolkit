@@ -1,0 +1,45 @@
+{
+  "id": "gen-1776654767-Cp4KmSfKJznE8rv59Vea",
+  "object": "chat.completion",
+  "created": 1776654767,
+  "model": "openai/gpt-4o-mini",
+  "provider": "OpenAI",
+  "system_fingerprint": "fp_93a2164d78",
+  "choices": [
+    {
+      "index": 0,
+      "logprobs": null,
+      "finish_reason": "stop",
+      "native_finish_reason": "stop",
+      "message": {
+        "role": "assistant",
+        "content": "Here is the extracted text from the image:\n\n```\nGLOW OpenRouter Vision Test\n\nThis image contains visible text for OCR.\n\nACB Large Printcheck: Arial-like sans serif layout.\n\nExpected marker: VISION_TEXT_OK\n```",
+        "refusal": null,
+        "reasoning": null
+      }
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 36853,
+    "completion_tokens": 47,
+    "total_tokens": 36900,
+    "cost": 0.00555615,
+    "is_byok": false,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "cache_write_tokens": 0,
+      "audio_tokens": 0,
+      "video_tokens": 0
+    },
+    "cost_details": {
+      "upstream_inference_cost": 0.00555615,
+      "upstream_inference_prompt_cost": 0.00552795,
+      "upstream_inference_completions_cost": 2.82e-05
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 0,
+      "image_tokens": 0,
+      "audio_tokens": 0
+    }
+  }
+}

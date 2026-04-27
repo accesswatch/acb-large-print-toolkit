@@ -4,9 +4,7 @@ from __future__ import annotations
 
 import logging
 import os
-import socket
 from datetime import UTC, datetime
-from urllib.parse import urlparse
 
 from flask import Flask, jsonify, render_template
 from flask_limiter import Limiter
@@ -94,6 +92,7 @@ def create_app(config: dict | None = None) -> Flask:
     @app.context_processor
     def inject_rules():
         from importlib.metadata import version as pkg_version
+        from .ai_features import get_all_flags as _get_ai_flags
 
         try:
             web_ver = pkg_version("acb-large-print-web")
@@ -108,7 +107,7 @@ def create_app(config: dict | None = None) -> Flask:
             release_ver = web_ver
         else:
             release_ver = f"web {web_ver} / desktop {desktop_ver}"
-        return {
+        ctx = {
             "rules_by_severity": get_rules_by_severity(),
             "rules_by_category": get_rules_by_category(),
             "help_urls_map": get_help_urls_map(),
@@ -116,9 +115,11 @@ def create_app(config: dict | None = None) -> Flask:
             "desktop_version": desktop_ver,
             "release_version": release_ver,
         }
+        ctx.update(_get_ai_flags())
+        return ctx
 
     # Jinja2 filter: render lightweight Markdown to safe HTML for AI answers.
-    # Covers the subset Ollama/Llama3 actually produces: headings, bold,
+    # Covers the subset typically produced: headings, bold,
     # inline code, unordered/ordered lists, horizontal rules, and paragraphs.
     # Uses markupsafe (already a Flask dependency) for escaping.
     import re as _re
@@ -256,6 +257,19 @@ def create_app(config: dict | None = None) -> Flask:
         os.environ.get("LOG_LEVEL", "INFO"),
     )
 
+    # Seed defaults for feature flags on first startup (if no persisted flags exist).
+    try:
+        from . import feature_flags as _feature_flags
+        from pathlib import Path as _Path
+
+        ff_path = _Path(app.instance_path) / "feature_flags.json"
+        if not ff_path.exists():
+            with app.app_context():
+                app.logger.info("Seeding default feature flags into instance/feature_flags.json")
+                _feature_flags.reset_defaults()
+    except Exception:
+        app.logger.debug("Failed to seed default feature flags (continuing)")
+
     # Maintenance mode: gate all requests except /health when MAINTENANCE_MODE=1
     # This allows safe deployment-time downtime while keeping health checks working
     @app.before_request
@@ -281,67 +295,82 @@ def create_app(config: dict | None = None) -> Flask:
     @app.route("/health")
     def health():
         from .gating import get_capacity_metrics
-        from acb_large_print.converter import whisper_available
+        from .ai_gateway import (
+            get_admin_stats,
+            is_ai_configured,
+            is_budget_exhausted,
+        )
         import time as _htime
         _hstart = _htime.monotonic()
 
-        pipeline_url = os.environ.get("PIPELINE_URL", "http://pipeline:8181/ws")
-        ollama_url = os.environ.get("OLLAMA_HOST", "http://ollama:11434")
-
-        pipeline_status = _check_tcp_endpoint(pipeline_url)
-        ollama_status = _check_http_endpoint(f"{ollama_url.rstrip('/')}/api/tags")
-        ollama_models = _get_ollama_models(ollama_url)
-        ollama_running = _get_ollama_running_models(ollama_url)
         capacity = get_capacity_metrics()
+        admin_stats = get_admin_stats()
+        ai_configured = is_ai_configured()
+        budget_ok = not is_budget_exhausted()
+
+        # Live reachability probes (non-blocking, short timeout)
+        openrouter_probe = _probe_openrouter() if ai_configured else {
+            "status": "not-configured",
+            "detail": "OPENROUTER_API_KEY not set -- AI features disabled",
+        }
+        whisper_probe = _probe_whisper() if ai_configured else {
+            "status": "not-configured",
+            "detail": "OPENROUTER_API_KEY not set -- BITS Whisperer disabled",
+        }
 
         services = {
             "web": {"status": "ok", "detail": "service responding"},
-            "pipeline": pipeline_status,
-            "ollama": ollama_status,
+            "openrouter": openrouter_probe,
+            "whisper": whisper_probe,
         }
-
-        has_llama3 = any("llama3" in model for model in ollama_models)
-        has_llava = any("llava" in model for model in ollama_models)
-        llama3_warm = any("llama3" in model for model in ollama_running)
-        llava_warm = any("llava" in model for model in ollama_running)
-
-        whisper_installed = whisper_available()
-        whisper_present = _whisper_model_present()
-        whisper_ready = whisper_installed and whisper_present
 
         readiness = {
             "chat": {
-                "status": "ready" if has_llama3 else "not-ready",
-                "model_required": "llama3",
-                "model_present": has_llama3,
-                "model_warm": llama3_warm,
+                "status": "ready" if ai_configured and budget_ok and openrouter_probe["status"] == "ok" else "not-ready",
+                "provider": "openrouter",
+                "key_set": ai_configured,
+                "reachable": openrouter_probe["status"] == "ok",
+                "budget_ok": budget_ok,
             },
             "vision": {
-                "status": "ready" if has_llava else "not-ready",
-                "model_required": "llava",
-                "model_present": has_llava,
-                "model_warm": llava_warm,
+                "status": "ready" if ai_configured and budget_ok and openrouter_probe["status"] == "ok" else "not-ready",
+                "provider": "openrouter",
+                "key_set": ai_configured,
+                "reachable": openrouter_probe["status"] == "ok",
+                "budget_ok": budget_ok,
             },
             "whisperer": {
-                "status": "ready" if whisper_ready else "not-ready",
-                "dependency_required": "faster-whisper",
-                "dependency_present": whisper_installed,
-                "model_present": whisper_present,
+                "status": "ready" if ai_configured and whisper_probe["status"] == "ok" else "not-ready",
+                "provider": "openrouter",
+                "key_set": ai_configured,
+                "reachable": whisper_probe["status"] == "ok",
+            },
+            "budget": {
+                "status": "ok" if budget_ok else "exhausted",
+                "monthly_budget_usd": admin_stats.get("budget_usd", 20.0),
+                "monthly_spend_usd": admin_stats.get("monthly_spend", 0.0),
+                "pct_used": round(
+                    min(100.0, admin_stats.get("monthly_spend", 0.0)
+                        / max(admin_stats.get("budget_usd", 20.0), 0.01) * 100),
+                    1,
+                ),
             },
         }
 
-        services_ok = all(service.get("status") == "ok" for service in services.values())
-        features_ready = all(item.get("status") == "ready" for item in readiness.values())
-        all_ok = services_ok and features_ready
+        # Overall status: web always ok; degrade only if a configured provider
+        # is unreachable or budget is gone
+        provider_ok = (
+            (not ai_configured or openrouter_probe["status"] == "ok")
+        )
+        all_ok = provider_ok and budget_ok
 
         _hduration_ms = round((_htime.monotonic() - _hstart) * 1000)
         app.logger.info(
-            "HEALTH status=%s services=%s readiness=%s models=%s running=%s duration_ms=%d",
+            "HEALTH status=%s openrouter=%s whisper=%s budget_pct=%.1f%% duration_ms=%d",
             "ok" if all_ok else "degraded",
-            {k: v.get("status") for k, v in services.items()},
-            {k: v.get("status") for k, v in readiness.items()},
-            ollama_models,
-            ollama_running,
+            openrouter_probe["status"],
+            whisper_probe["status"],
+            readiness["budget"]["pct_used"],
             _hduration_ms,
         )
 
@@ -352,11 +381,19 @@ def create_app(config: dict | None = None) -> Flask:
                     "services": services,
                     "readiness": readiness,
                     "models": {
-                        "ollama": ollama_models,
-                        "ollama_running": ollama_running,
+                        "chat_default": admin_stats.get("default_model", "n/a"),
+                        "chat_fallback": admin_stats.get("fallback_model", "n/a"),
+                        "vision": admin_stats.get("vision_model", "n/a"),
+                        # audio_path_active reflects which path GLOW tries first:
+                        # input_audio (gpt-audio-mini) is the primary; direct
+                        # (whisper-large-v3) is only used if primary fails.
+                        "whisper_fallback": admin_stats.get("whisper_model", "openai/whisper-large-v3"),
+                        "audio_primary": "openai/gpt-audio-mini",
+                        "audio_path_active": "input_audio",
                     },
                     "capacity": capacity,
                     "timestamp_utc": datetime.now(UTC).isoformat(),
+                    "duration_ms": _hduration_ms,
                 }
             ),
             200,
@@ -453,96 +490,47 @@ def _render_error(title: str, message: str, code: int):
     return render_template("error.html", title=title, message=message), code
 
 
-def _check_tcp_endpoint(url: str, timeout: float = 2.0) -> dict[str, str | int]:
-    """Check host:port reachability for internal services."""
-    parsed = urlparse(url)
-    host = parsed.hostname
-    port = parsed.port
+def _probe_openrouter(timeout: float = 4.0) -> dict[str, str]:
+    """Probe OpenRouter /models to verify the key is valid and the service is reachable.
 
-    if not host:
-        return {"status": "down", "error": f"invalid URL: {url}"}
-
-    if port is None:
-        port = 443 if parsed.scheme == "https" else 80
-
-    try:
-        with socket.create_connection((host, port), timeout=timeout):
-            return {"status": "ok", "host": host, "port": port}
-    except OSError as exc:
-        return {"status": "down", "host": host, "port": port, "error": str(exc)}
-
-
-def _check_http_endpoint(url: str, timeout: float = 2.0) -> dict[str, str | int]:
-    """Check HTTP endpoint status code for internal services."""
+    Returns a status dict with keys 'status' ("ok" | "unreachable" | "auth-error")
+    and 'detail' for display in the health response.
+    We hit /models (a cheap, read-only endpoint) with a short timeout.
+    No content is sent -- this is purely a connectivity + auth check.
+    """
+    from .credentials import get_openrouter_api_key
     from urllib.request import Request, urlopen
+    from urllib.error import HTTPError, URLError
 
-    req = Request(url, method="GET")
+    key = get_openrouter_api_key()
+    if not key:
+        return {"status": "not-configured", "detail": "OPENROUTER_API_KEY not set"}
+
+    req = Request(
+        "https://openrouter.ai/api/v1/models",
+        headers={
+            "Authorization": f"Bearer {key}",
+            "HTTP-Referer": "https://glow.bits-acb.org",
+            "X-Title": "GLOW Health Check",
+        },
+        method="GET",
+    )
     try:
         with urlopen(req, timeout=timeout) as resp:  # noqa: S310
             code = getattr(resp, "status", 200)
-            if 200 <= code < 400:
-                return {"status": "ok", "url": url, "http_status": code}
-            return {"status": "down", "url": url, "http_status": code}
-    except Exception as exc:  # pragma: no cover - network/runtime dependent
-        return {"status": "down", "url": url, "error": str(exc)}
+            if 200 <= code < 300:
+                return {"status": "ok", "detail": f"reachable (HTTP {code})"}
+            return {"status": "degraded", "detail": f"unexpected HTTP {code}"}
+    except HTTPError as exc:
+        if exc.code in (401, 403):
+            return {"status": "auth-error", "detail": f"API key rejected (HTTP {exc.code})"}
+        return {"status": "degraded", "detail": f"HTTP {exc.code} from OpenRouter"}
+    except URLError as exc:
+        return {"status": "unreachable", "detail": f"Network error: {exc.reason}"}
+    except Exception as exc:  # pragma: no cover
+        return {"status": "unreachable", "detail": str(exc)}
 
 
-def _get_ollama_models(ollama_url: str, timeout: float = 2.0) -> list[str]:
-    """Return a normalized list of pulled Ollama model names from /api/tags."""
-    from urllib.request import Request, urlopen
-    import json
-
-    url = f"{ollama_url.rstrip('/')}/api/tags"
-    req = Request(url, method="GET")
-    try:
-        with urlopen(req, timeout=timeout) as resp:  # noqa: S310
-            body = resp.read().decode("utf-8")
-            payload = json.loads(body)
-            models = payload.get("models", [])
-            return [str(m.get("name", "")).lower() for m in models if m.get("name")]
-    except Exception:
-        return []
-
-
-def _get_ollama_running_models(ollama_url: str, timeout: float = 2.0) -> list[str]:
-    """Return normalized names of Ollama models currently loaded in memory (/api/ps)."""
-    from urllib.request import Request, urlopen
-    import json
-
-    url = f"{ollama_url.rstrip('/')}/api/ps"
-    req = Request(url, method="GET")
-    try:
-        with urlopen(req, timeout=timeout) as resp:  # noqa: S310
-            body = resp.read().decode("utf-8")
-            payload = json.loads(body)
-            models = payload.get("models", [])
-            return [str(m.get("name", "")).lower() for m in models if m.get("name")]
-    except Exception:
-        return []
-
-
-def _whisper_model_present() -> bool:
-    """Return True if Whisper model files exist in the configured cache directory.
-
-    This checks the on-disk cache rather than attempting to load the model,
-    so it is cheap and safe to call from the health endpoint.
-    """
-    import os
-    from pathlib import Path
-
-    model_name = os.environ.get("WHISPER_MODEL", "medium")
-
-    cache_root = (
-        os.environ.get("HUGGINGFACE_HUB_CACHE")
-        or os.environ.get("HF_HOME")
-        or os.environ.get("XDG_CACHE_HOME")
-    )
-    if cache_root:
-        cache_dir = Path(cache_root)
-    else:
-        cache_dir = Path.home() / ".cache" / "huggingface" / "hub"
-
-    # faster-whisper stores models under:
-    #   <cache>/models--Systran--faster-whisper-<model>/snapshots/<hash>/
-    model_dir = cache_dir / f"models--Systran--faster-whisper-{model_name}"
-    return model_dir.is_dir() and any(model_dir.rglob("model.bin"))
+def _probe_whisper(timeout: float = 4.0) -> dict[str, str]:
+    """Whisperer uses the same OpenRouter key -- delegate to the OpenRouter probe."""
+    return _probe_openrouter(timeout=timeout)

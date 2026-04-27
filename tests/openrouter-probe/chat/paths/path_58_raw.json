@@ -1,0 +1,7 @@
+{
+  "tools_fired": [
+    "check_emphasis_patterns",
+    "search_text"
+  ],
+  "question": "Search for all places where italic appears in this document."
+}

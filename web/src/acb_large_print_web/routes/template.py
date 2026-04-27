@@ -1,13 +1,12 @@
 """Template route -- generate an ACB-compliant Word template (.dotx)."""
 
+import uuid
+
 from flask import Blueprint, render_template, request, send_file
 
 from acb_large_print.template import create_template
 
 from ..upload import UPLOAD_TEMP_BASE, cleanup_tempdir
-
-import uuid
-from pathlib import Path
 
 template_bp = Blueprint("template", __name__)
 

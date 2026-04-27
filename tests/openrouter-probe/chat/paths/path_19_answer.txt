@@ -1,0 +1,1 @@
+Section 'Nonexistent Section XYZ' not found.

@@ -1,0 +1,3 @@
+{
+  "raw": "Possible faux headings (2 found):\n  Line 3: **This Is A Faux Heading**\n  Line 7: **Another Fake Section Title**\nFix: apply a proper heading style instead of bold body text."
+}

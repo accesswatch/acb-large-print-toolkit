@@ -1,0 +1,2 @@
+Alignment issues (ACB-ALIGNMENT):
+  • Center alignment override found (1 instance(s)) — ACB requires flush-left

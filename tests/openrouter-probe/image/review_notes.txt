@@ -1,0 +1,5 @@
+Review notes:
+- vision_text.png is the source artifact sent to OpenRouter.
+- intent_prompt.txt is the exact OCR prompt.
+- expected_visible_text.txt is the target human-readable text reviewers expect to see recognized.
+- latest_ocr_text.txt and latest_response.json will be created/overwritten when run_image_app.py is executed.

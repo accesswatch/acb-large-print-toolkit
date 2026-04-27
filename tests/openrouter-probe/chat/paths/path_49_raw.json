@@ -1,0 +1,8 @@
+{
+  "tools_fired": [
+    "run_accessibility_audit",
+    "get_critical_findings",
+    "search_text"
+  ],
+  "question": "What violations and compliance findings does this document have?"
+}

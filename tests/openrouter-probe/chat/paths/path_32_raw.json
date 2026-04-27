@@ -1,0 +1,3 @@
+{
+  "raw": "Link text issues (ACB-LINK-TEXT):\n  \u2022 Bare URLs (1 found): https://internal.bits-acb.org/financials\n  \u2022 Generic link text (1 found): click here\nFix: replace with descriptive text like 'ACB Large Print Guidelines'."
+}

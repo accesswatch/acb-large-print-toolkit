@@ -1,0 +1,1 @@
+Subheadings should be 18pt Arial.

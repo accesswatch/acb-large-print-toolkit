@@ -11,7 +11,7 @@
 {% endif %}
 {% if customization_warning %}
 <section class="warning-box" role="status" aria-live="polite">
-  <p>{{ customization_warning | replace('\n', '<br />') }}</p>
+  <p class="warning-message">{{ customization_warning }}</p>
 </section>
 {% endif %}
 {% if trimmed %}

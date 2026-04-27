@@ -77,13 +77,13 @@ def _make_fake_docx() -> io.BytesIO:
 
 
 class TestFixForm:
-    @patch("acb_large_print.ai_provider.is_ai_available", return_value=False)
+    @patch("acb_large_print_web.ai_features.ai_heading_fix_enabled", return_value=False)
     def test_fix_form_loads(self, mock_ai, client):
         resp = client.get("/fix/")
         assert resp.status_code == 200
         assert b"Fix" in resp.data
 
-    @patch("acb_large_print.ai_provider.is_ai_available", return_value=True)
+    @patch("acb_large_print_web.ai_features.ai_heading_fix_enabled", return_value=True)
     def test_fix_form_shows_ai_checkbox_when_available(self, mock_ai, client):
         resp = client.get("/fix/")
         assert resp.status_code == 200
@@ -255,11 +255,14 @@ class TestParseFormOptions:
             opts = _parse_form_options(form)
             assert opts["list_indent_in"] == 2.0  # max
 
-    def test_detect_headings_on(self, app):
+    def test_detect_headings_on(self, app, monkeypatch):
         from acb_large_print_web.routes.fix import _parse_form_options
         from werkzeug.datastructures import MultiDict
 
         with app.app_context():
+            # Ensure AI master + heading-fix feature enabled for this test
+            monkeypatch.setenv("GLOW_ENABLE_AI", "1")
+            monkeypatch.setenv("GLOW_ENABLE_AI_HEADING_FIX", "1")
             form = MultiDict({"detect_headings": "on", "use_ai": "on"})
             opts = _parse_form_options(form)
             assert opts["detect_headings"] is True
@@ -356,6 +359,43 @@ def test_fix_result_shows_page_growth_warning_for_small_text(app):
 
     assert "can increase page count" in html
     assert "16pt" in html
+
+
+def test_fix_result_customization_warning_renders_without_literal_br_tags(app):
+    from acb_large_print_web.routes.fix import _run_fix_and_render
+
+    pre = _FakeAuditResult(score=80, grade="B", findings=[])
+    post = _FakeAuditResult(score=90, grade="A", findings=[])
+
+    opts = {
+        "bound": False,
+        "mode": "full",
+        "list_indent_in": 0.5,
+        "list_hanging_in": 0.0,
+        "list_level_indents": None,
+        "para_indent_in": 0.0,
+        "first_line_indent_in": 0.0,
+        "preserve_heading_alignment": False,
+        "detect_headings": False,
+        "use_ai": False,
+        "suppress_link_text": False,
+        "suppress_missing_alt_text": False,
+        "suppress_faux_heading": False,
+        "heading_threshold": 50,
+        "heading_accuracy": "balanced",
+    }
+
+    with app.test_request_context("/fix/", method="POST", data={}):
+        with patch("acb_large_print_web.routes.fix._audit_by_extension", return_value=pre), patch(
+            "acb_large_print_web.routes.fix._fix_by_extension",
+            return_value=(MagicMock(), 0, [], post, []),
+        ):
+            html = _run_fix_and_render(Path("test.docx"), "tok", opts)
+
+    assert "Custom Settings Applied" in html
+    assert "List indent changed to 0.5" in html
+    assert "&lt;br" not in html
+    assert "<br" not in html
 
 
 def test_fix_form_list_indent_fields_visible_and_disabled_by_default(client):

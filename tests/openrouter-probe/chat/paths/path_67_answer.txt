@@ -1,0 +1,10 @@
+The document contains one table, which is the "Budget Overview" table detailing the financial data for each quarter of 2026. 
+
+### Header Row Compliance:
+The table has a proper header row, as indicated by the use of the `|---------|-----------|-----------|-----------|` line, which visually separates the headers from the data. The headers are "Quarter," "Revenue," "Expenses," and "Net," which are clearly defined.
+
+### Summary:
+- **Table Present:** Yes
+- **Proper Header Row:** Yes
+
+No accessibility issues related to header rows were detected in the pre-flight analysis.

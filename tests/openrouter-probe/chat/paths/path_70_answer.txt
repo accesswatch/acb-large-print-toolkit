@@ -1,0 +1,18 @@
+To fix the italic violations in your document, follow these steps:
+
+1. **Locate the italic instances**:
+   - Find the phrase *Minutes recorded by the Secretary*.
+   - Find the phrase *The committee chair reviewed each report in order*.
+
+2. **Remove italic formatting**:
+   - For each of these phrases, select the text and remove the italic formatting. This can usually be done by:
+     - Highlighting the text and pressing `Ctrl + I` (Windows) or `Command + I` (Mac) to toggle off the italic style.
+     - Alternatively, you can use the formatting toolbar in your document editor to select "Normal" or "Body" text style instead of italic.
+
+3. **Consider alternative emphasis**:
+   - If you want to emphasize these phrases without using italics, consider using bold text or simply rephrasing for clarity.
+
+4. **Review the document**:
+   - After making these changes, review the document to ensure that no other italic instances are present and that the overall formatting remains consistent.
+
+By following these steps, you will resolve the critical violation related to italic usage (ACB-NO-ITALIC).

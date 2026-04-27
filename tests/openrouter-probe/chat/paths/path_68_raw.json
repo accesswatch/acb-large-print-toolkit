@@ -1,0 +1,7 @@
+{
+  "escalated": false,
+  "tools": [
+    "check_reading_level",
+    "get_section_content"
+  ]
+}

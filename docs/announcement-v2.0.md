@@ -110,7 +110,7 @@ Earlier releases focused on foundational capabilities:
 - conversion and export
 - explicit privacy behavior
 
-GLOW 2.0 builds on that foundation with guided entry points, local AI assistance, audio-to-text workflows, and agentic content interrogation.
+GLOW 2.0 builds on that foundation with guided entry points, privacy-aware cloud AI assistance, audio-to-text workflows, and agentic content interrogation.
 
 In short, the product moved from "find issues" to "help teams finish accessible output on time."
 
@@ -124,7 +124,7 @@ GLOW 2.0 is designed for that operational reality:
 - browser-first experience
 - practical defaults for non-technical users
 - advanced controls for expert teams
-- local processing pathways for privacy-sensitive work
+- transparent AI usage, short retention, and rule-based non-AI paths when teams prefer to opt out
 
 "Simplicity is crucial when we bring experiences to life for users," said **Deb Lewis, President of the American Council of the Blind**. "BITS is evolving GLOW into a truly usable platform and meeting people where they are in their digital journeys."
 
@@ -136,7 +136,7 @@ BITS plans additional major feature work in July for desktop experiences, includ
 - desktop-based BITS Whisperer for Mac
 - additional GLOW desktop implementations as time permits
 
-This roadmap continues the same 2.0 design principles: practical workflows, local-first privacy, and accessibility by default.
+This roadmap continues the same 2.0 design principles: practical workflows, transparent privacy controls, and accessibility by default.
 
 ## Statement from BITS Leadership
 

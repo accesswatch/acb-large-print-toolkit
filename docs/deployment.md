@@ -681,8 +681,27 @@ Paste the following, replacing the placeholder values:
 ```
 SECRET_KEY=PASTE_GENERATED_KEY_HERE
 FEEDBACK_PASSWORD=CHOOSE_A_STRONG_PASSWORD
+OPENROUTER_API_KEY=PASTE_OPENROUTER_KEY_HERE
+ADMIN_LOCAL_EMAIL=jeff@jeffbishop.com
+ADMIN_LOCAL_PASSWORD=CHOOSE_A_STRONG_PASSWORD
 LOG_LEVEL=INFO
 ```
+
+Optional resilience tuning for AI-heavy workloads (recommended for large files and peak traffic):
+
+```
+OPENROUTER_MAX_RETRIES=2
+OPENROUTER_RETRY_BASE_SECONDS=1.0
+GLOW_AI_QUEUE_WAIT_SECONDS=25
+GLOW_VISION_QUEUE_WAIT_SECONDS=20
+GLOW_AUDIO_QUEUE_WAIT_SECONDS=0
+```
+
+- `OPENROUTER_MAX_RETRIES` and `OPENROUTER_RETRY_BASE_SECONDS` control transient retry/backoff for OpenRouter chat and vision calls.
+- `GLOW_AI_QUEUE_WAIT_SECONDS` and `GLOW_VISION_QUEUE_WAIT_SECONDS` allow short bounded queue waits instead of immediate 503 responses under burst load.
+- `GLOW_AUDIO_QUEUE_WAIT_SECONDS` defaults to `0` because BITS Whisperer already has an explicit job queue and background processing flow.
+
+If you are deploying from a trusted local checkout that includes `server.credentials`, use it only as a source to manually copy the OpenRouter key and bootstrap password into `.env`. Do not upload `server.credentials` to the server, do not commit it, and do not reference it from Docker Compose in production.
 
 Generate a secure `SECRET_KEY`:
 
@@ -698,7 +717,38 @@ Save and restrict permissions:
 chmod 600 ~/app/web/.env
 ```
 
-> **How .env works with Docker Compose:** Docker Compose has two `.env` mechanisms. First, it automatically reads a `.env` file next to the compose file for variable interpolation (`${VAR}` syntax inside the compose file itself). Second, the `env_file:` directive passes all variables from the specified file into the container as actual environment variables. This guide uses the second mechanism. The `env_file: .env` line in `docker-compose.prod.yml` injects `SECRET_KEY`, `FEEDBACK_PASSWORD`, and `LOG_LEVEL` directly into the running container, where the Flask app reads them via `os.environ.get()`.
+> **How .env works with Docker Compose:** Docker Compose has two `.env` mechanisms. First, it automatically reads a `.env` file next to the compose file for variable interpolation (`${VAR}` syntax inside the compose file itself). Second, the `env_file:` directive passes all variables from the specified file into the container as actual environment variables. This guide uses the second mechanism. The `env_file: .env` line in `docker-compose.prod.yml` injects `SECRET_KEY`, `FEEDBACK_PASSWORD`, `OPENROUTER_API_KEY`, `ADMIN_LOCAL_EMAIL`, `ADMIN_LOCAL_PASSWORD`, and `LOG_LEVEL` directly into the running container, where the Flask app reads them via `os.environ.get()`.
+
+### 4.2a OpenRouter wiring
+
+1. Create or obtain an OpenRouter API key from the operator account.
+2. Paste it into `.env` as `OPENROUTER_API_KEY`.
+3. Leave the web compose file unchanged; the application reads this value automatically at runtime for chat and Whisperer transcription.
+4. Restart the stack after updating `.env`:
+
+```bash
+cd ~/app/web
+docker compose -f docker-compose.prod.yml up -d --build
+```
+
+6. Verify provider reachability:
+
+```bash
+curl -s https://glow.bits-acb.org/health
+```
+
+The JSON should show `services.openrouter.status` as `ok` and, if Whisper is configured, `services.whisper.status` as `ok`.
+
+### 4.2b Bootstrap the Jeff Bishop admin account
+
+Set these values in `.env`:
+
+```
+ADMIN_LOCAL_EMAIL=jeff@jeffbishop.com
+ADMIN_LOCAL_PASSWORD=YOUR_BOOTSTRAP_PASSWORD
+```
+
+On first app start, GLOW creates or updates this approved admin account and stores only the password hash in the admin database. Use the password sign-in form at `/admin/login` to access the admin queue and settings areas.
 
 > **Important:** The `.env` file contains secrets. Do not commit it to version control. If you cloned the repository, verify that `.env` is listed in `.gitignore`.
 
@@ -2206,6 +2256,189 @@ Artifacts are written to `web/e2e/artifacts/`:
 - `results.json` (machine-readable)
 - `junit.xml` (CI-friendly)
 - `html-report/index.html` (interactive report)
+
+---
+
+## WSL Staging Lane (Pre-Production Gate)
+
+Before pushing a release to the live server, validate it against a local Docker stack running inside Windows Subsystem for Linux (WSL). This catches environment-specific regressions that unit tests and Windows-local runs can miss.
+
+### Why WSL staging?
+
+- The production server runs Ubuntu + Docker. WSL provides an identical Linux container runtime on your Windows dev machine.
+- AI features are gated off by default in the WSL compose override, matching the production default before opt-in.
+- The staging stack is ephemeral -- it starts clean and tears down after the regression run, leaving no persistent state.
+
+---
+
+### Step 1: Enable Docker Desktop WSL Integration
+
+Docker Desktop must expose its daemon inside the Ubuntu WSL distro before the staging scripts will work.
+
+1. Open **Docker Desktop** on Windows.
+2. Go to **Settings** (gear icon, top-right).
+3. Select **Resources** > **WSL Integration**.
+4. Toggle **Ubuntu** (or your distro name) to **On**.
+5. Click **Apply & Restart**.
+6. Verify from PowerShell:
+
+```powershell
+wsl -d Ubuntu -- docker --version
+# Expected: Docker version 27.x.x, build ...
+```
+
+If this fails, Docker Desktop WSL integration is not active. Re-check the toggle and restart Docker Desktop.
+
+---
+
+### Step 2: Recommended WSL Tooling
+
+Install the following inside the Ubuntu WSL distro. Open a WSL shell with `wsl -d Ubuntu` and run:
+
+```bash
+# Core utilities (usually pre-installed; confirm they are present)
+sudo apt-get update
+sudo apt-get install -y curl git jq unzip
+
+# Python 3 and pip (needed if running tests directly inside WSL)
+sudo apt-get install -y python3 python3-pip python3-venv
+
+# Node.js 22 LTS (for Playwright inside WSL, if needed)
+curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
+sudo apt-get install -y nodejs
+
+# PowerShell (pwsh) -- install via Microsoft APT repo
+curl -fsSL https://packages.microsoft.com/keys/microsoft.asc | \
+  sudo gpg --dearmor -o /usr/share/keyrings/microsoft-prod.gpg
+echo "deb [arch=amd64 signed-by=/usr/share/keyrings/microsoft-prod.gpg] \
+  https://packages.microsoft.com/ubuntu/24.04/prod noble main" | \
+  sudo tee /etc/apt/sources.list.d/microsoft-prod.list
+sudo apt-get update
+sudo apt-get install -y powershell
+pwsh --version
+# Expected: PowerShell 7.x.x
+```
+
+**Why PowerShell in WSL?**
+The staging orchestrator (`scripts/wsl-stage-regression.ps1`) runs from Windows PowerShell and shells into WSL. Having `pwsh` available inside the distro lets you run the same orchestration scripts natively inside WSL for CI or pipeline scenarios, and ensures scripting parity between environments.
+
+---
+
+### Step 3: Run the WSL Staging Regression
+
+From a Windows PowerShell terminal at the repo root:
+
+```powershell
+# Basic run -- pytest + Playwright, AI gated off (default)
+.\scripts\wsl-stage-regression.ps1
+
+# Specify a DOCX file for upload-flow tests
+.\scripts\wsl-stage-regression.ps1 -DocxPath "C:\path\to\test.docx"
+
+# Keep the stack running after the test run (for manual inspection)
+.\scripts\wsl-stage-regression.ps1 -KeepRunning
+
+# Enable AI features in the staging stack (opt-in)
+.\scripts\wsl-stage-regression.ps1 -EnableAI
+
+# Run only pytest (skip Playwright browser tests)
+.\scripts\wsl-stage-regression.ps1 -SkipE2E
+
+# Run only Playwright (skip pytest)
+.\scripts\wsl-stage-regression.ps1 -SkipPytest
+
+# Target a non-default distro or port
+.\scripts\wsl-stage-regression.ps1 -Distro "Ubuntu-24.04" -Port 8001
+```
+
+**Script parameters:**
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `-Distro` | `Ubuntu` | WSL distro name to use |
+| `-Port` | `8000` | Host port mapped to the container |
+| `-SkipPytest` | `$false` | Skip pytest suite |
+| `-SkipE2E` | `$false` | Skip Playwright suite |
+| `-KeepRunning` | `$false` | Leave stack up after tests |
+| `-EnableAI` | `$false` | Set `GLOW_ENABLE_AI=1` in the staging stack |
+| `-DocxPath` | _(none)_ | Path to a DOCX file for upload-flow tests |
+| `-AudioPath` | _(none)_ | Path to an audio file for whisperer tests |
+
+---
+
+### Step 4: What the Script Tests
+
+The staging regression covers the same assertions as the production post-deploy check:
+
+1. **Health check** -- `/health` returns `200 OK`
+2. **Pytest suite** -- all 146+ unit and integration tests against the running container
+3. **Playwright e2e suite** -- browser-based regression across all major routes:
+   - Home page loads
+   - Audit form submits and returns results
+   - Fix form submits and returns results
+   - Convert form submits
+   - Template builder loads
+   - Feedback form submits
+   - Whisperer endpoint -- skipped automatically if AI is gated off (404 response)
+
+---
+
+### Step 5: Expected Output (Clean Pass)
+
+```
+[WSL-STAGE] Checking WSL distro: Ubuntu ... OK
+[WSL-STAGE] Starting stack inside WSL...
+[WSL-STAGE] Waiting for /health on http://localhost:8000 ...
+[WSL-STAGE] Stack is up after 12s
+[WSL-STAGE] Running pytest...
+=============== 146 passed in 18.4s ===============
+[WSL-STAGE] Running Playwright...
+  14 passed (42.1s)
+[WSL-STAGE] Tearing down stack...
+[WSL-STAGE] PASS -- all checks green. Safe to deploy.
+```
+
+If any step fails, the script exits non-zero and prints which phase failed. The Docker stack is torn down automatically unless `-KeepRunning` was specified.
+
+---
+
+### Step 6: Troubleshooting
+
+**"Docker is not available inside WSL distro"**
+Docker Desktop WSL integration is not enabled for that distro. Follow Step 1 above.
+
+**"Cannot connect to the Docker daemon"**
+Docker Desktop is not running on Windows. Start it and wait for the whale icon to appear in the system tray.
+
+**Stack starts but health check times out**
+Run `wsl -d Ubuntu -- docker compose -f web/docker-compose.yml -f web/docker-compose.wsl.yml logs` to inspect container logs for startup errors.
+
+**Pytest failures on imports or missing modules**
+The container builds from the repo's `Dockerfile`. If you have local changes that are not committed, rebuild: add `-Rebuild` support or run `docker compose build` manually inside WSL before re-running the script.
+
+**Port already in use**
+Another service is using port 8000. Pass `-Port 8001` (or any free port) to the staging script.
+
+---
+
+### Step 7: WSL Staging in the Pre-Production Workflow
+
+```
+[ Your feature branch ]
+        |
+        v
+[ pytest + mypy locally ] --> all green
+        |
+        v
+[ wsl-stage-regression.ps1 ] --> all green   <-- NEW GATE
+        |
+        v
+[ git push + deploy-app.sh to server ] --> post-deploy-check.sh
+```
+
+Run the WSL staging gate every time before pushing a release that touches routes, templates, Docker configuration, or AI feature flags. Skip it only for documentation-only changes.
+
+---
 
 ### backup-feedback.sh
 

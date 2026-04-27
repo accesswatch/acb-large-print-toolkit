@@ -1,0 +1,6 @@
+{
+  "tools_fired": [
+    "extract_table"
+  ],
+  "question": "How many tables and data columns does this document contain?"
+}

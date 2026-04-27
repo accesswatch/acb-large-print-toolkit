@@ -2,14 +2,20 @@
 
 from __future__ import annotations
 
-import html
-import os
 from pathlib import Path
+import re
 
-from flask import Blueprint, make_response, render_template, request, redirect, url_for, session
+from flask import Blueprint, abort, make_response, render_template, request, redirect, url_for, session
 from werkzeug.utils import secure_filename
 
 from ..app import limiter
+from ..ai_gateway import (
+    chat as gateway_chat,
+    describe_image as gateway_describe_image,
+    get_quota_status,
+    make_session_hash,
+)
+from ..ai_features import require_ai_feature, AIFeatureDisabled
 from ..chat_handler import ChatSession, DocumentContext, ToolRegistry
 from ..gating import ai_gate, GatingError
 from ..upload import get_temp_dir, UploadError
@@ -17,40 +23,39 @@ from ..upload import get_temp_dir, UploadError
 chat_bp = Blueprint("chat", __name__)
 
 _MAX_QUESTION_LENGTH = 2000
-_OLLAMA_HOST = os.environ.get("OLLAMA_HOST", "http://localhost:11434").rstrip("/")
+_IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp", ".tiff"}
+_IMAGE_QUESTION_KEYWORDS = (
+    "image",
+    "picture",
+    "photo",
+    "figure",
+    "diagram",
+    "chart",
+    "graph",
+    "screenshot",
+    "ocr",
+    "text in",
+)
 
 
-def _ollama_available() -> bool:
-    """Return True if Ollama is reachable and llama3 is loaded."""
-    import requests as _req
-    try:
-        r = _req.get(f"{_OLLAMA_HOST}/api/tags", timeout=3)
-        if not r.ok:
-            return False
-        models = [m.get("name", "") for m in r.json().get("models", [])]
-        return any("llama3" in m for m in models)
-    except Exception:
-        return False
+def _get_uploaded_document_path(token: str) -> Path:
+    """Return the uploaded document path for a token."""
+    temp_dir = get_temp_dir(token)
+    saved_files = list(temp_dir.glob("*"))
+    if not saved_files:
+        raise UploadError("Upload not found.")
+    return saved_files[0]
 
 
 def _load_document_text(token: str) -> str:
     """Extract text from uploaded document."""
     try:
-        temp_dir = get_temp_dir(token)
-        saved_files = list(temp_dir.glob("*"))
-        if not saved_files:
-            raise UploadError("Upload not found.")
-        
-        saved_path = saved_files[0]
+        saved_path = _get_uploaded_document_path(token)
         ext = saved_path.suffix.lower()
 
-        # Simple text extraction
-        if ext == ".md":
-            return saved_path.read_text(encoding="utf-8")
-        elif ext in {".txt", ".rst"}:
+        if ext in {".md", ".txt", ".rst"}:
             return saved_path.read_text(encoding="utf-8")
         else:
-            # For Word, PDF, etc., use MarkItDown
             try:
                 from markitdown import MarkItDown
                 md = MarkItDown()
@@ -65,141 +70,140 @@ def _load_document_text(token: str) -> str:
         raise UploadError(f"Error loading document: {e}") from e
 
 
-def _call_ollama_with_tools(
-    question: str,
-    document_text: str,
-    tools_registry: ToolRegistry,
-    conversation_context: str = "",
-) -> tuple[str, list[dict]]:
-    """Call Llama 3 with tool calling for Q&A.
-    
-    Returns:
-        (answer, tool_calls_made)
-    """
-    import json
-    import requests
+def _build_document_context(question: str, document_text: str, max_chars: int = 8000) -> str:
+    """Build a question-aware context window to improve answer grounding."""
+    if not document_text:
+        return ""
 
-    # Build tool definitions for Llama
-    tools_json = json.dumps(tools_registry.get_all_tools())
+    text = document_text.strip()
+    if len(text) <= max_chars:
+        return text
 
-    # System prompt with tool calling instructions
-    system_prompt = f"""You are GLOW (Guided Layout & Output Workflow), an accessibility-focused document assistant. \
-You have access to 24 tools organized into five categories:
-
-DOCUMENT tools — extract tables, find sections, search text, list headings, get stats, summarize sections
-COMPLIANCE AGENT tools — run_accessibility_audit, get_compliance_score, get_critical_findings, get_auto_fixable_findings
-STRUCTURE AGENT tools — check_heading_hierarchy, find_faux_headings, check_list_structure, estimate_reading_order
-CONTENT AGENT tools — check_emphasis_patterns, check_link_text, check_reading_level, check_alignment_hints
-REMEDIATION AGENT tools — explain_rule, suggest_fix, prioritize_findings, estimate_fix_impact, check_image_alt_text
-
-Full tool definitions:
-{tools_json}
-
-When the user asks a question:
-1. Identify which agent category best applies
-2. Call the most relevant tool(s) with correct parameters — use [TOOL: tool_name(param)] syntax
-3. Ground your answer in the tool results; do not guess document content
-4. Lead with the most important finding; be concise and actionable
-5. Cite the ACB rule ID (e.g. ACB-NO-ITALIC) when relevant
-
-Compliance questions → Compliance Agent tools first
-Structure questions → Structure Agent tools first
-Emphasis/link/reading-level questions → Content Agent tools first
-"How do I fix X" or "explain rule" → Remediation Agent tools first
-General document questions → Document tools"""
-
-    # Build conversation
-    messages = [
-        {"role": "system", "content": system_prompt},
+    # Prefer keyword-near snippets when possible.
+    tokens = [
+        tok.lower()
+        for tok in re.findall(r"[a-zA-Z0-9]{4,}", question)
+        if tok.lower() not in {"what", "when", "where", "which", "about", "from", "that", "this"}
     ]
-    
-    if conversation_context:
-        messages.append({"role": "user", "content": f"Context from previous turns:\n{conversation_context}"})
-    
-    messages.append({"role": "user", "content": f"Document text (first 5000 chars):\n{document_text[:5000]}\n\nQuestion: {question}"})
 
-    # Call Ollama
+    lines = text.splitlines()
+    snippets: list[str] = []
+    for tok in tokens[:4]:
+        for idx, line in enumerate(lines):
+            if tok in line.lower():
+                start = max(0, idx - 2)
+                end = min(len(lines), idx + 3)
+                snippet = "\n".join(lines[start:end]).strip()
+                if snippet and snippet not in snippets:
+                    snippets.append(snippet)
+                if len("\n\n".join(snippets)) >= max_chars // 2:
+                    break
+        if len("\n\n".join(snippets)) >= max_chars // 2:
+            break
+
+    if snippets:
+        merged = "\n\n".join(snippets)
+        head = text[: max_chars // 4]
+        return (head + "\n\n...\n\n" + merged)[:max_chars]
+
+    # Fallback: beginning + ending context.
+    half = max_chars // 2
+    return text[:half] + "\n\n...\n\n" + text[-half:]
+
+
+def _pdf_first_page_png(path: Path) -> bytes | None:
+    """Render first PDF page to PNG bytes for vision analysis."""
     try:
-        response = requests.post(
-            f"{_OLLAMA_HOST}/api/generate",
-            json={
-                "model": "llama3",
-                "prompt": question,
-                "system": system_prompt,
-                "stream": False,
-                "temperature": 0.3,
-            },
-            timeout=60,
-        )
-        response.raise_for_status()
-        result = response.json()
-        answer = result.get("response", "")
+        import fitz  # type: ignore[import-untyped]
 
-        # Parse tool calls from response (basic parsing)
-        tool_calls = []
-        # Look for patterns like [TOOL: extract_table(table_name)]
-        if "[TOOL:" in answer:
-            # Extract tool calls
-            import re
-            matches = re.findall(r'\[TOOL: (\w+)\((.*?)\)\]', answer)
-            for tool_name, params_str in matches:
-                tool_calls.append({
-                    "name": tool_name,
-                    "params": params_str,
-                })
-                # Execute tool and get result
-                result_text = tools_registry.call(tool_name, **{"param": params_str})
-                answer = answer.replace(f"[TOOL: {tool_name}({params_str})]", f"[Tool result: {result_text[:200]}...]")
+        doc = fitz.open(str(path))
+        if doc.page_count < 1:
+            return None
+        page = doc.load_page(0)
+        pix = page.get_pixmap(dpi=160)
+        return pix.tobytes("png")
+    except Exception:
+        return None
 
-        return answer, tool_calls
 
-    except Exception as e:
-        return f"Error querying LLM: {e}", []
+_CHAT_SYSTEM_PROMPT = (
+    "You are GLOW (Guided Layout & Output Workflow), an accessibility-focused "
+    "document assistant. You help users understand and fix accessibility issues "
+    "according to the ACB Large Print Guidelines, Microsoft Accessibility Checker "
+    "rules, and WCAG 2.2 AA.\n\n"
+    "When answering:\n"
+    "1. Be specific and actionable -- cite the ACB rule ID (e.g. ACB-NO-ITALIC) when relevant.\n"
+    "2. Prioritize critical violations first.\n"
+    "3. Provide step-by-step fix instructions.\n"
+    "4. If the document excerpt does not contain enough information, say so clearly.\n"
+    "5. Lead with the most important finding; keep answers concise.\n"
+    "6. Ground conclusions in the supplied pre-flight analysis and document context; do not invent findings.\n"
+    "7. When a question references converted output, explain both source-content and output-format implications.\n"
+    "8. CRITICAL -- Only report rule violations that were explicitly detected by a pre-flight tool result above. "
+    "Do NOT add violations from your training knowledge if they are not present in the tool output. "
+    "If a rule was not checked, say so rather than assuming it passes or fails.\n"
+    "9. When reporting violations, also briefly acknowledge what the document already does correctly "
+    "(e.g. valid heading hierarchy, clean link text). A balanced response builds trust.\n"
+    "10. If a get_document_summary or get_compliance_score result is present in the pre-flight data, "
+    "open your answer by briefly orienting the user to what the document is and its overall compliance picture."
+)
 
 
 @chat_bp.route("/", methods=["GET"])
 def chat_form():
-    """Show the chat form."""
+    """Show the chat form. Returns 404 if AI is not configured."""
+    try:
+        require_ai_feature("chat")
+    except AIFeatureDisabled:
+        abort(404)
+
     token = request.args.get("token")
     if not token:
         return redirect(url_for("process.process_form"))
 
+    # Session hash for quota tracking
+    sess_id = session.get("_id", "")
+    sess_hash = make_session_hash(sess_id) if sess_id else "anonymous"
+    quota = get_quota_status(sess_hash)
+
     try:
-        # Load or create chat session
         session_key = f"chat_{token}"
         chat_data = session.get(session_key)
-        
+
         if chat_data:
             chat_session = ChatSession.from_dict(chat_data)
         else:
-            # Load document and create new session
             try:
-                doc_text = _load_document_text(token)
+                _load_document_text(token)  # validate file is readable
                 temp_dir = get_temp_dir(token)
                 saved_files = list(temp_dir.glob("*"))
                 filename = saved_files[0].name if saved_files else "document"
-                
                 chat_session = ChatSession(token, filename)
                 session[session_key] = chat_session.to_dict()
             except UploadError as e:
-                return render_template("chat_form.html", error=str(e), token=token)
+                return render_template("chat_form.html", error=str(e), token=token, quota=quota)
 
         return render_template(
             "chat_form.html",
             token=token,
             filename=chat_session.filename,
             conversation=chat_session.turns,
-            ollama_available=_ollama_available(),
+            quota=quota,
         )
 
     except Exception as e:
-        return render_template("chat_form.html", error=str(e), token=token), 500
+        return render_template("chat_form.html", error=str(e), token=token, quota=quota), 500
 
 
 @chat_bp.route("/", methods=["POST"])
 @limiter.limit("10 per minute")
 def chat_submit():
-    """Process a user question and return answer."""
+    """Process a user question via OpenRouter and return an answer."""
+    try:
+        require_ai_feature("chat")
+    except AIFeatureDisabled:
+        abort(404)
+
     token = request.form.get("token")
     question = request.form.get("question", "").strip()
 
@@ -213,66 +217,155 @@ def chat_submit():
             token=token,
         ), 400
 
+    # Session hash for quota tracking
+    sess_id = session.get("_id", "")
+    sess_hash = make_session_hash(sess_id) if sess_id else "anonymous"
+    quota = get_quota_status(sess_hash)
+
+    if not quota["chat_available"]:
+        reason = (
+            "The daily AI chat limit has been reached. Please try again tomorrow."
+            if quota["chat_remaining_today"] == 0
+            else "AI features are temporarily unavailable. Please try again later."
+        )
+        return render_template("chat_form.html", error=reason, token=token, quota=quota), 429
+
     try:
-        # Load chat session from session storage
         session_key = f"chat_{token}"
         chat_data = session.get(session_key)
-        
+
         if not chat_data:
             return redirect(url_for("chat.chat_form", token=token))
 
         chat_session = ChatSession.from_dict(chat_data)
-
-        # Load document
         doc_text = _load_document_text(token)
-        context = DocumentContext(doc_text, chat_session.filename)
+        saved_path = _get_uploaded_document_path(token)
+        context = DocumentContext(doc_text, chat_session.filename, doc_path=saved_path)
         tools = ToolRegistry(context)
-
-        # Add turn and call AI with gating
         turn = chat_session.add_turn(question)
+        preflight_analysis = tools.dispatch_for_question(question)
+
+        # On the first turn, prepend a document orientation block so the model
+        # always knows what document it is looking at and its compliance state.
+        if len(chat_session.turns) == 1:
+            orientation = (
+                "\n\n=== Document orientation (first-turn context) ===\n"
+                + tools.get_document_summary()
+                + "\n\n"
+                + tools.get_compliance_score()
+                + "\n\n"
+                + tools.get_what_passes()
+                + "\n=== End orientation ==="
+            )
+            preflight_analysis = preflight_analysis + orientation
+
+        doc_context = _build_document_context(question, doc_text)
+
+        vision_context = ""
+        ext = saved_path.suffix.lower()
+        is_image_question = any(kw in question.lower() for kw in _IMAGE_QUESTION_KEYWORDS)
+        if ext in _IMAGE_EXTENSIONS:
+            try:
+                image_bytes = saved_path.read_bytes()
+                vision_answer = gateway_describe_image(
+                    image_bytes=image_bytes,
+                    mime_type=f"image/{'jpeg' if ext in {'.jpg', '.jpeg'} else ext.lstrip('.')}",
+                    prompt=(
+                        "Describe this image for accessibility review. Include visible text, "
+                        "chart/table meaning, and any missing-context risks for screen reader users."
+                    ),
+                    session_hash=sess_hash,
+                )
+                if vision_answer:
+                    vision_context = f"\n\n=== Vision analysis (uploaded image) ===\n{vision_answer}"
+            except Exception as exc:
+                vision_context = f"\n\n=== Vision analysis ===\nVision analysis unavailable: {exc}"
+
+        if (is_image_question or "ocr" in question.lower() or "scan" in question.lower()) and ext == ".pdf" and len(doc_text.strip()) < 300:
+            png_bytes = _pdf_first_page_png(saved_path)
+            if png_bytes:
+                try:
+                    vision_answer = gateway_describe_image(
+                        image_bytes=png_bytes,
+                        mime_type="image/png",
+                        prompt=(
+                            "This appears to be an image-first PDF page. Extract readable text when possible "
+                            "and summarize key visual structure for accessibility remediation."
+                        ),
+                        session_hash=sess_hash,
+                    )
+                    if vision_answer:
+                        vision_context = (
+                            vision_context
+                            + "\n\n=== Vision analysis (PDF first page render) ===\n"
+                            + vision_answer
+                        )
+                except Exception as exc:
+                    vision_context = vision_context + f"\n\nVision OCR fallback unavailable: {exc}"
+
+        conv_pairs = [
+            item
+            for t in chat_session.turns[:-1]
+            for item in (
+                {"role": "user", "content": t.question},
+                {"role": "assistant", "content": t.answer or ""},
+            )
+        ]
 
         try:
-            with ai_gate():
-                answer, tool_calls = _call_ollama_with_tools(
-                    question,
-                    doc_text,
-                    tools,
-                    conversation_context="\n".join(
-                        f"Q: {t.question}\nA: {t.answer}" for t in chat_session.turns[:-1]
-                    ),
+            wait_seconds = 90 if len(doc_context) > 6000 else None
+            with ai_gate(wait_seconds=wait_seconds):
+                answer, was_escalated = gateway_chat(
+                    question=question,
+                    system_prompt=f"{_CHAT_SYSTEM_PROMPT}\n\n{preflight_analysis}{vision_context}",
+                    session_hash=sess_hash,
+                    document_text=doc_context,
+                    conversation_history=conv_pairs,
                 )
         except GatingError:
             resp = make_response(
                 render_template(
                     "busy.html",
-                    operation="Document chat (AI interrogation)",
-                    retry_seconds=90,
+                    operation="AI document assistant",
+                    retry_seconds=30,
                     back_url=url_for("chat.chat_form", token=token),
                 ),
                 503,
             )
-            from ..gating import RETRY_AFTER_SECONDS
-            resp.headers["Retry-After"] = str(RETRY_AFTER_SECONDS)
+            resp.headers["Retry-After"] = "30"
             return resp
+        except RuntimeError as exc:
+            # Budget exhausted or not configured
+            return render_template("chat_form.html", error=str(exc), token=token, quota=quota), 503
 
         turn.answer = answer
-        turn.tool_calls = tool_calls
+        turn.tool_calls = []
+        for line in preflight_analysis.splitlines():
+            if line.startswith("[") and line.endswith("]") and line != "[=== GLOW Document Analysis (pre-flight tool results) ===]":
+                turn.tool_calls.append({"name": line.strip("[]")})
+        if was_escalated:
+            turn.tool_calls.append({"escalated": True})
+        turn.tool_results = {"preflight": preflight_analysis}
 
-        # Save updated session
         session[session_key] = chat_session.to_dict()
         session.modified = True
 
         return redirect(url_for("chat.chat_form", token=token))
 
     except UploadError as e:
-        return render_template("chat_form.html", error=str(e), token=token), 400
+        return render_template("chat_form.html", error=str(e), token=token, quota=quota), 400
     except Exception:
-        return render_template("chat_form.html", error="An unexpected error occurred. Please try again.", token=token), 500
+        return render_template("chat_form.html", error="An unexpected error occurred. Please try again.", token=token, quota=quota), 500
 
 
 @chat_bp.route("/export/<format>", methods=["GET"])
 def chat_export(format: str):
     """Export conversation."""
+    try:
+        require_ai_feature("chat")
+    except AIFeatureDisabled:
+        abort(404)
+
     token = request.args.get("token")
     
     if not token:
@@ -369,6 +462,11 @@ def chat_export(format: str):
 @chat_bp.route("/clear", methods=["POST"])
 def chat_clear():
     """Clear the conversation."""
+    try:
+        require_ai_feature("chat")
+    except AIFeatureDisabled:
+        abort(404)
+
     token = request.form.get("token")
     
     if token:

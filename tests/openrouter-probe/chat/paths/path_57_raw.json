@@ -1,0 +1,7 @@
+{
+  "tools_fired": [
+    "find_section",
+    "get_section_content"
+  ],
+  "question": "Show me the section on Financial Summary from this document."
+}

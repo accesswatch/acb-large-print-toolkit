@@ -1,0 +1,7 @@
+1. [ACB-LP-1] The text "click here" is not descriptive and does not provide context for the link. (Severity: high)  
+   
+2. [ACB-LP-2] The use of `<em>` and `<strong>` tags does not provide sufficient contrast or size for large print compliance. (Severity: medium)  
+
+3. [ACB-LP-3] The text alignment is centered, which may affect readability for large print users. (Severity: medium)  
+
+4. [ACB-LP-4] There is no indication of the purpose of the link, which could lead to confusion for users relying on assistive technologies. (Severity: high)

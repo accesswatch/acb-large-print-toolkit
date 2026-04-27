@@ -1,0 +1,3 @@
+Emphasis issues found:
+  • CRITICAL — 2 italic instance(s) found (ACB-NO-ITALIC). Example: *Minutes recorded by the Secretary*
+  • HIGH — 2 long bold phrase(s) that may be body emphasis (ACB-BOLD-HEADINGS-ONLY). Bold is permitted for headings only.

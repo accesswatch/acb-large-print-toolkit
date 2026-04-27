@@ -1,0 +1,8 @@
+=== GLOW Document Analysis (pre-flight tool results) ===
+
+[check_list_structure]
+Lists: 8 bullet items, 4 numbered items.
+Issues:
+  • Deep list nesting detected (2 items, >2 levels)
+
+=== Use the above analysis to give a grounded, specific answer. ===

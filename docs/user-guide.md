@@ -75,7 +75,7 @@ After upload, GLOW shows an action chooser. Every available action for your file
 
 **Template** -- Generates a Word template (.dotx) with all ACB styles pre-configured. Open it in Word and every document you create from it inherits compliant formatting from the first keystroke.
 
-**BITS Whisperer** -- Transcribes an audio file to Markdown or Word. Transcription runs entirely on the GLOW server using a local Whisper model. Your audio is never sent to OpenAI or any external service.
+**BITS Whisperer** -- Transcribes an audio file to Markdown or Word. GLOW may normalize some audio formats locally, then send the file to the Whisper API for transcription. Temporary files are cleaned up after processing.
 
 ### Step 4: Follow the form
 
@@ -197,7 +197,7 @@ When email delivery is configured on the server, an **Email Report** section app
 
 ### AI disclosure
 
-Every audit result shows a data and privacy notice. When AI was not involved, the notice says rule-based analysis only. When AI was used (for example, heading detection with Ollama), it names the local model and confirms no data was sent to any external service.
+Every audit result shows a data and privacy notice. When AI was not involved, the notice says rule-based analysis only. When AI was used, the notice explains which cloud-powered path was used and points you to the privacy policy.
 
 ---
 
@@ -247,9 +247,9 @@ Many documents -- meeting agendas, policy memos, handouts assembled from email -
 
 1. The tool scores each paragraph on ten signals: font size, bold formatting, paragraph length, capitalization patterns, position in the document, and surrounding context. Paragraphs above the confidence threshold are flagged as candidates.
 
-2. When Ollama is running on the server, borderline candidates are optionally sent to a local AI model (phi4-mini) for a second opinion based on surrounding context. No text leaves the server.
+2. When AI-assisted heading refinement is enabled by the operator, borderline candidates may be sent through the configured AI path for a second opinion based on surrounding context.
 
-3. Detected headings are assigned to Heading 1, Heading 2, or Heading 3 based on font size and document position.
+3. Detected headings are assigned across Heading 1 through Heading 6 based on font size, document position, and the heading levels you allow for the run. Heading 1 uses the 22pt primary heading treatment; deeper levels are normalized to the 20pt subheading pattern.
 
 **Accuracy modes:**
 
@@ -260,7 +260,7 @@ Many documents -- meeting agendas, policy memos, handouts assembled from email -
 **Using heading detection on the web:**
 
 1. On the Fix page, check **Detect and convert faux headings to real heading styles**.
-2. Optionally check **Refine with AI** (auto-enables when Ollama is detected on the server).
+2. Optionally check **Refine with AI** if that feature is enabled on your deployment.
 3. Adjust the confidence threshold if needed. Default is 50 out of 100. Higher means fewer, more certain conversions.
 4. Choose an accuracy level.
 5. Click **Fix Document**.
@@ -293,6 +293,8 @@ acb-lp detect-headings document.docx --ai --ai-prompt prompt.txt --threshold 75
 ### Preserve centered headings
 
 By default, Fix normalizes all paragraph alignment to flush-left per ACB requirements. Check **Preserve centered headings** on the Fix form to leave heading alignment as-is while still normalizing non-heading paragraphs.
+
+Fix also enforces paragraph spacing through Word's **paragraph format** settings (`Space Before` / `Space After`) rather than by inserting blank paragraphs. That means normal body text is normalized to the configured post-paragraph spacing without adding extra empty lines to the document.
 
 ### Per-level list indentation
 
@@ -393,7 +395,7 @@ Extracts readable text from any supported file. Good for feeding documents into 
 
 **You get back:** a `.md` file -- plain text with Markdown formatting marks for headings, lists, and links.
 
-**AI image descriptions:** when Ollama is running on the server, MarkItDown can use a local LLaVA vision model to generate descriptive alt text for images embedded in PowerPoint files or uploaded as standalone image files. No image data leaves the server.
+**AI image descriptions:** some deployments may enable AI-assisted image description generation for supported conversion paths. Check your local deployment policy before using AI-powered image workflows.
 
 **When to use:** you need the raw content out of a file in any format. Also the right first step before a chain conversion -- extract to Markdown, edit, then convert to HTML, Word, EPUB, or PDF.
 
@@ -498,7 +500,7 @@ You review and improve the content between steps. The final output reflects that
 
 ## 7. BITS Whisperer: Transcribe Audio
 
-BITS Whisperer transcribes audio files into accessible text documents. Transcription runs entirely on the GLOW server using a local Whisper model. Your audio is never sent to OpenAI or any external service.
+BITS Whisperer transcribes audio files into accessible text documents using the Whisper API. GLOW may normalize OGG, FLAC, AAC, or Opus uploads into a more compatible temporary format before sending them for transcription.
 
 ### When to use BITS Whisperer
 
@@ -565,13 +567,13 @@ When a file exceeds a limit, GLOW returns a clear message and guidance to split 
 
 ### Privacy
 
-Your audio is uploaded to the GLOW server, transcribed using a local Whisper model, and held only as long as needed to complete conversion and deliver your download. After download, temporary files are removed. Nothing is stored as permanent account data.
+Your audio is uploaded to GLOW, optionally normalized for compatibility, sent to the Whisper transcription service, and held only as long as needed to complete conversion and deliver your download. After download or expiry, temporary files are removed. Nothing is stored as permanent account data.
 
 ---
 
 ## 8. Document Chat
 
-Document Chat lets you ask questions about an uploaded document in plain language. A local Llama 3 model answers using 24 accessibility-focused tools across five categories. All processing runs on the GLOW server -- no document content is sent to any external service.
+Document Chat lets you ask questions about an uploaded document in plain language. An OpenRouter-backed AI gateway answers using accessibility-focused tools across compliance, structure, content, and remediation. Core workflows remain available without AI if you prefer not to use it.
 
 ### When to use Document Chat
 
@@ -635,7 +637,7 @@ Document Chat has 24 callable tools in five groups. GLOW selects and combines th
 
 ### Accessibility and privacy
 
-Conversation history is organized by heading-based turns for screen reader navigation. All controls are keyboard accessible. No JavaScript is required for core chat usage. Sessions use local model inference -- your document content stays on the GLOW server. Sessions and uploaded documents follow the 1-hour retention policy.
+Conversation history is organized by heading-based turns for screen reader navigation. All controls are keyboard accessible. No JavaScript is required for core chat usage. Sessions use GLOW's AI gateway and follow the same 1-hour retention policy for uploaded documents.
 
 ---
 
@@ -1131,7 +1133,7 @@ If the transcript is not retrieved within the configured window (default 4 hours
 
 ### Privacy
 
-Your audio file is uploaded to the GLOW (Guided Layout & Output Workflow) server, transcribed using a local copy of the Whisper model (never sent to OpenAI or any third party), and retained only as long as needed to complete conversion and deliver your download. After download, temporary files are deleted. Nothing is stored as permanent account data.
+Your audio file is uploaded to GLOW, optionally normalized for compatibility, sent to the configured Whisper transcription service, and retained only as long as needed to complete conversion and deliver your download. After download or expiry, temporary files are deleted from GLOW. Nothing is stored as permanent account data.
 
 ---
 
@@ -1217,7 +1219,7 @@ Use these prompts directly in chat:
 
 ### Privacy and retention
 
-- Chat runs on local models in GLOW (Guided Layout & Output Workflow) deployment.
+- Chat runs through GLOW's configured AI gateway in supported deployments.
 - Conversation data stays in session storage.
 - Session and uploaded content follow the 1-hour retention policy.
 
@@ -1396,7 +1398,7 @@ On the Fix and Audit forms, a new **Quick Rule Exceptions** section lets you sup
 
 By default, the fixer normalizes all paragraph alignment to flush-left (ragged-right) per ACB requirements. However, you may want to preserve intentional heading center-alignment for design reasons.
 
-The **Preserve centered headings** option on the Fix form skips alignment override for paragraphs identified as headings (those using Heading 1, Heading 2, or Heading 3 styles). Non-heading paragraphs are still normalized to flush-left.
+The **Preserve centered headings** option on the Fix form skips alignment override for paragraphs identified as headings (those using Heading 1 through Heading 6 styles). Non-heading paragraphs are still normalized to flush-left.
 
 **How to use:**
 
@@ -1426,7 +1428,7 @@ Tip: Leave a level blank or set it to 0 if your document does not have that dept
 
 ### Allowed heading levels
 
-You can now restrict heading conversion and review to a selected subset of heading levels (for example, Heading 1 through Heading 3 only).
+You can now restrict heading conversion and review to a selected subset of heading levels (for example, only Heading 1 through Heading 3, or include deeper levels when the document uses them).
 
 This is useful when:
 - Your publication style intentionally uses only part of the heading ladder.
@@ -1457,9 +1459,9 @@ The fixer can detect these "faux headings" and convert them to proper heading st
 
 1. **Heuristic detection** -- The tool scores each paragraph on 10 signals: font size, bold formatting, short length, capitalization patterns, position in the document, and more. Paragraphs scoring above the confidence threshold (default 50 out of 100) are identified as likely headings.
 
-2. **AI refinement (optional)** -- If Ollama is available, the tool can send borderline candidates to a local AI model (phi4-mini) for a second opinion. The AI considers surrounding context to improve accuracy. No data leaves your machine.
+2. **AI refinement (optional)** -- If AI-assisted heading refinement is enabled in your deployment, the tool can send borderline candidates for a second opinion. The AI considers surrounding context to improve accuracy.
 
-3. **Heading level assignment** -- Detected headings are assigned to Heading 1, 2, or 3 based on font size and document position. The first high-confidence heading is typically Heading 1, with subsequent headings assigned based on relative formatting.
+3. **Heading level assignment** -- Detected headings can be assigned across Heading 1 through Heading 6 based on font size, document position, and the heading levels enabled for the run. Heading 1 is typically the first primary heading; deeper levels are normalized to the lower-level subheading pattern when selected.
 
 ### Heading detection accuracy modes
 
@@ -1478,7 +1480,7 @@ Practical guidance:
 **Using heading detection on the web:**
 
 1. On the Fix page, check "Detect and convert faux headings to real heading styles."
-2. Optionally check "Refine with AI" if Ollama is running on the server. The checkbox auto-checks when Ollama is detected.
+2. Optionally check "Refine with AI" if that feature is enabled in your deployment.
 3. Adjust the confidence threshold if needed (higher means fewer but more certain conversions).
 4. Choose a heading detection accuracy level:
    - Conservative (fewer false positives)
@@ -1502,7 +1504,7 @@ If no candidates are found above the confidence threshold, the fix proceeds dire
 1. Open the GLOW Accessibility Toolkit desktop application.
 2. In the fix wizard (Step 3: Options), look for the Heading Detection section.
 3. Check "Detect and convert faux headings to real heading styles."
-4. Check "Refine with AI" if you have Ollama installed locally. The checkbox auto-checks when Ollama is detected.
+4. Check "Refine with AI" if that feature is enabled in your deployment.
 5. Adjust the confidence threshold using the slider or spin control.
 6. Complete the wizard to run the fix. Detected headings are converted before other fixes are applied.
 

@@ -375,10 +375,12 @@
 }());
 </script>
 
+{% if ai_whisperer_enabled %}
 <div class="info-box" role="note" aria-labelledby="whisperer-callout-heading">
   <h2 id="whisperer-callout-heading">Have audio to transcribe?</h2>
   <p>Use <a href="{{ url_for('whisperer.whisperer_form') }}"><strong>BITS Whisperer</strong></a> -- a dedicated tool that transcribes MP3, WAV, M4A, OGG, FLAC, and other audio formats into accessible Markdown or Word documents. Runs entirely on this server. No audio leaves GLOW.</p>
 </div>
+{% endif %}
 
 <details class="help-accordion">
   <summary>What happens to my file?</summary>

@@ -1,0 +1,1 @@
+ERROR: HTTP 500: <!DOCTYPE html><html><head><meta charSet="utf-8" data-next-head=""/><meta name="viewport" content="width=device-width" data-next-head=""/><title data-next-head="">500: Internal Server Error</title><noscript data-n-css=""></noscript><script defer="" noModule="" src="/_next/static/chunks/polyfills-423

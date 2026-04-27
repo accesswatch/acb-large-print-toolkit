@@ -112,6 +112,16 @@ async function fixStyles(context: Word.RequestContext): Promise<{ count: number;
                 changed = true;
             }
 
+            if (Math.abs(style.paragraphFormat.spaceBefore - styleDef.para.spaceBeforePt) > 0.5) {
+                style.paragraphFormat.spaceBefore = styleDef.para.spaceBeforePt;
+                changed = true;
+            }
+
+            if (Math.abs(style.paragraphFormat.spaceAfter - styleDef.para.spaceAfterPt) > 0.5) {
+                style.paragraphFormat.spaceAfter = styleDef.para.spaceAfterPt;
+                changed = true;
+            }
+
             // Line spacing
             if (Math.abs(style.paragraphFormat.lineSpacing - styleDef.para.lineSpacing) > 0.01) {
                 // Office.js lineSpacing is in points for "Multiple" -- ACB 1.15 means value * 12 for 12pt
@@ -208,9 +218,15 @@ async function fixParagraphs(context: Word.RequestContext): Promise<{ count: num
         // Fix italic -> underline
         if (para.font.italic === true) {
             para.font.italic = false;
-            para.font.underline = Word.UnderlineType.single;
+            if (!isHeading) {
+                para.font.underline = Word.UnderlineType.single;
+            }
             count++;
-            messages.push(`Removed italic, added underline in paragraph ${i + 1}`);
+            messages.push(
+                isHeading
+                    ? `Removed italic in heading paragraph ${i + 1}`
+                    : `Removed italic, added underline in paragraph ${i + 1}`,
+            );
         }
 
         // Fix bold in body text -> underline
@@ -227,8 +243,12 @@ async function fixParagraphs(context: Word.RequestContext): Promise<{ count: num
             count++;
         }
 
-        // Fix font size below minimum
-        if (para.font.size && para.font.size < MIN_SIZE_PT - 0.5) {
+        // Fix font size overrides.
+        const expectedStyle = isHeading ? ACB_STYLES[styleName] : undefined;
+        if (expectedStyle && para.font.size && Math.abs(para.font.size - expectedStyle.font.sizePt) > 0.5) {
+            para.font.size = expectedStyle.font.sizePt;
+            count++;
+        } else if (para.font.size && para.font.size < MIN_SIZE_PT - 0.5) {
             para.font.size = MIN_SIZE_PT;
             count++;
         }

@@ -1,0 +1,8 @@
+=== GLOW Document Analysis (pre-flight tool results) ===
+
+[check_image_alt_text]
+Alt text issues (ACB-MISSING-ALT-TEXT):
+  2 of 3 image(s) have empty alt text.
+Fix: add a meaningful description inside the brackets: ![Description](image.png)
+
+=== Use the above analysis to give a grounded, specific answer. ===

@@ -1,0 +1,45 @@
+{
+  "id": "gen-1776656928-t4nskwnxO3PXsaHGoP7R",
+  "object": "chat.completion",
+  "created": 1776656928,
+  "model": "openai/gpt-4o-mini",
+  "provider": "Azure",
+  "system_fingerprint": "fp_eb37e061ec",
+  "choices": [
+    {
+      "index": 0,
+      "logprobs": null,
+      "finish_reason": "stop",
+      "native_finish_reason": "stop",
+      "message": {
+        "role": "assistant",
+        "content": "GLOW_PAID_OK",
+        "refusal": null,
+        "reasoning": null
+      }
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 16,
+    "completion_tokens": 6,
+    "total_tokens": 22,
+    "cost": 6e-06,
+    "is_byok": false,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "cache_write_tokens": 0,
+      "audio_tokens": 0,
+      "video_tokens": 0
+    },
+    "cost_details": {
+      "upstream_inference_cost": 6e-06,
+      "upstream_inference_prompt_cost": 2.4e-06,
+      "upstream_inference_completions_cost": 3.6e-06
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 0,
+      "image_tokens": 0,
+      "audio_tokens": 0
+    }
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "tools_fired": [
+    "prioritize_findings",
+    "estimate_fix_impact",
+    "check_emphasis_patterns"
+  ],
+  "question": "How do I fix all the italic and bold issues in this document?"
+}

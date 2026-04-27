@@ -21,10 +21,12 @@ from typing import Any
 from urllib.parse import urlencode
 
 import requests
+from werkzeug.security import check_password_hash, generate_password_hash
 from flask import (
     Blueprint,
     abort,
     current_app,
+    jsonify,
     redirect,
     render_template,
     request,
@@ -33,6 +35,22 @@ from flask import (
 )
 
 from ..app import limiter
+from ..credentials import get_bootstrap_admin_email, get_bootstrap_admin_password
+from ..ai_gateway import (
+    get_admin_stats,
+    get_model_catalog,
+    get_runtime_config,
+    project_monthly_cost,
+    update_runtime_config,
+)
+from ..feature_flags import (
+    get_all_flags as _get_all_flags,
+    set_flag as _set_flag,
+    reset_defaults as _reset_flag_defaults,
+    get_flag_meta as _get_flag_meta,
+    get_backend as _get_flags_backend,
+    migrate_json_to_sqlite as _migrate_flags,
+)
 from ..email import email_configured, send_whisperer_status_email
 from .whisperer import (
     admin_cancel_queued_job,
@@ -73,6 +91,7 @@ def _db() -> sqlite3.Connection:
         "  email TEXT PRIMARY KEY,"
         "  display_name TEXT,"
         "  approved INTEGER NOT NULL DEFAULT 0,"
+        "  password_hash TEXT,"
         "  created_at TEXT NOT NULL,"
         "  approved_at TEXT,"
         "  approved_by TEXT"
@@ -99,6 +118,9 @@ def _db() -> sqlite3.Connection:
         "  used_at TEXT"
         ")"
     )
+    cols = [r[1] for r in conn.execute("PRAGMA table_info(admin_accounts)").fetchall()]
+    if "password_hash" not in cols:
+        conn.execute("ALTER TABLE admin_accounts ADD COLUMN password_hash TEXT")
     conn.commit()
     return conn
 
@@ -132,11 +154,43 @@ def _bootstrap_admins() -> None:
     conn.commit()
     conn.close()
 
+    _bootstrap_local_admin_password()
+
+
+def _bootstrap_local_admin_password() -> None:
+    """Bootstrap a local password admin account for emergency/admin access."""
+    email = _normalize_email(get_bootstrap_admin_email())
+    password = get_bootstrap_admin_password().strip()
+    if not email or not password:
+        return
+
+    conn = _db()
+    now = _utc_now()
+    row = conn.execute(
+        "SELECT email, password_hash FROM admin_accounts WHERE email=?",
+        (email,),
+    ).fetchone()
+
+    if row is None:
+        conn.execute(
+            "INSERT INTO admin_accounts (email, display_name, approved, password_hash, created_at, approved_at, approved_by) "
+            "VALUES (?, ?, 1, ?, ?, ?, 'bootstrap-local')",
+            (email, email, generate_password_hash(password), now, now),
+        )
+    elif not row["password_hash"]:
+        conn.execute(
+            "UPDATE admin_accounts SET approved=1, password_hash=?, approved_at=?, approved_by='bootstrap-local' WHERE email=?",
+            (generate_password_hash(password), now, email),
+        )
+
+    conn.commit()
+    conn.close()
+
 
 def _account(email: str) -> sqlite3.Row | None:
     conn = _db()
     row = conn.execute(
-        "SELECT email, display_name, approved FROM admin_accounts WHERE email=?",
+        "SELECT email, display_name, approved, password_hash FROM admin_accounts WHERE email=?",
         (email,),
     ).fetchone()
     conn.close()
@@ -325,8 +379,51 @@ def admin_login() -> Any:
         "admin_login.html",
         providers=providers,
         email_enabled=email_configured(),
+        local_password_enabled=bool(get_bootstrap_admin_password().strip()),
         ttl_minutes=_MAGIC_LINK_TTL_MINUTES,
     )
+
+
+@admin_bp.route("/login/password", methods=["POST"])
+@limiter.limit("10 per minute")
+def admin_login_password() -> Any:
+    _bootstrap_admins()
+    email = _normalize_email(request.form.get("email", ""))
+    password = request.form.get("password", "")
+
+    if not email or not password:
+        return render_template(
+            "admin_login.html",
+            providers=_provider_configs() if email_configured() else [],
+            email_enabled=email_configured(),
+            local_password_enabled=bool(get_bootstrap_admin_password().strip()),
+            ttl_minutes=_MAGIC_LINK_TTL_MINUTES,
+            error="Email and password are required.",
+        ), 400
+
+    row = _account(email)
+    if row is None or not row["password_hash"] or not check_password_hash(row["password_hash"], password):
+        return render_template(
+            "admin_login.html",
+            providers=_provider_configs() if email_configured() else [],
+            email_enabled=email_configured(),
+            local_password_enabled=bool(get_bootstrap_admin_password().strip()),
+            ttl_minutes=_MAGIC_LINK_TTL_MINUTES,
+            error="Invalid admin credentials.",
+        ), 403
+
+    if int(row["approved"]) != 1:
+        return render_template(
+            "admin_login.html",
+            providers=_provider_configs() if email_configured() else [],
+            email_enabled=email_configured(),
+            local_password_enabled=bool(get_bootstrap_admin_password().strip()),
+            ttl_minutes=_MAGIC_LINK_TTL_MINUTES,
+            error="This account is not approved for admin access.",
+        ), 403
+
+    session["admin_email"] = email
+    return redirect(url_for("admin.admin_queue"))
 
 
 @admin_bp.route("/logout", methods=["POST"])
@@ -615,6 +712,184 @@ def admin_queue() -> Any:
     email = _require_admin()
     rows = get_admin_queue_snapshot()
     return render_template("admin_queue.html", admin_email=email, rows=rows)
+
+
+@admin_bp.route("/ai", methods=["GET", "POST"])
+def admin_ai_settings() -> Any:
+    """Admin AI configuration panel (model routing, budget, quotas)."""
+    email = _require_admin()
+    notice = None
+    error = None
+
+    if request.method == "POST":
+        try:
+            updates = {
+                "default_model": (request.form.get("default_model") or "").strip(),
+                "fallback_model": (request.form.get("fallback_model") or "").strip(),
+                "vision_model": (request.form.get("vision_model") or "").strip(),
+                "escalation_thresh": float(request.form.get("escalation_thresh") or "0.7"),
+                "monthly_budget_usd": float(request.form.get("monthly_budget_usd") or "20"),
+                "chat_daily_limit": int(request.form.get("chat_daily_limit") or "50"),
+                "audio_monthly_min": int(request.form.get("audio_monthly_min") or "100"),
+                "whisper_model": (request.form.get("whisper_model") or "openai/whisper-large-v3").strip(),
+            }
+
+            if request.form.get("use_free_defaults") == "on":
+                updates["default_model"] = "openai/gpt-4o-mini"
+                updates["fallback_model"] = "openai/gpt-4o"
+            if updates["escalation_thresh"] < 0 or updates["escalation_thresh"] > 1:
+                raise ValueError("Escalation threshold must be between 0.0 and 1.0")
+            if updates["monthly_budget_usd"] <= 0:
+                raise ValueError("Monthly budget must be greater than 0")
+            if updates["chat_daily_limit"] < 0:
+                raise ValueError("Chat daily limit cannot be negative")
+            if updates["audio_monthly_min"] < 0:
+                raise ValueError("Audio monthly limit cannot be negative")
+            if not updates["default_model"]:
+                raise ValueError("Default model is required")
+            if not updates["fallback_model"]:
+                raise ValueError("Fallback model is required")
+            if not updates["vision_model"]:
+                updates["vision_model"] = updates["fallback_model"]
+
+            update_runtime_config(updates)
+            notice = "AI settings saved. Changes apply immediately."
+        except Exception as exc:
+            error = f"Could not save settings: {exc}"
+
+    cfg = get_runtime_config()
+    stats = get_admin_stats()
+    models = get_model_catalog()
+    projection = project_monthly_cost(
+        model_id=str(cfg.get("default_model", "openai/gpt-4o-mini")),
+        monthly_requests=10000,
+        avg_input_tokens=1200,
+        avg_output_tokens=400,
+    )
+    return render_template(
+        "admin_ai.html",
+        admin_email=email,
+        cfg=cfg,
+        stats=stats,
+        models=models,
+        projection=projection,
+        notice=notice,
+        error=error,
+    )
+
+
+@admin_bp.route("/ai/pricing", methods=["GET"])
+def admin_ai_pricing() -> Any:
+    """Live pricing and projection API for the admin AI settings page."""
+    _require_admin()
+    model_id = (request.args.get("model") or "").strip()
+    try:
+        monthly_requests = int(request.args.get("monthly_requests") or "10000")
+        avg_input_tokens = int(request.args.get("avg_input_tokens") or "1200")
+        avg_output_tokens = int(request.args.get("avg_output_tokens") or "400")
+    except ValueError:
+        return jsonify({"error": "Invalid numeric query params"}), 400
+
+    models = get_model_catalog()
+    selected = next((m for m in models if m.get("id") == model_id), None)
+    if selected is None and models:
+        selected = models[0]
+        model_id = str(selected.get("id", ""))
+
+    projected = project_monthly_cost(model_id, monthly_requests, avg_input_tokens, avg_output_tokens)
+    return jsonify(
+        {
+            "model": selected,
+            "projection": {
+                "monthly_requests": monthly_requests,
+                "avg_input_tokens": avg_input_tokens,
+                "avg_output_tokens": avg_output_tokens,
+                "projected_monthly_usd": projected,
+            },
+            "models": models,
+        }
+    )
+
+
+
+@admin_bp.route("/flags", methods=["GET", "POST"])
+def admin_flags() -> Any:
+    """Admin panel to view and manipulate server-side feature flags."""
+    email = _require_admin()
+    notice = None
+    error = None
+
+    feature_keys = [
+        # Master and AI subfeatures
+        "GLOW_ENABLE_AI",
+        "GLOW_ENABLE_AI_CHAT",
+        "GLOW_ENABLE_AI_WHISPERER",
+        "GLOW_ENABLE_AI_HEADING_FIX",
+        "GLOW_ENABLE_AI_ALT_TEXT",
+        "GLOW_ENABLE_AI_MARKITDOWN_LLM",
+        # Core GLOW features (non-AI)
+        "GLOW_ENABLE_AUDIT",
+        "GLOW_ENABLE_CHECKER",
+        "GLOW_ENABLE_CONVERTER",
+        "GLOW_ENABLE_TEMPLATE_BUILDER",
+        "GLOW_ENABLE_WORD_SETUP",
+        "GLOW_ENABLE_MARKDOWN_AUDIT",
+    ]
+
+    if request.method == "POST":
+        try:
+            if request.form.get("reset_defaults") == "on":
+                _reset_flag_defaults()
+                notice = "Feature flags reset to defaults."
+            else:
+                posted = {k: request.form.get(k) == "on" for k in feature_keys}
+
+                # Cascade: if master AI is off, ensure all AI subfeatures are off.
+                if not posted.get("GLOW_ENABLE_AI", False):
+                    for child in [
+                        "GLOW_ENABLE_AI_CHAT",
+                        "GLOW_ENABLE_AI_WHISPERER",
+                        "GLOW_ENABLE_AI_HEADING_FIX",
+                        "GLOW_ENABLE_AI_ALT_TEXT",
+                        "GLOW_ENABLE_AI_MARKITDOWN_LLM",
+                    ]:
+                        posted[child] = False
+
+                for k, v in posted.items():
+                    _set_flag(k, v)
+                notice = "Feature flags updated."
+        except Exception as exc:
+            error = f"Could not update flags: {exc}"
+
+    flags = _get_all_flags()
+    # Collect metadata per-flag for display
+    metas = {k: _get_flag_meta(k) for k in feature_keys}
+    backend = _get_flags_backend()
+    return render_template(
+        "admin_flags.html",
+        admin_email=email,
+        flags=flags,
+        flag_meta=metas,
+        flags_backend=backend,
+        notice=notice,
+        error=error,
+    )
+
+
+
+@admin_bp.route("/flags/migrate", methods=["POST"])
+def admin_flags_migrate() -> Any:
+    """Trigger a JSON->SQLite migration helper (idempotent) from the UI."""
+    _require_admin()
+    notice = None
+    error = None
+    try:
+        _migrate_flags()
+        notice = "Feature flags migrated (if JSON data present)."
+    except Exception as exc:
+        error = f"Migration failed: {exc}"
+
+    return redirect(url_for("admin.admin_flags", notice=notice, error=error))
 
 
 @admin_bp.route("/queue/cancel/<job_id>", methods=["POST"])

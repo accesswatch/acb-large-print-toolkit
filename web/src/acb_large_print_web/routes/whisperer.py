@@ -1,8 +1,12 @@
-"""BITS Whisperer route -- on-server audio transcription to Markdown or Word.
+"""BITS Whisperer route -- cloud audio transcription to Markdown or Word.
 
-BITS Whisperer uses faster-whisper (Whisper medium model, CTranslate2 int8)
-running entirely on the GLOW server.  Audio is never sent to any external
-service or cloud API.
+BITS Whisperer routes audio transcription through OpenRouter using the operator's
+OPENROUTER_API_KEY (same key used for all other AI features -- no separate key needed).
+When that key is not configured, the /whisperer route and tab are hidden entirely.
+
+Audio files are sent to the OpenRouter audio transcription endpoint, then immediately
+deleted from the GLOW server.  Transcripts are processed locally and never
+stored beyond the session temp directory (deleted within 1 hour).
 
 Outputs:
   - Markdown (.md) -- plain ACB-compliant transcript ready to edit or convert
@@ -26,6 +30,7 @@ from datetime import datetime, timedelta, UTC
 from pathlib import Path
 from collections import deque
 import re
+import subprocess
 
 from flask import (
     Blueprint,
@@ -40,18 +45,25 @@ from flask import (
 )
 from werkzeug.security import check_password_hash, generate_password_hash
 
-from acb_large_print.converter import (
-    AUDIO_EXTENSIONS,
-    whisper_available,
-    whisper_convert,
-)
 from acb_large_print.pandoc_converter import convert_to_docx, pandoc_available
 
+from ..ai_gateway import transcribe as gateway_transcribe, is_whisper_configured
+from ..ai_features import require_ai_feature, AIFeatureDisabled
 from ..gating import RETRY_AFTER_SECONDS, GatingError, audio_gate
-from ..upload import UploadError, cleanup_token, get_temp_dir, validate_upload
+from ..upload import AUDIO_EXTENSIONS, UploadError, cleanup_token, get_temp_dir, validate_upload
 from ..email import email_configured, send_whisperer_status_email
 
 whisperer_bp = Blueprint("whisperer", __name__)
+
+
+def _require_whisperer_feature() -> None:
+    """Abort with 404 when BITS Whisperer is disabled for this deployment."""
+    try:
+        require_ai_feature("whisperer")
+    except AIFeatureDisabled:
+        from flask import abort
+
+        abort(404)
 
 
 @dataclass
@@ -93,6 +105,8 @@ _RETRIEVAL_HOURS = int(os.environ.get("WHISPER_RETRIEVAL_HOURS", "4"))
 _EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 _ESTIMATE_BYTES_PER_SECOND = 16000  # ~128 kbps compressed audio
 _MIN_PLAUSIBLE_BYTES_PER_SECOND = 500  # guardrail for bogus long metadata durations
+_CLOUD_DIRECT_AUDIO_EXTENSIONS = {".mp3", ".m4a", ".wav", ".webm", ".mp4", ".mpeg", ".mpga"}
+_CLOUD_TRANSCODE_AUDIO_EXTENSIONS = {".ogg", ".flac", ".aac", ".opus"}
 
 # Accept string for the file input
 _AUDIO_ACCEPT = ",".join(sorted(AUDIO_EXTENSIONS))
@@ -126,7 +140,7 @@ _LANGUAGE_CHOICES: list[tuple[str, str]] = [
 def _template_context(**extra):
     return dict(
         audio_accept=_AUDIO_ACCEPT,
-        whisper_installed=whisper_available(),
+        whisper_installed=is_whisper_configured(),
         pandoc_installed=pandoc_available(),
         email_enabled=email_configured(),
         max_audio_mb=_MAX_AUDIO_MB,
@@ -315,6 +329,54 @@ def _resolve_audio_upload(
             return token, candidate, False, candidate.name
 
     raise UploadError("Your uploaded audio could not be found. Please select the file again.")
+
+
+def _prepare_audio_for_cloud(saved_path: Path) -> Path:
+    """Normalize cloud-incompatible audio containers/codecs to MP3 with ffmpeg.
+
+    OpenAI-compatible transcription endpoints are most reliable with mp3/m4a/wav/webm.
+    We keep the broader upload list for UX, then transcode unsupported-but-common
+    formats into MP3 locally before upload.
+    """
+    ext = saved_path.suffix.lower()
+    if ext in _CLOUD_DIRECT_AUDIO_EXTENSIONS:
+        return saved_path
+
+    if ext not in _CLOUD_TRANSCODE_AUDIO_EXTENSIONS:
+        return saved_path
+
+    normalized_path = saved_path.with_name(f"{saved_path.stem}.normalized.mp3")
+    if normalized_path.exists():
+        return normalized_path
+
+    try:
+        subprocess.run(
+            [
+                "ffmpeg",
+                "-y",
+                "-i",
+                str(saved_path),
+                "-vn",
+                "-acodec",
+                "libmp3lame",
+                "-ar",
+                "44100",
+                "-ac",
+                "1",
+                "-b:a",
+                "128k",
+                str(normalized_path),
+            ],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        return normalized_path
+    except Exception as exc:
+        raise UploadError(
+            "This audio format needs conversion before cloud transcription, but normalization failed. "
+            "Please convert the file to MP3, M4A, or WAV and try again."
+        ) from exc
 
 
 def _set_job(job: _WhisperJob) -> None:
@@ -612,22 +674,18 @@ def _run_whisper_job(job_id: str) -> None:
                 status="running",
                 progress=1,
                 message=(
-                    "Preparing Whisper model. First-time startup may take a few minutes "
-                    "while model files are initialized/downloaded."
+                    "Connecting to transcription service..."
                 ),
             )
             with audio_gate():
-                transcript_path, _ = whisper_convert(
+                transcript_text = gateway_transcribe(
                     job.saved_path,
-                    output_path=md_output,
                     language=job.language,
-                    progress_callback=lambda p, m: _update_job(
-                        job_id,
-                        status="running",
-                        progress=p,
-                        message=m,
-                    ),
+                    session_hash="background",
                 )
+                md_output.write_text(transcript_text, encoding="utf-8")
+                transcript_path = md_output
+                _update_job(job_id, status="running", progress=80, message="Transcription complete. Formatting output...")
                 _touch_token_dir(job.token)
         except GatingError:
             with _jobs_lock:
@@ -727,6 +785,7 @@ def _run_whisper_job(job_id: str) -> None:
 
 @whisperer_bp.route("/", methods=["GET"])
 def whisperer_form():
+    _require_whisperer_feature()
     return render_template("whisperer_form.html", **_template_context(estimate_ready=False))
 
 
@@ -737,6 +796,7 @@ def whisperer_estimate():
     Uses PyAV metadata when available; falls back to file-size-based estimate.
     This endpoint is intentionally lightweight and always cleans up the temp token.
     """
+    _require_whisperer_feature()
     token = None
     try:
         debug_requested = request.args.get("debug") == "1" or request.headers.get("X-Whisperer-Debug") == "1"
@@ -805,7 +865,7 @@ def whisperer_estimate():
             str(exc),
         )
         return jsonify({"error": str(exc)}), 400
-    except Exception as exc:
+    except Exception:
         current_app.logger.exception(
             "WHISPERER_ESTIMATE unexpected_error file=%s",
             getattr(request.files.get("audio"), "filename", "(missing)"),
@@ -819,6 +879,7 @@ def whisperer_estimate():
 @whisperer_bp.route("/estimate-page", methods=["POST"])
 def whisperer_estimate_page():
     """Server-side estimate flow that re-renders the form with estimate values."""
+    _require_whisperer_feature()
     token = None
     created_new_token = False
     try:
@@ -880,6 +941,7 @@ def whisperer_estimate_page():
 
 @whisperer_bp.route("/", methods=["POST"])
 def whisperer_submit():
+    _require_whisperer_feature()
     token = None
     created_new_token = False
     try:
@@ -890,10 +952,10 @@ def whisperer_submit():
         _require_estimate_acknowledgement()
         ext = saved_path.suffix.lower()
 
-        if not whisper_available():
+        if not is_whisper_configured():
             raise UploadError(
-                "BITS Whisperer (faster-whisper) is not installed on this server. "
-                "Audio transcription is unavailable."
+                "BITS Whisperer is not configured on this server. "
+                "Please contact the administrator."
             )
 
         if ext not in AUDIO_EXTENSIONS:
@@ -915,15 +977,18 @@ def whisperer_submit():
         language = request.form.get("language") or None
         output_format = request.form.get("output_format", "markdown")
 
+        cloud_audio_path = _prepare_audio_for_cloud(saved_path)
         md_output = temp_dir / f"{saved_path.stem}.md"
 
         try:
             with audio_gate():
-                transcript_path, _ = whisper_convert(
-                    saved_path,
-                    output_path=md_output,
+                transcript_text = gateway_transcribe(
+                    cloud_audio_path,
                     language=language,
+                    session_hash=request.cookies.get("session", "anonymous")[:24],
                 )
+                md_output.write_text(transcript_text, encoding="utf-8")
+                transcript_path = md_output
         except GatingError:
             return _busy_response()
 
@@ -1009,13 +1074,14 @@ def whisperer_submit():
 @whisperer_bp.route("/start", methods=["POST"])
 def whisperer_start_job():
     """Start a background Whisper transcription job and return a job id."""
+    _require_whisperer_feature()
     token = None
     created_new_token = False
     try:
-        if not whisper_available():
+        if not is_whisper_configured():
             raise UploadError(
-                "BITS Whisperer (faster-whisper) is not installed on this server. "
-                "Audio transcription is unavailable."
+                "BITS Whisperer is not configured on this server. "
+                "Please contact the administrator."
             )
 
         token, saved_path, created_new_token, uploaded_name = _resolve_audio_upload(
@@ -1030,6 +1096,8 @@ def whisperer_start_job():
                 f"'{ext}' is not a supported audio format. "
                 f"Supported: {', '.join(sorted(AUDIO_EXTENSIONS))}."
             )
+
+        cloud_audio_path = _prepare_audio_for_cloud(saved_path)
 
         duration_seconds = _sanitize_duration_estimate(
             saved_path,
@@ -1066,7 +1134,7 @@ def whisperer_start_job():
         job = _WhisperJob(
             job_id=job_id,
             token=token,
-            saved_path=saved_path,
+            saved_path=cloud_audio_path,
             language=request.form.get("language") or None,
             output_format=output_format,
             title=request.form.get("title") or None,
@@ -1133,6 +1201,7 @@ def whisperer_start_job():
 @whisperer_bp.route("/progress/<job_id>", methods=["GET"])
 def whisperer_job_progress(job_id: str):
     """Return JSON progress for a running or completed Whisper job."""
+    _require_whisperer_feature()
     job = _get_job(job_id)
     if job is None:
         return jsonify({"error": "Job not found or expired."}), 404
@@ -1157,6 +1226,7 @@ def whisperer_job_progress(job_id: str):
 @whisperer_bp.route("/download/<job_id>", methods=["GET"])
 def whisperer_job_download(job_id: str):
     """Download the completed Whisper output and clean up job resources."""
+    _require_whisperer_feature()
     job = _get_job(job_id)
     if job is None:
         return render_template("whisperer_form.html", error="Job not found or expired.", **_template_context()), 404
@@ -1201,6 +1271,7 @@ def whisperer_job_download(job_id: str):
 @whisperer_bp.route("/retrieve/<token>", methods=["GET", "POST"])
 def whisperer_retrieve(token: str):
     """Secure retrieval endpoint for background jobs (link + password)."""
+    _require_whisperer_feature()
     job = None
     with _jobs_lock:
         for _job in _jobs.values():

@@ -241,6 +241,7 @@ def _fix_paragraph_formatting(
 
     for i, para in enumerate(doc.paragraphs):
         style_name = para.style.name if para.style else "Normal"
+        style_def = C.ACB_STYLES.get(style_name)
         is_heading = bool(re.match(r"^Heading \d+$", style_name))
         is_list = style_name in (
             "List Bullet",
@@ -252,6 +253,41 @@ def _fix_paragraph_formatting(
         )
 
         loc = f"Paragraph {i + 1}"
+
+        if para.text.strip() and style_def is not None:
+            pf = para.paragraph_format
+            expected_para = style_def.para
+            spacing_changed = False
+
+            if pf.line_spacing != expected_para.line_spacing:
+                pf.line_spacing_rule = WD_LINE_SPACING.MULTIPLE
+                pf.line_spacing = expected_para.line_spacing
+                spacing_changed = True
+
+            actual_before = pf.space_before.pt if pf.space_before is not None else 0.0
+            if abs(actual_before - expected_para.space_before_pt) > 0.5:
+                pf.space_before = Pt(expected_para.space_before_pt)
+                spacing_changed = True
+
+            actual_after = pf.space_after.pt if pf.space_after is not None else 0.0
+            if abs(actual_after - expected_para.space_after_pt) > 0.5:
+                pf.space_after = Pt(expected_para.space_after_pt)
+                spacing_changed = True
+
+            if spacing_changed:
+                fixes += 1
+                records.append(
+                    C.FixRecord(
+                        "ACB-LINE-SPACING",
+                        C.FIX_CATEGORY_SPACING,
+                        (
+                            "Paragraph spacing -> "
+                            f"before {expected_para.space_before_pt}pt, "
+                            f"after {expected_para.space_after_pt}pt"
+                        ),
+                        loc,
+                    )
+                )
 
         # Fix alignment
         if para.paragraph_format.alignment is not None:
@@ -331,17 +367,20 @@ def _fix_paragraph_formatting(
                 )
 
         for run in para.runs:
+            expected_font = style_def.font if is_heading and style_def is not None else None
+
             # Remove italic everywhere
             if run.font.italic:
                 run.font.italic = False
-                # Convert italic text to underline (ACB emphasis)
-                run.font.underline = True
+                if not is_heading:
+                    # Convert body italic text to underline (ACB emphasis)
+                    run.font.underline = True
                 fixes += 1
                 records.append(
                     C.FixRecord(
-                        "ACB-ITALIC",
+                        "ACB-NO-ITALIC",
                         C.FIX_CATEGORY_EMPHASIS,
-                        "Italic -> underline",
+                        "Italic removed" if is_heading else "Italic -> underline",
                         loc,
                     )
                 )
@@ -375,8 +414,30 @@ def _fix_paragraph_formatting(
                     )
                 )
 
-            # Fix font size below minimum
-            if run.font.size and run.font.size.pt < C.MIN_SIZE_PT - 0.5:
+            # Fix heading font size overrides to match the resolved heading spec.
+            if (
+                expected_font is not None
+                and run.font.size
+                and abs(run.font.size.pt - expected_font.size_pt) > 0.5
+            ):
+                old_size = run.font.size.pt
+                run.font.size = Pt(expected_font.size_pt)
+                fixes += 1
+                records.append(
+                    C.FixRecord(
+                        "ACB-FONT-SIZE-H1" if style_name == "Heading 1" else "ACB-FONT-SIZE-H2",
+                        C.FIX_CATEGORY_FONT,
+                        f"Heading font size {old_size}pt -> {expected_font.size_pt}pt",
+                        loc,
+                    )
+                )
+
+            # Fix body font size below minimum
+            if (
+                expected_font is None
+                and run.font.size
+                and run.font.size.pt < C.MIN_SIZE_PT - 0.5
+            ):
                 old_size = run.font.size.pt
                 run.font.size = Pt(C.MIN_SIZE_PT)
                 fixes += 1

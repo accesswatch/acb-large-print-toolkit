@@ -9,7 +9,7 @@
 {% if actions|length == 0 %}
 <div class="notice-box" role="status">
   <p><strong>No actions available for this file type.</strong> GLOW cannot process <code>{{ file_ext }}</code> files directly.</p>
-  <p><a href="{{ url_for('process.process_form') }}">Upload a different file</a> -- supported formats include Word (.docx), Excel (.xlsx), PowerPoint (.pptx), PDF, Markdown (.md), ePub, audio (MP3, WAV, M4A), and most image formats.</p>
+  <p><a href="{{ url_for('process.process_form') }}">Upload a different file</a> -- supported formats include Word (.docx), Excel (.xlsx), PowerPoint (.pptx), PDF, Markdown (.md), ePub, common image formats, and audio (MP3, WAV, M4A, OGG, FLAC, AAC, Opus, WebM, MP4, MPEG, MPGA).</p>
 </div>
 {% else %}
 <p>We found {{ actions|length }} action{{ 's' if actions|length != 1 else '' }} you can perform on this file:</p>
@@ -21,7 +21,7 @@
     <h3>{{ action_info.name }}</h3>
     <p>{{ action_info.description }}</p>
     
-    <form method="post" action="{{ url_for('process.process_go', action=action_key) }}" style="display: inline;">
+    <form method="post" action="{{ url_for('process.process_go', action=action_key) }}" class="inline-form">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <input type="hidden" name="token" value="{{ token }}">
       <button type="submit" class="btn-secondary">Choose {{ action_info.name }}</button>

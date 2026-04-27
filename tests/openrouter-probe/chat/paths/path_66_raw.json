@@ -1,0 +1,8 @@
+{
+  "escalated": false,
+  "tools": [
+    "run_accessibility_audit",
+    "get_critical_findings",
+    "check_emphasis_patterns"
+  ]
+}

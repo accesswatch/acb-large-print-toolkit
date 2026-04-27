@@ -1,0 +1,738 @@
+[
+  {
+    "path_id": "00a",
+    "layer": 0,
+    "name": ".md direct read_text()",
+    "ok": true,
+    "answer_preview": "# BITS Board Meeting -- April 2026\n\n*Minutes recorded by the Secretary*\n\n## 1. Attendance\n\nAll board members were present. The meeting was called to order at 9:00 AM by\nPresident Jeff Bishop.\n\n**Thomas Hartley, Treasurer, noted that the following agenda items had been revised.**\n\n## 2. Financial Rep",
+    "notes": "2816 chars"
+  },
+  {
+    "path_id": "00b",
+    "layer": 0,
+    "name": ".docx MarkItDown extraction",
+    "ok": true,
+    "answer_preview": "# BITS Board Meeting -- April 2026\n\n## 1. Financial Report\n\n*This text is italic and violates ACB-NO-ITALIC.*\n\n**All staff must read this notice. The notice applies to all departments.**\n\n## 2. Budget\n\n|  |  |  |\n| --- | --- | --- |\n| Quarter | Revenue | Expenses |\n| Q1 | $142,000 | $118,000 |\n| Q2 ",
+    "notes": "419 chars"
+  },
+  {
+    "path_id": "00c",
+    "layer": 0,
+    "name": ".xlsx MarkItDown extraction",
+    "ok": true,
+    "answer_preview": "## Budget 2026\n| Quarter | Revenue | Expenses | Net |\n| --- | --- | --- | --- |\n| Q1 2026 | 142000 | 118000 | 24000 |\n| Q2 2026 | 158000 | 131000 | 27000 |\n| Q3 2026 | 155000 | 127500 | 27500 |\n| Q4 2026 | 161000 | 134000 | 27000 |\n\n## Members\n| Region | Count |\n| --- | --- |\n| Northeast | 412 |\n| S",
+    "notes": "349 chars"
+  },
+  {
+    "path_id": "00d",
+    "layer": 0,
+    "name": ".pptx MarkItDown extraction",
+    "ok": true,
+    "answer_preview": "<!-- Slide number: 1 -->\n# BITS Annual Report 2026\nMembership: 1,204 active members\nRevenue: $616,000 annual\nWebsite: WCAG 2.2 AA compliant\n\n<!-- Slide number: 2 -->\n# Technology Committee\nWebsite audit: 14 missing alt text.\n3 color-only violations.\n2 form fields without labels.\n\n<!-- Slide number: ",
+    "notes": "409 chars"
+  },
+  {
+    "path_id": "00f",
+    "layer": 0,
+    "name": ".epub MarkItDown extraction",
+    "ok": true,
+    "answer_preview": "**Title:** BITS Report 2026\n**Language:** en\n**Identifier:** bits-report-2026\n\n# BITS Board Report 2026\n\n## Financial Summary\n\nAnnual revenue reached $616,000 in 2026. The organization is stable.\n\n## Technology Committee\n\nThe website audit found 14 images missing alt text.\n\n## Membership\n\nTotal acti",
+    "notes": "349 chars"
+  },
+  {
+    "path_id": "00g",
+    "layer": 0,
+    "name": ".html MarkItDown extraction",
+    "ok": true,
+    "answer_preview": "# BITS Newsletter -- Spring 2026\n\n## President's Message\n\nWelcome to the spring 2026 edition of the BITS newsletter.\n\nMembership has grown to 1,204 members this quarter.\n\n## Technology Updates\n\nThe GLOW toolkit now supports Word, Excel, PowerPoint, PDF, and ePub.\n\n## Upcoming Events\n\n* Annual Confer",
+    "notes": "423 chars"
+  },
+  {
+    "path_id": "00h",
+    "layer": 0,
+    "name": ".csv MarkItDown extraction",
+    "ok": true,
+    "answer_preview": "| Quarter | Revenue | Expenses | Net |\n| --- | --- | --- | --- |\n| Q1 2026 | $142000 | $118000 | $24000 |\n| Q2 2026 | $158000 | $131000 | $27000 |\n| Q3 2026 | $155000 | $127500 | $27500 |\n| Q4 2026 | $161000 | $134000 | $27000 |\n| Total | $616000 | $510500 | $105500 |",
+    "notes": "268 chars"
+  },
+  {
+    "path_id": "00i",
+    "layer": 0,
+    "name": "_build_document_context long-doc truncation",
+    "ok": true,
+    "answer_preview": "In:12000 Out:2657\n\n# BITS Board Meeting -- April 2026\n\n*Minutes recorded by the Secretary*\n\n## 1. Attendance\n\nAll board members were present. The meeting was called to order at 9:00 AM by\nPresident Jeff Bishop.\n\n**Thoma",
+    "notes": "12000 -> 2657 chars"
+  },
+  {
+    "path_id": "00j",
+    "layer": 0,
+    "name": "_build_document_context short-doc passthrough",
+    "ok": true,
+    "answer_preview": "In:175 Out:174",
+    "notes": ""
+  },
+  {
+    "path_id": "00k",
+    "layer": 0,
+    "name": "_build_document_context keyword snippets",
+    "ok": true,
+    "answer_preview": "Out:3186\n\n# BITS Board Meeting -- April 2026\n\n*Minutes recorded by the Secretary*\n\n## 1. Attendance\n\nAll board members were present. The meeting was called to order at 9:00 AM by\nPresident Jeff Bishop.\n\n**Thomas Hartley, Treasurer, noted that the following agenda items had been revised.**\n\n## 2. Financial Rep",
+    "notes": "keyword-relevant snippets in 3186 chars"
+  },
+  {
+    "path_id": "01",
+    "layer": 1,
+    "name": "primary-model-ACB-font-question",
+    "ok": true,
+    "answer_preview": "The ACB Large Print Guidelines require the use of a sans serif font for body text, with Arial being a commonly recommended option.",
+    "notes": ""
+  },
+  {
+    "path_id": "02",
+    "layer": 1,
+    "name": "paid-model-echo",
+    "ok": true,
+    "answer_preview": "GLOW_PAID_OK",
+    "notes": ""
+  },
+  {
+    "path_id": "03",
+    "layer": 1,
+    "name": "gateway-chat-free-first",
+    "ok": true,
+    "answer_preview": "WCAG 2.2 AA is a set of web accessibility guidelines that aim to make digital content more accessible to people with disabilities, focusing on enhancing usability and inclusivity.",
+    "notes": "escalated=False"
+  },
+  {
+    "path_id": "04",
+    "layer": 1,
+    "name": "gateway-chat-document-context",
+    "ok": true,
+    "answer_preview": "The document excerpt presents several accessibility issues that need to be addressed:\n\n1. **Missing Alt Text for Images**: The document mentions that there are critical findings from the website accessibility audit, including missing alt text on 14 images. This is a significant accessibility issue as it prevents visually impaired users from understanding the content of these images.\n\n2. **Color-Only Information**: There are 3 instances of color-only information, which can be problematic for individuals with color blindness or visual impairments. Information should not rely solely on color to c",
+    "notes": "escalated=False"
+  },
+  {
+    "path_id": "05",
+    "layer": 1,
+    "name": "gateway-chat-multi-turn",
+    "ok": true,
+    "answer_preview": "Subheadings should be 18pt Arial.",
+    "notes": "escalated=False"
+  },
+  {
+    "path_id": "06",
+    "layer": 1,
+    "name": "gateway-chat-rich-ACB-audit",
+    "ok": true,
+    "answer_preview": "1. [ACB-LP-1] The text \"click here\" is not descriptive and does not provide context for the link. (Severity: high)  \n   \n2. [ACB-LP-2] The use of `<em>` and `<strong>` tags does not provide sufficient contrast or size for large print compliance. (Severity: medium)  \n\n3. [ACB-LP-3] The text alignment is centered, which may affect readability for large print users. (Severity: medium)  \n\n4. [ACB-LP-4] There is no indication of the purpose of the link, which could lead to confusion for users relying on assistive technologies. (Severity: high)",
+    "notes": "escalated=False"
+  },
+  {
+    "path_id": "07",
+    "layer": 1,
+    "name": "gateway-chat-uncertainty",
+    "ok": true,
+    "answer_preview": "I don't know.",
+    "notes": "escalated=False (acceptable)"
+  },
+  {
+    "path_id": "08",
+    "layer": 1,
+    "name": "quota-status-no-model-call",
+    "ok": true,
+    "answer_preview": "{\n  \"ai_configured\": true,\n  \"whisper_configured\": true,\n  \"budget_usd\": 20.0,\n  \"spent_usd\": 0.0173,\n  \"budget_remaining_usd\": 19.9827,\n  \"budget_pct\": 0.1,\n  \"budget_exhausted\": false,\n  \"chat_turns_today\": 44,\n  \"chat_daily_limit\": 50,\n  \"chat_remaining_today\": 6,\n  \"chat_available\": true,\n  \"audio_minutes_month\": 0,\n  \"audio_monthly_limit\": 100,\n  \"audio_remaining_min\": 100,\n  \"audio_available\": true\n}",
+    "notes": "remaining=$19.9827"
+  },
+  {
+    "path_id": "09",
+    "layer": 2,
+    "name": "tool-get-document-stats",
+    "ok": true,
+    "answer_preview": "Document: board-minutes.md\nWords: 404\nLines: 86\nCharacters: 2816\nReading time: ~2 minutes\nHeadings: 12\nTables: 1",
+    "notes": ""
+  },
+  {
+    "path_id": "10",
+    "layer": 2,
+    "name": "tool-list-headings-rich",
+    "ok": true,
+    "answer_preview": "\u2022 BITS Board Meeting -- April 2026\n  \u2022 1. Attendance\n  \u2022 2. Financial Report\n    \u2022 2a. Budget Overview\n      \u2022 2b. Reserves\n    \u2022 2c. Grant Activity\n  \u2022 3. Technology Committee Report\n    \u2022 3a. Website Accessibility Audit\n    \u2022 3b. Software Procurement\n  \u2022 4. Membership Update\n  \u2022 5. Action Items\n  \u2022 6. Next Meeting",
+    "notes": ""
+  },
+  {
+    "path_id": "11",
+    "layer": 2,
+    "name": "tool-heading-hierarchy-valid",
+    "ok": true,
+    "answer_preview": "Heading hierarchy is valid. 7 headings, no skipped levels.",
+    "notes": ""
+  },
+  {
+    "path_id": "12",
+    "layer": 2,
+    "name": "tool-heading-hierarchy-skipped",
+    "ok": true,
+    "answer_preview": "Heading hierarchy issues found (1):\n  Skipped heading level: H2 \u2192 H4 at \"Detailed Findings\"\nFix: do not skip heading levels (e.g. H1 \u2192 H3). Use consecutive levels.",
+    "notes": ""
+  },
+  {
+    "path_id": "13",
+    "layer": 2,
+    "name": "tool-faux-headings-violations",
+    "ok": true,
+    "answer_preview": "Possible faux headings (2 found):\n  Line 3: **This Is A Faux Heading**\n  Line 7: **Another Fake Section Title**\nFix: apply a proper heading style instead of bold body text.",
+    "notes": ""
+  },
+  {
+    "path_id": "14",
+    "layer": 2,
+    "name": "tool-faux-headings-clean",
+    "ok": true,
+    "answer_preview": "No obvious faux headings found in Markdown analysis. For Word documents, upload to Fix for full faux-heading detection.",
+    "notes": ""
+  },
+  {
+    "path_id": "15",
+    "layer": 2,
+    "name": "tool-list-structure-deep",
+    "ok": true,
+    "answer_preview": "Lists: 5 bullet items, 0 numbered items.\nIssues:\n  \u2022 Deep list nesting detected (2 items, >2 levels)",
+    "notes": ""
+  },
+  {
+    "path_id": "16",
+    "layer": 2,
+    "name": "tool-list-structure-clean",
+    "ok": true,
+    "answer_preview": "Lists: 3 bullet items, 0 numbered items.\nNo structural list issues found.",
+    "notes": ""
+  },
+  {
+    "path_id": "17",
+    "layer": 2,
+    "name": "tool-estimate-reading-order",
+    "ok": true,
+    "answer_preview": "Reading order risk: LOW. 1 table(s) detected. No complex layout signals.",
+    "notes": ""
+  },
+  {
+    "path_id": "18",
+    "layer": 2,
+    "name": "tool-find-section-match",
+    "ok": true,
+    "answer_preview": "## 2. Financial Report",
+    "notes": ""
+  },
+  {
+    "path_id": "19",
+    "layer": 2,
+    "name": "tool-find-section-no-match",
+    "ok": true,
+    "answer_preview": "Section 'Nonexistent Section XYZ' not found.",
+    "notes": ""
+  },
+  {
+    "path_id": "20",
+    "layer": 2,
+    "name": "tool-search-text-match",
+    "ok": true,
+    "answer_preview": "Line 28: #### 2b. Reserves\nLine 30: The organization maintains a three-month operating reserve of $354,000. The",
+    "notes": ""
+  },
+  {
+    "path_id": "21",
+    "layer": 2,
+    "name": "tool-search-text-no-match",
+    "ok": true,
+    "answer_preview": "No matches found for 'xyzzy_not_present'.",
+    "notes": ""
+  },
+  {
+    "path_id": "22",
+    "layer": 2,
+    "name": "tool-extract-table-index-0",
+    "ok": true,
+    "answer_preview": "| Quarter | Revenue   | Expenses  | Net       |\n|---------|-----------|-----------|-----------|\n| Q1 2026 | $142,000  | $118,000  | $24,000   |\n| Q2 2026 | $158,000  | $131,000  | $27,000   |\n| Q3 2026 | $155,000  | $127,500  | $27,500   |\n| Q4 2026 | $161,000  | $134,000  | $27,000   |",
+    "notes": ""
+  },
+  {
+    "path_id": "23",
+    "layer": 2,
+    "name": "tool-extract-table-not-found",
+    "ok": true,
+    "answer_preview": "Table '99' not found. Available tables: 0",
+    "notes": ""
+  },
+  {
+    "path_id": "24",
+    "layer": 2,
+    "name": "tool-get-images",
+    "ok": true,
+    "answer_preview": "Inline image extraction is not available in this version. If image alt text or figure captions are important, use the Audit tab to check for missing alt text findings.",
+    "notes": ""
+  },
+  {
+    "path_id": "24b",
+    "layer": 2,
+    "name": "tool-get-document-summary",
+    "ok": true,
+    "answer_preview": "Document: BITS Board Meeting -- April 2026\nType: meeting document (agenda or minutes); contains financial data; report with findings or recommendations\nLength: 404 words across 12 headings\nMain sections: 1. Attendance, 2. Financial Report, 3. Technology Committee Report, 4. Membership Update, 5. Action Items, 6. Next Meeting\nTables: 1",
+    "notes": ""
+  },
+  {
+    "path_id": "24c",
+    "layer": 2,
+    "name": "tool-get-section-content-found",
+    "ok": true,
+    "answer_preview": "Section: 2. Financial Report\n\n## 2. Financial Report",
+    "notes": ""
+  },
+  {
+    "path_id": "24d",
+    "layer": 2,
+    "name": "tool-get-section-content-not-found",
+    "ok": true,
+    "answer_preview": "Section 'nonexistent-xyz-section' not found. Available sections: \"BITS Board Meeting -- April 2026\", \"1. Attendance\", \"2. Financial Report\", \"2a. Budget Overview\", \"2b. Reserves\", \"2c. Grant Activity\", \"3. Technology Committee Report\", \"3a. Website Accessibility Audit\", \"3b. Software Procurement\", \"4. Membership Update\", \"5. Action Items\", \"6. Next Meeting\"",
+    "notes": ""
+  },
+  {
+    "path_id": "24e",
+    "layer": 2,
+    "name": "tool-get-decisions-and-actions",
+    "ok": true,
+    "answer_preview": "Decisions / motions (1 found):\n  \u2022 board voted unanimously to maintain this level throughout 2026.\n\nAction items (4 found):\n  \u2022 ## 5. Action Items\n  \u2022 1. Finance committee to present revised budget by May 15\n  \u2022 2. Technology committee to complete website remediation by May 31\n  \u2022 4. President to confirm annual meeting venue by April 30",
+    "notes": ""
+  },
+  {
+    "path_id": "24f",
+    "layer": 2,
+    "name": "tool-get-what-passes",
+    "ok": true,
+    "answer_preview": "What the document already does correctly (6 checks passing):\n  Heading hierarchy: PASS \u2014 7 headings, no skipped levels.\n  Italic usage: PASS \u2014 no italic text detected.\n  Link text: PASS \u2014 no bare URLs or generic link text detected.\n  Alt text: PASS \u2014 all 1 image(s) have alt text.\n  Faux headings: PASS \u2014 no bold-body-text fake headings detected.\n  List structure: PASS \u2014 3 list items, no excessive nesting.",
+    "notes": ""
+  },
+  {
+    "path_id": "25",
+    "layer": 3,
+    "name": "compliance-audit-violations",
+    "ok": true,
+    "answer_preview": "Heuristic compliance summary (no live audit available):\n\u2022 Possible bold-emphasis abuse (ACB-BOLD-HEADINGS-ONLY)\n\u2022 Possible italic usage (ACB-NO-ITALIC \u2014 critical violation)\n\u2022 Possible bare URLs used as link text (ACB-LINK-TEXT)",
+    "notes": ""
+  },
+  {
+    "path_id": "26",
+    "layer": 3,
+    "name": "compliance-audit-clean",
+    "ok": true,
+    "answer_preview": "Heuristic compliance summary (no live audit available):\n\u2022 Possible bare URLs used as link text (ACB-LINK-TEXT)",
+    "notes": ""
+  },
+  {
+    "path_id": "27",
+    "layer": 3,
+    "name": "compliance-get-score",
+    "ok": true,
+    "answer_preview": "Score not available. Run run_accessibility_audit first.",
+    "notes": ""
+  },
+  {
+    "path_id": "28",
+    "layer": 3,
+    "name": "compliance-get-critical",
+    "ok": true,
+    "answer_preview": "No audit data available.",
+    "notes": ""
+  },
+  {
+    "path_id": "29",
+    "layer": 3,
+    "name": "compliance-get-auto-fixable",
+    "ok": true,
+    "answer_preview": "No audit data available.",
+    "notes": ""
+  },
+  {
+    "path_id": "30",
+    "layer": 4,
+    "name": "content-emphasis-violations",
+    "ok": true,
+    "answer_preview": "Emphasis issues found:\n  \u2022 CRITICAL \u2014 2 italic instance(s) found (ACB-NO-ITALIC). Example: *Minutes recorded by the Secretary*\n  \u2022 HIGH \u2014 2 long bold phrase(s) that may be body emphasis (ACB-BOLD-HEADINGS-ONLY). Bold is permitted for headings only.",
+    "notes": ""
+  },
+  {
+    "path_id": "31",
+    "layer": 4,
+    "name": "content-emphasis-clean",
+    "ok": true,
+    "answer_preview": "Emphasis patterns: OK. No italic found. Bold usage appears limited to headings.",
+    "notes": ""
+  },
+  {
+    "path_id": "32",
+    "layer": 4,
+    "name": "content-link-text-violations",
+    "ok": true,
+    "answer_preview": "Link text issues (ACB-LINK-TEXT):\n  \u2022 Bare URLs (1 found): https://internal.bits-acb.org/financials\n  \u2022 Generic link text (1 found): click here\nFix: replace with descriptive text like 'ACB Large Print Guidelines'.",
+    "notes": ""
+  },
+  {
+    "path_id": "33",
+    "layer": 4,
+    "name": "content-link-text-clean",
+    "ok": true,
+    "answer_preview": "Link text: OK. No bare URLs or generic link text detected.",
+    "notes": ""
+  },
+  {
+    "path_id": "34",
+    "layer": 4,
+    "name": "content-reading-level-complex",
+    "ok": true,
+    "answer_preview": "Reading level estimate: LOW (plain language)\nAverage sentence length: 11.0 words\nLong sentences (>30 words): 2\nLong words (>12 chars): 13\nTotal sentences analyzed: 36",
+    "notes": ""
+  },
+  {
+    "path_id": "35",
+    "layer": 4,
+    "name": "content-reading-level-plain",
+    "ok": true,
+    "answer_preview": "Reading level estimate: LOW (plain language)\nAverage sentence length: 7.4 words\nLong sentences (>30 words): 0\nLong words (>12 chars): 0\nTotal sentences analyzed: 5",
+    "notes": ""
+  },
+  {
+    "path_id": "36",
+    "layer": 4,
+    "name": "content-alignment-center",
+    "ok": true,
+    "answer_preview": "Alignment issues (ACB-ALIGNMENT):\n  \u2022 Center alignment override found (1 instance(s)) \u2014 ACB requires flush-left",
+    "notes": ""
+  },
+  {
+    "path_id": "37",
+    "layer": 4,
+    "name": "content-alignment-clean",
+    "ok": true,
+    "answer_preview": "Alignment: No explicit alignment overrides detected in Markdown. Word documents should be verified with a full audit.",
+    "notes": ""
+  },
+  {
+    "path_id": "38",
+    "layer": 5,
+    "name": "remediation-explain-ACB-NO-ITALIC",
+    "ok": true,
+    "answer_preview": "Rule: ACB-NO-ITALIC\n\nWhat it means: Italic formatting is completely prohibited. This is a critical violation.\n\nWhy it matters: Italic text is harder to read for people with dyslexia and low vision. ACB requires underline for emphasis instead.\n\nHow to fix: Remove all italic formatting. Use underline (Ctrl+U) for emphasis instead.",
+    "notes": ""
+  },
+  {
+    "path_id": "39",
+    "layer": 5,
+    "name": "remediation-explain-ACB-FAUX-HEADING",
+    "ok": true,
+    "answer_preview": "Rule: ACB-FAUX-HEADING\n\nWhat it means: A paragraph formatted as bold text appears to be acting as a heading but uses normal body text style.\n\nWhy it matters: Screen readers announce true headings so users can navigate. Bold-formatted 'fake' headings are invisible to assistive technology.\n\nHow to fix: Apply the appropriate Word Heading style (Heading 1, 2, 3) instead of just making text bold.",
+    "notes": ""
+  },
+  {
+    "path_id": "40",
+    "layer": 5,
+    "name": "remediation-explain-ACB-ALIGNMENT",
+    "ok": true,
+    "answer_preview": "Rule: ACB-ALIGNMENT\n\nWhat it means: All text must be flush left (left-aligned). Justified, centered, and right-aligned text are violations.\n\nWhy it matters: Justified text creates uneven word spacing ('rivers of white space') that makes reading harder for people with low vision and dyslexia.\n\nHow to fix: Select all text and apply Left alignment (Ctrl+L).",
+    "notes": ""
+  },
+  {
+    "path_id": "41",
+    "layer": 5,
+    "name": "remediation-explain-ACB-TABLE-HEADERS",
+    "ok": true,
+    "answer_preview": "Rule: ACB-TABLE-HEADERS\n\nWhat it means: Tables must have defined header rows.\n\nWhy it matters: Screen readers announce column headers for each data cell in a table. Without headers, table data is meaningless to blind users.\n\nHow to fix: Click in the first row of the table, go to Table Design, and check 'Header Row'.",
+    "notes": ""
+  },
+  {
+    "path_id": "42",
+    "layer": 5,
+    "name": "remediation-explain-unknown-rule",
+    "ok": true,
+    "answer_preview": "Rule 'ACB-DOES-NOT-EXIST' not found in quick reference. Known rules: ACB-FONT-FAMILY, ACB-FONT-SIZE-BODY, ACB-FONT-SIZE-H1, ACB-FONT-SIZE-H2, ACB-NO-ITALIC, ACB-BOLD-HEADINGS-ONLY, ACB-ALIGNMENT, ACB-LINE-SPACING, ACB-MARGINS, ACB-NO-HYPHENATION, ACB-HEADING-HIERARCHY, ACB-FAUX-HEADING, ACB-LINK-TEXT, ACB-MISSING-ALT-TEXT, ACB-DOC-TITLE, ACB-DOC-LANGUAGE, ACB-TABLE-HEADERS, ACB-WIDOW-ORPHAN. For full rule details see the GLOW Guidelines page.",
+    "notes": ""
+  },
+  {
+    "path_id": "43",
+    "layer": 5,
+    "name": "remediation-suggest-fix-font",
+    "ok": true,
+    "answer_preview": "Fix for ACB-FONT-SIZE-BODY:\nSelect all body paragraphs and set font size to 18pt.",
+    "notes": ""
+  },
+  {
+    "path_id": "44",
+    "layer": 5,
+    "name": "remediation-prioritize-heuristic",
+    "ok": true,
+    "answer_preview": "Priority order (no live audit available):\n  1. Fix ACB-NO-ITALIC (critical \u2014 remove all italic)\n  2. Fix ACB-FAUX-HEADING (high \u2014 apply real heading styles)\n  3. Fix ACB-LINK-TEXT (high \u2014 replace generic/bare-URL links)\n  4. Fix ACB-FONT-SIZE-BODY (critical \u2014 raise body text to 18pt)\n  5. Fix ACB-MISSING-ALT-TEXT (high \u2014 add alt text to images)\nUpload to GLOW Fix for full auto-fix.",
+    "notes": ""
+  },
+  {
+    "path_id": "45",
+    "layer": 5,
+    "name": "remediation-estimate-impact-no-cache",
+    "ok": true,
+    "answer_preview": "Cannot estimate without audit data.",
+    "notes": ""
+  },
+  {
+    "path_id": "46",
+    "layer": 5,
+    "name": "remediation-alt-text-partial-missing",
+    "ok": true,
+    "answer_preview": "Alt text issues (ACB-MISSING-ALT-TEXT):\n  2 of 3 image(s) have empty alt text.\nFix: add a meaningful description inside the brackets: ![Description](image.png)",
+    "notes": ""
+  },
+  {
+    "path_id": "47",
+    "layer": 5,
+    "name": "remediation-alt-text-all-present",
+    "ok": true,
+    "answer_preview": "Alt text: OK. All 1 image(s) have alt text. Verify descriptions are meaningful, not just filenames.",
+    "notes": ""
+  },
+  {
+    "path_id": "48",
+    "layer": 5,
+    "name": "remediation-alt-text-no-images",
+    "ok": true,
+    "answer_preview": "No Markdown images found in document.",
+    "notes": ""
+  },
+  {
+    "path_id": "49",
+    "layer": 6,
+    "name": "dispatch-audit-compliance",
+    "ok": true,
+    "answer_preview": "=== GLOW Document Analysis (pre-flight tool results) ===\n\n[run_accessibility_audit]\nHeuristic compliance summary (no live audit available):\n\u2022 Possible bold-emphasis abuse (ACB-BOLD-HEADINGS-ONLY)\n\u2022 Possible italic usage (ACB-NO-ITALIC \u2014 critical violation)\n\u2022 Possible bare URLs used as link text (ACB-LINK-TEXT)\n\n[get_critical_findings]\nNo audit data available.\n\n[search_text]\nNo matches found for 'ings does this document have'.\n\n=== Use the above analysis to give a grounded, specific answer. ===",
+    "notes": "tools=['run_accessibility_audit', 'get_critical_findings', 'search_text']"
+  },
+  {
+    "path_id": "50",
+    "layer": 6,
+    "name": "dispatch-fix-remediation",
+    "ok": true,
+    "answer_preview": "=== GLOW Document Analysis (pre-flight tool results) ===\n\n[prioritize_findings]\nPriority order (no live audit available):\n  1. Fix ACB-NO-ITALIC (critical \u2014 remove all italic)\n  2. Fix ACB-FAUX-HEADING (high \u2014 apply real heading styles)\n  3. Fix ACB-LINK-TEXT (high \u2014 replace generic/bare-URL links)\n  4. Fix ACB-FONT-SIZE-BODY (critical \u2014 raise body text to 18pt)\n  5. Fix ACB-MISSING-ALT-TEXT (high \u2014 add alt text to images)\nUpload to GLOW Fix for full auto-fix.\n\n[estimate_fix_impact]\nCannot estimate without audit data.\n\n[check_emphasis_patterns]\nEmphasis issues found:\n  \u2022 CRITICAL \u2014 2 italic in",
+    "notes": "tools=['prioritize_findings', 'estimate_fix_impact', 'check_emphasis_patterns']"
+  },
+  {
+    "path_id": "51",
+    "layer": 6,
+    "name": "dispatch-heading-structure",
+    "ok": true,
+    "answer_preview": "=== GLOW Document Analysis (pre-flight tool results) ===\n\n[check_heading_hierarchy]\nHeading hierarchy is valid. 12 headings, no skipped levels.\n\n[list_headings]\n\u2022 BITS Board Meeting -- April 2026\n  \u2022 1. Attendance\n  \u2022 2. Financial Report\n    \u2022 2a. Budget Overview\n      \u2022 2b. Reserves\n    \u2022 2c. Grant Activity\n  \u2022 3. Technology Committee Report\n    \u2022 3a. Website Accessibility Audit\n    \u2022 3b. Software Procurement\n  \u2022 4. Membership Update\n  \u2022 5. Action Items\n  \u2022 6. Next Meeting\n\n[get_section_content]\nSection 'the heading structure and hierarchy of this docume' not found. Available sections: \"BITS ",
+    "notes": "tools=['check_heading_hierarchy', 'list_headings', 'get_section_content']"
+  },
+  {
+    "path_id": "52",
+    "layer": 6,
+    "name": "dispatch-emphasis-italic",
+    "ok": true,
+    "answer_preview": "=== GLOW Document Analysis (pre-flight tool results) ===\n\n[run_accessibility_audit]\nHeuristic compliance summary (no live audit available):\n\u2022 Possible bold-emphasis abuse (ACB-BOLD-HEADINGS-ONLY)\n\u2022 Possible italic usage (ACB-NO-ITALIC \u2014 critical violation)\n\u2022 Possible bare URLs used as link text (ACB-LINK-TEXT)\n\n[get_critical_findings]\nNo audit data available.\n\n[check_emphasis_patterns]\nEmphasis issues found:\n  \u2022 CRITICAL \u2014 2 italic instance(s) found (ACB-NO-ITALIC). Example: *Minutes recorded by the Secretary*\n  \u2022 HIGH \u2014 2 long bold phrase(s) that may be body emphasis (ACB-BOLD-HEADINGS-ONLY).",
+    "notes": "tools=['run_accessibility_audit', 'get_critical_findings', 'check_emphasis_patterns']"
+  },
+  {
+    "path_id": "53",
+    "layer": 6,
+    "name": "dispatch-link-url",
+    "ok": true,
+    "answer_preview": "=== GLOW Document Analysis (pre-flight tool results) ===\n\n[check_link_text]\nLink text issues (ACB-LINK-TEXT):\n  \u2022 Bare URLs (1 found): https://internal.bits-acb.org/financials\n  \u2022 Generic link text (1 found): click here\nFix: replace with descriptive text like 'ACB Large Print Guidelines'.\n\n=== Use the above analysis to give a grounded, specific answer. ===",
+    "notes": "tools=['check_link_text']"
+  },
+  {
+    "path_id": "54",
+    "layer": 6,
+    "name": "dispatch-image-alt",
+    "ok": true,
+    "answer_preview": "=== GLOW Document Analysis (pre-flight tool results) ===\n\n[check_image_alt_text]\nAlt text issues (ACB-MISSING-ALT-TEXT):\n  2 of 3 image(s) have empty alt text.\nFix: add a meaningful description inside the brackets: ![Description](image.png)\n\n=== Use the above analysis to give a grounded, specific answer. ===",
+    "notes": "tools=['check_image_alt_text']"
+  },
+  {
+    "path_id": "55",
+    "layer": 6,
+    "name": "dispatch-list-bullet",
+    "ok": true,
+    "answer_preview": "=== GLOW Document Analysis (pre-flight tool results) ===\n\n[check_list_structure]\nLists: 8 bullet items, 4 numbered items.\nIssues:\n  \u2022 Deep list nesting detected (2 items, >2 levels)\n\n=== Use the above analysis to give a grounded, specific answer. ===",
+    "notes": "tools=['check_list_structure']"
+  },
+  {
+    "path_id": "56",
+    "layer": 6,
+    "name": "dispatch-reading-level",
+    "ok": true,
+    "answer_preview": "=== GLOW Document Analysis (pre-flight tool results) ===\n\n[check_reading_level]\nReading level estimate: LOW (plain language)\nAverage sentence length: 11.0 words\nLong sentences (>30 words): 2\nLong words (>12 chars): 13\nTotal sentences analyzed: 36\n\n[get_section_content]\nSection 'the reading level and sentence complexity of this ' not found. Available sections: \"BITS Board Meeting -- April 2026\", \"1. Attendance\", \"2. Financial Report\", \"2a. Budget Overview\", \"2b. Reserves\", \"2c. Grant Activity\", \"3. Technology Committee Report\", \"3a. Website Accessibility Audit\", \"3b. Software Procurement\", \"4. ",
+    "notes": "tools=['check_reading_level', 'get_section_content']"
+  },
+  {
+    "path_id": "57",
+    "layer": 6,
+    "name": "dispatch-find-section",
+    "ok": true,
+    "answer_preview": "=== GLOW Document Analysis (pre-flight tool results) ===\n\n[find_section]\nSection 'on financial summary from this document' not found.\n\n[get_section_content]\nSection 'the section on financial summary from this documen' not found. Available sections: \"BITS Board Meeting -- April 2026\", \"1. Attendance\", \"2. Financial Report\", \"2a. Budget Overview\", \"2b. Reserves\", \"2c. Grant Activity\", \"3. Technology Committee Report\", \"3a. Website Accessibility Audit\", \"3b. Software Procurement\", \"4. Membership Update\", \"5. Action Items\", \"6. Next Meeting\"\n\n=== Use the above analysis to give a grounded, specific",
+    "notes": "tools=['find_section', 'get_section_content']"
+  },
+  {
+    "path_id": "58",
+    "layer": 6,
+    "name": "dispatch-search-term",
+    "ok": true,
+    "answer_preview": "=== GLOW Document Analysis (pre-flight tool results) ===\n\n[check_emphasis_patterns]\nEmphasis issues found:\n  \u2022 CRITICAL \u2014 2 italic instance(s) found (ACB-NO-ITALIC). Example: *Minutes recorded by the Secretary*\n  \u2022 HIGH \u2014 2 long bold phrase(s) that may be body emphasis (ACB-BOLD-HEADINGS-ONLY). Bold is permitted for headings only.\n\n[search_text]\nNo matches found for 'for all places where italic appears in th'.\n\n=== Use the above analysis to give a grounded, specific answer. ===",
+    "notes": "tools=['check_emphasis_patterns', 'search_text']"
+  },
+  {
+    "path_id": "59",
+    "layer": 6,
+    "name": "dispatch-table-data",
+    "ok": true,
+    "answer_preview": "=== GLOW Document Analysis (pre-flight tool results) ===\n\n[extract_table]\n| Quarter | Revenue   | Expenses  | Net       |\n|---------|-----------|-----------|-----------|\n| Q1 2026 | $142,000  | $118,000  | $24,000   |\n| Q2 2026 | $158,000  | $131,000  | $27,000   |\n| Q3 2026 | $155,000  | $127,500  | $27,500   |\n| Q4 2026 | $161,000  | $134,000  | $27,000   |\n\n=== Use the above analysis to give a grounded, specific answer. ===",
+    "notes": "tools=['extract_table']"
+  },
+  {
+    "path_id": "60",
+    "layer": 6,
+    "name": "dispatch-acb-rule-id",
+    "ok": true,
+    "answer_preview": "=== GLOW Document Analysis (pre-flight tool results) ===\n\n[explain_rule]\nRule: ACB-NO-ITALIC\n\nWhat it means: Italic formatting is completely prohibited. This is a critical violation.\n\nWhy it matters: Italic text is harder to read for people with dyslexia and low vision. ACB requires underline for emphasis instead.\n\nHow to fix: Remove all italic formatting. Use underline (Ctrl+U) for emphasis instead.\n\n[prioritize_findings]\nPriority order (no live audit available):\n  1. Fix ACB-NO-ITALIC (critical \u2014 remove all italic)\n  2. Fix ACB-FAUX-HEADING (high \u2014 apply real heading styles)\n  3. Fix ACB-LIN",
+    "notes": "tools=['explain_rule', 'prioritize_findings', 'estimate_fix_impact']"
+  },
+  {
+    "path_id": "61",
+    "layer": 6,
+    "name": "dispatch-no-keywords-default",
+    "ok": true,
+    "answer_preview": "=== GLOW Document Analysis (pre-flight tool results) ===\n\n[get_section_content]\nSection 'this document overall' not found. Available sections: \"BITS Board Meeting -- April 2026\", \"1. Attendance\", \"2. Financial Report\", \"2a. Budget Overview\", \"2b. Reserves\", \"2c. Grant Activity\", \"3. Technology Committee Report\", \"3a. Website Accessibility Audit\", \"3b. Software Procurement\", \"4. Membership Update\", \"5. Action Items\", \"6. Next Meeting\"\n\n=== Use the above analysis to give a grounded, specific answer. ===",
+    "notes": "tools=['get_section_content']"
+  },
+  {
+    "path_id": "62",
+    "layer": 6,
+    "name": "dispatch-combined-italic-heading",
+    "ok": true,
+    "answer_preview": "=== GLOW Document Analysis (pre-flight tool results) ===\n\n[run_accessibility_audit]\nHeuristic compliance summary (no live audit available):\n\u2022 Possible bold-emphasis abuse (ACB-BOLD-HEADINGS-ONLY)\n\u2022 Possible italic usage (ACB-NO-ITALIC \u2014 critical violation)\n\u2022 Possible bare URLs used as link text (ACB-LINK-TEXT)\n\n[get_critical_findings]\nNo audit data available.\n\n[check_heading_hierarchy]\nHeading hierarchy is valid. 12 headings, no skipped levels.\n\n=== Use the above analysis to give a grounded, specific answer. ===",
+    "notes": "tools=['run_accessibility_audit', 'get_critical_findings', 'check_heading_hierarchy']"
+  },
+  {
+    "path_id": "63",
+    "layer": 7,
+    "name": "pipeline-all-critical-violations",
+    "ok": true,
+    "answer_preview": "The document contains the following critical accessibility violations:\n\n1. **Possible italic usage** (ACB-NO-ITALIC) - This violation indicates that italic text is used, which may not be accessible for all users.\n\nPlease note that while there are other potential issues identified, such as bold-emphasis abuse and bare URLs used as link text, they are not classified as critical violations. The only critical violation detected is the italic usage.",
+    "notes": "tools=['run_accessibility_audit', 'get_critical_findings', 'check_list_structure'] escalated=False"
+  },
+  {
+    "path_id": "64",
+    "layer": 7,
+    "name": "pipeline-prioritize-fixes",
+    "ok": true,
+    "answer_preview": "Based on the pre-flight analysis of your document, here are the prioritized accessibility fixes, along with details on which ones can be auto-fixed:\n\n1. **Fix ACB-NO-ITALIC (critical)**: Remove all italic text. This is a critical issue that needs to be addressed to ensure readability for individuals with visual impairments. **(Auto-fix not available)**\n\n2. **Fix ACB-FONT-SIZE-BODY (critical)**: Raise body text to at least 18pt. This is also a critical requirement for accessibility. **(Auto-fix not available)**\n\n3. **Fix ACB-FAUX-HEADING (high)**: Apply real heading styles instead of using bold",
+    "notes": "tools=['prioritize_findings', 'estimate_fix_impact'] escalated=False"
+  },
+  {
+    "path_id": "65",
+    "layer": 7,
+    "name": "pipeline-heading-structure",
+    "ok": true,
+    "answer_preview": "The complete heading structure of your document is as follows:\n\n1. BITS Board Meeting -- April 2026\n   - 1. Attendance\n   - 2. Financial Report\n     - 2a. Budget Overview\n     - 2b. Reserves\n     - 2c. Grant Activity\n   - 3. Technology Committee Report\n     - 3a. Website Accessibility Audit\n     - 3b. Software Procurement\n   - 4. Membership Update\n   - 5. Action Items\n   - 6. Next Meeting\n\nYour document has a valid heading hierarchy with no skipped levels, as confirmed by the pre-flight analysis. Each heading level follows a logical structure, ensuring clarity and accessibility for users navig",
+    "notes": "tools=['check_heading_hierarchy', 'list_headings', 'get_section_content'] escalated=False"
+  },
+  {
+    "path_id": "66",
+    "layer": 7,
+    "name": "pipeline-explain-italic-fix",
+    "ok": true,
+    "answer_preview": "The document contains a critical violation related to the use of italics, specifically identified as ACB-NO-ITALIC. This rule states that italic text should not be used in documents intended for large print, as it can be difficult for some readers to perceive.\n\n### Violation Details:\n- **Instances Found**: There are 2 instances of italic text in the document. An example is: *Minutes recorded by the Secretary*.\n- **Impact**: Italicized text can reduce readability, especially for individuals with visual impairments or dyslexia.\n\n### Step-by-Step Instructions to Fix the Italic Violation:\n\n1. **Id",
+    "notes": "tools=['run_accessibility_audit', 'get_critical_findings', 'check_emphasis_patterns'] escalated=False"
+  },
+  {
+    "path_id": "67",
+    "layer": 7,
+    "name": "pipeline-table-check",
+    "ok": true,
+    "answer_preview": "The document contains one table, which is the \"Budget Overview\" table detailing the financial data for each quarter of 2026. \n\n### Header Row Compliance:\nThe table has a proper header row, as indicated by the use of the `|---------|-----------|-----------|-----------|` line, which visually separates the headers from the data. The headers are \"Quarter,\" \"Revenue,\" \"Expenses,\" and \"Net,\" which are clearly defined.\n\n### Summary:\n- **Table Present:** Yes\n- **Proper Header Row:** Yes\n\nNo accessibility issues related to header rows were detected in the pre-flight analysis.",
+    "notes": "tools=['extract_table'] escalated=False"
+  },
+  {
+    "path_id": "68",
+    "layer": 7,
+    "name": "pipeline-reading-level",
+    "ok": true,
+    "answer_preview": "The reading level of this document is estimated to be LOW, indicating that it uses plain language effectively. The average sentence length is 11.0 words, which is manageable for most readers. However, there are two long sentences exceeding 30 words, which could pose a challenge for individuals with cognitive disabilities.\n\nTo enhance accessibility for people with cognitive disabilities, consider the following actionable steps:\n\n1. **Shorten Long Sentences**: Break down the two long sentences into shorter, clearer statements. Aim for sentences that are 20 words or fewer.\n   \n2. **Use Simple Voc",
+    "notes": "tools=['check_reading_level', 'get_section_content'] escalated=False"
+  },
+  {
+    "path_id": "69",
+    "layer": 7,
+    "name": "pipeline-section-budget",
+    "ok": true,
+    "answer_preview": "The section that discusses the budget is \"2. Financial Report,\" specifically the subsections \"2a. Budget Overview\" and \"2b. Reserves.\"\n\nIn \"2a. Budget Overview,\" the treasurer presents a summary of the budget across four quarters for the year 2026, detailing revenue, expenses, and net income for each quarter.\n\nIn \"2b. Reserves,\" it states that the organization maintains a three-month operating reserve of $354,000, and the board voted unanimously to maintain this level throughout 2026. \n\nIf you need further details or specific data points, please let me know!",
+    "notes": "tools=['find_section', 'get_section_content'] escalated=False"
+  },
+  {
+    "path_id": "70",
+    "layer": 7,
+    "name": "pipeline-multi-turn-follow-up",
+    "ok": true,
+    "answer_preview": "To fix the italic violations in your document, follow these steps:\n\n1. **Locate the italic instances**:\n   - Find the phrase *Minutes recorded by the Secretary*.\n   - Find the phrase *The committee chair reviewed each report in order*.\n\n2. **Remove italic formatting**:\n   - For each of these phrases, select the text and remove the italic formatting. This can usually be done by:\n     - Highlighting the text and pressing `Ctrl + I` (Windows) or `Command + I` (Mac) to toggle off the italic style.\n     - Alternatively, you can use the formatting toolbar in your document editor to select \"Normal\" o",
+    "notes": "escalated=False"
+  },
+  {
+    "path_id": "70b",
+    "layer": 7,
+    "name": "pipeline-document-summary",
+    "ok": true,
+    "answer_preview": "The document is the minutes from the BITS Board Meeting held in April 2026. It covers several key topics, including:\n\n1. **Attendance**: A record of board members present at the meeting.\n2. **Financial Report**: This section includes a budget overview with a table detailing revenue, expenses, and net income for each quarter of 2026, as well as information on reserves and grant activity.\n3. **Technology Committee Report**: Highlights findings from a website accessibility audit and discusses software procurement.\n4. **Membership Update**: Provides statistics on new members, renewals, and total a",
+    "notes": "tools=['get_section_content'] escalated=False"
+  },
+  {
+    "path_id": "70c",
+    "layer": 7,
+    "name": "pipeline-section-content",
+    "ok": true,
+    "answer_preview": "The document excerpt includes a section titled \"2b. Reserves,\" which states that the organization maintains a three-month operating reserve of $354,000. The board voted unanimously to maintain this level throughout 2026. \n\nIf you need further details or context about the reserves, please provide additional sections or information.",
+    "notes": "tools=['get_section_content'] escalated=False"
+  },
+  {
+    "path_id": "70d",
+    "layer": 7,
+    "name": "pipeline-decisions-and-actions",
+    "ok": true,
+    "answer_preview": "The document excerpt does not contain a section titled \"the board vote on or decide,\" and therefore I cannot provide specific details about any votes or decisions made by the board. However, it does mention that the board voted unanimously to maintain the three-month operating reserve of $354,000 throughout 2026 in the \"2b. Reserves\" section. If you need further information or details from other sections, please let me know!",
+    "notes": "tools=['get_section_content'] escalated=False"
+  },
+  {
+    "path_id": "71",
+    "layer": 8,
+    "name": "vision-annotated-png-with-text",
+    "ok": true,
+    "answer_preview": "The image appears to be a document or text-based content. It contains the following visible text:\n\n\"ACB Large Print Arial 18pt minimum\"\n\nThis text suggests a guideline or specification related to font size and style, likely for accessibility purposes. The font mentioned is Arial, with a minimum size of 18 points, which is often recommended for better readability. \n\nThere are no charts, photos, or other content types present in this image.",
+    "notes": ""
+  },
+  {
+    "path_id": "72",
+    "layer": 8,
+    "name": "vision-tiny-synthetic-png",
+    "ok": true,
+    "answer_preview": "The image is a solid red square with no visible text or other elements. It is a uniform color without any patterns or variations.",
+    "notes": ""
+  },
+  {
+    "path_id": "73",
+    "layer": 8,
+    "name": "audio-silent-wav",
+    "ok": true,
+    "answer_preview": "Sure, please provide the audio file or a link to it, and I\u2019ll transcribe it for you.",
+    "notes": "got: 'Sure, please provide the audio file or a link to it, and I\u2019ll transcribe it for '"
+  },
+  {
+    "path_id": "74",
+    "layer": 8,
+    "name": "audio-real-mp3",
+    "ok": true,
+    "answer_preview": "Ladies and gentlemen, I had planned to speak to you tonight to report on the State of the Union. But the events of earlier today have led me to change those plans. Today is a day for mourning and remembering. Nancy and I are pained to the core by the tragedy of the shuttle Challenger. We know we share this pain with all of the people of our country. This is truly a national loss. Nineteen years ago, almost to the day, we lost three astronauts.",
+    "notes": "447 chars"
+  }
+]

@@ -1,0 +1,6 @@
+{
+  "tools_fired": [
+    "check_image_alt_text"
+  ],
+  "question": "Which images are missing alt text in this document?"
+}

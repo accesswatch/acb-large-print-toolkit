@@ -42,10 +42,23 @@ Override with:
 $env:E2E_UPLOAD_AUDIO="S:/path/to/your/audio.mp3"
 ```
 
+When the target environment intentionally gates AI off, the Whisperer regression
+test skips cleanly if `/whisperer/` returns `404` or shows the standard
+unavailable banner.
+
 ## Run
 
 ```powershell
 npm run test:e2e
+```
+
+To run the browser suite against a Dockerized WSL staging stack instead of the
+local Flask dev server, point Playwright at the reused server:
+
+```powershell
+$env:E2E_BASE_URL="http://127.0.0.1:8000"
+$env:E2E_PORT="8000"
+npm run test:e2e:report
 ```
 
 ## Generate Issue Report

@@ -1,0 +1,17 @@
+{
+  "ai_configured": true,
+  "whisper_configured": true,
+  "budget_usd": 20.0,
+  "spent_usd": 0.0173,
+  "budget_remaining_usd": 19.9827,
+  "budget_pct": 0.1,
+  "budget_exhausted": false,
+  "chat_turns_today": 44,
+  "chat_daily_limit": 50,
+  "chat_remaining_today": 6,
+  "chat_available": true,
+  "audio_minutes_month": 0,
+  "audio_monthly_limit": 100,
+  "audio_remaining_min": 100,
+  "audio_available": true
+}

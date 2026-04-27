@@ -1,0 +1,8 @@
+{
+  "tools_fired": [
+    "run_accessibility_audit",
+    "get_critical_findings",
+    "check_heading_hierarchy"
+  ],
+  "question": "Are there italic violations and heading structure issues?"
+}

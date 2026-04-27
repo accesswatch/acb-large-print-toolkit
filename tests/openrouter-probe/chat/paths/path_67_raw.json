@@ -1,0 +1,6 @@
+{
+  "escalated": false,
+  "tools": [
+    "extract_table"
+  ]
+}

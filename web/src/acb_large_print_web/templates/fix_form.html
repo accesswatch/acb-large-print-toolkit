@@ -252,9 +252,9 @@
           <input type="checkbox" name="use_ai" id="use-ai"
                  {% if ai_available %}checked{% endif %}
                  aria-describedby="ai-help">
-          Refine with AI (requires Ollama)
+          Refine with AI
         </label>
-        <p id="ai-help" class="help-text">Uses Ollama (local AI) to improve heading detection accuracy by analyzing paragraph context. Requires Ollama to be running.</p>
+        <p id="ai-help" class="help-text">Uses GLOW's AI service to improve heading detection accuracy by analyzing paragraph context.</p>
 
         <div class="form-group form-group-inline">
           <label for="heading-threshold">Confidence threshold (0-100):</label>

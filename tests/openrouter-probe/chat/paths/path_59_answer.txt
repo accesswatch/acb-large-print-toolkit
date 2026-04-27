@@ -1,0 +1,11 @@
+=== GLOW Document Analysis (pre-flight tool results) ===
+
+[extract_table]
+| Quarter | Revenue   | Expenses  | Net       |
+|---------|-----------|-----------|-----------|
+| Q1 2026 | $142,000  | $118,000  | $24,000   |
+| Q2 2026 | $158,000  | $131,000  | $27,000   |
+| Q3 2026 | $155,000  | $127,500  | $27,500   |
+| Q4 2026 | $161,000  | $134,000  | $27,000   |
+
+=== Use the above analysis to give a grounded, specific answer. ===

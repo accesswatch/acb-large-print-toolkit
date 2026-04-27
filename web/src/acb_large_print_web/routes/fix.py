@@ -320,13 +320,15 @@ def _estimate_pre_fix_body_font_pt(saved_path: Path) -> float | None:
 
 @fix_bp.route("/", methods=["GET"])
 def fix_form():
-    from acb_large_print.ai_provider import is_ai_available
+    from ..ai_features import ai_heading_fix_enabled
 
-    return render_template("fix_form.html", ai_available=is_ai_available())
+    return render_template("fix_form.html", ai_available=ai_heading_fix_enabled())
 
 
 def _parse_form_options(form):
     """Extract fix options from the submitted form (used by both submit and confirm)."""
+    from ..ai_features import ai_heading_fix_enabled
+
     bound = form.get("bound") == "on"
     flush_lists = form.get("flush_lists") == "on"
     use_list_levels = form.get("use_list_levels") == "on"
@@ -380,7 +382,7 @@ def _parse_form_options(form):
         first_line_indent_in = max(0.0, min(2.0, first_line_indent_in))
 
     detect_headings = form.get("detect_headings") == "on"
-    use_ai = form.get("use_ai") == "on"
+    use_ai = form.get("use_ai") == "on" and ai_heading_fix_enabled()
     try:
         heading_threshold = int(form.get("heading_threshold", "50"))
         heading_threshold = max(0, min(100, heading_threshold))
@@ -670,27 +672,29 @@ def fix_submit():
         return _run_fix_and_render(saved_path, token, opts)
 
     except UploadError as e:
+        from ..ai_features import ai_heading_fix_enabled
+
         if token:
             cleanup_token(token)
-        from acb_large_print.ai_provider import is_ai_available
 
         return (
             render_template(
-                "fix_form.html", error=str(e), ai_available=is_ai_available()
+                    "fix_form.html", error=str(e), ai_available=ai_heading_fix_enabled()
             ),
             400,
         )
     except Exception:
+        from ..ai_features import ai_heading_fix_enabled
+
         if token:
             cleanup_token(token)
-        from acb_large_print.ai_provider import is_ai_available
 
         return (
             render_template(
                 "fix_form.html",
                 error="An error occurred while fixing the document. "
                 "Please ensure it is a valid Office file and try again.",
-                ai_available=is_ai_available(),
+                ai_available=ai_heading_fix_enabled(),
             ),
             500,
         )
@@ -703,7 +707,7 @@ def fix_confirm():
     token = request.form.get("token", "")
     temp_dir = get_temp_dir(token)
     if temp_dir is None:
-        from acb_large_print.ai_provider import is_ai_available
+        from ..ai_features import ai_heading_fix_enabled
 
         return (
             render_template(
@@ -711,7 +715,7 @@ def fix_confirm():
                 error="Your session has expired or the uploaded file is no longer available. "
                       "Documents are kept for up to 1 hour after upload. "
                       "Please upload and fix the document again.",
-                ai_available=is_ai_available(),
+                ai_available=ai_heading_fix_enabled(),
             ),
             400,
         )
@@ -731,13 +735,13 @@ def fix_confirm():
             break
     if saved_path is None:
         cleanup_token(token)
-        from acb_large_print.ai_provider import is_ai_available
+        from ..ai_features import ai_heading_fix_enabled
 
         return (
             render_template(
                 "fix_form.html",
                 error="Uploaded file not found. Please upload and fix the document again.",
-                ai_available=is_ai_available(),
+                ai_available=ai_heading_fix_enabled(),
             ),
             400,
         )
@@ -776,14 +780,14 @@ def fix_confirm():
 
     except Exception:
         cleanup_token(token)
-        from acb_large_print.ai_provider import is_ai_available
+        from ..ai_features import ai_heading_fix_enabled
 
         return (
             render_template(
                 "fix_form.html",
                 error="An error occurred while fixing the document. "
                 "Please try again.",
-                ai_available=is_ai_available(),
+                ai_available=ai_heading_fix_enabled(),
             ),
             500,
         )

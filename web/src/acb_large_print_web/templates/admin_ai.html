@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+
+{% block title %}Admin AI Settings{% endblock %}
+{% block heading %}Admin AI Settings{% endblock %}
+
+{% block content %}
+<p><strong>Signed in as:</strong> {{ admin_email }}</p>
+<p>Configure model routing, budget caps, and quota limits for GLOW web AI features.</p>
+<p><a href="{{ url_for('admin.admin_queue') }}">Back to admin queue dashboard</a></p>
+
+{% if notice %}
+<div class="success-box" role="status"><p>{{ notice }}</p></div>
+{% endif %}
+{% if error %}
+<div class="error-box" role="alert"><p><strong>Error:</strong> {{ error }}</p></div>
+{% endif %}
+
+<section>
+  <h2>Current Budget Status</h2>
+  <ul>
+    <li><strong>Monthly budget:</strong> ${{ '%.2f'|format(stats.get('budget_usd', 0)) }}</li>
+    <li><strong>Spent this month:</strong> ${{ '%.4f'|format(stats.get('monthly_spend', 0)) }}</li>
+    <li><strong>Remaining:</strong> ${{ '%.4f'|format(stats.get('budget_remaining', 0)) }}</li>
+    <li><strong>Budget usage:</strong> {{ stats.get('budget_pct', 0) }}%</li>
+    <li><strong>Escalation rate:</strong> {{ stats.get('escalation_rate_pct', 0) }}%</li>
+  </ul>
+</section>
+
+<section>
+  <h2>Model Routing and Quotas</h2>
+  <form method="post" action="{{ url_for('admin.admin_ai_settings') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <fieldset>
+      <legend>Chat model routing</legend>
+      <label for="default_model">Default model (first pass):</label>
+      <select id="default_model" name="default_model" required>
+        <option value="openai/gpt-4o-mini" {% if cfg.default_model == 'openai/gpt-4o-mini' %}selected{% endif %}>GPT-4o mini (recommended default)</option>
+        {% for m in models %}
+        <option value="{{ m.id }}" {% if cfg.default_model == m.id %}selected{% endif %}>{{ m.name }} ({{ m.id }})</option>
+        {% endfor %}
+      </select>
+
+      <label for="fallback_model">Fallback/escalation model:</label>
+      <select id="fallback_model" name="fallback_model" required>
+        {% for m in models %}
+        <option value="{{ m.id }}" {% if cfg.fallback_model == m.id %}selected{% endif %}>{{ m.name }} ({{ m.id }})</option>
+        {% endfor %}
+      </select>
+
+      <label for="vision_model">Vision model (images / scanned PDF assistance):</label>
+      <select id="vision_model" name="vision_model" required>
+        {% for m in models %}
+        <option value="{{ m.id }}" {% if cfg.vision_model == m.id %}selected{% endif %}>{{ m.name }} ({{ m.id }})</option>
+        {% endfor %}
+      </select>
+
+      <label>
+        <input type="checkbox" name="use_free_defaults">
+        Reset to recommended defaults (GPT-4o mini primary, GPT-4o fallback)
+      </label>
+      <p class="field-hint">Resets both fields to the recommended GPT-4o mini primary and GPT-4o fallback. You can still override either field individually.</p>
+
+      <label for="escalation_thresh">Escalation threshold (0.0 to 1.0):</label>
+      <input id="escalation_thresh" name="escalation_thresh" type="number" step="0.05" min="0" max="1" value="{{ cfg.escalation_thresh }}">
+      <p class="field-hint">Lower values escalate less often; higher values escalate more often.</p>
+    </fieldset>
+
+    <fieldset>
+      <legend>Budget and quotas</legend>
+      <label for="monthly_budget_usd">Monthly budget (USD):</label>
+      <input id="monthly_budget_usd" name="monthly_budget_usd" type="number" step="0.01" min="1" value="{{ cfg.monthly_budget_usd }}" required>
+
+      <label for="chat_daily_limit">Chat turns per day (anonymous session):</label>
+      <input id="chat_daily_limit" name="chat_daily_limit" type="number" min="0" value="{{ cfg.chat_daily_limit }}" required>
+
+      <label for="audio_monthly_min">Whisperer minutes per month (anonymous session):</label>
+      <input id="audio_monthly_min" name="audio_monthly_min" type="number" min="0" value="{{ cfg.audio_monthly_min }}" required>
+    </fieldset>
+
+    <fieldset>
+      <legend>BITS Whisperer model</legend>
+      <label for="whisper_model">Transcription model (via OpenRouter):</label>
+      <select id="whisper_model" name="whisper_model">
+        <option value="openai/whisper-large-v3" {% if cfg.whisper_model == 'openai/whisper-large-v3' %}selected{% endif %}>openai/whisper-large-v3 (recommended, $0.006/min)</option>
+        <option value="openai/whisper-large-v3-turbo" {% if cfg.whisper_model == 'openai/whisper-large-v3-turbo' %}selected{% endif %}>openai/whisper-large-v3-turbo (faster, same price)</option>
+      </select>
+      <p class="field-hint">Uses your OpenRouter API key. No separate Whisper key required.</p>
+    </fieldset>
+
+    <button type="submit" class="btn-primary">Save AI Settings</button>
+  </form>
+</section>
+
+<section>
+  <h2>Live Cost Projection</h2>
+  <p class="field-hint">Projection uses selected default model + request profile. Updates in real-time via API.</p>
+
+  <label for="proj_requests">Monthly requests:</label>
+  <input id="proj_requests" type="number" min="1" value="10000">
+
+  <label for="proj_in">Avg input tokens/request:</label>
+  <input id="proj_in" type="number" min="1" value="1200">
+
+  <label for="proj_out">Avg output tokens/request:</label>
+  <input id="proj_out" type="number" min="1" value="400">
+
+  <p id="projection-result" aria-live="polite" class="field-hint">Projected monthly spend: ${{ projection }}</p>
+</section>
+
+<script>
+(function () {
+  'use strict';
+  var modelEl = document.getElementById('default_model');
+  var reqEl = document.getElementById('proj_requests');
+  var inEl = document.getElementById('proj_in');
+  var outEl = document.getElementById('proj_out');
+  var outNode = document.getElementById('projection-result');
+
+  function updateProjection() {
+    if (!modelEl || !reqEl || !inEl || !outEl || !outNode) return;
+    var qs = new URLSearchParams({
+      model: modelEl.value,
+      monthly_requests: reqEl.value,
+      avg_input_tokens: inEl.value,
+      avg_output_tokens: outEl.value
+    });
+    fetch('{{ url_for("admin.admin_ai_pricing") }}?' + qs.toString())
+      .then(function (r) { return r.json(); })
+      .then(function (payload) {
+        if (payload && payload.projection) {
+          var p = payload.projection;
+          outNode.textContent = 'Projected monthly spend: $' + Number(p.projected_monthly_usd || 0).toFixed(4);
+        }
+      })
+      .catch(function () {
+        outNode.textContent = 'Could not fetch projection right now.';
+      });
+  }
+
+  [modelEl, reqEl, inEl, outEl].forEach(function (el) {
+    if (el) {
+      el.addEventListener('change', updateProjection);
+      el.addEventListener('input', updateProjection);
+    }
+  });
+})();
+</script>
+{% endblock %}

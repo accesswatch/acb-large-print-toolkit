@@ -10,6 +10,7 @@ from werkzeug.datastructures import FileStorage
 
 from acb_large_print_web.upload import (
     ALLOWED_EXTENSIONS,
+    AUDIO_EXTENSIONS,
     CONVERT_EXTENSIONS,
     UploadError,
     cleanup_token,
@@ -172,3 +173,12 @@ class TestUploadConstants:
         assert ALLOWED_EXTENSIONS.issubset(CONVERT_EXTENSIONS)
         assert ".rst" in CONVERT_EXTENSIONS
         assert ".html" in CONVERT_EXTENSIONS
+
+    def test_audio_extensions_include_cloud_supported_formats(self):
+        assert ".mp3" in AUDIO_EXTENSIONS
+        assert ".wav" in AUDIO_EXTENSIONS
+        assert ".m4a" in AUDIO_EXTENSIONS
+        assert ".webm" in AUDIO_EXTENSIONS
+        assert ".mp4" in AUDIO_EXTENSIONS
+        assert ".mpeg" in AUDIO_EXTENSIONS
+        assert ".mpga" in AUDIO_EXTENSIONS

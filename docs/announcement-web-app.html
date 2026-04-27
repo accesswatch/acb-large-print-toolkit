@@ -1,14 +1,188 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>announcement-web-app</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+</head>
+<body>
 <h1
-id="glow-makes-document-accessibility-magical----no-technical-knowledge-required">GLOW
-Makes Document Accessibility Magical -- No Technical Knowledge
+id="glow-makes-document-accessibility-magical-no-technical-knowledge-required">GLOW
+Makes Document Accessibility Magical – No Technical Knowledge
 Required</h1>
-<p><strong>FOR IMMEDIATE RELEASE -- April 14, 2026</strong></p>
+<p><strong>FOR IMMEDIATE RELEASE – April 14, 2026</strong></p>
 <hr />
 <p>Your newsletter does not have to be a guessing game about large print
 anymore.</p>
 <p>The Blind Information Technology Solutions (BITS) organization today
 launched <strong>GLOW Accessibility Toolkit (Guided Layout &amp; Output
-Workflow)</strong> -- a free, browser-based tool that turns the headache
+Workflow)</strong> – a free, browser-based tool that turns the headache
 of accessible document formatting into a guided, almost magical
 experience. No software to install. No textbooks to read. No obscure
 formatting rules to memorize. Just open your browser, upload a document,
@@ -19,18 +193,18 @@ practical, standards-aware guidance from first upload to final
 publication.</p>
 <p>The web app is live now at <a
 href="https://glow.bits-acb.org">glow.bits-acb.org</a>.</p>
-<p>"I was a newsletter editor drowning in ACB guidelines," says a
-typical GLOW user. "I did not know if my fonts were right, my spacing
+<p>“I was a newsletter editor drowning in ACB guidelines,” says a
+typical GLOW user. “I did not know if my fonts were right, my spacing
 was right, my formatting was right. GLOW looked at my document and told
 me exactly what to fix in plain English. Now I actually know what large
-print means instead of just guessing."</p>
+print means instead of just guessing.”</p>
 <p><strong>Jeff Bishop, President of BITS</strong>, explains the magic:
-"Document accessibility should not require a degree. GLOW's job is to
+“Document accessibility should not require a degree. GLOW’s job is to
 understand the complex standards so you do not have to. When you are
 editing a quick memo on your phone, or your chapter needs to send out a
 last-minute agenda, GLOW is right there in your browser, giving you
-answers in seconds."</p>
-<h2 id="the-problem-documents-are-chaotic-standards-are-complex">The
+answers in seconds.”</p>
+<h2 id="the-problem-documents-are-chaotic.-standards-are-complex.">The
 Problem: Documents Are Chaotic. Standards Are Complex.</h2>
 <p>Every ACB chapter produces documents: meeting agendas, newsletters,
 election ballots, board reports. Every one of those documents should be
@@ -46,37 +220,37 @@ GLOW does the thinking for you.</p>
 <h2 id="how-it-works-three-simple-steps-zero-technical-jargon">How It
 Works: Three Simple Steps, Zero Technical Jargon</h2>
 <ol type="1">
-<li>Upload -- drag a document or browse to select it.</li>
-<li>Choose what you want -- check it, fix it, create a template, or
+<li>Upload – drag a document or browse to select it.</li>
+<li>Choose what you want – check it, fix it, create a template, or
 convert it.</li>
-<li>Get results -- see the answer instantly in your browser.</li>
+<li>Get results – see the answer instantly in your browser.</li>
 </ol>
 <p>No accounts. No downloads. No configuration. GLOW (Guided Layout
 &amp; Output Workflow) handles the standards so you can focus on your
 content.</p>
 <h2
-id="what-glow-guided-layout--output-workflow-actually-does-for-you">What
+id="what-glow-guided-layout-output-workflow-actually-does-for-you">What
 GLOW (Guided Layout &amp; Output Workflow) Actually Does For You</h2>
 <h3 id="audit-check-your-document">Audit (Check Your Document)</h3>
 <p>Upload your Word, PDF, PowerPoint, Excel, Markdown, or ePub file.
 GLOW reads it like a human would and tells you what is right and what
 needs fixing.</p>
-<p>The results appear in your browser organized by severity -- Critical
+<p>The results appear in your browser organized by severity – Critical
 (stop), High (fix soon), Medium (should fix), Low (nice to improve).
 Each finding explains what is wrong in plain English:</p>
 <blockquote>
-<p>"Heading 2 is 16 point, but it should be 20 point for large
-print"</p>
+<p>“Heading 2 is 16 point, but it should be 20 point for large
+print”</p>
 </blockquote>
 <p>not</p>
 <blockquote>
-<p>"DOCX-ACB-H1-001: Heading level 2 font size does not match
-standard"</p>
+<p>“DOCX-ACB-H1-001: Heading level 2 font size does not match
+standard”</p>
 </blockquote>
 <p>You get an instant compliance score. You know where you stand.</p>
 <h3 id="auto-fix-let-glow-fix-it">Auto-Fix (Let GLOW Fix It)</h3>
 <p>Upload a Word document. GLOW fixes fonts, sizes, spacing, alignment,
-emphasis, margins -- everything that can be automatically corrected.
+emphasis, margins – everything that can be automatically corrected.
 Download a corrected version with one action. A before-and-after score
 shows you exactly how much it improved.</p>
 <p>Want to control what gets fixed? GLOW lets you pick. Fix only the
@@ -107,7 +281,7 @@ surprises. They stay on <strong>ACB 2025 Baseline</strong> so nothing
 changes operationally, but they can still run APH-focused checks when
 needed.</li>
 <li>A state affiliate preparing a formal review packet needs APH-aligned
-evidence now, not "someday." They select <strong>APH Submission</strong>
+evidence now, not “someday.” They select <strong>APH Submission</strong>
 to generate traceable reports based on the finalized Release 1.2.0
 APH-aligned workflow.</li>
 <li>A quality lead doing final sign-off before publication wants the
@@ -134,10 +308,10 @@ the same checks apply next cycle.</li>
 added to give organizations a practical bridge: continue producing
 accessible content today while gaining more options to align and report
 across multiple standards.</p>
-<p>"We do not want users to pick between stability and progress," Bishop
-says. "The whole point is to give teams a safe default, a stronger APH
+<p>“We do not want users to pick between stability and progress,” Bishop
+says. “The whole point is to give teams a safe default, a stronger APH
 path, and a strict final review option without making anyone relearn the
-product."</p>
+product.”</p>
 <p>Template creation now also respects profile intent:</p>
 <ul>
 <li>ACB keeps current template defaults.</li>
@@ -173,21 +347,21 @@ built-in heading levels. Maybe it is a quick note scribbled into a Word
 doc. Maybe it is a PDF scanned from a printed document. Most tools give
 up.</p>
 <p>GLOW learns your document. It looks at font sizes, bold formatting,
-positioning, spacing -- all the visual clues -- and says:</p>
+positioning, spacing – all the visual clues – and says:</p>
 <blockquote>
-<p>"This looks like a heading. This looks like a subheading. This is
-body text."</p>
+<p>“This looks like a heading. This looks like a subheading. This is
+body text.”</p>
 </blockquote>
 <p>When the visual clues are clear, it just works. No human judgment
 needed.</p>
 <p>When things get ambiguous (like a title that might or might not be a
-heading), GLOW can ask you: "Is this a heading?" You click yes or no,
+heading), GLOW can ask you: “Is this a heading?” You click yes or no,
 and GLOW learns and applies your answer to similar content in the
 document. You can also choose the heading level from an easy review
 interface.</p>
 <p>And if even human intuition fails, GLOW can optionally use AI to
-learn your document's structure from the content, patterns, and context.
-It is not magic, it is machine learning -- but to users, it often feels
+learn your document’s structure from the content, patterns, and context.
+It is not magic, it is machine learning – but to users, it often feels
 magical.</p>
 <p><strong>Important note:</strong> This is not perfect. We will
 continue evolving the technology with community feedback and real-world
@@ -202,23 +376,23 @@ for every newsletter, agenda, and report. New documents are compliant
 from the first word.</p>
 <h3 id="convert-and-export">Convert and Export</h3>
 <ul>
-<li><strong>Extract to plain text</strong> -- pull readable content from
+<li><strong>Extract to plain text</strong> – pull readable content from
 Word, PDF, Excel, and PowerPoint into clean Markdown.</li>
-<li><strong>Convert to web page</strong> -- turn a document into an
+<li><strong>Convert to web page</strong> – turn a document into an
 accessible web page with proper heading structure, including direct
 copy/paste support for CMS platforms like WordPress or Drupal.</li>
-<li><strong>Convert to print-ready PDF</strong> -- create a PDF
-optimized for large-print output.</li>
-<li><strong>Convert to EPUB</strong> -- make an e-book for
+<li><strong>Convert to print-ready PDF</strong> – create a PDF optimized
+for large-print output.</li>
+<li><strong>Convert to EPUB</strong> – make an e-book for
 e-readers.</li>
 </ul>
 <p>Pick the conversion that fits your workflow. The tool guides you
 every step.</p>
 <h2 id="built-for-the-people-who-actually-create-documents">Built for
 the People Who Actually Create Documents</h2>
-<p>Not for IT staff. Not for accessibility consultants. For you -- the
+<p>Not for IT staff. Not for accessibility consultants. For you – the
 newsletter editor, meeting coordinator, chapter officer, volunteer with
-a side gig being "the document person."</p>
+a side gig being “the document person.”</p>
 <p>Every page in GLOW has a help section you can expand. Every confusing
 option is explained in plain language. GLOW teaches as it helps. After a
 few documents, people start understanding large print formatting, not
@@ -240,9 +414,8 @@ open your browser, upload it, fix it, and download it. Done.</p>
 <li>Documents are processed only for the time needed to return
 results.</li>
 </ul>
-<p>ACB chapters handle sensitive documents -- budgets, personnel
-matters, legal issues. GLOW is designed to minimize data retention
-risk.</p>
+<p>ACB chapters handle sensitive documents – budgets, personnel matters,
+legal issues. GLOW is designed to minimize data retention risk.</p>
 <h2 id="same-standards-every-interface">Same Standards, Every
 Interface</h2>
 <p>The GLOW Accessibility Toolkit (Guided Layout &amp; Output Workflow)
@@ -270,8 +443,8 @@ technology every day. It follows WCAG-aligned interaction patterns:</p>
 <li>Status messages not dependent on color</li>
 <li>Uses the same large-print CSS principles it enforces</li>
 </ul>
-<p>"I use a screen reader," says Bishop. "If I could not use my own
-tool, it would not be worth building."</p>
+<p>“I use a screen reader,” says Bishop. “If I could not use my own
+tool, it would not be worth building.”</p>
 <h2
 id="community-driven-and-improving-with-your-feedback">Community-Driven
 and Improving with Your Feedback</h2>
@@ -288,16 +461,16 @@ newsletters, 100-page workflows, and the practical constraints of
 mailing physical large-print copies.</p>
 <p>That feedback was direct, thoughtful, and deeply operational:</p>
 <ul>
-<li>"If faux heading detection is off, scoring should not keep
-penalizing us for faux headings."</li>
-<li>"Some workflows require raw URLs for print and narrated audio
-use."</li>
-<li>"Decorative images should not force unnecessary alt-text
-churn."</li>
-<li>"Centering can be meaningful for titles and poems; do not flatten
-visual hierarchy by default."</li>
-<li>"Long-document fixes can dramatically increase page count, which
-affects binding and mailing logistics."</li>
+<li>“If faux heading detection is off, scoring should not keep
+penalizing us for faux headings.”</li>
+<li>“Some workflows require raw URLs for print and narrated audio
+use.”</li>
+<li>“Decorative images should not force unnecessary alt-text
+churn.”</li>
+<li>“Centering can be meaningful for titles and poems; do not flatten
+visual hierarchy by default.”</li>
+<li>“Long-document fixes can dramatically increase page count, which
+affects binding and mailing logistics.”</li>
 </ul>
 <p>Those insights shaped major document experience updates,
 including:</p>
@@ -318,20 +491,20 @@ aligned.</li>
 <li>Expanded FAQ and guidance to answer the real formatting questions
 teams face under deadline pressure.</li>
 </ul>
-<p>"As a WCB newsletter editor, this felt like the first time the tool
-met us where we really work," said one Washington Council of the Blind
-editor. "Now when GLOW finds heading candidates, it only offers the
+<p>“As a WCB newsletter editor, this felt like the first time the tool
+met us where we really work,” said one Washington Council of the Blind
+editor. “Now when GLOW finds heading candidates, it only offers the
 levels we actually use, and our template follows the same structure. It
 is like the app already knows our publishing rhythm and quietly clears
-the path."</p>
+the path.”</p>
 <p>This is what community-driven engineering looks like in practice:
 members bring real document stories, and the product evolves to serve
 the people actually doing the work.</p>
-<p>"We have spent countless hours testing accuracy, but community
-feedback is what turns a good tool into a trusted one," says Bishop.</p>
-<p>"We hope many of you will keep sharing what happens in real
+<p>“We have spent countless hours testing accuracy, but community
+feedback is what turns a good tool into a trusted one,” says Bishop.</p>
+<p>“We hope many of you will keep sharing what happens in real
 workflows. That is how GLOW keeps getting better, by the community and
-for the community."</p>
+for the community.”</p>
 <h2 id="try-it-right-now">Try It Right Now</h2>
 <p>Visit <a href="https://glow.bits-acb.org">glow.bits-acb.org</a> and
 upload a document. You will see results in seconds.</p>
@@ -343,5 +516,7 @@ anymore. Neither does your agenda, report, or ballot.</p>
 Solutions (BITS) is a special interest affiliate of the American Council
 of the Blind (ACB), dedicated to promoting technology access for people
 who are blind or have low vision.</p>
-<p><strong>Contact:</strong> Jeff Bishop, President, BITS -- <a
+<p><strong>Contact:</strong> Jeff Bishop, President, BITS – <a
 href="https://bits-acb.org">bits-acb.org</a></p>
+</body>
+</html>

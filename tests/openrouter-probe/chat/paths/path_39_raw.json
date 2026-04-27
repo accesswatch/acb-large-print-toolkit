@@ -1,0 +1,3 @@
+{
+  "raw": "Rule: ACB-FAUX-HEADING\n\nWhat it means: A paragraph formatted as bold text appears to be acting as a heading but uses normal body text style.\n\nWhy it matters: Screen readers announce true headings so users can navigate. Bold-formatted 'fake' headings are invisible to assistive technology.\n\nHow to fix: Apply the appropriate Word Heading style (Heading 1, 2, 3) instead of just making text bold."
+}

@@ -1,0 +1,7 @@
+What the document already does correctly (6 checks passing):
+  Heading hierarchy: PASS — 7 headings, no skipped levels.
+  Italic usage: PASS — no italic text detected.
+  Link text: PASS — no bare URLs or generic link text detected.
+  Alt text: PASS — all 1 image(s) have alt text.
+  Faux headings: PASS — no bold-body-text fake headings detected.
+  List structure: PASS — 3 list items, no excessive nesting.

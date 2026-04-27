@@ -1,0 +1,7 @@
+{
+  "escalated": false,
+  "tools": [
+    "find_section",
+    "get_section_content"
+  ]
+}

@@ -1,0 +1,5 @@
+Review notes:
+- intent_prompt.txt is the exact user text sent to the chat model.
+- expected_reply.txt is the golden expected content.
+- latest_reply.txt will be created/overwritten when run_chat_app.py is executed.
+- latest_response.json will capture the full raw OpenRouter response for audit/debugging.

@@ -2,7 +2,7 @@
 
 ## Overview
 
-GLOW Accessibility Toolkit v2.0.0 is now released with a complete overhaul of web accessibility, form state management, and a safe, failsafe deployment strategy with integrated maintenance mode.
+GLOW Accessibility Toolkit v2.0.0 is now released with a complete overhaul of web accessibility, form state management, safe deployment operations, and a cloud-based AI architecture for chat and transcription with privacy-aware controls.
 
 ---
 
@@ -106,6 +106,15 @@ GLOW Accessibility Toolkit v2.0.0 is now released with a complete overhaul of we
 - `APP_ROOT`, `WEB_ROOT`, `COMPOSE_FILE` – Paths and file names
 - `APP_DOMAIN`, `APP_ALIAS_DOMAIN`, `MAIN_DOMAIN` – Hostnames for test URLs
 - `ENABLE_PREDEPLOY_BACKUP` – `1` (recommended) or `0`
+- `OPENROUTER_API_KEY` – enables cloud document chat and BITS Whisperer transcription
+- `ADMIN_LOCAL_EMAIL` / `ADMIN_LOCAL_PASSWORD` – bootstrap local admin login
+
+### 4. **Cloud AI Transition**
+
+- **Document Chat** now uses an OpenRouter gateway with privacy-aware routing, quotas, and budget enforcement.
+- **BITS Whisperer** now uses the Whisper API with server-side compatibility normalization and short-lived retention.
+- **Core workflows remain non-AI**: audit, fix, template, export, and most conversion paths still work without AI.
+- **Privacy remains central**: AI use is disclosed, temporary files are cleaned up, and non-AI paths remain available for teams that opt out.
 
 ---
 

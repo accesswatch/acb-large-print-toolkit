@@ -1,0 +1,7 @@
+Direct endpoint parameters:
+- model: openai/whisper-large-v3
+- response_format: text
+- language: en
+
+Fallback prompt:
+Transcribe this audio to plain text. Language hint: en.

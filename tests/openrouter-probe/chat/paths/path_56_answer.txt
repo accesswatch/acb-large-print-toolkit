@@ -1,0 +1,11 @@
+=== GLOW Document Analysis (pre-flight tool results) ===
+
+[check_reading_level]
+Reading level estimate: LOW (plain language)
+Average sentence length: 11.0 words
+Long sentences (>30 words): 2
+Long words (>12 chars): 13
+Total sentences analyzed: 36
+
+[get_section_content]
+Section 'the reading level and sentence complexity of this ' not found. Available sections: "BITS Board Meeting -- April 2026", "1. Attendance", "2. Financial Report", "2a. Budget Overview", "2b. Reserves", "2c. Grant Activity", "3. Technology Committee Report", "3a. Website Accessibility Audit", "3b. Software Procurement", "4. 

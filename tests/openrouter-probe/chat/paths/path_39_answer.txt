@@ -1,0 +1,7 @@
+Rule: ACB-FAUX-HEADING
+
+What it means: A paragraph formatted as bold text appears to be acting as a heading but uses normal body text style.
+
+Why it matters: Screen readers announce true headings so users can navigate. Bold-formatted 'fake' headings are invisible to assistive technology.
+
+How to fix: Apply the appropriate Word Heading style (Heading 1, 2, 3) instead of just making text bold.

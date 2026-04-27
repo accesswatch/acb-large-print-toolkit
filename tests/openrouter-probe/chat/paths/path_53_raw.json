@@ -1,0 +1,6 @@
+{
+  "tools_fired": [
+    "check_link_text"
+  ],
+  "question": "Check all link text and bare URLs in this document."
+}

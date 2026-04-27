@@ -1,0 +1,2 @@
+Lists: 3 bullet items, 0 numbered items.
+No structural list issues found.

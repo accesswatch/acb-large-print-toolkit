@@ -1,0 +1,3 @@
+{
+  "raw": "Priority order (no live audit available):\n  1. Fix ACB-NO-ITALIC (critical \u2014 remove all italic)\n  2. Fix ACB-FAUX-HEADING (high \u2014 apply real heading styles)\n  3. Fix ACB-LINK-TEXT (high \u2014 replace generic/bare-URL links)\n  4. Fix ACB-FONT-SIZE-BODY (critical \u2014 raise body text to 18pt)\n  5. Fix ACB-MISSING-ALT-TEXT (high \u2014 add alt text to images)\nUpload to GLOW Fix for full auto-fix."
+}

@@ -3,7 +3,7 @@
 **Status:** Implemented (v2.0.0 released)
 **Author:** Jeff Bishop, BITS
 **Date:** April 17, 2026
-**Target:** v2.0.0 (BITS Whisperer, consent gate, Quick Start, MarkItDown 0.2+, vision-ready OCR path, expanded agentic document chat, maintenance mode, deep deployment logging)
+**Target:** v2.0.0 (BITS Whisperer, consent gate, Quick Start, MarkItDown 0.2+, cloud-based document chat, cloud-based Whisperer, maintenance mode, deep deployment logging)
 
 ---
 
@@ -39,10 +39,10 @@ The Flask web application has been built and is ready for deployment. All core f
 | Contextual help (details/summary) | Done | Every form page has expandable help accordions |
 | WCAG 2.2 AA compliance | Done | lang, landmarks, labels, contrast, skip nav, focus indicators |
 | No JavaScript required | Done | All functionality works without JS |
-| AI heading detection (fix page) | Done | Two-tier faux heading detection: heuristic scoring (10 signals) + optional Ollama AI refinement. Web form fieldset with enable, AI toggle, confidence threshold. Ollama Docker service added. |
+| AI heading detection (fix page) | Done | Two-tier faux heading detection: heuristic scoring (10 signals) + optional AI refinement via GLOW's cloud AI service. Web form fieldset with enable, AI toggle, confidence threshold. |
 | Interactive heading review (fix page) | Done | When heading detection finds candidates in a .docx, users review a table of candidates with confidence scores, heuristic signals, and adjustable heading levels before fixes are applied. New `fix_review_headings.html` template and `/fix/confirm` POST route. |
-| AI auto-detection (fix page + desktop GUI) | Done | `is_ai_available()` probes Ollama at localhost:11434. Web form and desktop GUI auto-check the AI checkbox when Ollama is reachable. |
-| Desktop GUI heading detection | Done | Step 3 Options panel in wxPython wizard adds paragraph indent, heading detection, and AI toggle controls. AI checkbox auto-checks when Ollama is available. |
+| AI auto-detection (fix page + desktop GUI) | Done | `ai_heading_fix_enabled()` checks the configured AI gateway. Web form auto-checks the AI checkbox when the service is enabled; desktop GUI checks the local Ollama probe. |
+| Desktop GUI heading detection | Done | Step 3 Options panel in wxPython wizard adds paragraph indent, heading detection, and AI toggle controls. AI checkbox auto-checks when local Ollama is available (desktop-only feature). |
 | Detailed fix records (fix page) | Done | FixRecord dataclass tracks every fix with rule ID, category, description, location. Accordion UI groups fixes by category. |
 | Heading-rule suppression in fix scoring | Done | When heading detection is disabled, `ACB-FAUX-HEADING` is suppressed from post-fix scoring and shown as a suppressed rule in Fix Results. |
 | Pre-fix small-text pagination warning | Done | Fix Results warns when pre-fix body text appears below 18pt because ACB normalization can increase page count. |
@@ -59,10 +59,10 @@ The Flask web application has been built and is ready for deployment. All core f
 | Feature | Status | Notes |
 |---------|--------|-------|
 | GLOW (Guided Layout & Output Workflow) Quick Start path | Done | New `/process` flow: upload first, then choose context-aware actions for the uploaded file type. |
-| BITS Whisperer audio transcription | Done | New `/whisperer` route for MP3/WAV/M4A/OGG/FLAC/AAC/Opus transcription to Markdown or Word using on-server faster-whisper. |
+| BITS Whisperer audio transcription | Done | New `/whisperer` route for MP3/WAV/M4A/OGG/FLAC/AAC/Opus transcription to Markdown or Word using the Whisper API with server-side normalization and cleanup. |
 | Consent and privacy gate | Done | New `/consent` route for first-visit agreement with secure consent cookie and reset controls. |
 | MarkItDown 0.2+ integration | Done | Expanded support for image inputs and broader conversion workflows. |
-| Vision-ready OCR path | Done | Local vision-model path (LLaVA + Ollama) for scanned/image-heavy interpretation. |
+| Vision-ready OCR path | Done | Cloud-ready path reserved for future multimodal interpretation; v2.0 keeps core document workflows stable first. |
 | Capacity-aware protective gating | Done | AI/audio/vision concurrency protection with busy response behavior and health metrics. |
 | Whisperer preflight estimate + confirmation | Done | Audio metadata estimate shown before transcription starts; users explicitly confirm before proceeding. |
 | Whisperer background queue mode | Done | Long audio jobs can opt into background mode with queueing, position-aware processing, and shared audio capacity gating. |
@@ -74,7 +74,7 @@ The Flask web application has been built and is ready for deployment. All core f
 | Expanded Document Chat | Done | New `/chat` route with heading-based conversation history, export to Markdown/Word/PDF, and accessibility-focused tool calling. |
 | Accessibility-focused agent categories in chat | Done | Compliance, Structure, Content, and Remediation tool groups for in-context Q&A and fix guidance. |
 | Chat online help + guided question cards | Done | In-page guided cards and examples for first-time chat users; keyboard and screen-reader friendly. |
-| Privacy transparency updates | Done | Privacy policy and UI language updated to reflect retention windows and local model usage. |
+| Privacy transparency updates | Done | Privacy policy and UI language updated to reflect retention windows, cloud AI usage, and non-AI opt-out paths. |
 | Long-job retention reliability | Done | Active audio transcription jobs keep temporary workspace alive until completion so stale cleanup does not interrupt long-running conversions. |
 
 ### Deviations from Plan
@@ -179,7 +179,7 @@ The web app will:
 
 ## v2.0 Addendum: Expanded Agentic Accessibility Experience
 
-GLOW (Guided Layout & Output Workflow) 2.0 adds a major interaction model beyond form submission: users can ask targeted questions and invoke accessibility-aware tools through chat.
+GLOW (Guided Layout & Output Workflow) 2.0 adds a major interaction model beyond form submission: users can ask targeted questions and invoke accessibility-aware tools through chat. In v2.0 this runs through a centralized OpenRouter gateway with privacy-aware provider controls and budget enforcement.
 
 ### Chat Route and Interaction Model
 
@@ -237,6 +237,50 @@ The `/chat` template includes:
 - privacy and retention notice
 
 All help uses semantic HTML and native interaction patterns aligned to WCAG 2.2 AA.
+
+## v2.0 Cloud AI Implementation Plan
+
+The cloud transition planning that previously lived in separate working documents is now part of the PRD. The product direction is intentionally conservative: keep the rule-based core intact, move only the AI-dependent features to cloud services, and preserve clear non-AI paths for users who do not want AI involved.
+
+### Principles
+
+- No public account requirement for end users
+- AI use only where it adds clear value: Document Chat and Whisperer
+- Rule-based workflows remain available without AI
+- Privacy-aware routing and short retention by default
+- Hard monthly budget and per-session quota enforcement
+
+### Implemented cloud architecture
+
+- **Document Chat:** OpenRouter-backed gateway with grounded pre-flight tool dispatch, quota tracking, and health checks
+- **BITS Whisperer:** Whisper API transcription with server-side format normalization, background queueing, and secure retrieval
+- **Large-workload resilience:** bounded AI queue wait windows for heavy requests plus transient retry/backoff on OpenRouter rate-limit and 5xx failures
+- **Budget controls:** monthly spend ledger, daily chat limits, monthly audio-minute limits
+- **Operational visibility:** `/health` exposes provider reachability and budget readiness
+
+### OpenRouter production roadmap now adopted for GLOW
+
+1. Use explicit privacy-reviewed model lists before broadening router choices.
+2. Apply provider privacy controls per request where supported.
+3. Prefer deterministic fallback lists over random free-model routing for document-sensitive workloads.
+4. Add dynamic model discovery from the OpenRouter models API for future admin tooling.
+5. Preserve non-AI alternatives for users and organizations that opt out of AI processing.
+
+### Roadmap
+
+#### Near-term roadmap (within v2.0 maintenance releases)
+
+- Add explicit OpenRouter provider routing preferences for privacy, latency, and parameter support.
+- Add admin-facing visibility into resolved OpenRouter model/provider usage.
+- Add stronger cloud-side retry and fallback telemetry for chat and vision.
+- Expand Whisperer compatibility normalization and operator diagnostics.
+
+#### Medium-term roadmap
+
+- Introduce privacy-reviewed multimodal document assistance through the same AI gateway.
+- Add dynamic model catalog filtering for ZDR/privacy-safe providers.
+- Offer opt-in economy mode for low-risk workloads while preserving the privacy-first default.
+- Add richer structured-output/tool-calling flows for remediation suggestions.
 
 ## Implementation Decisions
 
@@ -505,7 +549,7 @@ For complete step-by-step commands starting from a bare server, see [docs/deploy
 | Core library | acb_large_print | (local) | Existing audit/fix/template/export engine -- zero changes |
 | Document converter | Pandoc | 3.1+ | Universal document converter: Markdown/Word/RST/ODT/RTF/ePub to HTML, Word, EPUB 3, and PDF (via WeasyPrint) |
 | PDF renderer | WeasyPrint | 62.0+ | CSS-based PDF rendering with ACB print formatting (CourtBouillon). Requires Pango, Cairo, GDK-Pixbuf system libraries and Liberation Sans font. |
-| AI inference | Ollama | Latest | Local LLM inference for heading detection refinement (phi4-mini 3.8B). Runs as Docker service, no data leaves the machine |
+| AI inference | OpenRouter | API | Cloud LLM inference for chat, heading detection, and AI-assisted workflows. Privacy-aware provider routing (`dataCollection: deny`). Desktop tool uses local Ollama (optional). |
 | Process manager | systemd | (OS built-in) | Auto-restart Docker on reboot, journald logging |
 | Firewall | ufw | (OS built-in) | Simple allow/deny rules for SSH, HTTP, HTTPS |
 | Monitoring | UptimeRobot | Free tier | 5-minute HTTP pings to `/health`, email/SMS alerts on downtime |

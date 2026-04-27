@@ -1,0 +1,45 @@
+{
+  "id": "gen-1776656927-u5gQW6SnsTnfmlqzXR4z",
+  "object": "chat.completion",
+  "created": 1776656927,
+  "model": "openai/gpt-4o-mini",
+  "provider": "OpenAI",
+  "system_fingerprint": "fp_42fcdba006",
+  "choices": [
+    {
+      "index": 0,
+      "logprobs": null,
+      "finish_reason": "stop",
+      "native_finish_reason": "stop",
+      "message": {
+        "role": "assistant",
+        "content": "The ACB Large Print Guidelines require the use of a sans serif font for body text, with Arial being a commonly recommended option.",
+        "refusal": null,
+        "reasoning": null
+      }
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 33,
+    "completion_tokens": 26,
+    "total_tokens": 59,
+    "cost": 2.055e-05,
+    "is_byok": false,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "cache_write_tokens": 0,
+      "audio_tokens": 0,
+      "video_tokens": 0
+    },
+    "cost_details": {
+      "upstream_inference_cost": 2.055e-05,
+      "upstream_inference_prompt_cost": 4.95e-06,
+      "upstream_inference_completions_cost": 1.56e-05
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 0,
+      "image_tokens": 0,
+      "audio_tokens": 0
+    }
+  }
+}

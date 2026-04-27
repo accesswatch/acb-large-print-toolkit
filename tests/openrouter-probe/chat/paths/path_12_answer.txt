@@ -1,0 +1,3 @@
+Heading hierarchy issues found (1):
+  Skipped heading level: H2 → H4 at "Detailed Findings"
+Fix: do not skip heading levels (e.g. H1 → H3). Use consecutive levels.
