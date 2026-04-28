@@ -16,6 +16,10 @@ Releases are tagged in the [GitHub repository](https://github.com/accesswatch/ac
 
 - **Deploy script: safe Docker cleanup controls added.** `scripts/deploy-app.sh` now supports orphan cleanup during deploy (`COMPOSE_REMOVE_ORPHANS=1` by default) and post-deploy artifact cleanup toggles. Successful deploys now optionally prune unused images (`CLEANUP_ON_SUCCESS=1`, `CLEANUP_IMAGE_PRUNE=1` by default). Optional builder cache cleanup is available via `CLEANUP_BUILDER_PRUNE=1` with `CLEANUP_BUILDER_KEEP_STORAGE` (default `4GB`). Rollback-path cleanup remains opt-in (`CLEANUP_ON_ROLLBACK=0` by default).
 
+### Fixed
+
+- **Post-deploy verification no longer hangs/fails on removed Ollama service.** `scripts/post-deploy-check.sh` now gates required service checks dynamically from Compose service definitions and skips `ollama` when it is not present in `docker-compose.prod.yml`. Readiness parsing now treats `not-configured` as OK for feature-gated AI checks, preventing false deployment failures when AI/Ollama are intentionally disabled.
+
 ## [2.5.0] - 2026-04-28
 
 ### Added

@@ -37,6 +37,11 @@ compose() {
     docker compose -f "$WEB_ROOT/$COMPOSE_FILE" "$@"
 }
 
+compose_has_service() {
+    local service="$1"
+    compose config --services 2>/dev/null | grep -Fxq "$service"
+}
+
 service_cid() {
     local service="$1"
     compose ps -q "$service" | head -n 1
@@ -206,7 +211,14 @@ compose ps --format "table {{.Name}}\t{{.Status}}"
 echo ""
 echo "--- Required service health gates ---"
 SERVICE_FAIL=0
-for svc in pipeline web ollama; do
+REQUIRED_SERVICES=(pipeline web)
+if compose_has_service "ollama"; then
+    REQUIRED_SERVICES+=(ollama)
+else
+    echo "  ollama: skipped (service not defined in $COMPOSE_FILE)"
+fi
+
+for svc in "${REQUIRED_SERVICES[@]}"; do
     if ! wait_for_service_healthy "$svc" 180 5; then
         echo "  $svc: FAILED health gate"
         SERVICE_FAIL=1
@@ -248,7 +260,7 @@ for key, label in labels.items():
     if warm is not None:
         parts.append(f"warm={warm}")
     detail = ", ".join(parts)
-    if status == "ready":
+    if status in ("ready", "not-configured"):
         print(f"  {label}: OK ({detail})")
     else:
         print(f"  {label}: NOT READY ({detail})")
