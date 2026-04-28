@@ -14,6 +14,7 @@ from __future__ import annotations
 from flask import Blueprint, render_template, request, redirect, url_for
 
 from ..ai_features import ai_chat_enabled, ai_whisperer_enabled
+from ..feature_flags import get_all_flags
 from ..upload import (
     AUDIO_EXTENSIONS,
     CONVERT_EXTENSIONS,
@@ -46,6 +47,19 @@ def _get_available_actions(file_ext: str) -> dict[str, dict]:
     ext = file_ext.lower()
     chat_enabled = ai_chat_enabled()
     whisperer_enabled = ai_whisperer_enabled()
+    all_flags = get_all_flags()
+
+    convert_directions_enabled = any(
+        bool(all_flags.get(k, True))
+        for k in (
+            "GLOW_ENABLE_CONVERT_TO_MARKDOWN",
+            "GLOW_ENABLE_CONVERT_TO_HTML",
+            "GLOW_ENABLE_CONVERT_TO_DOCX",
+            "GLOW_ENABLE_CONVERT_TO_EPUB",
+            "GLOW_ENABLE_CONVERT_TO_PDF",
+            "GLOW_ENABLE_CONVERT_TO_PIPELINE",
+        )
+    )
 
     actions = {
         "audit": {
@@ -53,22 +67,27 @@ def _get_available_actions(file_ext: str) -> dict[str, dict]:
             "route": "audit.audit_form",
             "icon": "🔍",
             "description": "Check for accessibility compliance issues",
-            "enabled": ext in {".docx", ".xlsx", ".pptx", ".md", ".pdf", ".epub"}
-            or ext in {".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp", ".tiff"},
+            "enabled": bool(all_flags.get("GLOW_ENABLE_AUDIT", True))
+            and (
+                ext in {".docx", ".xlsx", ".pptx", ".md", ".pdf", ".epub"}
+                or ext in {".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp", ".tiff"}
+            ),
         },
         "fix": {
             "name": "Fix",
             "route": "fix.fix_form",
             "icon": "🔧",
             "description": "Auto-fix accessibility problems (Word only)",
-            "enabled": ext == ".docx",
+            "enabled": bool(all_flags.get("GLOW_ENABLE_CHECKER", True)) and ext == ".docx",
         },
         "convert": {
             "name": "Convert",
             "route": "convert.convert_form",
             "icon": "📄",
             "description": "Transform to Markdown, HTML, PDF, Word, ePub, or other formats",
-            "enabled": ext in CONVERT_EXTENSIONS,
+            "enabled": bool(all_flags.get("GLOW_ENABLE_CONVERTER", True))
+            and convert_directions_enabled
+            and ext in CONVERT_EXTENSIONS,
         },
         "chat": {
             "name": "Document Chat",
@@ -82,14 +101,14 @@ def _get_available_actions(file_ext: str) -> dict[str, dict]:
             "route": "export.export_form",
             "icon": "📤",
             "description": "Convert Word document to accessible HTML with ACB styles",
-            "enabled": ext == ".docx",
+            "enabled": bool(all_flags.get("GLOW_ENABLE_EXPORT_HTML", True)) and ext == ".docx",
         },
         "template": {
             "name": "Create Template",
             "route": "template.template_form",
             "icon": "📋",
             "description": "Generate a pre-formatted Word template (.dotx) with ACB styles",
-            "enabled": ext == ".docx",
+            "enabled": bool(all_flags.get("GLOW_ENABLE_TEMPLATE_BUILDER", True)) and ext == ".docx",
         },
     }
 

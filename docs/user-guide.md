@@ -1013,7 +1013,7 @@ Everything you need to know to audit, fix, convert, and template your documents 
 1. [Quick Start (Beginner Path)](#1-quick-start-beginner-path)
 2. [BITS Whisperer: Transcribe Audio](#2-bits-whisperer-transcribe-audio)
 3. [Quick-Start Walkthrough (Expert Path)](#3-quick-start-walkthrough-expert-path)
-4. [GLOW v2.0.0 Features](#4-glow-v200-features)
+4. [GLOW v2.5.0 Features](#4-glow-v250-features)
 5. [How to Audit a Document](#5-how-to-audit-a-document)
 6. [How to Fix a Document](#6-how-to-fix-a-document)
 7. [How to Create a Template](#7-how-to-create-a-template)
@@ -1030,7 +1030,7 @@ Everything you need to know to audit, fix, convert, and template your documents 
 18. [Getting Help](#18-getting-help)
 19. [Document Chat and Agentic Accessibility Tools](#19-document-chat-and-agentic-accessibility-tools)
 
-**Quick links to v2.0.0 features:**
+**Quick links to v2.5.0 features:**
 - [Quick Start Path](#1-quick-start-beginner-path) (for newcomers to accessibility)
 - [BITS Whisperer](#2-bits-whisperer-transcribe-audio) (transcribe audio to text)
 - [MarkItDown image descriptions](#image-descriptions-llm-generated-alt-text) (AI-powered alt text for images)
@@ -1139,7 +1139,7 @@ Your audio file is uploaded to GLOW, optionally normalized for compatibility, se
 
 ## 19. Document Chat and Agentic Accessibility Tools
 
-GLOW (Guided Layout & Output Workflow) 2.0 includes a chat experience that lets you interrogate uploaded documents in plain language.
+GLOW (Guided Layout & Output Workflow) 2.5.0 includes a chat experience that lets you interrogate uploaded documents in plain language.
 
 ### What Document Chat does
 
@@ -1247,7 +1247,7 @@ If you have not written your document yet, start with Create a Template. This gi
 
 ---
 
-## 2. GLOW v2.0.0 Features and APH Submission Track
+## 4. GLOW v2.5.0 Features and APH Submission Track
 
 This section is the guided APH rollout workflow, written as an "instructor in your pocket" checklist. Follow each week in order and collect evidence at each gate.
 

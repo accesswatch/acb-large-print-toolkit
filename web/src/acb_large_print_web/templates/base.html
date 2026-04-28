@@ -4,28 +4,38 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="csrf-token" content="{{ csrf_token() }}">
-  <title>{% block title %}Home{% endblock %} | GLOW (Guided Layout &amp; Output Workflow)</title>
-  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
+  <title>{% block title %}Home{% endblock %} | {{ brand_title_suffix }}</title>
+  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename=brand_favicon) }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='acb-large-print.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='forms.css') }}">
 </head>
-<body>
+<body class="{{ brand_theme_class }}">
   <a href="#main" class="skip-link">Skip to main content</a>
 
   <header>
     <nav aria-label="Main navigation">
       <a href="{{ url_for('main.index') }}" class="nav-brand"{% if request.blueprint == 'main' %} aria-current="page"{% endif %}>
-        <span class="brand-icon" aria-hidden="true">&#9854;</span>
-        GLOW Accessibility
+        <img src="{{ url_for('static', filename=brand_logo_file) }}" alt="{{ brand_logo_alt }}" height="{{ brand_logo_height }}" class="brand-logo">
+        <span class="brand-nav-text">{{ brand_nav_label }}</span>
       </a>
       <ul class="nav-tabs" role="tablist" aria-label="Document tools">
+        {% if feature_audit_enabled %}
         <li role="none"><a href="{{ url_for('audit.audit_form') }}" role="tab" id="tab-audit" aria-controls="main"{% if request.blueprint == 'audit' %} aria-selected="true"{% else %} aria-selected="false"{% endif %}>Audit</a></li>
+        {% endif %}
+        {% if feature_checker_enabled %}
         <li role="none"><a href="{{ url_for('fix.fix_form') }}" role="tab" id="tab-fix" aria-controls="main"{% if request.blueprint == 'fix' %} aria-selected="true"{% else %} aria-selected="false"{% endif %}>Fix</a></li>
+        {% endif %}
+        {% if feature_template_builder_enabled %}
         <li role="none"><a href="{{ url_for('template.template_form') }}" role="tab" id="tab-template" aria-controls="main"{% if request.blueprint == 'template' %} aria-selected="true"{% else %} aria-selected="false"{% endif %}>Template</a></li>
+        {% endif %}
+        {% if feature_export_html_enabled %}
         <li role="none"><a href="{{ url_for('export.export_form') }}" role="tab" id="tab-export" aria-controls="main"{% if request.blueprint == 'export' %} aria-selected="true"{% else %} aria-selected="false"{% endif %}>Export</a></li>
+        {% endif %}
+        {% if feature_converter_enabled %}
         <li role="none"><a href="{{ url_for('convert.convert_form') }}" role="tab" id="tab-convert" aria-controls="main"{% if request.blueprint == 'convert' %} aria-selected="true"{% else %} aria-selected="false"{% endif %}>Convert</a></li>
+        {% endif %}
         {% if ai_whisperer_enabled %}
-        <li role="none"><a href="{{ url_for('whisperer.whisperer_form') }}" role="tab" id="tab-whisperer" aria-controls="main"{% if request.blueprint == 'whisperer' %} aria-selected="true"{% else %} aria-selected="false"{% endif %}>BITS Whisperer</a></li>
+        <li role="none"><a href="{{ url_for('whisperer.whisperer_form') }}" role="tab" id="tab-whisperer" aria-controls="main"{% if request.blueprint == 'whisperer' %} aria-selected="true"{% else %} aria-selected="false"{% endif %}>{{ brand_whisperer_label }}</a></li>
         {% endif %}
         <li role="none"><a href="{{ url_for('guidelines.guidelines_page') }}" role="tab" id="tab-guidelines" aria-controls="main"{% if request.blueprint == 'guidelines' %} aria-selected="true"{% else %} aria-selected="false"{% endif %}>Guidelines</a></li>
         <li role="none"><a href="{{ url_for('settings.settings_page') }}" role="tab" id="tab-settings" aria-controls="main"{% if request.blueprint == 'settings' %} aria-selected="true"{% else %} aria-selected="false"{% endif %}>Settings</a></li>
@@ -34,7 +44,7 @@
   </header>
 
   <main id="main">
-    <h1>{% block heading %}GLOW Accessibility Toolkit{% endblock %}</h1>
+    <h1>{% block heading %}{{ brand_heading_label }}{% endblock %}</h1>
 
     {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
@@ -63,8 +73,12 @@
         <li><a href="{{ url_for('consent.consent_form') }}"{% if request.blueprint == 'consent' %} aria-current="page"{% endif %}>Terms of Use</a></li>
       </ul>
     </nav>
-    <p>A <a href="https://www.bits-acb.org">BITS</a> community project. Blind Information Technology Solutions, a special interest affiliate of the American Council of the Blind.</p>
-    <p><strong>GLOW</strong> = Guided Layout &amp; Output Workflow. Magical guidance for real-world accessibility work.</p>
+    {% if brand_is_uarizona %}
+    <p>{{ brand_footer_org_line }}</p>
+    {% else %}
+    <p><a href="https://www.bits-acb.org">BITS</a> community project. Blind Information Technology Solutions, a special interest affiliate of the American Council of the Blind.</p>
+    {% endif %}
+    <p>{{ brand_footer_story_line }}</p>
     <p>Supports Word (.docx), Excel (.xlsx), PowerPoint (.pptx), Markdown (.md), PDF (.pdf), and ePub (.epub) documents.</p>
     <p>Admin features are restricted to approved administrative accounts.</p>
     <p>Current release: {{ release_version }}</p>

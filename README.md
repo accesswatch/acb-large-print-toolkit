@@ -8,6 +8,27 @@ External APH source reference: [APH Guidelines for the Development of Documents 
 
 Status note: APH alignment in this toolkit is fully integrated in Release 1.2.0 for the submission workflow, alongside existing ACB + WCAG + Microsoft Accessibility Checker + format-specific rule sets.
 
+## Release 2.5.0 at a Glance
+
+- Stronger user experience guardrails across web workflows: feature-gated navigation, result-page cross-link consistency, and clearer next-step actions.
+- Deployment-aware branding profiles: `bits` and `uarizona` now drive logo, theme, favicon, and profile-specific wording from one environment variable.
+- Granular conversion controls: dedicated `GLOW_ENABLE_EXPORT_HTML` plus per-direction convert flags for safe phased rollouts.
+- AI remains disabled by default in production/staging today. This does not limit core functionality: Audit, Fix, Convert, Export, Template, and standards guidance remain fully available.
+
+### How GLOW knows which branding profile is active
+
+GLOW reads the `GLOW_BRAND_PROFILE` environment variable at runtime and injects profile context into all templates.
+
+- `GLOW_BRAND_PROFILE=bits` (default)
+- `GLOW_BRAND_PROFILE=uarizona`
+
+Where this is resolved:
+
+- `web/src/acb_large_print_web/branding.py` (`get_branding_context()`)
+- `web/src/acb_large_print_web/app.py` (global context injection)
+
+Operational note: profile switching is deployment-level (restart/redeploy required), not a live admin toggle.
+
 ## Standards Profiles (Release 1.2.0)
 
 The web Audit, Fix, and Template flows now include three standards profiles:

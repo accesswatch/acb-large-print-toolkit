@@ -10,6 +10,12 @@ Releases are tagged in the [GitHub repository](https://github.com/accesswatch/ac
 
 ### Added
 
+- Placeholder for post-2.5.0 updates.
+
+## [2.5.0] - 2026-04-28
+
+### Added
+
 - **Ops: WSL pre-production Docker staging helper.** Added `scripts/wsl-stage-regression.ps1` plus `web/docker-compose.wsl.yml` so GLOW can be staged in a WSL distro, health-checked, and regression-tested from the workstation before deploying to the main server. The WSL staging override defaults AI feature flags off to mirror the current non-AI rollout plan.
 
 - **Web: Chat response quality improvements -- 7 new tools and grounding enhancements.** `web/src/acb_large_print_web/chat_handler.py` adds four new tools to the Document agent category: `get_document_summary` (plain-language document type, title, and section overview), `get_section_content` (full paragraph text of a named section, replacing the existence-only `find_section`), `get_decisions_and_actions` (extracts voted motions and action item owners from meeting/board documents), and `get_what_passes` (surfaces what the document already does correctly for balanced responses). `get_all_tools()` and the `call()` dispatcher are updated for all four. `routes/chat.py` now injects a document orientation block (summary + compliance score + what passes) on the first turn of every chat session so the model always opens with a grounded overview. The system prompt adds a confidence guard (rule 8) instructing the model not to report violations unless a pre-flight tool explicitly detected them, and a balance rule (rule 9) requiring acknowledgment of passing checks alongside violations.
@@ -31,11 +37,24 @@ Releases are tagged in the [GitHub repository](https://github.com/accesswatch/ac
 
 ### Changed
 
+- **Office Add-in: dependency toolchain refreshed to latest available versions.** Updated `office-addin/package.json` and `office-addin/package-lock.json` to current releases for `typescript` (6.0.3), `webpack` (5.106.2), `webpack-cli` (7.0.2), `@types/office-js` (1.0.589), and `html-webpack-plugin` (5.6.7), plus transitive updates (`ts-loader`, `css-loader`, `webpack-dev-server`). Added `office-addin/src/global.d.ts` to declare `*.css` modules for TypeScript 6 side-effect CSS import compatibility so `npm run build` continues to compile successfully.
+
+- **Web: Deployment branding profile support for BITS vs University of Arizona.** Added `web/src/acb_large_print_web/branding.py` and context injection in `web/src/acb_large_print_web/app.py` to support `GLOW_BRAND_PROFILE`. Default `bits` keeps current ACB/BITS wording. Setting `GLOW_BRAND_PROFILE=uarizona` now switches shared UI text in `templates/base.html` and `templates/index.html` to University of Arizona-friendly branding (removing ACB/BITS identity wording from title, nav/footer identity lines, homepage guideline copy, and Whisperer label).
+- **Web: Branding is now operator-visible in Admin with deployment guidance.** `web/src/acb_large_print_web/templates/admin_flags.html` now shows a read-only active profile panel and instructions for switching `GLOW_BRAND_PROFILE` at deployment time.
+- **Ops: Compose docs now include brand profile environment variable.** `web/docker-compose.prod.yml` and `web/docker-compose.wsl.yml` now document `GLOW_BRAND_PROFILE=${GLOW_BRAND_PROFILE:-bits}` for explicit profile selection.
+- **Release posture: AI remains disabled by default in production and staging.** AI feature flags continue to default to off; core non-AI workflows (Audit, Fix, Export, Convert, Template, standards guidance, and profile-aware branding) remain fully functional.
+- **Web: Guidelines reference page now supports UArizona branding profile language.** `web/src/acb_large_print_web/templates/guidelines.html` now conditionally removes ACB/BITS-branded wording when `GLOW_BRAND_PROFILE=uarizona` while preserving standards and rule details.
+- **Web: Completed template context exposure for all non-AI feature flags.** `web/src/acb_large_print_web/app.py` now exposes `feature_word_setup_enabled`, `feature_markdown_audit_enabled`, `feature_pydocx_enabled`, `feature_openpyxl_enabled`, and `feature_python_pptx_enabled` in addition to existing feature booleans.
+- **Web: Added dedicated HTML export feature flag.** `web/src/acb_large_print_web/feature_flags.py` introduces `GLOW_ENABLE_EXPORT_HTML` and `web/src/acb_large_print_web/routes/export.py` now gates `/export` at route level (GET/POST), while templates and Quick Start entry points hide Export when disabled.
+- **Web: Added per-direction convert feature flags and route enforcement.** `GLOW_ENABLE_CONVERT_TO_MARKDOWN`, `GLOW_ENABLE_CONVERT_TO_HTML`, `GLOW_ENABLE_CONVERT_TO_DOCX`, `GLOW_ENABLE_CONVERT_TO_EPUB`, `GLOW_ENABLE_CONVERT_TO_PDF`, and `GLOW_ENABLE_CONVERT_TO_PIPELINE` now drive both UI visibility in `templates/convert_form.html` and backend direction guards in `web/src/acb_large_print_web/routes/convert.py`. Admin management now includes a dedicated Convert directions section in `templates/admin_flags.html` / `routes/admin.py`.
+
 - **Web: AI features can now be deployment-gated independently from the OpenRouter key.** `web/src/acb_large_print_web/ai_features.py` now supports a master `GLOW_ENABLE_AI` switch plus per-feature gates for chat, Whisperer, AI heading refinement, alt-text helpers, and MarkItDown LLM behavior. This allows the non-AI web fixes to be deployed immediately while specific AI paths remain hidden and route-disabled until validation is complete.
 
 - **Web: Default AI model switched from free Llama/Mistral pool to GPT-4o-mini.** `_DEFAULT_MODEL` in `web/src/acb_large_print_web/ai_gateway.py` now defaults to `openai/gpt-4o-mini` (primary) and `openai/gpt-4o` (fallback/escalation), replacing the previously unavailable `meta-llama/llama-3-8b-instruct:free,mistralai/mistral-7b-instruct:free` free-model pool. The legacy free model entries are retained in the cost table for accounts that override via `AI_DEFAULT_MODEL`. Admin reset-to-defaults and the admin AI settings dropdown updated to match. Probe path 01 and integration test fixtures updated to the new primary model. All 84/84 probe paths now pass.
 
 ### Fixed
+
+- **Web: Home operation cards now map to correct features and labels.** `web/src/acb_large_print_web/templates/index.html` now correctly pairs the Audit card with `feature_audit_enabled` and the Fix card with `feature_checker_enabled`, with matching card classes/links/format labels.
 
 - **Web: default Fix runs no longer show a false custom-settings warning.** `web/src/acb_large_print_web/customization_warning.py` now reads the normalized option keys produced by the Fix route and uses the canonical ACB defaults (`0.0` flush-left list indent, `0.0` paragraph indents) instead of the obsolete `0.5` list-indent default. A plain, no-customization Fix run no longer reports `List indent changed to 0.0"`.
 - **Word fix: deeper heading styles now normalize consistently.** `desktop/src/acb_large_print/constants.py` and `office-addin/src/constants.ts` now define `Heading 4` through `Heading 6` with the same 20pt bold subheading treatment as the deepest configured subheading level, so existing built-in Word headings beyond level 3 no longer fall through with stale italic/small-font styling.

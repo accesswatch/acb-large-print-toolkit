@@ -15,11 +15,17 @@
 <section>
   <h2 id="features-heading">v2.0 Features (April 2026)</h2>
   <ul>
+    {% if ai_whisperer_enabled %}
     <li><strong>BITS Whisperer:</strong> Audio transcription (MP3, WAV, M4A, OGG, FLAC, AAC, Opus) to Markdown or Word via OpenRouter audio transcription (same OpenRouter key as chat), with server-side cleanup, short retention, and optional secure retrieval for background jobs.</li>
+    {% endif %}
     <li><strong>Consent &amp; Privacy Gate:</strong> First-time visitors are shown a transparent agreement explaining retention, cloud AI usage where applicable, and privacy protections. HttpOnly cookies, no ad tracking.</li>
     <li><strong>Quick Start Path:</strong> Universal upload form that shows contextual actions (Audit, Fix, Convert, Export, Template, BITS Whisperer) based on file type. Reduces barrier to entry for accessibility newcomers.</li>
+    {% if ai_chat_enabled %}
     <li><strong>OpenRouter-Powered Document Chat:</strong> Privacy-aware document Q&amp;A with grounded accessibility tools, quota controls, and low-cost fallback routing.</li>
+    {% endif %}
+    {% if ai_configured %}
     <li><strong>Cloud-Ready AI Gateway:</strong> Centralized routing, budget enforcement, quota tracking, and provider privacy controls for AI features while preserving rule-based non-AI workflows.</li>
+    {% endif %}
     <li><strong>Smart Concurrency Gating:</strong> Protective semaphores for AI and audio jobs. When capacity is full, users receive a 503 Busy response with Retry-After guidance instead of silent failures.</li>
   </ul>
   <a href="#main" class="back-to-top">Back to top</a>
@@ -49,8 +55,10 @@
     <dt><a href="https://www.w3.org/WAI/">W3C Web Accessibility Initiative (WAI)</a></dt>
     <dd>Develops the Web Content Accessibility Guidelines (WCAG), which this toolkit uses for digital content requirements including contrast, reflow, and line spacing.</dd>
 
+    {% if feature_epub_enabled %}
     <dt><a href="https://daisy.org/">DAISY Consortium</a></dt>
     <dd>An international association of libraries and organizations serving people with print disabilities. DAISY develops the <a href="https://daisy.github.io/ace/">Ace accessibility checker</a>, the <a href="https://github.com/daisy/a11y-meta-viewer">Accessibility Metadata Viewer</a>, and the <a href="https://kb.daisy.org/publishing/">Accessible Publishing Knowledge Base</a> used by this toolkit for ePub accessibility.</dd>
+    {% endif %}
   </dl>
   <a href="#main" class="back-to-top">Back to top</a>
 </section>
@@ -121,84 +129,108 @@
         <td>MIT</td>
         <td>Read, audit, and modify Word (.docx) documents</td>
       </tr>
+      {% if feature_word_enabled %}
       <tr>
         <td><a href="https://github.com/mwilliamson/python-mammoth">Mammoth</a></td>
         <td>1.8+</td>
         <td>BSD-2-Clause</td>
         <td>Convert Word documents to clean HTML</td>
       </tr>
+      {% endif %}
+      {% if feature_excel_enabled %}
       <tr>
         <td><a href="https://openpyxl.readthedocs.io/">openpyxl</a></td>
         <td>3.1+</td>
         <td>MIT</td>
         <td>Read and audit Excel (.xlsx) workbooks</td>
       </tr>
+      {% endif %}
+      {% if feature_powerpoint_enabled %}
       <tr>
         <td><a href="https://python-pptx.readthedocs.io/">python-pptx</a></td>
         <td>1.0+</td>
         <td>MIT</td>
         <td>Read and audit PowerPoint (.pptx) presentations</td>
       </tr>
+      {% endif %}
+      {% if feature_pymupdf_enabled %}
       <tr>
         <td><a href="https://pymupdf.readthedocs.io/">PyMuPDF (fitz)</a></td>
         <td>1.24+</td>
         <td>AGPL-3.0</td>
         <td>Read and audit PDF documents</td>
       </tr>
+      {% endif %}
+      {% if feature_markitdown_enabled %}
       <tr>
         <td><a href="https://github.com/microsoft/markitdown">MarkItDown</a></td>
         <td>0.2+</td>
         <td>MIT</td>
         <td>Convert documents and images to Markdown. Supports image files (JPG, PNG, GIF, WebP, BMP, TIFF) and YouTube transcript fetching (Microsoft)</td>
       </tr>
+      {% endif %}
+      {% if ai_whisperer_enabled %}
       <tr>
         <td><a href="https://github.com/openai/whisper">OpenAI Whisper</a></td>
         <td>API</td>
         <td>MIT</td>
         <td>Speech recognition model family used through OpenRouter's audio transcription endpoint for BITS Whisperer. No separate Whisper API key is required.</td>
       </tr>
+      {% endif %}
+      {% if ai_configured %}
       <tr>
         <td><a href="https://openrouter.ai/">OpenRouter</a></td>
         <td>API</td>
         <td>Commercial service</td>
         <td>Unified AI routing layer for Document Chat, Whisperer transcription, and privacy-aware AI features. Uses a single OpenRouter key with provider privacy controls, quota enforcement, and budget tracking.</td>
       </tr>
+      {% endif %}
+      {% if feature_daisy_ace_enabled %}
       <tr>
         <td><a href="https://daisy.github.io/ace/">DAISY Ace</a></td>
         <td>1.3+</td>
         <td>MIT</td>
         <td>EPUB accessibility checker -- 100+ axe-core rules + EPUB metadata validation (<a href="https://daisy.org/">DAISY Consortium</a>)</td>
       </tr>
+      {% endif %}
+      {% if feature_daisy_meta_viewer_enabled %}
       <tr>
         <td><a href="https://github.com/daisy/a11y-meta-viewer">DAISY a11y-meta-viewer</a></td>
         <td>2.0</td>
         <td>CC BY-NC-SA 4.0</td>
         <td>Reference implementation of the <a href="https://w3c.github.io/publ-a11y/a11y-meta-display-guide/2.0/draft/techniques/epub-metadata/">W3C Accessibility Metadata Display Guide 2.0</a> -- generates human-readable accessibility statements from EPUB metadata (<a href="https://daisy.org/">DAISY Consortium</a>)</td>
       </tr>
+      {% endif %}
+      {% if feature_pandoc_enabled %}
       <tr>
         <td><a href="https://pandoc.org/">Pandoc</a></td>
         <td>3.1+</td>
         <td>GPL-2.0</td>
         <td>Universal document converter -- transforms Markdown, Word, reStructuredText, OpenDocument, Rich Text, and ePub into accessible HTML, Word (.docx), EPUB 3, and PDF (via WeasyPrint) with embedded ACB Large Print formatting (John MacFarlane, University of California, Berkeley)</td>
       </tr>
+      {% endif %}
+      {% if feature_weasyprint_enabled %}
       <tr>
         <td><a href="https://weasyprint.org/">WeasyPrint</a></td>
         <td>62.0+</td>
         <td>BSD-3-Clause</td>
         <td>CSS-based PDF rendering engine -- converts Pandoc HTML output to accessible PDF with ACB BOP print formatting (Arial 18pt, 1.15 line spacing, 1-inch margins, @page rules). Uses Liberation Sans font (metrically identical to Arial) for consistent print typography (<a href="https://courtbouillon.org/">CourtBouillon</a>)</td>
       </tr>
+      {% endif %}
       <tr>
         <td><a href="https://postmarkapp.com/">Postmark</a></td>
         <td>API</td>
         <td>MIT (client library)</td>
         <td>Optional transactional email service -- delivers audit scorecards and findings CSV attachments to users who request an emailed report. Only active when <code>POSTMARK_SERVER_TOKEN</code> is configured; email delivery is entirely opt-in per audit session and addresses are never stored (<a href="https://activemarketing.com/">ActiveCampaign</a>)</td>
       </tr>
+      {% if feature_daisy_pipeline_enabled %}
       <tr>
         <td><a href="https://daisy.github.io/pipeline/">DAISY Pipeline 2</a></td>
         <td>1.15+</td>
         <td>LGPL-3.0</td>
         <td>Advanced document conversion engine -- Word to EPUB 3, HTML to EPUB 3, EPUB to DAISY 2.02, EPUB to DAISY 3/DTBook. Used for producing accessible e-books and talking book formats (<a href="https://daisy.org/">DAISY Consortium</a>)</td>
       </tr>
+      {% endif %}
     </tbody>
   </table>
 
@@ -301,7 +333,11 @@
     <dd>3.13+</dd>
   </dl>
   <p><strong>Runtime secrets:</strong> OpenRouter uses one key (<code>OPENROUTER_API_KEY</code>) for both chat and transcription. The only optional additional third-party API token is <code>POSTMARK_SERVER_TOKEN</code> for outbound email delivery.</p>
+  {% if ai_chat_enabled or ai_whisperer_enabled or ai_alt_text_enabled or ai_markitdown_llm_enabled %}
   <p><strong>AI use in GLOW is optional.</strong> The core audit, fix, template, export, and most conversion workflows remain available without AI. Users who want to avoid AI processing can simply stay on those rule-based paths.</p>
+  {% else %}
+  <p><strong>AI use in GLOW is not enabled on this server.</strong> All core workflows (audit, fix, template, export, and conversion) remain available as rule-based features. No requests are sent to external AI providers in this deployment.</p>
+  {% endif %}
   <a href="#main" class="back-to-top">Back to top</a>
 </section>
 
@@ -324,7 +360,9 @@
 <section>
   <h2 id="acknowledgments-heading">Acknowledgments</h2>
   <p>This project would not be possible without the tireless advocacy of the American Council of the Blind and the volunteers who authored and maintain the <a href="https://acb.org/large-print-guidelines">ACB Large Print Guidelines</a>. Special thanks to the <a href="https://acb.org/board-publications">ACB Board of Publications</a> for establishing clear, enforceable standards that make printed and digital materials accessible to people who are blind or have low vision.</p>
+  {% if feature_epub_enabled %}
   <p>We gratefully acknowledge the <a href="https://daisy.org/">DAISY Consortium</a> for their leadership in accessible publishing. This toolkit relies on three DAISY projects: <a href="https://daisy.github.io/ace/">DAISY Ace</a> for EPUB accessibility validation, the <a href="https://github.com/daisy/a11y-meta-viewer">DAISY Accessibility Metadata Viewer</a> for human-readable display of EPUB accessibility metadata per the <a href="https://w3c.github.io/publ-a11y/a11y-meta-display-guide/2.0/draft/techniques/epub-metadata/">W3C Accessibility Metadata Display Guide 2.0</a>, and <a href="https://daisy.github.io/pipeline/">DAISY Pipeline 2</a> for advanced document-to-EPUB and EPUB-to-DAISY conversions that produce accessible publications for e-readers, refreshable braille displays, and DAISY players.</p>
+  {% endif %}
   <p>The HTML conversion engine is powered by <a href="https://pandoc.org/">Pandoc</a>, the universal document converter created by John MacFarlane. Pandoc transforms Markdown, Word, reStructuredText, OpenDocument, Rich Text, and ePub files into accessible HTML with ACB Large Print styling.</p>
   <p>Thanks also to the <a href="https://www.bits-acb.org">BITS</a> community for testing, feedback, and ongoing development support, and to the open source maintainers whose libraries make this toolkit possible.</p>
   <a href="#main" class="back-to-top">Back to top</a>

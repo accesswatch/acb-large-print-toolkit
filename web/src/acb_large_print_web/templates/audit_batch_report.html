@@ -169,15 +169,15 @@
     <p class="celebration-inline">No issues found for this file.</p>
     {% endif %}
 
-    {% if r.doc_format == "docx" and res.findings %}
+    {% if r.doc_format == "docx" and res.findings and feature_checker_enabled %}
     <p><a href="{{ url_for('fix.fix_form') }}" class="btn-secondary">Fix this document</a></p>
     {% elif r.doc_format in ("xlsx", "pptx") and res.findings %}
     <p class="help-text">Auto-fix for {{ r.doc_format | upper }} is not yet available. Use the findings above and the <a href="{{ url_for('guide.guide_page') }}#common-issues">common issues guide</a> for step-by-step Office instructions.</p>
-    {% elif r.doc_format == "md" and res.findings %}
+    {% elif r.doc_format == "md" and res.findings and feature_converter_enabled %}
     <p class="help-text">Edit the source .md file to address the findings above, then re-upload. When ready, <a href="{{ url_for('convert.convert_form') }}">Convert it to accessible HTML or PDF</a>.</p>
-    {% elif r.doc_format == "pdf" and res.findings %}
+    {% elif r.doc_format == "pdf" and res.findings and feature_converter_enabled %}
     <p class="help-text">PDF remediation requires Adobe Acrobat Pro. If you have the original source file, <a href="{{ url_for('convert.convert_form') }}">converting it directly to an accessible PDF</a> often produces better results.</p>
-    {% elif r.doc_format == "epub" and res.findings %}
+    {% elif r.doc_format == "epub" and res.findings and feature_converter_enabled %}
     <p class="help-text">EPUB remediation is best done at the source. If you have the original Markdown or Word file, <a href="{{ url_for('convert.convert_form') }}">convert it to EPUB</a> with accessibility formatting built in.</p>
     {% endif %}
   </details>
@@ -246,15 +246,15 @@
     </tbody>
   </table>
 
-  {% if r.doc_format == "docx" %}
+  {% if r.doc_format == "docx" and feature_checker_enabled %}
   <p><a href="{{ url_for('fix.fix_form') }}" class="btn-secondary">Fix this document</a></p>
   {% elif r.doc_format in ("xlsx", "pptx") and res.findings %}
   <p class="help-text">Auto-fix for {{ r.doc_format | upper }} is not yet available. Use the findings above and the <a href="{{ url_for('guide.guide_page') }}#common-issues">common issues guide</a> for step-by-step Office instructions.</p>
-  {% elif r.doc_format == "md" and res.findings %}
+  {% elif r.doc_format == "md" and res.findings and feature_converter_enabled %}
   <p class="help-text">Edit the source .md file to address the findings above, then re-upload. When ready, <a href="{{ url_for('convert.convert_form') }}">Convert it to accessible HTML or PDF</a>.</p>
-  {% elif r.doc_format == "pdf" and res.findings %}
+  {% elif r.doc_format == "pdf" and res.findings and feature_converter_enabled %}
   <p class="help-text">PDF remediation requires Adobe Acrobat Pro. If you have the original source file, <a href="{{ url_for('convert.convert_form') }}">converting it directly to an accessible PDF</a> often produces better results.</p>
-  {% elif r.doc_format == "epub" and res.findings %}
+  {% elif r.doc_format == "epub" and res.findings and feature_converter_enabled %}
   <p class="help-text">EPUB remediation is best done at the source. If you have the original Markdown or Word file, <a href="{{ url_for('convert.convert_form') }}">convert it to EPUB</a> with accessibility formatting built in.</p>
   {% endif %}
 
@@ -275,9 +275,9 @@
 <section>
   <h2 id="batch-next-heading">What's Next?</h2>
   <ul>
-    <li><a href="{{ url_for('audit.audit_form') }}">Audit more documents</a></li>
-    <li><a href="{{ url_for('fix.fix_form') }}">Fix a Word document</a></li>
-    <li><a href="{{ url_for('convert.convert_form') }}">Convert a document to another format</a></li>
+    {% if feature_audit_enabled %}<li><a href="{{ url_for('audit.audit_form') }}">Audit more documents</a></li>{% endif %}
+    {% if feature_checker_enabled %}<li><a href="{{ url_for('fix.fix_form') }}">Fix a Word document</a></li>{% endif %}
+    {% if feature_converter_enabled %}<li><a href="{{ url_for('convert.convert_form') }}">Convert a document to another format</a></li>{% endif %}
     <li><a href="{{ url_for('guidelines.guidelines_page') }}">Read the full ACB guidelines</a></li>
     <li><a href="{{ url_for('guide.guide_page') }}#understanding-results">Help understanding these results</a></li>
     <li><a href="{{ url_for('guide.guide_page') }}#common-issues">Common issues and how to fix them</a></li>

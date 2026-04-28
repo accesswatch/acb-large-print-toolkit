@@ -33,10 +33,14 @@
 
 <section>
   <h2 id="ai-heading">Artificial Intelligence</h2>
+  {% if ai_chat_enabled or ai_whisperer_enabled or ai_alt_text_enabled or ai_markitdown_llm_enabled %}
   <p>GLOW uses artificial intelligence only in features that explicitly require it, such as Document Chat and BITS Whisperer. The core audit, fix, template, export, and many conversion workflows remain rule-based and can be used without AI.</p>
   <p>For text reasoning features, GLOW uses an OpenRouter-based gateway with provider privacy controls. Requests are routed with privacy-aware settings designed to prefer providers that do not retain prompts or use them for training. For audio transcription, GLOW sends audio to the Whisper API only for the transcription request.</p>
   <p>GLOW itself does not use your documents, prompts, or transcripts to train any model. GLOW stores only minimal metadata needed for quota, cost, and operational reporting. You should still avoid submitting highly sensitive information to AI-powered workflows unless your organization's policy permits it.</p>
   <p>Every results page shows a clear statement indicating whether AI was or was not used during that specific transaction.</p>
+  {% else %}
+  <p>AI features are not enabled on this server. Core audit, fix, template, export, and many conversion workflows remain available and are rule-based; no requests are sent to external AI providers. Audio transcription via BITS Whisperer is not available when AI is disabled.</p>
+  {% endif %}
 </section>
 
 <section>

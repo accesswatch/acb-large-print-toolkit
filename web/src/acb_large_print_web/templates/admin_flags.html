@@ -23,69 +23,183 @@
     <button type="button" role="tab" aria-selected="true" data-tab="ai">AI Features</button>
     <button type="button" role="tab" aria-selected="false" data-tab="core">Core Features</button>
     <button type="button" role="tab" aria-selected="false" data-tab="advanced">Advanced</button>
+    <button type="button" role="tab" aria-selected="false" data-tab="audit">Audit Log</button>
   </nav>
 
   <section class="tab-panel" id="tab-ai" role="tabpanel">
     <h3>AI feature visibility</h3>
-    <label class="master"><input id="master-ai" type="checkbox" name="GLOW_ENABLE_AI" {% if flags.GLOW_ENABLE_AI %}checked{% endif %}> Master AI enable (global)</label>
-    <div class="field-meta">Last modified: {{ flag_meta.GLOW_ENABLE_AI.updated_at or 'unknown' }}</div>
+    <fieldset class="flag-group" aria-labelledby="legend-ai-master">
+      <legend id="legend-ai-master">Master AI</legend>
+      <label class="master" for="flag-GLOW_ENABLE_AI"><input id="flag-GLOW_ENABLE_AI" type="checkbox" name="GLOW_ENABLE_AI" {% if flags.GLOW_ENABLE_AI %}checked{% endif %}> Master AI enable (global)</label>
+      <div id="meta-GLOW_ENABLE_AI" class="field-meta">Last modified: {{ flag_meta.GLOW_ENABLE_AI.updated_at or 'unknown' }}</div>
+    </fieldset>
 
     <details open class="accordion">
       <summary>Document Chat & Whisperer</summary>
-      <label><input class="ai-child" type="checkbox" name="GLOW_ENABLE_AI_CHAT" {% if flags.GLOW_ENABLE_AI_CHAT %}checked{% endif %}> Document Chat</label>
-      <div class="field-meta">Last modified: {{ flag_meta.GLOW_ENABLE_AI_CHAT.updated_at or 'unknown' }}</div>
-      <label><input class="ai-child" type="checkbox" name="GLOW_ENABLE_AI_WHISPERER" {% if flags.GLOW_ENABLE_AI_WHISPERER %}checked{% endif %}> BITS Whisperer</label>
-      <div class="field-meta">Last modified: {{ flag_meta.GLOW_ENABLE_AI_WHISPERER.updated_at or 'unknown' }}</div>
+      <fieldset class="flag-group" aria-labelledby="legend-ai-chat">
+        <legend id="legend-ai-chat">Chat & audio</legend>
+        <label for="flag-GLOW_ENABLE_AI_CHAT"><input id="flag-GLOW_ENABLE_AI_CHAT" class="ai-child" type="checkbox" name="GLOW_ENABLE_AI_CHAT" {% if flags.GLOW_ENABLE_AI_CHAT %}checked{% endif %}> Document Chat</label>
+        <div id="meta-GLOW_ENABLE_AI_CHAT" class="field-meta">Last modified: {{ flag_meta.GLOW_ENABLE_AI_CHAT.updated_at or 'unknown' }}</div>
+        <label for="flag-GLOW_ENABLE_AI_WHISPERER"><input id="flag-GLOW_ENABLE_AI_WHISPERER" class="ai-child" type="checkbox" name="GLOW_ENABLE_AI_WHISPERER" {% if flags.GLOW_ENABLE_AI_WHISPERER %}checked{% endif %}> BITS Whisperer</label>
+        <div id="meta-GLOW_ENABLE_AI_WHISPERER" class="field-meta">Last modified: {{ flag_meta.GLOW_ENABLE_AI_WHISPERER.updated_at or 'unknown' }}</div>
+      </fieldset>
     </details>
 
     <details class="accordion">
       <summary>Content helpers</summary>
-      <label><input class="ai-child" type="checkbox" name="GLOW_ENABLE_AI_HEADING_FIX" {% if flags.GLOW_ENABLE_AI_HEADING_FIX %}checked{% endif %}> Heading-fix helpers</label>
-      <div class="field-meta">Last modified: {{ flag_meta.GLOW_ENABLE_AI_HEADING_FIX.updated_at or 'unknown' }}</div>
-      <label><input class="ai-child" type="checkbox" name="GLOW_ENABLE_AI_ALT_TEXT" {% if flags.GLOW_ENABLE_AI_ALT_TEXT %}checked{% endif %}> Alt-text helpers</label>
-      <div class="field-meta">Last modified: {{ flag_meta.GLOW_ENABLE_AI_ALT_TEXT.updated_at or 'unknown' }}</div>
-      <label><input class="ai-child" type="checkbox" name="GLOW_ENABLE_AI_MARKITDOWN_LLM" {% if flags.GLOW_ENABLE_AI_MARKITDOWN_LLM %}checked{% endif %}> MarkItDown LLM features</label>
-      <div class="field-meta">Last modified: {{ flag_meta.GLOW_ENABLE_AI_MARKITDOWN_LLM.updated_at or 'unknown' }}</div>
+      <fieldset class="flag-group" aria-labelledby="legend-ai-helpers">
+        <legend id="legend-ai-helpers">Content helpers</legend>
+        <label for="flag-GLOW_ENABLE_AI_HEADING_FIX"><input id="flag-GLOW_ENABLE_AI_HEADING_FIX" class="ai-child" type="checkbox" name="GLOW_ENABLE_AI_HEADING_FIX" {% if flags.GLOW_ENABLE_AI_HEADING_FIX %}checked{% endif %}> Heading-fix helpers</label>
+        <div id="meta-GLOW_ENABLE_AI_HEADING_FIX" class="field-meta">Last modified: {{ flag_meta.GLOW_ENABLE_AI_HEADING_FIX.updated_at or 'unknown' }}</div>
+        <label for="flag-GLOW_ENABLE_AI_ALT_TEXT"><input id="flag-GLOW_ENABLE_AI_ALT_TEXT" class="ai-child" type="checkbox" name="GLOW_ENABLE_AI_ALT_TEXT" {% if flags.GLOW_ENABLE_AI_ALT_TEXT %}checked{% endif %}> Alt-text helpers</label>
+        <div id="meta-GLOW_ENABLE_AI_ALT_TEXT" class="field-meta">Last modified: {{ flag_meta.GLOW_ENABLE_AI_ALT_TEXT.updated_at or 'unknown' }}</div>
+        <label for="flag-GLOW_ENABLE_AI_MARKITDOWN_LLM"><input id="flag-GLOW_ENABLE_AI_MARKITDOWN_LLM" class="ai-child" type="checkbox" name="GLOW_ENABLE_AI_MARKITDOWN_LLM" {% if flags.GLOW_ENABLE_AI_MARKITDOWN_LLM %}checked{% endif %}> MarkItDown LLM features</label>
+        <div id="meta-GLOW_ENABLE_AI_MARKITDOWN_LLM" class="field-meta">Last modified: {{ flag_meta.GLOW_ENABLE_AI_MARKITDOWN_LLM.updated_at or 'unknown' }}</div>
+      </fieldset>
     </details>
   </section>
 
   <section class="tab-panel" id="tab-core" role="tabpanel" hidden>
     <h3>Core GLOW features</h3>
+    {% if categories.core %}
     <details open class="accordion">
       <summary>Audit & Checker</summary>
-      <label><input type="checkbox" name="GLOW_ENABLE_AUDIT" {% if flags.GLOW_ENABLE_AUDIT %}checked{% endif %}> Audit workflows</label>
-      <div class="field-meta">Last modified: {{ flag_meta.GLOW_ENABLE_AUDIT.updated_at or 'unknown' }}</div>
-      <label><input type="checkbox" name="GLOW_ENABLE_CHECKER" {% if flags.GLOW_ENABLE_CHECKER %}checked{% endif %}> Accessibility checker</label>
-      <div class="field-meta">Last modified: {{ flag_meta.GLOW_ENABLE_CHECKER.updated_at or 'unknown' }}</div>
+      <fieldset class="flag-group" aria-labelledby="legend-core">
+        <legend id="legend-core">Core features</legend>
+        {% for k in categories.core %}
+          <label for="flag-{{ k }}"><input id="flag-{{ k }}" type="checkbox" name="{{ k }}" {% if flags[k] %}checked{% endif %}> {{ k.replace('GLOW_ENABLE_','').replace('_',' ').title() }}</label>
+          <div id="meta-{{ k }}" class="field-meta">Last modified: {{ flag_meta[k].updated_at or 'unknown' }}</div>
+        {% endfor %}
+      </fieldset>
     </details>
+    {% endif %}
 
+    {% if categories.conversion %}
     <details class="accordion">
       <summary>Conversion & Templates</summary>
-      <label><input type="checkbox" name="GLOW_ENABLE_CONVERTER" {% if flags.GLOW_ENABLE_CONVERTER %}checked{% endif %}> Converter (MarkItDown/Pandoc)</label>
-      <div class="field-meta">Last modified: {{ flag_meta.GLOW_ENABLE_CONVERTER.updated_at or 'unknown' }}</div>
-      <label><input type="checkbox" name="GLOW_ENABLE_TEMPLATE_BUILDER" {% if flags.GLOW_ENABLE_TEMPLATE_BUILDER %}checked{% endif %}> Template builder</label>
-      <div class="field-meta">Last modified: {{ flag_meta.GLOW_ENABLE_TEMPLATE_BUILDER.updated_at or 'unknown' }}</div>
-      <label><input type="checkbox" name="GLOW_ENABLE_WORD_SETUP" {% if flags.GLOW_ENABLE_WORD_SETUP %}checked{% endif %}> Word setup helpers</label>
-      <div class="field-meta">Last modified: {{ flag_meta.GLOW_ENABLE_WORD_SETUP.updated_at or 'unknown' }}</div>
-      <label><input type="checkbox" name="GLOW_ENABLE_MARKDOWN_AUDIT" {% if flags.GLOW_ENABLE_MARKDOWN_AUDIT %}checked{% endif %}> Markdown audit assistant</label>
-      <div class="field-meta">Last modified: {{ flag_meta.GLOW_ENABLE_MARKDOWN_AUDIT.updated_at or 'unknown' }}</div>
+      <fieldset class="flag-group" aria-labelledby="legend-conversion">
+        <legend id="legend-conversion">Converter & templates</legend>
+        {% for k in categories.conversion %}
+          <label for="flag-{{ k }}"><input id="flag-{{ k }}" type="checkbox" name="{{ k }}" {% if flags[k] %}checked{% endif %}> {{ k.replace('GLOW_ENABLE_','').replace('_',' ').title() }}</label>
+          <div id="meta-{{ k }}" class="field-meta">Last modified: {{ flag_meta[k].updated_at or 'unknown' }}</div>
+        {% endfor %}
+      </fieldset>
     </details>
+    {% endif %}
   </section>
 
   <section class="tab-panel" id="tab-advanced" role="tabpanel" hidden>
     <h3>Advanced</h3>
+
+    <div class="info-box" role="note" aria-labelledby="branding-profile-heading">
+      <h4 id="branding-profile-heading">Active branding profile</h4>
+      <p>
+        <strong>Current profile:</strong>
+        {% if brand_is_uarizona %}
+          <code>uarizona</code> &mdash; University of Arizona theme (Arizona Red &amp; Navy, UA wordmark logo).
+        {% else %}
+          <code>bits</code> &mdash; BITS default theme (navy, BITS logo). This is the default when no profile is set.
+        {% endif %}
+      </p>
+      <p>The branding profile is a deployment-level setting and cannot be changed here. To switch profiles, set the <code>GLOW_BRAND_PROFILE</code> environment variable before starting the container:</p>
+      <ul>
+        <li><code>GLOW_BRAND_PROFILE=bits</code> &mdash; BITS / ACB theme (default)</li>
+        <li><code>GLOW_BRAND_PROFILE=uarizona</code> &mdash; University of Arizona theme</li>
+      </ul>
+      <p>In <code>docker-compose.yml</code> add it under the <code>environment:</code> key, then redeploy. A restart is required for the change to take effect.</p>
+    </div>
+
     <label><input type="checkbox" name="reset_defaults"> Reset to recommended defaults</label>
     <p class="field-hint">Check to reset stored flags to the recommended defaults.</p>
-    {% if flags_backend == 'sqlite' %}
-    <form method="post" action="{{ url_for('admin.admin_flags_migrate') }}" style="margin-top:0.5rem;">
-      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-      <button type="submit" class="btn-secondary" onclick="return confirm('Migrate JSON flags into SQLite? This is idempotent.');">Migrate JSON → SQLite</button>
-    </form>
+    <p class="field-hint">Migrate persisted flags between backends.</p>
+
+    {% if categories.documents %}
+    <details class="accordion">
+      <summary>Document types</summary>
+      <fieldset class="flag-group" aria-labelledby="legend-docs">
+        <legend id="legend-docs">Document types</legend>
+        {% for k in categories.documents %}
+          <label for="flag-{{ k }}"><input id="flag-{{ k }}" type="checkbox" name="{{ k }}" {% if flags[k] %}checked{% endif %}> {{ k.replace('GLOW_ENABLE_','').replace('_',' ').title() }}</label>
+          <div id="meta-{{ k }}" class="field-meta">Last modified: {{ flag_meta[k].updated_at or 'unknown' }}</div>
+        {% endfor %}
+      </fieldset>
+    </details>
+    {% endif %}
+
+    {% if categories.exports %}
+    <details class="accordion">
+      <summary>Export targets</summary>
+      <fieldset class="flag-group" aria-labelledby="legend-exports">
+        <legend id="legend-exports">Export targets</legend>
+        {% for k in categories.exports %}
+          <label for="flag-{{ k }}"><input id="flag-{{ k }}" type="checkbox" name="{{ k }}" {% if flags[k] %}checked{% endif %}> {{ k.replace('GLOW_ENABLE_','').replace('_',' ').title() }}</label>
+          <div id="meta-{{ k }}" class="field-meta">Last modified: {{ flag_meta[k].updated_at or 'unknown' }}</div>
+        {% endfor %}
+      </fieldset>
+    </details>
+    {% endif %}
+
+    {% if categories.convert_subfeatures %}
+    <details class="accordion">
+      <summary>Convert directions</summary>
+      <p class="field-hint">These control which output formats are available inside the Convert workflow. The master <strong>Converter</strong> flag (Core tab) must also be enabled. Disabling a direction hides it from the UI and rejects direct POST requests to that direction.</p>
+      <fieldset class="flag-group" aria-labelledby="legend-convert-subfeatures">
+        <legend id="legend-convert-subfeatures">Convert direction controls</legend>
+        {% for k in categories.convert_subfeatures %}
+          <label for="flag-{{ k }}"><input id="flag-{{ k }}" type="checkbox" name="{{ k }}" {% if flags[k] %}checked{% endif %}> {{ k.replace('GLOW_ENABLE_','').replace('_',' ').title() }}</label>
+          <div id="meta-{{ k }}" class="field-meta">Last modified: {{ flag_meta[k].updated_at or 'unknown' }}</div>
+        {% endfor %}
+      </fieldset>
+    </details>
+    {% endif %}
+
+    {% if categories.integrations %}
+    <details class="accordion">
+      <summary>Optional integrations</summary>
+      <fieldset class="flag-group" aria-labelledby="legend-integrations">
+        <legend id="legend-integrations">Integrations</legend>
+        {% for k in categories.integrations %}
+          <label for="flag-{{ k }}"><input id="flag-{{ k }}" type="checkbox" name="{{ k }}" {% if flags[k] %}checked{% endif %}> {{ k.replace('GLOW_ENABLE_','').replace('_',' ').title() }}</label>
+          <div id="meta-{{ k }}" class="field-meta">Last modified: {{ flag_meta[k].updated_at or 'unknown' }}</div>
+        {% endfor %}
+      </fieldset>
+    </details>
+    {% endif %}
+  </section>
+
+  <section class="tab-panel" id="tab-audit" role="tabpanel" hidden>
+    <h3>Flag audit log</h3>
+    <p class="field-hint">Recent changes to feature flags (most recent first).</p>
+    {% if audit_rows %}
+    <table class="audit-table">
+      <thead>
+        <tr><th>When</th><th>Flag</th><th>Old → New</th><th>By</th></tr>
+      </thead>
+      <tbody>
+      {% for r in audit_rows %}
+        <tr>
+          <td>{{ r.changed_at or 'unknown' }}</td>
+          <td>{{ r.name }}</td>
+          <td>{{ 'null' if r.old_value is none else (r.old_value|string) }} → {{ r.new_value|string }}</td>
+          <td>{{ r.changed_by or 'system' }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p>No audit entries available.</p>
     {% endif %}
   </section>
 
   <button type="submit" class="btn-primary">Save flags</button>
 </form>
+
+{% if flags_backend == 'json' %}
+<form method="post" action="{{ url_for('admin.admin_flags_migrate') }}" style="margin-top:0.5rem;">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <button type="submit" class="btn-secondary" onclick="return confirm('Migrate JSON flags into SQLite? This is idempotent.');">Migrate JSON → SQLite</button>
+</form>
+{% endif %}
 
 <style>
 .tabs { display:flex; gap:0.5rem; margin-bottom:0.75rem; }
@@ -95,6 +209,10 @@
 .field-meta{ font-size:0.85rem; color:#666; margin-bottom:0.5rem }
 .master{ display:block; margin-bottom:0.5rem }
 .ai-disabled{ opacity:0.55 }
+.flag-group{ border:0; margin:0 0 0.75rem 0; padding:0 }
+.flag-group label{ display:block; margin:0.25rem 0 }
+.flag-group legend{ font-weight:600; margin-bottom:0.25rem }
+input[type="checkbox"]:focus-visible{ outline:3px solid #6ca0ff; outline-offset:2px }
 </style>
 
 <script>
@@ -111,14 +229,14 @@ document.querySelectorAll('.tabs button').forEach(function(btn){
 
 // Master AI cascade: disable/enable children when master toggled
 function updateAICascade(){
-  var master = document.getElementById('master-ai');
+  var master = document.getElementById('flag-GLOW_ENABLE_AI');
   document.querySelectorAll('.ai-child').forEach(function(cb){
     cb.disabled = !master.checked;
     if(!master.checked){ cb.closest('label').classList.add('ai-disabled'); }
     else { cb.closest('label').classList.remove('ai-disabled'); }
   });
 }
-var m = document.getElementById('master-ai');
+var m = document.getElementById('flag-GLOW_ENABLE_AI');
 if(m){ m.addEventListener('change', updateAICascade); updateAICascade(); }
 </script>
 

@@ -379,6 +379,61 @@ Expected output: `root`
 
 If this works, the `deploy` user is correctly set up. Type `exit` to return to your local machine.
 
+---
+
+## Admin Bootstrap (password-only)
+
+When you need quick, local-only administrative access without configuring email or SSO, the application supports a bootstrap password. This is intended for emergency or short-term operator access only — use a strong secret and rotate it regularly.
+
+- **Env var names (priority):** `ADMIN_PASSWORD` → `ADMIN_LOCAL_PASSWORD` → fallback to `ssh_password` in `server.credentials`.
+- **How it works:** On first access to the admin routes (or when the app is restarted and the admin login page is visited), the app runs a bootstrap helper that will create or update an approved admin account for the bootstrap email configured via `ADMIN_LOCAL_EMAIL` and store a hashed password in `instance/admin_auth.db`.
+
+Examples (set for current shell):
+
+PowerShell (temporary for current session):
+```powershell
+$env:ADMIN_PASSWORD = "YourStr0ngSecretHere"
+# restart the Flask app or rebuild/start your container after setting this
+```
+
+WSL / bash (temporary for current session):
+```bash
+export ADMIN_PASSWORD="YourStr0ngSecretHere"
+# restart the Flask app or rebuild/start your container after setting this
+```
+
+Persisting in Docker Compose (recommended for dev):
+```yaml
+services:
+  web:
+    environment:
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD}
+```
+Or place `ADMIN_PASSWORD=YourStr0ngSecretHere` in a `.env` file consumed by `docker compose`.
+
+Verification (does not reveal the password):
+
+1. Confirm a local admin account exists and whether it has a password hash (shows `1` when present):
+```bash
+python - <<'PY'
+import sqlite3, pathlib
+from pathlib import Path
+p = Path('instance') / 'admin_auth.db'
+conn = sqlite3.connect(p)
+for row in conn.execute("SELECT email, approved, password_hash IS NOT NULL as has_pw FROM admin_accounts"):
+    print(row)
+conn.close()
+PY
+```
+
+2. Visit `/admin/login` in your browser and use the bootstrap email (configurable via `ADMIN_LOCAL_EMAIL`) and the password you set.
+
+Security notes:
+- Treat `ADMIN_PASSWORD` like any secret; do not check it into git or log it.
+- Use environment variables or secret managers in production (e.g., systemd drop-ins, Docker secrets, or cloud secret stores).
+- Rotate the bootstrap password regularly and remove it from environment files when not needed.
+
+
 ### 2.5b Harden SSH for password login
 
 > **WARNING: Keep your current root terminal open as a safety net while making these changes. If something goes wrong, use the SolusVM VNC console at `https://nerdvm.racknerd.com/` to recover.**

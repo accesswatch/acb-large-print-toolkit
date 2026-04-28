@@ -11,7 +11,7 @@ Six conversion directions:
 Audio transcription has its own dedicated route at /whisperer (BITS Whisperer).
 """
 
-from flask import Blueprint, current_app, render_template, request, send_file
+from flask import Blueprint, abort, current_app, render_template, request, send_file
 
 from acb_large_print.converter import (
     CONVERTIBLE_EXTENSIONS,
@@ -40,6 +40,7 @@ from ..upload import (
     get_temp_dir,
     validate_upload,
 )
+from ..feature_flags import get_all_flags
 
 from pathlib import Path
 
@@ -59,7 +60,18 @@ _ALL_ACCEPT = ",".join(
 
 def _template_context(**extra):
     """Common template variables for the convert form."""
-    pipeline_conversions = get_available_conversions()
+    all_flags = get_all_flags()
+    convert_enabled = bool(all_flags.get("GLOW_ENABLE_CONVERTER", True))
+    convert_to_markdown_enabled = bool(all_flags.get("GLOW_ENABLE_CONVERT_TO_MARKDOWN", True))
+    convert_to_html_enabled = bool(all_flags.get("GLOW_ENABLE_CONVERT_TO_HTML", True))
+    convert_to_docx_enabled = bool(all_flags.get("GLOW_ENABLE_CONVERT_TO_DOCX", True))
+    convert_to_epub_enabled = bool(all_flags.get("GLOW_ENABLE_CONVERT_TO_EPUB", True))
+    convert_to_pdf_enabled = bool(all_flags.get("GLOW_ENABLE_CONVERT_TO_PDF", True))
+    convert_to_pipeline_enabled = bool(all_flags.get("GLOW_ENABLE_CONVERT_TO_PIPELINE", True))
+
+    pipeline_conversions = (
+        get_available_conversions() if convert_to_pipeline_enabled else {}
+    )
     return dict(
         md_accept=_MD_ACCEPT,
         html_accept=_HTML_ACCEPT,
@@ -68,25 +80,52 @@ def _template_context(**extra):
         weasyprint_installed=weasyprint_available(),
         pipeline_installed=pipeline_available(),
         pipeline_conversions=pipeline_conversions,
+        convert_enabled=convert_enabled,
+        convert_to_markdown_enabled=convert_to_markdown_enabled,
+        convert_to_html_enabled=convert_to_html_enabled,
+        convert_to_docx_enabled=convert_to_docx_enabled,
+        convert_to_epub_enabled=convert_to_epub_enabled,
+        convert_to_pdf_enabled=convert_to_pdf_enabled,
+        convert_to_pipeline_enabled=convert_to_pipeline_enabled,
         **extra,
     )
 
 
 @convert_bp.route("/", methods=["GET"])
 def convert_form():
-    return render_template("convert_form.html", **_template_context())
+    ctx = _template_context()
+    if not ctx["convert_enabled"]:
+        abort(404)
+    return render_template("convert_form.html", **ctx)
 
 
 @convert_bp.route("/", methods=["POST"])
 def convert_submit():
     token = None
+    ctx = _template_context()
     try:
+        if not ctx["convert_enabled"]:
+            abort(404)
+
         token, saved_path = validate_upload(
             request.files.get("document"),
             allowed_extensions=CONVERT_EXTENSIONS,
         )
         ext = saved_path.suffix.lower()
         direction = request.form.get("direction", "to-markdown")
+
+        direction_flags = {
+            "to-markdown": ctx["convert_to_markdown_enabled"],
+            "to-html": ctx["convert_to_html_enabled"],
+            "to-docx": ctx["convert_to_docx_enabled"],
+            "to-epub": ctx["convert_to_epub_enabled"],
+            "to-pdf": ctx["convert_to_pdf_enabled"],
+            "to-pipeline": ctx["convert_to_pipeline_enabled"],
+        }
+        if direction.startswith("pipeline-") and not ctx["convert_to_pipeline_enabled"]:
+            raise UploadError("DAISY Pipeline conversion is disabled on this server.")
+        if direction in direction_flags and not direction_flags[direction]:
+            raise UploadError("That conversion direction is disabled on this server.")
 
         temp_dir = get_temp_dir(token)
 
@@ -327,7 +366,7 @@ def convert_submit():
             render_template(
                 "convert_form.html",
                 error=str(exc),
-                **_template_context(),
+                **ctx,
             ),
             400,
         )
@@ -336,7 +375,7 @@ def convert_submit():
             render_template(
                 "convert_form.html",
                 error=str(exc),
-                **_template_context(),
+                **ctx,
             ),
             500,
         )
@@ -346,7 +385,7 @@ def convert_submit():
             render_template(
                 "convert_form.html",
                 error=str(exc) or "An error occurred while converting the document. Please try again.",
-                **_template_context(),
+                **ctx,
             ),
             500,
         )

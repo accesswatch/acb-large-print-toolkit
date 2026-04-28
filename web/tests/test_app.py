@@ -451,15 +451,27 @@ class TestWhispererProgress:
 
 
 class TestAdminAuth:
-    def test_admin_login_page_loads(self, client):
+    def test_admin_login_page_loads(self, client, monkeypatch):
+        import acb_large_print_web.routes.admin as admin_route
+
+        monkeypatch.setattr(admin_route, "email_configured", lambda: True)
         resp = client.get("/admin/login")
         assert resp.status_code == 200
         assert b"Admin Sign-In" in resp.data
+        html = resp.data.decode("utf-8")
+        # Check for accessible email input and send button (requires email_configured=True)
+        assert 'id="email"' in html
+        assert "Admin email" in html
+        assert 'id="admin-login-btn"' in html
 
     def test_admin_request_access_requires_email_config(self, client):
         resp = client.get("/admin/request-access")
         assert resp.status_code == 503
         assert b"unavailable until email delivery is configured" in resp.data
+        html = resp.data.decode("utf-8")
+        # When email not configured, the request-access form should not be shown
+        assert "Email" not in html
+        assert 'id="access-request-btn"' not in html
 
     def test_admin_magic_link_sign_in_for_bootstrap_admin(self, app, client, monkeypatch):
         import acb_large_print_web.routes.admin as admin_route

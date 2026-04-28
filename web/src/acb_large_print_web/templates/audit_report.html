@@ -130,15 +130,15 @@
 <section>
   <h2 id="next-heading">What's Next?</h2>
   {% if result.findings %}
-  {% if doc_format == "docx" %}
+  {% if doc_format == "docx" and feature_checker_enabled %}
   <p>Your Word document has issues that can be fixed automatically. <a href="{{ url_for('fix.fix_form') }}" class="btn-primary">Fix This Document</a></p>
   {% elif doc_format in ("xlsx", "pptx") %}
   <p>Auto-fix for {{ doc_format | upper }} files is coming soon. Use the findings above to make corrections manually in Microsoft Office. The <a href="{{ url_for('guide.guide_page') }}#common-issues">common issues guide</a> has step-by-step Office instructions for the most frequent findings.</p>
-  {% elif doc_format == "md" %}
+  {% elif doc_format == "md" and feature_converter_enabled %}
   <p>Markdown files cannot be auto-fixed by the web tool. Edit the source <code>.md</code> file to address the findings above, then re-upload to confirm. When you are satisfied with the Markdown, <a href="{{ url_for('convert.convert_form') }}">Convert it to an accessible HTML page or PDF</a> using the Convert tool.</p>
-  {% elif doc_format == "pdf" %}
+  {% elif doc_format == "pdf" and feature_converter_enabled %}
   <p>PDF remediation requires Adobe Acrobat Pro or a similar editor. Use the findings above and the Learn More links for step-by-step fix instructions. If you have the original source document (Word, Markdown, etc.), consider <a href="{{ url_for('convert.convert_form') }}">converting it directly to an accessible PDF</a> instead -- that often produces better results than remediating an existing PDF.</p>
-  {% elif doc_format == "epub" %}
+  {% elif doc_format == "epub" and feature_converter_enabled %}
   <p>EPUB remediation typically requires editing the source document and re-exporting. If you have the original Markdown or Word source, <a href="{{ url_for('convert.convert_form') }}">convert it to EPUB</a> with accessibility formatting already built in.</p>
   {% endif %}
   {% endif %}
@@ -146,7 +146,7 @@
   <p><a href="{{ url_for('chat.chat_form', token=chat_token) }}">Chat about this document</a> -- ask plain-English questions using the AI-assisted document tools without re-uploading.</p>
   {% endif %}
   <ul>
-    <li><a href="{{ url_for('audit.audit_form') }}">Audit another document</a></li>
+    {% if feature_audit_enabled %}<li><a href="{{ url_for('audit.audit_form') }}">Audit another document</a></li>{% endif %}
     <li><a href="{{ url_for('guidelines.guidelines_page') }}">Read the full ACB guidelines</a></li>
     <li><a href="{{ url_for('guide.guide_page') }}#understanding-results">Help understanding these results</a></li>
     <li><a href="{{ url_for('guide.guide_page') }}#common-issues">Common issues and how to fix them</a></li>

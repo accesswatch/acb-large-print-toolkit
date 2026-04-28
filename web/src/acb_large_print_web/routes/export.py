@@ -2,10 +2,11 @@
 
 import zipfile
 
-from flask import Blueprint, render_template, request, send_file
+from flask import Blueprint, abort, render_template, request, send_file
 
 from acb_large_print.exporter import export_cms_fragment, export_standalone_html
 
+from ..feature_flags import get_flag
 from ..upload import UploadError, cleanup_token, get_temp_dir, validate_upload
 
 export_bp = Blueprint("export", __name__)
@@ -13,11 +14,15 @@ export_bp = Blueprint("export", __name__)
 
 @export_bp.route("/", methods=["GET"])
 def export_form():
+    if not get_flag("GLOW_ENABLE_EXPORT_HTML", True):
+        abort(404)
     return render_template("export_form.html")
 
 
 @export_bp.route("/", methods=["POST"])
 def export_submit():
+    if not get_flag("GLOW_ENABLE_EXPORT_HTML", True):
+        abort(404)
     token = None
     try:
         token, saved_path = validate_upload(request.files.get("document"))

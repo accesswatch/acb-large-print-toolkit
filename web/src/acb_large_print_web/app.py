@@ -93,6 +93,7 @@ def create_app(config: dict | None = None) -> Flask:
     def inject_rules():
         from importlib.metadata import version as pkg_version
         from .ai_features import get_all_flags as _get_ai_flags
+        from .branding import get_branding_context as _get_branding_context
 
         try:
             web_ver = pkg_version("acb-large-print-web")
@@ -115,7 +116,55 @@ def create_app(config: dict | None = None) -> Flask:
             "desktop_version": desktop_ver,
             "release_version": release_ver,
         }
+        # Inject AI flags (from ai_features)
         ctx.update(_get_ai_flags())
+        # Inject deployment branding profile (BITS default, UArizona optional)
+        ctx.update(_get_branding_context())
+
+        # Inject server-side feature flags (broad feature visibility)
+        try:
+            from . import feature_flags as _ff
+
+            all_flags = _ff.get_all_flags()
+            # Expose raw map and common convenience booleans used in templates
+            ctx["feature_flags"] = all_flags
+            ctx["feature_word_enabled"] = bool(all_flags.get("GLOW_ENABLE_WORD", True))
+            ctx["feature_excel_enabled"] = bool(all_flags.get("GLOW_ENABLE_EXCEL", True))
+            ctx["feature_powerpoint_enabled"] = bool(all_flags.get("GLOW_ENABLE_POWERPOINT", True))
+            ctx["feature_pdf_enabled"] = bool(all_flags.get("GLOW_ENABLE_PDF", True))
+            ctx["feature_markdown_enabled"] = bool(all_flags.get("GLOW_ENABLE_MARKDOWN", True))
+            ctx["feature_epub_enabled"] = bool(all_flags.get("GLOW_ENABLE_EPUB", True))
+            ctx["feature_pandoc_enabled"] = bool(all_flags.get("GLOW_ENABLE_PANDOC", True))
+            ctx["feature_weasyprint_enabled"] = bool(all_flags.get("GLOW_ENABLE_WEASYPRINT", True))
+            ctx["feature_daisy_ace_enabled"] = bool(all_flags.get("GLOW_ENABLE_DAISY_ACE", True))
+            ctx["feature_daisy_meta_viewer_enabled"] = bool(all_flags.get("GLOW_ENABLE_DAISY_META_VIEWER", True))
+            ctx["feature_daisy_pipeline_enabled"] = bool(all_flags.get("GLOW_ENABLE_DAISY_PIPELINE", True))
+            ctx["feature_pymupdf_enabled"] = bool(all_flags.get("GLOW_ENABLE_PYMUPDF", True))
+            ctx["feature_markitdown_enabled"] = bool(all_flags.get("GLOW_ENABLE_MARKITDOWN", True))
+            # Operation-level feature flags (controls tab/card/guide visibility)
+            ctx["feature_audit_enabled"] = bool(all_flags.get("GLOW_ENABLE_AUDIT", True))
+            ctx["feature_checker_enabled"] = bool(all_flags.get("GLOW_ENABLE_CHECKER", True))
+            ctx["feature_converter_enabled"] = bool(all_flags.get("GLOW_ENABLE_CONVERTER", True))
+            ctx["feature_template_builder_enabled"] = bool(all_flags.get("GLOW_ENABLE_TEMPLATE_BUILDER", True))
+            ctx["feature_export_html_enabled"] = bool(all_flags.get("GLOW_ENABLE_EXPORT_HTML", True))
+            ctx["feature_export_pdf_enabled"] = bool(all_flags.get("GLOW_ENABLE_EXPORT_PDF", True))
+            ctx["feature_export_word_enabled"] = bool(all_flags.get("GLOW_ENABLE_EXPORT_WORD", True))
+            ctx["feature_export_markdown_enabled"] = bool(all_flags.get("GLOW_ENABLE_EXPORT_MARKDOWN", True))
+            ctx["feature_convert_to_markdown_enabled"] = bool(all_flags.get("GLOW_ENABLE_CONVERT_TO_MARKDOWN", True))
+            ctx["feature_convert_to_html_enabled"] = bool(all_flags.get("GLOW_ENABLE_CONVERT_TO_HTML", True))
+            ctx["feature_convert_to_docx_enabled"] = bool(all_flags.get("GLOW_ENABLE_CONVERT_TO_DOCX", True))
+            ctx["feature_convert_to_epub_enabled"] = bool(all_flags.get("GLOW_ENABLE_CONVERT_TO_EPUB", True))
+            ctx["feature_convert_to_pdf_enabled"] = bool(all_flags.get("GLOW_ENABLE_CONVERT_TO_PDF", True))
+            ctx["feature_convert_to_pipeline_enabled"] = bool(all_flags.get("GLOW_ENABLE_CONVERT_TO_PIPELINE", True))
+            # Additional capability flags exposed for future UI/route gating
+            ctx["feature_word_setup_enabled"] = bool(all_flags.get("GLOW_ENABLE_WORD_SETUP", True))
+            ctx["feature_markdown_audit_enabled"] = bool(all_flags.get("GLOW_ENABLE_MARKDOWN_AUDIT", True))
+            ctx["feature_pydocx_enabled"] = bool(all_flags.get("GLOW_ENABLE_PYDOCX", True))
+            ctx["feature_openpyxl_enabled"] = bool(all_flags.get("GLOW_ENABLE_OPENPYXL", True))
+            ctx["feature_python_pptx_enabled"] = bool(all_flags.get("GLOW_ENABLE_PYTHON_PPTX", True))
+        except Exception:
+            # Best-effort injection; templates should handle missing keys gracefully
+            pass
         return ctx
 
     # Jinja2 filter: render lightweight Markdown to safe HTML for AI answers.

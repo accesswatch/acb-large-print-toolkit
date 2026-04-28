@@ -16,10 +16,22 @@ Implementation
 - The `acb_large_print_web.feature_flags` module provides `get_flag`, `set_flag`, `get_all_flags`, and `reset_defaults`.
 - `acb_large_print_web.ai_features` resolves flags in this order: explicit environment variable → persisted server-side flag → module defaults. Environment variables override persisted flags for immediate operator control.
 
+Branding profile detection (deployment-level)
+--------------------------------------------
+- Branding profile selection is not a runtime feature flag. It is deployment configuration controlled by the `GLOW_BRAND_PROFILE` environment variable.
+- Supported values:
+	- `bits` (default)
+	- `uarizona`
+- Profile resolution is done during request context injection through `acb_large_print_web.branding.get_branding_context()`, which populates template context values such as `brand_profile`, `brand_logo_file`, `brand_logo_alt`, `brand_theme_class`, and `brand_favicon`.
+- Admin UI behavior: the Advanced tab displays the active branding profile as read-only guidance, but does not provide a live toggle. This avoids mid-session identity/theme drift for active users.
+- Operational change flow: set `GLOW_BRAND_PROFILE` in deployment environment (for example Compose `environment:`), restart/redeploy, then verify in Admin → Feature flags → Advanced.
+
 Operational notes
 -----------------
 - Flag changes apply immediately across worker processes that share the instance volume. For multi-worker deployments, ensure the `instance/` path is a shared volume or use a centralized backend.
 -- Defaults are intentionally conservative for AI features: AI flags default to `false`. Non-AI GLOW flags default to `true` so core workflows are available by default.
+- Defaults are intentionally conservative for AI features: AI flags default to `false`. Non-AI GLOW flags default to `true` so core workflows are available by default.
+- Current release posture: AI features are disabled by default in production and staging. This does not reduce core functionality for audit, fix, export, convert, template generation, standards guidance, or branding profiles.
 
 Seeding and persistence
 -----------------------
@@ -110,6 +122,14 @@ Additional non-AI GLOW flags (defaults: `true`)
 -- **`GLOW_ENABLE_CONVERTER`** (default: `true`)
 	- Purpose: Enable document conversion pathways (MarkItDown, Pandoc hooks).
 
+-- **`GLOW_ENABLE_EXPORT_HTML`** (default: `true`)
+	- Purpose: Enable the dedicated Word-to-HTML export workflow (`/export`).
+	- Notes: Disabling this flag hides Export UI and route access while leaving other conversion features available.
+
+-- **`GLOW_ENABLE_CONVERT_TO_MARKDOWN`**, **`GLOW_ENABLE_CONVERT_TO_HTML`**, **`GLOW_ENABLE_CONVERT_TO_DOCX`**, **`GLOW_ENABLE_CONVERT_TO_EPUB`**, **`GLOW_ENABLE_CONVERT_TO_PDF`**, **`GLOW_ENABLE_CONVERT_TO_PIPELINE`** (defaults: `true`)
+	- Purpose: Control which conversion directions are available inside the Convert workflow (`/convert`).
+	- Notes: Use these for phased rollouts (for example, enable Markdown first, then HTML/PDF). When a direction is disabled, its UI option is hidden and direct POST requests to that direction are rejected.
+
 -- **`GLOW_ENABLE_TEMPLATE_BUILDER`** (default: `true`)
 	- Purpose: Enable template builder UI features.
 
@@ -118,6 +138,40 @@ Additional non-AI GLOW flags (defaults: `true`)
 
 -- **`GLOW_ENABLE_MARKDOWN_AUDIT`** (default: `true`)
 	- Purpose: Enable markdown-specific audit features and integrations.
+
+Additional document-type and integration flags (defaults: `true`)
+
+- **`GLOW_ENABLE_WORD`** (default: `true`)
+	- Purpose: Enable Word (.docx) processing, auditing, and conversion pathways.
+	- Notes: Toggles code paths that use `python-docx` / Mammoth for Word import/export. When disabled, Word upload options are hidden.
+
+- **`GLOW_ENABLE_EXCEL`** (default: `true`)
+	- Purpose: Enable Excel (.xlsx) workbook auditing and helpers.
+	- Notes: Toggles `openpyxl` usage and Excel-specific audit rules. When disabled, Excel upload and audit flows are hidden.
+
+- **`GLOW_ENABLE_POWERPOINT`** (default: `true`)
+	- Purpose: Enable PowerPoint (.pptx) slide audit and remediation helpers.
+	- Notes: Toggles `python-pptx` usage. When disabled, PowerPoint-specific UI is hidden.
+
+- **`GLOW_ENABLE_PDF`** (default: `true`)
+	- Purpose: Enable PDF auditing and readback features (PyMuPDF/PdfMiner hooks).
+	- Notes: Toggles PDF import and audit flows. When disabled, PDF upload options are hidden.
+
+- **`GLOW_ENABLE_MARKDOWN`** (default: `true`)
+	- Purpose: Enable Markdown import, audit, and conversion features.
+	- Notes: Controls MarkItDown/Markdown-related UI and processors.
+
+- **`GLOW_ENABLE_EPUB`** (default: `true`)
+	- Purpose: Enable EPUB processing, DAISY/EPUB validation, and metadata viewers.
+	- Notes: Toggles DAISY Ace, a11y-meta-viewer integrations, and EPUB-specific UI.
+
+- **`GLOW_ENABLE_EXPORT_PDF`**, **`GLOW_ENABLE_EXPORT_WORD`**, **`GLOW_ENABLE_EXPORT_MARKDOWN`** (defaults: `true`)
+	- Purpose: Control export targets available to users (PDF/Word/Markdown).
+	- Notes: When an export target is disabled, the corresponding export button or background job is hidden/disabled.
+
+- **`GLOW_ENABLE_PANDOC`**, **`GLOW_ENABLE_WEASYPRINT`**, **`GLOW_ENABLE_PYMUPDF`**, **`GLOW_ENABLE_MARKITDOWN`**, **`GLOW_ENABLE_DAISY_ACE`**, **`GLOW_ENABLE_DAISY_META_VIEWER`**, **`GLOW_ENABLE_DAISY_PIPELINE`**, **`GLOW_ENABLE_PYDOCX`**, **`GLOW_ENABLE_OPENPYXL`**, **`GLOW_ENABLE_PYTHON_PPTX`** (defaults: `true`)
+	- Purpose: Toggle optional third-party tool integrations and binary-backed capabilities.
+	- Notes: Use these flags when a deployment lacks the external binary or wants to disable a heavy-weight integration. For example, disabling `GLOW_ENABLE_PANDOC` hides Pandoc-dependent conversion flows; disabling `GLOW_ENABLE_DAISY_PIPELINE` hides DAISY Pipeline-based EPUB conversions.
 
 Backend and metadata
 --------------------
@@ -146,6 +200,23 @@ Operational recommendations
 - For single-node or simple container deployments, `json` backend is sufficient and easy to mount.
 - For multi-node deployments or when audit/history is required, use `sqlite` or a central DB and ensure the `instance/` path is shared or replaced by a centralized service.
 - Consider adding an audit log or webhook when flags change so on-call and incident tooling can be notified automatically.
+
+Webhooks & Audit
+----------------
+- Optional webhook: set `FEATURE_FLAGS_WEBHOOK_URL` to an HTTP(S) endpoint to receive a POST whenever a flag changes. Payload example:
+
+```json
+{
+	"flag": "GLOW_ENABLE_AI_CHAT",
+	"old_value": true,
+	"new_value": false,
+	"changed_by": "admin@example.com",
+	"changed_at": "2026-04-27T12:34:56.123456+00:00"
+}
+```
+
+- If `FEATURE_FLAGS_WEBHOOK_SECRET` is set, requests include header `X-FeatureFlags-Signature: sha256=<hex>` (HMAC-SHA256 of the JSON body) to allow verification.
+- Audit log: the app writes a best-effort audit table into the feature flags sqlite DB (`instance/feature_flags.db`) under `flag_audit` with `name, old_value, new_value, changed_at, changed_by` so operators can review who changed what and when.
 
 Maintenance and rollout
 -----------------------

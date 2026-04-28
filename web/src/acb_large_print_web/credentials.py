@@ -80,5 +80,10 @@ def get_bootstrap_admin_email() -> str:
 
 
 def get_bootstrap_admin_password() -> str:
-    # Default to SSH password from server.credentials only when explicit env password is absent.
-    return os.environ.get("ADMIN_LOCAL_PASSWORD", "").strip() or secret("ssh_password")
+    # Support multiple env var names for a local bootstrap/admin password.
+    # Priority: ADMIN_PASSWORD -> ADMIN_LOCAL_PASSWORD -> server.credentials ssh_password
+    return (
+        os.environ.get("ADMIN_PASSWORD", "").strip()
+        or os.environ.get("ADMIN_LOCAL_PASSWORD", "").strip()
+        or secret("ssh_password")
+    )

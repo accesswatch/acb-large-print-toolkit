@@ -1,24 +1,39 @@
 {% extends "base.html" %}
 
-{% block title %}ACB Large Print Guidelines Reference{% endblock %}
-{% block heading %}ACB Large Print Guidelines Reference{% endblock %}
+{% block title %}{% if brand_is_uarizona %}Large Print Accessibility Guidelines Reference{% else %}ACB Large Print Guidelines Reference{% endif %}{% endblock %}
+{% block heading %}{% if brand_is_uarizona %}Large Print Accessibility Guidelines Reference{% else %}ACB Large Print Guidelines Reference{% endif %}{% endblock %}
 
 {% block content %}
+{% if brand_is_uarizona %}
+<p>This page presents large-print accessibility guidance supplemented with WCAG 2.2 AA digital accessibility requirements. These are the rules enforced by the <a href="{{ url_for('audit.audit_form') }}">audit</a> and <a href="{{ url_for('fix.fix_form') }}">fix</a> tools.</p>
+{% else %}
 <p>This page presents the complete ACB Large Print Guidelines (revised May 6, 2025) supplemented with WCAG 2.2 AA digital accessibility requirements. These are the rules enforced by the <a href="{{ url_for('audit.audit_form') }}">audit</a> and <a href="{{ url_for('fix.fix_form') }}">fix</a> tools.</p>
+{% endif %}
 <p>For APH source guidance, see <a href="https://www.aph.org/resources/large-print-guidelines/">APH: Guidelines for the Development of Documents in Large Print</a> (includes APH-hosted DOCX/PDF guideline downloads). APH alignment in this toolkit is fully integrated for the Release 1.2.0 submission workflow.</p>
 
 <section id="section-guideline-sets">
   <h2>About These Guideline Sets</h2>
   <details class="guideline-accordion" open>
     <summary>Which standard should I use?</summary>
+    {% if brand_is_uarizona %}
+    <p><strong>Large-print and APH guidance are supported in this toolkit.</strong></p>
+    {% else %}
     <p><strong>ACB and APH are the two large-print production standards supported in this toolkit.</strong></p>
+    {% endif %}
     <ul>
+      {% if not brand_is_uarizona %}
       <li><strong>ACB:</strong> best fit for consumer and member publications. This is the default baseline in GLOW.</li>
+      {% endif %}
       <li><strong>APH:</strong> best fit for educational and student-facing large-print workflows, with full Release 1.2.0 submission alignment in the APH Submission profile.</li>
       <li><strong>AFB JVIB style:</strong> not a large-print production standard and not offered as a fix/audit mode in this toolkit. It is a manuscript submission standard for academic publishing in the <em>Journal of Visual Impairment &amp; Blindness</em>.</li>
     </ul>
+    {% if brand_is_uarizona %}
+    <p>Use AFB JVIB guidance directly when preparing an academic manuscript for JVIB submission. For large-print production output, use the profiles available in this toolkit.</p>
+    <p><strong>Reference links:</strong> <a href="https://www.aph.org/resources/large-print-guidelines/">APH large-print guidelines</a> and <a href="https://afb.org/news-publications/publications/jvib/authors/afb-style-guidelines">AFB JVIB style guidelines</a>.</p>
+    {% else %}
     <p>Use AFB JVIB guidance directly when preparing an academic manuscript for JVIB submission. For large-print production output, use ACB or APH profiles in this toolkit.</p>
     <p><strong>Reference links:</strong> <a href="https://www.bits-acb.org">BITS / ACB</a>, <a href="https://www.aph.org/resources/large-print-guidelines/">APH large-print guidelines</a>, and <a href="https://afb.org/news-publications/publications/jvib/authors/afb-style-guidelines">AFB JVIB style guidelines</a>.</p>
+    {% endif %}
   </details>
   <a href="#toc-heading" class="back-to-top">Back to table of contents</a>
 </section>
@@ -181,7 +196,11 @@
   <h2>10. Document Properties (WCAG 2.2 Supplement)</h2>
   <details class="guideline-accordion" open>
     <summary>Document property requirements</summary>
+    {% if brand_is_uarizona %}
+    <p>These rules come from WCAG 2.2 AA and supplement large-print guidance for digital documents:</p>
+    {% else %}
     <p>These rules come from WCAG 2.2 AA, which supplements the ACB print guidelines for digital documents:</p>
+    {% endif %}
     <p><strong>Document title:</strong> The document must have a title set in its properties (File &gt; Properties &gt; Title in Word). This title is announced by screen readers and helps users identify the document. (WCAG 2.4.2)</p>
     <p><strong>Document language:</strong> The document language must be set (Review &gt; Language in Word). This tells screen readers which language to use for pronunciation. (WCAG 3.1.1)</p>
     <h3>Related audit rules</h3>
@@ -226,7 +245,11 @@
   <details class="guideline-accordion" open>
     <summary>How APH submission is handled in this toolkit</summary>
     <p>Release 1.2.0 introduces an APH submission profile workflow on top of the existing ACB and WCAG rules. The goal is to keep one canonical rule engine while making submission evidence explicit and traceable.</p>
+    {% if brand_is_uarizona %}
+    <p><strong>Profile model:</strong> The toolkit's baseline, APH submission, and combined strict profiles share the same core engine and differ by rule applicability and reporting scope.</p>
+    {% else %}
     <p><strong>Profile model:</strong> ACB-only, APH submission, and combined strict profiles share the same core engine and differ by rule applicability and reporting scope.</p>
+    {% endif %}
     <p><strong>Evidence model:</strong> Every reported finding in APH mode should map to a source standard, rule reference, severity, and remediation status so reviewers can follow decisions without external handouts.</p>
     <p><strong>Cross-surface parity:</strong> Rule metadata and severity behavior must remain synchronized across Python core, web UI, and Office add-in implementations before APH package generation.</p>
     <h3>Week-by-week APH execution gates</h3>
@@ -243,7 +266,11 @@
       <li>APH guidance includes recommendations on line spacing, line length, and color/palette usage; the APH Submission profile in Release 1.2.0 maps implemented requirements for submission evidence and review.</li>
     </ul>
     <h3>Font integration note (APHont)</h3>
+    {% if brand_is_uarizona %}
+    <p>APHont is being evaluated as an optional profile-specific output target. Existing workflows keep Arial as the default to preserve current behavior and compatibility.</p>
+    {% else %}
     <p>APHont is being evaluated as an optional profile-specific output target. Existing ACB workflows keep Arial as the default to preserve current behavior and compatibility.</p>
+    {% endif %}
     <p><strong>Current status:</strong> APH alignment is fully integrated for the Release 1.2.0 submission workflow. Behavior includes ACB + WCAG + Microsoft Accessibility Checker + format-specific rule sets with APH profile mapping finalized in this release.</p>
     <p>Detailed operational guidance is available in the <a href="{{ url_for('guide.guide_page') }}#aph-release-track">User Guide APH track</a>.</p>
   </details>

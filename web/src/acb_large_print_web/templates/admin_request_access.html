@@ -15,7 +15,7 @@
   <p>Your request was submitted. An existing admin must approve access before you can sign in.</p>
 </div>
 <p><a href="{{ url_for('admin.admin_login') }}">Return to admin sign-in</a></p>
-{% else %}
+{% elif not form_disabled %}
 <form method="post" novalidate>
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 

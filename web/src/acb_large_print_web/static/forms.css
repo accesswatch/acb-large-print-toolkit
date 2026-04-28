@@ -1541,3 +1541,141 @@ footer p {
 .button-group {
   margin-top: 1.5rem;
 }
+
+/* --- Brand logo in nav --- */
+.brand-logo {
+  display: inline-block;
+  vertical-align: middle;
+  max-height: 44px;
+  width: auto;
+  margin-right: 0.5rem;
+}
+
+.brand-nav-text {
+  vertical-align: middle;
+}
+
+/* ==========================================================================
+   University of Arizona brand theme (GLOW_BRAND_PROFILE=uarizona)
+   Overrides default BITS blue palette with UA Arizona Red + Navy.
+   ========================================================================== */
+
+body.theme-uarizona {
+  /* UA brand palette */
+  --ua-red:        #AB0520;
+  --ua-red-dark:   #8B0416;
+  --ua-navy:       #0C234B;
+  --ua-navy-dark:  #071830;
+  --ua-red-light:  #f9e5e8;
+}
+
+/* Nav bar border and brand link */
+body.theme-uarizona nav[aria-label="Main navigation"] {
+  border-bottom-color: var(--ua-navy);
+}
+
+body.theme-uarizona .nav-brand {
+  color: var(--ua-navy);
+}
+
+body.theme-uarizona .nav-brand:hover,
+body.theme-uarizona .nav-brand:focus {
+  color: var(--ua-red);
+}
+
+/* Active tab highlight */
+body.theme-uarizona .nav-tabs a[aria-selected="true"] {
+  color: var(--ua-red);
+  border-bottom-color: var(--ua-red);
+}
+
+body.theme-uarizona .nav-tabs a[aria-selected="false"]:hover {
+  color: var(--ua-red-dark);
+  border-bottom-color: #f5b8c1;
+}
+
+body.theme-uarizona .nav-tabs a:focus {
+  outline-color: var(--ua-red);
+}
+
+/* Primary button */
+body.theme-uarizona .btn-primary {
+  background: var(--ua-red);
+  border-color: var(--ua-red);
+}
+
+body.theme-uarizona .btn-primary:hover,
+body.theme-uarizona .btn-primary:focus {
+  background: var(--ua-red-dark);
+  border-color: var(--ua-red-dark);
+  outline-color: var(--ua-red-dark);
+}
+
+body.theme-uarizona .btn-primary:disabled,
+body.theme-uarizona .btn-primary[aria-disabled="true"] {
+  background: #d4727f;
+  border-color: #d4727f;
+}
+
+/* Links */
+body.theme-uarizona a {
+  color: var(--ua-navy);
+}
+
+body.theme-uarizona a:hover,
+body.theme-uarizona a:focus {
+  color: var(--ua-red);
+}
+
+body.theme-uarizona a:visited {
+  color: var(--ua-navy-dark);
+}
+
+/* Focus rings */
+body.theme-uarizona input[type="text"]:focus,
+body.theme-uarizona input[type="file"]:focus,
+body.theme-uarizona select:focus,
+body.theme-uarizona textarea:focus {
+  outline-color: var(--ua-red);
+}
+
+body.theme-uarizona details > summary:focus {
+  outline-color: var(--ua-red);
+}
+
+/* Checkboxes and radios */
+body.theme-uarizona input[type="radio"],
+body.theme-uarizona input[type="checkbox"] {
+  accent-color: var(--ua-red);
+}
+
+/* Skip link */
+body.theme-uarizona .skip-link {
+  background: var(--ua-navy);
+}
+
+/* Footer links */
+body.theme-uarizona .footer-links a {
+  color: var(--ua-navy);
+}
+
+/* Info box accent */
+body.theme-uarizona .info-box {
+  border-left-color: var(--ua-red);
+}
+
+/* Card borders */
+body.theme-uarizona .card {
+  border-color: var(--ua-navy);
+}
+
+/* Nav brand logo: UA wordmark is wide, cap at a comfortable nav height */
+body.theme-uarizona .brand-logo {
+  max-height: 36px;
+}
+
+/* BITS logo: square mark, slightly smaller */
+body.theme-bits .brand-logo {
+  max-height: 44px;
+  border-radius: 0.25rem;
+}

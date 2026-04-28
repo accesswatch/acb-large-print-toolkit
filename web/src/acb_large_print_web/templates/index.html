@@ -1,30 +1,36 @@
 {% extends "base.html" %}
 
 {% block title %}Home{% endblock %}
-{% block heading %}GLOW Accessibility Toolkit{% endblock %}
+{% block heading %}{{ brand_heading_label }}{% endblock %}
 
 {% block content %}
-<p>Check and fix your Office documents for compliance with the <a href="{{ url_for('guidelines.guidelines_page') }}">ACB Large Print Guidelines</a> and WCAG 2.2 AA accessibility standards. No installation required -- upload a file and get results instantly.</p>
+<p>Check and fix your Office documents for compliance with the <a href="{{ url_for('guidelines.guidelines_page') }}">{{ brand_guidelines_name }}</a> and WCAG 2.2 AA accessibility standards. No installation required -- upload a file and get results instantly.</p>
 <p><strong>GLOW</strong> means <strong>Guided Layout &amp; Output Workflow</strong>: a guided, magical-feeling experience backed by strict accessibility standards.</p>
 
 <section>
   <h2 id="quickstart-heading">Quick Start</h2>
   <div class="quickstart-steps">
+    {% if feature_audit_enabled %}
     <div class="quickstart-step">
       <div class="qs-number" aria-hidden="true">1</div>
       <h3><a href="{{ url_for('audit.audit_form') }}">Audit</a></h3>
       <p>Upload your document and see every accessibility issue, organized by severity.</p>
     </div>
+    {% endif %}
+    {% if feature_checker_enabled %}
     <div class="quickstart-step">
       <div class="qs-number" aria-hidden="true">2</div>
       <h3><a href="{{ url_for('fix.fix_form') }}">Fix</a></h3>
       <p>Auto-correct fonts, sizes, spacing, and emphasis. Download a compliant copy.</p>
     </div>
+    {% endif %}
+    {% if feature_audit_enabled %}
     <div class="quickstart-step">
       <div class="qs-number" aria-hidden="true">3</div>
       <h3><a href="{{ url_for('audit.audit_form') }}">Re-Audit</a></h3>
       <p>Upload the fixed document to confirm. Address any remaining manual items.</p>
     </div>
+    {% endif %}
   </div>
   <p>New to this tool? <a href="{{ url_for('guide.guide_page') }}">Read the full user guide</a> for step-by-step help with every feature.</p>
 </section>
@@ -33,12 +39,12 @@
   <h2 id="formats-heading">Supported Document Formats</h2>
 
   <ul class="format-pills">
-    <li class="format-pill format-docx">Word (.docx)</li>
-    <li class="format-pill format-xlsx">Excel (.xlsx)</li>
-    <li class="format-pill format-pptx">PowerPoint (.pptx)</li>
-    <li class="format-pill format-md">Markdown (.md)</li>
-    <li class="format-pill format-pdf">PDF (.pdf)</li>
-    <li class="format-pill format-epub">ePub (.epub)</li>
+    {% if feature_word_enabled %}<li class="format-pill format-docx">Word (.docx)</li>{% endif %}
+    {% if feature_excel_enabled %}<li class="format-pill format-xlsx">Excel (.xlsx)</li>{% endif %}
+    {% if feature_powerpoint_enabled %}<li class="format-pill format-pptx">PowerPoint (.pptx)</li>{% endif %}
+    {% if feature_markdown_enabled %}<li class="format-pill format-md">Markdown (.md)</li>{% endif %}
+    {% if feature_pdf_enabled %}<li class="format-pill format-pdf">PDF (.pdf)</li>{% endif %}
+    {% if feature_epub_enabled %}<li class="format-pill format-epub">ePub (.epub)</li>{% endif %}
   </ul>
 </section>
 
@@ -54,64 +60,74 @@
   <h2 id="ops-heading">Choose an Operation</h2>
 
   <div class="card-grid">
+    {% if feature_audit_enabled %}
     <div class="card card-audit">
       <h3><a href="{{ url_for('audit.audit_form') }}">Audit a Document</a></h3>
       <p>Upload a Word, Excel, PowerPoint, Markdown, PDF, or ePub file and get a detailed compliance report. Choose Full, Quick, or Custom audit modes. Rules adapt automatically to each file format.</p>
       <ul class="card-formats">
-        <li class="format-tag format-docx">Word</li>
-        <li class="format-tag format-xlsx">Excel</li>
-        <li class="format-tag format-pptx">PowerPoint</li>
-        <li class="format-tag format-md">Markdown</li>
-        <li class="format-tag format-pdf">PDF</li>
-        <li class="format-tag format-epub">ePub</li>
+        {% if feature_word_enabled %}<li class="format-tag format-docx">Word</li>{% endif %}
+        {% if feature_excel_enabled %}<li class="format-tag format-xlsx">Excel</li>{% endif %}
+        {% if feature_powerpoint_enabled %}<li class="format-tag format-pptx">PowerPoint</li>{% endif %}
+        {% if feature_markdown_enabled %}<li class="format-tag format-md">Markdown</li>{% endif %}
+        {% if feature_pdf_enabled %}<li class="format-tag format-pdf">PDF</li>{% endif %}
+        {% if feature_epub_enabled %}<li class="format-tag format-epub">ePub</li>{% endif %}
       </ul>
     </div>
+    {% endif %}
 
+    {% if feature_checker_enabled %}
     <div class="card card-fix">
       <h3><a href="{{ url_for('fix.fix_form') }}">Fix a Document</a></h3>
       <p>Upload a non-compliant document and download a corrected version. Word documents get full auto-fix (fonts, sizes, spacing, alignment, emphasis). Other formats receive a detailed audit with manual fix guidance.</p>
       <ul class="card-formats">
-        <li class="format-tag format-docx">Word -- auto-fix</li>
-        <li class="format-tag format-xlsx">Excel -- audit only</li>
-        <li class="format-tag format-pptx">PowerPoint -- audit only</li>
-        <li class="format-tag format-md">Markdown -- audit only</li>
-        <li class="format-tag format-pdf">PDF -- audit only</li>
-        <li class="format-tag format-epub">ePub -- audit only</li>
+        {% if feature_word_enabled %}<li class="format-tag format-docx">Word -- auto-fix</li>{% endif %}
+        {% if feature_excel_enabled %}<li class="format-tag format-xlsx">Excel -- audit only</li>{% endif %}
+        {% if feature_powerpoint_enabled %}<li class="format-tag format-pptx">PowerPoint -- audit only</li>{% endif %}
+        {% if feature_markdown_enabled %}<li class="format-tag format-md">Markdown -- audit only</li>{% endif %}
+        {% if feature_pdf_enabled %}<li class="format-tag format-pdf">PDF -- audit only</li>{% endif %}
+        {% if feature_epub_enabled %}<li class="format-tag format-epub">ePub -- audit only</li>{% endif %}
       </ul>
     </div>
+    {% endif %}
 
+    {% if feature_template_builder_enabled %}
     <div class="card card-template">
       <h3><a href="{{ url_for('template.template_form') }}">Create a Template</a></h3>
-      <p>Generate a pre-configured Word template (<code>.dotx</code>) with all ACB styles built in. Start compliant by default -- no manual formatting required.</p>
+      <p>Generate a pre-configured Word template (<code>.dotx</code>) with large-print styles built in. Start compliant by default -- no manual formatting required.</p>
       <ul class="card-formats">
         <li class="format-tag format-docx">Word</li>
       </ul>
     </div>
+    {% endif %}
 
+    {% if feature_export_html_enabled %}
     <div class="card card-export">
       <h3><a href="{{ url_for('export.export_form') }}">Export to HTML</a></h3>
-      <p>Convert a Word document to accessible HTML with ACB-compliant CSS. Choose standalone (full page) or CMS fragment (for pasting into WordPress or Drupal).</p>
+      <p>Convert a Word document to accessible HTML with large-print-compliant CSS. Choose standalone (full page) or CMS fragment (for pasting into WordPress or Drupal).</p>
       <ul class="card-formats">
         <li class="format-tag format-docx">Word</li>
       </ul>
     </div>
+    {% endif %}
 
+    {% if feature_converter_enabled %}
     <div class="card card-convert">
       <h3><a href="{{ url_for('convert.convert_form') }}">Convert a Document</a></h3>
-      <p>Two options: extract the text from any Office document or PDF into a simple readable file, or turn a Markdown or text document into an accessible web page that follows ACB Large Print Guidelines.</p>
+      <p>Two options: extract the text from any Office document or PDF into a simple readable file, or turn a Markdown or text document into an accessible web page that follows large-print accessibility guidelines.</p>
       <ul class="card-formats">
-        <li class="format-tag format-docx">Word</li>
-        <li class="format-tag format-xlsx">Excel</li>
-        <li class="format-tag format-pptx">PowerPoint</li>
-        <li class="format-tag format-pdf">PDF</li>
-        <li class="format-tag format-md">Markdown</li>
+        {% if feature_word_enabled %}<li class="format-tag format-docx">Word</li>{% endif %}
+        {% if feature_excel_enabled %}<li class="format-tag format-xlsx">Excel</li>{% endif %}
+        {% if feature_powerpoint_enabled %}<li class="format-tag format-pptx">PowerPoint</li>{% endif %}
+        {% if feature_pdf_enabled %}<li class="format-tag format-pdf">PDF</li>{% endif %}
+        {% if feature_markdown_enabled %}<li class="format-tag format-md">Markdown</li>{% endif %}
         <li class="format-tag format-misc">and more</li>
       </ul>
     </div>
+    {% endif %}
 
     {% if ai_whisperer_enabled %}
     <div class="card card-whisperer">
-      <h3><a href="{{ url_for('whisperer.whisperer_form') }}">BITS Whisperer</a></h3>
+      <h3><a href="{{ url_for('whisperer.whisperer_form') }}">{{ brand_whisperer_label }}</a></h3>
       <p>Transcribe audio recordings into accessible Markdown or Word documents using the OpenAI Whisper API with strict short-lived retention and server-side cleanup. Audio is sent only for transcription and is deleted from GLOW after processing.</p>
       <ul class="card-formats">
         <li class="format-tag format-misc">MP3</li>
@@ -139,7 +155,7 @@
 
     <div class="card card-guidelines">
       <h3><a href="{{ url_for('guidelines.guidelines_page') }}">Guidelines Reference</a></h3>
-      <p>Browse the full ACB, WCAG, and APH submission guidance in one place. Use this tab when you need rule rationale or standards references while reviewing findings.</p>
+      <p>Browse the full {{ brand_guidelines_summary }} in one place. Use this tab when you need rule rationale or standards references while reviewing findings.</p>
       <ul class="card-formats">
         <li class="format-tag format-misc">Reference</li>
       </ul>
@@ -158,13 +174,13 @@
 <section>
   <h2 id="tabs-heading">What Each Tab Does</h2>
   <ul>
-    <li><strong>Audit:</strong> checks documents and reports findings by severity.</li>
-    <li><strong>Fix:</strong> applies available auto-fixes and shows what still needs manual work.</li>
-    <li><strong>Template:</strong> creates Word templates with profile-aware defaults.</li>
-    <li><strong>Export:</strong> turns Word documents into accessible HTML for web publishing.</li>
-    <li><strong>Convert:</strong> transforms documents across Markdown, HTML, Word, EPUB, PDF, and DAISY workflows.</li>
+    {% if feature_audit_enabled %}<li><strong>Audit:</strong> checks documents and reports findings by severity.</li>{% endif %}
+    {% if feature_checker_enabled %}<li><strong>Fix:</strong> applies available auto-fixes and shows what still needs manual work.</li>{% endif %}
+    {% if feature_template_builder_enabled %}<li><strong>Template:</strong> creates Word templates with profile-aware defaults.</li>{% endif %}
+    {% if feature_export_html_enabled %}<li><strong>Export:</strong> turns Word documents into accessible HTML for web publishing.</li>{% endif %}
+    {% if feature_converter_enabled %}<li><strong>Convert:</strong> transforms documents across Markdown, HTML, Word, EPUB, PDF, and DAISY workflows.</li>{% endif %}
     {% if ai_whisperer_enabled %}
-    <li><strong>BITS Whisperer:</strong> transcribes audio recordings (.mp3, .wav, .m4a, and more) to accessible Markdown or Word documents using the OpenAI Whisper API with explicit retention controls.</li>
+    <li><strong>{{ brand_whisperer_label }}:</strong> transcribes audio recordings (.mp3, .wav, .m4a, and more) to accessible Markdown or Word documents using the OpenAI Whisper API with explicit retention controls.</li>
     {% endif %}
     {% if ai_chat_enabled %}
     <li><strong>Document Chat:</strong> lets you ask plain-English questions about any uploaded document through a privacy-aware OpenRouter gateway. Available from the <a href="{{ url_for('process.process_form') }}">Quick Start</a> flow -- upload your file and choose "Chat" from the actions menu.</li>
@@ -175,9 +191,9 @@
 </section>
 
 <section>
-  <h2 id="about-heading">About the ACB Large Print Guidelines</h2>
+  <h2 id="about-heading">{{ brand_about_heading }}</h2>
 
-  <p>The American Council of the Blind (ACB) Large Print Guidelines specify formatting standards that make printed and digital documents readable for people with low vision. Key requirements include:</p>
+  <p>{{ brand_about_intro }} Key requirements include:</p>
 
   <ul>
     <li>Arial font, 18-point minimum for body text</li>
@@ -196,6 +212,10 @@
 
 <section>
   <h2 id="privacy-heading">Privacy</h2>
+  {% if ai_chat_enabled or ai_whisperer_enabled or ai_alt_text_enabled or ai_markitdown_llm_enabled %}
   <p>Uploaded documents and audio files are held only long enough to complete processing and are then deleted on GLOW's retention schedule. No public account is required. Core audit, fix, template, export, and many convert paths are rule-based. AI features use cloud providers only for the specific requests that need them, with explicit privacy controls and transparent disclosure.</p>
+  {% else %}
+  <p>Uploaded documents are held only long enough to complete processing and are then deleted on GLOW's retention schedule. No public account is required. Core audit, fix, template, export, and many convert paths are rule-based. AI-powered features and cloud audio transcription are not enabled on this server.</p>
+  {% endif %}
 </section>
 {% endblock %}

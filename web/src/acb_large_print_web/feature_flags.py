@@ -54,15 +54,49 @@ _DEFAULTS: dict[str, bool] = {
     "GLOW_ENABLE_AI_HEADING_FIX": False,
     "GLOW_ENABLE_AI_ALT_TEXT": False,
     "GLOW_ENABLE_AI_MARKITDOWN_LLM": False,
-
-    # Broad GLOW feature flags (non-AI features). Default to OFF so
-    # operators explicitly enable what they want on production systems.
+    # Broad GLOW feature flags (non-AI features).
+    # Defaults: non-AI features are enabled by default so typical
+    # document processing (audit, convert, export) is available.
     "GLOW_ENABLE_AUDIT": True,
     "GLOW_ENABLE_CHECKER": True,
     "GLOW_ENABLE_CONVERTER": True,
     "GLOW_ENABLE_TEMPLATE_BUILDER": True,
     "GLOW_ENABLE_WORD_SETUP": True,
     "GLOW_ENABLE_MARKDOWN_AUDIT": True,
+
+    # Document-format specific flags
+    "GLOW_ENABLE_WORD": True,
+    "GLOW_ENABLE_EXCEL": True,
+    "GLOW_ENABLE_POWERPOINT": True,
+    "GLOW_ENABLE_PDF": True,
+    "GLOW_ENABLE_MARKDOWN": True,
+    "GLOW_ENABLE_EPUB": True,
+
+    # Export / conversion capabilities
+    "GLOW_ENABLE_EXPORT_HTML": True,
+    "GLOW_ENABLE_EXPORT_PDF": True,
+    "GLOW_ENABLE_EXPORT_WORD": True,
+    "GLOW_ENABLE_EXPORT_MARKDOWN": True,
+
+    # Convert route subfeatures (direction-level controls)
+    "GLOW_ENABLE_CONVERT_TO_MARKDOWN": True,
+    "GLOW_ENABLE_CONVERT_TO_HTML": True,
+    "GLOW_ENABLE_CONVERT_TO_DOCX": True,
+    "GLOW_ENABLE_CONVERT_TO_EPUB": True,
+    "GLOW_ENABLE_CONVERT_TO_PDF": True,
+    "GLOW_ENABLE_CONVERT_TO_PIPELINE": True,
+
+    # Optional tool integrations (can be disabled if binary deps are not present)
+    "GLOW_ENABLE_PANDOC": True,
+    "GLOW_ENABLE_WEASYPRINT": True,
+    "GLOW_ENABLE_PYMUPDF": True,
+    "GLOW_ENABLE_MARKITDOWN": True,
+    "GLOW_ENABLE_DAISY_ACE": True,
+    "GLOW_ENABLE_DAISY_META_VIEWER": True,
+    "GLOW_ENABLE_DAISY_PIPELINE": True,
+    "GLOW_ENABLE_PYDOCX": True,
+    "GLOW_ENABLE_OPENPYXL": True,
+    "GLOW_ENABLE_PYTHON_PPTX": True,
 }
 
 

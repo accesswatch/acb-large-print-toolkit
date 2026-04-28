@@ -50,6 +50,7 @@ from ..feature_flags import (
     get_flag_meta as _get_flag_meta,
     get_backend as _get_flags_backend,
     migrate_json_to_sqlite as _migrate_flags,
+    get_audit_entries as _get_audit_entries,
 )
 from ..email import email_configured, send_whisperer_status_email
 from .whisperer import (
@@ -441,6 +442,7 @@ def admin_request_access() -> Any:
             render_template(
                 "admin_request_access.html",
                 submitted=False,
+                form_disabled=True,
                 error="Admin access requests are unavailable until email delivery is configured.",
             ),
             503,
@@ -834,7 +836,93 @@ def admin_flags() -> Any:
         "GLOW_ENABLE_TEMPLATE_BUILDER",
         "GLOW_ENABLE_WORD_SETUP",
         "GLOW_ENABLE_MARKDOWN_AUDIT",
+        # Document type flags
+        "GLOW_ENABLE_WORD",
+        "GLOW_ENABLE_EXCEL",
+        "GLOW_ENABLE_POWERPOINT",
+        "GLOW_ENABLE_PDF",
+        "GLOW_ENABLE_MARKDOWN",
+        "GLOW_ENABLE_EPUB",
+        # Export / conversion capabilities
+        "GLOW_ENABLE_EXPORT_HTML",
+        "GLOW_ENABLE_EXPORT_PDF",
+        "GLOW_ENABLE_EXPORT_WORD",
+        "GLOW_ENABLE_EXPORT_MARKDOWN",
+        # Convert direction subfeatures
+        "GLOW_ENABLE_CONVERT_TO_MARKDOWN",
+        "GLOW_ENABLE_CONVERT_TO_HTML",
+        "GLOW_ENABLE_CONVERT_TO_DOCX",
+        "GLOW_ENABLE_CONVERT_TO_EPUB",
+        "GLOW_ENABLE_CONVERT_TO_PDF",
+        "GLOW_ENABLE_CONVERT_TO_PIPELINE",
+        # Optional tool integrations
+        "GLOW_ENABLE_PANDOC",
+        "GLOW_ENABLE_WEASYPRINT",
+        "GLOW_ENABLE_PYMUPDF",
+        "GLOW_ENABLE_MARKITDOWN",
+        "GLOW_ENABLE_DAISY_ACE",
+        "GLOW_ENABLE_DAISY_META_VIEWER",
+        "GLOW_ENABLE_DAISY_PIPELINE",
+        "GLOW_ENABLE_PYDOCX",
+        "GLOW_ENABLE_OPENPYXL",
+        "GLOW_ENABLE_PYTHON_PPTX",
     ]
+
+    # Group keys for template rendering
+    categories = {
+        "ai": [
+            "GLOW_ENABLE_AI",
+            "GLOW_ENABLE_AI_CHAT",
+            "GLOW_ENABLE_AI_WHISPERER",
+            "GLOW_ENABLE_AI_HEADING_FIX",
+            "GLOW_ENABLE_AI_ALT_TEXT",
+            "GLOW_ENABLE_AI_MARKITDOWN_LLM",
+        ],
+        "core": [
+            "GLOW_ENABLE_AUDIT",
+            "GLOW_ENABLE_CHECKER",
+        ],
+        "conversion": [
+            "GLOW_ENABLE_CONVERTER",
+            "GLOW_ENABLE_TEMPLATE_BUILDER",
+            "GLOW_ENABLE_WORD_SETUP",
+            "GLOW_ENABLE_MARKDOWN_AUDIT",
+        ],
+        "documents": [
+            "GLOW_ENABLE_WORD",
+            "GLOW_ENABLE_EXCEL",
+            "GLOW_ENABLE_POWERPOINT",
+            "GLOW_ENABLE_PDF",
+            "GLOW_ENABLE_MARKDOWN",
+            "GLOW_ENABLE_EPUB",
+        ],
+        "exports": [
+            "GLOW_ENABLE_EXPORT_HTML",
+            "GLOW_ENABLE_EXPORT_PDF",
+            "GLOW_ENABLE_EXPORT_WORD",
+            "GLOW_ENABLE_EXPORT_MARKDOWN",
+        ],
+        "convert_subfeatures": [
+            "GLOW_ENABLE_CONVERT_TO_MARKDOWN",
+            "GLOW_ENABLE_CONVERT_TO_HTML",
+            "GLOW_ENABLE_CONVERT_TO_DOCX",
+            "GLOW_ENABLE_CONVERT_TO_EPUB",
+            "GLOW_ENABLE_CONVERT_TO_PDF",
+            "GLOW_ENABLE_CONVERT_TO_PIPELINE",
+        ],
+        "integrations": [
+            "GLOW_ENABLE_PANDOC",
+            "GLOW_ENABLE_WEASYPRINT",
+            "GLOW_ENABLE_PYMUPDF",
+            "GLOW_ENABLE_MARKITDOWN",
+            "GLOW_ENABLE_DAISY_ACE",
+            "GLOW_ENABLE_DAISY_META_VIEWER",
+            "GLOW_ENABLE_DAISY_PIPELINE",
+            "GLOW_ENABLE_PYDOCX",
+            "GLOW_ENABLE_OPENPYXL",
+            "GLOW_ENABLE_PYTHON_PPTX",
+        ],
+    }
 
     if request.method == "POST":
         try:
@@ -856,7 +944,8 @@ def admin_flags() -> Any:
                         posted[child] = False
 
                 for k, v in posted.items():
-                    _set_flag(k, v)
+                    # Record who changed the flag for auditing
+                    _set_flag(k, v, changed_by=email)
                 notice = "Feature flags updated."
         except Exception as exc:
             error = f"Could not update flags: {exc}"
@@ -865,12 +954,24 @@ def admin_flags() -> Any:
     # Collect metadata per-flag for display
     metas = {k: _get_flag_meta(k) for k in feature_keys}
     backend = _get_flags_backend()
+    # Collect recent audit rows for display (best-effort)
+    audit_rows: list[dict[str, Any]] = []
+    try:
+        for k in feature_keys:
+            audit_rows.extend(_get_audit_entries(k, limit=10))
+        # sort by changed_at desc and keep recent 200
+        audit_rows = sorted(audit_rows, key=lambda r: r.get("changed_at") or "", reverse=True)[:200]
+    except Exception:
+        audit_rows = []
     return render_template(
         "admin_flags.html",
         admin_email=email,
         flags=flags,
         flag_meta=metas,
         flags_backend=backend,
+        audit_rows=audit_rows,
+        feature_keys=feature_keys,
+        categories=categories,
         notice=notice,
         error=error,
     )

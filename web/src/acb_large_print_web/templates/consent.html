@@ -32,19 +32,28 @@
           <li>Your document is never shared with, forwarded to, or stored by any third party.</li>
         </ul>
 
-        <h4>Audio Files (BITS Whisperer)</h4>
-        <ul>
-           <li>Audio files you upload for transcription are sent to the <a href="https://openai.com/research/whisper">Whisper API</a> for high-quality speech recognition and then immediately deleted from the GLOW server.</li>
-           <li>Transcripts are processed locally and never stored beyond your session (deleted within 1 hour).</li>
-           <li>The audio file is deleted from GLOW immediately after the transcript is received from the API.</li>
-        </ul>
+          {% if ai_whisperer_enabled %}
+          <h4>Audio Files (BITS Whisperer)</h4>
+          <ul>
+            <li>Audio files you upload for transcription are sent to the <a href="https://openai.com/research/whisper">Whisper API</a> for high-quality speech recognition and then immediately deleted from the GLOW server.</li>
+            <li>Transcripts are processed locally and never stored beyond your session (deleted within 1 hour).</li>
+            <li>The audio file is deleted from GLOW immediately after the transcript is received from the API.</li>
+          </ul>
+          {% endif %}
 
-        <h4>AI-Assisted Features</h4>
-        <ul>
-           <li>Optional AI features route requests through GLOW's configured AI provider (OpenRouter). Only the content required to complete a request is transmitted.</li>
-           <li>Transmitted content is not sold, shared, or used for advertising or independent product training by GLOW.</li>
-           <li>AI-assisted options are always optional, clearly labelled, and can be skipped entirely.</li>
-        </ul>
+          {% if ai_chat_enabled or ai_whisperer_enabled or ai_alt_text_enabled or ai_markitdown_llm_enabled %}
+          <h4>AI-Assisted Features</h4>
+          <ul>
+            <li>Optional AI features route requests through GLOW's configured AI provider (OpenRouter). Only the content required to complete a request is transmitted.</li>
+            <li>Transmitted content is not sold, shared, or used for advertising or independent product training by GLOW.</li>
+            <li>AI-assisted options are always optional, clearly labelled, and can be skipped entirely.</li>
+          </ul>
+          {% else %}
+          <h4>AI-Assisted Features</h4>
+          <ul>
+            <li>AI-assisted features are not enabled on this server. All workflows described elsewhere on this page are rule-based and do not send content to external AI providers.</li>
+          </ul>
+          {% endif %}
       </section>
 
       <section>
