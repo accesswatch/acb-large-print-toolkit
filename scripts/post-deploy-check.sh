@@ -195,14 +195,17 @@ check_url() {
     fi
 }
 
+# NOTE: External URL checks are informational only (000 is common when the server
+# cannot curl its own domain due to DNS loopback). Container health gates below
+# are the authoritative liveness check.
 URL_FAIL=0
-check_url "${APP_DOMAIN}/health" "https://${APP_DOMAIN}/health" true || URL_FAIL=1
-check_url "${APP_DOMAIN}/" "https://${APP_DOMAIN}/" true true || URL_FAIL=1
+check_url "${APP_DOMAIN}/health" "https://${APP_DOMAIN}/health" false || true
+check_url "${APP_DOMAIN}/" "https://${APP_DOMAIN}/" false true || true
 if [[ -n "$APP_ALIAS_DOMAIN" ]]; then
-    check_url "${APP_ALIAS_DOMAIN}/health" "https://${APP_ALIAS_DOMAIN}/health" true || URL_FAIL=1
-    check_url "${APP_ALIAS_DOMAIN}/" "https://${APP_ALIAS_DOMAIN}/" true true || URL_FAIL=1
+    check_url "${APP_ALIAS_DOMAIN}/health" "https://${APP_ALIAS_DOMAIN}/health" false || true
+    check_url "${APP_ALIAS_DOMAIN}/" "https://${APP_ALIAS_DOMAIN}/" false true || true
 fi
-check_url "csedesigns.com/" "https://csedesigns.com/" false true
+check_url "csedesigns.com/" "https://csedesigns.com/" false true || true
 
 echo ""
 echo "--- Container status ---"
@@ -231,7 +234,10 @@ done
 echo ""
 echo "--- Model readiness check via /health ---"
 READINESS_FAIL=0
-HEALTH_JSON="$(curl -sf --max-time 10 "https://${APP_DOMAIN}/health" 2>/dev/null || echo '{}')"
+# Probe /health internally via the web container to avoid external DNS loopback issues
+HEALTH_JSON="$(compose exec -T web python -c \
+    "import urllib.request, json; r=urllib.request.urlopen('http://localhost:8000/health',timeout=5); print(r.read().decode())" \
+    2>/dev/null || echo '{}')"
 if command -v python3 &>/dev/null; then
     python3 - <<'PYEOF'
 import json, sys, os
