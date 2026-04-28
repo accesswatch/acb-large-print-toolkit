@@ -156,6 +156,7 @@ def create_app(config: dict | None = None) -> Flask:
             ctx["feature_convert_to_epub_enabled"] = bool(all_flags.get("GLOW_ENABLE_CONVERT_TO_EPUB", True))
             ctx["feature_convert_to_pdf_enabled"] = bool(all_flags.get("GLOW_ENABLE_CONVERT_TO_PDF", True))
             ctx["feature_convert_to_pipeline_enabled"] = bool(all_flags.get("GLOW_ENABLE_CONVERT_TO_PIPELINE", True))
+            ctx["feature_heading_detection_enabled"] = bool(all_flags.get("GLOW_ENABLE_HEADING_DETECTION", True))
             # Additional capability flags exposed for future UI/route gating
             ctx["feature_word_setup_enabled"] = bool(all_flags.get("GLOW_ENABLE_WORD_SETUP", True))
             ctx["feature_markdown_audit_enabled"] = bool(all_flags.get("GLOW_ENABLE_MARKDOWN_AUDIT", True))

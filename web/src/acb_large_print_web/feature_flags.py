@@ -59,6 +59,7 @@ _DEFAULTS: dict[str, bool] = {
     # document processing (audit, convert, export) is available.
     "GLOW_ENABLE_AUDIT": True,
     "GLOW_ENABLE_CHECKER": True,
+    "GLOW_ENABLE_HEADING_DETECTION": True,
     "GLOW_ENABLE_CONVERTER": True,
     "GLOW_ENABLE_TEMPLATE_BUILDER": True,
     "GLOW_ENABLE_WORD_SETUP": True,

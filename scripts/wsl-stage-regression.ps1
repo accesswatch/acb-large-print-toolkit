@@ -51,10 +51,10 @@ if ($LASTEXITCODE -ne 0) {
     )
 }
 
-$wslRepo = (& wsl -d $Distro -- wslpath -a $repoRoot | Out-String).Trim()
-if (-not $wslRepo) {
-    throw "Could not translate repo path '$repoRoot' into a WSL path."
-}
+# Convert Windows path to WSL path: D:\code\glow -> /mnt/d/code/glow
+$driveLetter = $repoRoot.Substring(0, 1).ToLower()
+$remainingPath = $repoRoot.Substring(2).Replace("\", "/")
+$wslRepo = "/mnt/$driveLetter$remainingPath"
 
 $wslStageScript = "$wslRepo/scripts/wsl-stage-stack.sh"
 

@@ -6,23 +6,15 @@ Releases are tagged in the [GitHub repository](https://github.com/accesswatch/ac
 
 ---
 
-## [Unreleased]
-
-### Added
-
-- Placeholder for post-2.5.0 updates.
-
-### Changed
-
-- **Deploy script: safe Docker cleanup controls added.** `scripts/deploy-app.sh` now supports orphan cleanup during deploy (`COMPOSE_REMOVE_ORPHANS=1` by default) and post-deploy artifact cleanup toggles. Successful deploys now optionally prune unused images (`CLEANUP_ON_SUCCESS=1`, `CLEANUP_IMAGE_PRUNE=1` by default). Optional builder cache cleanup is available via `CLEANUP_BUILDER_PRUNE=1` with `CLEANUP_BUILDER_KEEP_STORAGE` (default `4GB`). Rollback-path cleanup remains opt-in (`CLEANUP_ON_ROLLBACK=0` by default).
-
-### Fixed
-
-- **Post-deploy verification no longer hangs/fails on removed Ollama service.** `scripts/post-deploy-check.sh` now gates required service checks dynamically from Compose service definitions and skips `ollama` when it is not present in `docker-compose.prod.yml`. Readiness parsing now treats `not-configured` as OK for feature-gated AI checks, preventing false deployment failures when AI/Ollama are intentionally disabled.
-
 ## [2.5.0] - 2026-04-28
 
 ### Added
+
+- **New feature flag: `GLOW_ENABLE_HEADING_DETECTION` (default `True`).** Added to `feature_flags.py` `_DEFAULTS` and injected as `feature_heading_detection_enabled` in the global template context via `app.py`. Controls visibility of heading detection settings in the Settings tab and can be used to gate the Fix route's heading detection controls in future.
+
+- **Settings tab: feature-flag-gated settings.** `settings.html` now conditionally renders settings based on active feature flags. The "Enable heading detection" checkbox and its confidence threshold and accuracy mode controls are hidden when `GLOW_ENABLE_HEADING_DETECTION` is off. The "Enable AI refinement" checkbox remains hidden when `GLOW_ENABLE_AI_HEADING_FIX` is off (existing gate). Convert Defaults direction radios (`to-markdown`, `to-html`, `to-docx`, `to-epub`, `to-pdf`, `to-pipeline`) are each individually gated behind their corresponding `feature_convert_to_*_enabled` flags, matching the gating already applied in `convert_form.html`.
+
+- **Settings tab: convert direction default selection now respects feature flags.** In `settings.html`, Convert Defaults now selects the first enabled direction radio using a Jinja namespace guard instead of hard-coding `to-markdown` as checked. This prevents blank or invalid defaults when `GLOW_ENABLE_CONVERT_TO_MARKDOWN` is disabled.
 
 - **Desktop PDF audit: smarter image-based PDF detection with DPI quality check.** `desktop/src/acb_large_print/pdf_auditor.py` now uses image coverage area (requires ≥40% of page area) to avoid false positives from pages with small decorative images. The `PDF-NO-IMAGES-OF-TEXT` finding now classifies documents as entirely scanned, majority-scanned (≥50%), or partially scanned and includes page percentage and OCR remediation guidance (Adobe Acrobat, Tesseract, ABBYY FineReader). A new `PDF-IMAGE-RESOLUTION` check (`desktop/src/acb_large_print/constants.py`) flags scanned pages where image resolution is below 150 DPI — the minimum for acceptable OCR results — with per-page DPI values and a recommendation to re-scan at 300 DPI or higher.
 
@@ -52,6 +44,8 @@ Releases are tagged in the [GitHub repository](https://github.com/accesswatch/ac
 
 ### Changed
 
+- **Deploy script: safe Docker cleanup controls added.** `scripts/deploy-app.sh` now supports orphan cleanup during deploy (`COMPOSE_REMOVE_ORPHANS=1` by default) and post-deploy artifact cleanup toggles. Successful deploys now optionally prune unused images (`CLEANUP_ON_SUCCESS=1`, `CLEANUP_IMAGE_PRUNE=1` by default). Optional builder cache cleanup is available via `CLEANUP_BUILDER_PRUNE=1` with `CLEANUP_BUILDER_KEEP_STORAGE` (default `4GB`). Rollback-path cleanup remains opt-in (`CLEANUP_ON_ROLLBACK=0` by default).
+
 - **Office Add-in: dependency toolchain refreshed to latest available versions.** Updated `office-addin/package.json` and `office-addin/package-lock.json` to current releases for `typescript` (6.0.3), `webpack` (5.106.2), `webpack-cli` (7.0.2), `@types/office-js` (1.0.589), and `html-webpack-plugin` (5.6.7), plus transitive updates (`ts-loader`, `css-loader`, `webpack-dev-server`). Added `office-addin/src/global.d.ts` to declare `*.css` modules for TypeScript 6 side-effect CSS import compatibility so `npm run build` continues to compile successfully.
 
 - **Web: Deployment branding profile support for BITS vs University of Arizona.** Added `web/src/acb_large_print_web/branding.py` and context injection in `web/src/acb_large_print_web/app.py` to support `GLOW_BRAND_PROFILE`. Default `bits` keeps current ACB/BITS wording. Setting `GLOW_BRAND_PROFILE=uarizona` now switches shared UI text in `templates/base.html` and `templates/index.html` to University of Arizona-friendly branding (removing ACB/BITS identity wording from title, nav/footer identity lines, homepage guideline copy, and Whisperer label).
@@ -68,6 +62,8 @@ Releases are tagged in the [GitHub repository](https://github.com/accesswatch/ac
 - **Web: Default AI model switched from free Llama/Mistral pool to GPT-4o-mini.** `_DEFAULT_MODEL` in `web/src/acb_large_print_web/ai_gateway.py` now defaults to `openai/gpt-4o-mini` (primary) and `openai/gpt-4o` (fallback/escalation), replacing the previously unavailable `meta-llama/llama-3-8b-instruct:free,mistralai/mistral-7b-instruct:free` free-model pool. The legacy free model entries are retained in the cost table for accounts that override via `AI_DEFAULT_MODEL`. Admin reset-to-defaults and the admin AI settings dropdown updated to match. Probe path 01 and integration test fixtures updated to the new primary model. All 84/84 probe paths now pass.
 
 ### Fixed
+
+- **Post-deploy verification no longer hangs/fails on removed Ollama service.** `scripts/post-deploy-check.sh` now gates required service checks dynamically from Compose service definitions and skips `ollama` when it is not present in `docker-compose.prod.yml`. Readiness parsing now treats `not-configured` as OK for feature-gated AI checks, preventing false deployment failures when AI/Ollama are intentionally disabled.
 
 - **CI deploy gate: fixed false failure in Fix route form-option test under AI-off defaults.** `web/tests/test_fix_routes.py` now mocks `acb_large_print_web.ai_features.ai_heading_fix_enabled()` directly in `TestParseFormOptions::test_detect_headings_on` instead of mutating environment variables after app startup. This keeps the assertion aligned with cached feature-flag behavior in CI and prevents the `Deploy Web App` workflow from failing before SSH deployment.
 

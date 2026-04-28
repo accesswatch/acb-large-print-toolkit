@@ -85,8 +85,12 @@
       <label><input type="checkbox" name="settings_fix_flush_lists" checked> Flush lists left by default</label>
       <label><input type="checkbox" name="settings_fix_flush_paragraphs" checked> Flush paragraphs left by default</label>
       <label><input type="checkbox" name="settings_fix_preserve_heading_alignment"> Preserve centered headings by default</label>
+      {% if feature_heading_detection_enabled %}
       <label><input type="checkbox" name="settings_fix_detect_headings" checked> Enable heading detection by default</label>
+      {% if ai_heading_fix_enabled %}
       <label><input type="checkbox" name="settings_fix_use_ai"> Enable AI refinement by default when available</label>
+      {% endif %}
+      {% endif %}
       <label><input type="checkbox" name="settings_fix_use_list_levels"> Use per-level list indentation by default</label>
       <label><input type="checkbox" name="settings_fix_suppress_link_text"> Suppress ambiguous link text by default</label>
       <label><input type="checkbox" name="settings_fix_suppress_missing_alt_text"> Suppress missing alt text by default</label>
@@ -140,6 +144,7 @@
       <input type="number" id="settings-fix-first-line-indent" name="settings_fix_first_line_indent" value="0.00" min="0" max="2" step="0.05" class="input-narrow">
     </div>
 
+    {% if feature_heading_detection_enabled %}
     <div class="form-group form-group-inline">
       <label for="settings-fix-threshold">Heading confidence threshold:</label>
       <input type="number" id="settings-fix-threshold" name="settings_fix_heading_threshold" value="50" min="0" max="100" step="5" class="input-narrow">
@@ -153,6 +158,7 @@
         <option value="thorough">Thorough</option>
       </select>
     </div>
+    {% endif %}
   </fieldset>
 
   <fieldset>
@@ -185,12 +191,13 @@
   <fieldset>
     <legend>Convert Defaults</legend>
     <div class="radio-group">
-      <label><input type="radio" name="settings_convert_direction" value="to-markdown" checked> Plain text (Markdown)</label>
-      <label><input type="radio" name="settings_convert_direction" value="to-html"> Accessible web page (HTML)</label>
-      <label><input type="radio" name="settings_convert_direction" value="to-docx"> Word document (.docx)</label>
-      <label><input type="radio" name="settings_convert_direction" value="to-epub"> EPUB 3 e-book</label>
-      <label><input type="radio" name="settings_convert_direction" value="to-pdf"> Accessible PDF</label>
-      <label><input type="radio" name="settings_convert_direction" value="to-pipeline"> EPUB or DAISY format</label>
+      {% set ns = namespace(default_set=false) %}
+      {% if feature_convert_to_markdown_enabled %}<label><input type="radio" name="settings_convert_direction" value="to-markdown"{% if not ns.default_set %} checked{% set ns.default_set = true %}{% endif %}> Plain text (Markdown)</label>{% endif %}
+      {% if feature_convert_to_html_enabled %}<label><input type="radio" name="settings_convert_direction" value="to-html"{% if not ns.default_set %} checked{% set ns.default_set = true %}{% endif %}> Accessible web page (HTML)</label>{% endif %}
+      {% if feature_convert_to_docx_enabled %}<label><input type="radio" name="settings_convert_direction" value="to-docx"{% if not ns.default_set %} checked{% set ns.default_set = true %}{% endif %}> Word document (.docx)</label>{% endif %}
+      {% if feature_convert_to_epub_enabled %}<label><input type="radio" name="settings_convert_direction" value="to-epub"{% if not ns.default_set %} checked{% set ns.default_set = true %}{% endif %}> EPUB 3 e-book</label>{% endif %}
+      {% if feature_convert_to_pdf_enabled %}<label><input type="radio" name="settings_convert_direction" value="to-pdf"{% if not ns.default_set %} checked{% set ns.default_set = true %}{% endif %}> Accessible PDF</label>{% endif %}
+      {% if feature_convert_to_pipeline_enabled %}<label><input type="radio" name="settings_convert_direction" value="to-pipeline"{% if not ns.default_set %} checked{% set ns.default_set = true %}{% endif %}> EPUB or DAISY format</label>{% endif %}
     </div>
     <div class="checkbox-group">
       <label><input type="checkbox" name="settings_convert_acb_format" checked> Apply ACB formatting by default</label>
