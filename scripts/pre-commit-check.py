@@ -52,6 +52,22 @@ def run_check(name: str, func) -> bool:
         return False
 
 
+def check_version_consistency():
+    """0. Version consistency check (release-blocking)."""
+    try:
+        result = subprocess.run(
+            [sys.executable, str(REPO_ROOT / "scripts/check-version-consistency.py")],
+            capture_output=True,
+            text=True,
+        )
+        if result.stdout:
+            print(result.stdout)
+        return result.returncode == 0
+    except Exception as e:
+        print(f"Error running version check: {e}")
+        return False
+
+
 def check_config_consistency():
     """1. Configuration consistency check."""
     try:
@@ -268,6 +284,7 @@ def main():
     print("=" * 70)
     
     checks = [
+        ("Version Consistency", check_version_consistency),
         ("Configuration Consistency", check_config_consistency),
         ("CHANGELOG.md Verification", check_changelog),
         ("Feature Flags Documentation", check_feature_flags_documented),
