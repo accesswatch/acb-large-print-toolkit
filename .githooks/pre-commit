@@ -1,12 +1,23 @@
-#!/usr/bin/env bash
-set -euo pipefail
+#!/usr/bin/env python3
+"""
+Git pre-commit hook: GLOW v2.5.0+ release quality gate.
 
-# Rebuild committed HTML partials from markdown sources before commit.
-python scripts/build-doc-pages.py
+This hook runs comprehensive checks before each commit to ensure:
+- Configuration consistency across Desktop, Office, Web, Docker, CI
+- CHANGELOG.md is maintained
+- Feature flags are documented
+- Documentation is built and embedded
+- Code quality standards are met
 
-# Ensure generated docs are part of the commit.
-git add \
-  web/src/acb_large_print_web/templates/partials/guide_body.html \
-  web/src/acb_large_print_web/templates/partials/changelog_body.html \
-  web/src/acb_large_print_web/templates/partials/prd_body.html \
-  web/src/acb_large_print_web/templates/partials/faq_body.html
+To skip (not recommended): git commit --no-verify
+"""
+
+import subprocess
+import sys
+from pathlib import Path
+
+REPO_ROOT = Path(__file__).parent.parent
+SCRIPT = REPO_ROOT / "scripts/pre-commit-check.py"
+
+sys.exit(subprocess.call([sys.executable, str(SCRIPT)]))
+

@@ -8,6 +8,7 @@
 <ul>
 <li><a href="#prd-glow-guided-layout-output-workflow-accessibility-web-application">PRD: GLOW (Guided Layout &amp; Output Workflow) Accessibility Web Application</a><ul>
 <li><a href="#implementation-status">Implementation Status</a><ul>
+<li><a href="#post-v20-addendum-v250-quality-and-release-safety-updates">Post-v2.0 Addendum (v2.5.0 quality and release-safety updates)</a></li>
 <li><a href="#v20-release-features-april-2026">v2.0 Release Features (April 2026)</a></li>
 <li><a href="#deviations-from-plan">Deviations from Plan</a></li>
 </ul>
@@ -67,6 +68,14 @@
 <hr />
 <h2 id="implementation-status">Implementation Status</h2>
 <p>The Flask web application has been built and is ready for deployment. All core features described in this PRD are implemented. The following table summarizes what shipped in v0.1 and subsequent v1.2.0 enhancements:</p>
+<h3 id="post-v20-addendum-v250-quality-and-release-safety-updates">Post-v2.0 Addendum (v2.5.0 quality and release-safety updates)</h3>
+<p>This PRD remains focused on the original platform scope. Since v2.0, additional quality safeguards were added in v2.5.0:</p>
+<ul>
+<li>PDF scanned-content detection now uses smarter page-image coverage logic and includes low-resolution scan detection (<code>PDF-IMAGE-RESOLUTION</code>) to improve OCR readiness guidance.</li>
+<li>EPUB auditing now supports optional EPUBCheck integration, mapping validation output to structured findings (<code>EPUBCHECK-ERROR</code>, <code>EPUBCHECK-WARNING</code>).</li>
+<li>Web release validation now includes an automated accessibility regression gate (Playwright + axe scan converted to SARIF).</li>
+</ul>
+<p>For implementation-level detail and release chronology, see <code>CHANGELOG.md</code> and <code>docs/RELEASE-v2.5.0.md</code>.</p>
 <table>
 <thead>
 <tr>
