@@ -61,6 +61,8 @@ Releases are tagged in the [GitHub repository](https://github.com/accesswatch/ac
 
 ### Fixed
 
+- **CI deploy gate: fixed false failure in Fix route form-option test under AI-off defaults.** `web/tests/test_fix_routes.py` now mocks `acb_large_print_web.ai_features.ai_heading_fix_enabled()` directly in `TestParseFormOptions::test_detect_headings_on` instead of mutating environment variables after app startup. This keeps the assertion aligned with cached feature-flag behavior in CI and prevents the `Deploy Web App` workflow from failing before SSH deployment.
+
 - **Desktop PDF audit: resolved pre-existing style violations in `pdf_auditor.py`.** Wrapped long string and expression lines that previously triggered lint errors (including lines around missing-PyMuPDF messaging, tagged-PDF messaging, text block extraction, and font-family prefix checks) with no behavior changes.
 
 - **Web: Changelog page `/changelog/` returned HTTP 500 due to unescaped template syntax in `changelog_body.html`.** Two occurrences of brace sequences that Jinja2 mis-parsed as template directives were escaped with HTML entities: a Docker service label using Go template syntax `{{.Name}}` (→ `&#123;&#123;.Name&#125;&#125;`) and an inline code example showing `{% set %}` / `{{ }}` Jinja2 syntax (→ `&#123;% set %&#125;` / `&#123;&#123; &#125;&#125;`).

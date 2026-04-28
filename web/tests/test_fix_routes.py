@@ -260,9 +260,9 @@ class TestParseFormOptions:
         from werkzeug.datastructures import MultiDict
 
         with app.app_context():
-            # Ensure AI master + heading-fix feature enabled for this test
-            monkeypatch.setenv("GLOW_ENABLE_AI", "1")
-            monkeypatch.setenv("GLOW_ENABLE_AI_HEADING_FIX", "1")
+            # Mock ai_heading_fix_enabled to return True for this test
+            # (Environment variables don't work because flags are cached at app startup)
+            monkeypatch.setattr("acb_large_print_web.ai_features.ai_heading_fix_enabled", lambda: True)
             form = MultiDict({"detect_headings": "on", "use_ai": "on"})
             opts = _parse_form_options(form)
             assert opts["detect_headings"] is True
