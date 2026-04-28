@@ -54,6 +54,12 @@ MAIN_DOMAIN="${MAIN_DOMAIN:-csedesigns.com}"
 ENABLE_PREDEPLOY_BACKUP="${ENABLE_PREDEPLOY_BACKUP:-1}"
 HEALTH_MAX_ATTEMPTS="${HEALTH_MAX_ATTEMPTS:-40}"
 HEALTH_SLEEP="${HEALTH_SLEEP:-3}"
+COMPOSE_REMOVE_ORPHANS="${COMPOSE_REMOVE_ORPHANS:-1}"
+CLEANUP_ON_SUCCESS="${CLEANUP_ON_SUCCESS:-1}"
+CLEANUP_ON_ROLLBACK="${CLEANUP_ON_ROLLBACK:-0}"
+CLEANUP_IMAGE_PRUNE="${CLEANUP_IMAGE_PRUNE:-1}"
+CLEANUP_BUILDER_PRUNE="${CLEANUP_BUILDER_PRUNE:-0}"
+CLEANUP_BUILDER_KEEP_STORAGE="${CLEANUP_BUILDER_KEEP_STORAGE:-4GB}"
 
 
 PRE_DEPLOY_COMMIT=""
@@ -86,6 +92,31 @@ dump_service_logs() {
     local lines="${2:-40}"
     log_ts "--- Log tail: $service (last $lines lines) ---"
     docker compose -f "$COMPOSE_FILE" logs --tail "$lines" "$service" 2>&1 || true
+}
+
+# ---------------------------------------------------------------------------
+# Helper: optional cleanup of stale Docker artifacts
+# ---------------------------------------------------------------------------
+run_optional_cleanup() {
+    local phase="${1:-deploy}"
+
+    log_ts "--- Cleanup phase ($phase): begin ---"
+
+    if [[ "$CLEANUP_IMAGE_PRUNE" == "1" ]]; then
+        log_ts "    Pruning dangling/unused images (docker image prune -f)"
+        docker image prune -f || true
+    else
+        log_ts "    Skipping image prune (CLEANUP_IMAGE_PRUNE=$CLEANUP_IMAGE_PRUNE)"
+    fi
+
+    if [[ "$CLEANUP_BUILDER_PRUNE" == "1" ]]; then
+        log_ts "    Pruning builder cache with keep-storage=$CLEANUP_BUILDER_KEEP_STORAGE"
+        docker builder prune -f --keep-storage "$CLEANUP_BUILDER_KEEP_STORAGE" || true
+    else
+        log_ts "    Skipping builder prune (CLEANUP_BUILDER_PRUNE=$CLEANUP_BUILDER_PRUNE)"
+    fi
+
+    log_ts "--- Cleanup phase ($phase): complete ---"
 }
 
 # ---------------------------------------------------------------------------
@@ -249,7 +280,11 @@ cd "$WEB_ROOT"
 
 log_ts "--- Building and starting containers (docker compose up -d --build) ---"
 log_ts "    Build output follows:"
-docker compose -f "$COMPOSE_FILE" up -d --build
+if [[ "$COMPOSE_REMOVE_ORPHANS" == "1" ]]; then
+    docker compose -f "$COMPOSE_FILE" up -d --build --remove-orphans
+else
+    docker compose -f "$COMPOSE_FILE" up -d --build
+fi
 log_ts "--- docker compose up complete ---"
 
 # Show initial container state immediately after launch
@@ -270,8 +305,18 @@ if [[ "$HEALTHY" -eq 1 ]]; then
     log_ts "--- Disabling maintenance mode (site is now live) ---"
     export MAINTENANCE_MODE=0
     MAINTENANCE_ENABLED=0
-    docker compose -f "$COMPOSE_FILE" up -d --build
+    if [[ "$COMPOSE_REMOVE_ORPHANS" == "1" ]]; then
+        docker compose -f "$COMPOSE_FILE" up -d --build --remove-orphans
+    else
+        docker compose -f "$COMPOSE_FILE" up -d --build
+    fi
     log_ts "--- Maintenance mode disabled successfully ---"
+
+    if [[ "$CLEANUP_ON_SUCCESS" == "1" ]]; then
+        run_optional_cleanup "success"
+    else
+        log_ts "--- Skipping cleanup on success (CLEANUP_ON_SUCCESS=$CLEANUP_ON_SUCCESS) ---"
+    fi
 
 else
     log_ts "--- Health check: FAILED after ${HEALTH_MAX_ATTEMPTS} attempts ---"
@@ -305,7 +350,11 @@ Container: {{.Name}}
         log_ts "--- Rollback checkout complete; rebuilding containers ---"
 
         cd "$WEB_ROOT"
-        docker compose -f "$COMPOSE_FILE" up -d --build
+        if [[ "$COMPOSE_REMOVE_ORPHANS" == "1" ]]; then
+            docker compose -f "$COMPOSE_FILE" up -d --build --remove-orphans
+        else
+            docker compose -f "$COMPOSE_FILE" up -d --build
+        fi
         log_ts "--- Rollback containers started ---"
 
         ROLLBACK_HEALTHY="$(wait_for_health "rollback")"
@@ -315,6 +364,12 @@ Container: {{.Name}}
             ROLLED_BACK=1
             log_ts "--- Rollback health check: PASSED ---"
             probe_health_json "Rollback health readiness"
+
+            if [[ "$CLEANUP_ON_ROLLBACK" == "1" ]]; then
+                run_optional_cleanup "rollback"
+            else
+                log_ts "--- Skipping cleanup after rollback (CLEANUP_ON_ROLLBACK=$CLEANUP_ON_ROLLBACK) ---"
+            fi
         else
             log_ts "--- Rollback health check: FAILED ---"
             dump_service_logs web 60
