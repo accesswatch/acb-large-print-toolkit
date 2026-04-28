@@ -8,7 +8,7 @@ GLOW 2.0 is available at [glow.bits-acb.org](https://glow.bits-acb.org).
 
 GLOW 2.0 will be released **on or around 8:00 PM on Saturday, April 18, 2026**.
 
-"From what I experienced, GLOW does not just give me information that creates extra work for me to do in order to get accessible documents out the door. It actually automates work I probably was not doing all that well in the first place. In other words, it is giving me a way to improve my product, and it is also making my work easier and quicker. Getting both quality and quantity benefits from the same product is not something I have experienced that often, and it is actually pretty cool." -- Ron Brooks, [Accessible Avenue](https://accessibleavenue.net/)
+"From what I experienced, GLOW does not just give me information that creates extra work for me to do to get accessible documents out the door. It actually automates work I probably was not doing all that well in the first place. In other words, it is giving me a way to improve my product, and it is also making my work easier and quicker. Getting both quality and quantity benefits from the same product is not something I have experienced that often, and it is actually pretty cool." -- Ron Brooks, [Accessible Avenue](https://accessibleavenue.net/)
 
 ## A Real-World Story
 

@@ -52,7 +52,10 @@ def audit_pdf(file_path: str | Path) -> AuditResult:
             Finding(
                 rule_id="PDF-TAGGED",
                 severity=C.Severity.CRITICAL,
-                message="PyMuPDF is not installed; PDF audit requires it (pip install pymupdf)",
+                message=(
+                    "PyMuPDF is not installed; PDF audit requires it "
+                    "(pip install pymupdf)"
+                ),
                 auto_fixable=False,
             )
         )
@@ -63,7 +66,8 @@ def audit_pdf(file_path: str | Path) -> AuditResult:
         _check_metadata(doc, result)
         _check_tagged(doc, result)
         _check_fonts(doc, result)
-        _check_images_of_text(doc, result)
+        image_only_pages = _check_images_of_text(doc, result)
+        _check_image_resolution(doc, image_only_pages, result)
         _check_bookmarks(doc, result)
     finally:
         doc.close()
@@ -117,7 +121,8 @@ def _check_tagged(doc, result: AuditResult) -> None:
     if not is_tagged:
         result.add(
             "PDF-TAGGED",
-            "PDF is not tagged; screen readers cannot determine document structure",
+            "PDF is not tagged; screen readers cannot determine "
+            "document structure",
         )
 
 
@@ -130,9 +135,9 @@ def _check_fonts(doc, result: AuditResult) -> None:
     for page_num in range(min(doc.page_count, 50)):  # Cap at 50 pages
         page = doc[page_num]
         pages_checked += 1
-        blocks = page.get_text("dict", flags=fitz.TEXT_PRESERVE_WHITESPACE).get(
-            "blocks", []
-        )
+        blocks = page.get_text(
+            "dict", flags=fitz.TEXT_PRESERVE_WHITESPACE
+        ).get("blocks", [])
 
         for block in blocks:
             if block.get("type") != 0:  # text blocks only
@@ -152,7 +157,10 @@ def _check_fonts(doc, result: AuditResult) -> None:
 
                     # Font family check
                     font_lower = font.lower()
-                    if not any(font_lower.startswith(p) for p in _SANS_SERIF_PREFIXES):
+                    if not any(
+                        font_lower.startswith(p)
+                        for p in _SANS_SERIF_PREFIXES
+                    ):
                         if font_lower and len(text) > 2:  # Skip tiny fragments
                             non_arial_fonts.add(font)
 
@@ -175,27 +183,81 @@ def _check_fonts(doc, result: AuditResult) -> None:
         )
 
 
-def _check_images_of_text(doc, result: AuditResult) -> None:
-    """Detect pages that appear to be scanned images (no extractable text)."""
+def _check_images_of_text(doc, result: AuditResult) -> list[int]:
+    """Detect pages that appear to be scanned images (no extractable text).
+
+    A page is classified as image-only when it contains at least one image that
+    covers 40 % or more of the page area and has no extractable text.  Pages
+    with small decorative images (logos, watermarks) alongside real text are
+    not flagged.
+
+    Returns the list of 1-based page numbers that were classified as image-only
+    so the caller can pass them to the DPI check.
+    """
+    checked = min(doc.page_count, 50)
     image_only_pages: list[int] = []
 
-    for page_num in range(min(doc.page_count, 50)):
+    for page_num in range(checked):
         page = doc[page_num]
         text = page.get_text("text").strip()
-        images = page.get_images()
+        if text:
+            # Real text present — not an image-only page
+            continue
 
-        # Page has images but no extractable text -> likely scanned
-        if images and not text:
+        images = page.get_images()
+        if not images:
+            continue
+
+        # Require images to cover at least 40 % of the page before flagging.
+        # This avoids false positives from pages that contain only a tiny
+        # watermark or a blank page with a single pixel image.
+        page_area = page.rect.width * page.rect.height
+        image_area = 0.0
+        try:
+            for info in page.get_image_info():
+                r = fitz.Rect(info["bbox"])
+                image_area += r.width * r.height
+        except Exception:
+            # Fallback: treat any image presence as sufficient when bbox info
+            # is unavailable (older PyMuPDF builds).
+            image_area = page_area  # assume full coverage
+
+        if page_area > 0 and (image_area / page_area) >= 0.40:
             image_only_pages.append(page_num + 1)
 
-    if image_only_pages:
-        pages_str = ", ".join(str(p) for p in image_only_pages[:10])
-        if len(image_only_pages) > 10:
-            pages_str += f" (and {len(image_only_pages) - 10} more)"
-        result.add(
-            "PDF-NO-IMAGES-OF-TEXT",
-            f"Scanned or image-only pages with no extractable text: {pages_str}",
+    if not image_only_pages:
+        return image_only_pages
+
+    total = doc.page_count
+    pct = int(round(100 * len(image_only_pages) / total))
+    pages_str = ", ".join(str(p) for p in image_only_pages[:10])
+    if len(image_only_pages) > 10:
+        pages_str += f" (and {len(image_only_pages) - 10} more)"
+
+    if len(image_only_pages) >= total * 0.9:
+        # Entire document is scanned images
+        msg = (
+            f"This PDF appears to be entirely scanned (all {total} pages"
+            f" are image-only with no extractable text).  Run OCR"
+            f" (e.g. Adobe Acrobat 'Recognize Text', Tesseract, or ABBYY"
+            f" FineReader) before attempting accessibility remediation."
         )
+    elif pct >= 50:
+        msg = (
+            f"{len(image_only_pages)} of {total} pages ({pct}%) are"
+            f" image-only with no extractable text (pages: {pages_str})."
+            f"  OCR is required on these pages before screen readers can"
+            f" access the content."
+        )
+    else:
+        msg = (
+            f"{len(image_only_pages)} page(s) appear to be scanned images"
+            f" with no extractable text (pages: {pages_str}).  These pages"
+            f" require OCR to become screen-reader accessible."
+        )
+
+    result.add("PDF-NO-IMAGES-OF-TEXT", msg)
+    return image_only_pages
 
 
 def _check_bookmarks(doc, result: AuditResult) -> None:
@@ -208,4 +270,55 @@ def _check_bookmarks(doc, result: AuditResult) -> None:
         result.add(
             "PDF-BOOKMARKS",
             f"PDF has {doc.page_count} pages but no bookmarks for navigation",
+        )
+
+
+def _check_image_resolution(
+    doc, image_only_pages: list[int], result: AuditResult
+) -> None:
+    """Check DPI of images on image-only pages.
+
+    Images below 150 DPI will produce poor OCR results and cannot be reliably
+    remediated.  300 DPI is the recommended minimum for archival-quality OCR.
+    Only pages that were already identified as image-only are inspected so that
+    small decorative images on text pages are not evaluated.
+    """
+    if not image_only_pages:
+        return
+
+    low_res_pages: list[tuple[int, int]] = []  # (page_num_1based, min_dpi)
+
+    for page_num_1 in image_only_pages:
+        page = doc[page_num_1 - 1]
+        try:
+            infos = page.get_image_info()
+        except Exception:
+            continue
+
+        for info in infos:
+            bbox = fitz.Rect(info["bbox"])
+            w_pts = bbox.width
+            h_pts = bbox.height
+            w_px = info.get("width", 0)
+            h_px = info.get("height", 0)
+            if w_pts <= 0 or h_pts <= 0 or w_px <= 0 or h_px <= 0:
+                continue
+            dpi_x = (w_px / w_pts) * 72
+            dpi_y = (h_px / h_pts) * 72
+            min_dpi = int(min(dpi_x, dpi_y))
+            if min_dpi < 150:
+                low_res_pages.append((page_num_1, min_dpi))
+                break  # one low-res image is enough to flag the page
+
+    if low_res_pages:
+        detail = ", ".join(
+            f"p.{p} ({d} DPI)" for p, d in low_res_pages[:8]
+        )
+        if len(low_res_pages) > 8:
+            detail += f" (and {len(low_res_pages) - 8} more)"
+        result.add(
+            "PDF-IMAGE-RESOLUTION",
+            f"Scanned pages have low image resolution (below 150 DPI);"
+            f" OCR quality will be poor: {detail}."
+            f"  Re-scan at 300 DPI or higher.",
         )

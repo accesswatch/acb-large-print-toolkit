@@ -11,6 +11,16 @@
 
 The Flask web application has been built and is ready for deployment. All core features described in this PRD are implemented. The following table summarizes what shipped in v0.1 and subsequent v1.2.0 enhancements:
 
+### Post-v2.0 Addendum (v2.5.0 quality and release-safety updates)
+
+This PRD remains focused on the original platform scope. Since v2.0, additional quality safeguards were added in v2.5.0:
+
+- PDF scanned-content detection now uses smarter page-image coverage logic and includes low-resolution scan detection (`PDF-IMAGE-RESOLUTION`) to improve OCR readiness guidance.
+- EPUB auditing now supports optional EPUBCheck integration, mapping validation output to structured findings (`EPUBCHECK-ERROR`, `EPUBCHECK-WARNING`).
+- Web release validation now includes an automated accessibility regression gate (Playwright + axe scan converted to SARIF).
+
+For implementation-level detail and release chronology, see `CHANGELOG.md` and `docs/RELEASE-v2.5.0.md`.
+
 | Feature | Status | Notes |
 |---------|--------|-------|
 | Audit page (Full / Quick / Custom modes) | Done | Rule filtering by severity, severity-grouped checkboxes |

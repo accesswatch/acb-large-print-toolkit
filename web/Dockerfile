@@ -9,6 +9,7 @@ WORKDIR /app
 # Install system dependencies:
 #   pandoc        -- Markdown/RST/ODT/RTF -> ACB HTML conversion
 #   nodejs + npm  -- DAISY Ace EPUB accessibility checker
+#   epubcheck     -- W3C-authoritative EPUB package validation
 #   WeasyPrint system libs -- CSS-based PDF rendering
 #   fonts-liberation -- Liberation Sans (metrically identical to Arial)
 #                       for ACB BOP font compliance in PDF output
@@ -17,7 +18,7 @@ WORKDIR /app
 # via its REST API (no JRE or .deb needed in this image).
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
-    pandoc nodejs npm \
+    pandoc nodejs npm epubcheck \
     ffmpeg \
     libpango-1.0-0 libpangocairo-1.0-0 libcairo2 libgdk-pixbuf-2.0-0 \
     libffi-dev shared-mime-info \

@@ -1,0 +1,7 @@
+extends: existence
+message: "Use descriptive link text instead of '%s'."
+level: warning
+ignorecase: true
+scope: raw
+tokens:
+  - '(?i)\[(click here|read more|learn more|more info|this link|here|more)\]\([^)]*\)'

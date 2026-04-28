@@ -1,0 +1,102 @@
+name: Accessibility Regression Gate
+
+on:
+  pull_request:
+    paths:
+      - "web/**"
+      - ".github/workflows/accessibility-regression.yml"
+  push:
+    branches: [main]
+    paths:
+      - "web/**"
+      - ".github/workflows/accessibility-regression.yml"
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  accessibility-regression:
+    name: Playwright + axe gate
+    runs-on: ubuntu-latest
+    env:
+      E2E_PORT: "5100"
+      E2E_BASE_URL: "http://127.0.0.1:5100"
+      GLOW_ENABLE_AI: "false"
+      GLOW_ENABLE_AI_CHAT: "false"
+      GLOW_ENABLE_AI_WHISPERER: "false"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ./desktop
+          python -m pip install -e ./web
+
+      - name: Install web Node dependencies
+        working-directory: web
+        run: npm ci
+
+      - name: Install Playwright browser
+        working-directory: web
+        run: npx playwright install --with-deps chromium
+
+      - name: Run Playwright regression suite
+        working-directory: web
+        run: npm run test:e2e
+
+      - name: Run axe CLI scan and emit SARIF
+        shell: bash
+        run: |
+          mkdir -p web/e2e/artifacts
+          python -m flask --app acb_large_print_web.app:create_app run --no-debugger --no-reload --port 5100 > web/e2e/artifacts/flask.log 2>&1 &
+          FLASK_PID=$!
+
+          for i in {1..30}; do
+            if curl -fsS http://127.0.0.1:5100/health > /dev/null; then
+              break
+            fi
+            sleep 2
+          done
+
+          npx @axe-core/cli \
+            http://127.0.0.1:5100/ \
+            http://127.0.0.1:5100/audit/ \
+            http://127.0.0.1:5100/fix/ \
+            http://127.0.0.1:5100/convert/ \
+            http://127.0.0.1:5100/template/ \
+            --tags wcag2a,wcag2aa,wcag21a,wcag21aa,wcag22aa \
+            --save web/e2e/artifacts/axe-results.json
+
+          python .github/scripts/axe_json_to_sarif.py \
+            web/e2e/artifacts/axe-results.json \
+            web/e2e/artifacts/axe-results.sarif
+
+          kill "$FLASK_PID" || true
+
+      - name: Upload SARIF
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: web/e2e/artifacts/axe-results.sarif
+          category: accessibility-regression
+
+      - name: Upload accessibility artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: accessibility-regression-artifacts
+          path: web/e2e/artifacts/
+          retention-days: 14

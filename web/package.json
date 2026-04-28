@@ -10,6 +10,7 @@
     "test:e2e:issues": "node e2e/scripts/generate-issue-report.mjs"
   },
   "devDependencies": {
+    "@axe-core/cli": "^4.11.2",
     "@playwright/test": "^1.54.2"
   }
 }

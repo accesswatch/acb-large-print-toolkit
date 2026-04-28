@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+import os
 import tempfile
 import zipfile
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -236,6 +238,49 @@ class TestReporterIntegration:
             assert "Ways of Reading" in report
             assert "Navigation" in report
             assert "Hazards" in report
+        finally:
+            _cleanup(path)
+
+
+class TestEpubCheckIntegration:
+    def test_epubcheck_adds_error_and_warning_findings(self, monkeypatch: pytest.MonkeyPatch):
+        path = _build_epub("<dc:title>Test</dc:title><dc:language>en</dc:language>")
+        try:
+            monkeypatch.setenv("GLOW_ENABLE_EPUBCHECK", "true")
+            monkeypatch.setattr(
+                "acb_large_print.epub_auditor._epubcheck_command",
+                lambda: ["epubcheck"],
+            )
+
+            output = (
+                "ERROR(RSC-005): OEBPS/ch1.xhtml(12,5): Error while parsing file\n"
+                "WARNING(ACC-013): OEBPS/ch1.xhtml(44,9): Landmark missing\n"
+            )
+            monkeypatch.setattr(
+                "acb_large_print.epub_auditor.subprocess.run",
+                lambda *args, **kwargs: SimpleNamespace(returncode=1, stdout=output, stderr=""),
+            )
+
+            result = audit_epub(path)
+            rule_ids = [f.rule_id for f in result.findings]
+            assert "EPUBCHECK-ERROR" in rule_ids
+            assert "EPUBCHECK-WARNING" in rule_ids
+        finally:
+            _cleanup(path)
+
+    def test_epubcheck_unavailable_is_graceful(self, monkeypatch: pytest.MonkeyPatch):
+        path = _build_epub("<dc:title>Test</dc:title><dc:language>en</dc:language>")
+        try:
+            monkeypatch.setenv("GLOW_ENABLE_EPUBCHECK", "true")
+            monkeypatch.setattr(
+                "acb_large_print.epub_auditor._epubcheck_command",
+                lambda: None,
+            )
+
+            result = audit_epub(path)
+            # Should still return normal findings without crashing and without EPUBCheck entries.
+            rule_ids = [f.rule_id for f in result.findings]
+            assert all(not r.startswith("EPUBCHECK-") for r in rule_ids)
         finally:
             _cleanup(path)
 

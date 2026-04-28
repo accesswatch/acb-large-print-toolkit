@@ -68,6 +68,16 @@
     <h3>6. Better operator visibility</h3>
     <p>Admin now clearly shows the active branding profile and explains exactly how to change it at deployment time.</p>
 
+    <h3>7. Stronger PDF and EPUB confidence with automated accessibility regression checks</h3>
+    <p>This release also improves document-quality signal and release safety for non-AI workflows:</p>
+    <ul>
+      <li>PDF scanning detection is smarter and now distinguishes likely full-page scans from decorative-image pages.</li>
+      <li>New low-resolution scan guidance flags scanned pages below 150 DPI and recommends 300 DPI or higher for reliable OCR outcomes.</li>
+      <li>EPUB audits can optionally include EPUBCheck validation results as structured findings.</li>
+      <li>Web accessibility regression checks now run as a repeatable Playwright + axe + SARIF pipeline.</li>
+    </ul>
+    <p>For users and operators, this means clearer remediation guidance for scanned PDFs, stronger EPUB validation confidence, and more dependable accessibility quality gates before release.</p>
+
     <h2>High-profile user-impact fixes in this release</h2>
     <ul>
       <li>Resolved mismatched cross-links that could point users to disabled features.</li>
@@ -84,6 +94,14 @@
     <h2>AI status update</h2>
     <p>At this time, AI features remain disabled by default in production and staging.</p>
     <p>This does not limit functionality for core GLOW workflows. Audit, Fix, Export, Convert, Template, and standards-guidance workflows remain fully available and production-ready.</p>
+
+    <h2>Technology stewardship and mission impact</h2>
+    <p>GLOW 2.5.0 also reflects a core operating principle: responsible stewardship of the technology we build so it can reach the widest possible audience.</p>
+    <p>As part of that commitment, BITS partnered with the University of Arizona to deliver a fully branded, non-AI-capable experience tailored for educational use while preserving the full strength of core accessibility workflows.</p>
+    <blockquote>
+      <p>"As President of BITS, I believe we are stewards of the technology we create. Our partnership with the University of Arizona reflects that responsibility by delivering a fully branded, non-AI-capable GLOW experience that still gives students, faculty, and staff powerful access to accessible documents. When accessibility is practical, reliable, and welcoming, it does more than improve compliance. It opens doors to participation, learning, and success."</p>
+      <p><strong>-- Jeff Bishop, President, BITS</strong></p>
+    </blockquote>
 
     <h2>Availability</h2>
     <p>GLOW 2.5.0 is available now.</p>

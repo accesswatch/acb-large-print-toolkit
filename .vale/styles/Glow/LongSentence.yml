@@ -1,0 +1,6 @@
+extends: occurrence
+message: "Sentence is long (%s words). Consider splitting for readability."
+level: warning
+scope: sentence
+max: 32
+token: '\\b\\w+\\b'

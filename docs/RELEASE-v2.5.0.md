@@ -8,6 +8,8 @@ Important release posture: AI features are currently disabled by default in prod
 
 Operational model: v2.5.0 ships as one unified release. Feature flags control what is visible and actionable at runtime, so teams can safely pare down or phase in capabilities without forking release content.
 
+Technology stewardship posture: this release emphasizes responsible delivery so accessibility capability can reach the broadest set of users across different deployment needs.
+
 Core workflows fully available in 2.5.0:
 
 - Audit
@@ -115,6 +117,22 @@ User impact:
 - Faster diagnosis when a deployment appears "wrong brand"
 - Clear boundary between runtime flags and deploy-time profile settings
 
+### 8. PDF and EPUB audit confidence plus automated regression gating
+
+v2.5.0 also strengthens non-AI quality safeguards for document workflows and release validation:
+
+- PDF scanned-content detection now uses image coverage thresholds to reduce false positives from decorative images.
+- PDF audits now include a low-resolution scanned-image rule (`PDF-IMAGE-RESOLUTION`) that flags pages below 150 DPI and recommends 300 DPI re-scan targets for OCR reliability.
+- EPUB auditing can optionally run EPUBCheck and map its validation output into first-class findings (`EPUBCHECK-ERROR`, `EPUBCHECK-WARNING`).
+- The web pipeline now includes an accessibility regression gate using Playwright plus axe scans converted to SARIF for code scanning visibility.
+
+User impact:
+
+- Better triage for image-based and scanned PDFs
+- Clearer OCR remediation guidance for low-quality scans
+- Stronger EPUB package validation when EPUBCheck is available
+- Higher release confidence through repeatable accessibility regression checks
+
 ---
 
 ## High-Profile User-Impact Fixes Resolved in v2.5.0
@@ -164,7 +182,11 @@ Operational rule:
 4. Run focused regression tests:
    - `tests/test_app.py`
    - `tests/test_admin_flags.py`
-5. Validate visual branding for target profile.
+5. Validate document audit signal quality:
+  - confirm scanned/image-heavy PDFs are classified accurately
+  - confirm low-DPI scanned pages surface `PDF-IMAGE-RESOLUTION`
+  - confirm EPUBCheck findings appear when EPUBCheck is available
+6. Validate visual branding for target profile.
 
 ---
 
@@ -176,3 +198,11 @@ Operational rule:
 | Flask Web App | 2.5.0 | 2026-04-28 |
 | Desktop CLI/GUI | 2.5.0 | 2026-04-28 |
 | Office Add-in | 2.5.0 | 2026-04-28 |
+
+---
+
+## Leadership Note: Stewardship and Education Impact
+
+BITS partnered with the University of Arizona to provide a fully branded, non-AI-capable educational experience for GLOW while preserving complete core workflow capability for accessibility production use.
+
+> "As President of BITS, I believe we are stewards of the technology we create. Our partnership with the University of Arizona reflects that responsibility by delivering a fully branded, non-AI-capable GLOW experience that still gives students, faculty, and staff powerful access to accessible documents. When accessibility is practical, reliable, and welcoming, it does more than improve compliance. It opens doors to participation, learning, and success." -- Jeff Bishop, President, BITS

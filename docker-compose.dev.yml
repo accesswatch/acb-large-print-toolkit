@@ -1,0 +1,22 @@
+version: "3.8"
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: web/Dockerfile
+    image: glow-web:dev
+    # Run as root in dev so file permissions and control operations are permitted
+    user: "0:0"
+    volumes:
+      - ./:/app:cached
+      - ./instance:/app/instance:cached
+    ports:
+      - "8000:8000"
+    environment:
+      SECRET_KEY: change-me
+      FEATURE_FLAGS_BACKEND: sqlite
+      FLASK_APP: "acb_large_print_web.app:create_app"
+      FLASK_ENV: development
+    command: flask run --host=0.0.0.0 --port=8000
+    tty: true

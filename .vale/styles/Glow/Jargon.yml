@@ -1,0 +1,10 @@
+extends: existence
+message: "Consider plain-language wording instead of '%s'."
+level: warning
+ignorecase: true
+tokens:
+  - utilize
+  - leverage
+  - in order to
+  - commence
+  - facilitate

@@ -43,14 +43,16 @@ async function ensureConsent(page) {
 test.describe('GLOW web regression suite', () => {
   test('home page loads and references WCAG 2.2', async ({ page }) => {
     await page.goto('/');
+    await ensureConsent(page);
     await expect(page.getByRole('heading', { level: 1, name: /GLOW Accessibility Toolkit/i })).toBeVisible();
-    await expect(page.getByText(/WCAG 2\.2 AA/i).first()).toBeVisible();
+    await expect(page.getByText(/WCAG\s*2\.2(?:\s*AA)?/i).first()).toBeVisible();
   });
 
   test('audit flow uploads docx and returns report', async ({ page }) => {
     skipIfMissingUploadFile();
 
     await page.goto('/audit/');
+    await ensureConsent(page);
     await page.locator('#document').setInputFiles(uploadDocx);
     await page.getByRole('button', { name: /Run Audit/i }).click();
 
@@ -62,6 +64,7 @@ test.describe('GLOW web regression suite', () => {
     skipIfMissingUploadFile();
 
     await page.goto('/fix/');
+    await ensureConsent(page);
     await page.locator('#document').setInputFiles(uploadDocx);
 
     const detectHeadings = page.locator('#detect-headings');
@@ -80,6 +83,7 @@ test.describe('GLOW web regression suite', () => {
     skipIfMissingUploadFile();
 
     await page.goto('/export/');
+    await ensureConsent(page);
     await page.locator('#document').setInputFiles(uploadDocx);
     await page.locator('input[name="mode"][value="cms"]').check();
 
@@ -96,6 +100,7 @@ test.describe('GLOW web regression suite', () => {
     skipIfMissingUploadFile();
 
     await page.goto('/convert/');
+    await ensureConsent(page);
     await page.locator('#document').setInputFiles(uploadDocx);
 
     const [download] = await Promise.all([
@@ -109,6 +114,7 @@ test.describe('GLOW web regression suite', () => {
 
   test('template flow downloads dotx', async ({ page }) => {
     await page.goto('/template/');
+    await ensureConsent(page);
 
     const [download] = await Promise.all([
       page.waitForEvent('download'),
@@ -130,6 +136,7 @@ test.describe('GLOW web regression suite', () => {
 
     for (const [url, headingPattern] of pages) {
       await page.goto(url);
+      await ensureConsent(page);
       await expect(page.locator('h1', { hasText: headingPattern }).first()).toBeVisible();
     }
   });

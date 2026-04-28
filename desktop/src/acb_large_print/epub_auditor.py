@@ -15,6 +15,7 @@ logs a warning recommending installation.
 from __future__ import annotations
 
 import logging
+import os
 import re
 import shutil
 import subprocess
@@ -45,6 +46,13 @@ _AMBIGUOUS_LINK_RE = re.compile(
 
 # URL-like pattern
 _URL_RE = re.compile(r"^https?://", re.IGNORECASE)
+
+# EPUBCheck output patterns, e.g.:
+# ERROR(RSC-005): chapter1.xhtml(12,5): Message
+_EPUBCHECK_RE = re.compile(
+    r"^(ERROR|WARNING)\(([^)]+)\):\s+(.+)$",
+    re.IGNORECASE,
+)
 
 
 class _HTMLStructureParser(HTMLParser):
@@ -187,6 +195,8 @@ def audit_epub(file_path: str | Path) -> AuditResult:
         )
 
     # Always run our built-in checks (Ace may miss ACB-specific rules)
+    _check_with_epubcheck(file_path, result)
+
     # Phase 1: OPF metadata checks (no external dependencies)
     _check_opf_metadata(file_path, result, ace_used)
 
@@ -207,6 +217,75 @@ def audit_epub(file_path: str | Path) -> AuditResult:
         )
 
     return result
+
+
+def _epubcheck_command() -> list[str] | None:
+    """Resolve EPUBCheck invocation command.
+
+    Priority:
+    1) `epubcheck` executable on PATH
+    2) `EPUBCHECK_JAR` + `java -jar`
+    """
+    exe = shutil.which("epubcheck")
+    if exe:
+        return [exe]
+
+    jar = os.environ.get("EPUBCHECK_JAR", "").strip()
+    if jar and Path(jar).exists():
+        java = shutil.which("java")
+        if java:
+            return [java, "-jar", jar]
+
+    return None
+
+
+def _check_with_epubcheck(file_path: Path, result: AuditResult) -> None:
+    """Run EPUBCheck when available and map findings into AuditResult.
+
+    This is best-effort and does not block standard auditing when EPUBCheck is
+    unavailable or fails unexpectedly.
+    """
+    enabled = os.environ.get("GLOW_ENABLE_EPUBCHECK", "true").strip().lower()
+    if enabled not in ("1", "true", "yes", "on"):
+        return
+
+    cmd = _epubcheck_command()
+    if not cmd:
+        log.debug("EPUBCheck unavailable: skipping external EPUB validation")
+        return
+
+    try:
+        proc = subprocess.run(
+            [*cmd, str(file_path)],
+            capture_output=True,
+            text=True,
+            timeout=120,
+        )
+    except (subprocess.SubprocessError, OSError):
+        log.debug("EPUBCheck execution failed", exc_info=True)
+        return
+
+    combined = f"{proc.stdout}\n{proc.stderr}".strip()
+    if not combined:
+        return
+
+    added = 0
+    for line in combined.splitlines():
+        m = _EPUBCHECK_RE.match(line.strip())
+        if not m:
+            continue
+        severity, code, message = m.groups()
+        rule_id = "EPUBCHECK-ERROR" if severity.upper() == "ERROR" else "EPUBCHECK-WARNING"
+        result.add(rule_id, f"{code}: {message}")
+        added += 1
+        if added >= 30:
+            # Cap volume to keep reports readable on severely malformed EPUBs.
+            break
+
+    # If EPUBCheck ran and failed but did not produce parseable lines, add summary.
+    if added == 0 and proc.returncode != 0:
+        tail = combined.splitlines()[-1].strip() if combined.splitlines() else "Validation failed"
+        result.add("EPUBCHECK-ERROR", f"EPUBCheck reported validation failure: {tail}")
 
 
 def _check_opf_metadata(

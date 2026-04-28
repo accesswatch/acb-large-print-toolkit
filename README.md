@@ -72,6 +72,21 @@ References:
 - Use em-dashes with no surrounding spaces.
 - Use person-first and neutral language in documentation and UI.
 
+### Prose quality checks (Vale)
+
+This repository uses a lightweight Vale profile for documentation clarity and accessibility writing quality.
+
+- Config: `.vale.ini`
+- Rules: `.vale/styles/Glow/`
+- Vocabulary: `.vale/config/vocabularies/Glow/`
+- CI workflow: `.github/workflows/docs-quality.yml`
+
+Current rules are intentionally low-noise and focus on:
+
+- discouraging ambiguous link text (for example "click here")
+- reducing jargon-heavy phrasing
+- flagging very long sentences for readability review
+
 ## Supported Document Formats
 
 | Format | Audit | Auto-Fix | Template | Export | Convert |

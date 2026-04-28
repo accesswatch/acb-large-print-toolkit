@@ -173,6 +173,10 @@ Additional document-type and integration flags (defaults: `true`)
 	- Purpose: Toggle optional third-party tool integrations and binary-backed capabilities.
 	- Notes: Use these flags when a deployment lacks the external binary or wants to disable a heavy-weight integration. For example, disabling `GLOW_ENABLE_PANDOC` hides Pandoc-dependent conversion flows; disabling `GLOW_ENABLE_DAISY_PIPELINE` hides DAISY Pipeline-based EPUB conversions.
 
+- **`GLOW_ENABLE_EPUBCHECK`** (environment flag, default: `true`)
+	- Purpose: Enables EPUBCheck-backed EPUB package validation inside the EPUB auditor.
+	- Notes: This is an environment-controlled integration flag consumed by the core EPUB auditor (`desktop/src/acb_large_print/epub_auditor.py`) and is best used when the `epubcheck` binary (or `EPUBCHECK_JAR` + Java) is present in the runtime image.
+
 Backend and metadata
 --------------------
 - The application supports two storage backends for persisted feature flags:
