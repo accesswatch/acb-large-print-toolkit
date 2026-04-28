@@ -13,20 +13,25 @@
 </section>
 
 <section>
-  <h2 id="features-heading">v2.0 Features (April 2026)</h2>
+  <h2 id="features-heading">v2.5.0 Features (April 28, 2026)</h2>
   <ul>
-    {% if ai_whisperer_enabled %}
-    <li><strong>BITS Whisperer:</strong> Audio transcription (MP3, WAV, M4A, OGG, FLAC, AAC, Opus) to Markdown or Word via OpenRouter audio transcription (same OpenRouter key as chat), with server-side cleanup, short retention, and optional secure retrieval for background jobs.</li>
-    {% endif %}
+    <li><strong>Audit Quality &amp; Document Intelligence:</strong> Enhanced Word heading normalization (Heading 1&ndash;6), paragraph spacing repair for mixed-format documents, smarter PDF scanned-image detection with per-page DPI quality checks (flagging pages below 150 DPI for OCR re-scan), and optional EPUBCheck integration for authoritative EPUB package validation.</li>
+    <li><strong>Report and Action Clarity:</strong> Improved audit and fix guidance with better cross-links between findings and next actions, format-specific post-fix recommendations, and feature-gated navigation that never shows dead-end links.</li>
+    <li><strong>Deployment-Aware Branding Profiles:</strong> New <code>GLOW_BRAND_PROFILE</code> setting supports <code>bits</code> (default ACB/BITS identity) and <code>uarizona</code> (University of Arizona deployment), controlling logos, colors, alt text, favicons, and shared wording from a single deployment variable.</li>
+    <li><strong>Granular Feature Controls:</strong> Per-direction convert flags (<code>GLOW_ENABLE_CONVERT_TO_MARKDOWN</code>, <code>GLOW_ENABLE_CONVERT_TO_HTML</code>, etc.), dedicated HTML export control, and per-feature AI gating (Chat, Whisperer, heading assistance, alt-text helpers) allow operators to phase features safely without forking code.</li>
     <li><strong>Consent &amp; Privacy Gate:</strong> First-time visitors are shown a transparent agreement explaining retention, cloud AI usage where applicable, and privacy protections. HttpOnly cookies, no ad tracking.</li>
     <li><strong>Quick Start Path:</strong> Universal upload form that shows contextual actions (Audit, Fix, Convert, Export, Template, BITS Whisperer) based on file type. Reduces barrier to entry for accessibility newcomers.</li>
+    {% if ai_whisperer_enabled %}
+    <li><strong>BITS Whisperer:</strong> Audio transcription (MP3, WAV, M4A, OGG, FLAC, AAC, Opus) to Markdown or Word via OpenRouter audio transcription, with server-side cleanup, temporary retention, two-stage form workflow, and optional client-side diagnostics.</li>
+    {% endif %}
     {% if ai_chat_enabled %}
-    <li><strong>OpenRouter-Powered Document Chat:</strong> Privacy-aware document Q&amp;A with grounded accessibility tools, quota controls, and low-cost fallback routing.</li>
+    <li><strong>Document Chat with Grounded Tools:</strong> Privacy-aware document Q&amp;A powered by OpenRouter with seven specialized tools: document summary, section content extraction, table analysis, decision/action mining, compliance assessment, and comprehensive "what passes" feedback for balanced responses.</li>
     {% endif %}
     {% if ai_configured %}
-    <li><strong>Cloud-Ready AI Gateway:</strong> Centralized routing, budget enforcement, quota tracking, and provider privacy controls for AI features while preserving rule-based non-AI workflows.</li>
+    <li><strong>Cloud-Ready AI Gateway:</strong> Centralized OpenRouter routing with provider privacy controls, transient retry/backoff, budget enforcement, queue wait controls, and compatibility fallbacks for edge cases &mdash; all while preserving rule-based non-AI workflows.</li>
     {% endif %}
-    <li><strong>Smart Concurrency Gating:</strong> Protective semaphores for AI and audio jobs. When capacity is full, users receive a 503 Busy response with Retry-After guidance instead of silent failures.</li>
+    <li><strong>Smart Concurrency Gating:</strong> Protective semaphores for AI and audio jobs with configurable queue-wait times. When capacity is full, users receive a 503 Busy response with Retry-After guidance instead of silent failures.</li>
+    <li><strong>Release-Safe Accessibility Regression Gate:</strong> Automated Playwright browser regression testing plus axe-core WCAG 2.2 AA scanning converted to SARIF for GitHub code scanning visibility. Ensures every release maintains accessibility compliance across key routes.</li>
   </ul>
   <a href="#main" class="back-to-top">Back to top</a>
 </section>
@@ -231,6 +236,14 @@
         <td>Advanced document conversion engine -- Word to EPUB 3, HTML to EPUB 3, EPUB to DAISY 2.02, EPUB to DAISY 3/DTBook. Used for producing accessible e-books and talking book formats (<a href="https://daisy.org/">DAISY Consortium</a>)</td>
       </tr>
       {% endif %}
+      {% if feature_epubcheck_enabled %}
+      <tr>
+        <td><a href="https://github.com/w3c/epubcheck">EPUBCheck</a></td>
+        <td>5.1+</td>
+        <td>BSD-3-Clause</td>
+        <td>EPUB package validation and conformance checker. Validates EPUB 3 structure, OPF manifest, navigation documents, media types, and W3C publication metadata. Results are mapped into GLOW audit findings (EPUBCHECK-ERROR, EPUBCHECK-WARNING) when enabled.</td>
+      </tr>
+      {% endif %}
     </tbody>
   </table>
 
@@ -269,6 +282,24 @@
         <td>6.0+</td>
         <td>Inno Setup License (free)</td>
         <td>Windows installer (.exe) creation</td>
+      </tr>
+      <tr>
+        <td><a href="https://www.deque.com/axe/core/">axe DevTools (Core)</a></td>
+        <td>4.11+</td>
+        <td>MPL-2.0</td>
+        <td>WCAG 2.2 AA accessibility scanning engine. Used in CI pipelines and E2E tests to validate pages against WCAG standards. Available as CLI tool (<code>@axe-core/cli</code>) for automated scanning and Node.js/Python packages for programmatic audits.</td>
+      </tr>
+      <tr>
+        <td><a href="https://playwright.dev/">Playwright</a></td>
+        <td>1.59+</td>
+        <td>Apache 2.0</td>
+        <td>Cross-browser E2E testing framework. Used for regression testing (consent flow, core workflows, page loads) and behavioral accessibility scanning in CI/CD pipelines.</td>
+      </tr>
+      <tr>
+        <td><a href="https://vale.sh/">Vale</a></td>
+        <td>3.0+</td>
+        <td>MIT</td>
+        <td>Prose linting and documentation quality gate. Enforces consistent style, plain-language clarity, descriptive link text, and project vocabulary across <code>docs/**/*.md</code> and <code>README.md</code>. Runs in CI with custom GLOW prose rules and vocabulary lists.</td>
       </tr>
     </tbody>
   </table>
