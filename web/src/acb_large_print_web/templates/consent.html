@@ -98,34 +98,53 @@
 <script>
 (function () {
   'use strict';
-  var form = document.querySelector('form[method="post"]');
-  var agreeBox = document.getElementById('consent-agree-checkbox');
-  var title = document.getElementById('consent-modal-title');
-  var btn = document.getElementById('consent-continue-btn');
-  if (title) {
-    title.focus();
-  }
-  if (btn) {
-    // btn.disabled = true; // Remove pre-emptive disable
-  }
-  if (agreeBox && btn) {
-    agreeBox.addEventListener('change', function () {
+  
+  function initConsent() {
+    var form = document.querySelector('form[method="post"]');
+    var agreeBox = document.getElementById('consent-agree-checkbox');
+    var title = document.getElementById('consent-modal-title');
+    var btn = document.getElementById('consent-continue-btn');
+
+    if (title) {
+      title.focus();
+    }
+
+    if (agreeBox && btn) {
+      // Set initial state
       btn.disabled = !agreeBox.checked;
-    });
-    // Initialize state on load
-    btn.disabled = !agreeBox.checked;
-    
-    // Safety check for browsers that might have checked attribute set but haven't fired change
-    if (agreeBox.checked) {
-       btn.disabled = false;
+
+      // Handle changes
+      agreeBox.addEventListener('change', function () {
+        btn.disabled = !agreeBox.checked;
+      });
+      
+      // Secondary click handler for some mobile browsers
+      agreeBox.addEventListener('click', function () {
+        btn.disabled = !agreeBox.checked;
+      });
+    }
+
+    if (form) {
+      form.addEventListener('submit', function () {
+        var statusEl = document.getElementById('consent-status');
+        if (statusEl) statusEl.textContent = 'Saving your agreement\u2026';
+        if (btn) {
+          btn.disabled = true;
+          btn.textContent = 'Continuing\u2026';
+        }
+      });
     }
   }
-  if (!form) return;
-  form.addEventListener('submit', function () {
-    var statusEl = document.getElementById('consent-status');
-    if (statusEl) statusEl.textContent = 'Saving your agreement\u2026';
-    if (btn) { btn.disabled = true; btn.textContent = 'Continuing\u2026'; }
-  });
+
+  // Run on load
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initConsent);
+  } else {
+    initConsent();
+  }
+  
+  // Also run when SPA content is swapped
+  document.addEventListener('glow:content-swapped', initConsent);
 }());
 </script>
 {% endblock %}
