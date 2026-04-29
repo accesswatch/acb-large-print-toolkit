@@ -904,15 +904,21 @@ document.addEventListener('DOMContentLoaded', function () {
 
   document.getElementById('btn-toggle-all').addEventListener('click', function () {
     const btn = this;
-    const allOpen = cards.every(function(card) {
-      return card.hidden || card.open;
+    const allItems = Array.from(document.querySelectorAll('.rule-group, .rule-card'));
+    
+    // Check if the currently visible items are all open
+    const allOpen = allItems.every(function(item) {
+      return item.hidden || item.open;
     });
-    cards.forEach(function (card) {
-      if (!card.hidden) {
-        card.open = !allOpen;
+    
+    allItems.forEach(function (item) {
+      if (!item.hidden) {
+        item.open = !allOpen;
       }
     });
+    
     btn.textContent = allOpen ? 'Expand all' : 'Collapse all';
+    btn.setAttribute('aria-label', allOpen ? 'Expand all rules' : 'Collapse all rules');
   });
 
   selectionTarget.addEventListener('change', function () {
