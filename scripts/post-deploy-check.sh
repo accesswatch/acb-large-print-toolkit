@@ -195,15 +195,38 @@ check_url() {
     fi
 }
 
+check_header_contains() {
+    local label="$1"
+    local url="$2"
+    local header_name="$3"
+    local expected_fragment="$4"
+    local required="${5:-false}"
+    local headers
+    headers=$(curl -s -I --max-time 15 "$url" 2>/dev/null || true)
+
+    if echo "$headers" | grep -Fi "$header_name:" | grep -Fqi "$expected_fragment"; then
+        echo "  $label: OK ($header_name contains '$expected_fragment')"
+        return 0
+    fi
+
+    echo "  $label: PROBLEM ($header_name missing '$expected_fragment')"
+    if [[ "$required" == "true" ]]; then
+        return 1
+    fi
+    return 0
+}
+
 # NOTE: External URL checks are informational only (000 is common when the server
 # cannot curl its own domain due to DNS loopback). Container health gates below
 # are the authoritative liveness check.
 URL_FAIL=0
 check_url "${APP_DOMAIN}/health" "https://${APP_DOMAIN}/health" false || true
 check_url "${APP_DOMAIN}/" "https://${APP_DOMAIN}/" false true || true
+check_header_contains "${APP_DOMAIN} CSP media-src" "https://${APP_DOMAIN}/static/let-it-glow.mp3" "Content-Security-Policy" "media-src 'self'" true || URL_FAIL=1
 if [[ -n "$APP_ALIAS_DOMAIN" ]]; then
     check_url "${APP_ALIAS_DOMAIN}/health" "https://${APP_ALIAS_DOMAIN}/health" false || true
     check_url "${APP_ALIAS_DOMAIN}/" "https://${APP_ALIAS_DOMAIN}/" false true || true
+    check_header_contains "${APP_ALIAS_DOMAIN} CSP media-src" "https://${APP_ALIAS_DOMAIN}/static/let-it-glow.mp3" "Content-Security-Policy" "media-src 'self'" true || URL_FAIL=1
 fi
 check_url "csedesigns.com/" "https://csedesigns.com/" false true || true
 

@@ -312,9 +312,20 @@ if [[ "$HEALTHY" -eq 1 ]]; then
     fi
     log_ts "--- Maintenance mode disabled successfully ---"
 
-    # Explicitly reload Caddy to ensure config changes take effect even if the container was only updated/restarted
+    # Force the proxy to pick up bind-mounted Caddyfile changes. A plain
+    # `docker compose up -d --build` can leave the long-lived Caddy container
+    # running with stale config even though the file on disk has changed.
+    log_ts "--- Validating Caddy configuration ---"
+    docker compose -f "$COMPOSE_FILE" exec -T caddy caddy validate --config /etc/caddy/Caddyfile
+
+    log_ts "--- Recreating Caddy container to apply updated proxy configuration ---"
+    docker compose -f "$COMPOSE_FILE" up -d --no-deps --force-recreate caddy
+
     log_ts "--- Reloading Caddy configuration ---"
-    docker compose -f "$COMPOSE_FILE" exec -T caddy caddy reload --config /etc/caddy/Caddyfile || true
+    docker compose -f "$COMPOSE_FILE" exec -T caddy caddy reload --config /etc/caddy/Caddyfile
+
+    log_ts "--- Caddy container state after reload ---"
+    docker compose -f "$COMPOSE_FILE" ps caddy
 
     if [[ "$CLEANUP_ON_SUCCESS" == "1" ]]; then
         run_optional_cleanup "success"

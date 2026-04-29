@@ -106,6 +106,8 @@ Releases are tagged in the [GitHub repository](https://github.com/accesswatch/ac
 
 ### Fixed
 
+- **Production deploy now forces Caddy to reload config changes.** Updated `scripts/deploy-app.sh` to validate the active Caddyfile, force-recreate the `caddy` container, and fail the deploy if `caddy reload` does not succeed. Updated `scripts/post-deploy-check.sh` to verify that the live MP3 response includes `media-src 'self'` in the Content Security Policy so stale proxy config is caught during deployment instead of after release.
+
 - **Web changelog page no longer crashes under Jinja parsing.** `web/src/acb_large_print_web/templates/partials/changelog_body.html` is now wrapped in a Jinja `{% raw %}...{% endraw %}` block so literal documentation examples like `{{.Name}}`, `{% if %}`, and `{{ }}` are treated as text instead of template syntax. This resolves `/changelog/` HTTP 500 errors and unblocks the Playwright static reference page regression test in Accessibility Regression Gate.
 
 - **Home page accessibility test updated for renamed navigation section heading.** `web/tests/test_app.py` now asserts `Main Navigation Tab Order and Purpose` (replacing `What Each Tab Does`) and renames the test method to match the updated UI copy, resolving Deploy/Feature Flags CI failures caused by stale expectation text.
