@@ -83,9 +83,12 @@ jobs:
             set -e
             echo "=== Starting deploy at $(date -u) ==="
             cd ~/app
-              git fetch origin
-              # Use the branch that triggered the workflow (main or release/**)
-              git reset --hard origin/${{ github.ref_name }}
+            git fetch origin
+            # Use the branch that triggered the workflow (main or release/**)
+            git reset --hard origin/${{ github.ref_name }}
+            bash scripts/deploy-app.sh
+            bash scripts/post-deploy-check.sh
+            echo "=== Deploy finished at $(date -u) ==="
       - name: Publish deploy troubleshooting summary
         if: always()
         run: |
