@@ -94,6 +94,10 @@ Releases are tagged in the [GitHub repository](https://github.com/accesswatch/ac
 
 ### Fixed
 
+- **Web changelog page no longer crashes under Jinja parsing.** `web/src/acb_large_print_web/templates/partials/changelog_body.html` is now wrapped in a Jinja `{% raw %}...{% endraw %}` block so literal documentation examples like `{{.Name}}`, `{% if %}`, and `{{ }}` are treated as text instead of template syntax. This resolves `/changelog/` HTTP 500 errors and unblocks the Playwright static reference page regression test in Accessibility Regression Gate.
+
+- **Home page accessibility test updated for renamed navigation section heading.** `web/tests/test_app.py` now asserts `Main Navigation Tab Order and Purpose` (replacing `What Each Tab Does`) and renames the test method to match the updated UI copy, resolving Deploy/Feature Flags CI failures caused by stale expectation text.
+
 - **Streamlined flow: session context preserved on fix error.** When a fix attempt initiated from an audit report (`POST /fix/from-audit/<token>`) encounters an error, the fix form now re-renders with the original session token and filename intact. Previously the form re-rendered as a generic upload form, losing the user's context and requiring a fresh upload. Change in `routes/fix.py`.
 
 - **Streamlined flow: prefill notice button label.** The notice shown when the Fix form pre-loads a session file incorrectly referred to the submit action as "Run Fix." The actual button label is "Fix Document." Label corrected in `templates/fix_form.html`.

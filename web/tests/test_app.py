@@ -842,10 +842,10 @@ class TestAccessibilityExtended:
         assert b"Excel (.xlsx)" in resp.data
         assert b"PowerPoint (.pptx)" in resp.data
 
-    def test_home_has_settings_tile_and_tab_descriptions(self, client):
+    def test_home_has_settings_tile_and_navigation_descriptions(self, client):
         resp = client.get("/")
         assert b"Settings" in resp.data
-        assert b"What Each Tab Does" in resp.data
+        assert b"Main Navigation Tab Order and Purpose" in resp.data
         assert b"Guidelines" in resp.data
 
     def test_audit_form_accepts_all_formats(self, client):
