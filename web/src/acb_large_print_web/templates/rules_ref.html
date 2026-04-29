@@ -111,7 +111,7 @@
     </div>
 
     <div class="filter-group filter-group--actions">
-      <button type="button" id="btn-toggle-all" class="btn-secondary btn-sm">Expand all</button>
+        <button type="button" id="btn-apply-filters" class="btn-primary btn-sm">Apply Filters</button>
       <button type="button" id="btn-clear-filters" class="btn-secondary btn-sm">Clear filters</button>
     </div>
 
@@ -888,6 +888,7 @@ document.addEventListener('DOMContentLoaded', function () {
     el.addEventListener('change', applyFilters);
   });
 
+  document.getElementById('btn-apply-filters').addEventListener('click', applyFilters);
   document.getElementById('btn-clear-filters').addEventListener('click', clearFilters);
   document.getElementById('btn-clear-filters-inline').addEventListener('click', clearFilters);
   document.getElementById('btn-select-visible').addEventListener('click', function () {
