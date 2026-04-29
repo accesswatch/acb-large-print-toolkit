@@ -53,13 +53,14 @@
 <section>
   <h2 id="findings-heading">Findings</h2>
 
-  {% set ns = namespace(critical=0, high=0, medium=0, low=0) %}
+  {% set ns = namespace(critical=0, high=0, medium=0, low=0, fixable=0) %}
   {% for f in result.findings %}
     {% if f.severity.value == "Critical" %}{% set ns.critical = ns.critical + 1 %}
     {% elif f.severity.value == "High" %}{% set ns.high = ns.high + 1 %}
     {% elif f.severity.value == "Medium" %}{% set ns.medium = ns.medium + 1 %}
     {% elif f.severity.value == "Low" %}{% set ns.low = ns.low + 1 %}
     {% endif %}
+    {% if fixable_rule_ids and f.rule_id in fixable_rule_ids %}{% set ns.fixable = ns.fixable + 1 %}{% endif %}
   {% endfor %}
   <ul class="severity-summary" aria-label="Findings by severity">
     {%- if ns.critical %}<li><span class="severity-badge severity-critical">Critical</span> {{ ns.critical }}</li>{% endif %}
@@ -67,6 +68,22 @@
     {%- if ns.medium %}<li><span class="severity-badge severity-medium">Medium</span> {{ ns.medium }}</li>{% endif %}
     {%- if ns.low %}<li><span class="severity-badge severity-low">Low</span> {{ ns.low }}</li>{% endif %}
   </ul>
+
+  {% if ns.fixable > 0 %}
+  <div class="quick-wins-bar" id="quick-wins-bar">
+    <button type="button" id="quick-wins-toggle" class="btn-secondary"
+            aria-pressed="false" aria-controls="findings-tbody"
+            data-total="{{ result.findings | length }}" data-fixable="{{ ns.fixable }}">
+      Show Quick Wins Only ({{ ns.fixable }} auto-fixable)
+    </button>
+    {% if doc_format == "docx" and feature_checker_enabled %}
+    <a href="{{ url_for('fix.fix_form') }}" class="btn-primary" id="fix-quick-wins-btn">
+      Fix These Auto-Fixable Issues
+    </a>
+    {% endif %}
+    <span id="quick-wins-status" class="visually-hidden" aria-live="polite" aria-atomic="true"></span>
+  </div>
+  {% endif %}
 
   <table class="findings-table">
     <caption>Accessibility findings sorted by severity</caption>
@@ -80,9 +97,9 @@
         <th scope="col">Learn More</th>
       </tr>
     </thead>
-    <tbody>
+    <tbody id="findings-tbody">
       {% for f in result.findings %}
-      <tr>
+      <tr data-fixable="{{ '1' if fixable_rule_ids and f.rule_id in fixable_rule_ids else '0' }}">
         <td><span class="severity-badge severity-{{ f.severity.value | lower }}">{{ f.severity.value }}</span></td>
         <td><a href="{{ url_for('guidelines.guidelines_page') }}#section-rules-summary">{{ f.rule_id }}</a></td>
         <td>{{ f.message }}</td>
@@ -160,5 +177,49 @@
     <li><a href="{{ url_for('guide.guide_page') }}#understanding-results">Help understanding these results</a></li>
     <li><a href="{{ url_for('guide.guide_page') }}#common-issues">Common issues and how to fix them</a></li>
   </ul>
+
+  {% if share_url %}
+  <details class="share-section no-print" id="share-section">
+    <summary>Share this report</summary>
+    <p>Anyone with this link can view this report for approximately 1&nbsp;hour. The original document is not accessible via this link.</p>
+    <div class="share-url-row">
+      <input type="text" readonly id="share-url-input" value="{{ share_url }}"
+             aria-label="Shareable report URL" class="share-url-input">
+      <button type="button" class="btn-secondary" data-copy-target="share-url-input">
+        Copy Link
+      </button>
+    </div>
+  </details>
+  {% endif %}
 </section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+  'use strict';
+  /* Quick Wins filter */
+  var btn = document.getElementById('quick-wins-toggle');
+  if (!btn) return;
+  var total = parseInt(btn.getAttribute('data-total'), 10) || 0;
+  var fixable = parseInt(btn.getAttribute('data-fixable'), 10) || 0;
+  var active = false;
+  btn.addEventListener('click', function () {
+    active = !active;
+    btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+    btn.textContent = active
+      ? 'Show All Findings (' + total + ')'
+      : 'Show Quick Wins Only (' + fixable + ' auto-fixable)';
+    var rows = document.querySelectorAll('#findings-tbody tr');
+    rows.forEach(function (row) {
+      row.hidden = active && row.getAttribute('data-fixable') !== '1';
+    });
+    var statusEl = document.getElementById('quick-wins-status');
+    if (statusEl) {
+      var shown = active ? fixable : total;
+      statusEl.textContent = shown + ' finding' + (shown !== 1 ? 's' : '') + ' shown';
+    }
+  });
+}());
+</script>
 {% endblock %}

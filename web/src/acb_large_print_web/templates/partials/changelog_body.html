@@ -184,6 +184,33 @@
 <li>
 <p><strong>Convert page: JavaScript extension-aware output filtering.</strong> After a file is selected in Step 1, JavaScript reads the file extension and enables only the conversion directions that support that file type. Unavailable options are disabled in place with a visual indicator. A live-region hint message names the available formats and notes when two-stage chaining applies. The extension sets are serialized from Flask template context variables (<code>pandoc_effective_exts</code>, <code>markitdown_exts</code>, <code>pipeline_exts</code>, <code>chain_via_markdown_exts</code>) and injected as <code>Set</code> objects so no server round-trip is needed. Changes in <code>templates/convert_form.html</code>.</p>
 </li>
+<li>
+<p><strong>Convert: Result page with inline preview.</strong> HTML and CMS Fragment conversion now redirects to a dedicated result page (<code>templates/convert_result.html</code>) instead of immediately downloading the file. The result page shows a Download button, and for HTML output, an inline iframe preview of the converted document. New <code>GET /convert/download/&lt;token&gt;/&lt;filename&gt;</code> and <code>GET /convert/preview/&lt;token&gt;/&lt;filename&gt;</code> routes serve the file without exposing the temp directory path. Changes in <code>routes/convert.py</code> and new template <code>templates/convert_result.html</code>.</p>
+</li>
+<li>
+<p><strong>Convert: CMS Fragment clipboard copy.</strong> The Convert result page for the CMS Fragment direction includes a read-only <code>&lt;textarea&gt;</code> showing the full HTML snippet and a "Copy to Clipboard" button. Changes in <code>templates/convert_result.html</code>, <code>static/forms.css</code>, and new <code>static/toast.js</code>.</p>
+</li>
+<li>
+<p><strong>Audit report: Quick wins filter.</strong> A "Show Quick Wins Only" toggle button appears above the findings table when at least one finding is auto-fixable. Clicking it hides all non-auto-fixable rows and shows a count of auto-fixable findings. The toggle is ARIA-pressed compliant and includes a live-region status element. The set of auto-fixable rule IDs (<code>FIXABLE_RULE_IDS</code>) is defined in <code>routes/audit.py</code> and passed to the template as <code>fixable_rule_ids</code>. Changes in <code>routes/audit.py</code> and <code>templates/audit_report.html</code>.</p>
+</li>
+<li>
+<p><strong>Audit report: Shareable report URL.</strong> After a successful audit, the rendered report HTML is cached server-side for 1 hour in a new <code>report_cache.py</code> module (<code>web/src/acb_large_print_web/report_cache.py</code>). A shareable URL (<code>GET /audit/share/&lt;share_token&gt;</code>) is displayed in a collapsible "Share this report" section at the bottom of the report. The share token is a separate UUID from the upload token — the original document is never accessible via the share link. Changes in <code>routes/audit.py</code>, new <code>report_cache.py</code>, and <code>templates/audit_report.html</code>.</p>
+</li>
+<li>
+<p><strong>Fix result: Grade letter on After score box.</strong> The After score box on the fix result page now displays a large typographic grade letter (matching the audit report style), making the improvement immediately visible. Changes in <code>templates/fix_result.html</code> and <code>static/forms.css</code>.</p>
+</li>
+<li>
+<p><strong>Toast notification system.</strong> A lightweight global toast notification module (<code>static/toast.js</code>) is included from <code>base.html</code>. It exposes <code>window.GLOW.toast(message, type)</code> for programmatic toasts and wires a global <code>click</code> handler for <code>[data-copy-target]</code> buttons that copies the target input's value to the clipboard and shows a "Copied!" toast. Changes in <code>templates/base.html</code>, new <code>static/toast.js</code>, and <code>static/forms.css</code>.</p>
+</li>
+<li>
+<p><strong>Dark mode CSS.</strong> A comprehensive <code>@media (prefers-color-scheme: dark)</code> block has been added to <code>static/forms.css</code>. It overrides body, navigation, cards, buttons, tables, badges, score grades, footer, forms, file-input zones, dropzone, and details/summary elements to respect the user's system dark mode preference.</p>
+</li>
+<li>
+<p><strong>Print CSS improvements.</strong> An additional <code>@media print</code> block in <code>static/forms.css</code> hides the quick wins bar, share section, toast container, CMS copy bar, and convert preview iframe when printing, and adds page-break rules for the findings table.</p>
+</li>
+<li>
+<p><strong>Responsive mobile layout improvements.</strong> New responsive rules in <code>static/forms.css</code> adjust form layouts, navigation, action bars, and score boxes for narrow viewports.</p>
+</li>
 </ul>
 <h2 id="260---2026-04-28">[2.6.0] - 2026-04-28</h2>
 <h3 id="added_1">Added</h3>

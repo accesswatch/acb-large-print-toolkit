@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+
+{% block title %}Conversion Complete{% endblock %}
+{% block heading %}Conversion Complete{% endblock %}
+
+{% block content %}
+<section>
+  <h2 id="result-heading">Your Converted File Is Ready</h2>
+  <p>
+    <strong>{{ original_stem }}</strong> was converted successfully.
+    {% if preview_type == "cms" %}
+    The CMS Fragment is an HTML snippet ready to paste into a content management system.
+    {% endif %}
+  </p>
+
+  <div class="next-step-actions" style="margin-top: 1rem;">
+    <a href="{{ url_for('convert.convert_download', token=token, filename=download_name) }}"
+       class="btn-primary"
+       download="{{ download_name }}">
+      Download {{ download_name }}
+    </a>
+    <a href="{{ url_for('convert.convert_form') }}" class="btn-secondary">Convert Another</a>
+  </div>
+</section>
+
+{% if preview_type == "cms" and cms_content %}
+<section>
+  <h2 id="cms-heading">CMS Fragment</h2>
+  <p>Copy the HTML snippet below and paste it directly into your CMS editor (HTML/source view).</p>
+  <div class="cms-copy-bar">
+    <button type="button" class="btn-secondary" data-copy-target="cms-content-area"
+            aria-label="Copy CMS Fragment to clipboard">
+      Copy to Clipboard
+    </button>
+  </div>
+  <textarea id="cms-content-area" class="cms-textarea" readonly
+            aria-label="CMS Fragment HTML content"
+            rows="12">{{ cms_content }}</textarea>
+</section>
+{% endif %}
+
+{% if preview_type == "html" %}
+<section>
+  <h2 id="preview-heading">Preview</h2>
+  <p>This preview shows how the converted document will look in a browser. Use the download button above to save the file.</p>
+  <div class="convert-preview-wrap">
+    <iframe
+      src="{{ url_for('convert.convert_preview', token=token, filename=download_name) }}"
+      title="Preview of {{ original_stem }}"
+      class="convert-preview-frame"
+      sandbox="allow-same-origin allow-popups"
+      loading="lazy">
+      <p>Your browser does not support inline previews. Please use the download link above.</p>
+    </iframe>
+  </div>
+</section>
+{% endif %}
+
+<section>
+  <h2 id="next-heading">What's Next?</h2>
+  {% if feature_audit_enabled %}
+  <p>Run an accessibility audit on your converted document to confirm it meets ACB Large Print Guidelines.</p>
+  <div class="next-step-actions">
+    <a href="{{ url_for('audit.audit_form') }}" class="btn-secondary">Audit the Result</a>
+  </div>
+  {% endif %}
+  <ul>
+    {% if feature_converter_enabled %}<li><a href="{{ url_for('convert.convert_form') }}">Convert another document</a></li>{% endif %}
+    {% if feature_audit_enabled %}<li><a href="{{ url_for('audit.audit_form') }}">Audit a document</a></li>{% endif %}
+    <li><a href="{{ url_for('guidelines.guidelines_page') }}">Read the ACB guidelines</a></li>
+  </ul>
+</section>
+{% endblock %}

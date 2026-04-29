@@ -19,7 +19,9 @@ extends Pandoc output to PowerPoint, Excel, PDF, and other MarkItDown-readable f
 Audio transcription has its own dedicated route at /whisperer (BITS Whisperer).
 """
 
-from flask import Blueprint, abort, current_app, render_template, request, send_file
+from flask import Blueprint, abort, current_app, render_template, request, send_file, url_for
+
+from werkzeug.utils import secure_filename as _secure_filename
 
 from acb_large_print.converter import (
     CONVERTIBLE_EXTENSIONS,
@@ -57,6 +59,63 @@ convert_bp = Blueprint("convert", __name__)
 
 # Sentinel path used to signal "skip ACB CSS" to pandoc_converter
 _NO_ACB_CSS_SENTINEL = Path("__no_acb_css__")
+
+
+# Allowed MIME types for the download/preview routes
+_DOWNLOAD_MIMETYPES: dict[str, str] = {
+    ".html": "text/html; charset=utf-8",
+    ".md": "text/markdown; charset=utf-8",
+    ".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    ".epub": "application/epub+zip",
+    ".pdf": "application/pdf",
+    ".zip": "application/zip",
+    ".epub": "application/epub+zip",
+}
+
+
+def _resolve_convert_file(token: str, filename: str):
+    """Resolve a convert download/preview request to a safe file path.
+
+    Returns (file_path, mimetype) or aborts 404 on any failure.
+    """
+    safe_name = _secure_filename(filename)
+    if not safe_name:
+        abort(404)
+    temp_dir = get_temp_dir(token)
+    if not temp_dir:
+        abort(404)
+    file_path = temp_dir / safe_name
+    # Verify the resolved path is still inside the temp dir (traversal guard)
+    try:
+        file_path.resolve().relative_to(temp_dir.resolve())
+    except ValueError:
+        abort(404)
+    if not file_path.exists() or not file_path.is_file():
+        abort(404)
+    ext = file_path.suffix.lower()
+    mimetype = _DOWNLOAD_MIMETYPES.get(ext, "application/octet-stream")
+    return file_path, mimetype
+
+
+@convert_bp.route("/download/<token>/<filename>", methods=["GET"])
+def convert_download(token: str, filename: str):
+    """Serve a previously converted file as a download."""
+    file_path, mimetype = _resolve_convert_file(token, filename)
+    return send_file(
+        str(file_path),
+        mimetype=mimetype,
+        as_attachment=True,
+        download_name=file_path.name,
+    )
+
+
+@convert_bp.route("/preview/<token>/<filename>", methods=["GET"])
+def convert_preview(token: str, filename: str):
+    """Serve a previously converted HTML file inline (for iframe preview)."""
+    file_path, mimetype = _resolve_convert_file(token, filename)
+    if file_path.suffix.lower() != ".html":
+        abort(404)
+    return send_file(str(file_path), mimetype=mimetype, as_attachment=False)
 
 # Document-type formats in CONVERTIBLE_EXTENSIONS that Pandoc cannot read directly
 # but are worth chaining via Markdown (excludes .zip and image formats).
@@ -230,14 +289,17 @@ def convert_submit():
                     )
                 output_path.write_text(html_text, encoding="utf-8")
 
-            return send_file(
-                str(output_path),
-                mimetype="text/html; charset=utf-8",
-                as_attachment=True,
+            # Preserve the temp dir for the result page download/preview routes.
+            result_token = token
+            token = None
+            return render_template(
+                "convert_result.html",
+                token=result_token,
                 download_name=f"{saved_path.stem}.html",
+                preview_type="html",
+                original_stem=saved_path.stem,
             )
         elif direction == "to-docx":
-            # Pandoc (or MarkItDown->Pandoc): document -> Word (.docx)
             if not pandoc_available():
                 raise UploadError(
                     "Pandoc is not installed on the server. "
@@ -384,11 +446,17 @@ def convert_submit():
             title = user_title or None
             cms_output = temp_dir / f"{saved_path.stem}-cms.html"
             export_cms_fragment(saved_path, cms_output, title=title)
-            return send_file(
-                str(cms_output),
-                mimetype="text/html; charset=utf-8",
-                as_attachment=True,
+            cms_content = cms_output.read_text(encoding="utf-8")
+            # Preserve the temp dir for the result page download route.
+            result_token = token
+            token = None
+            return render_template(
+                "convert_result.html",
+                token=result_token,
                 download_name=f"{saved_path.stem}-cms.html",
+                preview_type="cms",
+                cms_content=cms_content,
+                original_stem=saved_path.stem,
             )
         elif direction == "to-pipeline" or direction.startswith("pipeline-"):
             # DAISY Pipeline conversion

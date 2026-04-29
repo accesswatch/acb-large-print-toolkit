@@ -21,10 +21,10 @@
     </div>
     <div class="score-arrow" aria-hidden="true">&rarr;</div>
     <span class="visually-hidden">improved to</span>
-    <div class="score-box">
+    <div class="score-box score-box--after">
       <h3>After</h3>
+      <span class="score-grade-letter grade-{{ post_grade | lower }}" aria-label="Grade {{ post_grade }}">{{ post_grade }}</span>
       <p class="score-number grade-{{ post_grade | lower }}">{{ post_score }}/100</p>
-      <p>Grade: {{ post_grade }}</p>
     </div>
   </div>
 

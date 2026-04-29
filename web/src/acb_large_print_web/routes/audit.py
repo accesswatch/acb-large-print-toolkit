@@ -2,8 +2,9 @@
 
 from collections import Counter
 from pathlib import Path
+import uuid
 
-from flask import Blueprint, render_template, request
+from flask import Blueprint, Response, abort, render_template, request, url_for
 
 import re
 
@@ -24,6 +25,31 @@ from ..upload import UploadError, cleanup_token, validate_upload
 from ..customization_warning import detect_audit_customizations, generate_customization_warning
 
 audit_bp = Blueprint("audit", __name__)
+
+# Rule IDs that the fixer can auto-remediate (all document formats combined).
+# Used by the audit report Quick Wins filter.
+FIXABLE_RULE_IDS: frozenset[str] = frozenset({
+    "ACB-FONT-FAMILY",
+    "ACB-FONT-SIZE-BODY",
+    "ACB-FONT-SIZE-H1",
+    "ACB-FONT-SIZE-H2",
+    "ACB-MARGINS",
+    "ACB-LINE-SPACING",
+    "ACB-ALIGNMENT",
+    "ACB-LIST-INDENT",
+    "ACB-PARA-INDENT",
+    "ACB-FIRST-LINE-INDENT",
+    "ACB-NO-ITALIC",
+    "ACB-BOLD-BODY",
+    "ACB-ALL-CAPS",
+    "ACB-NO-ALLCAPS",
+    "ACB-HYPHENATION",
+    "ACB-PAGE-NUMBERS",
+    "ACB-DOC-TITLE",
+    "ACB-DOC-LANG",
+    "ACB-FAUX-HEADING",
+    "ACB-HEADING-HIERARCHY",
+})
 
 _BATCH_LIMIT = 3
 _EMAIL_RE = re.compile(r'^[^@\s]+@[^@\s]+\.[^@\s]+$')
@@ -100,6 +126,16 @@ def audit_form():
     )
 
 
+@audit_bp.route("/share/<share_token>", methods=["GET"])
+def shared_report(share_token: str):
+    """Serve a cached, shareable audit report by token (valid for 1 hour)."""
+    from ..report_cache import load_report
+    html = load_report(share_token)
+    if not html:
+        abort(404)
+    return Response(html, mimetype="text/html")
+
+
 def audit_submit():
     upload_mode = request.form.get("upload_mode", "single")
 
@@ -160,7 +196,17 @@ def _audit_single():
         chat_token = token
         token = None
 
-        return render_template(
+        # Generate share token before rendering so it can be embedded in the HTML.
+        share_token = str(uuid.uuid4())
+        try:
+            share_url = url_for(
+                "audit.shared_report", share_token=share_token, _external=True
+            )
+        except Exception:
+            share_url = None
+            share_token = None
+
+        html = render_template(
             "audit_report.html",
             result=result,
             mode_label=mode_label,
@@ -172,7 +218,20 @@ def _audit_single():
             ai_used=False,
             customization_warning=customization_warning,
             chat_token=chat_token,
+            fixable_rule_ids=FIXABLE_RULE_IDS,
+            share_token=share_token,
+            share_url=share_url,
         )
+
+        # Cache the rendered report for the shareable URL (best-effort).
+        if share_token:
+            try:
+                from ..report_cache import save_report
+                save_report(share_token, html)
+            except Exception:
+                pass
+
+        return html
     except UploadError as e:
         from ..email import email_configured as _ec
         return (

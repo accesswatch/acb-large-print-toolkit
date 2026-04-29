@@ -36,6 +36,24 @@ Releases are tagged in the [GitHub repository](https://github.com/accesswatch/ac
 
 - **Convert page: JavaScript extension-aware output filtering.** After a file is selected in Step 1, JavaScript reads the file extension and enables only the conversion directions that support that file type. Unavailable options are disabled in place with a visual indicator. A live-region hint message names the available formats and notes when two-stage chaining applies. The extension sets are serialized from Flask template context variables (`pandoc_effective_exts`, `markitdown_exts`, `pipeline_exts`, `chain_via_markdown_exts`) and injected as `Set` objects so no server round-trip is needed. Changes in `templates/convert_form.html`.
 
+- **Convert: Result page with inline preview.** HTML and CMS Fragment conversion now redirects to a dedicated result page (`templates/convert_result.html`) instead of immediately downloading the file. The result page shows a Download button, and for HTML output, an inline iframe preview of the converted document. New `GET /convert/download/<token>/<filename>` and `GET /convert/preview/<token>/<filename>` routes serve the file without exposing the temp directory path. Changes in `routes/convert.py` and new template `templates/convert_result.html`.
+
+- **Convert: CMS Fragment clipboard copy.** The Convert result page for the CMS Fragment direction includes a read-only `<textarea>` showing the full HTML snippet and a "Copy to Clipboard" button. Changes in `templates/convert_result.html`, `static/forms.css`, and new `static/toast.js`.
+
+- **Audit report: Quick wins filter.** A "Show Quick Wins Only" toggle button appears above the findings table when at least one finding is auto-fixable. Clicking it hides all non-auto-fixable rows and shows a count of auto-fixable findings. The toggle is ARIA-pressed compliant and includes a live-region status element. The set of auto-fixable rule IDs (`FIXABLE_RULE_IDS`) is defined in `routes/audit.py` and passed to the template as `fixable_rule_ids`. Changes in `routes/audit.py` and `templates/audit_report.html`.
+
+- **Audit report: Shareable report URL.** After a successful audit, the rendered report HTML is cached server-side for 1 hour in a new `report_cache.py` module (`web/src/acb_large_print_web/report_cache.py`). A shareable URL (`GET /audit/share/<share_token>`) is displayed in a collapsible "Share this report" section at the bottom of the report. The share token is a separate UUID from the upload token — the original document is never accessible via the share link. Changes in `routes/audit.py`, new `report_cache.py`, and `templates/audit_report.html`.
+
+- **Fix result: Grade letter on After score box.** The After score box on the fix result page now displays a large typographic grade letter (matching the audit report style), making the improvement immediately visible. Changes in `templates/fix_result.html` and `static/forms.css`.
+
+- **Toast notification system.** A lightweight global toast notification module (`static/toast.js`) is included from `base.html`. It exposes `window.GLOW.toast(message, type)` for programmatic toasts and wires a global `click` handler for `[data-copy-target]` buttons that copies the target input's value to the clipboard and shows a "Copied!" toast. Changes in `templates/base.html`, new `static/toast.js`, and `static/forms.css`.
+
+- **Dark mode CSS.** A comprehensive `@media (prefers-color-scheme: dark)` block has been added to `static/forms.css`. It overrides body, navigation, cards, buttons, tables, badges, score grades, footer, forms, file-input zones, dropzone, and details/summary elements to respect the user's system dark mode preference.
+
+- **Print CSS improvements.** An additional `@media print` block in `static/forms.css` hides the quick wins bar, share section, toast container, CMS copy bar, and convert preview iframe when printing, and adds page-break rules for the findings table.
+
+- **Responsive mobile layout improvements.** New responsive rules in `static/forms.css` adjust form layouts, navigation, action bars, and score boxes for narrow viewports.
+
 ## [2.6.0] - 2026-04-28
 
 ### Added

@@ -44,6 +44,8 @@
   <main id="main">
     <h1>{% block heading %}{{ brand_heading_label }}{% endblock %}</h1>
 
+    <div id="toast-container" aria-live="polite" aria-atomic="false"></div>
+
     {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
     <section class="flash-messages" aria-label="Notifications">
@@ -106,6 +108,7 @@
   <script src="{{ url_for('static', filename='tabs.js') }}"></script>
   <script src="{{ url_for('static', filename='consent.js') }}"></script>
   <script src="{{ url_for('static', filename='dropzone.js') }}"></script>
+  <script src="{{ url_for('static', filename='toast.js') }}"></script>
   {% block extra_js %}{% endblock %}
 </body>
 </html>

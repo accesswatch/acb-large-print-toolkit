@@ -962,10 +962,9 @@ class TestConvertPage:
         if pandoc_available():
             assert resp.status_code == 200
             assert resp.content_type.startswith("text/html")
-            assert b"test.html" in resp.headers.get("Content-Disposition", "").encode()
-            # Verify ACB CSS is embedded
-            assert b"font-family: Arial" in resp.data
-            assert b"Hello World" in resp.data
+            # Route now returns a result page (not a direct file download)
+            assert b"test.html" in resp.data
+            assert b"Conversion Complete" in resp.data
         else:
             # Pandoc not installed -- should get an error page
             assert resp.status_code in (400, 500)
