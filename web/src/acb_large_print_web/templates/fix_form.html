@@ -29,7 +29,7 @@
 
 {% if prefill_token and prefill_filename %}
 <div class="help-box" role="status">
-  <p><strong>Ready to fix:</strong> <em>{{ prefill_filename }}</em> &mdash; your document is already loaded from your audit session. You do not need to upload again. Adjust options below and click <strong>Run Fix</strong>.</p>
+  <p><strong>Ready to fix:</strong> <em>{{ prefill_filename }}</em> &mdash; your document is already loaded from your audit session. You do not need to upload again. Adjust options below and click <strong>Fix Document</strong>.</p>
 </div>
 <form method="post" action="{{ url_for('fix.fix_from_audit_submit', token=prefill_token) }}" enctype="multipart/form-data" novalidate>
 {% else %}

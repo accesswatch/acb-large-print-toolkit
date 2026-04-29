@@ -880,7 +880,7 @@ def fix_from_audit_form(token: str):
     from flask import redirect
     temp_dir = get_temp_dir(token)
     if temp_dir is None:
-        return redirect(url_for("fix.fix_form") + "?notice=session_expired")
+        return redirect(url_for("fix.fix_form", notice="session_expired"))
     prefill_file = _find_fixable_file(temp_dir)
     if prefill_file is None:
         return redirect(url_for("fix.fix_form"))
@@ -967,12 +967,15 @@ def fix_from_audit_submit(token: str):
         return _run_fix_and_render(saved_path, token, opts)
 
     except Exception:
+        # Preserve prefill context so the user keeps their session reference on error
         return (
             render_template(
                 "fix_form.html",
                 error="An error occurred while fixing the document. Please try again.",
                 ai_available=ai_heading_fix_enabled(),
                 rules_by_format=get_rules_by_format(),
+                prefill_token=token if get_temp_dir(token) is not None else None,
+                prefill_filename=saved_path.name,
             ),
             500,
         )

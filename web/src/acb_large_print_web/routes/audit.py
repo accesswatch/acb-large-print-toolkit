@@ -217,7 +217,6 @@ def audit_from_fix():
             fixable_rule_ids=FIXABLE_RULE_IDS,
             share_token=share_token,
             share_url=share_url,
-            reaudit_context=True,
         )
 
         if share_token:
