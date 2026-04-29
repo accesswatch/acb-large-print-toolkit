@@ -48,7 +48,11 @@
   <h2 id="rights-heading">Data Rights and Use</h2>
   <p>BITS (Blind Information Technology Solutions) does not claim any rights to the content you upload. Your documents belong to you.</p>
   <p>GLOW does not sell, share, license, or otherwise transfer document content to any third party for advertising or independent product training. When you use an AI-powered workflow, GLOW transmits only the content required to complete that request to the configured AI provider.</p>
-  <p>Aggregate, anonymized usage statistics (such as the number of audits run per day or which file formats are most common) may be collected for operational purposes and do not include any document content.</p>
+
+  <h3>Operational analytics</h3>
+  <p>GLOW collects a limited set of operational analytics to understand service health and adoption. This includes an aggregate visitor counter (unique browser sessions) and per-tool usage counts (Audit, Fix, Convert, Template Builder, BITS Whisperer, and Document Chat), with a last-used timestamp for each tool.</p>
+  <p>These analytics are stored in local SQLite files on the server (`instance/visitor_counter.db` and `instance/tool_usage.db`) and are used only for internal reporting, capacity planning, and product improvement. They do not include uploaded document contents, extracted text, prompts, transcript bodies, or fixed-file output.</p>
+  <p>Analytics are shown in aggregate in administrator reporting views and are not used for advertising, profiling, or sale to third parties.</p>
 </section>
 
 {% if email_configured %}

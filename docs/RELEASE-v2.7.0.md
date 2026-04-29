@@ -129,6 +129,7 @@ The Data Storage and Retention Policy has been updated to accurately reflect the
 - Audit workflow description updated: files are retained briefly (up to 1 hour) to enable the Fix shortcut and Chat follow-on actions
 - New paragraph describes shareable report links: cached HTML only, 1-hour expiry, original document never accessible
 - "No permanent storage" section updated to clarify that the report cache holds only rendered HTML
+- New analytics disclosure clarifies that operational metrics include aggregate visitor sessions and per-tool usage counters (with last-used timestamps), stored in local SQLite (`instance/visitor_counter.db`, `instance/tool_usage.db`) and excluding document content
 - Last updated date changed to April 29, 2026
 
 ---
