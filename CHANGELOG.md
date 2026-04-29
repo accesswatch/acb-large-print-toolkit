@@ -62,6 +62,12 @@ Releases are tagged in the [GitHub repository](https://github.com/accesswatch/ac
 
 - **Responsive mobile layout improvements.** New responsive rules in `static/forms.css` adjust form layouts, navigation, action bars, and score boxes for narrow viewports.
 
+### Fixed
+
+- **Streamlined flow: session context preserved on fix error.** When a fix attempt initiated from an audit report (`POST /fix/from-audit/<token>`) encounters an error, the fix form now re-renders with the original session token and filename intact. Previously the form re-rendered as a generic upload form, losing the user's context and requiring a fresh upload. Change in `routes/fix.py`.
+
+- **Streamlined flow: prefill notice button label.** The notice shown when the Fix form pre-loads a session file incorrectly referred to the submit action as "Run Fix." The actual button label is "Fix Document." Label corrected in `templates/fix_form.html`.
+
 ## [2.6.0] - 2026-04-28
 
 ### Added

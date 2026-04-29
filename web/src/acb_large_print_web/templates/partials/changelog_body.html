@@ -9,6 +9,7 @@
 <li><a href="#changelog">Changelog</a><ul>
 <li><a href="#unreleased-release270">[Unreleased] – release/2.7.0</a><ul>
 <li><a href="#added">Added</a></li>
+<li><a href="#fixed">Fixed</a></li>
 </ul>
 </li>
 <li><a href="#260---2026-04-28">[2.6.0] - 2026-04-28</a><ul>
@@ -19,7 +20,7 @@
 <li><a href="#250---2026-04-28">[2.5.0] - 2026-04-28</a><ul>
 <li><a href="#added_2">Added</a></li>
 <li><a href="#changed_1">Changed</a></li>
-<li><a href="#fixed">Fixed</a></li>
+<li><a href="#fixed_1">Fixed</a></li>
 <li><a href="#added_3">Added</a></li>
 <li><a href="#changed_2">Changed</a></li>
 </ul>
@@ -29,18 +30,18 @@
 <li><a href="#changed_3">Changed</a></li>
 <li><a href="#added_5">Added</a></li>
 <li><a href="#changed_4">Changed</a></li>
-<li><a href="#fixed_1">Fixed</a></li>
-<li><a href="#added_6">Added</a></li>
 <li><a href="#fixed_2">Fixed</a></li>
-<li><a href="#changed_5">Changed</a></li>
+<li><a href="#added_6">Added</a></li>
 <li><a href="#fixed_3">Fixed</a></li>
+<li><a href="#changed_5">Changed</a></li>
+<li><a href="#fixed_4">Fixed</a></li>
 <li><a href="#changed_6">Changed</a></li>
 <li><a href="#changed_7">Changed</a></li>
 <li><a href="#removed">Removed</a></li>
 </ul>
 </li>
 <li><a href="#110----2026-04-15">[1.1.0] -- 2026-04-15</a><ul>
-<li><a href="#fixed_4">Fixed</a></li>
+<li><a href="#fixed_5">Fixed</a></li>
 <li><a href="#added_7">Added</a></li>
 </ul>
 </li>
@@ -224,6 +225,15 @@
 <p><strong>Responsive mobile layout improvements.</strong> New responsive rules in <code>static/forms.css</code> adjust form layouts, navigation, action bars, and score boxes for narrow viewports.</p>
 </li>
 </ul>
+<h3 id="fixed">Fixed</h3>
+<ul>
+<li>
+<p><strong>Streamlined flow: session context preserved on fix error.</strong> When a fix attempt initiated from an audit report (<code>POST /fix/from-audit/&lt;token&gt;</code>) encounters an error, the fix form now re-renders with the original session token and filename intact. Previously the form re-rendered as a generic upload form, losing the user's context and requiring a fresh upload. Change in <code>routes/fix.py</code>.</p>
+</li>
+<li>
+<p><strong>Streamlined flow: prefill notice button label.</strong> The notice shown when the Fix form pre-loads a session file incorrectly referred to the submit action as "Run Fix." The actual button label is "Fix Document." Label corrected in <code>templates/fix_form.html</code>.</p>
+</li>
+</ul>
 <h2 id="260---2026-04-28">[2.6.0] - 2026-04-28</h2>
 <h3 id="added_1">Added</h3>
 <ul>
@@ -371,7 +381,7 @@
 <p><strong>Web: Default AI model switched from free Llama/Mistral pool to GPT-4o-mini.</strong> <code>_DEFAULT_MODEL</code> in <code>web/src/acb_large_print_web/ai_gateway.py</code> now defaults to <code>openai/gpt-4o-mini</code> (primary) and <code>openai/gpt-4o</code> (fallback/escalation), replacing the previously unavailable <code>meta-llama/llama-3-8b-instruct:free,mistralai/mistral-7b-instruct:free</code> free-model pool. The legacy free model entries are retained in the cost table for accounts that override via <code>AI_DEFAULT_MODEL</code>. Admin reset-to-defaults and the admin AI settings dropdown updated to match. Probe path 01 and integration test fixtures updated to the new primary model. All 84/84 probe paths now pass.</p>
 </li>
 </ul>
-<h3 id="fixed">Fixed</h3>
+<h3 id="fixed_1">Fixed</h3>
 <ul>
 <li>
 <p><strong>Post-deploy verification no longer hangs/fails on removed Ollama service.</strong> <code>scripts/post-deploy-check.sh</code> now gates required service checks dynamically from Compose service definitions and skips <code>ollama</code> when it is not present in <code>docker-compose.prod.yml</code>. Readiness parsing now treats <code>not-configured</code> as OK for feature-gated AI checks, preventing false deployment failures when AI/Ollama are intentionally disabled.</p>
@@ -522,7 +532,7 @@
 <li><strong>Web: <code>/audit</code> POST endpoint has per-IP rate limit.</strong> 6 requests per minute per IP to prevent abuse of the email delivery path. Limit applies to all POST submissions, email or not.</li>
 <li><strong>Web: Email report delivery on Audit pages (optional, Postmark integration).</strong> Checkbox to request audit scorecard and findings CSV attachment be sent to an email address immediately after the run. Requires <code>POSTMARK_SERVER_TOKEN</code> env var. Server-side validation and graceful error handling. Email address is never stored.</li>
 </ul>
-<h3 id="fixed_1">Fixed</h3>
+<h3 id="fixed_2">Fixed</h3>
 <ul>
 <li>Fixed CSRF token handling in consent form so first-visit users can agree without pre-existing session.</li>
 <li><strong>Ops: <code>wait_for_health</code> bash syntax error caused rollback health check to crash.</strong> <code>log_ts</code> writes to stdout; capturing <code>ROLLBACK_HEALTHY="$(wait_for_health "rollback")"</code> included all log lines in the variable, causing <code>[[ "$ROLLBACK_HEALTHY" -eq 1 ]]</code> to fail with <code>syntax error: operand expected</code>. Fixed by redirecting all <code>log_ts</code> calls inside <code>wait_for_health</code> to stderr so command substitution captures only the final <code>0</code> or <code>1</code>.</li>
@@ -537,7 +547,7 @@
 <li><strong>Web: Document availability expiry on Fix result pages.</strong> Fix Results and Fix Review Headings pages now display the exact UTC date and time when the held document will be automatically deleted (approximately one hour after upload). This gives users a clear deadline to download their fixed file.</li>
 <li><strong>Web: <code>get_upload_expiry()</code> helper in <code>upload.py</code>.</strong> Returns the UTC <code>datetime</code> when a token's temp directory expires, computed from the directory's modification time plus the configured retention window. Used by the fix route to pass expiry time to templates.</li>
 </ul>
-<h3 id="fixed_2">Fixed</h3>
+<h3 id="fixed_3">Fixed</h3>
 <ul>
 <li><strong>Web: Expired session error message updated.</strong> The 24-hour reference in the fix confirm expired-session error was corrected to 1 hour to match the actual retention window.</li>
 </ul>
@@ -566,7 +576,7 @@
 - <strong>Web: <code>test_email.py</code> -- 24 unit tests for <code>email.py</code>.</strong> Covers <code>email_configured()</code>, <code>_findings_to_csv_bytes()</code> (BOM, header, truncation, column values), <code>_send()</code> (all Postmark response codes, timeout, network errors), <code>send_audit_report_email()</code> (unconfigured guard, payload structure, attachment format), and <code>send_batch_audit_report_email()</code> (unconfigured guard, merged CSV file column, failed-result exclusion).<br />
 - <strong>Docs: <code>about.html</code> -- Postmark listed in open-source dependencies table.</strong> Postmark row added alongside WeasyPrint with version, license (MIT client library), and privacy note.<br />
 - <strong>Docs: <code>user-guide.md</code> -- Email delivery section added to "How to Audit a Document".</strong> Documents the optional email field, what is sent (scorecard + CSV), and the privacy policy (address never stored).</p>
-<h3 id="fixed_3">Fixed</h3>
+<h3 id="fixed_4">Fixed</h3>
 <ul>
 <li>Fixed the macOS DMG packaging step in <code>.github/workflows/build.yml</code> by switching directory copy commands to recursive copy (<code>cp -R</code>), resolving the GitHub Actions failure in "Create DMG (macOS)" for onedir PyInstaller outputs.</li>
 <li>Fixed workflow tip banner icons rendering as literal text (<code>&amp;#9758;</code>) in all web form pages (<code>audit_form.html</code>, <code>fix_form.html</code>, <code>convert_form.html</code>, <code>export_form.html</code>, <code>template_form.html</code>) and the <code>_workflow_tip.html</code> partial. Jinja2 auto-escaping was converting <code>&amp;</code> to <code>&amp;amp;</code> when HTML entity strings were stored in <code>{% set %}</code> variables and rendered via <code>{{ }}</code>. Replaced entity strings (<code>"&amp;#9758;"</code>, <code>"&amp;#9432;"</code>) with literal Unicode characters (<code>"☞"</code>, <code>"ℹ"</code>) which pass through auto-escaping unchanged. The <code>aria-hidden="true"</code> on the icon span remains correct and is why screen readers were not affected.</li>
@@ -607,7 +617,7 @@
 <li>Removed <code>BITS-FEEDBACK-PLAN.md</code> after integrating retained AFB scoping and terminology actions into <code>README.md</code>, <code>web/src/acb_large_print_web/templates/guidelines.html</code>, and <code>web/src/acb_large_print_web/templates/faq.html</code>.</li>
 </ul>
 <h2 id="110----2026-04-15">[1.1.0] -- 2026-04-15</h2>
-<h3 id="fixed_4">Fixed</h3>
+<h3 id="fixed_5">Fixed</h3>
 <ul>
 <li>Fix results no longer penalize users for faux-heading findings when heading detection is explicitly disabled in the Fix form; <code>ACB-FAUX-HEADING</code> is suppressed from post-fix scoring and the results page now lists suppressed rules.</li>
 <li>Legacy Word VML shapes now treat explicit <code>alt=""</code> as decorative content, preventing false <code>ACB-MISSING-ALT-TEXT</code> findings when decorative intent is correctly marked.</li>
