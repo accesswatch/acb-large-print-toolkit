@@ -11,6 +11,29 @@
 
 The Flask web application has been built and is ready for deployment. All core features described in this PRD are implemented. The following table summarizes what shipped in v0.1 and subsequent v1.2.0 enhancements:
 
+### v2.7.0 Addendum (UX, scorecard, and streamlined workflow updates)
+
+All features below shipped in v2.7.0 (May 2026) and are fully implemented.
+
+| Feature | Status | Notes |
+|---------|--------|-------|
+| Export folded into Convert | Done | `/export` redirects (301) to `/convert`. CMS Fragment is a first-class direction in Convert. `GLOW_ENABLE_EXPORT_HTML` now gates the CMS Fragment direction in Convert rather than a separate route. |
+| Compliance score headline on audit report | Done | Grade letter (A–F) and numeric score displayed prominently at the top of every audit report. Color-coded by grade. |
+| Compliance grade on Fix result after-box | Done | Grade letter shown in the "After" score box on fix result so users see the before/after grade improvement at a glance. |
+| Quick Wins filter on audit report | Done | Bar above findings table showing auto-fixable count; toggle button filters to fixable findings only; "Fix These" button links to Fix. |
+| Shareable audit report URLs | Done | UUID-keyed report cache (`report_cache.py`) stores rendered HTML for 1 hour. Share link shown on every audit report. Share token is separate from upload token; cached HTML only — original document never accessible via share link. |
+| Drag-and-drop upload | Done | All upload forms support drag-and-drop with visual drop zone. |
+| Next-step cards on audit report | Done | "What's Next" section with context-aware callout cards for Fix, Convert, and manual guidance depending on doc format and findings. |
+| Dark mode support | Done | ACB-compliant dark color scheme via `prefers-color-scheme: dark` media query; all contrast ratios meet WCAG AA in both modes. |
+| HTML preview on Convert result | Done | Inline live preview iframe shown on Convert result page for HTML output; collapses to avoid layout shift on smaller viewports. |
+| CMS Fragment clipboard copy | Done | One-click "Copy to Clipboard" button on Convert result for CMS Fragment output. Toast notification confirms copy success. |
+| Toast notification system | Done | `toast.js` provides screen-reader-announced status toasts for clipboard actions and async UI feedback. |
+| Print and mobile CSS polish | Done | Responsive layout improvements; `@media print` hides nav and non-essential chrome. |
+| Streamlined Audit → Fix (no re-upload) | Done | `GET /fix/from-audit/<token>` and `POST /fix/from-audit/<token>` routes load an existing audit session file into Fix without requiring re-upload. "Fix This Document" and "Fix These Auto-Fixable Issues" buttons on audit report use the token-based route when session is active. |
+| Streamlined Fix → Re-Audit (no re-upload) | Done | `POST /audit/from-fix` route re-audits the fixed file from an existing session. "Re-Audit Fixed Document" button on fix result is a form POST rather than a plain link -- no re-upload required. |
+| Session expiry notice on fix form | Done | Redirect to fix form with `?notice=session_expired` when a from-audit token has expired; template shows an informational notice rather than an error. |
+| Privacy policy updated for share token and audit retention | Done | Audit workflow description clarifies that uploaded files are retained briefly for the Fix shortcut and Chat. Shareable link behavior (HTML-only cache, 1-hour expiry) is described. Policy last-updated date updated to April 29, 2026. |
+
 ### Post-v2.0 Addendum (v2.5.0 quality and release-safety updates)
 
 This PRD remains focused on the original platform scope. Since v2.0, additional quality safeguards were added in v2.5.0:

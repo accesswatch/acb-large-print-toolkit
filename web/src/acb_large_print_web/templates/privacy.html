@@ -13,7 +13,8 @@
   <h2 id="storage-heading">Document Storage and Retention</h2>
 
   <h3>Audit workflow</h3>
-  <p>When you submit a document for audit, GLOW processes it entirely in server memory and then deletes it immediately. By the time your audit report appears in the browser, the uploaded file is gone. Nothing is written to permanent storage.</p>
+  <p>When you submit a document for audit, GLOW retains it briefly on the server to enable two optional follow-on actions available directly from the audit report: the <strong>direct Fix shortcut</strong> (which lets you proceed to fix without re-uploading) and <strong>Document Chat</strong>. The file is held in a short-lived server-side session and is automatically deleted within <strong>one hour</strong> of upload. If you close the browser or do not use either follow-on feature, the file is no longer actively referenced and will be removed at the next scheduled sweep.</p>
+  <p>A <strong>shareable report link</strong> is generated for every audit. This link contains only the rendered HTML report &mdash; your original document is never accessible through it. Shareable links and their cached HTML expire after one hour and are then permanently deleted. Nothing about the original document is retained in the link or its cache.</p>
 
   <h3>Fix workflow</h3>
   <p>The Fix workflow is multi-step. After you upload a document, GLOW holds it on the server while it produces the fixed copy and optionally presents a heading review screen for your input. Once you download the fixed document, the original and the fixed copy are both deleted immediately.</p>
@@ -28,7 +29,7 @@
   <p>If a completed background transcript is not retrieved within the secure retrieval window (default 4 hours), GLOW clears the content and can send a final notification confirming removal.</p>
 
   <h3>No permanent storage</h3>
-  <p>GLOW does not store documents in any database, object store, archive, or backup system. Temporary files live only in a short-lived directory on the server and are removed as described above.</p>
+  <p>GLOW does not store documents in any database, object store, archive, or backup system. Temporary files live only in a short-lived directory on the server and are removed as described above. The shareable-report cache holds only rendered HTML &mdash; no original document content &mdash; and is also cleared after one hour.</p>
 </section>
 
 <section>
@@ -82,7 +83,7 @@
 <section>
   <h2 id="contact-heading">Questions and Contact</h2>
   <p>If you have questions about this policy or how your data is handled, contact BITS through the <a href="{{ url_for('feedback.feedback_form') }}">Feedback page</a> or visit <a href="https://www.bits-acb.org">bits-acb.org</a>.</p>
-  <p>This policy was last updated on April 17, 2026.</p>
+  <p>This policy was last updated on April 29, 2026.</p>
 </section>
 
 <section>

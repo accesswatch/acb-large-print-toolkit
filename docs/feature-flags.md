@@ -123,8 +123,8 @@ Additional non-AI GLOW flags (defaults: `true`)
 	- Purpose: Enable document conversion pathways (MarkItDown, Pandoc hooks).
 
 -- **`GLOW_ENABLE_EXPORT_HTML`** (default: `true`)
-	- Purpose: Enable the dedicated Word-to-HTML export workflow (`/export`).
-	- Notes: Disabling this flag hides Export UI and route access while leaving other conversion features available.
+	- Purpose: Enable the CMS Fragment direction within the Convert workflow (`/convert`). Also controls the legacy `/export` redirect target.
+	- Notes: In v2.7.0 the dedicated Export tab was folded into Convert. This flag now gates the CMS Fragment option on the Convert form. Disabling it hides the CMS Fragment direction from Convert and blocks direct `/export` access. All other Convert directions remain unaffected. Deployments that already had this flag set to `false` will automatically hide CMS Fragment without any further configuration change.
 
 -- **`GLOW_ENABLE_CONVERT_TO_MARKDOWN`**, **`GLOW_ENABLE_CONVERT_TO_HTML`**, **`GLOW_ENABLE_CONVERT_TO_DOCX`**, **`GLOW_ENABLE_CONVERT_TO_EPUB`**, **`GLOW_ENABLE_CONVERT_TO_PDF`**, **`GLOW_ENABLE_CONVERT_TO_PIPELINE`** (defaults: `true`)
 	- Purpose: Control which conversion directions are available inside the Convert workflow (`/convert`).

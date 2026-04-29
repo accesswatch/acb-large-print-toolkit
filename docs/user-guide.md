@@ -12,7 +12,7 @@ New to GLOW? Start at [Quick Start](#1-quick-start). Already familiar? Jump stra
 2. [How to Audit a Document](#2-how-to-audit-a-document)
 3. [How to Fix a Document](#3-how-to-fix-a-document)
 4. [How to Create a Template](#4-how-to-create-a-template)
-5. [How to Export to HTML](#5-how-to-export-to-html)
+5. [CMS Fragment (formerly Export)](#5-cms-fragment-formerly-export)
 6. [How to Convert Between Formats](#6-how-to-convert-between-formats)
 7. [BITS Whisperer: Transcribe Audio](#7-bits-whisperer-transcribe-audio)
 8. [Document Chat](#8-document-chat)
@@ -71,7 +71,7 @@ After upload, GLOW shows an action chooser. Every available action for your file
 
 **Convert** -- Transforms your document into a different format. Upload a PowerPoint, Excel, PDF, Word, or Markdown file and get back accessible HTML, a Word document, an EPUB, a PDF, or plain Markdown. PowerPoint, Excel, and PDF files use smart two-stage extraction: GLOW pulls the text into Markdown first, then Pandoc applies full ACB Large Print formatting. This is handled automatically -- you just choose your output format.
 
-**Export** -- Converts a Word document to an accessible HTML web page with ACB styling already applied. Choose Standalone (a complete web page you upload to a server) or CMS Fragment (a scoped snippet you paste into WordPress, Drupal, or any content management system).
+**Export** -- Converts a Word document to a CMS Fragment (a scoped HTML snippet for WordPress, Drupal, or any CMS). The Export tab was merged into Convert in v2.7.0. Use **Convert &gt; CMS Fragment** to produce scoped HTML. Standalone HTML output is also available in Convert. See [Section 5](#5-cms-fragment-formerly-export) and [Section 6](#6-how-to-convert-between-formats).
 
 **Template** -- Generates a Word template (.dotx) with all ACB styles pre-configured. Open it in Word and every document you create from it inherits compliant formatting from the first keystroke.
 
@@ -103,7 +103,7 @@ Go to **Fix**. Upload the .docx. Run Full Fix. Download the corrected file. Re-a
 
 #### "I have meeting minutes I need to post on our website."
 
-If they are in Word: Fix first, then Export with Standalone HTML mode. Upload the HTML file to your server.
+If they are in Word: Fix first, then use **Convert &gt; Accessible web page (HTML)** or **Convert &gt; CMS Fragment** for WordPress/Drupal.
 
 If they are in Markdown: Audit first, then Convert to accessible web page (HTML via Pandoc).
 
@@ -174,9 +174,24 @@ Go to **Audit** and upload the .epub. GLOW runs DAISY Ace (100+ axe-core checks)
 6. Click **Run Audit**.
 7. Review the report.
 
-### Reading the audit report
+### Quick Wins filter
 
-Each finding shows:
+After an audit of a Word document, the report shows a **Quick Wins** bar above the findings table. This bar shows how many findings can be auto-fixed and lets you toggle the table to show only those fixable findings.
+
+- Click **Show Quick Wins Only** to filter the table to auto-fixable findings.
+- Click **Fix These Auto-Fixable Issues** to go directly to the Fix page. If your session is still active (within one hour of upload), GLOW pre-loads your document into Fix automatically -- no re-upload required.
+- Click **Show Quick Wins Only** again to restore all findings.
+
+### Shareable audit report links
+
+Every audit report generates a **shareable link** that lets you send the report to a colleague without giving them access to the GLOW interface. The link is shown in the Share section of the report.
+
+- The link contains only the rendered HTML report -- the original document is never accessible through it.
+- The link is valid for one hour from the time the audit completed.
+- Anyone with the link can view the report; no login is required.
+- After one hour, the link expires and the cached report is permanently deleted.
+
+Use shareable links for team reviews, stakeholder sign-off, or archiving a point-in-time compliance snapshot.\n\n---
 
 - **Rule ID** -- a short code like `ACB-FONT-FAMILY` or `EPUB-MISSING-ALT-TEXT`
 - **Severity** -- Critical, High, Medium, or Low
@@ -216,6 +231,17 @@ Every audit result shows a data and privacy notice. When AI was not involved, th
 | Word (.docx) | Fonts changed to Arial; body text raised to 18pt minimum; headings to 22pt and 20pt; italic removed; bold-as-emphasis changed to underline; alignment set to flush-left; line spacing normalized; margins set; widow and orphan control enabled; hyphenation disabled; document language set |
 | Markdown (.md) | Heading hierarchy corrected; italic removed; em-dashes replaced |
 | Excel, PowerPoint, PDF, ePub | Audit report with step-by-step manual guidance; no auto-fix available |
+
+### Starting Fix from an audit (no re-upload)
+
+The fastest way to start a fix pass is directly from your audit report. After the audit completes:
+
+1. Click **Fix This Document** in the "What's Next" section, or click **Fix These Auto-Fixable Issues** in the Quick Wins bar.
+2. GLOW takes you to the Fix page with your document already loaded -- no need to upload again.
+3. Adjust options and click **Fix Document**.
+4. After the fix, click **Re-Audit Fixed Document** on the fix result page to run an audit on the fixed file immediately -- again, no re-upload required.
+
+This entire Audit → Fix → Re-Audit cycle requires uploading the document only once. The document session stays active for up to one hour from your initial upload.
 
 ### Step-by-step
 
@@ -365,25 +391,39 @@ If your editorial policy uses only a subset of heading levels, choose those in t
 
 ---
 
-## 5. How to Export to HTML
+## 5. CMS Fragment (formerly Export)
 
-Export converts a Word document to an accessible web page with ACB-compliant CSS already included.
+In v2.7.0, the dedicated Export page was merged into Convert. All Export functionality is now available in **Convert** at the same URL (`/convert`).
 
-### Output modes
+### What changed
 
-**Standalone HTML** -- a complete web page with a separate CSS file. Upload both to your web server. Best for dedicated pages, intranet publishing, or email attachments.
+- The **Export** tab has been removed from the navigation.
+- Bookmarks and links to `/export` are automatically redirected to `/convert`.
+- CMS Fragment output is available in Convert: upload a Word file and select **CMS Fragment** as the direction.
+- Standalone HTML output is also available in Convert: select **Accessible web page (HTML)** as the direction.
 
-**CMS Fragment** -- an HTML snippet with CSS scoped to a wrapper class (`.acb-lp`). Paste it into WordPress, Drupal, or any CMS HTML editor. The scoped CSS does not conflict with your site theme.
+### How to produce a CMS Fragment (for WordPress, Drupal, or any CMS)
 
-### Step-by-step
-
-1. Go to **Export**.
+1. Go to **Convert**.
 2. Upload a Word (.docx) file.
-3. Optionally enter a page title.
-4. Choose **Standalone** or **CMS Fragment**.
-5. Click **Export** and download your result.
+3. Select **CMS Fragment** as the output direction.
+4. Click **Convert**.
+5. On the result page, download the `-cms.html` file, or use the **Copy to Clipboard** button to copy the scoped HTML snippet directly.
 
-If your source is Markdown rather than Word, use **Convert > Accessible web page** instead -- Pandoc handles Markdown directly and produces cleaner HTML.
+The CMS Fragment contains HTML scoped to an `.acb-lp` wrapper class with matching CSS. Paste it into your CMS HTML editor without affecting your site theme.
+
+### How to produce Standalone HTML
+
+1. Go to **Convert**.
+2. Upload a Word (.docx), Markdown (.md), or other supported file.
+3. Select **Accessible web page (HTML)**.
+4. Click **Convert** and download the result.
+
+If your source is Markdown, Pandoc handles it directly and produces cleaner output than the Word-to-HTML path.
+
+### Feature flag
+
+The CMS Fragment direction in Convert is gated by the `GLOW_ENABLE_EXPORT_HTML` flag. Deployments that had this flag set to `false` will continue to hide CMS Fragment without any configuration change.
 
 ---
 
@@ -498,7 +538,7 @@ Pipeline conversions appear when DAISY Pipeline is installed on the server. If y
 | A quick e-book | EPUB 3 e-book (Pandoc) |
 | A DAISY talking book or production EPUB | EPUB or DAISY (Pipeline) |
 | Raw content for editing or AI | Plain text (Markdown) |
-| An HTML snippet for WordPress or Drupal | Export page -- CMS Fragment mode |
+| An HTML snippet for WordPress or Drupal | Convert page -- CMS Fragment direction |
 | A PowerPoint or Excel file as a web page | Accessible web page (HTML) -- two-stage |
 | A PDF reformatted with ACB print styles | Accessible PDF -- two-stage |
 
@@ -842,13 +882,15 @@ The List Indentation fields are always visible. They are disabled while **Flush 
 
 ## 13. Recommended Workflows
 
-### Workflow A: Fix an existing document
+### Workflow A: Fix an existing document (streamlined)
 
 1. **Audit first** -- upload to Audit to understand the scope of issues.
-2. **Auto-fix** -- upload to Fix to correct everything the tool can handle automatically.
-3. **Manual fixes** -- open the fixed document and address remaining items from the fix report.
-4. **Re-audit** -- upload the manually-fixed document to confirm.
-5. **Publish** -- Export to accessible HTML, distribute the corrected Word file, or convert to PDF.
+2. **Fix directly** -- from the audit report, click **Fix This Document** or **Fix These Auto-Fixable Issues**. Your document loads into Fix automatically -- no re-upload required.
+3. **Re-Audit directly** -- after the fix, click **Re-Audit Fixed Document** on the Fix result page. The fixed document is audited immediately -- no re-upload required.
+4. **Manual fixes** -- open the fixed document and address remaining items from the re-audit report.
+5. **Publish** -- use Convert to produce accessible HTML, distribute the corrected Word file, or convert to PDF.
+
+The entire Audit → Fix → Re-Audit cycle requires uploading the document only once.
 
 ### Workflow B: Start a new document from scratch
 
@@ -861,7 +903,7 @@ The List Indentation fields are always visible. They are disabled while **Flush 
 1. Write content in Markdown or Word.
 2. Audit to check compliance.
 3. Fix if the source is Word and has issues.
-4. Convert to accessible HTML using the Accessible web page option.
+4. Convert to accessible HTML using the Accessible web page option (or CMS Fragment for WordPress/Drupal).
 5. Upload the HTML file to your website.
 
 ### Workflow D: Transcribe a recorded meeting and publish
@@ -897,6 +939,16 @@ The List Indentation fields are always visible. They are disabled while **Flush 
 4. Ask "Estimate my score after running Fix."
 5. Export the chat session as your audit planning document.
 6. Proceed to Fix based on what you learned.
+
+### Workflow H: Rapid compliance pass on a known document
+
+Use this when you have a document you have worked on before and want a fast pass to confirm it still meets standards before publishing.
+
+1. Go to **Audit** and upload the document.
+2. Select **Quick Audit** (Critical and High findings only).
+3. On the report, check the Quick Wins bar -- if there are auto-fixable issues, click **Fix These Auto-Fixable Issues** to proceed directly to Fix with your document pre-loaded.
+4. On the Fix page, run Fix. Then click **Re-Audit Fixed Document** to confirm the score.
+5. If the re-audit shows only Medium or Low findings, the document is ready to publish.
 
 ---
 

@@ -201,11 +201,17 @@
   {% if feature_audit_enabled %}
   <div class="next-step-callout">
     <h3 id="reaudit-heading">Recommended Next Step: Re-Audit</h3>
-    <p>Download your fixed document above, then upload it to Audit to confirm the score improvement and catch any remaining issues.</p>
-    <div class="next-step-actions">
-      <a href="{{ url_for('audit.audit_form') }}" class="btn-primary">Re-Audit Now</a>
-      {% if feature_checker_enabled %}<a href="{{ url_for('fix.fix_form') }}" class="btn-secondary">Fix Another Document</a>{% endif %}
-    </div>
+    <p>Re-audit your fixed document now to confirm the score improvement and see what, if anything, remains.</p>
+    <form method="post" action="{{ url_for('audit.audit_from_fix') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="token" value="{{ token }}">
+      <input type="hidden" name="download_name" value="{{ download_name }}">
+      <input type="hidden" name="standards_profile" value="acb_2025">
+      <div class="next-step-actions">
+        <button type="submit" class="btn-primary">Re-Audit Fixed Document</button>
+        {% if feature_checker_enabled %}<a href="{{ url_for('fix.fix_form') }}" class="btn-secondary">Fix Another Document</a>{% endif %}
+      </div>
+    </form>
   </div>
   {% endif %}
   {% if token and ai_chat_enabled %}

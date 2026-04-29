@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>GLOW 2.7.0 Announcement</title>
+  <style>
+    body { font-family: Arial, sans-serif; line-height: 1.5; margin: 0; background: #f7f8fb; color: #1a1a1a; }
+    main { max-width: 70ch; margin: 2rem auto; background: #fff; padding: 2rem; border: 1px solid #d9deea; }
+    h1, h2, h3 { line-height: 1.3; margin-top: 1.5rem; }
+    h1 { margin-top: 0; }
+    ul { padding-left: 1.25rem; }
+    a { color: #0c234b; }
+    .lede { font-size: 1.1rem; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>GLOW 2.7.0: Upload Once, Audit Faster, Fix Smarter</h1>
+    <p><strong>FOR IMMEDIATE RELEASE -- May 2026</strong></p>
+
+    <p class="lede">GLOW (Guided Layout and Output Workflow) Accessibility Toolkit 2.7.0 is now available.</p>
+
+    <p>This release is about reducing friction in the workflows that matter most: auditing a document, fixing what is broken, and confirming the fix worked. Starting today, the entire audit-fix-re-audit cycle requires uploading your document exactly once.</p>
+
+    <h2>The headline: one upload, three steps</h2>
+    <p>Before this release, every step in a compliance workflow required re-uploading the same file. Audit it. Download the report. Upload it again to fix it. Download the fixed file. Upload it a third time to confirm the improvements.</p>
+    <p>GLOW 2.7.0 eliminates those extra uploads.</p>
+    <p>After your initial upload and audit:</p>
+    <ol>
+      <li>Click <strong>Fix This Document</strong> -- GLOW opens the Fix page with your document already loaded.</li>
+      <li>Adjust options and click <strong>Fix Document</strong>.</li>
+      <li>Click <strong>Re-Audit Fixed Document</strong> -- GLOW runs the audit on the fixed file immediately.</li>
+    </ol>
+    <p>Three actions. Zero re-uploads. Your document session stays active for up to one hour.</p>
+    <p>This is a meaningful change for organizations that process the same documents repeatedly: board meeting agendas, newsletter issues, and compliance submissions where the audit-fix-confirm loop happens on a deadline.</p>
+
+    <h2>What else is new in 2.7.0</h2>
+
+    <h3>Shareable audit report links</h3>
+    <p>Every audit report now includes a shareable link. Send your compliance report to a colleague, a board member, or an external reviewer without sharing the original document.</p>
+    <p>The link contains only the rendered HTML report -- never the document itself. It expires after one hour.</p>
+
+    <h3>Quick Wins filter</h3>
+    <p>The audit report now includes a bar above the findings table showing how many issues are auto-fixable. One click filters to fixable issues only. Another click takes you straight to Fix with your document already loaded.</p>
+    <p>For organizations triaging a long list of findings, this filter surfaces the highest-return actions first.</p>
+
+    <h3>CMS Fragment is now in Convert</h3>
+    <p>The dedicated Export tab has been retired. The CMS Fragment output -- a self-contained HTML snippet for pasting into WordPress, Drupal, or any CMS -- is now a direction in the Convert workflow, alongside Standalone HTML, Word, Markdown, and EPUB.</p>
+    <p>The <code>/export</code> URL now redirects automatically to Convert. No links need updating.</p>
+
+    <h3>Compliance grade on the Fix result</h3>
+    <p>After running a fix, the result page shows before-and-after compliance scores with letter grades (A through F) so you can see at a glance whether the document reached an acceptable level or needs another pass.</p>
+
+    <h3>Dark mode</h3>
+    <p>GLOW now respects the system <code>prefers-color-scheme: dark</code> setting with an ACB-compliant dark color scheme. All contrast ratios meet WCAG 2.2 AA in dark mode. Print output continues to use the light ACB palette.</p>
+
+    <h3>HTML preview on Convert</h3>
+    <p>When you convert a document to HTML, the result page shows a sandboxed inline preview before you download. Confirm what the output looks like without opening a separate file.</p>
+
+    <h3>Drag-and-drop upload</h3>
+    <p>All upload forms now support drag-and-drop. The drop zone is keyboard accessible and falls back to the standard file picker on any device.</p>
+
+    <h2>Privacy policy update</h2>
+    <p>The Data Storage and Retention Policy has been updated to accurately reflect how audit session files are handled under the new streamlined flow.</p>
+    <p>Uploaded files are retained briefly (up to one hour from upload) to enable the Fix shortcut and Chat follow-on actions. Shareable report links contain only rendered HTML -- the original document is never stored in or accessible from the report cache.</p>
+
+    <h2>Get GLOW 2.7.0</h2>
+    <p>GLOW is freely available at <a href="https://glow.csedesigns.com">https://glow.csedesigns.com</a>.</p>
+    <p>The source code is on GitHub. The Python desktop tool, CLI, and VS Code agent toolkit are updated in the same release.</p>
+    <p>Questions, feedback, and issue reports are welcome through the Feedback link on the site.</p>
+
+    <h2>About GLOW</h2>
+    <p>GLOW helps teams audit, remediate, convert, and publish accessible documents aligned with ACB guidelines, WCAG 2.2 AA, and Microsoft Accessibility Checker expectations.</p>
+    <p><em>GLOW is a community project of the Blindness and Information Technology Section (BITS) of the American Council of the Blind.</em></p>
+  </main>
+</body>
+</html>

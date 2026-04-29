@@ -77,9 +77,15 @@
       Show Quick Wins Only ({{ ns.fixable }} auto-fixable)
     </button>
     {% if doc_format == "docx" and feature_checker_enabled %}
+    {% if chat_token %}
+    <a href="{{ url_for('fix.fix_from_audit_form', token=chat_token) }}" class="btn-primary" id="fix-quick-wins-btn">
+      Fix These Auto-Fixable Issues
+    </a>
+    {% else %}
     <a href="{{ url_for('fix.fix_form') }}" class="btn-primary" id="fix-quick-wins-btn">
       Fix These Auto-Fixable Issues
     </a>
+    {% endif %}
     {% endif %}
     <span id="quick-wins-status" class="visually-hidden" aria-live="polite" aria-atomic="true"></span>
   </div>
@@ -154,7 +160,11 @@
     <h3 id="next-action-heading">Recommended Next Step</h3>
     <p>{{ result.findings | length }} issue{{ "s" if result.findings | length != 1 else "" }} found &mdash; many can be fixed automatically. Run Fix to apply corrections, then re-audit to confirm.</p>
     <div class="next-step-actions">
+      {% if chat_token %}
+      <a href="{{ url_for('fix.fix_from_audit_form', token=chat_token) }}" class="btn-primary">Fix This Document</a>
+      {% else %}
       <a href="{{ url_for('fix.fix_form') }}" class="btn-primary">Fix This Document</a>
+      {% endif %}
       {% if feature_audit_enabled %}<a href="{{ url_for('audit.audit_form') }}" class="btn-secondary">Audit Another</a>{% endif %}
     </div>
   </div>

@@ -5,6 +5,7 @@ from pathlib import Path
 import uuid
 
 from flask import Blueprint, Response, abort, render_template, request, url_for
+from werkzeug.utils import secure_filename as _sf
 
 import re
 
@@ -124,6 +125,121 @@ def audit_form():
         email_configured=email_configured(),
         rules_by_format=get_rules_by_format(),
     )
+
+
+@audit_bp.route("/from-fix", methods=["POST"])
+def audit_from_fix():
+    """Re-audit a fixed document without re-uploading (uses existing session token)."""
+    from ..upload import get_temp_dir, ALLOWED_EXTENSIONS
+    from ..email import email_configured as _ec
+
+    token = request.form.get("token", "").strip()
+    download_name = request.form.get("download_name", "").strip()
+
+    temp_dir = get_temp_dir(token)
+    if temp_dir is None:
+        return (
+            render_template(
+                "audit_form.html",
+                error="Your session has expired. Please upload the fixed document to audit it.",
+                ace_installed=_is_ace_installed(),
+                email_configured=_ec(),
+                rules_by_format=get_rules_by_format(),
+            ),
+            400,
+        )
+
+    # Resolve the fixed file -- prefer the named download, then any -fixed file, then any allowed file
+    saved_path = None
+    if download_name:
+        candidate = temp_dir / _sf(download_name)
+        try:
+            candidate.resolve().relative_to(temp_dir.resolve())
+            if candidate.exists() and candidate.suffix.lower() in ALLOWED_EXTENSIONS:
+                saved_path = candidate
+        except ValueError:
+            pass
+    if saved_path is None:
+        for f in sorted(temp_dir.iterdir()):
+            if f.is_file() and f.suffix.lower() in ALLOWED_EXTENSIONS and f.stem.endswith("-fixed"):
+                saved_path = f
+                break
+    if saved_path is None:
+        for f in sorted(temp_dir.iterdir()):
+            if f.is_file() and f.suffix.lower() in ALLOWED_EXTENSIONS:
+                saved_path = f
+                break
+
+    if saved_path is None:
+        return (
+            render_template(
+                "audit_form.html",
+                error="Fixed document not found. Session may have expired. Please upload again.",
+                ace_installed=_is_ace_installed(),
+                email_configured=_ec(),
+                rules_by_format=get_rules_by_format(),
+            ),
+            400,
+        )
+
+    try:
+        standards_profile = request.form.get("standards_profile", "acb_2025")
+        profile_label = get_profile_label(standards_profile)
+        doc_format = _format_from_path(saved_path)
+        policy = build_rule_policy(request.form)
+        mode_label = policy.mode_label
+        suppressed_rules = sorted(policy.suppressed)
+
+        result = _audit_by_extension(saved_path)
+        result.findings = policy.filter_findings(result.findings, doc_format)
+
+        chat_token = token  # keep token alive for further downstream use
+
+        share_token = str(uuid.uuid4())
+        try:
+            share_url = url_for("audit.shared_report", share_token=share_token, _external=True)
+        except Exception:
+            share_url = None
+            share_token = None
+
+        html = render_template(
+            "audit_report.html",
+            result=result,
+            mode_label=mode_label,
+            profile_label=profile_label,
+            doc_format=doc_format,
+            ace_installed=_is_ace_installed(),
+            suppressed_rules=suppressed_rules,
+            email_status=None,
+            ai_used=False,
+            customization_warning="",
+            chat_token=chat_token,
+            fixable_rule_ids=FIXABLE_RULE_IDS,
+            share_token=share_token,
+            share_url=share_url,
+            reaudit_context=True,
+        )
+
+        if share_token:
+            try:
+                from ..report_cache import save_report
+                save_report(share_token, html)
+            except Exception:
+                pass
+
+        return html
+
+    except Exception:
+        return (
+            render_template(
+                "audit_form.html",
+                error="An error occurred during re-audit. Please try again.",
+                ace_installed=_is_ace_installed(),
+                email_configured=_ec(),
+                rules_by_format=get_rules_by_format(),
+            ),
+            500,
+        )
 
 
 @audit_bp.route("/share/<share_token>", methods=["GET"])

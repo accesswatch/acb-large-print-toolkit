@@ -21,10 +21,26 @@
 <div class="error-box" role="alert">
   <p><strong>Error:</strong> {{ error }}</p>
 </div>
+{% elif request.args.get('notice') == 'session_expired' %}
+<div class="help-box" role="status">
+  <p>Your previous audit session expired. Upload your document again to continue.</p>
+</div>
 {% endif %}
 
+{% if prefill_token and prefill_filename %}
+<div class="help-box" role="status">
+  <p><strong>Ready to fix:</strong> <em>{{ prefill_filename }}</em> &mdash; your document is already loaded from your audit session. You do not need to upload again. Adjust options below and click <strong>Run Fix</strong>.</p>
+</div>
+<form method="post" action="{{ url_for('fix.fix_from_audit_submit', token=prefill_token) }}" enctype="multipart/form-data" novalidate>
+{% else %}
 <form method="post" enctype="multipart/form-data" novalidate>
+{% endif %}
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  {% if prefill_token and prefill_filename %}
+  <div class="form-group">
+    <p class="help-text" id="file-help"><strong>Document:</strong> {{ prefill_filename }}</p>
+  </div>
+  {% else %}
   <div class="form-group">
     <label for="document">Upload a document</label>
     <input type="file" id="document" name="document" accept=".docx,.xlsx,.pptx,.md,.pdf,.epub"
@@ -32,6 +48,7 @@
            {% if error %}aria-invalid="true"{% endif %}>
     <p id="file-help" class="help-text">Accepted formats: Word (.docx) and Markdown (.md) for auto-fix; Excel (.xlsx), PowerPoint (.pptx), PDF (.pdf), and ePub (.epub) for audit-only guidance. Maximum size: 500 MB.</p>
   </div>
+  {% endif %}
 
   <fieldset>
     <legend>Standards Profile</legend>

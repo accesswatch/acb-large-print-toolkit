@@ -862,3 +862,118 @@ def fix_download():
         cleanup_token(token)
 
     return response
+
+
+def _find_fixable_file(temp_dir):
+    """Return the first fixable file in a temp dir, or None."""
+    from ..upload import ALLOWED_EXTENSIONS
+    for f in sorted(temp_dir.iterdir()):
+        if f.is_file() and f.suffix.lower() in ALLOWED_EXTENSIONS:
+            return f
+    return None
+
+
+@fix_bp.route("/from-audit/<token>", methods=["GET"])
+def fix_from_audit_form(token: str):
+    """Show the fix form pre-filled with a file from a completed audit session."""
+    from ..ai_features import ai_heading_fix_enabled
+    from flask import redirect
+    temp_dir = get_temp_dir(token)
+    if temp_dir is None:
+        return redirect(url_for("fix.fix_form") + "?notice=session_expired")
+    prefill_file = _find_fixable_file(temp_dir)
+    if prefill_file is None:
+        return redirect(url_for("fix.fix_form"))
+    return render_template(
+        "fix_form.html",
+        ai_available=ai_heading_fix_enabled(),
+        rules_by_format=get_rules_by_format(),
+        prefill_token=token,
+        prefill_filename=prefill_file.name,
+    )
+
+
+@fix_bp.route("/from-audit/<token>", methods=["POST"])
+def fix_from_audit_submit(token: str):
+    """Run fix using an existing file from a completed audit session (no re-upload)."""
+    from ..ai_features import ai_heading_fix_enabled
+    temp_dir = get_temp_dir(token)
+    if temp_dir is None:
+        return (
+            render_template(
+                "fix_form.html",
+                error="Your session has expired. Please upload your document again.",
+                ai_available=ai_heading_fix_enabled(),
+                rules_by_format=get_rules_by_format(),
+            ),
+            400,
+        )
+
+    saved_path = _find_fixable_file(temp_dir)
+    if saved_path is None:
+        return (
+            render_template(
+                "fix_form.html",
+                error="Original document not found. Please upload again.",
+                ai_available=ai_heading_fix_enabled(),
+                rules_by_format=get_rules_by_format(),
+            ),
+            400,
+        )
+
+    try:
+        opts = _parse_form_options(request.form)
+        ext = saved_path.suffix.lower()
+
+        # Interactive heading review: same path as fix_submit
+        if opts["detect_headings"] and ext == ".docx":
+            from docx import Document as _Document
+            from acb_large_print.heading_detector import detect_headings as _detect
+
+            ai_provider = None
+            if opts["use_ai"]:
+                try:
+                    from acb_large_print.ai_provider import get_provider
+                    ai_provider = get_provider()
+                except Exception:
+                    pass
+
+            doc = _Document(str(saved_path))
+            candidates = _detect(doc, ai_provider=ai_provider, threshold=opts["heading_threshold"])
+            allowed_levels = opts["allowed_heading_levels"]
+            for candidate in candidates:
+                candidate.suggested_level = _closest_allowed_level(candidate.suggested_level, allowed_levels)
+
+            if candidates:
+                form_fields = {}
+                for key in request.form:
+                    values = request.form.getlist(key)
+                    form_fields[key] = values[0] if len(values) == 1 else values
+                from ..upload import get_upload_expiry
+                import os as _os
+                _max_age = int(_os.environ.get("UPLOAD_MAX_AGE_HOURS", "1"))
+                doc_expiry = get_upload_expiry(token, max_age_hours=_max_age)
+                return render_template(
+                    "fix_review_headings.html",
+                    candidates=candidates,
+                    allowed_heading_levels=allowed_levels,
+                    token=token,
+                    filename=saved_path.name,
+                    form_fields=form_fields,
+                    ai_used=ai_provider is not None,
+                    doc_expiry=doc_expiry,
+                )
+
+        return _run_fix_and_render(saved_path, token, opts)
+
+    except Exception:
+        return (
+            render_template(
+                "fix_form.html",
+                error="An error occurred while fixing the document. Please try again.",
+                ai_available=ai_heading_fix_enabled(),
+                rules_by_format=get_rules_by_format(),
+            ),
+            500,
+        )
+    # Note: do NOT clean up here -- token stays alive for download
