@@ -621,6 +621,8 @@ def _run_fix_and_render(
 def fix_submit():
     token = None
     try:
+        from ..tool_usage import record as _record_usage
+        _record_usage("fix")
         token, saved_path = validate_upload(request.files.get("document"))
         opts = _parse_form_options(request.form)
         ext = saved_path.suffix.lower()

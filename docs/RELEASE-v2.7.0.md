@@ -236,3 +236,35 @@ A new `web/tests/test_v270_new_routes.py` module adds 22 unit tests covering:
 - A CSS guard that fails if any shipped stylesheet introduces an `outline: none / 0 / transparent` rule outside the allowed `:focus:not(:focus-visible)` recipe, protecting the new global focus ring from future regressions
 
 Full web suite: 266 passed, 20 skipped.
+
+### 18. Visitor counter and tool usage analytics
+
+**Visitor counter (footer badge):**
+
+A new `visitor_counter.py` module tracks unique browser sessions using a single-row SQLite counter (`instance/visitor_counter.db`, WAL mode). The current count is displayed in the footer of every page as "Visitors: 1,234". One increment fires per session; static assets and `/health` are excluded.
+
+**Tool usage analytics:**
+
+A new `tool_usage.py` module records per-tool use counts in `instance/tool_usage.db`. Each of the six public tool endpoints (Audit, Fix, Convert, Template Builder, BITS Whisperer, Document Chat) increments its counter at the start of every successful submission. Increments are failure-safe (silently swallowed on DB error).
+
+**Admin analytics dashboard (`/admin/analytics`):**
+
+A new admin-only page shows total visitors, total tool uses, and a table of per-tool counts with share percentages and last-used timestamps. Linked from the Admin Queue dashboard.
+
+**About page: Usage Statistics section:**
+
+The public About page (`/about/`) now includes a "Usage Statistics" section showing visitor count, total tool uses, and a per-tool count table (zero-count tools are hidden until first use).
+
+**New files:**
+- `web/src/acb_large_print_web/visitor_counter.py`
+- `web/src/acb_large_print_web/tool_usage.py`
+- `web/src/acb_large_print_web/templates/admin_analytics.html`
+
+**Changed files:**
+- `web/src/acb_large_print_web/app.py` -- before_request hook + context processor injection
+- `web/src/acb_large_print_web/templates/base.html` -- visitor count in footer
+- `web/src/acb_large_print_web/templates/about.html` -- Usage Statistics section
+- `web/src/acb_large_print_web/templates/admin_queue.html` -- link to analytics
+- `web/src/acb_large_print_web/routes/about.py` -- passes tool_usage, total_uses, visitor_count to template
+- `web/src/acb_large_print_web/routes/admin.py` -- new /admin/analytics route
+- `web/src/acb_large_print_web/routes/audit.py`, `fix.py`, `convert.py`, `template.py`, `whisperer.py`, `chat.py` -- tool usage instrumentation

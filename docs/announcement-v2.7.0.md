@@ -36,6 +36,12 @@ The audit report now includes a bar above the findings table showing how many is
 
 For organizations triaging a long list of findings, this filter surfaces the highest-return actions first.
 
+### Visitor counter and tool usage analytics
+
+A "Visitors" count in the footer of every page shows cumulative unique sessions since deployment. The public About page now includes a "Usage Statistics" section listing visitor count, total tool uses, and per-tool counts.
+
+Administrators can see full detail -- per-tool counts with share percentages and last-used timestamps -- on the new Tool Usage Analytics page linked from the Admin Queue dashboard. Both counters persist across server restarts in SQLite and survive normal deployments.
+
 ### CMS Fragment is now in Convert
 
 The dedicated Export tab has been retired. The CMS Fragment output -- a self-contained HTML snippet for pasting into WordPress, Drupal, or any CMS -- is now a direction in the Convert workflow, alongside Standalone HTML, Word, Markdown, and EPUB.

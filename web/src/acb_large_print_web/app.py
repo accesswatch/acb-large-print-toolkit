@@ -71,6 +71,22 @@ def create_app(config: dict | None = None) -> Flask:
         from flask import g as _g
         _g._request_start = _time.monotonic()
 
+    @app.before_request
+    def _count_visitor():
+        """Increment visitor counter once per browser session."""
+        from flask import session as _sess, request as _req
+        # Skip static files, health checks, and API calls
+        if _req.path.startswith('/static') or _req.path == '/health':
+            return
+        if not _sess.get('_v_counted'):
+            try:
+                from .visitor_counter import increment_and_get
+                _sess['_v_counted'] = True
+                _sess.permanent = True
+                increment_and_get()
+            except Exception:
+                pass
+
     @app.after_request
     def _log_request(response):
         from flask import g as _g, request as _req
@@ -120,6 +136,13 @@ def create_app(config: dict | None = None) -> Flask:
         ctx.update(_get_ai_flags())
         # Inject deployment branding profile (BITS default, UArizona optional)
         ctx.update(_get_branding_context())
+
+        # Inject visitor count for footer display
+        try:
+            from .visitor_counter import get_count as _get_visitor_count
+            ctx["visitor_count"] = _get_visitor_count()
+        except Exception:
+            ctx["visitor_count"] = 0
 
         # Inject server-side feature flags (broad feature visibility)
         try:

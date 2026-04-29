@@ -2212,6 +2212,10 @@ GLOW includes an admin-only sign-in and approval workflow for operational dashbo
 - **Sign-in options:** Email magic link, Google, Apple, GitHub, Microsoft, Auth0, and WordPress (providers appear only when configured).
 - **Approval required:** A user may request admin access, but an existing approved admin must approve before sign-in succeeds.
 - **Admin dashboard:** Approved admins can view the audio conversion queue, cancel queued jobs, and re-queue failed jobs.
+- **AI settings:** Configure and monitor cloud AI budget controls and API key status.
+- **Feature flags:** Enable or disable specific tool features without redeploying.
+- **Access request review:** Approve or deny pending admin access requests.
+- **Tool usage analytics (`/admin/analytics`):** View cumulative visitor count, total tool uses, and per-tool breakdown with share percentages and last-used timestamps. Data persists across server restarts in SQLite.
 
 ---
 

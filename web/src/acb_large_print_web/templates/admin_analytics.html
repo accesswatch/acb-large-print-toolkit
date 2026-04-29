@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block title %}Analytics{% endblock %}
+{% block heading %}Tool Usage Analytics{% endblock %}
+
+{% block content %}
+<p><strong>Signed in as:</strong> {{ admin_email }}</p>
+
+<form method="post" action="{{ url_for('admin.admin_logout') }}" class="inline-form">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <button type="submit" class="btn-secondary">Sign Out</button>
+</form>
+<p><a href="{{ url_for('admin.admin_queue') }}">Back to Admin Queue</a></p>
+
+<section>
+  <h2 id="overview-heading">Overview</h2>
+  <dl>
+    <dt>Total unique visitors</dt>
+    <dd>{{ "{:,}".format(visitor_count) }}</dd>
+    <dt>Total tool uses</dt>
+    <dd>{{ "{:,}".format(total_uses) }}</dd>
+  </dl>
+</section>
+
+<section>
+  <h2 id="tools-heading">Counts by Tool</h2>
+  {% if total_uses == 0 %}
+  <p>No tool uses recorded yet. Counts appear here after users submit documents.</p>
+  {% else %}
+  <table class="findings-table">
+    <caption id="tools-hint">Tool use counts since deployment</caption>
+    <thead>
+      <tr>
+        <th scope="col">Tool</th>
+        <th scope="col">Uses</th>
+        <th scope="col">Share</th>
+        <th scope="col">Last Used</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in usage %}
+      <tr>
+        <td>{{ row.label }}</td>
+        <td>{{ "{:,}".format(row.count) }}</td>
+        <td>
+          {% if total_uses > 0 %}
+          {{ "%.1f"|format(row.count / total_uses * 100) }}%
+          {% else %}
+          —
+          {% endif %}
+        </td>
+        <td>
+          {% if row.last_used_at %}
+          <time datetime="{{ row.last_used_at }}">{{ row.last_used_at[:16].replace("T", " ") }} UTC</time>
+          {% else %}
+          Never
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+    <tfoot>
+      <tr>
+        <th scope="row">Total</th>
+        <td>{{ "{:,}".format(total_uses) }}</td>
+        <td>100%</td>
+        <td></td>
+      </tr>
+    </tfoot>
+  </table>
+  {% endif %}
+</section>
+
+<section>
+  <h2 id="notes-heading">Notes</h2>
+  <ul>
+    <li>Tool counts increment once per successful form submission. Page views and errors are not counted.</li>
+    <li>Visitor count tracks unique browser sessions (one count per session, not per page view).</li>
+    <li>Both counters persist across server restarts in SQLite under <code>instance/</code>.</li>
+    <li>Counts reset only if the instance volume is wiped (for example, during a destructive redeploy).</li>
+  </ul>
+</section>
+
+{% endblock %}

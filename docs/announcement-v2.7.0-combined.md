@@ -218,6 +218,8 @@ GLOW's **Changelog** (`/changelog`) is deployed inside the Docker image and serv
 
 GLOW 2.7.0 adds a **Roadmap** page — linked from the footer — so contributors and adopters always know where the project is heading.
 
+GLOW 2.7.0 also adds a **visitor counter** in the footer and a **tool usage analytics** system that tracks how many times each tool has been used since deployment. The public About page surfaces the summary; administrators see full per-tool detail with share percentages and last-used timestamps in the new Admin Analytics dashboard.
+
 ---
 
 ## A NOTE ON COMMUNITY AND ATTRIBUTION
@@ -235,10 +237,11 @@ GLOW acknowledges the foundational work of **Jamal Mazrui** and his projects [ex
 | | v2.5.0 | v2.6.0 | v2.7.0 |
 |---|---|---|---|
 | New audit rules | ~30 | ~40 | — |
-| New web routes | 8 | 5 | 8 |
+| New web routes | 8 | 5 | 10 |
 | New test cases | 40+ | 30+ | 22 |
-| Templates updated | 18+ | 8 | 6 |
+| Templates updated | 18+ | 8 | 7 |
 | Document formats covered | 6 | 6 | 6 |
+| New analytics modules | — | — | 2 (visitor counter, tool usage) |
 | Test suite (web) | passing | passing | **266 passed, 20 skipped** |
 
 ---

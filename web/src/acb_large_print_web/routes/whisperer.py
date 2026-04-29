@@ -945,6 +945,8 @@ def whisperer_submit():
     token = None
     created_new_token = False
     try:
+        from ..tool_usage import record as _record_usage
+        _record_usage("whisperer")
         token, saved_path, created_new_token, uploaded_name = _resolve_audio_upload(
             request.files.get("audio"),
             existing_token=request.form.get("existing_token"),

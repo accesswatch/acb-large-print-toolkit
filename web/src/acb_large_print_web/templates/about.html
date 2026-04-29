@@ -373,6 +373,39 @@
 </section>
 
 <section>
+  <h2 id="usage-heading">Usage Statistics</h2>
+  <p>Cumulative counts since deployment, tracked per browser session (visitors) or per document submission (tool uses).</p>
+  <dl>
+    <dt>Total unique visitors</dt>
+    <dd>{{ "{:,}".format(visitor_count) }}</dd>
+    <dt>Total tool uses</dt>
+    <dd>{{ "{:,}".format(total_uses) }}</dd>
+  </dl>
+  {% if total_uses > 0 %}
+  <table class="findings-table">
+    <caption>Tool use counts by feature</caption>
+    <thead>
+      <tr>
+        <th scope="col">Tool</th>
+        <th scope="col">Uses</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in tool_usage %}
+      {% if row.count > 0 %}
+      <tr>
+        <td>{{ row.label }}</td>
+        <td>{{ "{:,}".format(row.count) }}</td>
+      </tr>
+      {% endif %}
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+  <a href="#main" class="back-to-top">Back to top</a>
+</section>
+
+<section>
   <h2 id="stress-heading">Stress Testing</h2>
   <p>The toolkit includes a reproducible synthetic Word-document stress harness for the heading-detection and fixing pipeline. The current corpus covers <strong>{{ stress_summary.total_heading_cases }}</strong> heading scenarios across <strong>{{ stress_summary.document_count }}</strong> generated documents.</p>
   <p>These generated documents deliberately mix ACB-conformant content with failure patterns such as centered titles, justified paragraphs, hanging indents, faux headings, signature blocks, copied web formatting, and body-text emphasis drift. Each failure that proves useful is folded back into the audit rules, fixer behavior, or online help so the product learns from the corpus instead of letting that knowledge stay trapped in tests.</p>

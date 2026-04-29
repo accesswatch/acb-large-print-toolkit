@@ -43,3 +43,7 @@ Desktop.ini
 
 # Logs
 *.log
+
+# Runtime SQLite databases (created automatically on first use)
+instance/visitor_counter.db
+instance/tool_usage.db

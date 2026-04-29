@@ -9,4 +9,12 @@ about_bp = Blueprint("about", __name__)
 
 @about_bp.route("/")
 def about_page():
-    return render_template("about.html", stress_summary=describe_stress_corpus())
+    from ..tool_usage import get_all as _get_tool_usage, get_total as _get_tool_total
+    from ..visitor_counter import get_count as _get_visitor_count
+    return render_template(
+        "about.html",
+        stress_summary=describe_stress_corpus(),
+        tool_usage=_get_tool_usage(),
+        total_uses=_get_tool_total(),
+        visitor_count=_get_visitor_count(),
+    )

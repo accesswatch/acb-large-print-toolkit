@@ -33,6 +33,10 @@ All features below shipped in v2.7.0 (May 2026) and are fully implemented.
 | Streamlined Fix → Re-Audit (no re-upload) | Done | `POST /audit/from-fix` route re-audits the fixed file from an existing session. "Re-Audit Fixed Document" button on fix result is a form POST rather than a plain link -- no re-upload required. |
 | Session expiry notice on fix form | Done | Redirect to fix form with `?notice=session_expired` when a from-audit token has expired; template shows an informational notice rather than an error. |
 | Privacy policy updated for share token and audit retention | Done | Audit workflow description clarifies that uploaded files are retained briefly for the Fix shortcut and Chat. Shareable link behavior (HTML-only cache, 1-hour expiry) is described. Policy last-updated date updated to April 29, 2026. |
+| Visitor counter | Done | SQLite unique-session visitor counter (`instance/visitor_counter.db`). One increment per browser session via `@app.before_request`; count displayed in footer as "Visitors: 1,234" and injected via context processor. |
+| Tool usage analytics | Done | Per-tool use counts in `instance/tool_usage.db`. Six tools instrumented (Audit, Fix, Convert, Template Builder, BITS Whisperer, Document Chat). Failure-safe — never surfaces DB errors to users. |
+| Admin analytics dashboard | Done | `GET /admin/analytics` (admin-only) shows total visitors, total tool uses, per-tool table with share percentages and last-used timestamps. Linked from Admin Queue. |
+| About page usage stats | Done | Public "Usage Statistics" section on `/about/` shows visitor count, total tool uses, and per-tool counts (zero-count tools hidden). |
 
 ### Post-v2.0 Addendum (v2.5.0 quality and release-safety updates)
 

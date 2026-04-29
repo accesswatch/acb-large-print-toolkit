@@ -124,6 +124,7 @@
     {% endif %}
     <p>Admin features are restricted to approved administrative accounts.</p>
     <p>Current release: {{ release_version }}</p>
+    <p>Visitors: {{ "{:,}".format(visitor_count) }}</p>
     <div class="theme-toggle">
       <label for="theme-toggle-select">Theme:</label>
       <select id="theme-toggle-select" data-theme-control aria-describedby="theme-status">

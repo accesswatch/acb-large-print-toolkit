@@ -256,6 +256,9 @@ def convert_submit():
         if direction in direction_flags and not direction_flags[direction]:
             raise UploadError("That conversion direction is disabled on this server.")
 
+        from ..tool_usage import record as _record_usage
+        _record_usage("convert", detail=direction)
+
         temp_dir = get_temp_dir(token)
 
         if direction == "to-html":

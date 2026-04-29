@@ -208,6 +208,12 @@ def chat_submit():
     question = request.form.get("question", "").strip()
 
     if not token or not question:
+        pass
+    else:
+        from ..tool_usage import record as _record_usage
+        _record_usage("chat")
+
+    if not token or not question:
         return redirect(url_for("chat.chat_form", token=token))
 
     if len(question) > _MAX_QUESTION_LENGTH:

@@ -1073,6 +1073,24 @@ def admin_approve_request(req_id: int) -> Any:
     return redirect(url_for("admin.admin_requests"))
 
 
+@admin_bp.route("/analytics", methods=["GET"])
+def admin_analytics() -> Any:
+    """Tool usage analytics dashboard."""
+    email = _require_admin()
+    from ..tool_usage import get_all as _get_tool_usage, get_total as _get_tool_total
+    from ..visitor_counter import get_count as _get_visitor_count
+    usage = _get_tool_usage()
+    total_uses = _get_tool_total()
+    visitor_count = _get_visitor_count()
+    return render_template(
+        "admin_analytics.html",
+        admin_email=email,
+        usage=usage,
+        total_uses=total_uses,
+        visitor_count=visitor_count,
+    )
+
+
 @admin_bp.route("/requests/deny/<int:req_id>", methods=["POST"])
 def admin_deny_request(req_id: int) -> Any:
     reviewer = _require_admin()

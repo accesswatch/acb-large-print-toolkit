@@ -578,6 +578,8 @@ def _audit_single():
     """Handle single-file audit -- original behaviour."""
     token = None
     try:
+        from ..tool_usage import record as _record_usage
+        _record_usage("audit")
         token, saved_path = validate_upload(request.files.get("document"))
 
         standards_profile = request.form.get("standards_profile", "acb_2025")

@@ -20,6 +20,8 @@ def template_form():
 def template_submit():
     temp_dir = None
     try:
+        from ..tool_usage import record as _record_usage
+        _record_usage("template")
         title = request.form.get("title", "").strip() or "ACB Large Print Document"
         bound = request.form.get("bound") == "on"
         include_sample = request.form.get("include_sample") == "on"
