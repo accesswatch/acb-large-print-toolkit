@@ -890,17 +890,17 @@ document.addEventListener('DOMContentLoaded', function () {
   document.getElementById('btn-save-rule-set').addEventListener('click', saveRuleSet);
   document.getElementById('btn-reset-rule-set').addEventListener('click', resetRuleSet);
 
-  document.getElementById('btn-expand-all').addEventListener('click', function () {
+  document.getElementById('btn-toggle-all').addEventListener('click', function () {
+    const btn = this;
+    const allOpen = cards.every(function(card) {
+      return card.hidden || card.open;
+    });
     cards.forEach(function (card) {
       if (!card.hidden) {
-        card.open = true;
+        card.open = !allOpen;
       }
     });
-  });
-  document.getElementById('btn-collapse-all').addEventListener('click', function () {
-    cards.forEach(function (card) {
-      card.open = false;
-    });
+    btn.textContent = allOpen ? 'Expand all' : 'Collapse all';
   });
 
   selectionTarget.addEventListener('change', function () {
