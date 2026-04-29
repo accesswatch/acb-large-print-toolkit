@@ -70,7 +70,7 @@
   <p>GLOW does not require an account, login, or registration for standard document workflows. No personally identifiable information is collected as a condition of using the core tool.</p>
   <p>Administrative dashboards use a separate admin-only authentication flow. Admin sign-in options (email magic link and configured OAuth providers) are only enabled when email delivery is configured. Admin access requests require approval by an existing approved admin.</p>
   <p>If you submit feedback through the Feedback page, your message is stored in an encrypted SQLite database on the server and is accessible only to BITS administrators. Feedback is retained to help improve the tool and is not shared externally.</p>
-  <p>If you opt in to cookie-based preferences (via the Settings page), your preferences are stored in a browser cookie on your device only. The cookie contains your chosen defaults (profile, mode, heading levels, and so on) and no document content.</p>
+  <p>If you choose to remember your preferences on the Settings page, GLOW stores those defaults in your browser's local storage on your device only. The saved data contains your chosen defaults, custom rule sets, and page-state preferences such as Rules Reference filters. It does not include document content and is not sent to the server.</p>
 </section>
 
 <section>
@@ -87,7 +87,7 @@
 
 <section>
   <h2 id="consent-reset-heading">Withdraw or Reset Your Agreement</h2>
-  <p>Your agreement to these terms is stored only in a cookie named <code>glow_consent_v1</code> on your own browser. No record of your agreement is stored on the server.</p>
+  <p>Your agreement to these terms is stored only in a cookie named <code>glow_consent_v1</code> on your own browser. This consent cookie is separate from the optional local storage used for saved workflow defaults. No record of your agreement is stored on the server.</p>
   <p>To withdraw your agreement and clear the consent record, use your browser's cookie controls to delete the <code>glow_consent_v1</code> cookie, or click the button below. You will be asked to agree again on your next visit.</p>
   <form method="post" action="{{ url_for('consent.consent_withdraw') }}">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">

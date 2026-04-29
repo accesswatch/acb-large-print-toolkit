@@ -6,6 +6,52 @@ Releases are tagged in the [GitHub repository](https://github.com/accesswatch/ac
 
 ---
 
+## [2.6.0] - 2026-04-28
+
+### Added
+
+- **Web Rules Reference deep-dive page.** Added a new `/rules/` route in `web/src/acb_large_print_web/routes/rules_ref.py` with a dedicated `rules_ref.html` template and `rule_reference_metadata.py` data module. The page provides a searchable, filterable browser for all audit rules with severity badges, profile membership, help links, extended rationale, suppression guidance, and deep-linkable rule anchors from the main web navigation.
+
+- **Community inspiration and attribution: Jamal Mazrui's accessibility tooling leadership.** Added release-level attribution recognizing [Jamal Mazrui](https://github.com/jamalmazrui) and the influence of [extCheck](https://github.com/jamalmazrui/extCheck) and [xlHeaders](https://github.com/jamalmazrui/xlHeaders) on this release's expanded rule coverage and remediation tooling.
+
+- **PowerPoint timing and motion safety checks.** Added four new PPTX rules in `desktop/src/acb_large_print/constants.py` and implemented detection in `desktop/src/acb_large_print/pptx_auditor.py`:
+  - `PPTX-FAST-AUTO-ADVANCE`
+  - `PPTX-REPEATING-ANIMATION`
+  - `PPTX-RAPID-AUTO-ANIMATION`
+  - `PPTX-FAST-TRANSITION`
+
+- **Expanded Markdown accessibility quality checks.** Added 20 Markdown-focused rules and corresponding auditor logic in `desktop/src/acb_large_print/md_auditor.py`, including alt text quality checks, YAML/front-matter validation, heading and code-block quality checks, raw HTML checks, table consistency checks, fake-list checks, and ALL CAPS detection.
+
+- **Deeper YAML front matter validation -- three new sub-rules.** `desktop/src/acb_large_print/md_auditor.py` and `constants.py` now enforce three additional YAML front matter checks applied whenever a front matter block is present:
+  - `MD-YAML-UNCLOSED-FENCE` (High) -- opening `---` has no closing `---` fence; metadata cannot be parsed
+  - `MD-YAML-MISSING-TITLE` (Medium) -- front matter block lacks a `title:` field (WCAG 2.4.2)
+  - `MD-YAML-MISSING-LANG` (High) -- front matter block lacks a `lang:` or `language:` field (WCAG 3.1.1)
+  The existing `MD-NO-YAML-FRONT-MATTER` check is suppressed when any deeper check fires (no redundant reports). `office-addin/src/constants.ts` and `web/src/acb_large_print_web/rules.py` are both updated with the new rules.
+
+- **Web app help-text coverage for all 2.6.0 Markdown rules.** `web/src/acb_large_print_web/rules.py` was missing help links for all 16 Markdown rules added in this release. Added link entries (CommonMark spec, WebAIM, WCAG Understanding docs, ACB guidelines) for every new rule: `MD-ALT-TEXT-FILENAME`, `MD-ALT-TEXT-REDUNDANT-PREFIX`, `MD-ALT-TEXT-TOO-SHORT`, `MD-NO-YAML-FRONT-MATTER`, `MD-YAML-UNCLOSED-FENCE`, `MD-YAML-MISSING-TITLE`, `MD-YAML-MISSING-LANG`, `MD-EMPTY-HEADING`, `MD-HEADING-TOO-LONG`, `MD-HEADING-ENDS-PUNCTUATION`, `MD-CODE-BLOCK-NO-LANGUAGE`, `MD-INDENTED-CODE-BLOCK`, `MD-RAW-HTML-TABLE`, `MD-MOVING-CONTENT`, `MD-BLANK-TABLE-HEADER`, `MD-TABLE-COLUMN-MISMATCH`, `MD-FAKE-LIST-BULLET`, `MD-FAKE-NUMBERED-LIST`, `MD-ALLCAPS`.
+
+- **Markdown parity sweep: 14 additional extCheck-aligned rules.** Added the remaining Markdown parity checks identified from extCheck into `desktop/src/acb_large_print/md_auditor.py` with synchronized rule metadata in `desktop/src/acb_large_print/constants.py`, `office-addin/src/constants.ts`, and help-link coverage in `web/src/acb_large_print_web/rules.py`: `MD-EMPTY-LINK-TEXT`, `MD-URL-AS-LINK-TEXT`, `MD-NO-HEADINGS`, `MD-DUPLICATE-HEADING-TEXT`, `MD-LONG-SECTION-WITHOUT-HEADING`, `MD-YAML-MISSING-AUTHOR`, `MD-YAML-MISSING-DESCRIPTION`, `MD-EXCESSIVE-BLANK-LINES`, `MD-EXCESSIVE-TRAILING-SPACES`, `MD-RAW-BR-TAG`, `MD-RAW-HTML-GENERIC-CONTAINER`, `MD-RAW-HTML-PRESENTATIONAL`, `MD-FAKE-INLINE-BULLET`, and `MD-ENTIRE-LINE-BOLDED`.
+
+- **Excel layout and naming checks.** Added two new XLSX rules in `desktop/src/acb_large_print/constants.py` and implemented in `desktop/src/acb_large_print/xlsx_auditor.py`:
+  - `XLSX-BLANK-ROWS-LAYOUT`
+  - `XLSX-DEFAULT-TABLE-NAME`
+
+- **New Excel fixer capability inspired by xlHeaders.** Added `desktop/src/acb_large_print/xlsx_fixer.py` with `add_excel_header_named_ranges()`, which creates xlHeaders-style named ranges (`ColumnTitleNN`, `RowTitleNN`, `Title01`) to improve screen reader header context in Excel workbooks.
+
+- **Office add-in rule registry sync for 2.6.0 coverage.** Updated `office-addin/src/constants.ts` with the new PPTX and XLSX rules, plus Markdown rule identifiers and `DocFormat.MD` support to keep shared rule metadata aligned across implementations.
+
+### Changed
+
+- **Web Rules Reference accessibility polish.** `web/src/acb_large_print_web/templates/rules_ref.html` now exposes each rule as a navigable heading for screen-reader heading lists, moves keyboard focus to deep-linked rules when loading `#rule-*` anchors, and debounces search-driven live-region updates to reduce announcement noise.
+
+- **Web settings and per-rule customization now use local storage instead of preference cookies.** `web/src/acb_large_print_web/static/preferences.js`, `web/src/acb_large_print_web/templates/settings.html`, `web/src/acb_large_print_web/templates/rules_ref.html`, `web/src/acb_large_print_web/templates/privacy.html`, and `web/src/acb_large_print_web/templates/consent.html` now explain and use browser local storage for saved workflow defaults, saved custom Audit/Fix rule sets, and Rules Reference filter state. The consent cookie (`glow_consent_v1`) remains separate and unchanged.
+
+- **Rules Reference can now edit saved custom rule sets for Audit and Fix.** `web/src/acb_large_print_web/templates/rules_ref.html` and `web/src/acb_large_print_web/routes/rules_ref.py` now support target-aware rule-set editing with per-rule checkboxes, visible-only bulk actions, saved selection counts, and direct links from Settings into Audit or Fix custom-rule editing.
+
+- **Excel default table-name findings now use a dedicated rule ID.** `desktop/src/acb_large_print/xlsx_auditor.py` now emits default Excel table-name findings under `XLSX-DEFAULT-TABLE-NAME` instead of reusing `XLSX-TABLE-HEADERS`, improving severity targeting and reporting clarity.
+
+- **Website About page now includes 2.6.0 attribution details.** Updated `web/src/acb_large_print_web/templates/about.html` with a dedicated acknowledgment of Jamal Mazrui and explicit references to extCheck and xlHeaders as inspirations for this release.
+
 ## [2.5.0] - 2026-04-28
 
 ### Added
@@ -296,6 +342,7 @@ Releases are tagged in the [GitHub repository](https://github.com/accesswatch/ac
 - Added heading-review telemetry logging in the fix confirm workflow to report confirmed heading selections received vs heading fixes applied.
 - Fix Results page now displays heading review counts directly in the UI (`selected` vs `applied`) when interactive heading confirmation is used.
 - Updated documentation links from `lp.csedesigns.com` to `glow.bits-acb.org` across announcement, deployment, and user guide content.
+
 - Updated `web/Caddyfile.example` to support both `lp.csedesigns.com` and `glow.bits-acb.org`; operational scripts keep `lp.csedesigns.com` as the canonical default domain.
 - Added a tracked `web/Caddyfile` with dual-domain app host support (`lp.csedesigns.com`, `glow.bits-acb.org`) for direct production deployment with Docker Compose.
 - Deployment scripts now support optional alias-domain verification via `APP_ALIAS_DOMAIN` while keeping `APP_DOMAIN` defaulted to `lp.csedesigns.com`.

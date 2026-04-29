@@ -197,16 +197,28 @@ def _build_parser() -> argparse.ArgumentParser:
         help="Use Ollama AI to refine heading detection (requires Ollama running)",
     )
     fix_p.add_argument(
+        "--ai-provider",
+        choices=["ollama", "openrouter"],
+        default="ollama",
+        help="AI provider to use for heading refinement (default: ollama)",
+    )
+    fix_p.add_argument(
         "--ai-model",
         type=str,
         default=None,
-        help="Ollama model name (default: phi4-mini)",
+        help="AI model name (provider-specific default when omitted)",
     )
     fix_p.add_argument(
         "--ai-endpoint",
         type=str,
         default=None,
-        help="Ollama API endpoint (default: http://localhost:11434)",
+        help="AI endpoint URL override (provider-specific default when omitted)",
+    )
+    fix_p.add_argument(
+        "--ai-api-key",
+        type=str,
+        default=None,
+        help="API key for cloud providers (e.g., OpenRouter). Defaults to environment variable.",
     )
     fix_p.add_argument(
         "--ai-prompt",
@@ -398,16 +410,28 @@ def _build_parser() -> argparse.ArgumentParser:
         help="Use Ollama AI to refine heading detection (batch fix)",
     )
     batch_p.add_argument(
+        "--ai-provider",
+        choices=["ollama", "openrouter"],
+        default="ollama",
+        help="AI provider to use for heading refinement (default: ollama)",
+    )
+    batch_p.add_argument(
         "--ai-model",
         type=str,
         default=None,
-        help="Ollama model name (default: phi4-mini)",
+        help="AI model name (provider-specific default when omitted)",
     )
     batch_p.add_argument(
         "--ai-endpoint",
         type=str,
         default=None,
-        help="Ollama API endpoint (default: http://localhost:11434)",
+        help="AI endpoint URL override (provider-specific default when omitted)",
+    )
+    batch_p.add_argument(
+        "--ai-api-key",
+        type=str,
+        default=None,
+        help="API key for cloud providers (e.g., OpenRouter). Defaults to environment variable.",
     )
     batch_p.add_argument(
         "--ai-prompt",
@@ -592,16 +616,28 @@ def _build_parser() -> argparse.ArgumentParser:
         help="Use Ollama AI to refine heading detection (requires Ollama running)",
     )
     dh_p.add_argument(
+        "--ai-provider",
+        choices=["ollama", "openrouter"],
+        default="ollama",
+        help="AI provider to use for heading refinement (default: ollama)",
+    )
+    dh_p.add_argument(
         "--ai-model",
         type=str,
         default=None,
-        help="Ollama model name (default: phi4-mini)",
+        help="AI model name (provider-specific default when omitted)",
     )
     dh_p.add_argument(
         "--ai-endpoint",
         type=str,
         default=None,
-        help="Ollama API endpoint (default: http://localhost:11434)",
+        help="AI endpoint URL override (provider-specific default when omitted)",
+    )
+    dh_p.add_argument(
+        "--ai-api-key",
+        type=str,
+        default=None,
+        help="API key for cloud providers (e.g., OpenRouter). Defaults to environment variable.",
     )
     dh_p.add_argument(
         "--ai-prompt",
@@ -714,10 +750,12 @@ def _resolve_ai_provider(args: argparse.Namespace):
         system_prompt = p.read_text(encoding="utf-8")
 
     return get_provider(
+        provider=getattr(args, "ai_provider", "ollama"),
         model=getattr(args, "ai_model", None),
         endpoint=getattr(args, "ai_endpoint", None),
         system_prompt=system_prompt,
         keep_alive=getattr(args, "ai_keep_alive", None),
+        api_key=getattr(args, "ai_api_key", None),
     )
 
 

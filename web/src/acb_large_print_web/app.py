@@ -270,6 +270,7 @@ def create_app(config: dict | None = None) -> Flask:
     from .routes.process import process_bp
     from .routes.chat import chat_bp
     from .routes.admin import admin_bp
+    from .routes.rules_ref import rules_ref_bp
 
     app.register_blueprint(main_bp)
     app.register_blueprint(consent_bp, url_prefix="/consent")
@@ -291,6 +292,7 @@ def create_app(config: dict | None = None) -> Flask:
     app.register_blueprint(privacy_bp, url_prefix="/privacy")
     app.register_blueprint(chat_bp, url_prefix="/chat")
     app.register_blueprint(admin_bp, url_prefix="/admin")
+    app.register_blueprint(rules_ref_bp, url_prefix="/rules")
 
     # Startup ready log -- emitted once per worker process launch
     try:

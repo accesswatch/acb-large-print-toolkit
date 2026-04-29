@@ -10,6 +10,7 @@ import re
 from ..email import send_audit_report_email, send_batch_audit_report_email
 from ..app import limiter
 from ..rules import (
+    build_rule_policy,
     filter_findings,
     get_all_rule_ids,
     get_profile_label,
@@ -17,6 +18,7 @@ from ..rules import (
     get_rule_ids_by_severity,
     get_rule_ids_by_format,
     get_rule_ids_by_profile,
+    get_rules_by_format,
 )
 from ..upload import UploadError, cleanup_token, validate_upload
 from ..customization_warning import detect_audit_customizations, generate_customization_warning
@@ -76,49 +78,6 @@ def _format_from_path(saved_path: Path) -> str:
     return saved_path.suffix.lower().lstrip(".")
 
 
-def _build_rule_filter(form) -> tuple[set, str, list[str]]:
-    """Compute the intersected rule ID set and labels from form data.
-
-    Returns (selected_rule_ids, mode_label, suppressed_rules).
-    """
-    mode = form.get("mode", "full")
-    standards_profile = form.get("standards_profile", "acb_2025")
-
-    suppress_rule_ids: set[str] = set()
-    if form.get("suppress_link_text") == "on":
-        suppress_rule_ids.add("ACB-LINK-TEXT")
-    if form.get("suppress_missing_alt_text") == "on":
-        suppress_rule_ids.add("ACB-MISSING-ALT-TEXT")
-    if form.get("suppress_faux_heading") == "on":
-        suppress_rule_ids.add("ACB-FAUX-HEADING")
-    suppressed_rules = sorted(suppress_rule_ids)
-
-    categories = form.getlist("category") or ["acb", "msac"]
-    category_rule_ids = get_rule_ids_by_category(*categories)
-    profile_rule_ids = get_rule_ids_by_profile(standards_profile)
-
-    if mode == "quick":
-        base = get_rule_ids_by_severity("Critical", "High")
-        mode_label = "Quick Audit -- Critical and High only"
-    elif mode == "custom":
-        base = set(form.getlist("rule")) or get_all_rule_ids()
-        mode_label = f"Custom Audit -- {len(base)} rules selected"
-    else:
-        base = get_all_rule_ids()
-        mode_label = "Full Audit -- all rules"
-
-    # format-specific intersection happens per file in batch; caller handles it
-    selected = base & category_rule_ids & profile_rule_ids
-    return selected, mode_label, suppressed_rules
-
-
-def _apply_filters(result, selected: set, doc_format: str, suppress_rule_ids: set):
-    """Filter findings by selected rules, format scope, and suppressed rules."""
-    format_rule_ids = get_rule_ids_by_format(doc_format)
-    effective = (selected & format_rule_ids) - suppress_rule_ids
-    result.findings = filter_findings(result.findings, effective)
-    return result
-
 
 @audit_bp.route("/", methods=["POST"])
 @limiter.limit(
@@ -137,6 +96,7 @@ def audit_form():
         "audit_form.html",
         ace_installed=_is_ace_installed(),
         email_configured=email_configured(),
+        rules_by_format=get_rules_by_format(),
     )
 
 
@@ -158,11 +118,12 @@ def _audit_single():
         profile_label = get_profile_label(standards_profile)
         doc_format = _format_from_path(saved_path)
 
-        selected, mode_label, suppressed_rules = _build_rule_filter(request.form)
-        suppress_rule_ids = set(suppressed_rules)
+        policy = build_rule_policy(request.form)
+        mode_label = policy.mode_label
+        suppressed_rules = sorted(policy.suppressed)
 
         result = _audit_by_extension(saved_path)
-        result = _apply_filters(result, selected, doc_format, suppress_rule_ids)
+        result.findings = policy.filter_findings(result.findings, doc_format)
 
         # Optional email delivery
         email_status = None
@@ -220,6 +181,7 @@ def _audit_single():
                 error=str(e),
                 ace_installed=_is_ace_installed(),
                 email_configured=_ec(),
+                rules_by_format=get_rules_by_format(),
             ),
             400,
         )
@@ -232,6 +194,7 @@ def _audit_single():
                 "Please ensure it is a valid Office file and try again.",
                 ace_installed=_is_ace_installed(),
                 email_configured=_ec(),
+                rules_by_format=get_rules_by_format(),
             ),
             500,
         )
@@ -251,8 +214,9 @@ def _audit_batch():
     profile_label = get_profile_label(standards_profile)
     report_style = request.form.get("report_style", "combined")
 
-    selected, mode_label, suppressed_rules = _build_rule_filter(request.form)
-    suppress_rule_ids = set(suppressed_rules)
+    policy = build_rule_policy(request.form)
+    mode_label = policy.mode_label
+    suppressed_rules = sorted(policy.suppressed)
 
     uploaded_files = request.files.getlist("document")
 
@@ -269,6 +233,7 @@ def _audit_batch():
                 error="No files were received. Please add at least one document.",
                 ace_installed=_is_ace_installed(),
                 email_configured=_ec(),
+                rules_by_format=get_rules_by_format(),
             ),
             400,
         )
@@ -283,7 +248,7 @@ def _audit_batch():
             tokens_to_clean.append(token)
             doc_format = _format_from_path(saved_path)
             result = _audit_by_extension(saved_path)
-            result = _apply_filters(result, selected, doc_format, suppress_rule_ids)
+            result.findings = policy.filter_findings(result.findings, doc_format)
             file_results.append(
                 {
                     "filename": saved_path.name,

@@ -22,6 +22,7 @@ from acb_large_print.ai_provider import (
     is_ai_available,
     parse_ai_response,
 )
+from acb_large_print.ai_providers.openrouter_provider import OpenRouterProvider
 from acb_large_print.ai_providers.ollama_provider import (
     BATCH_SIZE,
     DEFAULT_ENDPOINT,
@@ -131,6 +132,14 @@ class TestGetProvider:
     def test_passes_system_prompt(self):
         provider = get_provider(system_prompt="test prompt")
         assert provider.system_prompt == "test prompt"
+
+    def test_returns_openrouter_provider(self):
+        provider = get_provider(provider="openrouter", api_key="test-key")
+        assert isinstance(provider, OpenRouterProvider)
+
+    def test_unknown_provider_raises_value_error(self):
+        with pytest.raises(ValueError, match="Unknown AI provider"):
+            get_provider(provider="not-a-provider")
 
 
 # ===================================================================

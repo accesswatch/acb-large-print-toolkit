@@ -103,24 +103,50 @@
     </fieldset>
   </details>
 
-  <fieldset>
-    <legend>Quick Rule Exceptions</legend>
-    <p class="help-text">Use these when specific findings are intentional for your publication workflow.</p>
-    <div class="checkbox-group">
-      <label>
-        <input type="checkbox" name="suppress_link_text">
-        I use raw URLs for hard-copy readers -- suppress <strong>ACB-LINK-TEXT</strong>
-      </label>
-      <label>
-        <input type="checkbox" name="suppress_missing_alt_text">
-        This document includes intentional decorative images -- suppress <strong>ACB-MISSING-ALT-TEXT</strong>
-      </label>
-      <label>
-        <input type="checkbox" name="suppress_faux_heading">
-        My headings are already correct -- suppress <strong>ACB-FAUX-HEADING</strong>
-      </label>
-    </div>
-  </fieldset>
+  <details class="suppress-rules-panel">
+    <summary>Suppress individual rules <span id="fix-suppressed-count" class="rule-count-badge" aria-live="polite"></span></summary>
+    <p class="help-text">Check any rule you want excluded from the post-fix report. Use this when a finding is intentional for your workflow.</p>
+
+    <fieldset>
+      <legend class="visually-hidden">Common Rule Exceptions</legend>
+      <div class="checkbox-group">
+        <label>
+          <input type="checkbox" name="suppress_rule" value="ACB-LINK-TEXT">
+          I use raw URLs for hard-copy readers &#8212; suppress <strong>ACB-LINK-TEXT</strong>
+        </label>
+        <label>
+          <input type="checkbox" name="suppress_rule" value="ACB-MISSING-ALT-TEXT">
+          This document includes intentional decorative images &#8212; suppress <strong>ACB-MISSING-ALT-TEXT</strong>
+        </label>
+        <label>
+          <input type="checkbox" name="suppress_rule" value="ACB-FAUX-HEADING">
+          My headings are already correct &#8212; suppress <strong>ACB-FAUX-HEADING</strong>
+        </label>
+      </div>
+    </fieldset>
+
+    {% for fmt_key, fmt_info in rules_by_format.items() %}
+    {% if fmt_info.rules %}
+    <details class="rule-format-group">
+      <summary>{{ fmt_info.label }} ({{ fmt_info.rules|length }} rules)</summary>
+      <div class="rule-group-actions">
+        <button type="button" class="btn-tiny" onclick="glowToggleRuleGroup(this, true)">Select all</button>
+        <button type="button" class="btn-tiny" onclick="glowToggleRuleGroup(this, false)">Deselect all</button>
+      </div>
+      <div class="checkbox-group">
+        {% for rule in fmt_info.rules %}
+        <label class="rule-suppress-label">
+          <input type="checkbox" name="suppress_rule" value="{{ rule.rule_id }}" class="rule-suppress-cb">
+          <code>{{ rule.rule_id }}</code>
+          <span class="severity-badge severity-{{ rule.severity|lower }}">{{ rule.severity }}</span>
+          {{ rule.description }}
+        </label>
+        {% endfor %}
+      </div>
+    </details>
+    {% endif %}
+    {% endfor %}
+  </details>
 
   <fieldset>
     <legend>Additional Options</legend>
@@ -355,5 +381,28 @@
     if (btn) { btn.disabled = true; btn.textContent = 'Processing\u2026'; }
   });
 }());
+
+/* Suppress-rule panel: live count badge + group toggle helper */
+(function () {
+  var badge = document.getElementById('fix-suppressed-count');
+  function updateBadge() {
+    if (!badge) return;
+    var checked = document.querySelectorAll('input[name="suppress_rule"]:checked').length;
+    badge.textContent = checked > 0 ? checked + ' suppressed' : '';
+  }
+  document.querySelectorAll('input[name="suppress_rule"]').forEach(function (cb) {
+    cb.addEventListener('change', updateBadge);
+  });
+  updateBadge();
+}());
+
+window.glowToggleRuleGroup = window.glowToggleRuleGroup || function (btn, state) {
+  var group = btn.closest('details');
+  if (!group) return;
+  group.querySelectorAll('input[name="suppress_rule"]').forEach(function (cb) {
+    cb.checked = state;
+    cb.dispatchEvent(new Event('change', { bubbles: true }));
+  });
+};
 </script>
 {% endblock %}

@@ -1,7 +1,7 @@
 """OpenRouter AI gateway with budget enforcement and quota tracking.
 
 Single control plane for all AI inference in the GLOW web app.
-Replaces on-device Ollama/faster-whisper with privacy-first open models.
+Replaces on-device model servers with privacy-first open models.
 
 Architecture
 ------------

@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>GLOW 2.6.0 Announcement</title>
+  <style>
+    body { font-family: Arial, sans-serif; line-height: 1.5; margin: 0; background: #f7f8fb; color: #1a1a1a; }
+    main { max-width: 70ch; margin: 2rem auto; background: #fff; padding: 2rem; border: 1px solid #d9deea; }
+    h1, h2, h3 { line-height: 1.3; margin-top: 1.5rem; }
+    h1 { margin-top: 0; }
+    ul { padding-left: 1.25rem; }
+    a { color: #0c234b; }
+    .lede { font-size: 1.1rem; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>GLOW 2.6.0: Expanded Rule Coverage, Smarter Findings, and Community-Driven Accessibility Progress</h1>
+    <p><strong>FOR IMMEDIATE RELEASE -- April 28, 2026</strong></p>
+
+    <p class="lede">GLOW (Guided Layout and Output Workflow) Accessibility Toolkit 2.6.0 is now available.</p>
+
+    <p>This release delivers broad accessibility rule expansion across PowerPoint, Markdown, and Excel, plus a practical new Excel remediation helper inspired by community tooling.</p>
+
+    <h2>The headline: stronger accessibility signal quality where teams spend time every day</h2>
+    <p>GLOW 2.6.0 strengthens day-to-day outcomes by catching more real-world accessibility issues in presentation decks, documentation pipelines, and spreadsheets.</p>
+    <p>This is a practical release focused on finding what matters, reducing ambiguous findings, and improving remediation guidance.</p>
+
+    <h2>Acknowledgment and inspiration</h2>
+    <p>GLOW 2.6.0 is substantially informed by the accessibility tooling work of Jamal Mazrui.</p>
+    <p>Two projects were especially influential:</p>
+    <ul>
+      <li><a href="https://github.com/jamalmazrui/extCheck">extCheck</a></li>
+      <li><a href="https://github.com/jamalmazrui/xlHeaders">xlHeaders</a></li>
+    </ul>
+    <p>We are grateful for the open-source leadership and practical implementation examples these tools provide to the accessibility community.</p>
+
+    <h2>What is new in 2.6.0</h2>
+
+    <h3>1. New PowerPoint timing and animation checks</h3>
+    <p>GLOW now detects several high-value timing and motion risks in PPTX files:</p>
+    <ul>
+      <li>Fast auto-advance</li>
+      <li>Repeating animations</li>
+      <li>Rapid auto-triggered animation sequences</li>
+      <li>Fast slide transitions</li>
+    </ul>
+    <p>For users, this means stronger detection of motion and timing patterns that can harm readability and comfort.</p>
+
+    <h3>2. Major Markdown accessibility quality expansion</h3>
+    <p>GLOW 2.6.0 adds a substantial set of Markdown checks, including:</p>
+    <ul>
+      <li>Alt text quality checks (filename alt, redundant prefixes, too-short alt text)</li>
+      <li>YAML front matter validation -- not just presence, but field depth:
+        <ul>
+          <li>Missing front matter block entirely</li>
+          <li>Unclosed front matter fence (no closing ---)</li>
+          <li>Missing title: field (WCAG 2.4.2)</li>
+          <li>Missing lang: or language: field (WCAG 3.1.1)</li>
+        </ul>
+      </li>
+      <li>Heading quality and structure checks</li>
+      <li>Code block language and formatting checks</li>
+      <li>Raw HTML moving-content and table checks</li>
+      <li>Table consistency checks (blank headers, column count mismatches)</li>
+      <li>Fake list-pattern and ALL CAPS checks</li>
+    </ul>
+    <p>For users, this means cleaner documentation audits with more actionable guidance and better semantic quality outcomes. All 25 Markdown rules include help links in the web UI.</p>
+
+    <h3>3. New Excel checks for layout and naming quality</h3>
+    <p>Two new XLSX checks target common spreadsheet accessibility friction:</p>
+    <ul>
+      <li>Detection of excessive blank-row spacing patterns</li>
+      <li>Detection of default table names that should be descriptive</li>
+    </ul>
+    <p>For users, this means clearer navigation quality and better context for assistive technology.</p>
+
+    <h3>4. New xlHeaders-style Excel fixer utility</h3>
+    <p>A new desktop helper creates named ranges in an xlHeaders-style convention to improve row and column header context in Excel navigation.</p>
+    <p>For users, this means a practical path from findings to stronger screen-reader behavior in spreadsheets.</p>
+
+    <h3>5. Office add-in rule metadata alignment</h3>
+    <p>Rule metadata updates were synced in the Office add-in constants registry to improve consistency with the desktop Python core.</p>
+
+    <h3>6. New Rules Reference page</h3>
+    <p>A new <strong>Rules Reference</strong> page is available in the GLOW web app at <code>/rules/</code>. It lists every audit rule across all document formats with severity, WCAG criterion mapping, fix guidance, and help links.</p>
+    <p>From the Rules Reference page you can filter by format, severity, or rule category, then save a custom rule set directly to Settings for use in Audit or Fix Custom mode. This replaces the previous workflow of selecting rules one-by-one on the Audit or Fix form.</p>
+
+    <h2>Notable changes in behavior</h2>
+    <p><strong>Rules Reference page:</strong> custom rule sets are now saved from the Rules Reference page and loaded into Audit or Fix Custom mode. See the new <code>/rules/</code> page in the web app.</p>
+    <p><strong>Settings persistence:</strong> settings are now saved in browser local storage instead of preference cookies. Existing saved preferences carry forward automatically. No action required for most users; clearing browser site data will reset settings to defaults.</p>
+    <p><strong>Excel table-name findings</strong> now use a dedicated rule ID (<code>XLSX-DEFAULT-TABLE-NAME</code>), improving report clarity and remediation targeting.</p>
+
+    <h2>Availability</h2>
+    <p>GLOW 2.6.0 is available now.</p>
+    <ul>
+      <li>Changelog: CHANGELOG.md</li>
+      <li>Release summary: docs/RELEASE-v2.6.0.md</li>
+      <li>User guide: docs/user-guide.md</li>
+    </ul>
+
+    <h2>About GLOW</h2>
+    <p>GLOW helps teams audit, remediate, convert, and publish accessible documents aligned with ACB guidelines, WCAG 2.2 AA, and Microsoft Accessibility Checker expectations.</p>
+  </main>
+</body>
+</html>

@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
@@ -203,42 +204,73 @@ class AIProvider(ABC):
 
 def get_provider(
     *,
+    provider: str | None = None,
     model: str | None = None,
     endpoint: str | None = None,
     system_prompt: str | None = None,
     keep_alive: str | None = None,
+    api_key: str | None = None,
 ) -> AIProvider:
-    """Create the Ollama AI provider.
+    """Create an AI provider implementation.
 
     Args:
-        model: Model name override (default ``phi4-mini``).
-        endpoint: Ollama API endpoint URL (default ``http://localhost:11434``).
+        provider: Provider name (``"ollama"`` or ``"openrouter"``).
+            Defaults to ``"ollama"``.
+        model: Model name override. Provider-specific default when omitted.
+        endpoint: Provider endpoint URL override.
         system_prompt: Custom prompt template. Uses the built-in default
             when *None*.
         keep_alive: How long Ollama keeps the model in RAM after the last
             request (default ``30m``).  Accepts Ollama duration strings
             like ``"5m"``, ``"1h"``, ``"0"`` (unload immediately).
+        api_key: Optional API key (used by OpenRouter).
 
     Raises:
-        ImportError: ``ollama`` package not installed.
+        ImportError: Provider dependency is not installed.
+        ValueError: Unknown provider name.
     """
-    from .ai_providers.ollama_provider import OllamaProvider
+    selected = (provider or "ollama").strip().lower()
 
-    return OllamaProvider(
-        model=model,
-        endpoint=endpoint,
-        system_prompt=system_prompt,
-        keep_alive=keep_alive,
+    if selected == "ollama":
+        from .ai_providers.ollama_provider import OllamaProvider
+
+        return OllamaProvider(
+            model=model,
+            endpoint=endpoint,
+            system_prompt=system_prompt,
+            keep_alive=keep_alive,
+        )
+
+    if selected == "openrouter":
+        from .ai_providers.openrouter_provider import OpenRouterProvider
+
+        return OpenRouterProvider(
+            model=model,
+            endpoint=endpoint,
+            system_prompt=system_prompt,
+            api_key=api_key,
+        )
+
+    raise ValueError(
+        f"Unknown AI provider '{provider}'. Supported providers: ollama, openrouter"
     )
 
 
-def is_ai_available() -> bool:
-    """Return *True* if the Ollama package is installed and the server responds.
+def is_ai_available(provider: str = "ollama") -> bool:
+    """Return *True* if the selected AI provider appears available.
 
-    Performs a lightweight HTTP check against the default endpoint so callers
-    can pre-check the AI checkbox in the UI without instantiating a full
-    provider.
+    For Ollama this performs a lightweight HTTP probe against the local
+    endpoint. For OpenRouter this checks whether ``OPENROUTER_API_KEY``
+    is configured in the environment.
     """
+    selected = (provider or "ollama").strip().lower()
+
+    if selected == "openrouter":
+        return bool(os.getenv("OPENROUTER_API_KEY"))
+
+    if selected != "ollama":
+        return False
+
     try:
         import ollama as _ollama  # noqa: F401
     except ImportError:

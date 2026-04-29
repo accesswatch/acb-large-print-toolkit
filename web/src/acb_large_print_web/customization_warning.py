@@ -68,18 +68,24 @@ def detect_audit_customizations(form_data) -> tuple[bool, list[str]]:
             f"Audit categories changed to: {', '.join(sorted(categories))}"
         )
 
-    # Check suppressed rules
-    suppressed = []
+    # Check suppressed rules (new generic field + backward-compat legacy keys)
+    suppressed_ids: list[str] = []
+    if hasattr(form_data, "getlist"):
+        suppressed_ids = form_data.getlist("suppress_rule")
+    # Backward-compat: legacy boolean checkboxes
     if form_data.get("suppress_link_text") == "on":
-        suppressed.append("link text")
+        if "ACB-LINK-TEXT" not in suppressed_ids:
+            suppressed_ids.append("ACB-LINK-TEXT")
     if form_data.get("suppress_missing_alt_text") == "on":
-        suppressed.append("missing alt text")
+        if "ACB-MISSING-ALT-TEXT" not in suppressed_ids:
+            suppressed_ids.append("ACB-MISSING-ALT-TEXT")
     if form_data.get("suppress_faux_heading") == "on":
-        suppressed.append("faux heading")
+        if "ACB-FAUX-HEADING" not in suppressed_ids:
+            suppressed_ids.append("ACB-FAUX-HEADING")
 
-    if suppressed:
+    if suppressed_ids:
         reasons.append(
-            f"Rule suppressions enabled for: {', '.join(suppressed)}"
+            f"Rule suppressions enabled for: {', '.join(sorted(suppressed_ids))}"
         )
 
     return len(reasons) > 0, reasons
@@ -172,18 +178,22 @@ def detect_fix_customizations(form_data) -> tuple[bool, list[str]]:
         else:
             customizations.append("Heading detection enabled")
 
-    # Check suppressed rules
-    suppressed = []
-    if _get_bool(form_data, "suppress_link_text"):
-        suppressed.append("link text")
-    if _get_bool(form_data, "suppress_missing_alt_text"):
-        suppressed.append("missing alt text")
-    if _get_bool(form_data, "suppress_faux_heading"):
-        suppressed.append("faux heading")
+    # Check suppressed rules via the rule_policy if available
+    suppressed_ids: list[str] = []
+    if "rule_policy" in form_data and form_data["rule_policy"] is not None:
+        suppressed_ids = sorted(form_data["rule_policy"].suppressed)
+    else:
+        # Backward-compat: legacy boolean keys in opts dict
+        if _get_bool(form_data, "suppress_link_text"):
+            suppressed_ids.append("ACB-LINK-TEXT")
+        if _get_bool(form_data, "suppress_missing_alt_text"):
+            suppressed_ids.append("ACB-MISSING-ALT-TEXT")
+        if _get_bool(form_data, "suppress_faux_heading"):
+            suppressed_ids.append("ACB-FAUX-HEADING")
 
-    if suppressed:
+    if suppressed_ids:
         customizations.append(
-            f"Rule suppressions for: {', '.join(suppressed)}"
+            f"Rule suppressions for: {', '.join(suppressed_ids)}"
         )
 
     if customizations:

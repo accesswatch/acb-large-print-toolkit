@@ -6,6 +6,7 @@ from flask import Blueprint, current_app, render_template, request, send_file
 from werkzeug.utils import secure_filename
 
 from ..rules import (
+    build_rule_policy,
     filter_findings,
     get_all_rule_ids,
     get_profile_label,
@@ -13,6 +14,7 @@ from ..rules import (
     get_rule_ids_by_format,
     get_rule_ids_by_profile,
     get_rule_ids_by_severity,
+    get_rules_by_format,
 )
 from flask import url_for
 
@@ -322,7 +324,11 @@ def _estimate_pre_fix_body_font_pt(saved_path: Path) -> float | None:
 def fix_form():
     from ..ai_features import ai_heading_fix_enabled
 
-    return render_template("fix_form.html", ai_available=ai_heading_fix_enabled())
+    return render_template(
+        "fix_form.html",
+        ai_available=ai_heading_fix_enabled(),
+        rules_by_format=get_rules_by_format(),
+    )
 
 
 def _parse_form_options(form):
@@ -334,6 +340,7 @@ def _parse_form_options(form):
     use_list_levels = form.get("use_list_levels") == "on"
     mode = form.get("mode", "full")
     preserve_heading_alignment = form.get("preserve_heading_alignment") == "on"
+    # Legacy boolean suppression fields kept for backward-compat; policy absorbs them.
     suppress_link_text = form.get("suppress_link_text") == "on"
     suppress_missing_alt_text = form.get("suppress_missing_alt_text") == "on"
     suppress_faux_heading = form.get("suppress_faux_heading") == "on"
@@ -412,6 +419,7 @@ def _parse_form_options(form):
         "heading_threshold": heading_threshold,
         "heading_accuracy": heading_accuracy,
         "allowed_heading_levels": allowed_heading_levels,
+        "rule_policy": build_rule_policy(form),
     }
 
 
@@ -493,14 +501,13 @@ def _run_fix_and_render(
 
     # Suppress findings for rules intentionally bypassed by user settings.
     suppressed_rules: list[str] = []
-    suppress_rule_ids: set[str] = set()
+    _rule_policy = opts.get("rule_policy")
+    suppress_rule_ids: set[str] = set(_rule_policy.suppressed) if _rule_policy is not None else set()
 
-    if not opts["detect_headings"] or opts["suppress_faux_heading"]:
+    # Special case: when heading detection is off, always suppress faux-heading
+    # findings since the fixer did not attempt to convert them.
+    if not opts["detect_headings"]:
         suppress_rule_ids.add("ACB-FAUX-HEADING")
-    if opts["suppress_link_text"]:
-        suppress_rule_ids.add("ACB-LINK-TEXT")
-    if opts["suppress_missing_alt_text"]:
-        suppress_rule_ids.add("ACB-MISSING-ALT-TEXT")
 
     if suppress_rule_ids:
         suppressed_rules.extend(sorted(suppress_rule_ids))
@@ -679,7 +686,10 @@ def fix_submit():
 
         return (
             render_template(
-                    "fix_form.html", error=str(e), ai_available=ai_heading_fix_enabled()
+                "fix_form.html",
+                error=str(e),
+                ai_available=ai_heading_fix_enabled(),
+                rules_by_format=get_rules_by_format(),
             ),
             400,
         )
@@ -695,6 +705,7 @@ def fix_submit():
                 error="An error occurred while fixing the document. "
                 "Please ensure it is a valid Office file and try again.",
                 ai_available=ai_heading_fix_enabled(),
+                rules_by_format=get_rules_by_format(),
             ),
             500,
         )
@@ -716,6 +727,7 @@ def fix_confirm():
                       "Documents are kept for up to 1 hour after upload. "
                       "Please upload and fix the document again.",
                 ai_available=ai_heading_fix_enabled(),
+                rules_by_format=get_rules_by_format(),
             ),
             400,
         )
@@ -742,6 +754,7 @@ def fix_confirm():
                 "fix_form.html",
                 error="Uploaded file not found. Please upload and fix the document again.",
                 ai_available=ai_heading_fix_enabled(),
+                rules_by_format=get_rules_by_format(),
             ),
             400,
         )

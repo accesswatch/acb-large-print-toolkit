@@ -112,6 +112,9 @@ def audit_workbook(file_path: str | Path) -> AuditResult:
         # Blank / generic column headers
         _check_column_headers(ws, result, sheet_loc)
 
+        # Blank rows used for layout
+        _check_blank_rows_layout(ws, result, sheet_loc)
+
     # -- Excel Table objects --
     for ws in wb.worksheets:
         for tbl in ws.tables.values():
@@ -286,8 +289,8 @@ def _check_table_object(tbl, ws: Worksheet, result: AuditResult) -> None:
     # Default table name
     if re.match(r"^Table\d+$", tbl.name or ""):
         result.add(
-            "XLSX-TABLE-HEADERS",
-            f"Excel Table '{tbl.name}' has a default name. Rename to describe content.",
+            "XLSX-DEFAULT-TABLE-NAME",
+            f"Excel Table '{tbl.name}' has a default name. Rename to describe its content.",
             loc,
         )
 
@@ -298,6 +301,31 @@ def _check_table_object(tbl, ws: Worksheet, result: AuditResult) -> None:
             f"Excel Table '{tbl.name}' has the header row turned off.",
             loc,
         )
+
+
+def _check_blank_rows_layout(ws: Worksheet, result: AuditResult, loc: str) -> None:
+    """Flag runs of 3+ consecutive fully-blank rows used for visual spacing."""
+    max_row = ws.max_row or 0
+    max_col = min(ws.max_column or 1, 50)
+    if max_row < 3:
+        return
+
+    consecutive_blank = 0
+    for row in ws.iter_rows(min_row=1, max_row=max_row, max_col=max_col, values_only=True):
+        if all(v is None or str(v).strip() == "" for v in row):
+            consecutive_blank += 1
+            if consecutive_blank == 3:
+                result.add(
+                    "XLSX-BLANK-ROWS-LAYOUT",
+                    "3 or more consecutive blank rows detected. "
+                    "Screen readers announce blank cells, creating a confusing reading experience. "
+                    "Remove blank rows used for visual spacing.",
+                    loc,
+                )
+                # One finding per sheet is enough
+                return
+        else:
+            consecutive_blank = 0
 
 
 def _check_images(ws: Worksheet, result: AuditResult, loc: str) -> None:

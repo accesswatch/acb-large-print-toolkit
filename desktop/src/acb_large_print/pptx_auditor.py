@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import re
 from pathlib import Path
+from xml.etree import ElementTree as ET
 
 from pptx import Presentation
 from pptx.enum.shapes import MSO_SHAPE_TYPE
@@ -21,6 +22,15 @@ _URL_RE = re.compile(r"^https?://", re.IGNORECASE)
 
 # Fake bullet characters
 _FAKE_BULLET_RE = re.compile(r"^[\u2022\u2023\u25CB\u25CF\u25E6\u2043\u2219\-\*]\s")
+
+# OOXML namespaces used for animation/transition inspection
+_PNS = "http://schemas.openxmlformats.org/presentationml/2006/main"
+_ANS = "http://schemas.openxmlformats.org/drawingml/2006/main"
+
+# Minimum auto-advance time (seconds) to avoid WCAG 2.2.1 violation
+_MIN_AUTO_ADVANCE_SEC = 3.0
+# Maximum animation delay (seconds) before rapid-animation flag triggers
+_MAX_RAPID_DELAY_SEC = 1.0
 
 
 def audit_presentation(file_path: str | Path) -> AuditResult:
@@ -94,6 +104,10 @@ def audit_presentation(file_path: str | Path) -> AuditResult:
                 continue
             for para in shape.text_frame.paragraphs:
                 _check_paragraph(para, shape, result, loc)
+
+        # -- Animation and timing (WCAG 2.2.1 / 2.2.2 / 2.3.3) --
+        _check_slide_timing(slide, result, loc)
+        _check_slide_animations(slide, result, loc)
 
         # -- Speaker notes --
         notes = slide.notes_slide if slide.has_notes_slide else None
@@ -259,3 +273,103 @@ def _check_duplicate_titles(titles: list[str], result: AuditResult) -> None:
                 "PPTX-DUPLICATE-SLIDE-TITLE",
                 f"Title '{title_lower}' is used on {count} slides.",
             )
+
+
+def _check_slide_timing(slide, result: AuditResult, loc: str) -> None:
+    """Check for auto-advance timing violations (WCAG 2.2.1).
+
+    Inspects the slide's <p:transition> XML element for advTm (advance time in
+    milliseconds) with advClick=0, which means the slide advances automatically
+    without a click.  Times under 3000 ms (3 seconds) are flagged.
+    """
+    try:
+        spTree = slide.element
+        # p:transition is a direct child of p:sld
+        transition = spTree.find(f"{{{_PNS}}}transition")
+        if transition is None:
+            return
+
+        adv_tm = transition.get("advTm")
+        adv_click = transition.get("advClick", "1")
+
+        # advClick="0" + advTm present means timed auto-advance
+        if adv_click == "0" and adv_tm is not None:
+            try:
+                adv_ms = int(adv_tm)
+            except (ValueError, TypeError):
+                return
+            adv_sec = adv_ms / 1000.0
+            if adv_sec < _MIN_AUTO_ADVANCE_SEC:
+                result.add(
+                    "PPTX-FAST-AUTO-ADVANCE",
+                    f"Slide auto-advances in {adv_sec:.1f}s (minimum {_MIN_AUTO_ADVANCE_SEC}s required).",
+                    loc,
+                )
+
+        # Check transition speed attribute (spd): "fast" triggers PPTX-FAST-TRANSITION
+        speed = transition.get("spd", "")
+        if speed.lower() == "fast":
+            result.add(
+                "PPTX-FAST-TRANSITION",
+                "Slide transition speed is set to 'Fast'. Use 'Slow' or 'Medium' to reduce motion impact.",
+                loc,
+            )
+    except Exception:
+        # Never let XML parsing errors crash the audit
+        pass
+
+
+def _check_slide_animations(slide, result: AuditResult, loc: str) -> None:
+    """Check for repeating or rapid auto-start animations (WCAG 2.2.2).
+
+    Inspects the timing tree (<p:timing>) for:
+    - indefinite repeating animations (PPTX-REPEATING-ANIMATION)
+    - multiple auto-start (<p:par autoRev or delay<1000ms) (PPTX-RAPID-AUTO-ANIMATION)
+    """
+    try:
+        timing_el = slide.element.find(f"{{{_PNS}}}timing")
+        if timing_el is None:
+            return
+
+        # Serialize to string and parse with ElementTree for easy traversal
+        xml_str = ET.tostring(timing_el, encoding="unicode")
+        root = ET.fromstring(xml_str)
+
+        # Check for indefinite repeat (repeatCount="indefinite")
+        for iterate_el in root.iter():
+            if iterate_el.tag.endswith("}iterate") or iterate_el.tag.endswith("}cTn"):
+                rep_count = iterate_el.get("repeatCount", "")
+                if rep_count.lower() == "indefinite":
+                    result.add(
+                        "PPTX-REPEATING-ANIMATION",
+                        "A looping/repeating animation (repeatCount=indefinite) was found on this slide.",
+                        loc,
+                    )
+                    break  # One finding per slide
+
+        # Check for rapid auto-start animations: multiple <p:par> with delay < 1000ms
+        auto_delays: list[int] = []
+        for ctn in root.iter():
+            if not ctn.tag.endswith("}cTn"):
+                continue
+            node_type = ctn.get("nodeType", "")
+            if node_type not in ("tmRoot", "mainSeq", "interactiveSeq", "afterGroup"):
+                # Delay is in milliseconds; "0" and small values are rapid
+                delay_str = ctn.get("delay", "indefinite")
+                if delay_str == "indefinite":
+                    continue
+                try:
+                    delay_ms = int(delay_str)
+                except (ValueError, TypeError):
+                    continue
+                if delay_ms < int(_MAX_RAPID_DELAY_SEC * 1000):
+                    auto_delays.append(delay_ms)
+
+        if len(auto_delays) >= 3:
+            result.add(
+                "PPTX-RAPID-AUTO-ANIMATION",
+                f"{len(auto_delays)} auto-start animation(s) with delays under {_MAX_RAPID_DELAY_SEC}s found on this slide.",
+                loc,
+            )
+    except Exception:
+        pass

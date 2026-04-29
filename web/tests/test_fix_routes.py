@@ -406,9 +406,9 @@ def test_fix_form_list_indent_fields_visible_and_disabled_by_default(client):
     assert '<div id="list-indent-fields" class="indent-fields">' in html
     assert 'id="list-indent"' in html and "disabled" in html
     assert 'id="list-hanging"' in html and "disabled" in html
-    assert 'name="suppress_link_text"' in html
-    assert 'name="suppress_missing_alt_text"' in html
-    assert 'name="suppress_faux_heading"' in html
+    assert 'value="ACB-LINK-TEXT"' in html
+    assert 'value="ACB-MISSING-ALT-TEXT"' in html
+    assert 'value="ACB-FAUX-HEADING"' in html
     assert 'name="preserve_heading_alignment"' in html
     assert 'name="use_list_levels"' in html
     assert 'name="allowed_heading_levels"' in html

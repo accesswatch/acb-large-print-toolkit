@@ -1,16 +1,18 @@
 (function () {
   "use strict";
 
-  var COOKIE_NAME = "glow_user_settings";
-  var COOKIE_DAYS = 365;
+  var STORAGE_KEY = "glow_user_settings";
+  var LEGACY_COOKIE_NAME = "glow_user_settings";
+  var STORAGE_VERSION = 2;
 
   var DEFAULTS = {
-    version: 1,
+    version: STORAGE_VERSION,
     optIn: false,
     audit: {
       profile: "acb_2025",
       mode: "full",
       categories: ["acb", "msac"],
+      customRules: [],
       suppressLinkText: false,
       suppressMissingAltText: false,
       suppressFauxHeading: false,
@@ -19,6 +21,7 @@
       profile: "acb_2025",
       mode: "full",
       categories: ["acb", "msac"],
+      customRules: [],
       bound: false,
       flushLists: true,
       flushParagraphs: true,
@@ -55,28 +58,42 @@
       bindingMargin: false,
       printReady: false,
     },
+    ui: {
+      rulesReference: {
+        target: "audit",
+        search: "",
+        severity: "",
+        format: "",
+        profile: "",
+        category: "",
+        autoFixableOnly: false,
+      },
+    },
   };
 
   function cloneDefaults() {
     return JSON.parse(JSON.stringify(DEFAULTS));
   }
 
-  function setCookie(name, value, days) {
-    var expires = "";
-    if (days) {
-      var date = new Date();
-      date.setTime(date.getTime() + days * 24 * 60 * 60 * 1000);
-      expires = "; expires=" + date.toUTCString();
+  function cloneArray(value, fallback) {
+    if (Array.isArray(value)) {
+      return value.slice();
     }
-    document.cookie =
-      name +
-      "=" +
-      encodeURIComponent(value) +
-      expires +
-      "; path=/; SameSite=Lax";
+    return Array.isArray(fallback) ? fallback.slice() : [];
   }
 
-  function getCookie(name) {
+  function canUseLocalStorage() {
+    try {
+      var testKey = STORAGE_KEY + "__test";
+      window.localStorage.setItem(testKey, "1");
+      window.localStorage.removeItem(testKey);
+      return true;
+    } catch (_error) {
+      return false;
+    }
+  }
+
+  function getLegacyCookie(name) {
     var nameEQ = name + "=";
     var ca = document.cookie.split(";");
     for (var i = 0; i < ca.length; i += 1) {
@@ -89,38 +106,147 @@
     return null;
   }
 
-  function eraseCookie(name) {
+  function eraseLegacyCookie(name) {
     document.cookie = name + "=; Max-Age=-99999999; path=/; SameSite=Lax";
   }
 
-  function loadSettings() {
-    var raw = getCookie(COOKIE_NAME);
-    if (!raw) return cloneDefaults();
+  function normalizeRulesReferenceUi(ui) {
+    var defaults = cloneDefaults().ui.rulesReference;
+    return {
+      target: ui && ui.target === "fix" ? "fix" : defaults.target,
+      search: ui && typeof ui.search === "string" ? ui.search : defaults.search,
+      severity: ui && typeof ui.severity === "string" ? ui.severity : defaults.severity,
+      format: ui && typeof ui.format === "string" ? ui.format : defaults.format,
+      profile: ui && typeof ui.profile === "string" ? ui.profile : defaults.profile,
+      category: ui && typeof ui.category === "string" ? ui.category : defaults.category,
+      autoFixableOnly: !!(ui && ui.autoFixableOnly),
+    };
+  }
+
+  function normalizeSettings(parsed) {
+    var defaults = cloneDefaults();
+    if (!parsed || typeof parsed !== "object") {
+      return defaults;
+    }
+
+    return {
+      version: STORAGE_VERSION,
+      savedAt: parsed.savedAt || null,
+      optIn: !!parsed.optIn,
+      audit: Object.assign({}, defaults.audit, parsed.audit || {}, {
+        categories: cloneArray(parsed.audit && parsed.audit.categories, defaults.audit.categories),
+        customRules: cloneArray(parsed.audit && parsed.audit.customRules, defaults.audit.customRules),
+      }),
+      fix: Object.assign({}, defaults.fix, parsed.fix || {}, {
+        categories: cloneArray(parsed.fix && parsed.fix.categories, defaults.fix.categories),
+        allowedHeadingLevels: cloneArray(
+          parsed.fix && parsed.fix.allowedHeadingLevels,
+          defaults.fix.allowedHeadingLevels
+        ),
+        customRules: cloneArray(parsed.fix && parsed.fix.customRules, defaults.fix.customRules),
+      }),
+      template: Object.assign({}, defaults.template, parsed.template || {}, {
+        allowedHeadingLevels: cloneArray(
+          parsed.template && parsed.template.allowedHeadingLevels,
+          defaults.template.allowedHeadingLevels
+        ),
+      }),
+      export: Object.assign({}, defaults.export, parsed.export || {}),
+      convert: Object.assign({}, defaults.convert, parsed.convert || {}),
+      ui: {
+        rulesReference: normalizeRulesReferenceUi(
+          parsed.ui && parsed.ui.rulesReference ? parsed.ui.rulesReference : null
+        ),
+      },
+    };
+  }
+
+  function removeStoredSettings() {
+    if (canUseLocalStorage()) {
+      try {
+        window.localStorage.removeItem(STORAGE_KEY);
+      } catch (_error) {
+        // Ignore storage removal failures.
+      }
+    }
+    eraseLegacyCookie(LEGACY_COOKIE_NAME);
+  }
+
+  function migrateLegacyCookieIfNeeded() {
+    if (!canUseLocalStorage()) {
+      return;
+    }
     try {
-      var parsed = JSON.parse(raw);
-      var defaults = cloneDefaults();
-      return {
-        version: 1,
-        optIn: !!parsed.optIn,
-        audit: Object.assign(defaults.audit, parsed.audit || {}),
-        fix: Object.assign(defaults.fix, parsed.fix || {}),
-        template: Object.assign(defaults.template, parsed.template || {}),
-        export: Object.assign(defaults.export, parsed.export || {}),
-        convert: Object.assign(defaults.convert, parsed.convert || {}),
-      };
+      if (window.localStorage.getItem(STORAGE_KEY)) {
+        return;
+      }
+    } catch (_error) {
+      return;
+    }
+
+    var legacyRaw = getLegacyCookie(LEGACY_COOKIE_NAME);
+    if (!legacyRaw) {
+      return;
+    }
+
+    try {
+      var migrated = normalizeSettings(JSON.parse(legacyRaw));
+      if (migrated.optIn) {
+        window.localStorage.setItem(STORAGE_KEY, JSON.stringify(migrated));
+      }
+    } catch (_error) {
+      // Ignore invalid legacy preference payloads.
+    }
+
+    eraseLegacyCookie(LEGACY_COOKIE_NAME);
+  }
+
+  function loadSettings() {
+    migrateLegacyCookieIfNeeded();
+    if (!canUseLocalStorage()) return cloneDefaults();
+
+    try {
+      var raw = window.localStorage.getItem(STORAGE_KEY);
+      if (!raw) return cloneDefaults();
+      return normalizeSettings(JSON.parse(raw));
     } catch (_e) {
       return cloneDefaults();
     }
   }
 
   function saveSettings(settings) {
-    if (!settings.optIn) {
-      eraseCookie(COOKIE_NAME);
-      return;
+    var normalized = normalizeSettings(settings);
+    if (!normalized.optIn) {
+      removeStoredSettings();
+      return false;
     }
-    settings.version = 1;
-    settings.savedAt = new Date().toISOString();
-    setCookie(COOKIE_NAME, JSON.stringify(settings), COOKIE_DAYS);
+    if (!canUseLocalStorage()) {
+      return false;
+    }
+    normalized.version = STORAGE_VERSION;
+    normalized.savedAt = new Date().toISOString();
+    try {
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(normalized));
+      eraseLegacyCookie(LEGACY_COOKIE_NAME);
+      return true;
+    } catch (_error) {
+      return false;
+    }
+  }
+
+  function resetSettings() {
+    removeStoredSettings();
+    return cloneDefaults();
+  }
+
+  function updateSettings(mutator, options) {
+    var settings = loadSettings();
+    mutator(settings);
+    if (options && options.forceOptIn) {
+      settings.optIn = true;
+    }
+    saveSettings(settings);
+    return normalizeSettings(settings);
   }
 
   function setRadio(name, value) {
@@ -169,6 +295,9 @@
         setRadio("standards_profile", settings.audit.profile);
         setRadio("mode", settings.audit.mode);
         setCheckboxGroup("category", settings.audit.categories);
+        if (settings.audit.customRules.length) {
+          setCheckboxGroup("rule", settings.audit.customRules);
+        }
         setCheckbox("suppress_link_text", settings.audit.suppressLinkText);
         setCheckbox("suppress_missing_alt_text", settings.audit.suppressMissingAltText);
         setCheckbox("suppress_faux_heading", settings.audit.suppressFauxHeading);
@@ -179,6 +308,9 @@
         setRadio("standards_profile", settings.fix.profile);
         setRadio("mode", settings.fix.mode);
         setCheckboxGroup("category", settings.fix.categories);
+        if (settings.fix.customRules.length) {
+          setCheckboxGroup("rule", settings.fix.customRules);
+        }
         setCheckbox("bound", settings.fix.bound);
         setCheckbox("flush_lists", settings.fix.flushLists);
         setCheckbox("flush_paragraphs", settings.fix.flushParagraphs);
@@ -226,6 +358,21 @@
 
   function readSettingsForm() {
     var settings = cloneDefaults();
+    var existingSettings = loadSettings();
+
+    settings.audit.customRules = cloneArray(
+      existingSettings.audit.customRules,
+      settings.audit.customRules
+    );
+    settings.fix.customRules = cloneArray(
+      existingSettings.fix.customRules,
+      settings.fix.customRules
+    );
+    settings.ui.rulesReference = normalizeRulesReferenceUi(
+      existingSettings.ui && existingSettings.ui.rulesReference
+        ? existingSettings.ui.rulesReference
+        : null
+    );
 
     var optIn = document.getElementById("settings-opt-in");
     settings.optIn = !!(optIn && optIn.checked);
@@ -317,6 +464,30 @@
     return settings;
   }
 
+  function updateSettingsRuleSummary(target, selectedRuleIds) {
+    var summaryEl = document.getElementById("settings-" + target + "-rules-summary");
+    if (!summaryEl) {
+      return;
+    }
+
+    var totalRules = parseInt(summaryEl.getAttribute("data-total-rules") || "0", 10) || 0;
+    if (selectedRuleIds && selectedRuleIds.length) {
+      summaryEl.textContent =
+        selectedRuleIds.length +
+        " of " +
+        totalRules +
+        " rules are saved for Custom " +
+        (target === "fix" ? "Fix" : "Audit") +
+        ".";
+      return;
+    }
+
+    summaryEl.textContent =
+      "All " + totalRules + " rules will be used when Custom " +
+      (target === "fix" ? "Fix" : "Audit") +
+      " is selected.";
+  }
+
   function populateSettingsForm() {
     var form = document.getElementById("settings-form");
     if (!form) return;
@@ -369,38 +540,74 @@
     setCheckbox("settings_convert_binding_margin", settings.convert.bindingMargin);
     setCheckbox("settings_convert_print_ready", settings.convert.printReady);
 
+    updateSettingsRuleSummary("audit", settings.audit.customRules);
+    updateSettingsRuleSummary("fix", settings.fix.customRules);
+
     var status = document.getElementById("settings-status");
     var saveBtn = document.getElementById("settings-save");
     var resetBtn = document.getElementById("settings-reset");
+    var resetAuditRulesBtn = document.getElementById("settings-reset-audit-rules");
+    var resetFixRulesBtn = document.getElementById("settings-reset-fix-rules");
 
-    if (saveBtn) {
+    if (saveBtn && !saveBtn.dataset.glowBound) {
+      saveBtn.dataset.glowBound = "true";
       saveBtn.addEventListener("click", function () {
         var newSettings = readSettingsForm();
-        saveSettings(newSettings);
+        var saved = saveSettings(newSettings);
         if (status) {
           status.style.display = "block";
-          if (newSettings.optIn) {
+          if (newSettings.optIn && saved) {
             status.className = "flash-success";
-            status.innerHTML = "<p><strong>Saved:</strong> Your settings were saved in a cookie on this device and will be applied across GLOW workflows.</p>";
+            status.innerHTML = "<p><strong>Saved:</strong> Your settings were saved in local storage on this device and will be applied across GLOW workflows.</p>";
+          } else if (newSettings.optIn) {
+            status.className = "flash-warning";
+            status.innerHTML = "<p><strong>Not saved:</strong> Your browser did not allow local storage for GLOW settings.</p>";
           } else {
             status.className = "flash-info";
-            status.innerHTML = "<p><strong>Updated:</strong> Cookie opt-in is off. Saved settings were removed and GLOW will use standard defaults.</p>";
+            status.innerHTML = "<p><strong>Updated:</strong> Remember my settings is off. Saved local settings were removed and GLOW will use standard defaults.</p>";
           }
         }
       });
     }
 
-    if (resetBtn) {
+    if (resetBtn && !resetBtn.dataset.glowBound) {
+      resetBtn.dataset.glowBound = "true";
       resetBtn.addEventListener("click", function () {
-        eraseCookie(COOKIE_NAME);
+        resetSettings();
         populateSettingsForm();
         if (status) {
           status.style.display = "block";
           status.className = "flash-info";
-          status.innerHTML = "<p><strong>Reset:</strong> Settings returned to GLOW defaults. Cookie storage is now off.</p>";
+          status.innerHTML = "<p><strong>Reset:</strong> Settings returned to GLOW defaults. Local storage is now off for saved preferences.</p>";
         }
       });
     }
+
+    function bindRuleResetButton(button, target) {
+      if (!button || button.dataset.glowBound) {
+        return;
+      }
+      button.dataset.glowBound = "true";
+      button.addEventListener("click", function () {
+        var settings = loadSettings();
+        settings[target].customRules = [];
+        if (settings.optIn) {
+          saveSettings(settings);
+        }
+        updateSettingsRuleSummary(target, []);
+        if (status) {
+          status.style.display = "block";
+          status.className = "flash-info";
+          status.innerHTML =
+            "<p><strong>Reset:</strong> The saved Custom " +
+            (target === "fix" ? "Fix" : "Audit") +
+            " rule set now uses all rules again.</p>";
+        }
+      });
+    }
+
+    bindRuleResetButton(resetAuditRulesBtn, "audit");
+    bindRuleResetButton(resetFixRulesBtn, "fix");
   }
 
   document.addEventListener("DOMContentLoaded", function () {
@@ -412,4 +619,14 @@
     applySettingsToCurrentPage();
     populateSettingsForm();
   });
+
+  window.glowPreferences = {
+    cloneDefaults: cloneDefaults,
+    loadSettings: loadSettings,
+    normalizeSettings: normalizeSettings,
+    resetSettings: resetSettings,
+    saveSettings: saveSettings,
+    storageKey: STORAGE_KEY,
+    updateSettings: updateSettings,
+  };
 })();

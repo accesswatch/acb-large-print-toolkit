@@ -1,0 +1,831 @@
+{% extends "base.html" %}
+
+{% block title %}Rules Reference{% endblock %}
+{% block heading %}Rules Reference{% endblock %}
+
+{% block content %}
+<p>Browse all {{ total_rules }} audit rules. Use the filters below to narrow by severity, format, profile, or category. Select any rule to expand its full description and suppression guidance.</p>
+
+<div id="rules-selection-status" class="flash-info" role="status" aria-live="polite" style="display:none;"></div>
+
+<section id="rules-selection-panel">
+  <h2 id="rules-selection-heading">Saved Custom Rule Sets</h2>
+  <p>Use this page to build the saved Custom rule set for Audit or Fix. GLOW does not use cookies for this. When you save a rule set, it is stored in local storage on this browser only and used when that workflow is set to Custom mode.</p>
+
+  <div class="rules-filter-bar rules-filter-bar--selection">
+    <div class="filter-group">
+      <label for="rule-selection-target">Edit saved set for</label>
+      <select id="rule-selection-target" aria-label="Choose which saved custom rule set to edit">
+        <option value="audit"{% if default_target == 'audit' %} selected{% endif %}>Audit</option>
+        <option value="fix"{% if default_target == 'fix' %} selected{% endif %}>Fix</option>
+      </select>
+    </div>
+
+    <p id="rules-selection-summary" class="rules-count rules-selection-summary" aria-live="polite" aria-atomic="true"></p>
+
+    <div class="filter-group filter-group--actions">
+      <button type="button" id="btn-select-visible" class="btn-secondary btn-sm">Select visible</button>
+      <button type="button" id="btn-clear-visible" class="btn-secondary btn-sm">Clear visible</button>
+      <button type="button" id="btn-invert-visible" class="btn-secondary btn-sm">Invert visible</button>
+      <button type="button" id="btn-save-rule-set" class="btn-primary btn-sm">Save Rule Set</button>
+      <button type="button" id="btn-reset-rule-set" class="btn-secondary btn-sm">Reset to All Rules</button>
+    </div>
+  </div>
+
+  <p class="rules-count">Tip: filter first, then use Select visible or Clear visible for bulk edits.</p>
+</section>
+
+{# ------------------------------------------------------------------ Filters #}
+<section id="rules-filters" aria-label="Filter rules">
+  <div class="rules-filter-bar">
+
+    <div class="filter-group">
+      <label for="filter-search">Search</label>
+      <input type="search" id="filter-search" name="q" placeholder="Rule ID or keyword…" aria-label="Search rules by ID or keyword" autocomplete="off">
+    </div>
+
+    <div class="filter-group">
+      <label for="filter-severity">Severity</label>
+      <select id="filter-severity" aria-label="Filter by severity">
+        <option value="">All severities</option>
+        {% for sev in all_severities %}
+        <option value="{{ sev }}">{{ sev }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="filter-group">
+      <label for="filter-format">Format</label>
+      <select id="filter-format" aria-label="Filter by document format">
+        <option value="">All formats</option>
+        {% for fmt in all_formats %}
+        <option value="{{ fmt }}">{{ format_labels.get(fmt, fmt) }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="filter-group">
+      <label for="filter-profile">Profile</label>
+      <select id="filter-profile" aria-label="Filter by audit profile">
+        <option value="">All profiles</option>
+        {% for pid in all_profiles %}
+        <option value="{{ pid }}">{{ profile_labels.get(pid, pid) }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="filter-group">
+      <label for="filter-category">Category</label>
+      <select id="filter-category" aria-label="Filter by rule category">
+        <option value="">All categories</option>
+        {% for cat in all_categories %}
+        <option value="{{ cat }}">{{ cat | upper }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="filter-group filter-group--auto-fix">
+      <label>
+        <input type="checkbox" id="filter-auto-fixable" aria-label="Show auto-fixable rules only">
+        Auto-fixable only
+      </label>
+    </div>
+
+    <div class="filter-group filter-group--actions">
+      <button type="button" id="btn-expand-all" class="btn-secondary btn-sm">Expand all</button>
+      <button type="button" id="btn-collapse-all" class="btn-secondary btn-sm">Collapse all</button>
+      <button type="button" id="btn-clear-filters" class="btn-secondary btn-sm">Clear filters</button>
+    </div>
+
+  </div>
+
+  <p id="rules-visible-count" aria-live="polite" aria-atomic="true" class="rules-count">
+    Showing <span id="visible-count">{{ total_rules }}</span> of {{ total_rules }} rules
+  </p>
+</section>
+
+{# ------------------------------------------------------------------ Rule list #}
+<section id="rules-list" aria-label="Rules list">
+{% for rule in rules %}
+<h2 class="rule-heading-visually-hidden">{{ rule.rule_id }}: {{ rule.description }}</h2>
+<details class="rule-card sev-{{ rule.severity | lower }}"
+  id="rule-{{ rule.rule_id }}"
+  data-rule-id="{{ rule.rule_id }}"
+  data-severity="{{ rule.severity }}"
+  data-formats="{{ rule.formats | join(' ') }}"
+  data-profiles="{{ rule.profiles | join(' ') }}"
+  data-category="{{ rule.category }}"
+  data-auto-fixable="{{ 'true' if rule.auto_fixable else 'false' }}"
+  data-searchable="{{ rule.rule_id | lower }} {{ rule.description | lower }}{% if rule.full_description %} {{ rule.full_description | lower }}{% endif %}">
+
+  <summary class="rule-summary">
+    <span class="rule-select-control">
+      <input
+        type="checkbox"
+        class="rule-select-checkbox"
+        data-rule-id="{{ rule.rule_id }}"
+        aria-label="Include {{ rule.rule_id }} in the saved custom rule set">
+    </span>
+    <span class="rule-id">{{ rule.rule_id }}</span>
+    <span class="rule-desc">{{ rule.description }}</span>
+    <span class="rule-badges">
+      <span class="badge badge-sev badge-sev--{{ rule.severity | lower }}" aria-label="Severity: {{ rule.severity }}">{{ rule.severity }}</span>
+      {% for fmt_label in rule.format_labels %}
+      <span class="badge badge-fmt">{{ fmt_label }}</span>
+      {% endfor %}
+      {% if rule.auto_fixable %}
+      <span class="badge badge-fix" aria-label="Auto-fixable">Auto-fix</span>
+      {% endif %}
+    </span>
+  </summary>
+
+  <div class="rule-body">
+    <dl class="rule-meta">
+      <div class="rule-meta-row">
+        <dt>Rule ID</dt>
+        <dd><code>{{ rule.rule_id }}</code></dd>
+      </div>
+
+      <div class="rule-meta-row">
+        <dt>Category</dt>
+        <dd>{{ rule.category | upper }}</dd>
+      </div>
+
+      <div class="rule-meta-row">
+        <dt>Severity</dt>
+        <dd><span class="badge badge-sev badge-sev--{{ rule.severity | lower }}">{{ rule.severity }}</span></dd>
+      </div>
+
+      <div class="rule-meta-row">
+        <dt>Formats</dt>
+        <dd>{{ rule.format_labels | join(', ') }}</dd>
+      </div>
+
+      {% if rule.acb_reference %}
+      <div class="rule-meta-row">
+        <dt>Standard reference</dt>
+        <dd>{{ rule.acb_reference }}</dd>
+      </div>
+      {% endif %}
+
+      <div class="rule-meta-row">
+        <dt>Auto-fixable</dt>
+        <dd>{% if rule.auto_fixable %}Yes{% else %}No{% endif %}</dd>
+      </div>
+
+      {% if rule.profiles %}
+      <div class="rule-meta-row">
+        <dt>Profiles</dt>
+        <dd>
+          {% for pid in rule.profiles %}
+          <span class="badge badge-profile">{{ profile_labels.get(pid, pid) }}</span>
+          {% endfor %}
+        </dd>
+      </div>
+      {% endif %}
+
+      {% if rule.help_urls %}
+      <div class="rule-meta-row">
+        <dt>Learn more</dt>
+        <dd>
+          <ul class="rule-help-links">
+            {% for link in rule.help_urls %}
+            <li><a href="{{ link.url }}" rel="noopener noreferrer">{{ link.label }}</a></li>
+            {% endfor %}
+          </ul>
+        </dd>
+      </div>
+      {% endif %}
+    </dl>
+
+    {% if rule.full_description %}
+    <div class="rule-section">
+      <h3>Why this rule matters</h3>
+      <p>{{ rule.full_description }}</p>
+    </div>
+    {% endif %}
+
+    {% if rule.suppress_guidance %}
+    <div class="rule-section rule-section--suppress">
+      <h3>When to suppress</h3>
+      <p>{{ rule.suppress_guidance }}</p>
+    </div>
+    {% endif %}
+
+  </div>{# /.rule-body #}
+</details>
+{% endfor %}
+</section>
+
+<p id="rules-empty-state" class="rules-empty-state" hidden aria-live="polite">
+  No rules match your current filters. <button type="button" id="btn-clear-filters-inline" class="btn-link">Clear all filters</button>
+</p>
+
+{# ------------------------------------------------------------------ Jump-to-top #}
+<p class="jump-top"><a href="#rules-filters">Back to filters</a></p>
+
+<style>
+/* ------------------------------------------------------------------ Filters */
+.rules-filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: flex-end;
+  padding: 1rem;
+  background: var(--surface-alt, #f5f5f5);
+  border-radius: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.rules-filter-bar--selection {
+  margin-bottom: 0.5rem;
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+.filter-group label {
+  font-size: 0.875rem;
+  font-weight: bold;
+}
+.filter-group input[type="search"],
+.filter-group select {
+  min-width: 10rem;
+  font-size: 1rem;
+  padding: 0.25rem 0.5rem;
+}
+.filter-group--auto-fix {
+  justify-content: flex-end;
+  padding-bottom: 0.25rem;
+}
+.filter-group--auto-fix label {
+  font-weight: normal;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  cursor: pointer;
+}
+.filter-group--actions {
+  flex-direction: row;
+  align-items: flex-end;
+  gap: 0.5rem;
+}
+.rules-count {
+  font-size: 0.95rem;
+  color: var(--color-muted, #555);
+  margin-top: 0.25rem;
+  margin-bottom: 0;
+}
+
+/* ------------------------------------------------------------------ Rule cards */
+.rule-card {
+  border-left: 4px solid var(--color-border, #ccc);
+  border-radius: 0 0.375rem 0.375rem 0;
+  margin-bottom: 0.75rem;
+  background: var(--surface, #fff);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.07);
+}
+
+.rule-card.rule-selected {
+  box-shadow: 0 0 0 0.15rem rgba(0, 87, 184, 0.15), 0 1px 3px rgba(0,0,0,0.07);
+}
+
+.rule-heading-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+.rule-card.sev-critical { border-left-color: #c00; }
+.rule-card.sev-high     { border-left-color: #d45500; }
+.rule-card.sev-medium   { border-left-color: #b57d00; }
+.rule-card.sev-low      { border-left-color: #2a7a2a; }
+
+.rule-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: baseline;
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  list-style: none;
+  font-size: 1rem;
+}
+.rule-summary::-webkit-details-marker { display: none; }
+.rule-summary::before {
+  content: "▶";
+  font-size: 0.75rem;
+  flex-shrink: 0;
+  margin-right: 0.25rem;
+  color: var(--color-muted, #555);
+}
+details[open] > .rule-summary::before { content: "▼"; }
+
+.rule-select-control {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  margin-right: 0.25rem;
+}
+
+.rule-select-checkbox {
+  width: 1.1rem;
+  height: 1.1rem;
+}
+
+.rule-id {
+  font-weight: bold;
+  font-family: monospace;
+  font-size: 0.95rem;
+  flex-shrink: 0;
+}
+.rule-desc {
+  flex: 1;
+  min-width: 0;
+}
+.rule-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  flex-shrink: 0;
+}
+
+/* ------------------------------------------------------------------ Badges */
+.badge {
+  display: inline-block;
+  padding: 0.15rem 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.8rem;
+  font-weight: bold;
+  white-space: nowrap;
+}
+.badge-sev--critical { background: #fde8e8; color: #c00; border: 1px solid #f9b4b4; }
+.badge-sev--high     { background: #fdeede; color: #a33a00; border: 1px solid #f5c5a0; }
+.badge-sev--medium   { background: #fdf8de; color: #7a5200; border: 1px solid #e8d98a; }
+.badge-sev--low      { background: #e8f5e8; color: #1e5e1e; border: 1px solid #a3d0a3; }
+.badge-fmt  { background: #e8ecf8; color: #2040a0; border: 1px solid #b0bde8; }
+.badge-fix  { background: #e0f7f0; color: #006644; border: 1px solid #8fd4bc; }
+.badge-profile { background: #f0eafc; color: #4a208a; border: 1px solid #c4a8e8; }
+
+/* ------------------------------------------------------------------ Rule body */
+.rule-body {
+  padding: 0.5rem 1rem 1rem 1.75rem;
+  border-top: 1px solid var(--color-border, #e0e0e0);
+}
+.rule-meta {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  column-gap: 1.5rem;
+  row-gap: 0.4rem;
+  font-size: 0.95rem;
+  margin-bottom: 1rem;
+}
+.rule-meta-row {
+  display: contents;
+}
+.rule-meta dt {
+  font-weight: bold;
+  color: var(--color-muted, #555);
+  white-space: nowrap;
+}
+.rule-meta dd {
+  margin: 0;
+}
+.rule-help-links {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.rule-section {
+  margin-top: 0.75rem;
+  padding: 0.75rem;
+  background: var(--surface-alt, #f8f8f8);
+  border-radius: 0.375rem;
+}
+.rule-section h3 {
+  margin-top: 0;
+  margin-bottom: 0.4rem;
+  font-size: 1rem;
+}
+.rule-section--suppress {
+  background: #fffbe6;
+  border-left: 3px solid #c8a000;
+}
+
+/* ------------------------------------------------------------------ Empty state / jump-top */
+.rules-empty-state {
+  padding: 1.5rem;
+  text-align: center;
+  background: var(--surface-alt, #f5f5f5);
+  border-radius: 0.5rem;
+}
+.btn-link {
+  background: none;
+  border: none;
+  color: var(--color-link, #0057b8);
+  text-decoration: underline;
+  cursor: pointer;
+  font-size: inherit;
+  padding: 0;
+}
+.jump-top {
+  text-align: right;
+  margin-top: 1.5rem;
+}
+.btn-sm {
+  font-size: 0.875rem;
+  padding: 0.2rem 0.6rem;
+}
+
+.rules-selection-summary {
+  margin: 0;
+  min-width: 16rem;
+}
+
+/* ------------------------------------------------------------------ Hidden (JS filter) */
+.rule-card[hidden] { display: none; }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  'use strict';
+
+  const searchInput = document.getElementById('filter-search');
+  const severitySelect = document.getElementById('filter-severity');
+  const formatSelect = document.getElementById('filter-format');
+  const profileSelect = document.getElementById('filter-profile');
+  const categorySelect = document.getElementById('filter-category');
+  const autoFixChk = document.getElementById('filter-auto-fixable');
+  const visibleCount = document.getElementById('visible-count');
+  const emptyState = document.getElementById('rules-empty-state');
+  const cards = Array.from(document.querySelectorAll('.rule-card'));
+  const selectionTarget = document.getElementById('rule-selection-target');
+  const selectionSummary = document.getElementById('rules-selection-summary');
+  const selectionStatus = document.getElementById('rules-selection-status');
+  const prefApi = window.glowPreferences || null;
+  const requestedTarget = new URLSearchParams(window.location.search).get('target');
+  const allRuleIds = cards.map(function (card) {
+    return card.dataset.ruleId;
+  });
+  const workingSelections = {
+    audit: [],
+    fix: [],
+  };
+  let currentTarget = '{{ default_target }}';
+  let filterTimer = null;
+
+  function getSettings() {
+    return prefApi ? prefApi.loadSettings() : null;
+  }
+
+  function cloneRuleIds(ruleIds) {
+    return Array.isArray(ruleIds) ? ruleIds.slice() : [];
+  }
+
+  function normalizeTarget(target) {
+    return target === 'fix' ? 'fix' : 'audit';
+  }
+
+  function getStoredRuleIds(target) {
+    const settings = getSettings();
+    if (!settings || !settings[target] || !Array.isArray(settings[target].customRules)) {
+      return cloneRuleIds(allRuleIds);
+    }
+    return settings[target].customRules.length
+      ? cloneRuleIds(settings[target].customRules)
+      : cloneRuleIds(allRuleIds);
+  }
+
+  function readUiState() {
+    return {
+      target: currentTarget,
+      search: searchInput.value,
+      severity: severitySelect.value,
+      format: formatSelect.value,
+      profile: profileSelect.value,
+      category: categorySelect.value,
+      autoFixableOnly: !!autoFixChk.checked,
+    };
+  }
+
+  function persistUiState() {
+    const settings = getSettings();
+    if (!prefApi || !settings || !settings.optIn) {
+      return;
+    }
+    settings.ui.rulesReference = readUiState();
+    prefApi.saveSettings(settings);
+  }
+
+  function showSelectionStatus(kind, message) {
+    if (!selectionStatus) {
+      return;
+    }
+    selectionStatus.style.display = 'block';
+    selectionStatus.className = kind;
+    selectionStatus.innerHTML = '<p>' + message + '</p>';
+  }
+
+  function currentCheckboxes() {
+    return cards.map(function (card) {
+      return card.querySelector('.rule-select-checkbox');
+    }).filter(Boolean);
+  }
+
+  function syncSelectionClasses() {
+    cards.forEach(function (card) {
+      const checkbox = card.querySelector('.rule-select-checkbox');
+      card.classList.toggle('rule-selected', !!(checkbox && checkbox.checked));
+    });
+  }
+
+  function updateVisibleStatus(shown) {
+    visibleCount.textContent = shown;
+    emptyState.hidden = shown > 0;
+  }
+
+  function updateSelectionSummary() {
+    const selectedCount = currentCheckboxes().filter(function (checkbox) {
+      return checkbox.checked;
+    }).length;
+    const visibleSelected = cards.filter(function (card) {
+      const checkbox = card.querySelector('.rule-select-checkbox');
+      return !card.hidden && checkbox && checkbox.checked;
+    }).length;
+    const settings = getSettings();
+    const isPersisted = !!(settings && settings.optIn);
+
+    selectionSummary.textContent =
+      (currentTarget === 'fix' ? 'Fix' : 'Audit') +
+      ' custom rules: ' +
+      selectedCount +
+      ' of ' +
+      allRuleIds.length +
+      ' selected (' +
+      visibleSelected +
+      ' visible). ' +
+      (isPersisted
+        ? 'Saved selections live in local storage on this browser.'
+        : 'Selections are temporary until you save them.');
+  }
+
+  function updateWorkingSelectionFromDom() {
+    workingSelections[currentTarget] = currentCheckboxes()
+      .filter(function (checkbox) {
+        return checkbox.checked;
+      })
+      .map(function (checkbox) {
+        return checkbox.dataset.ruleId;
+      });
+  }
+
+  function applyWorkingSelection(target) {
+    const selected = new Set(
+      (workingSelections[target] && workingSelections[target].length)
+        ? workingSelections[target]
+        : allRuleIds
+    );
+
+    currentCheckboxes().forEach(function (checkbox) {
+      checkbox.checked = selected.has(checkbox.dataset.ruleId);
+    });
+
+    syncSelectionClasses();
+    updateSelectionSummary();
+  }
+
+  function applyFilters() {
+    const q = searchInput.value.toLowerCase().trim();
+    const sev = severitySelect.value;
+    const fmt = formatSelect.value;
+    const profile = profileSelect.value;
+    const cat = categorySelect.value;
+    const fixOnly = autoFixChk.checked;
+
+    let shown = 0;
+    cards.forEach(function (card) {
+      const matchSearch = !q || card.dataset.searchable.includes(q);
+      const matchSev = !sev || card.dataset.severity === sev;
+      const matchFmt = !fmt || card.dataset.formats.split(' ').includes(fmt);
+      const matchProfile = !profile || card.dataset.profiles.split(' ').includes(profile);
+      const matchCat = !cat || card.dataset.category === cat;
+      const matchFix = !fixOnly || card.dataset.autoFixable === 'true';
+
+      const visible =
+        matchSearch && matchSev && matchFmt && matchProfile && matchCat && matchFix;
+      card.hidden = !visible;
+      if (visible) {
+        shown += 1;
+      }
+    });
+
+    updateVisibleStatus(shown);
+    updateSelectionSummary();
+    persistUiState();
+  }
+
+  function debounceApplyFilters() {
+    clearTimeout(filterTimer);
+    filterTimer = setTimeout(applyFilters, 180);
+  }
+
+  function focusRuleCard(card) {
+    if (!card || !card.matches('details.rule-card')) {
+      return;
+    }
+    const summary = card.querySelector('.rule-summary');
+    card.open = true;
+    if (summary) {
+      summary.focus();
+    }
+    card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function focusHashTarget() {
+    if (!location.hash) {
+      return;
+    }
+    const target = document.querySelector(location.hash);
+    focusRuleCard(target);
+  }
+
+  function clearFilters() {
+    searchInput.value = '';
+    severitySelect.value = '';
+    formatSelect.value = '';
+    profileSelect.value = '';
+    categorySelect.value = '';
+    autoFixChk.checked = false;
+    applyFilters();
+  }
+
+  function toggleVisibleSelections(mode) {
+    cards.forEach(function (card) {
+      if (card.hidden) {
+        return;
+      }
+      const checkbox = card.querySelector('.rule-select-checkbox');
+      if (!checkbox) {
+        return;
+      }
+      if (mode === 'invert') {
+        checkbox.checked = !checkbox.checked;
+      } else {
+        checkbox.checked = mode === 'select';
+      }
+    });
+    updateWorkingSelectionFromDom();
+    syncSelectionClasses();
+    updateSelectionSummary();
+  }
+
+  function saveRuleSet() {
+    updateWorkingSelectionFromDom();
+    const selected = workingSelections[currentTarget];
+    if (!selected.length) {
+      showSelectionStatus(
+        'flash-warning',
+        '<strong>Not saved:</strong> Select at least one rule before saving this custom set.'
+      );
+      return;
+    }
+    if (!prefApi) {
+      showSelectionStatus(
+        'flash-warning',
+        '<strong>Not saved:</strong> Preferences are not available on this page.'
+      );
+      return;
+    }
+
+    const settings = prefApi.loadSettings();
+    settings.optIn = true;
+    settings[currentTarget].customRules = cloneRuleIds(selected);
+    settings.ui.rulesReference = readUiState();
+    prefApi.saveSettings(settings);
+    updateSelectionSummary();
+    showSelectionStatus(
+      'flash-success',
+      '<strong>Saved:</strong> The ' +
+        (currentTarget === 'fix' ? 'Fix' : 'Audit') +
+        ' custom rule set was saved to local storage on this browser.'
+    );
+  }
+
+  function resetRuleSet() {
+    workingSelections[currentTarget] = cloneRuleIds(allRuleIds);
+    applyWorkingSelection(currentTarget);
+
+    if (!prefApi) {
+      return;
+    }
+
+    const settings = prefApi.loadSettings();
+    if (settings.optIn) {
+      settings[currentTarget].customRules = [];
+      settings.ui.rulesReference = readUiState();
+      prefApi.saveSettings(settings);
+      showSelectionStatus(
+        'flash-info',
+        '<strong>Reset:</strong> The ' +
+          (currentTarget === 'fix' ? 'Fix' : 'Audit') +
+          ' custom rule set now uses all rules again.'
+      );
+    } else {
+      showSelectionStatus(
+        'flash-info',
+        '<strong>Reset:</strong> All rules are selected in the working view. Save the set to keep it for later visits.'
+      );
+    }
+  }
+
+  function loadSavedUiState() {
+    const settings = getSettings();
+    if (!settings || !settings.optIn || !settings.ui || !settings.ui.rulesReference) {
+      return;
+    }
+    const uiState = settings.ui.rulesReference;
+    searchInput.value = uiState.search || '';
+    severitySelect.value = uiState.severity || '';
+    formatSelect.value = uiState.format || '';
+    profileSelect.value = uiState.profile || '';
+    categorySelect.value = uiState.category || '';
+    autoFixChk.checked = !!uiState.autoFixableOnly;
+    if (requestedTarget !== 'audit' && requestedTarget !== 'fix') {
+      currentTarget = normalizeTarget(uiState.target || currentTarget);
+      selectionTarget.value = currentTarget;
+    }
+  }
+
+  currentCheckboxes().forEach(function (checkbox) {
+    checkbox.addEventListener('click', function (event) {
+      event.stopPropagation();
+    });
+    checkbox.addEventListener('change', function () {
+      updateWorkingSelectionFromDom();
+      syncSelectionClasses();
+      updateSelectionSummary();
+    });
+  });
+
+  searchInput.addEventListener('input', debounceApplyFilters);
+  [severitySelect, formatSelect, profileSelect, categorySelect, autoFixChk].forEach(function (el) {
+    el.addEventListener('input', applyFilters);
+    el.addEventListener('change', applyFilters);
+  });
+
+  document.getElementById('btn-clear-filters').addEventListener('click', clearFilters);
+  document.getElementById('btn-clear-filters-inline').addEventListener('click', clearFilters);
+  document.getElementById('btn-select-visible').addEventListener('click', function () {
+    toggleVisibleSelections('select');
+  });
+  document.getElementById('btn-clear-visible').addEventListener('click', function () {
+    toggleVisibleSelections('clear');
+  });
+  document.getElementById('btn-invert-visible').addEventListener('click', function () {
+    toggleVisibleSelections('invert');
+  });
+  document.getElementById('btn-save-rule-set').addEventListener('click', saveRuleSet);
+  document.getElementById('btn-reset-rule-set').addEventListener('click', resetRuleSet);
+
+  document.getElementById('btn-expand-all').addEventListener('click', function () {
+    cards.forEach(function (card) {
+      if (!card.hidden) {
+        card.open = true;
+      }
+    });
+  });
+  document.getElementById('btn-collapse-all').addEventListener('click', function () {
+    cards.forEach(function (card) {
+      card.open = false;
+    });
+  });
+
+  selectionTarget.addEventListener('change', function () {
+    updateWorkingSelectionFromDom();
+    currentTarget = normalizeTarget(selectionTarget.value);
+    applyWorkingSelection(currentTarget);
+    persistUiState();
+  });
+
+  workingSelections.audit = getStoredRuleIds('audit');
+  workingSelections.fix = getStoredRuleIds('fix');
+  loadSavedUiState();
+  currentTarget = normalizeTarget(selectionTarget.value || currentTarget);
+  applyWorkingSelection(currentTarget);
+  applyFilters();
+
+  focusHashTarget();
+  window.addEventListener('hashchange', focusHashTarget);
+});
+</script>
+{% endblock %}

@@ -832,6 +832,7 @@ def admin_flags() -> Any:
         # Core GLOW features (non-AI)
         "GLOW_ENABLE_AUDIT",
         "GLOW_ENABLE_CHECKER",
+        "GLOW_ENABLE_HEADING_DETECTION",
         "GLOW_ENABLE_CONVERTER",
         "GLOW_ENABLE_TEMPLATE_BUILDER",
         "GLOW_ENABLE_WORD_SETUP",
@@ -863,6 +864,7 @@ def admin_flags() -> Any:
         "GLOW_ENABLE_DAISY_ACE",
         "GLOW_ENABLE_DAISY_META_VIEWER",
         "GLOW_ENABLE_DAISY_PIPELINE",
+        "GLOW_ENABLE_EPUBCHECK",
         "GLOW_ENABLE_PYDOCX",
         "GLOW_ENABLE_OPENPYXL",
         "GLOW_ENABLE_PYTHON_PPTX",
@@ -881,6 +883,7 @@ def admin_flags() -> Any:
         "core": [
             "GLOW_ENABLE_AUDIT",
             "GLOW_ENABLE_CHECKER",
+            "GLOW_ENABLE_HEADING_DETECTION",
         ],
         "conversion": [
             "GLOW_ENABLE_CONVERTER",
@@ -918,6 +921,7 @@ def admin_flags() -> Any:
             "GLOW_ENABLE_DAISY_ACE",
             "GLOW_ENABLE_DAISY_META_VIEWER",
             "GLOW_ENABLE_DAISY_PIPELINE",
+            "GLOW_ENABLE_EPUBCHECK",
             "GLOW_ENABLE_PYDOCX",
             "GLOW_ENABLE_OPENPYXL",
             "GLOW_ENABLE_PYTHON_PPTX",

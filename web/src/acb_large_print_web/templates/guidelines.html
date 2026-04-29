@@ -52,6 +52,7 @@
     <li><a href="#section-page-numbers">Page Numbers</a></li>
     <li><a href="#section-doc-properties">Document Properties (WCAG)</a></li>
     <li><a href="#section-epub">ePub Accessibility</a></li>
+    <li><a href="#section-markdown">Markdown Accessibility</a></li>
     <li><a href="#section-aph-submission">APH Submission Profile (Release 1.2.0)</a></li>
     <li><a href="#section-rules-summary">All Rules by Severity</a></li>
   </ol>
@@ -240,8 +241,60 @@
   <a href="#toc-heading" class="back-to-top">Back to table of contents</a>
 </section>
 
+<section id="section-markdown">
+  <h2>12. Markdown Accessibility</h2>
+  <details class="guideline-accordion" open>
+    <summary>Markdown-specific accessibility rules</summary>
+    <p>When auditing <code>.md</code> files, GLOW checks the following categories against WCAG 2.2 AA and the ACB Large Print Guidelines:</p>
+    <p><strong>YAML front matter:</strong> Every Markdown document should begin with a YAML front matter block (<code>---</code> ... <code>---</code>) that declares at minimum a <code>title:</code> and a <code>lang:</code> field. The <code>title:</code> field satisfies WCAG 2.4.2 (Page Titled). The <code>lang:</code> field (BCP 47 tag, e.g. <code>en</code>) satisfies WCAG 3.1.1 (Language of Page).</p>
+    <p><strong>Heading structure:</strong> Headings must follow a strict hierarchy without skipping levels. Each document may have only one H1. Empty headings (<code>#</code> with no text), headings longer than 120 characters, and headings ending in terminal punctuation (period, semicolon, or colon) are flagged.</p>
+    <p><strong>Emphasis:</strong> Italic and bold-for-emphasis are prohibited by ACB guidelines. Use underline (<code>&lt;u&gt;text&lt;/u&gt;</code>) for emphasis instead.</p>
+    <p><strong>Links:</strong> Bare URLs must be replaced with descriptive link text. Vague phrases like "click here", "read more", or "here" are flagged as ambiguous link text.</p>
+    <p><strong>Images:</strong> All images must have non-empty alt text. Alt text that appears to be a filename, begins with a redundant prefix ("image of", "picture of"), or is fewer than three characters is flagged for quality.</p>
+    <p><strong>Tables:</strong> Pipe tables must have non-blank column headers and consistent column counts across all rows. Raw HTML <code>&lt;table&gt;</code> elements must use <code>&lt;th scope&gt;</code> headers and a <code>&lt;caption&gt;</code> element.</p>
+    <p><strong>Code blocks:</strong> Fenced code blocks (<code>```</code>) must include a language identifier. Indented code blocks (4-space indent) cannot carry a language identifier and should be converted to fenced blocks.</p>
+    <p><strong>Emoji and em-dashes:</strong> Emoji must be replaced with descriptive text or removed; screen readers may spell out Unicode emoji names verbatim. Em-dashes should be replaced with double hyphens or rephrased for plain text compatibility.</p>
+    <p><strong>Fake lists:</strong> Unicode bullet characters (•, ◦, ▪, ‣) and manually numbered lines (<code>1.</code>, <code>2.</code> outside Markdown list syntax) must be replaced with proper Markdown list items.</p>
+    <p><strong>ALL CAPS:</strong> Body text containing four or more consecutive uppercase letters is flagged; some screen readers spell out ALL CAPS word by word instead of reading them naturally.</p>
+    <p><strong>Moving content:</strong> Raw <code>&lt;marquee&gt;</code> or <code>&lt;blink&gt;</code> HTML creates content that cannot be paused or stopped (WCAG 2.2.2).</p>
+    <h3>Related audit rules</h3>
+    <ul>
+      <li><strong>MD-NO-YAML-FRONT-MATTER</strong> (Medium) -- No YAML front matter block at all</li>
+      <li><strong>MD-YAML-UNCLOSED-FENCE</strong> (High) -- Front matter block has no closing ---</li>
+      <li><strong>MD-YAML-MISSING-TITLE</strong> (Medium) -- Front matter has no title: field</li>
+      <li><strong>MD-YAML-MISSING-LANG</strong> (High) -- Front matter has no lang: or language: field</li>
+      <li><strong>MD-HEADING-HIERARCHY</strong> (High) -- Heading levels skip (e.g. H1 to H3)</li>
+      <li><strong>MD-MULTIPLE-H1</strong> (High) -- More than one H1 in the document</li>
+      <li><strong>MD-EMPTY-HEADING</strong> (High) -- Heading with no text</li>
+      <li><strong>MD-HEADING-TOO-LONG</strong> (Medium) -- Heading text exceeds 120 characters</li>
+      <li><strong>MD-HEADING-ENDS-PUNCTUATION</strong> (Low) -- Heading ends with . ; or :</li>
+      <li><strong>MD-NO-ITALIC</strong> (Medium) -- Italic emphasis used</li>
+      <li><strong>MD-BOLD-EMPHASIS</strong> (Medium) -- Bold used for body emphasis</li>
+      <li><strong>MD-BARE-URL</strong> (High) -- Raw URL used as link text</li>
+      <li><strong>MD-AMBIGUOUS-LINK</strong> (High) -- Vague link text ("click here", etc.)</li>
+      <li><strong>MD-MISSING-ALT-TEXT</strong> (Critical) -- Image has empty or missing alt text</li>
+      <li><strong>MD-ALT-TEXT-FILENAME</strong> (High) -- Alt text is a filename</li>
+      <li><strong>MD-ALT-TEXT-REDUNDANT-PREFIX</strong> (Medium) -- Alt text starts with "image of" etc.</li>
+      <li><strong>MD-ALT-TEXT-TOO-SHORT</strong> (High) -- Alt text is fewer than 3 characters</li>
+      <li><strong>MD-TABLE-NO-DESCRIPTION</strong> (Medium) -- Table has no caption or description</li>
+      <li><strong>MD-BLANK-TABLE-HEADER</strong> (High) -- Pipe table has blank column header</li>
+      <li><strong>MD-TABLE-COLUMN-MISMATCH</strong> (High) -- Pipe table column count mismatch</li>
+      <li><strong>MD-RAW-HTML-TABLE</strong> (Medium) -- Raw HTML table lacks th scope and caption</li>
+      <li><strong>MD-CODE-BLOCK-NO-LANGUAGE</strong> (Low) -- Fenced code block has no language</li>
+      <li><strong>MD-INDENTED-CODE-BLOCK</strong> (Low) -- 4-space indented code block used</li>
+      <li><strong>MD-MOVING-CONTENT</strong> (High) -- marquee or blink element present</li>
+      <li><strong>MD-NO-EMOJI</strong> (Medium) -- Emoji characters in body text</li>
+      <li><strong>MD-EM-DASH</strong> (Low) -- Em-dash or en-dash in body text</li>
+      <li><strong>MD-FAKE-LIST-BULLET</strong> (Medium) -- Unicode bullet used instead of Markdown list</li>
+      <li><strong>MD-FAKE-NUMBERED-LIST</strong> (Medium) -- Manually numbered lines instead of ordered list</li>
+      <li><strong>MD-ALLCAPS</strong> (Medium) -- ALL CAPS words in body text</li>
+    </ul>
+  </details>
+  <a href="#toc-heading" class="back-to-top">Back to table of contents</a>
+</section>
+
 <section id="section-aph-submission">
-  <h2>12. APH Submission Profile (Release 1.2.0)</h2>
+  <h2>13. APH Submission Profile (Release 1.2.0)</h2>
   <details class="guideline-accordion" open>
     <summary>How APH submission is handled in this toolkit</summary>
     <p>Release 1.2.0 introduces an APH submission profile workflow on top of the existing ACB and WCAG rules. The goal is to keep one canonical rule engine while making submission evidence explicit and traceable.</p>
@@ -278,7 +331,7 @@
 </section>
 
 <section id="section-rules-summary">
-  <h2>13. All Rules by Severity</h2>
+  <h2>14. All Rules by Severity</h2>
   <p>The following is the complete list of audit rules, grouped by severity level. These are the same rules available in the <a href="{{ url_for('audit.audit_form') }}">audit</a> and <a href="{{ url_for('fix.fix_form') }}">fix</a> tools.</p>
 
   {% for severity in ["Critical", "High", "Medium", "Low"] %}

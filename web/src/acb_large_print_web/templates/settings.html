@@ -4,7 +4,7 @@
 {% block heading %}Settings{% endblock %}
 
 {% block content %}
-<p>Personalize how GLOW starts each workflow on this device. You can opt in to save settings in a browser cookie, or leave persistence off and use defaults each visit.</p>
+<p>Personalize how GLOW starts each workflow on this device. If you choose to remember your defaults, GLOW stores them in your browser's local storage on this device only. These settings stay available when you close the browser and come back, until you reset them or clear site data.</p>
 
 <div id="settings-status" class="flash-info" role="status" aria-live="polite" style="display:none;"></div>
 
@@ -13,9 +13,36 @@
     <legend>Privacy and Storage</legend>
     <label>
       <input type="checkbox" id="settings-opt-in" name="opt_in">
-      Remember my settings on this device (cookie opt-in)
+      Remember my settings on this device
     </label>
-    <p class="help-text">When enabled, GLOW stores your selected defaults in a first-party cookie on this browser only. No account is required, and settings are not shared across devices.</p>
+    <p class="help-text">When enabled, GLOW stores your selected defaults in local storage on this browser only. No account is required, nothing is sent to the server for this preference storage, and settings are not shared across devices.</p>
+  </fieldset>
+
+  <fieldset>
+    <legend>Custom Rule Sets</legend>
+    <p class="help-text">Use the Rules Reference page to save per-rule custom sets for Audit and Fix. These saved rule lists are used only when the corresponding workflow is set to Custom mode.</p>
+
+    <div class="settings-rule-grid">
+      <section class="settings-rule-card">
+        <h2 id="settings-audit-rules-heading">Audit custom rules</h2>
+        <p id="settings-audit-rules-summary" class="settings-rule-summary" data-total-rules="{{ total_rules }}">All {{ total_rules }} rules will be used when Custom Audit is selected.</p>
+        <p class="help-text">Filter, review, and save the Audit custom rule set from the Rules Reference page.</p>
+        <div class="settings-rule-actions">
+          <a class="btn-secondary" href="{{ url_for('rules_ref.rules_ref_page', target='audit') }}">Edit Audit Rules</a>
+          <button type="button" id="settings-reset-audit-rules" class="btn-secondary">Reset Audit Rule Set</button>
+        </div>
+      </section>
+
+      <section class="settings-rule-card">
+        <h2 id="settings-fix-rules-heading">Fix custom rules</h2>
+        <p id="settings-fix-rules-summary" class="settings-rule-summary" data-total-rules="{{ total_rules }}">All {{ total_rules }} rules will be used when Custom Fix is selected.</p>
+        <p class="help-text">Filter, review, and save the Fix custom rule set from the Rules Reference page.</p>
+        <div class="settings-rule-actions">
+          <a class="btn-secondary" href="{{ url_for('rules_ref.rules_ref_page', target='fix') }}">Edit Fix Rules</a>
+          <button type="button" id="settings-reset-fix-rules" class="btn-secondary">Reset Fix Rule Set</button>
+        </div>
+      </section>
+    </div>
   </fieldset>
 
   <fieldset>
@@ -219,7 +246,40 @@
   <details class="help-accordion">
     <summary>How this guided settings experience works</summary>
     <p>GLOW starts with standards-first defaults so every user gets a safe baseline. If your team has a repeat workflow, use this page to personalize defaults once, then GLOW automatically pre-fills forms each time.</p>
-    <p>Privacy first: nothing is saved unless you opt in. If you turn off opt-in, saved settings are removed and GLOW returns to standard defaults.</p>
+    <p>Privacy first: nothing is saved unless you opt in. If you turn off Remember my settings, GLOW removes the saved local storage entry and returns to standard defaults.</p>
   </details>
 </form>
+
+<style>
+.settings-rule-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
+  gap: 1rem;
+}
+
+.settings-rule-card {
+  border: 1px solid #c9d4e5;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  background: #f7f9fc;
+}
+
+.settings-rule-card h2 {
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+  font-size: 1.5rem;
+}
+
+.settings-rule-summary {
+  margin-bottom: 0.75rem;
+  font-weight: bold;
+}
+
+.settings-rule-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+}
+</style>
 {% endblock %}

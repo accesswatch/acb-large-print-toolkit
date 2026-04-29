@@ -418,6 +418,12 @@ _RULE_HELP_URLS: dict[str, list[tuple[str, str]]] = {
     "MD-AMBIGUOUS-LINK": [
         ("WebAIM: Links and Hypertext", "https://webaim.org/techniques/hypertext/"),
     ],
+    "MD-EMPTY-LINK-TEXT": [
+        ("WebAIM: Links and Hypertext", "https://webaim.org/techniques/hypertext/"),
+    ],
+    "MD-URL-AS-LINK-TEXT": [
+        ("WebAIM: Links and Hypertext", "https://webaim.org/techniques/hypertext/"),
+    ],
     "MD-MISSING-ALT-TEXT": [
         ("CommonMark: Images", "https://spec.commonmark.org/0.31.2/#images"),
         ("WebAIM: Alternative Text", "https://webaim.org/techniques/alttext/"),
@@ -432,6 +438,169 @@ _RULE_HELP_URLS: dict[str, list[tuple[str, str]]] = {
         ),
     ],
     "MD-EM-DASH": [],
+    "MD-ALT-TEXT-FILENAME": [
+        ("WebAIM: Alternative Text", "https://webaim.org/techniques/alttext/"),
+        ("CommonMark: Images", "https://spec.commonmark.org/0.31.2/#images"),
+    ],
+    "MD-ALT-TEXT-REDUNDANT-PREFIX": [
+        ("WebAIM: Alternative Text", "https://webaim.org/techniques/alttext/"),
+    ],
+    "MD-ALT-TEXT-TOO-SHORT": [
+        ("WebAIM: Alternative Text", "https://webaim.org/techniques/alttext/"),
+    ],
+    "MD-NO-YAML-FRONT-MATTER": [
+        (
+            "YAML Front Matter (Jekyll docs)",
+            "https://jekyllrb.com/docs/front-matter/",
+        ),
+        ("WCAG 2.4.2 Page Titled", "https://www.w3.org/WAI/WCAG22/Understanding/page-titled"),
+    ],
+    "MD-YAML-UNCLOSED-FENCE": [
+        (
+            "YAML Front Matter (Jekyll docs)",
+            "https://jekyllrb.com/docs/front-matter/",
+        ),
+        ("WCAG 2.4.2 Page Titled", "https://www.w3.org/WAI/WCAG22/Understanding/page-titled"),
+    ],
+    "MD-YAML-MISSING-TITLE": [
+        (
+            "WCAG 2.4.2 Page Titled",
+            "https://www.w3.org/WAI/WCAG22/Understanding/page-titled",
+        ),
+    ],
+    "MD-YAML-MISSING-LANG": [
+        (
+            "WCAG 3.1.1 Language of Page",
+            "https://www.w3.org/WAI/WCAG22/Understanding/language-of-page",
+        ),
+        (
+            "BCP 47 Language Tags",
+            "https://www.iana.org/assignments/language-subtag-registry/language-subtag-registry",
+        ),
+    ],
+    "MD-YAML-MISSING-AUTHOR": [
+        (
+            "YAML Front Matter (Jekyll docs)",
+            "https://jekyllrb.com/docs/front-matter/",
+        ),
+    ],
+    "MD-YAML-MISSING-DESCRIPTION": [
+        (
+            "YAML Front Matter (Jekyll docs)",
+            "https://jekyllrb.com/docs/front-matter/",
+        ),
+    ],
+    "MD-NO-HEADINGS": [
+        ("WebAIM: Headings", "https://webaim.org/techniques/semanticstructure/"),
+    ],
+    "MD-DUPLICATE-HEADING-TEXT": [
+        ("WebAIM: Headings", "https://webaim.org/techniques/semanticstructure/"),
+    ],
+    "MD-LONG-SECTION-WITHOUT-HEADING": [
+        ("WebAIM: Headings", "https://webaim.org/techniques/semanticstructure/"),
+    ],
+    "MD-EMPTY-HEADING": [
+        ("WebAIM: Headings", "https://webaim.org/techniques/semanticstructure/"),
+    ],
+    "MD-HEADING-TOO-LONG": [
+        ("WebAIM: Headings", "https://webaim.org/techniques/semanticstructure/"),
+    ],
+    "MD-HEADING-ENDS-PUNCTUATION": [
+        ("WebAIM: Headings", "https://webaim.org/techniques/semanticstructure/"),
+    ],
+    "MD-CODE-BLOCK-NO-LANGUAGE": [
+        (
+            "CommonMark: Fenced Code Blocks",
+            "https://spec.commonmark.org/0.31.2/#fenced-code-blocks",
+        ),
+    ],
+    "MD-INDENTED-CODE-BLOCK": [
+        (
+            "CommonMark: Fenced Code Blocks",
+            "https://spec.commonmark.org/0.31.2/#fenced-code-blocks",
+        ),
+    ],
+    "MD-RAW-HTML-TABLE": [
+        (
+            "WebAIM: Creating Accessible Tables",
+            "https://webaim.org/techniques/tables/data",
+        ),
+    ],
+    "MD-MOVING-CONTENT": [
+        (
+            "WCAG 2.2.2 Pause, Stop, Hide",
+            "https://www.w3.org/WAI/WCAG22/Understanding/pause-stop-hide",
+        ),
+    ],
+    "MD-RAW-BR-TAG": [
+        (
+            "CommonMark: Hard Line Breaks",
+            "https://spec.commonmark.org/0.31.2/#hard-line-breaks",
+        ),
+    ],
+    "MD-RAW-HTML-GENERIC-CONTAINER": [
+        (
+            "CommonMark: Raw HTML",
+            "https://spec.commonmark.org/0.31.2/#raw-html",
+        ),
+    ],
+    "MD-RAW-HTML-PRESENTATIONAL": [
+        (
+            "CommonMark: Raw HTML",
+            "https://spec.commonmark.org/0.31.2/#raw-html",
+        ),
+    ],
+    "MD-BLANK-TABLE-HEADER": [
+        (
+            "WebAIM: Creating Accessible Tables",
+            "https://webaim.org/techniques/tables/data",
+        ),
+    ],
+    "MD-TABLE-COLUMN-MISMATCH": [
+        (
+            "WebAIM: Creating Accessible Tables",
+            "https://webaim.org/techniques/tables/data",
+        ),
+    ],
+    "MD-FAKE-LIST-BULLET": [
+        (
+            "CommonMark: Lists",
+            "https://spec.commonmark.org/0.31.2/#lists",
+        ),
+    ],
+    "MD-FAKE-NUMBERED-LIST": [
+        (
+            "CommonMark: Lists",
+            "https://spec.commonmark.org/0.31.2/#lists",
+        ),
+    ],
+    "MD-FAKE-INLINE-BULLET": [
+        (
+            "CommonMark: Lists",
+            "https://spec.commonmark.org/0.31.2/#lists",
+        ),
+    ],
+    "MD-EXCESSIVE-BLANK-LINES": [
+        (
+            "CommonMark: Blank Lines",
+            "https://spec.commonmark.org/0.31.2/#blank-lines",
+        ),
+    ],
+    "MD-EXCESSIVE-TRAILING-SPACES": [
+        (
+            "CommonMark: Hard Line Breaks",
+            "https://spec.commonmark.org/0.31.2/#hard-line-breaks",
+        ),
+    ],
+    "MD-ENTIRE-LINE-BOLDED": [
+        ("WebAIM: Headings", "https://webaim.org/techniques/semanticstructure/"),
+    ],
+    "MD-ALLCAPS": [
+        (
+            "ACB Large Print Guidelines (PDF)",
+            "https://www.acb.org/large-print-guidelines",
+        ),
+    ],
     # --- PDF rules ---
     "PDF-TITLE": [
         (
@@ -728,3 +897,114 @@ def get_help_urls_map() -> dict[str, list[dict[str, str]]]:
         rule.rule_id: get_help_urls(rule.rule_id, rule.acb_reference)
         for rule in AUDIT_RULES.values()
     }
+
+
+# Format display ordering and labels for the suppression panel template.
+_FORMAT_ORDER = ["docx", "xlsx", "pptx", "md", "pdf", "epub"]
+_FORMAT_LABELS: dict[str, str] = {
+    "docx": "Word (.docx)",
+    "xlsx": "Excel (.xlsx)",
+    "pptx": "PowerPoint (.pptx)",
+    "md": "Markdown (.md)",
+    "pdf": "PDF",
+    "epub": "ePub",
+}
+
+
+def get_rules_by_format() -> dict[str, dict]:
+    """Return all audit rules grouped by document format.
+
+    Returns an ordered dict keyed by format string ("docx", etc.) where
+    each value is ``{"label": str, "rules": list[dict]}``.  Rules that
+    apply to multiple formats appear in every relevant group.  Empty
+    groups are included so the template can iterate a stable key order.
+    """
+    groups: dict[str, dict] = {
+        fmt: {"label": _FORMAT_LABELS[fmt], "rules": []}
+        for fmt in _FORMAT_ORDER
+    }
+    for rule in AUDIT_RULES.values():
+        rule_dict = _rule_to_dict(rule)
+        for fmt_val in rule_dict["formats"]:
+            if fmt_val in groups:
+                groups[fmt_val]["rules"].append(rule_dict)
+    return groups
+
+
+def build_rule_policy(form) -> "RulePolicy":
+    """Build a :class:`RulePolicy` from Flask form data.
+
+    This is the single entry point for both the audit and fix routes.
+    It consolidates all rule-selection and suppression logic that was
+    previously scattered across audit.py, fix.py, and the old
+    ``_build_rule_filter`` helper.
+
+    Backward-compatible: the legacy boolean fields
+    ``suppress_link_text``, ``suppress_missing_alt_text``, and
+    ``suppress_faux_heading`` are still recognised alongside the new
+    ``suppress_rule`` multi-value field.
+
+    Parameters
+    ----------
+    form:
+        A Flask ``ImmutableMultiDict`` (``request.form``) or any mapping
+        that supports ``.get()`` and ``.getlist()``.
+    """
+    from acb_large_print.rule_policy import RulePolicy
+
+    mode = form.get("mode", "full")
+    standards_profile = form.get("standards_profile", PROFILE_ACB_2025)
+
+    # ---- Category + profile intersection --------------------------------
+    categories = (
+        form.getlist("category") if hasattr(form, "getlist") else form.get("category", [])
+    )
+    if not categories:
+        categories = ["acb", "msac"]
+
+    category_rule_ids = get_rule_ids_by_category(*categories)
+    profile_rule_ids = get_rule_ids_by_profile(standards_profile)
+
+    # ---- Base rule set from mode ----------------------------------------
+    if mode == "quick":
+        base = get_rule_ids_by_severity("Critical", "High")
+        mode_label = "Quick Audit -- Critical and High only"
+    elif mode == "custom":
+        custom_ids = (
+            set(form.getlist("rule")) if hasattr(form, "getlist") else set(form.get("rule", []))
+        )
+        base = custom_ids or get_all_rule_ids()
+        mode_label = f"Custom Audit -- {len(base)} rules selected"
+    else:
+        base = get_all_rule_ids()
+        mode_label = "Full Audit -- all rules"
+
+    selected = frozenset(base & category_rule_ids & profile_rule_ids)
+
+    # ---- Suppressed rules -----------------------------------------------
+    suppressed: set[str] = set()
+
+    # New generic multi-value field
+    if hasattr(form, "getlist"):
+        suppressed.update(form.getlist("suppress_rule"))
+
+    # Backward-compat: legacy boolean checkboxes
+    if form.get("suppress_link_text") == "on":
+        suppressed.add("ACB-LINK-TEXT")
+    if form.get("suppress_missing_alt_text") == "on":
+        suppressed.add("ACB-MISSING-ALT-TEXT")
+    if form.get("suppress_faux_heading") == "on":
+        suppressed.add("ACB-FAUX-HEADING")
+
+    # Safety: only allow real rule IDs to prevent form injection
+    suppressed = {rid for rid in suppressed if rid in AUDIT_RULES}
+
+    return RulePolicy(
+        selected=selected,
+        suppressed=frozenset(suppressed),
+        mode_label=mode_label,
+    )
+
+
+# Type alias so callers can import RulePolicy via this module if desired.
+from acb_large_print.rule_policy import RulePolicy  # noqa: E402  (import at bottom OK)

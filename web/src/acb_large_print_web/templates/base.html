@@ -38,6 +38,7 @@
         <li role="none"><a href="{{ url_for('whisperer.whisperer_form') }}" role="tab" id="tab-whisperer" aria-controls="main"{% if request.blueprint == 'whisperer' %} aria-selected="true"{% else %} aria-selected="false"{% endif %}>{{ brand_whisperer_label }}</a></li>
         {% endif %}
         <li role="none"><a href="{{ url_for('guidelines.guidelines_page') }}" role="tab" id="tab-guidelines" aria-controls="main"{% if request.blueprint == 'guidelines' %} aria-selected="true"{% else %} aria-selected="false"{% endif %}>Guidelines</a></li>
+        <li role="none"><a href="{{ url_for('rules_ref.rules_ref_page') }}" role="tab" id="tab-rules" aria-controls="main"{% if request.blueprint == 'rules_ref' %} aria-selected="true"{% else %} aria-selected="false"{% endif %}>Rules</a></li>
         <li role="none"><a href="{{ url_for('settings.settings_page') }}" role="tab" id="tab-settings" aria-controls="main"{% if request.blueprint == 'settings' %} aria-selected="true"{% else %} aria-selected="false"{% endif %}>Settings</a></li>
       </ul>
     </nav>
@@ -79,7 +80,20 @@
     <p><a href="https://www.bits-acb.org">BITS</a> community project. Blind Information Technology Solutions, a special interest affiliate of the American Council of the Blind.</p>
     {% endif %}
     <p>{{ brand_footer_story_line }}</p>
-    <p>Supports Word (.docx), Excel (.xlsx), PowerPoint (.pptx), Markdown (.md), PDF (.pdf), and ePub (.epub) documents.</p>
+    {% set _ns = namespace(parts=[]) %}
+    {% if feature_word_enabled %}{% set _ns.parts = _ns.parts + ["Word (.docx)"] %}{% endif %}
+    {% if feature_excel_enabled %}{% set _ns.parts = _ns.parts + ["Excel (.xlsx)"] %}{% endif %}
+    {% if feature_powerpoint_enabled %}{% set _ns.parts = _ns.parts + ["PowerPoint (.pptx)"] %}{% endif %}
+    {% if feature_markdown_enabled %}{% set _ns.parts = _ns.parts + ["Markdown (.md)"] %}{% endif %}
+    {% if feature_pdf_enabled %}{% set _ns.parts = _ns.parts + ["PDF (.pdf)"] %}{% endif %}
+    {% if feature_epub_enabled %}{% set _ns.parts = _ns.parts + ["ePub (.epub)"] %}{% endif %}
+    {% if _ns.parts %}
+    <p>Supports
+      {%- if _ns.parts | length == 1 %} {{ _ns.parts[0] }}
+      {%- elif _ns.parts | length == 2 %} {{ _ns.parts[0] }} and {{ _ns.parts[1] }}
+      {%- else %} {{ _ns.parts[:-1] | join(", ") }}, and {{ _ns.parts[-1] }}
+      {%- endif %} documents.</p>
+    {% endif %}
     <p>Admin features are restricted to approved administrative accounts.</p>
     <p>Current release: {{ release_version }}</p>
   </footer>

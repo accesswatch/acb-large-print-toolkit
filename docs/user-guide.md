@@ -144,9 +144,9 @@ Go to **Audit** and upload the .epub. GLOW runs DAISY Ace (100+ axe-core checks)
 | Format | What is checked |
 |--------|----------------|
 | Word (.docx) | Fonts, sizes, spacing, emphasis, alignment, margins, heading structure, alt text, table headers, document properties, language, hyperlink text |
-| Excel (.xlsx) | Sheet names, table headers, merged cells, alt text, color-only data, hyperlink text, workbook title |
-| PowerPoint (.pptx) | Slide titles, reading order, alt text, font sizes, speaker notes, chart descriptions, duplicate titles |
-| Markdown (.md) | Heading hierarchy, italic and bold-abuse emphasis, link text, alt text, emoji, em-dashes, table structure |
+| Excel (.xlsx) | Sheet names, table headers, merged cells, alt text, color-only data, hyperlink text, workbook title, blank-row layout patterns, default table names |
+| PowerPoint (.pptx) | Slide titles, reading order, alt text, font sizes, speaker notes, chart descriptions, duplicate titles, timing and animation safety (auto-advance speed, repeating animations, rapid sequences, fast transitions) |
+| Markdown (.md) | YAML front matter (presence, closed fence, title, lang fields), heading hierarchy, empty/overlong/punctuated headings, italic and bold-abuse emphasis, bare URLs, ambiguous link text, alt text (presence + quality), emoji, em-dashes, table structure (headers, column counts), code block language identifiers, raw HTML tables and moving content, fake lists, ALL CAPS body text |
 | PDF (.pdf) | Title, language, tagging, font sizes, font families, scanned pages, bookmarks, form fields |
 | ePub (.epub) | Title, language, navigation, heading hierarchy, alt text, table headers, accessibility metadata, link text, MathML -- plus 100+ axe-core checks via DAISY Ace |
 
@@ -655,16 +655,15 @@ The **Settings** tab lets you configure default values once and apply them acros
 
 ### Privacy and persistence
 
-Settings are saved only when you enable cookie opt-in. They stay on the current browser and device only. Turning off cookie opt-in removes saved settings and returns GLOW to its built-in defaults.
+Settings are saved in your browser's local storage. Nothing is sent to the server. Your preferences stay on the current browser and device only. Clearing browser data or site storage removes saved settings and returns GLOW to its built-in defaults.
 
 ### First-time setup
 
 1. Open **Settings**.
-2. Enable cookie opt-in.
-3. Set your preferred audit mode and categories.
-4. Set your preferred fix mode and heading options.
-5. Save.
-6. Open Audit or Fix and verify the defaults are pre-selected.
+2. Set your preferred audit mode and categories.
+3. Set your preferred fix mode and heading options.
+4. Click **Save My Settings**.
+5. Open Audit or Fix and verify the defaults are pre-selected.
 
 ---
 
@@ -793,6 +792,7 @@ The List Indentation fields are always visible. They are disabled while **Flush 
 - Add alt text to every image, chart, and SmartArt graphic.
 - Use slide layouts with built-in placeholders rather than manually placed text boxes.
 - Add speaker notes for slides where the content is primarily visual.
+- Avoid auto-advance timings under 5 seconds and repeating or rapidly triggered animation sequences. These prevent users from reading slide content in their own time and can cause discomfort for users with vestibular disorders.
 
 ### Markdown (.md)
 
@@ -997,6 +997,7 @@ Yes. GLOW includes an admin-only sign-in and approval workflow for operational d
 - **ACB Large Print Guidelines** -- [acb.org/large-print-guidelines](https://acb.org/large-print-guidelines)
 - **APH Large Print Guidelines** -- [aph.org/resources/large-print-guidelines](https://www.aph.org/resources/large-print-guidelines/)
 - **Guidelines reference page** -- available in the GLOW web app at [glow.bits-acb.org/guidelines](https://glow.bits-acb.org/guidelines)
+- **Rules Reference page** -- browse every audit rule with severity, WCAG mapping, and fix guidance at [glow.bits-acb.org/rules](https://glow.bits-acb.org/rules). Save custom rule sets for Audit and Fix directly from this page.
 - **Submit feedback** -- use the Feedback page in the web app to report bugs, request features, or share your experience
 - **About page** -- mission, organizations, standards, and open source dependencies
 - **GitHub Issues** -- [report bugs or request features](https://github.com/accesswatch/acb-large-print-toolkit/issues)
