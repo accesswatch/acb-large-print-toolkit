@@ -145,9 +145,9 @@
 
     <div class="card card-guidelines">
       <h3><a href="{{ url_for('guidelines.guidelines_page') }}">Guidelines Reference</a></h3>
-      <p>Browse the full {{ brand_guidelines_summary }} in one place. Use this tab when you need rule rationale or standards references while reviewing findings.</p>
+      <p>Browse the full {{ brand_guidelines_summary }} in one place. Use this page when you need rule rationale or standards references while reviewing findings.</p>
       <ul class="card-formats">
-        <li class="format-tag format-misc">Reference</li>
+        <li class="format-tag format-misc"><a href="{{ url_for('guidelines.guidelines_page') }}">Reference</a></li>
       </ul>
     </div>
 
@@ -162,7 +162,7 @@
 </section>
 
 <section>
-  <h2 id="tabs-heading">What Each Tab Does</h2>
+  <h2 id="tabs-heading">What Each Tool and Page Does</h2>
   <ul>
     <li><strong>Quick Start:</strong> upload any file once and GLOW shows every available action for that file type. The best first stop if you are unsure which tool to use.</li>
     {% if feature_template_builder_enabled %}<li><strong>Template:</strong> creates Word templates with profile-aware defaults so new documents start compliant.</li>{% endif %}
@@ -175,8 +175,8 @@
     {% if ai_chat_enabled %}
     <li><strong>Document Chat:</strong> lets you ask plain-English questions about any uploaded document through a privacy-aware OpenRouter gateway. Available from the <a href="{{ url_for('process.process_form') }}">Quick Start</a> flow -- upload your file and choose "Chat" from the actions menu.</li>
     {% endif %}
-    <li><strong>Guidelines:</strong> explains the standards behind each rule and profile.</li>
-    <li><strong>Settings:</strong> stores your default choices so every workflow opens the way your team prefers.</li>
+    <li><strong>Guidelines page:</strong> explains the standards behind each rule and profile.</li>
+    <li><strong>Settings page:</strong> stores your default choices so every workflow opens the way your team prefers.</li>
   </ul>
 </section>
 
