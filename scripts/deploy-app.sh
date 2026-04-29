@@ -312,6 +312,10 @@ if [[ "$HEALTHY" -eq 1 ]]; then
     fi
     log_ts "--- Maintenance mode disabled successfully ---"
 
+    # Explicitly reload Caddy to ensure config changes take effect even if the container was only updated/restarted
+    log_ts "--- Reloading Caddy configuration ---"
+    docker compose -f "$COMPOSE_FILE" exec -T caddy caddy reload --config /etc/caddy/Caddyfile || true
+
     if [[ "$CLEANUP_ON_SUCCESS" == "1" ]]; then
         run_optional_cleanup "success"
     else
