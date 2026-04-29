@@ -6,6 +6,19 @@ Releases are tagged in the [GitHub repository](https://github.com/accesswatch/ac
 
 ---
 
+## [Unreleased] – release/2.7.0
+
+### Added
+
+- **Two-stage chained conversion for PowerPoint, Excel, PDF, and more.** The Convert page (`/convert/`) now accepts `.pptx`, `.xlsx`, `.xls`, `.pdf`, `.csv`, `.html`, `.htm`, `.json`, and `.xml` files as input for all Pandoc output directions (HTML, Word, EPUB, PDF). Files are first extracted to Markdown via MarkItDown, then Pandoc applies full ACB Large Print formatting. This is fully transparent -- users simply upload their file and choose the output format. Changes in `web/src/acb_large_print_web/routes/convert.py` and `templates/convert_form.html`.
+  - Defined `_CHAIN_VIA_MARKDOWN` frozenset for the chained extension set.
+  - Defined `_PANDOC_EFFECTIVE_EXTENSIONS` = `PANDOC_INPUT_EXTENSIONS | _CHAIN_VIA_MARKDOWN` used for validation and UI.
+  - All four Pandoc directions (`to-html`, `to-docx`, `to-epub`, `to-pdf`) now perform a MarkItDown stage 1 when the extension is in `_CHAIN_VIA_MARKDOWN`, then pass the intermediate `.md` to Pandoc.
+
+- **Convert page: Upload first (step reorder).** Step 1 is now "Upload your file" so the JavaScript can inspect the extension before the user picks an output format. The previous step order was: choose output → formatting → title → upload. The new order is: upload → choose output → formatting → title. Changes in `templates/convert_form.html`.
+
+- **Convert page: JavaScript extension-aware output filtering.** After a file is selected in Step 1, JavaScript reads the file extension and enables only the conversion directions that support that file type. Unavailable options are disabled in place with a visual indicator. A live-region hint message names the available formats and notes when two-stage chaining applies. The extension sets are serialized from Flask template context variables (`pandoc_effective_exts`, `markitdown_exts`, `pipeline_exts`, `chain_via_markdown_exts`) and injected as `Set` objects so no server round-trip is needed. Changes in `templates/convert_form.html`.
+
 ## [2.6.0] - 2026-04-28
 
 ### Added

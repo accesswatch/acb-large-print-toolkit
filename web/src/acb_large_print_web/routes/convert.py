@@ -1,12 +1,20 @@
 """Convert route -- convert documents via MarkItDown, Pandoc, WeasyPrint, or DAISY Pipeline.
 
-Six conversion directions:
+Seven conversion directions:
 1. To Markdown (MarkItDown): .docx, .xlsx, .pptx, .pdf, .html, .csv, etc.
-2. To ACB HTML (Pandoc): .md, .rst, .odt, .rtf, .docx, .epub
-3. To Word .docx (Pandoc): .md, .rst, .odt, .rtf, .epub
-4. To EPUB 3 (Pandoc): .md, .rst, .odt, .rtf, .docx
-5. To PDF (Pandoc + WeasyPrint): .md, .rst, .odt, .rtf, .docx, .epub
+2. To ACB HTML (Pandoc, or MarkItDown→Pandoc): .md, .rst, .odt, .rtf, .docx, .epub,
+   plus chained: .pptx, .xlsx, .xls, .pdf, .csv, .html, .htm, .json, .xml
+3. To Word .docx (Pandoc, or MarkItDown→Pandoc): .md, .rst, .odt, .rtf, .epub,
+   plus chained: .pptx, .xlsx, .xls, .pdf, .csv, .html, .htm, .json, .xml
+4. To EPUB 3 (Pandoc, or MarkItDown→Pandoc): .md, .rst, .odt, .rtf, .docx,
+   plus chained: .pptx, .xlsx, .xls, .pdf, .csv, .html, .htm, .json, .xml
+5. To PDF (Pandoc + WeasyPrint, or MarkItDown→Pandoc+WeasyPrint): .md, .rst, .odt,
+   .rtf, .docx, .epub, plus chained: .pptx, .xlsx, .xls, .pdf, .csv, .html, .htm
 6. To EPUB / DAISY (Pipeline): .docx, .html, .epub (when Pipeline is installed)
+
+Two-stage chaining: formats not natively supported by Pandoc are first extracted to
+Markdown via MarkItDown, then that Markdown is fed to Pandoc. This transparently
+extends Pandoc output to PowerPoint, Excel, PDF, and other MarkItDown-readable formats.
 
 Audio transcription has its own dedicated route at /whisperer (BITS Whisperer).
 """
@@ -49,9 +57,29 @@ convert_bp = Blueprint("convert", __name__)
 # Sentinel path used to signal "skip ACB CSS" to pandoc_converter
 _NO_ACB_CSS_SENTINEL = Path("__no_acb_css__")
 
+# Document-type formats in CONVERTIBLE_EXTENSIONS that Pandoc cannot read directly
+# but are worth chaining via Markdown (excludes .zip and image formats).
+# These get a two-stage conversion: MarkItDown → .md → Pandoc.
+_CHAIN_VIA_MARKDOWN: frozenset[str] = frozenset({
+    ".pptx",  # PowerPoint
+    ".xlsx",  # Excel
+    ".xls",   # Excel (legacy)
+    ".pdf",   # PDF (text-based)
+    ".csv",   # CSV data
+    ".html",  # HTML (re-encode with ACB styling via Pandoc)
+    ".htm",   # HTML (alternate extension)
+    ".json",  # JSON data
+    ".xml",   # XML data
+})
+
+# All formats accepted by Pandoc outputs after chaining is accounted for
+_PANDOC_EFFECTIVE_EXTENSIONS: frozenset[str] = (
+    PANDOC_INPUT_EXTENSIONS | _CHAIN_VIA_MARKDOWN
+)
+
 # Build the accept strings for the file inputs
 _MD_ACCEPT = ",".join(sorted(CONVERTIBLE_EXTENSIONS))
-_HTML_ACCEPT = ",".join(sorted(PANDOC_INPUT_EXTENSIONS))
+_HTML_ACCEPT = ",".join(sorted(_PANDOC_EFFECTIVE_EXTENSIONS))
 # Union of all for a single file input (no audio -- that's /whisperer)
 _ALL_ACCEPT = ",".join(
     sorted(CONVERTIBLE_EXTENSIONS | PANDOC_INPUT_EXTENSIONS | PIPELINE_INPUT_EXTENSIONS)
@@ -87,6 +115,12 @@ def _template_context(**extra):
         convert_to_epub_enabled=convert_to_epub_enabled,
         convert_to_pdf_enabled=convert_to_pdf_enabled,
         convert_to_pipeline_enabled=convert_to_pipeline_enabled,
+        # Extension sets for JS-driven UI filtering
+        chain_via_markdown_exts=sorted(_CHAIN_VIA_MARKDOWN),
+        pandoc_native_exts=sorted(PANDOC_INPUT_EXTENSIONS),
+        pandoc_effective_exts=sorted(_PANDOC_EFFECTIVE_EXTENSIONS),
+        markitdown_exts=sorted(CONVERTIBLE_EXTENSIONS),
+        pipeline_exts=sorted(PIPELINE_INPUT_EXTENSIONS),
         **extra,
     )
 
@@ -130,16 +164,26 @@ def convert_submit():
         temp_dir = get_temp_dir(token)
 
         if direction == "to-html":
-            # Pandoc: document -> ACB HTML
+            # Pandoc (or MarkItDown→Pandoc): document -> ACB HTML
             if not pandoc_available():
                 raise UploadError(
                     "Pandoc is not installed on the server. "
                     "HTML conversion is unavailable."
                 )
-            if ext not in PANDOC_INPUT_EXTENSIONS:
+            if ext not in _PANDOC_EFFECTIVE_EXTENSIONS:
                 raise UploadError(
                     f"File type '{ext}' cannot be converted to HTML. "
-                    f"Supported: {', '.join(sorted(PANDOC_INPUT_EXTENSIONS))}."
+                    f"Supported: {', '.join(sorted(_PANDOC_EFFECTIVE_EXTENSIONS))}."
+                )
+            # Two-stage chain: MarkItDown -> Markdown -> Pandoc HTML
+            pandoc_input = saved_path
+            if ext in _CHAIN_VIA_MARKDOWN:
+                md_intermediate = temp_dir / f"{saved_path.stem}-extracted.md"
+                current_app.logger.info(
+                    "CONVERT two_stage ext=%s stage1=markitdown->md", ext
+                )
+                pandoc_input, _ = convert_to_markdown(
+                    saved_path, output_path=md_intermediate
                 )
             html_output = temp_dir / f"{saved_path.stem}.html"
 
@@ -157,7 +201,7 @@ def convert_submit():
                 css_path = _NO_ACB_CSS_SENTINEL
 
             output_path, text = convert_to_html(
-                saved_path,
+                pandoc_input,
                 output_path=html_output,
                 title=title,
                 css_path=css_path,
@@ -190,27 +234,37 @@ def convert_submit():
                 download_name=f"{saved_path.stem}.html",
             )
         elif direction == "to-docx":
-            # Pandoc: document -> Word (.docx)
+            # Pandoc (or MarkItDown->Pandoc): document -> Word (.docx)
             if not pandoc_available():
                 raise UploadError(
                     "Pandoc is not installed on the server. "
                     "Word conversion is unavailable."
                 )
-            if ext not in PANDOC_INPUT_EXTENSIONS:
+            if ext not in _PANDOC_EFFECTIVE_EXTENSIONS:
                 raise UploadError(
                     f"File type '{ext}' cannot be converted to Word. "
-                    f"Supported: {', '.join(sorted(PANDOC_INPUT_EXTENSIONS))}."
+                    f"Supported: {', '.join(sorted(_PANDOC_EFFECTIVE_EXTENSIONS))}."
                 )
             if ext == ".docx":
                 raise UploadError(
                     "The input file is already a Word document (.docx). "
                     "Choose a different input format."
                 )
+            # Two-stage chain: MarkItDown -> Markdown -> Pandoc .docx
+            pandoc_input = saved_path
+            if ext in _CHAIN_VIA_MARKDOWN:
+                md_intermediate = temp_dir / f"{saved_path.stem}-extracted.md"
+                current_app.logger.info(
+                    "CONVERT two_stage ext=%s stage1=markitdown->md", ext
+                )
+                pandoc_input, _ = convert_to_markdown(
+                    saved_path, output_path=md_intermediate
+                )
             docx_output = temp_dir / f"{saved_path.stem}.docx"
             user_title = request.form.get("title", "").strip()
             title = user_title or saved_path.stem.replace("-", " ").replace("_", " ")
             output_path, _ = convert_to_docx(
-                saved_path,
+                pandoc_input,
                 output_path=docx_output,
                 title=title,
             )
@@ -221,21 +275,31 @@ def convert_submit():
                 download_name=f"{saved_path.stem}.docx",
             )
         elif direction == "to-epub":
-            # Pandoc: document -> EPUB 3
+            # Pandoc (or MarkItDown->Pandoc): document -> EPUB 3
             if not pandoc_available():
                 raise UploadError(
                     "Pandoc is not installed on the server. "
                     "EPUB conversion is unavailable."
                 )
-            if ext not in PANDOC_INPUT_EXTENSIONS:
+            if ext not in _PANDOC_EFFECTIVE_EXTENSIONS:
                 raise UploadError(
                     f"File type '{ext}' cannot be converted to EPUB. "
-                    f"Supported: {', '.join(sorted(PANDOC_INPUT_EXTENSIONS))}."
+                    f"Supported: {', '.join(sorted(_PANDOC_EFFECTIVE_EXTENSIONS))}."
                 )
             if ext == ".epub":
                 raise UploadError(
                     "The input file is already an EPUB. "
                     "Choose a different input format."
+                )
+            # Two-stage chain: MarkItDown -> Markdown -> Pandoc EPUB
+            pandoc_input = saved_path
+            if ext in _CHAIN_VIA_MARKDOWN:
+                md_intermediate = temp_dir / f"{saved_path.stem}-extracted.md"
+                current_app.logger.info(
+                    "CONVERT two_stage ext=%s stage1=markitdown->md", ext
+                )
+                pandoc_input, _ = convert_to_markdown(
+                    saved_path, output_path=md_intermediate
                 )
             epub_output = temp_dir / f"{saved_path.stem}.epub"
             user_title = request.form.get("title", "").strip()
@@ -245,7 +309,7 @@ def convert_submit():
             if not acb_format:
                 css_path = _NO_ACB_CSS_SENTINEL
             output_path, _ = convert_to_epub(
-                saved_path,
+                pandoc_input,
                 output_path=epub_output,
                 title=title,
                 css_path=css_path,
@@ -257,7 +321,7 @@ def convert_submit():
                 download_name=f"{saved_path.stem}.epub",
             )
         elif direction == "to-pdf":
-            # Pandoc + WeasyPrint: document -> PDF
+            # Pandoc + WeasyPrint (or MarkItDown->Pandoc+WeasyPrint): document -> PDF
             if not pandoc_available():
                 raise UploadError(
                     "Pandoc is not installed on the server. "
@@ -268,10 +332,20 @@ def convert_submit():
                     "WeasyPrint is not installed on the server. "
                     "PDF conversion is unavailable."
                 )
-            if ext not in PANDOC_INPUT_EXTENSIONS:
+            if ext not in _PANDOC_EFFECTIVE_EXTENSIONS:
                 raise UploadError(
                     f"File type '{ext}' cannot be converted to PDF. "
-                    f"Supported: {', '.join(sorted(PANDOC_INPUT_EXTENSIONS))}."
+                    f"Supported: {', '.join(sorted(_PANDOC_EFFECTIVE_EXTENSIONS))}."
+                )
+            # Two-stage chain: MarkItDown -> Markdown -> Pandoc PDF
+            pandoc_input = saved_path
+            if ext in _CHAIN_VIA_MARKDOWN:
+                md_intermediate = temp_dir / f"{saved_path.stem}-extracted.md"
+                current_app.logger.info(
+                    "CONVERT two_stage ext=%s stage1=markitdown->md", ext
+                )
+                pandoc_input, _ = convert_to_markdown(
+                    saved_path, output_path=md_intermediate
                 )
             pdf_output = temp_dir / f"{saved_path.stem}.pdf"
             user_title = request.form.get("title", "").strip()
@@ -282,7 +356,7 @@ def convert_submit():
             if not acb_format:
                 css_path = _NO_ACB_CSS_SENTINEL
             output_path, _ = convert_to_pdf(
-                saved_path,
+                pandoc_input,
                 output_path=pdf_output,
                 title=title,
                 css_path=css_path,

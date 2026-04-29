@@ -5,7 +5,7 @@
 
 {% block content %}
 {% set tip_icon = "☞" %}
-{% set tip_text = "Change your document from one format to another. Choose what you want to create, pick your options, upload your file, and we handle the rest." %}
+{% set tip_text = "Upload your file first, then choose your output format. GLOW will automatically show which conversion options work with the file you uploaded." %}
 {% set tip_link_url = url_for('guide.guide_page') + '#how-convert' %}
 {% set tip_link_text = "Read the convert guide" %}
 {% include '_workflow_tip.html' %}
@@ -31,11 +31,27 @@
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
   <!-- ============================================================ -->
-  <!-- STEP 1: Choose output format                                 -->
+  <!-- STEP 1: Upload                                               -->
   <!-- ============================================================ -->
-  <h2 id="convert-step-1">Step 1: What do you want to create?</h2>
+  <h2 id="convert-step-1">Step 1: Upload your file</h2>
   <fieldset>
-    <legend>Step 1: What do you want to create?</legend>
+    <legend>Step 1: Upload your file</legend>
+    <div class="form-group">
+      <label for="document">Choose a file from your computer</label>
+      <input type="file" id="document" name="document" accept="{{ all_accept }}"
+             aria-describedby="file-help"
+             {% if error %}aria-invalid="true"{% endif %}>
+      <p id="file-help" class="help-text">Maximum file size: 500 MB. After you choose a file, the output format options below will automatically reflect what is available for that file type.</p>
+    </div>
+    <p id="convert-ext-hint" class="help-text" aria-live="polite" aria-atomic="true"></p>
+  </fieldset>
+
+  <!-- ============================================================ -->
+  <!-- STEP 2: Choose output format                                 -->
+  <!-- ============================================================ -->
+  <h2 id="convert-step-2">Step 2: What do you want to create?</h2>
+  <fieldset>
+    <legend>Step 2: What do you want to create?</legend>
 
     <div class="radio-group">
       {% set ns = namespace(default_set=false) %}
@@ -54,7 +70,7 @@
         <input type="radio" name="direction" value="to-html"{% if not ns.default_set and pandoc_installed %} checked{% set ns.default_set = true %}{% endif %}{% if not pandoc_installed %} disabled{% endif %}>
         <span>
           <strong>Accessible web page (HTML)</strong><br>
-          Create a complete web page with ACB Large Print formatting and WCAG 2.2 AA accessibility built in. Ready to upload to a website or email as an attachment.
+          Create a complete web page with ACB Large Print formatting and WCAG 2.2 AA accessibility built in. Ready to upload to a website or email as an attachment. Accepts Markdown, Word, PowerPoint, Excel, PDF, and more.
           {% if not pandoc_installed %}<br><em>This option is temporarily unavailable on this server.</em>{% endif %}
         </span>
       </label>
@@ -65,7 +81,7 @@
         <input type="radio" name="direction" value="to-docx"{% if not ns.default_set and pandoc_installed %} checked{% set ns.default_set = true %}{% endif %}{% if not pandoc_installed %} disabled{% endif %}>
         <span>
           <strong>Word document (.docx)</strong><br>
-          Create a Word document from Markdown, reStructuredText, OpenDocument, Rich Text, or ePub files. Good for delivering editable documents or collaborating with people who use Microsoft Word.
+          Create a Word document from Markdown, reStructuredText, OpenDocument, Rich Text, ePub, PowerPoint, Excel, PDF, and more. Good for delivering editable documents or collaborating with people who use Microsoft Word.
           {% if not pandoc_installed %}<br><em>This option is temporarily unavailable on this server.</em>{% endif %}
         </span>
       </label>
@@ -208,9 +224,10 @@
     </ul>
 
     <h3>Can I chain them together?</h3>
-    <p>Yes, and this is often the best approach for complex workflows:</p>
+    <p>For many formats (PowerPoint, Excel, PDF) GLOW already does this automatically -- it extracts content to Markdown first, then applies ACB formatting with Pandoc. You do not need to do the steps yourself.</p>
+    <p>If you want more control (for example, to clean up headings or fix links before the final conversion), you can still do it manually:</p>
     <ol>
-      <li><strong>Start with Plain text</strong> to extract content from a PDF or PowerPoint into Markdown.</li>
+      <li><strong>Start with Plain text</strong> to extract content from any source file into Markdown.</li>
       <li><strong>Edit the Markdown</strong> in any text editor to clean up headings, fix links, and improve structure.</li>
       <li><strong>Then convert the Markdown</strong> to an accessible web page, Word document, EPUB, or PDF using one of the other options.</li>
     </ol>
@@ -222,11 +239,11 @@
   </details>
 
   <!-- ============================================================ -->
-  <!-- STEP 2: ACB formatting options (shown for HTML output)       -->
+  <!-- STEP 3: ACB formatting options                               -->
   <!-- ============================================================ -->
-  <h2 id="convert-step-2">Step 2: Formatting options</h2>
+  <h2 id="convert-step-3">Step 3: Formatting options</h2>
   <fieldset>
-    <legend>Step 2: Formatting options</legend>
+    <legend>Step 3: Formatting options</legend>
 
     <p>These options control how your output is formatted. The defaults follow the ACB Large Print Guidelines. Change them only if you have a specific reason.</p>
 
@@ -282,31 +299,16 @@
   </details>
 
   <!-- ============================================================ -->
-  <!-- STEP 3: Optional title                                       -->
+  <!-- STEP 4: Optional title                                       -->
   <!-- ============================================================ -->
-  <h2 id="convert-step-3">Step 3: Document title (optional)</h2>
+  <h2 id="convert-step-4">Step 4: Document title (optional)</h2>
   <fieldset>
-    <legend>Step 3: Document title (optional)</legend>
+    <legend>Step 4: Document title (optional)</legend>
     <div class="form-group">
       <label for="title">Page title</label>
       <input type="text" id="title" name="title" value=""
              aria-describedby="title-help">
       <p id="title-help" class="help-text">Sets the document title used by browsers, screen readers, and PDF metadata. Leave blank to use the filename as the title. Applies to HTML, Word, EPUB, and PDF output.</p>
-    </div>
-  </fieldset>
-
-  <!-- ============================================================ -->
-  <!-- STEP 4: Upload                                               -->
-  <!-- ============================================================ -->
-  <h2 id="convert-step-4">Step 4: Upload your file</h2>
-  <fieldset>
-    <legend>Step 4: Upload your file</legend>
-    <div class="form-group">
-      <label for="document">Choose a file from your computer</label>
-      <input type="file" id="document" name="document" accept="{{ all_accept }}"
-             aria-describedby="file-help"
-             {% if error %}aria-invalid="true"{% endif %}>
-      <p id="file-help" class="help-text">Maximum file size: 500 MB. The accepted file types depend on which output format you chose in Step 1.</p>
     </div>
   </fieldset>
 
@@ -327,7 +329,7 @@
     </ul>
 
     <h3>For accessible web page (HTML) output</h3>
-    <p>Best results come from text-oriented document formats:</p>
+    <p>Directly supported formats (converted by Pandoc):</p>
     <ul>
       <li><strong>Markdown (.md)</strong> -- best input format; heading structure, lists, links, and tables convert cleanly</li>
       <li><strong>Word (.docx)</strong> -- headings, lists, tables, and basic formatting are preserved</li>
@@ -336,29 +338,40 @@
       <li><strong>OpenDocument (.odt)</strong> -- LibreOffice and Google Docs export format</li>
       <li><strong>Rich Text (.rtf)</strong> -- legacy text format with basic formatting</li>
     </ul>
+    <p>Two-stage formats (text is first extracted to Markdown, then converted to HTML with full ACB styling):</p>
+    <ul>
+      <li><strong>PowerPoint (.pptx)</strong> -- slide titles, text, and speaker notes become headings and paragraphs</li>
+      <li><strong>Excel (.xlsx, .xls)</strong> -- each sheet becomes a section with data in table format</li>
+      <li><strong>PDF (.pdf)</strong> -- text extracted from tagged and text-based PDFs; quality depends on PDF structure</li>
+      <li><strong>HTML (.html, .htm)</strong> -- re-encoded with full ACB Large Print styling via Pandoc</li>
+      <li><strong>CSV / JSON / XML</strong> -- structured data converted to readable text, then formatted</li>
+    </ul>
+    <p><em>Note: two-stage conversions work best with well-structured source files. Complex layouts, images, and heavily formatted slides will produce plain text output.</em></p>
 
     <h3>For Word document (.docx) output</h3>
-    <p>All text-oriented formats except Word itself (since the file is already a .docx):</p>
+    <p>All text-oriented formats except Word itself (since the file is already a .docx). Same two-stage support as HTML:</p>
     <ul>
       <li><strong>Markdown (.md)</strong> -- best input; heading styles, lists, and tables map directly to Word styles</li>
       <li><strong>ePub (.epub)</strong> -- e-book content extracted into a Word document</li>
       <li><strong>reStructuredText (.rst)</strong> -- technical documentation format</li>
       <li><strong>OpenDocument (.odt)</strong> -- LibreOffice and Google Docs export format</li>
       <li><strong>Rich Text (.rtf)</strong> -- legacy text format with basic formatting</li>
+      <li><strong>PowerPoint (.pptx), Excel (.xlsx/.xls), PDF (.pdf)</strong> -- two-stage via Markdown extraction</li>
     </ul>
 
     <h3>For EPUB 3 e-book (via Pandoc) output</h3>
-    <p>All text-oriented formats except EPUB itself:</p>
+    <p>All text-oriented formats except EPUB itself. Same two-stage support as HTML:</p>
     <ul>
       <li><strong>Markdown (.md)</strong> -- best input; heading structure becomes EPUB chapters and navigation</li>
       <li><strong>Word (.docx)</strong> -- headings, lists, tables, and basic formatting are preserved</li>
       <li><strong>reStructuredText (.rst)</strong> -- technical documentation format</li>
       <li><strong>OpenDocument (.odt)</strong> -- LibreOffice and Google Docs export format</li>
       <li><strong>Rich Text (.rtf)</strong> -- legacy text format with basic formatting</li>
+      <li><strong>PowerPoint (.pptx), Excel (.xlsx/.xls), PDF (.pdf)</strong> -- two-stage via Markdown extraction</li>
     </ul>
 
     <h3>For accessible PDF output</h3>
-    <p>All text-oriented formats supported by Pandoc:</p>
+    <p>All text-oriented formats supported by Pandoc, plus two-stage formats:</p>
     <ul>
       <li><strong>Markdown (.md)</strong> -- best input; produces the cleanest PDF with proper heading hierarchy</li>
       <li><strong>Word (.docx)</strong> -- headings, lists, tables, and basic formatting are preserved</li>
@@ -366,6 +379,7 @@
       <li><strong>reStructuredText (.rst)</strong> -- technical documentation format</li>
       <li><strong>OpenDocument (.odt)</strong> -- LibreOffice and Google Docs export format</li>
       <li><strong>Rich Text (.rtf)</strong> -- legacy text format with basic formatting</li>
+      <li><strong>PowerPoint (.pptx), Excel (.xlsx/.xls)</strong> -- two-stage via Markdown extraction</li>
     </ul>
 
     {% if pipeline_installed and pipeline_conversions %}
@@ -388,14 +402,120 @@
 <script>
 (function () {
   'use strict';
+
+  // Extension sets injected from Flask template context
+  var EXT_SETS = {
+    'to-markdown': new Set({{ markitdown_exts | tojson }}),
+    'to-html':     new Set({{ pandoc_effective_exts | tojson }}),
+    'to-docx':     new Set({{ pandoc_effective_exts | tojson | replace('".docx"', '"__excluded__"') }}),
+    'to-epub':     new Set({{ pandoc_effective_exts | tojson | replace('".epub"', '"__excluded__"') }}),
+    'to-pdf':      new Set({{ pandoc_effective_exts | tojson }}),
+    'to-pipeline': new Set({{ pipeline_exts | tojson }}),
+  };
+
+  // Pipeline conversions: map input_ext -> list of keys
+  var PIPELINE_BY_EXT = {};
+  {% if convert_to_pipeline_enabled and pipeline_installed and pipeline_conversions %}
+  {% for key, conv in pipeline_conversions.items() %}
+  (function(k, e) {
+    if (!PIPELINE_BY_EXT[e]) PIPELINE_BY_EXT[e] = [];
+    PIPELINE_BY_EXT[e].push(k);
+  })({{ key | tojson }}, {{ conv.input_ext | tojson }});
+  {% endfor %}
+  {% endif %}
+
+  // Formats that go through a two-stage chain (shown with a note)
+  var CHAIN_EXTS = new Set({{ chain_via_markdown_exts | tojson }});
+
+  var fileInput = document.getElementById('document');
+  var extHint = document.getElementById('convert-ext-hint');
+
+  function getExt(filename) {
+    var m = filename.match(/(\.[^.]+)$/);
+    return m ? m[1].toLowerCase() : '';
+  }
+
+  function setRadioDisabled(radio, disabled) {
+    radio.disabled = disabled;
+    // Walk up to the label and toggle a visual class
+    var lbl = radio.closest('label');
+    if (lbl) lbl.classList.toggle('option-unavailable', disabled);
+  }
+
+  function updateOptions(ext) {
+    var radios = document.querySelectorAll('input[name="direction"]');
+    var firstEnabled = null;
+    var currentChecked = document.querySelector('input[name="direction"]:checked');
+
+    radios.forEach(function (radio) {
+      if (radio.hasAttribute('data-server-disabled')) return; // server flagged it off
+      var supported = !ext || EXT_SETS[radio.value] && EXT_SETS[radio.value].has(ext);
+      setRadioDisabled(radio, !supported);
+      if (supported && !firstEnabled) firstEnabled = radio;
+    });
+
+    // If the currently-checked option is now disabled, select the first enabled one
+    if (currentChecked && currentChecked.disabled && firstEnabled) {
+      firstEnabled.checked = true;
+    }
+
+    // Update pipeline sub-options if pipeline section exists
+    var pipelineRadios = document.querySelectorAll('input[name="pipeline_conversion"]');
+    if (pipelineRadios.length && ext) {
+      var allowed = PIPELINE_BY_EXT[ext] || [];
+      pipelineRadios.forEach(function (r) {
+        var ok = !allowed.length || allowed.indexOf(r.value) !== -1;
+        setRadioDisabled(r, !ok);
+      });
+    }
+
+    // Update the hint message
+    if (!ext) {
+      extHint.textContent = '';
+      return;
+    }
+    var availableLabels = [];
+    radios.forEach(function (r) {
+      if (!r.disabled) {
+        var span = r.closest('label') && r.closest('label').querySelector('strong');
+        if (span) availableLabels.push(span.textContent.trim());
+      }
+    });
+    var chain = CHAIN_EXTS.has(ext);
+    var msg = ext + ' files: ' + (availableLabels.length
+      ? availableLabels.join(', ') + ' available.'
+      : 'No conversion options are available for this file type.');
+    if (chain) msg += ' (HTML, Word, EPUB, and PDF use a two-stage process: text is extracted first, then formatted with ACB styles.)';
+    extHint.textContent = msg;
+  }
+
+  if (fileInput) {
+    // Mark server-disabled radios so we never re-enable them
+    document.querySelectorAll('input[name="direction"][disabled]').forEach(function (r) {
+      r.setAttribute('data-server-disabled', '1');
+    });
+
+    fileInput.addEventListener('change', function () {
+      var ext = this.files.length ? getExt(this.files[0].name) : '';
+      updateOptions(ext);
+    });
+
+    // If a file is already selected on page load (e.g. browser back), run immediately
+    if (fileInput.files && fileInput.files.length) {
+      updateOptions(getExt(fileInput.files[0].name));
+    }
+  }
+
+  // Submit feedback
   var form = document.querySelector('form[method="post"]');
-  if (!form) return;
-  form.addEventListener('submit', function () {
-    var statusEl = document.getElementById('convert-processing-status');
-    var btn = document.getElementById('convert-submit-btn');
-    if (statusEl) statusEl.textContent = 'Converting your document\u2026 This may take up to a minute for large files.';
-    if (btn) { btn.disabled = true; btn.textContent = 'Converting\u2026'; }
-  });
+  if (form) {
+    form.addEventListener('submit', function () {
+      var statusEl = document.getElementById('convert-processing-status');
+      var btn = document.getElementById('convert-submit-btn');
+      if (statusEl) statusEl.textContent = 'Converting your document\u2026 This may take up to a minute for large files.';
+      if (btn) { btn.disabled = true; btn.textContent = 'Converting\u2026'; }
+    });
+  }
 }());
 </script>
 
@@ -417,7 +537,7 @@
     <li><strong>Start with a well-structured source.</strong> Documents with proper headings, lists, and styles convert more cleanly than documents that use only manual formatting (bold text, extra blank lines, and tab characters). This matters most for HTML and EPUB output, where document structure becomes semantic HTML elements.</li>
     <li><strong>Word documents work best for HTML conversion</strong> when they use Word's built-in heading styles (Heading 1, Heading 2, etc.) rather than manually formatted bold text. Pandoc reads these styles and produces correct heading hierarchy.</li>
     <li><strong>PDFs vary in quality.</strong> Tagged PDFs (created from Word or InDesign) convert well to plain text. Scanned PDFs or image-only PDFs may produce little or no text. For best results, convert PDFs to plain text first, clean up the Markdown, then convert to HTML or EPUB.</li>
-    <li><strong>Excel and PowerPoint are plain-text-only.</strong> MarkItDown can extract their text content, but they cannot be converted directly to HTML, Word, EPUB, or PDF. Extract to Markdown first, then convert from there.</li>
+      <li><strong>Excel and PowerPoint</strong> now convert directly to HTML, Word, EPUB, and PDF using a two-stage process: text is extracted to Markdown first, then Pandoc applies full ACB Large Print formatting. You do not need to do this manually -- just upload your file and choose your output format.</li>
     <li><strong>Markdown is the best input for all Pandoc outputs.</strong> Pandoc was built for Markdown conversion and produces the cleanest output from <code>.md</code> files -- whether you are creating HTML, Word, EPUB, or PDF. If your source is a PDF or PowerPoint, the two-step approach (extract to Markdown first, then convert) almost always gives better results.</li>
     {% if feature_audit_enabled %}<li><strong>Use Audit first.</strong> If you are converting a Word document to an accessible web page, run it through <a href="{{ url_for('audit.audit_form') }}">Audit</a> first to catch any issues in the source document before conversion.</li>{% endif %}
     {% if feature_export_html_enabled %}<li><strong>For WordPress or Drupal,</strong> use <a href="{{ url_for('export.export_form') }}">Export to HTML</a> instead -- it offers a CMS Fragment mode that creates a snippet you can paste directly into your content editor without conflicting with your site's theme.</li>{% endif %}
