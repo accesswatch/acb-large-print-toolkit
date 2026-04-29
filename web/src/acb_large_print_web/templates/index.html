@@ -162,16 +162,18 @@
 </section>
 
 <section>
-  <h2 id="tabs-heading">What Each Tool and Page Does</h2>
+  <h2 id="tabs-heading">Main Navigation Tab Order and Purpose</h2>
   <ul>
     <li><strong>Quick Start:</strong> upload any file once and GLOW shows every available action for that file type. The best first stop if you are unsure which tool to use.</li>
     {% if feature_template_builder_enabled %}<li><strong>Template:</strong> creates Word templates with profile-aware defaults so new documents start compliant.</li>{% endif %}
     {% if feature_audit_enabled %}<li><strong>Audit:</strong> checks documents and reports findings by severity.</li>{% endif %}
     {% if feature_checker_enabled %}<li><strong>Fix:</strong> applies available auto-fixes and shows what still needs manual work.</li>{% endif %}
     {% if feature_converter_enabled %}<li><strong>Convert:</strong> transforms documents across Markdown, HTML, Word, EPUB, PDF, and DAISY workflows. Includes a CMS Fragment option for Word documents. PowerPoint, Excel, and PDF files convert directly to accessible HTML, Word, EPUB, and PDF using smart two-stage extraction.</li>{% endif %}
-    {% if ai_whisperer_enabled %}
-    <li><strong>{{ brand_whisperer_label }}:</strong> transcribes audio recordings (.mp3, .wav, .m4a, and more) to accessible Markdown or Word documents using the OpenAI Whisper API with explicit retention controls.</li>
-    {% endif %}
+    {% if ai_whisperer_enabled %}<li><strong>{{ brand_whisperer_label }}:</strong> transcribes audio recordings (.mp3, .wav, .m4a, and more) to accessible Markdown or Word documents using the OpenAI Whisper API with explicit retention controls.</li>{% endif %}
+  </ul>
+
+  <h3>Additional Tools and Pages</h3>
+  <ul>
     {% if ai_chat_enabled %}
     <li><strong>Document Chat:</strong> lets you ask plain-English questions about any uploaded document through a privacy-aware OpenRouter gateway. Available from the <a href="{{ url_for('process.process_form') }}">Quick Start</a> flow -- upload your file and choose "Chat" from the actions menu.</li>
     {% endif %}
