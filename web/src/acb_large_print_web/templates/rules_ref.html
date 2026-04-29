@@ -330,19 +330,20 @@
 }
 .rule-group-header {
   padding: 1rem;
-  background: var(--surface, #eee);
+  background: #333 !important;
+  color: #fff !important;
   cursor: pointer;
   list-style: none;
   display: flex;
   align-items: center;
-  border-bottom: 1px solid var(--color-border, #e0e0e0);
+  border-bottom: 2px solid #555;
 }
 .rule-group-header::-webkit-details-marker { display: none; }
 .rule-group-header::before {
   content: "▶";
   font-size: 1rem;
   margin-right: 0.75rem;
-  color: var(--color-muted, #555);
+  color: #fff !important;
   transition: transform 0.2s;
 }
 details.rule-group[open] > .rule-group-header::before {
@@ -350,8 +351,9 @@ details.rule-group[open] > .rule-group-header::before {
 }
 .rule-group-title {
   margin: 0;
-  font-size: 1.25rem;
+  font-size: 1.5rem !important;
   font-weight: bold;
+  color: #fff !important;
 }
 .rule-group-content {
   padding: 1rem;
