@@ -998,6 +998,94 @@ footer p {
   word-wrap: break-word;
 }
 
+/* --- Drag-and-drop zone --- */
+.drop-zone {
+  border: 2px dashed #767676;
+  border-radius: 0.25rem;
+  padding: 0.875rem 1.25rem;
+  margin-top: 0.5rem;
+  max-width: 40rem;
+  background: #f8f8f8;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.drop-zone--active {
+  border-color: #0055cc;
+  border-style: solid;
+  background: #e8f0fe;
+}
+
+.drop-zone-hint {
+  margin: 0;
+  color: #595959;
+  font-size: 1rem;
+  text-align: center;
+}
+
+.drop-zone--active .drop-zone-hint {
+  color: #0055cc;
+  font-weight: 700;
+}
+
+/* --- Score headline: large grade letter beside score number --- */
+.score-headline {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  margin: 1rem 0 1.5rem;
+}
+
+.score-grade-letter {
+  font-size: 6rem;
+  font-weight: 700;
+  line-height: 1;
+  min-width: 1.5ch;
+  text-align: center;
+}
+
+.score-headline-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.score-headline-detail p {
+  margin: 0;
+}
+
+/* --- Next-step action callout card --- */
+.next-step-callout {
+  border: 2px solid #0055cc;
+  border-left: 6px solid #0055cc;
+  background: #f0f5ff;
+  padding: 1.25rem 1.5rem;
+  border-radius: 0.25rem;
+  margin-bottom: 1.5rem;
+}
+
+.next-step-callout h3 {
+  margin-top: 0;
+  color: #0044aa;
+}
+
+.next-step-callout.next-step-success {
+  border-color: #2e6b2e;
+  background: #f0fff0;
+}
+
+.next-step-callout.next-step-success h3 {
+  color: #2e6b2e;
+}
+
+.next-step-actions {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-top: 1rem;
+}
+
 .tool-list {
   list-style-type: disc;
   margin-left: 2rem;

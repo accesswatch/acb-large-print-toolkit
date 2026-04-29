@@ -25,6 +25,7 @@
   or convert_to_epub_enabled
   or convert_to_pdf_enabled
   or (convert_to_pipeline_enabled and pipeline_installed and pipeline_conversions)
+  or (export_html_enabled and pandoc_installed)
 ) %}
 
 <form method="post" enctype="multipart/form-data" novalidate>
@@ -105,6 +106,17 @@
           <strong>Accessible PDF</strong><br>
           Create a PDF with ACB BOP print formatting -- Arial font, 18-point body text, 22-point headings, 1.15 line spacing, 1-inch margins, and flush-left alignment. Ready for printing or sharing as a fixed-layout document.
           {% if not pandoc_installed or not weasyprint_installed %}<br><em>This option is temporarily unavailable on this server.</em>{% endif %}
+        </span>
+      </label>
+      {% endif %}
+
+      {% if export_html_enabled and pandoc_installed %}
+      <label>
+        <input type="radio" name="direction" value="to-html-cms" data-docx-only="1"{% if not pandoc_installed %} disabled{% endif %}>
+        <span>
+          <strong>CMS Fragment (for WordPress&nbsp;/&nbsp;Drupal)</strong><br>
+          Convert a Word document to an HTML snippet with ACB Large Print styling scoped to a <code>.acb-lp</code> class. Paste directly into your CMS editor without conflicting with your site theme. Accepts Word (.docx) only.
+          {% if not pandoc_installed %}<br><em>This option is temporarily unavailable on this server.</em>{% endif %}
         </span>
       </label>
       {% endif %}
@@ -220,7 +232,7 @@
       <li><strong>Reading on an e-reader or phone?</strong> Use "EPUB 3 e-book" -- the content reflows to fit small screens and works with e-reader accessibility features.</li>
       <li><strong>Reading on a DAISY player or braille display?</strong> Use "EPUB or DAISY format" (Pipeline) -- these are the formats those devices expect.{% if not pipeline_installed %} (Not available on this server.){% endif %}</li>
       <li><strong>Editing, searching, or feeding to an AI tool?</strong> Use "Plain text" -- you get raw content in a simple format that works everywhere.</li>
-      {% if feature_export_html_enabled %}<li><strong>Pasting into WordPress or Drupal?</strong> Use <a href="{{ url_for('export.export_form') }}">Export to HTML</a> instead -- it has a CMS Fragment mode that avoids conflicts with your site's theme.</li>{% endif %}
+      {% if export_html_enabled %}<li><strong>Pasting into WordPress or Drupal?</strong> Use "CMS Fragment" above -- it produces a scoped HTML snippet you can paste directly into your CMS editor without breaking your site theme.</li>{% endif %}
     </ul>
 
     <h3>Can I chain them together?</h3>
@@ -233,9 +245,6 @@
     </ol>
     <p>This two-step process often produces better results than a single direct conversion, because you can review and improve the content between steps.</p>
     <p>Another common workflow: convert a Word document to HTML for your website, then also convert the same source to PDF for a print handout and to EPUB for e-reader distribution -- all from the same source file.</p>
-
-    <h3>What is the difference between "Export to HTML" and this page?</h3>
-    <p><strong>Export</strong> (in the main navigation) is specifically for Word documents and gives you extra options like CMS fragments for pasting into WordPress or Drupal. <strong>This page</strong> handles a wider range of input formats and always produces a complete, standalone web page with all the accessibility styling included.</p>
   </details>
 
   <!-- ============================================================ -->
@@ -407,6 +416,7 @@
   var EXT_SETS = {
     'to-markdown': new Set({{ markitdown_exts | tojson }}),
     'to-html':     new Set({{ pandoc_effective_exts | tojson }}),
+    'to-html-cms': new Set(['.docx']),
     'to-docx':     new Set({{ pandoc_effective_exts | tojson | replace('".docx"', '"__excluded__"') }}),
     'to-epub':     new Set({{ pandoc_effective_exts | tojson | replace('".epub"', '"__excluded__"') }}),
     'to-pdf':      new Set({{ pandoc_effective_exts | tojson }}),
@@ -540,7 +550,7 @@
       <li><strong>Excel and PowerPoint</strong> now convert directly to HTML, Word, EPUB, and PDF using a two-stage process: text is extracted to Markdown first, then Pandoc applies full ACB Large Print formatting. You do not need to do this manually -- just upload your file and choose your output format.</li>
     <li><strong>Markdown is the best input for all Pandoc outputs.</strong> Pandoc was built for Markdown conversion and produces the cleanest output from <code>.md</code> files -- whether you are creating HTML, Word, EPUB, or PDF. If your source is a PDF or PowerPoint, the two-step approach (extract to Markdown first, then convert) almost always gives better results.</li>
     {% if feature_audit_enabled %}<li><strong>Use Audit first.</strong> If you are converting a Word document to an accessible web page, run it through <a href="{{ url_for('audit.audit_form') }}">Audit</a> first to catch any issues in the source document before conversion.</li>{% endif %}
-    {% if feature_export_html_enabled %}<li><strong>For WordPress or Drupal,</strong> use <a href="{{ url_for('export.export_form') }}">Export to HTML</a> instead -- it offers a CMS Fragment mode that creates a snippet you can paste directly into your content editor without conflicting with your site's theme.</li>{% endif %}
+    {% if export_html_enabled %}<li><strong>For WordPress or Drupal,</strong> choose "CMS Fragment" in Step 2 -- it produces a scoped HTML snippet that avoids conflicts with your site theme. Only Word (.docx) files are supported for CMS Fragment.</li>{% endif %}
   </ul>
 </details>
 {% endblock %}

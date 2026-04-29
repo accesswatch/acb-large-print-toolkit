@@ -29,11 +29,8 @@
         {% if feature_checker_enabled %}
         <li role="none"><a href="{{ url_for('fix.fix_form') }}" role="tab" id="tab-fix" aria-controls="main"{% if request.blueprint == 'fix' %} aria-selected="true"{% else %} aria-selected="false"{% endif %}>Fix</a></li>
         {% endif %}
-        {% if feature_export_html_enabled %}
-        <li role="none"><a href="{{ url_for('export.export_form') }}" role="tab" id="tab-export" aria-controls="main"{% if request.blueprint == 'export' %} aria-selected="true"{% else %} aria-selected="false"{% endif %}>Export</a></li>
-        {% endif %}
         {% if feature_converter_enabled %}
-        <li role="none"><a href="{{ url_for('convert.convert_form') }}" role="tab" id="tab-convert" aria-controls="main"{% if request.blueprint == 'convert' %} aria-selected="true"{% else %} aria-selected="false"{% endif %}>Convert</a></li>
+        <li role="none"><a href="{{ url_for('convert.convert_form') }}" role="tab" id="tab-convert" aria-controls="main"{% if request.blueprint in ['convert', 'export'] %} aria-selected="true"{% else %} aria-selected="false"{% endif %}>Convert</a></li>
         {% endif %}
         {% if ai_whisperer_enabled %}
         <li role="none"><a href="{{ url_for('whisperer.whisperer_form') }}" role="tab" id="tab-whisperer" aria-controls="main"{% if request.blueprint == 'whisperer' %} aria-selected="true"{% else %} aria-selected="false"{% endif %}>{{ brand_whisperer_label }}</a></li>
@@ -108,6 +105,7 @@
   <script src="{{ url_for('static', filename='preferences.js') }}"></script>
   <script src="{{ url_for('static', filename='tabs.js') }}"></script>
   <script src="{{ url_for('static', filename='consent.js') }}"></script>
+  <script src="{{ url_for('static', filename='dropzone.js') }}"></script>
   {% block extra_js %}{% endblock %}
 </body>
 </html>

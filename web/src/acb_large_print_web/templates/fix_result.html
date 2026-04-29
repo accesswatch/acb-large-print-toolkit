@@ -198,12 +198,21 @@
 
 <section>
   <h2 id="next-heading">What's Next?</h2>
+  {% if feature_audit_enabled %}
+  <div class="next-step-callout">
+    <h3 id="reaudit-heading">Recommended Next Step: Re-Audit</h3>
+    <p>Download your fixed document above, then upload it to Audit to confirm the score improvement and catch any remaining issues.</p>
+    <div class="next-step-actions">
+      <a href="{{ url_for('audit.audit_form') }}" class="btn-primary">Re-Audit Now</a>
+      {% if feature_checker_enabled %}<a href="{{ url_for('fix.fix_form') }}" class="btn-secondary">Fix Another Document</a>{% endif %}
+    </div>
+  </div>
+  {% endif %}
   {% if token and ai_chat_enabled %}
-  <p><a href="{{ url_for('chat.chat_form', token=token) }}">Chat about this document</a> -- ask plain-English questions about the fixed document using the AI-assisted document tools without re-uploading.</p>
+  <p><a href="{{ url_for('chat.chat_form', token=token) }}">Chat about this document</a> &mdash; ask plain-English questions about the fixed document using the AI-assisted document tools without re-uploading.</p>
   {% endif %}
   <ul>
-    {% if feature_audit_enabled %}<li><a href="{{ url_for('audit.audit_form') }}">Audit the fixed document</a> to verify compliance</li>{% endif %}
-    {% if feature_checker_enabled %}<li><a href="{{ url_for('fix.fix_form') }}">Fix another document</a></li>{% endif %}
+    {% if not feature_audit_enabled and feature_checker_enabled %}<li><a href="{{ url_for('fix.fix_form') }}">Fix another document</a></li>{% endif %}
     <li><a href="{{ url_for('guidelines.guidelines_page') }}">Read the full ACB guidelines</a></li>
     <li><a href="{{ url_for('guide.guide_page') }}#common-issues">Common issues and how to fix them</a></li>
   </ul>

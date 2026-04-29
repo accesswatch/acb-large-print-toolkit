@@ -25,6 +25,7 @@ from acb_large_print.converter import (
     CONVERTIBLE_EXTENSIONS,
     convert_to_markdown,
 )
+from acb_large_print.exporter import export_cms_fragment
 from acb_large_print.pandoc_converter import (
     PANDOC_INPUT_EXTENSIONS,
     convert_to_html,
@@ -115,6 +116,7 @@ def _template_context(**extra):
         convert_to_epub_enabled=convert_to_epub_enabled,
         convert_to_pdf_enabled=convert_to_pdf_enabled,
         convert_to_pipeline_enabled=convert_to_pipeline_enabled,
+        export_html_enabled=bool(all_flags.get("GLOW_ENABLE_EXPORT_HTML", True)),
         # Extension sets for JS-driven UI filtering
         chain_via_markdown_exts=sorted(_CHAIN_VIA_MARKDOWN),
         pandoc_native_exts=sorted(PANDOC_INPUT_EXTENSIONS),
@@ -151,6 +153,7 @@ def convert_submit():
         direction_flags = {
             "to-markdown": ctx["convert_to_markdown_enabled"],
             "to-html": ctx["convert_to_html_enabled"],
+            "to-html-cms": ctx["export_html_enabled"],
             "to-docx": ctx["convert_to_docx_enabled"],
             "to-epub": ctx["convert_to_epub_enabled"],
             "to-pdf": ctx["convert_to_pdf_enabled"],
@@ -367,6 +370,25 @@ def convert_submit():
                 mimetype="application/pdf",
                 as_attachment=True,
                 download_name=f"{saved_path.stem}.pdf",
+            )
+        elif direction == "to-html-cms":
+            # Exporter: .docx -> ACB-styled HTML CMS fragment for WordPress/Drupal
+            if not ctx["export_html_enabled"]:
+                raise UploadError("CMS Fragment export is disabled on this server.")
+            if ext != ".docx":
+                raise UploadError(
+                    "CMS Fragment export only accepts Word (.docx) files. "
+                    f"Received '{ext}'."
+                )
+            user_title = request.form.get("title", "").strip()
+            title = user_title or None
+            cms_output = temp_dir / f"{saved_path.stem}-cms.html"
+            export_cms_fragment(saved_path, cms_output, title=title)
+            return send_file(
+                str(cms_output),
+                mimetype="text/html; charset=utf-8",
+                as_attachment=True,
+                download_name=f"{saved_path.stem}-cms.html",
             )
         elif direction == "to-pipeline" or direction.startswith("pipeline-"):
             # DAISY Pipeline conversion

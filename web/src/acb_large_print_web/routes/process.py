@@ -97,10 +97,10 @@ def _get_available_actions(file_ext: str) -> dict[str, dict]:
             "enabled": chat_enabled and ext in (CONVERT_EXTENSIONS | ALLOWED_EXTENSIONS),
         },
         "export": {
-            "name": "Export",
-            "route": "export.export_form",
+            "name": "CMS Fragment",
+            "route": "convert.convert_form",
             "icon": "📤",
-            "description": "Convert Word document to accessible HTML with ACB styles",
+            "description": "Convert Word document to a scoped HTML snippet for pasting into WordPress or Drupal",
             "enabled": bool(all_flags.get("GLOW_ENABLE_EXPORT_HTML", True)) and ext == ".docx",
         },
         "template": {
@@ -226,7 +226,7 @@ def process_go(action: str):
         "audit": "audit.audit_form",
         "fix": "fix.fix_form",
         "convert": "convert.convert_form",
-        "export": "export.export_form",
+        "export": "convert.convert_form",
         "template": "template.template_form",
         "chat": "chat.chat_form",
         "whisperer": "whisperer.whisperer_form",

@@ -10,6 +10,19 @@ Releases are tagged in the [GitHub repository](https://github.com/accesswatch/ac
 
 ### Added
 
+- **Export folded into Convert.** The Export tab has been removed from the main navigation. Its CMS Fragment functionality is now a dedicated direction within the Convert page (`/convert/`). Users who visit `/export` (bookmarks, cached links) are permanently redirected (301) to `/convert`. The Quick Start "CMS Fragment" action for `.docx` files now routes directly to Convert. The CMS Fragment option in Convert is gated by the existing `GLOW_ENABLE_EXPORT_HTML` feature flag, calls the same `export_cms_fragment()` function, and produces an identical `-cms.html` download. Changes in `routes/convert.py`, `routes/export.py`, `routes/process.py`, `templates/base.html`, `templates/convert_form.html`, `templates/index.html`, and `templates/process_form.html`.
+
+- **Convert: CMS Fragment direction.** Added a new `to-html-cms` direction to Convert that accepts Word (`.docx`) files and produces a scoped ACB-styled HTML snippet ready to paste into WordPress or Drupal without conflicting with the site theme. Visible in Step 2 only for `.docx` files. Changes in `routes/convert.py` and `templates/convert_form.html`.
+
+- **Audit report: grade letter headline.** The compliance grade letter (A–F) is now displayed as a large typographic element at the top of the audit report, making the outcome immediately visible before reading the score or findings. The score (NN/100) and finding count appear beside the grade letter as supporting detail. Changes in `templates/audit_report.html` and `static/forms.css`.
+
+- **After-action next-step cards.** The "What's Next?" section on both the audit report and fix result pages now displays a prominent action card (`.next-step-callout`) for the primary recommended workflow:
+  - **Audit report:** a "Fix This Document" card with a "Audit Another" secondary button replaces the bare link for `.docx` files with findings and an enabled Fix feature.
+  - **Fix result:** a "Re-Audit Now" card with a "Fix Another Document" secondary button immediately follows the What's Next heading, making the Audit → Fix → Re-Audit loop explicit and actionable.
+  Changes in `templates/audit_report.html`, `templates/fix_result.html`, and `static/forms.css`.
+
+- **Drag-and-drop file upload zones.** All file upload forms now include a visual drag-and-drop zone adjacent to the file input. Dragging a file onto the zone assigns it to the input, updates the hint text, and fires a `change` event so other scripts (such as the Convert extension filter) react correctly. The original `<input type="file">` remains accessible and unchanged for keyboard and screen-reader users. Implemented in a new `static/dropzone.js` module included from `templates/base.html`. Styles added to `static/forms.css`.
+
 - **Navigation: Quick Start tab.** The Quick Start upload-and-discover flow (`/process/`) is now accessible from a permanent tab in the main navigation bar, appearing as the first tab on every page. Previously it was only reachable from a button on the home page. The tab is always shown regardless of feature flags. Changes in `templates/base.html`.
 
 - **Navigation: Template tab moved before Audit.** The Template tab now appears immediately after Quick Start, before Audit and Fix, reflecting a start-of-workflow position for new document creation. Changes in `templates/base.html`.

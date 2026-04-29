@@ -2,7 +2,7 @@
 
 import zipfile
 
-from flask import Blueprint, abort, render_template, request, send_file
+from flask import Blueprint, abort, redirect, render_template, request, send_file, url_for
 
 from acb_large_print.exporter import export_cms_fragment, export_standalone_html
 
@@ -16,7 +16,7 @@ export_bp = Blueprint("export", __name__)
 def export_form():
     if not get_flag("GLOW_ENABLE_EXPORT_HTML", True):
         abort(404)
-    return render_template("export_form.html")
+    return redirect(url_for("convert.convert_form"), 301)
 
 
 @export_bp.route("/", methods=["POST"])

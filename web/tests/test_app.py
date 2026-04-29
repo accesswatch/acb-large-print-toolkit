@@ -133,8 +133,8 @@ class TestPageLoads:
 
     def test_export_form(self, client):
         resp = client.get("/export/")
-        assert resp.status_code == 200
-        assert b"Export" in resp.data
+        assert resp.status_code == 301
+        assert "/convert/" in resp.headers.get("Location", "")
 
     def test_guidelines(self, client):
         resp = client.get("/guidelines/")
@@ -972,14 +972,17 @@ class TestConvertPage:
             assert b"Pandoc" in resp.data
 
     def test_convert_to_html_unsupported_ext(self, client):
-        """Upload an .xlsx with direction=to-html -- not a Pandoc-supported format."""
+        """Upload a .jpg (image) with direction=to-html -- not a Pandoc-supported format.
+
+        Note: .xlsx was previously used here but is now supported via the two-stage
+        MarkItDown→Pandoc chain added in 2.7.0. Images remain unsupported for to-html.
+        """
         from acb_large_print.pandoc_converter import pandoc_available
 
         if not pandoc_available():
             pytest.skip("Pandoc not installed")
-        xlsx_data = _make_fake_xlsx()
         data = {
-            "document": (xlsx_data, "test.xlsx"),
+            "document": (io.BytesIO(b"fake image data"), "test.jpg"),
             "direction": "to-html",
         }
         resp = client.post("/convert/", data=data, content_type="multipart/form-data")

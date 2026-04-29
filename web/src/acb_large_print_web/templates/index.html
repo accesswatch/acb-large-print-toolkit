@@ -100,20 +100,10 @@
     </div>
     {% endif %}
 
-    {% if feature_export_html_enabled %}
-    <div class="card card-export">
-      <h3><a href="{{ url_for('export.export_form') }}">Export to HTML</a></h3>
-      <p>Convert a Word document to accessible HTML with large-print-compliant CSS. Choose standalone (full page) or CMS fragment (for pasting into WordPress or Drupal).</p>
-      <ul class="card-formats">
-        <li class="format-tag format-docx">Word</li>
-      </ul>
-    </div>
-    {% endif %}
-
     {% if feature_converter_enabled %}
     <div class="card card-convert">
       <h3><a href="{{ url_for('convert.convert_form') }}">Convert a Document</a></h3>
-      <p>Change any supported file into a different format. Upload a PowerPoint, Excel, PDF, Word, or Markdown file and get back accessible HTML, a Word document, an EPUB, a PDF, or plain Markdown. PowerPoint, Excel, and PDF files use a smart two-stage extraction &mdash; GLOW handles it automatically.</p>
+      <p>Change any supported file into a different format. Upload a PowerPoint, Excel, PDF, Word, or Markdown file and get back accessible HTML, a Word document, an EPUB, a PDF, or plain Markdown. For Word documents, a CMS Fragment option produces a scoped HTML snippet for WordPress or Drupal. PowerPoint, Excel, and PDF files use a smart two-stage extraction &mdash; GLOW handles it automatically.</p>
       <ul class="card-formats">
         {% if feature_word_enabled %}<li class="format-tag format-docx">Word</li>{% endif %}
         {% if feature_excel_enabled %}<li class="format-tag format-xlsx">Excel</li>{% endif %}
@@ -178,8 +168,7 @@
     {% if feature_template_builder_enabled %}<li><strong>Template:</strong> creates Word templates with profile-aware defaults so new documents start compliant.</li>{% endif %}
     {% if feature_audit_enabled %}<li><strong>Audit:</strong> checks documents and reports findings by severity.</li>{% endif %}
     {% if feature_checker_enabled %}<li><strong>Fix:</strong> applies available auto-fixes and shows what still needs manual work.</li>{% endif %}
-    {% if feature_export_html_enabled %}<li><strong>Export:</strong> turns Word documents into accessible HTML for web publishing.</li>{% endif %}
-    {% if feature_converter_enabled %}<li><strong>Convert:</strong> transforms documents across Markdown, HTML, Word, EPUB, PDF, and DAISY workflows. PowerPoint, Excel, and PDF files convert directly to accessible HTML, Word, EPUB, and PDF using smart two-stage extraction.</li>{% endif %}
+    {% if feature_converter_enabled %}<li><strong>Convert:</strong> transforms documents across Markdown, HTML, Word, EPUB, PDF, and DAISY workflows. Includes a CMS Fragment option for Word documents. PowerPoint, Excel, and PDF files convert directly to accessible HTML, Word, EPUB, and PDF using smart two-stage extraction.</li>{% endif %}
     {% if ai_whisperer_enabled %}
     <li><strong>{{ brand_whisperer_label }}:</strong> transcribes audio recordings (.mp3, .wav, .m4a, and more) to accessible Markdown or Word documents using the OpenAI Whisper API with explicit retention controls.</li>
     {% endif %}
