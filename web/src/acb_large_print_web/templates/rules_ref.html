@@ -161,19 +161,19 @@
       </span>
       <span class="rule-id" aria-hidden="true">{{ rule.rule_id | replace('-', ' ') }}</span>
       <span class="rule-desc" aria-hidden="true">{{ rule.description }}</span>
-      <span class="visually-hidden">{{ rule.description }} (ID: {{ rule.rule_id | replace('-', ' ') }})</span>
-      <span class="rule-badges" aria-label="Rule traits">
+      <span class="visually-hidden">{{ rule.description }}</span>
+      <span class="rule-badges" aria-hidden="true">
         <span class="badge badge-sev badge-sev--{{ rule.severity | lower }}" title="Severity: {{ rule.severity }}">
-          <span class="visually-hidden">Severity </span>{{ rule.severity }}
+          {{ rule.severity }}
         </span>
         {% for fmt_label in rule.format_labels %}
         <span class="badge badge-fmt" title="Applies to {{ fmt_label }}">
-          <span class="visually-hidden">Format </span>{{ fmt_label }}
+          {{ fmt_label }}
         </span>
         {% endfor %}
         {% if rule.auto_fixable %}
         <span class="badge badge-fix" title="This rule can be fixed automatically">
-          <span class="visually-hidden">Supports </span>Auto-fix
+          Auto-fix
         </span>
         {% endif %}
       </span>
