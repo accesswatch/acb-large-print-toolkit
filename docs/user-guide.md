@@ -996,8 +996,8 @@ Yes. GLOW includes an admin-only sign-in and approval workflow for operational d
 
 - **ACB Large Print Guidelines** -- [acb.org/large-print-guidelines](https://acb.org/large-print-guidelines)
 - **APH Large Print Guidelines** -- [aph.org/resources/large-print-guidelines](https://www.aph.org/resources/large-print-guidelines/)
-- **Guidelines reference page** -- available in the GLOW web app at [glow.bits-acb.org/guidelines](https://glow.bits-acb.org/guidelines)
-- **Rules Reference page** -- browse every audit rule with severity, WCAG mapping, and fix guidance at [glow.bits-acb.org/rules](https://glow.bits-acb.org/rules). Save custom rule sets for Audit and Fix directly from this page.
+- **Guidelines reference page** -- available in the GLOW web app via the **Guidelines** tab. Includes a deep-dive link to the Rules Reference.
+- **Rules Reference page** -- browse every audit rule with severity, WCAG mapping, and fix guidance. Accessible from the bottom of the Guidelines page. Save custom rule sets for Audit and Fix directly from this page.
 - **Submit feedback** -- use the Feedback page in the web app to report bugs, request features, or share your experience
 - **About page** -- mission, organizations, standards, and open source dependencies
 - **GitHub Issues** -- [report bugs or request features](https://github.com/accesswatch/acb-large-print-toolkit/issues)
