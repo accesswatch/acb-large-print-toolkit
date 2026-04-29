@@ -2456,3 +2456,49 @@ html[data-theme="dark"] .theme-toggle select {
   flex-wrap: wrap;
   gap: 0.75rem;
 }
+
+/* --- GLOW Anthem (Audio Player) --- */
+.audio-player-container {
+  border: 4px solid #0055cc;
+  padding: 1.5rem;
+  border-radius: 0.5rem;
+  background-color: #f0f7ff;
+  margin: 2rem 0;
+}
+
+.audio-player-container audio {
+  width: 100%;
+  margin: 1rem 0;
+}
+
+.lyrics {
+  margin-top: 1rem;
+  padding: 1rem;
+  border-top: 2px solid #0055cc;
+  background: #ffffff;
+}
+
+.lyrics h3 {
+  margin-top: 0;
+}
+
+.lyrics h4 {
+  margin-top: 1.5rem;
+  color: #0044aa;
+  border-bottom: 2px solid #e0e0e0;
+}
+
+[data-theme="dark"] .audio-player-container {
+  background-color: #001a33;
+  border-color: #3385ff;
+}
+
+[data-theme="dark"] .lyrics {
+  background: #1a1a1a;
+  border-top-color: #3385ff;
+}
+
+[data-theme="dark"] .lyrics h4 {
+  color: #80b3ff;
+  border-bottom-color: #333;
+}
