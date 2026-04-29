@@ -908,17 +908,26 @@ document.addEventListener('DOMContentLoaded', function () {
     
     // Check if the currently visible items are all open
     const allOpen = allItems.every(function(item) {
+      // For details elements, checking the 'open' property is the standard way
       return item.hidden || item.open;
     });
     
     allItems.forEach(function (item) {
       if (!item.hidden) {
+        // Force the open property to the new state
         item.open = !allOpen;
       }
     });
     
     btn.textContent = allOpen ? 'Expand all' : 'Collapse all';
     btn.setAttribute('aria-label', allOpen ? 'Expand all rules' : 'Collapse all rules');
+    
+    // Accessibility: announce results to screen reader
+    const status = allOpen ? 'All rules collapsed' : 'All rules expanded';
+    const live = document.getElementById('rules-selection-status');
+    if (live) {
+      live.textContent = status;
+    }
   });
 
   selectionTarget.addEventListener('change', function () {
