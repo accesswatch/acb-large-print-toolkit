@@ -1,5 +1,0 @@
-fix(web): add Rules Reference test coverage and CI reliability fixes
-
-- Create web/tests/test_rules_ref.py to verify /rules/ route
-- Ensure all 2.6.0 features are covered by automated tests
-- Resolve CI deployment gate blockers
