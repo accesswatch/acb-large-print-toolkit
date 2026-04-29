@@ -135,12 +135,11 @@
     {% endif %}
     <details class="rule-group" open>
       <summary class="rule-group-header">
-        <h2 class="rule-group-title">{{ rule.ui_group }}</h2>
+        <h2 class="rule-group-title" id="group-{{ loop.index }}">{{ rule.ui_group }}</h2>
       </summary>
-      <div class="rule-group-content">
+      <div class="rule-group-content" role="group" aria-labelledby="group-{{ loop.index }}">
   {% endif %}
 
-  <h2 class="rule-heading-visually-hidden">{{ rule.rule_id }}: {{ rule.description }}</h2>
   <details class="rule-card sev-{{ rule.severity | lower }}"
     id="rule-{{ rule.rule_id }}"
     data-rule-id="{{ rule.rule_id }}"
@@ -160,8 +159,9 @@
           data-rule-id="{{ rule.rule_id }}"
           aria-label="Include {{ rule.rule_id | replace('-', ' ') }} in current selection">
       </span>
-      <span class="rule-id">{{ rule.rule_id | replace('-', ' ') }}</span>
-      <span class="rule-desc">{{ rule.description }}</span>
+      <span class="rule-id" aria-hidden="true">{{ rule.rule_id | replace('-', ' ') }}</span>
+      <span class="rule-desc" aria-hidden="true">{{ rule.description }}</span>
+      <span class="visually-hidden">{{ rule.description }} (ID: {{ rule.rule_id | replace('-', ' ') }})</span>
       <span class="rule-badges" aria-label="Rule traits">
         <span class="badge badge-sev badge-sev--{{ rule.severity | lower }}" title="Severity: {{ rule.severity }}">
           <span class="visually-hidden">Severity </span>{{ rule.severity }}
