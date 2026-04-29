@@ -316,7 +316,10 @@ if [[ "$HEALTHY" -eq 1 ]]; then
     # `docker compose up -d --build` can leave the long-lived Caddy container
     # running with stale config even though the file on disk has changed.
     log_ts "--- Validating Caddy configuration ---"
-    docker compose -f "$COMPOSE_FILE" exec -T caddy caddy validate --config /etc/caddy/Caddyfile
+    docker run --rm \
+        -v "$WEB_ROOT/Caddyfile:/etc/caddy/Caddyfile:ro" \
+        caddy:2-alpine \
+        caddy validate --config /etc/caddy/Caddyfile
 
     log_ts "--- Recreating Caddy container to apply updated proxy configuration ---"
     docker compose -f "$COMPOSE_FILE" up -d --no-deps --force-recreate caddy

@@ -20,16 +20,7 @@ csedesigns.com, www.csedesigns.com {
 # ACB Large Print web application -- reverse proxy to Flask/Gunicorn
 lp.csedesigns.com, glow.bits-acb.org {
     reverse_proxy web:8000
-    encode {
-        gzip
-        zstd
-        match {
-            not {
-                header Content-Type audio/mpeg*
-                file *.mp3 *.m4a *.wav
-            }
-        }
-    }
+    encode gzip
 
     header {
         X-Content-Type-Options nosniff
