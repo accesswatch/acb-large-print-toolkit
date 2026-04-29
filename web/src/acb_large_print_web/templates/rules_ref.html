@@ -4,6 +4,7 @@
 {% block heading %}Rules Reference{% endblock %}
 
 {% block content %}
+<p><a href="{{ url_for('guidelines.guidelines_page') }}" class="back-link">&larr; Back to Guidelines</a></p>
 <p>Browse all {{ total_rules }} audit rules. Use the filters below to narrow by severity, format, profile, or category. Select any rule to expand its full description and suppression guidance.</p>
 
 <div id="rules-selection-status" class="flash-info" role="status" aria-live="polite" style="display:none;"></div>

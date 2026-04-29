@@ -37,8 +37,7 @@
         {% if ai_whisperer_enabled %}
         <li role="none"><a href="{{ url_for('whisperer.whisperer_form') }}" role="tab" id="tab-whisperer" aria-controls="main"{% if request.blueprint == 'whisperer' %} aria-selected="true"{% else %} aria-selected="false"{% endif %}>{{ brand_whisperer_label }}</a></li>
         {% endif %}
-        <li role="none"><a href="{{ url_for('guidelines.guidelines_page') }}" role="tab" id="tab-guidelines" aria-controls="main"{% if request.blueprint == 'guidelines' %} aria-selected="true"{% else %} aria-selected="false"{% endif %}>Guidelines</a></li>
-        <li role="none"><a href="{{ url_for('rules_ref.rules_ref_page') }}" role="tab" id="tab-rules" aria-controls="main"{% if request.blueprint == 'rules_ref' %} aria-selected="true"{% else %} aria-selected="false"{% endif %}>Rules</a></li>
+        <li role="none"><a href="{{ url_for('guidelines.guidelines_page') }}" role="tab" id="tab-guidelines" aria-controls="main"{% if request.blueprint in ['guidelines', 'rules_ref'] %} aria-selected="true"{% else %} aria-selected="false"{% endif %}>Guidelines</a></li>
         <li role="none"><a href="{{ url_for('settings.settings_page') }}" role="tab" id="tab-settings" aria-controls="main"{% if request.blueprint == 'settings' %} aria-selected="true"{% else %} aria-selected="false"{% endif %}>Settings</a></li>
       </ul>
     </nav>
