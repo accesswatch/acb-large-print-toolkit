@@ -321,10 +321,7 @@ if [[ "$HEALTHY" -eq 1 ]]; then
     log_ts "--- Recreating Caddy container to apply updated proxy configuration ---"
     docker compose -f "$COMPOSE_FILE" up -d --no-deps --force-recreate caddy
 
-    log_ts "--- Reloading Caddy configuration ---"
-    docker compose -f "$COMPOSE_FILE" exec -T caddy caddy reload --config /etc/caddy/Caddyfile
-
-    log_ts "--- Caddy container state after reload ---"
+    log_ts "--- Caddy container state after recreation ---"
     docker compose -f "$COMPOSE_FILE" ps caddy
 
     if [[ "$CLEANUP_ON_SUCCESS" == "1" ]]; then
