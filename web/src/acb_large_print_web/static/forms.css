@@ -286,8 +286,10 @@ main[aria-busy="true"] {
 .consent-modal-scroll {
   max-height: 52vh;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   padding-right: 0.5rem;
   margin-bottom: 1rem;
+  outline: none;
 }
 
 .consent-modal h2,

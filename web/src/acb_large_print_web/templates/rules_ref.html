@@ -158,17 +158,23 @@
           type="checkbox"
           class="rule-select-checkbox"
           data-rule-id="{{ rule.rule_id }}"
-          aria-label="Include {{ rule.rule_id }} in the saved custom rule set">
+          aria-label="Include {{ rule.rule_id | replace('-', ' ') }} in current selection">
       </span>
-      <span class="rule-id">{{ rule.rule_id }}</span>
-      <span class="rule-desc" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ rule.description }}</span>
-      <span class="rule-badges">
-        <span class="badge badge-sev badge-sev--{{ rule.severity | lower }}" aria-label="Severity: {{ rule.severity }}">{{ rule.severity }}</span>
+      <span class="rule-id">{{ rule.rule_id | replace('-', ' ') }}</span>
+      <span class="rule-desc">{{ rule.description }}</span>
+      <span class="rule-badges" aria-label="Rule traits">
+        <span class="badge badge-sev badge-sev--{{ rule.severity | lower }}" title="Severity: {{ rule.severity }}">
+          <span class="visually-hidden">Severity </span>{{ rule.severity }}
+        </span>
         {% for fmt_label in rule.format_labels %}
-        <span class="badge badge-fmt">{{ fmt_label }}</span>
+        <span class="badge badge-fmt" title="Applies to {{ fmt_label }}">
+          <span class="visually-hidden">Format </span>{{ fmt_label }}
+        </span>
         {% endfor %}
         {% if rule.auto_fixable %}
-        <span class="badge badge-fix" aria-label="Auto-fixable">Auto-fix</span>
+        <span class="badge badge-fix" title="This rule can be fixed automatically">
+          <span class="visually-hidden">Supports </span>Auto-fix
+        </span>
         {% endif %}
       </span>
     </summary>
@@ -177,9 +183,7 @@
       <dl class="rule-meta">
         <div class="rule-meta-row">
           <dt>Rule ID</dt>
-          <dd><code>{{ rule.rule_id }}</code></dd>
-        </div>
-
+        <dd><code>{{ rule.rule_id | replace('-', ' ') }}</code></dd>
         <div class="rule-meta-row">
           <dt>Category</dt>
           <dd>{{ rule.category | upper }}</dd>
