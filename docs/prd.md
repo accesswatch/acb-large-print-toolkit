@@ -24,7 +24,7 @@ All features below shipped in v2.7.0 (May 2026) and are fully implemented.
 | Shareable audit report URLs | Done | UUID-keyed report cache (`report_cache.py`) stores rendered HTML for 1 hour. Share link shown on every audit report. Share token is separate from upload token; cached HTML only — original document never accessible via share link. |
 | Drag-and-drop upload | Done | All upload forms support drag-and-drop with visual drop zone. |
 | Next-step cards on audit report | Done | "What's Next" section with context-aware callout cards for Fix, Convert, and manual guidance depending on doc format and findings. |
-| Dark mode support | Done | ACB-compliant dark color scheme via `prefers-color-scheme: dark` media query; all contrast ratios meet WCAG AA in both modes. |
+| Dark mode support | Done | User-selectable Light / Dark / Auto theme via footer dropdown and Settings page; preference stored in `localStorage`; CSS keys off `html[data-theme]` attribute so explicit user choice wins over `prefers-color-scheme`; all contrast ratios meet WCAG 2.2 AA in both modes. |
 | HTML preview on Convert result | Done | Inline live preview iframe shown on Convert result page for HTML output; collapses to avoid layout shift on smaller viewports. |
 | CMS Fragment clipboard copy | Done | One-click "Copy to Clipboard" button on Convert result for CMS Fragment output. Toast notification confirms copy success. |
 | Toast notification system | Done | `toast.js` provides screen-reader-announced status toasts for clipboard actions and async UI feedback. |

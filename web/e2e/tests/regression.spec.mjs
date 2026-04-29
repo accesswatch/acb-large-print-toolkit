@@ -79,17 +79,23 @@ test.describe('GLOW web regression suite', () => {
     await expect(page.getByRole('button', { name: /Download/i })).toBeVisible();
   });
 
-  test('export flow uploads docx and downloads CMS html', async ({ page }) => {
+  test('export-via-convert flow uploads docx and downloads CMS html', async ({ page }) => {
     skipIfMissingUploadFile();
 
-    await page.goto('/export/');
+    // Export was folded into Convert in v2.7.0. /export/ now redirects to
+    // /convert/ and the format is selected via the "direction" radios.
+    await page.goto('/convert/');
     await ensureConsent(page);
     await page.locator('#document').setInputFiles(uploadDocx);
-    await page.locator('input[name="mode"][value="cms"]').check();
+
+    const cmsRadio = page.locator('input[name="direction"][value="to-html-cms"]');
+    if (await cmsRadio.count()) {
+      await cmsRadio.check();
+    }
 
     const [download] = await Promise.all([
       page.waitForEvent('download'),
-      page.getByRole('button', { name: /^Export$/i }).click(),
+      page.getByRole('button', { name: /Convert My Document/i }).click(),
     ]);
 
     const suggested = download.suggestedFilename();

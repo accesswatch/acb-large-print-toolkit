@@ -6,7 +6,9 @@
 /* --- Global focus indicator (WCAG 2.4.7 / 2.4.13 baseline) ----------------
    Every interactive element gets a high-contrast focus ring by default.
    Per-component rules below may override the colour but should never
-   remove this indicator without providing an equally visible replacement. */
+   remove this indicator without providing an equally visible replacement.
+   The ring uses a double layer (white halo + blue outline) so it remains
+   visible against both light and dark backgrounds. */
 :focus {
   outline: 3px solid #0055cc;
   outline-offset: 2px;
@@ -16,8 +18,9 @@
 }
 :focus-visible {
   outline: 3px solid #0055cc;
-  outline-offset: 2px;
-  box-shadow: 0 0 0 5px rgba(255, 255, 255, 0.9);
+  outline-offset: 3px;
+  box-shadow: 0 0 0 5px #ffffff, 0 0 0 8px #0055cc;
+  border-radius: 2px;
 }
 /* Native form controls render the ring inside their box; offset it so the
    indicator is never clipped by adjacent borders or radii. */
@@ -29,7 +32,53 @@ a:focus-visible,
 summary:focus-visible,
 [tabindex]:focus-visible {
   outline: 3px solid #0055cc;
-  outline-offset: 2px;
+  outline-offset: 3px;
+  box-shadow: 0 0 0 5px #ffffff, 0 0 0 8px #0055cc;
+}
+
+/* Native checkboxes and radios are small (16-20px) and many browsers/OS
+   themes draw a faint or hard-to-see focus outline on them. Force a
+   visible ring with currentColor so it survives high-contrast mode and
+   dark themes, plus a white halo for separation from any backdrop. */
+input[type="checkbox"]:focus-visible,
+input[type="radio"]:focus-visible {
+  outline: 3px solid #0055cc;
+  outline-offset: 3px;
+  box-shadow: 0 0 0 5px #ffffff, 0 0 0 8px #0055cc;
+  border-radius: 3px;
+}
+
+/* When a checkbox/radio inside a label is focused, also outline the label
+   text so keyboard users with low vision can locate the control by its
+   text rather than the small box alone. */
+label:has(input[type="checkbox"]:focus-visible),
+label:has(input[type="radio"]:focus-visible) {
+  outline: 2px dashed #0055cc;
+  outline-offset: 4px;
+  border-radius: 4px;
+}
+
+/* Forced-colors / Windows High Contrast: defer to the system focus
+   colour so the indicator survives any user theme. */
+@media (forced-colors: active) {
+  :focus-visible,
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible,
+  button:focus-visible,
+  a:focus-visible,
+  summary:focus-visible,
+  [tabindex]:focus-visible,
+  input[type="checkbox"]:focus-visible,
+  input[type="radio"]:focus-visible {
+    outline: 3px solid Highlight;
+    outline-offset: 3px;
+    box-shadow: none;
+  }
+  label:has(input[type="checkbox"]:focus-visible),
+  label:has(input[type="radio"]:focus-visible) {
+    outline-color: Highlight;
+  }
 }
 
 /* --- Skip Link --- */
@@ -1992,251 +2041,310 @@ body.theme-bits .brand-logo {
 
 /* ============================================================
    DARK MODE
+   ------------------------------------------------------------
+   Activated when html[data-theme="dark"] is set. The boot
+   script in base.html resolves the user's preference (light /
+   dark / auto) and writes the attribute before first paint.
+   "auto" defers to prefers-color-scheme, also via JS, so this
+   stylesheet only needs a single attribute selector.
    ============================================================ */
 
-@media (prefers-color-scheme: dark) {
-  body {
-    background: #121212;
-    color: #e0e0e0;
-  }
+html[data-theme="dark"] {
+  color-scheme: dark;
+}
+html[data-theme="light"] {
+  color-scheme: light;
+}
 
-  a {
-    color: #7ab3ff;
-  }
+html[data-theme="dark"] body {
+  background: #121212;
+  color: #e0e0e0;
+}
 
-  a:visited {
-    color: #c3a0ff;
-  }
+html[data-theme="dark"] a {
+  color: #7ab3ff;
+}
 
-  /* Navigation */
-  nav[aria-label="Main navigation"] {
-    background: #1e1e1e;
-    border-bottom-color: #333;
-  }
+html[data-theme="dark"] a:visited {
+  color: #c3a0ff;
+}
 
-  .nav-tabs a {
-    color: #c0c0c0;
-  }
+/* Navigation */
+html[data-theme="dark"] nav[aria-label="Main navigation"] {
+  background: #1e1e1e;
+  border-bottom-color: #333;
+}
 
-  .nav-tabs a[aria-selected="true"],
-  .nav-tabs a:hover {
-    color: #fff;
-    border-bottom-color: #7ab3ff;
-    background: #2a2a2a;
-  }
+html[data-theme="dark"] .nav-tabs a {
+  color: #c0c0c0;
+}
 
-  /* Cards and boxes */
-  .card,
-  .help-box,
-  .score-box,
-  .option-card,
-  .upload-option-card {
-    background: #1e1e1e;
-    border-color: #333;
-    color: #e0e0e0;
-  }
+html[data-theme="dark"] .nav-tabs a[aria-selected="true"],
+html[data-theme="dark"] .nav-tabs a:hover {
+  color: #fff;
+  border-bottom-color: #7ab3ff;
+  background: #2a2a2a;
+}
 
-  .notice-box {
-    background: #1e2a00;
-    border-color: #3a5a00;
-    color: #d8e8c0;
-  }
+/* Cards and boxes */
+html[data-theme="dark"] .card,
+html[data-theme="dark"] .help-box,
+html[data-theme="dark"] .score-box,
+html[data-theme="dark"] .option-card,
+html[data-theme="dark"] .upload-option-card {
+  background: #1e1e1e;
+  border-color: #333;
+  color: #e0e0e0;
+}
 
-  .warning-box {
-    background: #2a1800;
-    border-color: #6b4000;
-    color: #f5d8a0;
-  }
+html[data-theme="dark"] .notice-box {
+  background: #1e2a00;
+  border-color: #3a5a00;
+  color: #d8e8c0;
+}
 
-  .error-box,
-  .flash-error {
-    background: #2d0a0a;
-    border-color: #6b1010;
-    color: #f5b0b0;
-  }
+html[data-theme="dark"] .warning-box {
+  background: #2a1800;
+  border-color: #6b4000;
+  color: #f5d8a0;
+}
 
-  .success-box,
-  .flash-success {
-    background: #0a2010;
-    border-color: #1b5e20;
-    color: #b0f5b0;
-  }
+html[data-theme="dark"] .error-box,
+html[data-theme="dark"] .flash-error {
+  background: #2d0a0a;
+  border-color: #6b1010;
+  color: #f5b0b0;
+}
 
-  .celebration {
-    background: #0a1a2d;
-    border-color: #1a4570;
-    color: #b0d8ff;
-  }
+html[data-theme="dark"] .success-box,
+html[data-theme="dark"] .flash-success {
+  background: #0a2010;
+  border-color: #1b5e20;
+  color: #b0f5b0;
+}
 
-  /* Forms */
-  input[type="text"],
-  input[type="email"],
-  input[type="search"],
-  select,
-  textarea {
-    background: #2a2a2a;
-    border-color: #555;
-    color: #e0e0e0;
-  }
+html[data-theme="dark"] .celebration {
+  background: #0a1a2d;
+  border-color: #1a4570;
+  color: #b0d8ff;
+}
 
-  input[type="text"]:focus,
-  input[type="email"]:focus,
-  select:focus,
-  textarea:focus {
-    outline-color: #7ab3ff;
-    border-color: #7ab3ff;
-  }
+/* Forms */
+html[data-theme="dark"] input[type="text"],
+html[data-theme="dark"] input[type="email"],
+html[data-theme="dark"] input[type="search"],
+html[data-theme="dark"] select,
+html[data-theme="dark"] textarea {
+  background: #2a2a2a;
+  border-color: #555;
+  color: #e0e0e0;
+}
 
-  /* Buttons */
-  .btn-primary {
-    background: #1a5fb4;
-    color: #fff;
-    border-color: #1a5fb4;
-  }
+html[data-theme="dark"] input[type="text"]:focus,
+html[data-theme="dark"] input[type="email"]:focus,
+html[data-theme="dark"] select:focus,
+html[data-theme="dark"] textarea:focus {
+  outline-color: #7ab3ff;
+  border-color: #7ab3ff;
+}
 
-  .btn-primary:hover,
-  .btn-primary:focus {
-    background: #2470cc;
-  }
+/* Dark-mode focus ring: swap the white halo for a dark halo so the
+   indicator stays visible against dark backgrounds. */
+html[data-theme="dark"] :focus-visible,
+html[data-theme="dark"] input:focus-visible,
+html[data-theme="dark"] select:focus-visible,
+html[data-theme="dark"] textarea:focus-visible,
+html[data-theme="dark"] button:focus-visible,
+html[data-theme="dark"] a:focus-visible,
+html[data-theme="dark"] summary:focus-visible,
+html[data-theme="dark"] [tabindex]:focus-visible,
+html[data-theme="dark"] input[type="checkbox"]:focus-visible,
+html[data-theme="dark"] input[type="radio"]:focus-visible {
+  outline-color: #7ab3ff;
+  box-shadow: 0 0 0 5px #121212, 0 0 0 8px #7ab3ff;
+}
+html[data-theme="dark"] label:has(input[type="checkbox"]:focus-visible),
+html[data-theme="dark"] label:has(input[type="radio"]:focus-visible) {
+  outline-color: #7ab3ff;
+}
 
-  .btn-secondary {
-    background: #2a2a2a;
-    color: #7ab3ff;
-    border-color: #7ab3ff;
-  }
+/* Buttons */
+html[data-theme="dark"] .btn-primary {
+  background: #1a5fb4;
+  color: #fff;
+  border-color: #1a5fb4;
+}
 
-  .btn-secondary:hover,
-  .btn-secondary:focus {
-    background: #1e2d42;
-  }
+html[data-theme="dark"] .btn-primary:hover,
+html[data-theme="dark"] .btn-primary:focus {
+  background: #2470cc;
+}
 
-  /* Findings table */
-  .findings-table th {
-    background: #1e1e1e;
-    color: #e0e0e0;
-    border-color: #444;
-  }
+html[data-theme="dark"] .btn-secondary {
+  background: #2a2a2a;
+  color: #7ab3ff;
+  border-color: #7ab3ff;
+}
 
-  .findings-table td {
-    border-color: #333;
-  }
+html[data-theme="dark"] .btn-secondary:hover,
+html[data-theme="dark"] .btn-secondary:focus {
+  background: #1e2d42;
+}
 
-  .findings-table tr:nth-child(even) {
-    background: #1a1a1a;
-  }
+/* Findings table */
+html[data-theme="dark"] .findings-table th {
+  background: #1e1e1e;
+  color: #e0e0e0;
+  border-color: #444;
+}
 
-  .findings-table tr:nth-child(odd) {
-    background: #121212;
-  }
+html[data-theme="dark"] .findings-table td {
+  border-color: #333;
+}
 
-  .findings-table tr:hover {
-    background: #1e2d42;
-  }
+html[data-theme="dark"] .findings-table tr:nth-child(even) {
+  background: #1a1a1a;
+}
 
-  /* Severity badges -- keep colors but bump contrast */
-  .severity-badge.severity-critical {
-    background: #b71c1c;
-    color: #fff;
-  }
+html[data-theme="dark"] .findings-table tr:nth-child(odd) {
+  background: #121212;
+}
 
-  .severity-badge.severity-high {
-    background: #bf5600;
-    color: #fff;
-  }
+html[data-theme="dark"] .findings-table tr:hover {
+  background: #1e2d42;
+}
 
-  .severity-badge.severity-medium {
-    background: #7a6a00;
-    color: #fff;
-  }
+/* Severity badges -- keep colors but bump contrast */
+html[data-theme="dark"] .severity-badge.severity-critical {
+  background: #b71c1c;
+  color: #fff;
+}
 
-  .severity-badge.severity-low {
-    background: #1b5e20;
-    color: #fff;
-  }
+html[data-theme="dark"] .severity-badge.severity-high {
+  background: #bf5600;
+  color: #fff;
+}
 
-  /* Score grades */
-  .grade-a { color: #66bb6a; }
-  .grade-b { color: #8bc34a; }
-  .grade-c { color: #ffca28; }
-  .grade-d { color: #ff7043; }
-  .grade-f { color: #ef5350; }
+html[data-theme="dark"] .severity-badge.severity-medium {
+  background: #7a6a00;
+  color: #fff;
+}
 
-  /* Score headline */
-  .score-headline {
-    background: #1e1e1e;
-    border-color: #333;
-  }
+html[data-theme="dark"] .severity-badge.severity-low {
+  background: #1b5e20;
+  color: #fff;
+}
 
-  /* Footer */
-  footer {
-    background: #1a1a1a;
-    border-top-color: #333;
-    color: #b0b0b0;
-  }
+/* Score grades */
+html[data-theme="dark"] .grade-a { color: #66bb6a; }
+html[data-theme="dark"] .grade-b { color: #8bc34a; }
+html[data-theme="dark"] .grade-c { color: #ffca28; }
+html[data-theme="dark"] .grade-d { color: #ff7043; }
+html[data-theme="dark"] .grade-f { color: #ef5350; }
 
-  /* Code */
-  code {
-    background: #2a2a2a;
-    color: #ff8a80;
-  }
+/* Score headline */
+html[data-theme="dark"] .score-headline {
+  background: #1e1e1e;
+  border-color: #333;
+}
 
-  .tool-list code {
-    background: #2a2a2a;
-    color: #ff8a80;
-  }
+/* Footer */
+html[data-theme="dark"] footer {
+  background: #1a1a1a;
+  border-top-color: #333;
+  color: #b0b0b0;
+}
 
-  /* Drop zone */
-  .dropzone {
-    background: #1e1e1e;
-    border-color: #555;
-    color: #c0c0c0;
-  }
+/* Code */
+html[data-theme="dark"] code {
+  background: #2a2a2a;
+  color: #ff8a80;
+}
 
-  .dropzone.drag-over {
-    background: #1e2d42;
-    border-color: #7ab3ff;
-  }
+html[data-theme="dark"] .tool-list code {
+  background: #2a2a2a;
+  color: #ff8a80;
+}
 
-  /* Quick wins bar */
-  .quick-wins-bar {
-    background: #0d1a2d;
-    border-color: #1a4570;
-  }
+/* Drop zone */
+html[data-theme="dark"] .dropzone {
+  background: #1e1e1e;
+  border-color: #555;
+  color: #c0c0c0;
+}
 
-  /* Share section */
-  .share-section {
-    background: #1a1a1a;
-    border-color: #333;
-  }
+html[data-theme="dark"] .dropzone.drag-over {
+  background: #1e2d42;
+  border-color: #7ab3ff;
+}
 
-  .share-url-input {
-    background: #2a2a2a;
-    border-color: #555;
-    color: #e0e0e0;
-  }
+/* Quick wins bar */
+html[data-theme="dark"] .quick-wins-bar {
+  background: #0d1a2d;
+  border-color: #1a4570;
+}
 
-  /* CMS textarea */
-  .cms-textarea {
-    background: #2a2a2a;
-    border-color: #555;
-    color: #e0e0e0;
-  }
+/* Share section */
+html[data-theme="dark"] .share-section {
+  background: #1a1a1a;
+  border-color: #333;
+}
 
-  /* Details/summary */
-  details {
-    border-color: #333;
-  }
+html[data-theme="dark"] .share-url-input {
+  background: #2a2a2a;
+  border-color: #555;
+  color: #e0e0e0;
+}
 
-  details > summary {
-    color: #7ab3ff;
-  }
+/* CMS textarea */
+html[data-theme="dark"] .cms-textarea {
+  background: #2a2a2a;
+  border-color: #555;
+  color: #e0e0e0;
+}
 
-  /* Skip link */
-  .skip-link:focus {
-    background: #1e1e1e;
-    color: #7ab3ff;
-    outline-color: #7ab3ff;
-  }
+/* Details/summary */
+html[data-theme="dark"] details {
+  border-color: #333;
+}
+
+html[data-theme="dark"] details > summary {
+  color: #7ab3ff;
+}
+
+/* Skip link */
+html[data-theme="dark"] .skip-link:focus {
+  background: #1e1e1e;
+  color: #7ab3ff;
+  outline-color: #7ab3ff;
+}
+
+/* Theme toggle button (footer) */
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+.theme-toggle label {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+}
+.theme-toggle select {
+  font-family: Arial, sans-serif;
+  font-size: 1rem;
+  padding: 0.35em 0.6em;
+  border: 2px solid currentColor;
+  border-radius: 0.25rem;
+  background: transparent;
+  color: inherit;
+  min-height: 44px;
+}
+html[data-theme="dark"] .theme-toggle select {
+  background: #1e1e1e;
+  color: #e0e0e0;
+  border-color: #7ab3ff;
 }
 
 /* ============================================================

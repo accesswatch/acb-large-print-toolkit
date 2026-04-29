@@ -28,12 +28,16 @@ body {
   letter-spacing: 0.12em;
   word-spacing: 0.16em;
 
-  /* ACB: 1 inch margins (approximated for screen) */
-  margin: 0;
-  padding: 1rem 1rem;
+  /* ACB: 1 inch margins (approximated for screen).
+     Center the page horizontally so wide viewports do not leave the
+     content flush left in a narrow column. The cap is wide enough to
+     accommodate nav, cards, tables, and form layouts; long-prose
+     blocks are constrained to a readable width below. */
+  margin: 0 auto;
+  padding: 1.25rem clamp(1rem, 3vw, 2.5rem);
 
-  /* Line length: 45-80 characters recommended */
-  max-width: 70ch;
+  max-width: min(82rem, 100%);
+  box-sizing: border-box;
 
   /* Hyphenation off -- ACB: no hyphenated words */
   hyphens: none;
@@ -73,6 +77,17 @@ h3, h4, h5, h6 {
 p {
   margin-top: 0;
   margin-bottom: 2em;           /* WCAG 1.4.12: paragraph spacing >= 2x font size */
+}
+
+/* Keep long-prose blocks at a comfortable reading measure even though the
+   page chrome (nav, cards, tables, forms) extends to a wider max-width.
+   Applies only to direct prose children of <main>; lists/paragraphs
+   inside cards, tables, fieldsets, etc. inherit their container width. */
+main > p,
+main > ul,
+main > ol,
+main > blockquote {
+  max-width: 70ch;
 }
 
 /* --- Emphasis --- */

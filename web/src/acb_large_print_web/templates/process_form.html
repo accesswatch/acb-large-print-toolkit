@@ -64,4 +64,13 @@
     {% endif %}
   </ul>
 </details>
+
+<div class="card">
+  <h2>More resources</h2>
+  <p>Two additional pages live in the page footer (look for the "Additional links" navigation):</p>
+  <ul>
+    <li><a href="{{ url_for('guidelines.guidelines_page') }}"><strong>Guidelines</strong></a> -- the American Council of the Blind Large Print Guidelines plus the full rule reference GLOW checks against. Read this if you want to know <em>why</em> a finding fired.</li>
+    <li><a href="{{ url_for('settings.settings_page') }}"><strong>Settings</strong></a> -- per-browser preferences for theme (light, dark, or auto), audit defaults, and privacy. Settings are stored in your browser only; nothing is sent to the server.</li>
+  </ul>
+</div>
 {% endblock %}

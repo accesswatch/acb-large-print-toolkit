@@ -52,8 +52,17 @@
     <h3>Compliance grade on the Fix result</h3>
     <p>After running a fix, the result page shows before-and-after compliance scores with letter grades (A through F) so you can see at a glance whether the document reached an acceptable level or needs another pass.</p>
 
-    <h3>Dark mode</h3>
-    <p>GLOW now respects the system <code>prefers-color-scheme: dark</code> setting with an ACB-compliant dark color scheme. All contrast ratios meet WCAG 2.2 AA in dark mode. Print output continues to use the light ACB palette.</p>
+    <h3>Dark mode toggle (Light, Dark, or Auto)</h3>
+    <p>Choose your theme from the footer dropdown on every page, or from the new Appearance section on the Settings page. Pick <strong>Light</strong>, <strong>Dark</strong>, or <strong>Auto</strong> (follow your system). Your choice is stored in this browser only and applied before the page paints, so there is no flash on reload. Auto mode reacts live when you toggle dark mode in your operating system. The dark palette is ACB-compliant with WCAG 2.2 AA contrast throughout. Print output continues to use the light ACB palette.</p>
+
+    <h3>Centered layout on wide viewports</h3>
+    <p>GLOW no longer pins itself to the left half of the screen on wide or full-screen monitors. The body is horizontally centered with a wider max-width and responsive horizontal padding. Long-prose paragraphs and lists inside <code>&lt;main&gt;</code> are still constrained to a 70-character reading measure, while cards, tables, and form layouts use the full width.</p>
+
+    <h3>Reliable focus indicators on every control</h3>
+    <p>All interactive elements -- including native checkboxes and radios, which previously dropped their outline on some browsers and themes -- now show a 3px solid blue outline plus a layered halo on <code>:focus-visible</code>. Wrapping <code>&lt;label&gt;</code> elements get a dashed outline via <code>:has()</code> so the control text is visually located too. Windows High Contrast users get the system <code>Highlight</code> color, and dark mode swaps the white halo for a dark halo so the indicator stays visible.</p>
+
+    <h3>Navigation focused on document tools</h3>
+    <p>The top ribbon now contains only the tools you launch from it: Quick Start, Template, Audit, Fix, Convert, Whisperer. Guidelines and Settings have moved into the footer "Additional links" navigation alongside User Guide, FAQ, About, PRD, Changelog, Feedback, Privacy, and Terms. Both are also called out as cards on the Quick Start page so new users always find them.</p>
 
     <h3>HTML preview on Convert</h3>
     <p>When you convert a document to HTML, the result page shows a sandboxed inline preview before you download. Confirm what the output looks like without opening a separate file.</p>

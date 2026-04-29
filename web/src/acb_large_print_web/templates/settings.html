@@ -10,6 +10,16 @@
 
 <form id="settings-form" novalidate>
   <fieldset>
+    <legend>Appearance</legend>
+    <p class="help-text">Choose how GLOW looks on this device. Your choice is saved in local storage on this browser only and applies before the page paints, so there is no flash on reload.</p>
+    <div class="radio-group">
+      <label><input type="radio" name="glow_theme" value="auto" data-theme-control checked> Auto -- follow my system preference</label>
+      <label><input type="radio" name="glow_theme" value="light" data-theme-control> Light mode</label>
+      <label><input type="radio" name="glow_theme" value="dark" data-theme-control> Dark mode</label>
+    </div>
+  </fieldset>
+
+  <fieldset>
     <legend>Privacy and Storage</legend>
     <label>
       <input type="checkbox" id="settings-opt-in" name="opt_in">

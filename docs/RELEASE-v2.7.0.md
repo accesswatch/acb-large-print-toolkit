@@ -10,7 +10,7 @@ Core highlights:
 - **Export merged into Convert** -- the dedicated Export tab is gone; CMS Fragment is now a first-class direction in Convert
 - **Shareable audit report URLs** -- send a read-only compliance report link to a colleague with one click
 - **Quick Wins filter** -- one-click filter on the audit report shows only auto-fixable findings
-- **Dark mode** -- full ACB-compliant dark color scheme via `prefers-color-scheme: dark`
+- **Dark mode toggle (Light, Dark, or Auto)** -- footer dropdown and Settings panel option, persisted in `localStorage`, no flash on reload, ACB-compliant dark palette with WCAG 2.2 AA contrast
 - **HTML preview on Convert** -- inline iframe preview of converted HTML output before download
 - **Compliance grade on Fix result** -- before/after grade letters displayed in the score comparison boxes
 
@@ -76,13 +76,15 @@ The "After" score box on the Fix result page now shows a grade letter (A–F) al
 - Matches the grade display already on the audit report
 - Before/after comparison shows both grade letters and numeric scores side by side
 
-### 6. Dark mode
+### 6. Dark mode (user-selectable)
 
-Full ACB-compliant dark color scheme via `prefers-color-scheme: dark` in the stylesheet.
+Light, Dark, or Auto modes selectable from the footer dropdown on every page and from the Settings page. Preference persists in `localStorage` per-browser and applies before first paint via an inline boot script in `<head>`, so there is no flash of wrong theme.
 
 - All foreground/background contrast ratios meet WCAG 2.2 AA in dark mode
 - All ACB-specific colors (severity badges, score grades, callout boxes) have dark-mode variants
-- Print media query continues to use light-mode ACB colors regardless of system preference
+- CSS keys off `html[data-theme="dark"]` so explicit user choice always wins over `prefers-color-scheme`
+- Auto mode reacts live to OS theme changes via `matchMedia` listener
+- Print media query continues to use light-mode ACB colors regardless of theme
 
 ### 7. HTML preview on Convert result
 

@@ -46,9 +46,21 @@ The `/export` URL now redirects automatically to Convert. No links need updating
 
 After running a fix, the result page shows before-and-after compliance scores with letter grades (A through F) so you can see at a glance whether the document reached an acceptable level or needs another pass.
 
-### Dark mode
+### Dark mode toggle (Light, Dark, or Auto)
 
-GLOW now respects the system `prefers-color-scheme: dark` setting with an ACB-compliant dark color scheme. All contrast ratios meet WCAG 2.2 AA in dark mode. Print output continues to use the light ACB palette.
+Choose your theme from the footer dropdown on every page, or from the new Appearance section on the Settings page. Pick **Light**, **Dark**, or **Auto** (follow your system). Your choice is stored in this browser only and applied before the page paints, so there is no flash on reload. Auto mode reacts live when you toggle dark mode in your operating system. The dark palette is ACB-compliant with WCAG 2.2 AA contrast throughout. Print output continues to use the light ACB palette.
+
+### Centered layout on wide viewports
+
+GLOW no longer pins itself to the left half of the screen on wide or full-screen monitors. The body is horizontally centered with a wider max-width and responsive horizontal padding. Long-prose paragraphs and lists inside `<main>` are still constrained to a 70-character reading measure, while cards, tables, and form layouts use the full width.
+
+### Reliable focus indicators on every control
+
+All interactive elements -- including native checkboxes and radios, which previously dropped their outline on some browsers and themes -- now show a 3px solid blue outline plus a layered halo on `:focus-visible`. Wrapping `<label>` elements get a dashed outline via `:has()` so the control text is visually located too. Windows High Contrast users get the system `Highlight` color, and dark mode swaps the white halo for a dark halo so the indicator stays visible.
+
+### Navigation focused on document tools
+
+The top ribbon now contains only the tools you launch from it: Quick Start, Template, Audit, Fix, Convert, Whisperer. Guidelines and Settings have moved into the footer "Additional links" navigation alongside User Guide, FAQ, About, PRD, Changelog, Feedback, Privacy, and Terms. Both are also called out as cards on the Quick Start page so new users always find them.
 
 ### HTML preview on Convert
 
