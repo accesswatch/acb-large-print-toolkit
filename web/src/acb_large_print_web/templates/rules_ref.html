@@ -159,8 +159,10 @@
           aria-label="Include {{ rule.rule_id | replace('-', ' ') }} in current selection">
       </span>
       <span class="rule-id" aria-hidden="true">{{ rule.rule_id | replace('-', ' ') }}</span>
-      <span class="rule-desc" aria-hidden="true">{{ rule.description }}</span>
-      <span class="visually-hidden">{{ rule.description }}</span>
+      <h3 class="rule-title-heading">
+        <span class="rule-desc" aria-hidden="true">{{ rule.description }}</span>
+        <span class="visually-hidden">{{ rule.description }}</span>
+      </h3>
       <span class="rule-badges" aria-hidden="true">
         <span class="badge badge-sev badge-sev--{{ rule.severity | lower }}" title="Severity: {{ rule.severity }}">
           {{ rule.severity }}
@@ -425,9 +427,17 @@ details[open] > .rule-summary::before { content: "▼"; }
   font-size: 0.95rem;
   flex-shrink: 0;
 }
-.rule-desc {
+.rule-title-heading {
+  margin: 0;
+  padding: 0;
+  font-size: 1rem;
+  font-weight: normal;
   flex: 1;
   min-width: 0;
+  display: inline;
+}
+.rule-desc {
+  display: inline;
 }
 .rule-badges {
   display: flex;
