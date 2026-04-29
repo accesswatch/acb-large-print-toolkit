@@ -13,10 +13,10 @@
   <h2 id="rules-selection-heading">Saved Custom Rule Sets</h2>
   <p>Use this page to build the saved Custom rule set for Audit or Fix. GLOW does not use cookies for this. When you save a rule set, it is stored in local storage on this browser only and used when that workflow is set to Custom mode.</p>
 
-  <div class="rules-filter-bar rules-filter-bar--selection">
+  <div class="rules-filter-bar rules-filter-bar--selection" role="region" aria-labelledby="rules-selection-heading">
     <div class="filter-group">
       <label for="rule-selection-target">Edit saved set for</label>
-      <select id="rule-selection-target" aria-label="Choose which saved custom rule set to edit">
+      <select id="rule-selection-target">
         <option value="audit"{% if default_target == 'audit' %} selected{% endif %}>Audit</option>
         <option value="fix"{% if default_target == 'fix' %} selected{% endif %}>Fix</option>
       </select>
@@ -33,21 +33,21 @@
     </div>
   </div>
 
-  <p class="rules-count">Tip: filter first, then use Select visible or Clear visible for bulk edits.</p>
+  <p class="rules-count">Tip: Use the filters below then use bulk actions to quickly build your set.</p>
 </section>
 
 {# ------------------------------------------------------------------ Filters #}
 <section id="rules-filters" aria-label="Filter rules">
-  <div class="rules-filter-bar">
+  <div class="rules-filter-bar" role="search">
 
     <div class="filter-group">
       <label for="filter-search">Search</label>
-      <input type="search" id="filter-search" name="q" placeholder="Rule ID or keyword…" aria-label="Search rules by ID or keyword" autocomplete="off">
+      <input type="search" id="filter-search" name="q" placeholder="Rule ID or keyword…" autocomplete="off">
     </div>
 
     <div class="filter-group">
       <label for="filter-severity">Severity</label>
-      <select id="filter-severity" aria-label="Filter by severity">
+      <select id="filter-severity">
         <option value="">All severities</option>
         {% for sev in all_severities %}
         <option value="{{ sev }}">{{ sev }}</option>
@@ -57,7 +57,7 @@
 
     <div class="filter-group">
       <label for="filter-format">Format</label>
-      <select id="filter-format" aria-label="Filter by document format">
+      <select id="filter-format">
         <option value="">All formats</option>
         {% for fmt in all_formats %}
         <option value="{{ fmt }}">{{ format_labels.get(fmt, fmt) }}</option>
@@ -67,7 +67,7 @@
 
     <div class="filter-group">
       <label for="filter-profile">Profile</label>
-      <select id="filter-profile" aria-label="Filter by audit profile">
+      <select id="filter-profile">
         <option value="">All profiles</option>
         {% for pid in all_profiles %}
         <option value="{{ pid }}">{{ profile_labels.get(pid, pid) }}</option>
@@ -77,7 +77,7 @@
 
     <div class="filter-group">
       <label for="filter-category">Category</label>
-      <select id="filter-category" aria-label="Filter by rule category">
+      <select id="filter-category">
         <option value="">All categories</option>
         {% for cat in all_categories %}
         <option value="{{ cat }}">{{ cat | upper }}</option>
@@ -86,7 +86,7 @@
     </div>
     <div class="filter-group">
       <label for="filter-type">Standard Type</label>
-      <select id="filter-type" aria-label="Filter by standard type (ACB, APH, Microsoft)">
+      <select id="filter-type">
         <option value="">All types</option>
         {% for type_id in all_types %}
         <option value="{{ type_id }}">{{ type_labels.get(type_id, type_id) }}</option>

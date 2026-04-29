@@ -704,16 +704,25 @@ select.input-narrow {
 
 /* --- Flash Messages --- */
 [class^="flash-"] {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
   padding: 1rem 1.25rem;
   border-radius: 0.25rem;
   margin-bottom: 1.5rem;
   border: 2px solid;
 }
 
-[class^="flash-"] p {
-  margin: 0;
+.flash-icon {
+  font-size: 1.5rem;
+  line-height: 1;
+  flex-shrink: 0;
 }
 
+[class^="flash-"] p {
+  margin: 0;
+  line-height: 1.4;
+}
 .flash-error {
   border-color: #8b0000;
   background: #fff0f0;

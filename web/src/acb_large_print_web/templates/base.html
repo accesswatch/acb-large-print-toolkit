@@ -48,11 +48,19 @@
 
     {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
+    <section class="flash-messages" aria-label="Notifications">
     {% for category, message in messages %}
     <div class="flash-{{ category }}" role="alert">
+      <div class="flash-icon" aria-hidden="true">
+        {% if category == "error" %}⚠
+        {% elif category == "success" %}✔
+        {% elif category == "warning" %}‼
+        {% else %}ℹ{% endif %}
+      </div>
       <p>{% if category == "error" %}<strong>Error:</strong> {% elif category == "success" %}<strong>Success:</strong> {% elif category == "warning" %}<strong>Warning:</strong> {% elif category == "info" %}<strong>Note:</strong> {% endif %}{{ message }}</p>
     </div>
     {% endfor %}
+    </section>
     {% endif %}
     {% endwith %}
 
