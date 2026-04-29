@@ -808,6 +808,18 @@ def get_help_urls(rule_id: str, acb_reference: str) -> list[dict[str, str]]:
 
 def _rule_to_dict(rule) -> dict:
     """Convert a RuleDef to a template-friendly dict with help_urls."""
+    rule_type = "other"
+    if rule.rule_id.startswith("ACB-"):
+        rule_type = "acb"
+    elif rule.rule_id.startswith("MSAC-"):
+        rule_type = "msac"
+    elif rule.rule_id.startswith("APH-"):
+        rule_type = "aph"
+    elif rule.rule_id.startswith("EPUB-"):
+        rule_type = "epub"
+    elif rule.rule_id.startswith("MD-"):
+        rule_type = "markdown"
+
     return {
         "rule_id": rule.rule_id,
         "description": rule.description,
@@ -817,6 +829,7 @@ def _rule_to_dict(rule) -> dict:
         "auto_fixable": rule.auto_fixable,
         "formats": sorted(f.value for f in rule.formats),
         "help_urls": get_help_urls(rule.rule_id, rule.acb_reference),
+        "rule_type": rule_type,
     }
 
 

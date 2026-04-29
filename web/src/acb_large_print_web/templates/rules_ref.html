@@ -84,6 +84,24 @@
         {% endfor %}
       </select>
     </div>
+    <div class="filter-group">
+      <label for="filter-type">Standard Type</label>
+      <select id="filter-type" aria-label="Filter by standard type (ACB, APH, Microsoft)">
+        <option value="">All types</option>
+        {% for type_id in all_types %}
+        <option value="{{ type_id }}">{{ type_labels.get(type_id, type_id) }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="filter-group">
+      <label for="filter-type">Type</label>
+      <select id="filter-type" aria-label="Filter by check type">
+        <option value="">All types</option>
+        <option value="content">Content & Structure</option>
+        <option value="metadata">Metadata & Properties</option>
+        <option value="technical">Technical Validation</option>
+      </select>
+    </div>
 
     <div class="filter-group filter-group--auto-fix">
       <label>
@@ -116,19 +134,13 @@
   data-formats="{{ rule.formats | join(' ') }}"
   data-profiles="{{ rule.profiles | join(' ') }}"
   data-category="{{ rule.category }}"
-  data-auto-fixable="{{ 'true' if rule.auto_fixable else 'false' }}"
-  data-searchable="{{ rule.rule_id | lower }} {{ rule.description | lower }}{% if rule.full_description %} {{ rule.full_description | lower }}{% endif %}">
-
-  <summary class="rule-summary">
-    <span class="rule-select-control">
-      <input
-        type="checkbox"
+  data-type="{{ rule.rule_type }}"
         class="rule-select-checkbox"
         data-rule-id="{{ rule.rule_id }}"
         aria-label="Include {{ rule.rule_id }} in the saved custom rule set">
     </span>
     <span class="rule-id">{{ rule.rule_id }}</span>
-    <span class="rule-desc">{{ rule.description }}</span>
+    <span class="rule-desc" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ rule.description }}</span>
     <span class="rule-badges">
       <span class="badge badge-sev badge-sev--{{ rule.severity | lower }}" aria-label="Severity: {{ rule.severity }}">{{ rule.severity }}</span>
       {% for fmt_label in rule.format_labels %}
@@ -466,6 +478,7 @@ document.addEventListener('DOMContentLoaded', function () {
   const formatSelect = document.getElementById('filter-format');
   const profileSelect = document.getElementById('filter-profile');
   const categorySelect = document.getElementById('filter-category');
+  const typeSelect = document.getElementById('filter-type');
   const autoFixChk = document.getElementById('filter-auto-fixable');
   const visibleCount = document.getElementById('visible-count');
   const emptyState = document.getElementById('rules-empty-state');
@@ -611,6 +624,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const fmt = formatSelect.value;
     const profile = profileSelect.value;
     const cat = categorySelect.value;
+    const type = typeSelect.value;
     const fixOnly = autoFixChk.checked;
 
     let shown = 0;
@@ -620,10 +634,11 @@ document.addEventListener('DOMContentLoaded', function () {
       const matchFmt = !fmt || card.dataset.formats.split(' ').includes(fmt);
       const matchProfile = !profile || card.dataset.profiles.split(' ').includes(profile);
       const matchCat = !cat || card.dataset.category === cat;
+      const matchType = !type || card.dataset.type === type;
       const matchFix = !fixOnly || card.dataset.autoFixable === 'true';
 
       const visible =
-        matchSearch && matchSev && matchFmt && matchProfile && matchCat && matchFix;
+        matchSearch && matchSev && matchFmt && matchProfile && matchCat && matchType && matchFix;
       card.hidden = !visible;
       if (visible) {
         shown += 1;
@@ -666,6 +681,7 @@ document.addEventListener('DOMContentLoaded', function () {
     formatSelect.value = '';
     profileSelect.value = '';
     categorySelect.value = '';
+    typeSelect.value = '';
     autoFixChk.checked = false;
     applyFilters();
   }
@@ -760,6 +776,7 @@ document.addEventListener('DOMContentLoaded', function () {
     formatSelect.value = uiState.format || '';
     profileSelect.value = uiState.profile || '';
     categorySelect.value = uiState.category || '';
+    typeSelect.value = uiState.type || '';
     autoFixChk.checked = !!uiState.autoFixableOnly;
     if (requestedTarget !== 'audit' && requestedTarget !== 'fix') {
       currentTarget = normalizeTarget(uiState.target || currentTarget);
@@ -779,7 +796,7 @@ document.addEventListener('DOMContentLoaded', function () {
   });
 
   searchInput.addEventListener('input', debounceApplyFilters);
-  [severitySelect, formatSelect, profileSelect, categorySelect, autoFixChk].forEach(function (el) {
+  [severitySelect, formatSelect, profileSelect, categorySelect, typeSelect, autoFixChk].forEach(function (el) {
     el.addEventListener('input', applyFilters);
     el.addEventListener('change', applyFilters);
   });

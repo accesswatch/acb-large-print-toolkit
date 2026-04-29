@@ -34,6 +34,15 @@ _SEV_ORDER: dict[str, int] = {
     "Low": 3,
 }
 
+_TYPE_LABELS: dict[str, str] = {
+    "acb": "ACB",
+    "msac": "Microsoft",
+    "aph": "APH",
+    "epub": "ePub",
+    "markdown": "Markdown",
+    "other": "Other",
+}
+
 # ACB 2025 profile = all ACB-* and MSAC-* rules for DOCX
 # Combined strict = union of all three profiles
 _ACB_2025_RULE_IDS: set[str] = {
@@ -79,6 +88,7 @@ def rules_ref_page():
     all_formats = sorted({f for r in rules for f in r["formats"]})
     all_severities = ["Critical", "High", "Medium", "Low"]
     all_categories = sorted({r["category"] for r in rules})
+    all_types = sorted({r["rule_type"] for r in rules})
     all_profiles = [
         PROFILE_APH_SUBMISSION,
         PROFILE_ACB_2025,
@@ -92,6 +102,8 @@ def rules_ref_page():
         format_labels=_FORMAT_LABELS,
         all_severities=all_severities,
         all_categories=all_categories,
+        all_types=all_types,
+        type_labels=_TYPE_LABELS,
         all_profiles=all_profiles,
         profile_labels=PROFILE_LABELS,
         total_rules=len(rules),
