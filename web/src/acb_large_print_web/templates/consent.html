@@ -112,6 +112,8 @@
     agreeBox.addEventListener('change', function () {
       btn.disabled = !agreeBox.checked;
     });
+    // Initialize state on load
+    btn.disabled = !agreeBox.checked;
   }
   if (!form) return;
   form.addEventListener('submit', function () {
