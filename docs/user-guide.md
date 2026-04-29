@@ -38,9 +38,9 @@ You have a document. Maybe a board meeting agenda, a newsletter, a training hand
 
 That is exactly what Quick Start is for.
 
-### Step 1: Go to Quick Start on the homepage
+### Step 1: Go to Quick Start
 
-On the GLOW homepage, click **Quick Start: Upload and Discover**. You will land on a single upload form.
+Click the **Quick Start** tab at the top of any GLOW page. You will land on a single upload form.
 
 ### Step 2: Upload anything
 
@@ -69,7 +69,7 @@ After upload, GLOW shows an action chooser. Every available action for your file
 
 **Fix** -- Automatically corrects every formatting problem it can find in Word and Markdown documents: fonts, sizes, spacing, emphasis, alignment. Returns a corrected file. You keep your original. Available for Word and Markdown only.
 
-**Convert** -- Transforms your document into a different format. A Word document can become a web page. A Markdown file can become a PDF. An ePub can become a DAISY talking book. You choose the direction that fits your publishing workflow.
+**Convert** -- Transforms your document into a different format. Upload a PowerPoint, Excel, PDF, Word, or Markdown file and get back accessible HTML, a Word document, an EPUB, a PDF, or plain Markdown. PowerPoint, Excel, and PDF files use smart two-stage extraction: GLOW pulls the text into Markdown first, then Pandoc applies full ACB Large Print formatting. This is handled automatically -- you just choose your output format.
 
 **Export** -- Converts a Word document to an accessible HTML web page with ACB styling already applied. Choose Standalone (a complete web page you upload to a server) or CMS Fragment (a scoped snippet you paste into WordPress, Drupal, or any content management system).
 
@@ -111,7 +111,13 @@ If they are in Markdown: Audit first, then Convert to accessible web page (HTML 
 
 Go to **Audit**. Upload the .pptx. The report shows every slide with issues, what is wrong on each slide, and step-by-step instructions for fixing it manually in PowerPoint.
 
-#### "I need to publish a newsletter in large print PDF."
+Go to **Convert**. Upload the .xlsx and choose **Accessible web page (HTML)** or **Word document**. GLOW extracts the worksheet content to Markdown automatically and then formats it with ACB styles. Review the extracted content to ensure table structure and headers came through correctly.
+
+#### "I have a PowerPoint and I need to publish it as an accessible web page."
+
+Go to **Convert**. Upload the .pptx and choose **Accessible web page (HTML)**. GLOW automatically extracts the content to Markdown and then formats it with full ACB Large Print styles. For best results, review the extracted Markdown before the final HTML step.
+
+#### "I have an Excel workbook and I need to share the data as an accessible document."
 
 Write your content in Markdown or Word. Audit it. Fix it (if Word). Then Convert to accessible PDF. The output uses ACB print formatting: Arial 18pt, 1.15 line spacing, 1-inch margins.
 
@@ -383,7 +389,7 @@ If your source is Markdown rather than Word, use **Convert > Accessible web page
 
 ## 6. How to Convert Between Formats
 
-The Convert page offers six conversion directions, each powered by a different engine chosen for that task.
+The Convert page offers conversion directions powered by different engines. Starting in 2.7.0, PowerPoint (.pptx), Excel (.xlsx/.xls), PDF (.pdf), HTML, CSV, JSON, and XML files can be converted directly to accessible HTML, Word, EPUB, and PDF -- no manual intermediate step required. GLOW uses a smart two-stage process: MarkItDown extracts the content to Markdown, then Pandoc applies full ACB Large Print formatting. This happens transparently when you upload one of these file types and choose an output format.
 
 ### To Markdown (plain text extraction)
 
@@ -401,11 +407,13 @@ Extracts readable text from any supported file. Good for feeding documents into 
 
 ### To accessible web page (HTML)
 
-**Engine:** Pandoc
+**Engine:** Pandoc (with MarkItDown pre-processing for some formats)
 
 Converts a document to a complete, accessible HTML page with ACB Large Print CSS built in. Produces clean, semantically correct HTML with proper headings, lists, tables, footnotes, and cross-references.
 
-**Accepts:** Markdown (.md), Word (.docx), reStructuredText (.rst), OpenDocument (.odt), Rich Text (.rtf), ePub (.epub).
+**Accepts natively:** Markdown (.md), Word (.docx), reStructuredText (.rst), OpenDocument (.odt), Rich Text (.rtf), ePub (.epub).
+
+**Accepts via two-stage extraction:** PowerPoint (.pptx), Excel (.xlsx, .xls), PDF (.pdf), HTML (.html, .htm), CSV, JSON, XML. GLOW extracts content to Markdown first, then Pandoc formats the result.
 
 **You get back:** a standalone `.html` file with all ACB formatting included.
 
@@ -419,11 +427,13 @@ Converts a document to a complete, accessible HTML page with ACB Large Print CSS
 
 ### To Word document
 
-**Engine:** Pandoc
+**Engine:** Pandoc (with MarkItDown pre-processing for some formats)
 
 Converts a document to a Word file (.docx). Pandoc maps headings, lists, tables, and emphasis into Word's native styles.
 
-**Accepts:** Markdown (.md), reStructuredText (.rst), OpenDocument (.odt), Rich Text (.rtf), HTML (.html), ePub (.epub).
+**Accepts natively:** Markdown (.md), reStructuredText (.rst), OpenDocument (.odt), Rich Text (.rtf), HTML (.html), ePub (.epub).
+
+**Accepts via two-stage extraction:** PowerPoint (.pptx), Excel (.xlsx, .xls), PDF (.pdf), CSV, JSON, XML. GLOW extracts content to Markdown first, then Pandoc formats the result.
 
 **You get back:** a `.docx` file, immediately editable in Microsoft Word or LibreOffice Writer.
 
@@ -431,11 +441,13 @@ Converts a document to a Word file (.docx). Pandoc maps headings, lists, tables,
 
 ### To EPUB 3 e-book (Pandoc)
 
-**Engine:** Pandoc
+**Engine:** Pandoc (with MarkItDown pre-processing for some formats)
 
 Creates a lightweight EPUB 3 e-book with ACB Large Print CSS embedded in the stylesheet. Pandoc generates proper EPUB structure including a navigation document and EPUB metadata from the document title.
 
-**Accepts:** Markdown (.md), Word (.docx), reStructuredText (.rst), OpenDocument (.odt), Rich Text (.rtf), HTML (.html).
+**Accepts natively:** Markdown (.md), Word (.docx), reStructuredText (.rst), OpenDocument (.odt), Rich Text (.rtf), HTML (.html).
+
+**Accepts via two-stage extraction:** PowerPoint (.pptx), Excel (.xlsx, .xls), PDF (.pdf), CSV, JSON, XML.
 
 **You get back:** an `.epub` file that opens in Apple Books, Calibre, Thorium, and other e-readers.
 
@@ -443,11 +455,13 @@ Creates a lightweight EPUB 3 e-book with ACB Large Print CSS embedded in the sty
 
 ### To accessible PDF
 
-**Engine:** Pandoc plus WeasyPrint
+**Engine:** Pandoc plus WeasyPrint (with MarkItDown pre-processing for some formats)
 
 Creates a print-ready PDF formatted with ACB rules. Pandoc converts the source to HTML, then WeasyPrint renders it to PDF using ACB print rules: Liberation Sans (metrically identical to Arial), 18pt body text, 22pt headings, 1.15 line spacing, and 1-inch margins.
 
-**Accepts:** Markdown (.md), Word (.docx), reStructuredText (.rst), OpenDocument (.odt), Rich Text (.rtf), ePub (.epub), HTML (.html).
+**Accepts natively:** Markdown (.md), Word (.docx), reStructuredText (.rst), OpenDocument (.odt), Rich Text (.rtf), ePub (.epub), HTML (.html).
+
+**Accepts via two-stage extraction:** PowerPoint (.pptx), Excel (.xlsx, .xls), PDF (.pdf), CSV, JSON, XML.
 
 **You get back:** a `.pdf` file.
 
@@ -485,16 +499,20 @@ Pipeline conversions appear when DAISY Pipeline is installed on the server. If y
 | A DAISY talking book or production EPUB | EPUB or DAISY (Pipeline) |
 | Raw content for editing or AI | Plain text (Markdown) |
 | An HTML snippet for WordPress or Drupal | Export page -- CMS Fragment mode |
+| A PowerPoint or Excel file as a web page | Accessible web page (HTML) -- two-stage |
+| A PDF reformatted with ACB print styles | Accessible PDF -- two-stage |
 
 ### Getting better results with chained conversion
 
-One-step conversion from complex formats (PDF, PowerPoint) to HTML or PDF often produces imperfect output. Two steps almost always produce better results:
+For complex source formats (PowerPoint, Excel, PDF), GLOW automatically runs a two-stage process when you choose HTML, Word, EPUB, or PDF output: it extracts content to Markdown first (via MarkItDown), then Pandoc formats the result with ACB styles. You do not need to do anything extra -- just upload your file and choose your output format.
+
+For even higher quality, you can run the chain manually and edit the intermediate Markdown:
 
 1. **Extract to Markdown** -- pulls the text out of the source file.
 2. **Edit the Markdown** -- fix headings, clean up tables, replace vague link text, add missing alt text.
 3. **Convert the Markdown** -- to HTML, Word, EPUB, or PDF.
 
-You review and improve the content between steps. The final output reflects that care.
+Manual chaining gives you a review step between extraction and formatting. Automatic chaining is faster when the source structure is clean.
 
 ---
 

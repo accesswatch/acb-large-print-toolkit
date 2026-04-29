@@ -65,4 +65,25 @@
 <p>For numbers in prose, spell out one through nine, use numerals for 10 and above, write "percent" instead of "%", and use decades without apostrophes (for example, 1990s).</p>
 </details>
 <p>See also: <a href="./user-guide.md#11-frequently-asked-questions">User Guide FAQ section</a>.</p>
+<h2 id="convert-faq">Convert FAQ</h2>
+<details class="help-accordion">
+<summary>Can I convert a PowerPoint or Excel file directly to HTML, Word, EPUB, or PDF?</summary>
+<p>Yes. As of GLOW 2.7.0, you can upload a PowerPoint (.pptx), Excel (.xlsx, .xls), PDF (.pdf), HTML, CSV, JSON, or XML file and choose any of the Pandoc output directions (accessible web page, Word document, EPUB, accessible PDF). GLOW automatically runs a two-stage process: it extracts the content to Markdown first using MarkItDown, then Pandoc formats the result with full ACB Large Print styles. You do not need to do anything extra -- just upload and choose your output format.</p>
+<p>For the cleanest results, well-structured source files work best. Complex layouts, merged table cells, and heavily visual slides may require manual cleanup of the extracted Markdown.</p>
+</details>
+<details class="help-accordion">
+<summary>What is the difference between automatic two-stage conversion and doing it manually?</summary>
+<p>Automatic two-stage conversion is the same two-step process (MarkItDown extract → Pandoc format) run back-to-back without you doing anything in between. It is fast and convenient for well-structured source files.</p>
+<p>Manual chaining gives you a review step between extraction and formatting:</p>
+<ol>
+<li>Convert your file <strong>To Markdown</strong> to get the extracted text.</li>
+<li>Open the Markdown file, review and fix headings, clean up tables, add missing alt text.</li>
+<li>Convert the improved Markdown to your target format (HTML, Word, EPUB, or PDF).</li>
+</ol>
+<p>Manual chaining produces better results when the source file has complex layouts, inconsistent heading structure, or heavy use of visual formatting that does not map cleanly to text.</p>
+</details>
+<details class="help-accordion">
+<summary>Where is the Quick Start option?</summary>
+<p>Quick Start is the first tab in the navigation bar at the top of every GLOW page. Click it, upload any supported file, and GLOW shows you every available action for that file type -- no need to know in advance which tool to use.</p>
+</details>
 </div>

@@ -10,7 +10,7 @@
 <li><a href="#in-this-guide">In This Guide</a></li>
 <li><a href="#1-quick-start">1. Quick Start</a><ul>
 <li><a href="#the-scenario">The scenario</a></li>
-<li><a href="#step-1-go-to-quick-start-on-the-homepage">Step 1: Go to Quick Start on the homepage</a></li>
+<li><a href="#step-1-go-to-quick-start">Step 1: Go to Quick Start</a></li>
 <li><a href="#step-2-upload-anything">Step 2: Upload anything</a></li>
 <li><a href="#step-3-choose-what-you-want-to-do">Step 3: Choose what you want to do</a></li>
 <li><a href="#step-4-follow-the-form">Step 4: Follow the form</a></li>
@@ -20,7 +20,8 @@
 <li><a href="#i-have-a-word-document-that-i-need-to-make-accessible-quickly">"I have a Word document that I need to make accessible quickly."</a></li>
 <li><a href="#i-have-meeting-minutes-i-need-to-post-on-our-website">"I have meeting minutes I need to post on our website."</a></li>
 <li><a href="#someone-sent-me-a-powerpoint-and-i-need-an-accessibility-report">"Someone sent me a PowerPoint and I need an accessibility report."</a></li>
-<li><a href="#i-need-to-publish-a-newsletter-in-large-print-pdf">"I need to publish a newsletter in large print PDF."</a></li>
+<li><a href="#i-have-a-powerpoint-and-i-need-to-publish-it-as-an-accessible-web-page">"I have a PowerPoint and I need to publish it as an accessible web page."</a></li>
+<li><a href="#i-have-an-excel-workbook-and-i-need-to-share-the-data-as-an-accessible-document">"I have an Excel workbook and I need to share the data as an accessible document."</a></li>
 <li><a href="#i-have-a-conference-call-recording-and-i-need-to-turn-it-into-a-document">"I have a conference call recording and I need to turn it into a document."</a></li>
 <li><a href="#i-need-to-start-fresh-with-a-correctly-formatted-word-document">"I need to start fresh with a correctly formatted Word document."</a></li>
 <li><a href="#i-want-to-understand-what-is-wrong-with-a-specific-section-of-my-document-without-reading-a-full-audit-report">"I want to understand what is wrong with a specific section of my document without reading a full audit report."</a></li>
@@ -350,8 +351,8 @@
 <h3 id="the-scenario">The scenario</h3>
 <p>You have a document. Maybe a board meeting agenda, a newsletter, a training handout, a policy memo, or a recording of a conference call. You need it to be readable by people with low vision and compatible with screen readers. You are not sure where to begin.</p>
 <p>That is exactly what Quick Start is for.</p>
-<h3 id="step-1-go-to-quick-start-on-the-homepage">Step 1: Go to Quick Start on the homepage</h3>
-<p>On the GLOW homepage, click <strong>Quick Start: Upload and Discover</strong>. You will land on a single upload form.</p>
+<h3 id="step-1-go-to-quick-start">Step 1: Go to Quick Start</h3>
+<p>Click the <strong>Quick Start</strong> tab at the top of any GLOW page. You will land on a single upload form.</p>
 <h3 id="step-2-upload-anything">Step 2: Upload anything</h3>
 <p>Quick Start accepts every format GLOW supports:</p>
 <table>
@@ -402,7 +403,7 @@
 <p><strong>What each action does:</strong></p>
 <p><strong>Audit</strong> -- Checks your document against ACB Large Print Guidelines and WCAG 2.2 rules. Returns a scored report with every finding, its severity, and what to do about it. Available for all document formats.</p>
 <p><strong>Fix</strong> -- Automatically corrects every formatting problem it can find in Word and Markdown documents: fonts, sizes, spacing, emphasis, alignment. Returns a corrected file. You keep your original. Available for Word and Markdown only.</p>
-<p><strong>Convert</strong> -- Transforms your document into a different format. A Word document can become a web page. A Markdown file can become a PDF. An ePub can become a DAISY talking book. You choose the direction that fits your publishing workflow.</p>
+<p><strong>Convert</strong> -- Transforms your document into a different format. Upload a PowerPoint, Excel, PDF, Word, or Markdown file and get back accessible HTML, a Word document, an EPUB, a PDF, or plain Markdown. PowerPoint, Excel, and PDF files use smart two-stage extraction: GLOW pulls the text into Markdown first, then Pandoc applies full ACB Large Print formatting. This is handled automatically -- you just choose your output format.</p>
 <p><strong>Export</strong> -- Converts a Word document to an accessible HTML web page with ACB styling already applied. Choose Standalone (a complete web page you upload to a server) or CMS Fragment (a scoped snippet you paste into WordPress, Drupal, or any content management system).</p>
 <p><strong>Template</strong> -- Generates a Word template (.dotx) with all ACB styles pre-configured. Open it in Word and every document you create from it inherits compliant formatting from the first keystroke.</p>
 <p><strong>BITS Whisperer</strong> -- Transcribes an audio file to Markdown or Word. GLOW may normalize some audio formats locally, then send the file to the Whisper API for transcription. Temporary files are cleaned up after processing.</p>
@@ -423,7 +424,10 @@
 <p>If they are in Markdown: Audit first, then Convert to accessible web page (HTML via Pandoc).</p>
 <h4 id="someone-sent-me-a-powerpoint-and-i-need-an-accessibility-report">"Someone sent me a PowerPoint and I need an accessibility report."</h4>
 <p>Go to <strong>Audit</strong>. Upload the .pptx. The report shows every slide with issues, what is wrong on each slide, and step-by-step instructions for fixing it manually in PowerPoint.</p>
-<h4 id="i-need-to-publish-a-newsletter-in-large-print-pdf">"I need to publish a newsletter in large print PDF."</h4>
+<p>Go to <strong>Convert</strong>. Upload the .xlsx and choose <strong>Accessible web page (HTML)</strong> or <strong>Word document</strong>. GLOW extracts the worksheet content to Markdown automatically and then formats it with ACB styles. Review the extracted content to ensure table structure and headers came through correctly.</p>
+<h4 id="i-have-a-powerpoint-and-i-need-to-publish-it-as-an-accessible-web-page">"I have a PowerPoint and I need to publish it as an accessible web page."</h4>
+<p>Go to <strong>Convert</strong>. Upload the .pptx and choose <strong>Accessible web page (HTML)</strong>. GLOW automatically extracts the content to Markdown and then formats it with full ACB Large Print styles. For best results, review the extracted Markdown before the final HTML step.</p>
+<h4 id="i-have-an-excel-workbook-and-i-need-to-share-the-data-as-an-accessible-document">"I have an Excel workbook and I need to share the data as an accessible document."</h4>
 <p>Write your content in Markdown or Word. Audit it. Fix it (if Word). Then Convert to accessible PDF. The output uses ACB print formatting: Arial 18pt, 1.15 line spacing, 1-inch margins.</p>
 <h4 id="i-have-a-conference-call-recording-and-i-need-to-turn-it-into-a-document">"I have a conference call recording and I need to turn it into a document."</h4>
 <p>Go to <strong>BITS Whisperer</strong>. Upload the audio file. Choose Markdown or Word output. Download the transcript. Edit it in a text editor, then use Convert or Fix to finish the document.</p>
@@ -452,15 +456,15 @@
 </tr>
 <tr>
 <td>Excel (.xlsx)</td>
-<td>Sheet names, table headers, merged cells, alt text, color-only data, hyperlink text, workbook title</td>
+<td>Sheet names, table headers, merged cells, alt text, color-only data, hyperlink text, workbook title, blank-row layout patterns, default table names</td>
 </tr>
 <tr>
 <td>PowerPoint (.pptx)</td>
-<td>Slide titles, reading order, alt text, font sizes, speaker notes, chart descriptions, duplicate titles</td>
+<td>Slide titles, reading order, alt text, font sizes, speaker notes, chart descriptions, duplicate titles, timing and animation safety (auto-advance speed, repeating animations, rapid sequences, fast transitions)</td>
 </tr>
 <tr>
 <td>Markdown (.md)</td>
-<td>Heading hierarchy, italic and bold-abuse emphasis, link text, alt text, emoji, em-dashes, table structure</td>
+<td>YAML front matter (presence, closed fence, title, lang fields), heading hierarchy, empty/overlong/punctuated headings, italic and bold-abuse emphasis, bare URLs, ambiguous link text, alt text (presence + quality), emoji, em-dashes, table structure (headers, column counts), code block language identifiers, raw HTML tables and moving content, fake lists, ALL CAPS body text</td>
 </tr>
 <tr>
 <td>PDF (.pdf)</td>
@@ -670,7 +674,7 @@ acb-lp detect-headings document.docx --ai --ai-prompt prompt.txt --threshold 75
 <p>If your source is Markdown rather than Word, use <strong>Convert &gt; Accessible web page</strong> instead -- Pandoc handles Markdown directly and produces cleaner HTML.</p>
 <hr />
 <h2 id="6-how-to-convert-between-formats">6. How to Convert Between Formats</h2>
-<p>The Convert page offers six conversion directions, each powered by a different engine chosen for that task.</p>
+<p>The Convert page offers conversion directions powered by different engines. Starting in 2.7.0, PowerPoint (.pptx), Excel (.xlsx/.xls), PDF (.pdf), HTML, CSV, JSON, and XML files can be converted directly to accessible HTML, Word, EPUB, and PDF -- no manual intermediate step required. GLOW uses a smart two-stage process: MarkItDown extracts the content to Markdown, then Pandoc applies full ACB Large Print formatting. This happens transparently when you upload one of these file types and choose an output format.</p>
 <h3 id="to-markdown-plain-text-extraction">To Markdown (plain text extraction)</h3>
 <p><strong>Engine:</strong> Microsoft MarkItDown</p>
 <p>Extracts readable text from any supported file. Good for feeding documents into AI tools, creating editable starting points, or getting content you can clean up and re-convert.</p>
@@ -679,9 +683,10 @@ acb-lp detect-headings document.docx --ai --ai-prompt prompt.txt --threshold 75
 <p><strong>AI image descriptions:</strong> some deployments may enable AI-assisted image description generation for supported conversion paths. Check your local deployment policy before using AI-powered image workflows.</p>
 <p><strong>When to use:</strong> you need the raw content out of a file in any format. Also the right first step before a chain conversion -- extract to Markdown, edit, then convert to HTML, Word, EPUB, or PDF.</p>
 <h3 id="to-accessible-web-page-html">To accessible web page (HTML)</h3>
-<p><strong>Engine:</strong> Pandoc</p>
+<p><strong>Engine:</strong> Pandoc (with MarkItDown pre-processing for some formats)</p>
 <p>Converts a document to a complete, accessible HTML page with ACB Large Print CSS built in. Produces clean, semantically correct HTML with proper headings, lists, tables, footnotes, and cross-references.</p>
-<p><strong>Accepts:</strong> Markdown (.md), Word (.docx), reStructuredText (.rst), OpenDocument (.odt), Rich Text (.rtf), ePub (.epub).</p>
+<p><strong>Accepts natively:</strong> Markdown (.md), Word (.docx), reStructuredText (.rst), OpenDocument (.odt), Rich Text (.rtf), ePub (.epub).</p>
+<p><strong>Accepts via two-stage extraction:</strong> PowerPoint (.pptx), Excel (.xlsx, .xls), PDF (.pdf), HTML (.html, .htm), CSV, JSON, XML. GLOW extracts content to Markdown first, then Pandoc formats the result.</p>
 <p><strong>You get back:</strong> a standalone <code>.html</code> file with all ACB formatting included.</p>
 <p><strong>Options:</strong></p>
 <ul>
@@ -691,21 +696,24 @@ acb-lp detect-headings document.docx --ai --ai-prompt prompt.txt --threshold 75
 </ul>
 <p><strong>When to use:</strong> producing a web page for a browser, for printing from a browser, for email attachment, or for uploading to a website. Markdown input produces the cleanest output.</p>
 <h3 id="to-word-document">To Word document</h3>
-<p><strong>Engine:</strong> Pandoc</p>
+<p><strong>Engine:</strong> Pandoc (with MarkItDown pre-processing for some formats)</p>
 <p>Converts a document to a Word file (.docx). Pandoc maps headings, lists, tables, and emphasis into Word's native styles.</p>
-<p><strong>Accepts:</strong> Markdown (.md), reStructuredText (.rst), OpenDocument (.odt), Rich Text (.rtf), HTML (.html), ePub (.epub).</p>
+<p><strong>Accepts natively:</strong> Markdown (.md), reStructuredText (.rst), OpenDocument (.odt), Rich Text (.rtf), HTML (.html), ePub (.epub).</p>
+<p><strong>Accepts via two-stage extraction:</strong> PowerPoint (.pptx), Excel (.xlsx, .xls), PDF (.pdf), CSV, JSON, XML. GLOW extracts content to Markdown first, then Pandoc formats the result.</p>
 <p><strong>You get back:</strong> a <code>.docx</code> file, immediately editable in Microsoft Word or LibreOffice Writer.</p>
 <p><strong>When to use:</strong> you have a Markdown or HTML document and need a Word version -- either for colleagues who work in Word, or to run GLOW Fix on content that started in another format. Common workflow: extract to Markdown, edit, convert to Word, then Fix.</p>
 <h3 id="to-epub-3-e-book-pandoc">To EPUB 3 e-book (Pandoc)</h3>
-<p><strong>Engine:</strong> Pandoc</p>
+<p><strong>Engine:</strong> Pandoc (with MarkItDown pre-processing for some formats)</p>
 <p>Creates a lightweight EPUB 3 e-book with ACB Large Print CSS embedded in the stylesheet. Pandoc generates proper EPUB structure including a navigation document and EPUB metadata from the document title.</p>
-<p><strong>Accepts:</strong> Markdown (.md), Word (.docx), reStructuredText (.rst), OpenDocument (.odt), Rich Text (.rtf), HTML (.html).</p>
+<p><strong>Accepts natively:</strong> Markdown (.md), Word (.docx), reStructuredText (.rst), OpenDocument (.odt), Rich Text (.rtf), HTML (.html).</p>
+<p><strong>Accepts via two-stage extraction:</strong> PowerPoint (.pptx), Excel (.xlsx, .xls), PDF (.pdf), CSV, JSON, XML.</p>
 <p><strong>You get back:</strong> an <code>.epub</code> file that opens in Apple Books, Calibre, Thorium, and other e-readers.</p>
 <p><strong>When to use:</strong> you need a simple, portable e-book. For production-quality EPUB with full accessibility metadata and DAISY reading-system compatibility, use the Pipeline option instead.</p>
 <h3 id="to-accessible-pdf">To accessible PDF</h3>
-<p><strong>Engine:</strong> Pandoc plus WeasyPrint</p>
+<p><strong>Engine:</strong> Pandoc plus WeasyPrint (with MarkItDown pre-processing for some formats)</p>
 <p>Creates a print-ready PDF formatted with ACB rules. Pandoc converts the source to HTML, then WeasyPrint renders it to PDF using ACB print rules: Liberation Sans (metrically identical to Arial), 18pt body text, 22pt headings, 1.15 line spacing, and 1-inch margins.</p>
-<p><strong>Accepts:</strong> Markdown (.md), Word (.docx), reStructuredText (.rst), OpenDocument (.odt), Rich Text (.rtf), ePub (.epub), HTML (.html).</p>
+<p><strong>Accepts natively:</strong> Markdown (.md), Word (.docx), reStructuredText (.rst), OpenDocument (.odt), Rich Text (.rtf), ePub (.epub), HTML (.html).</p>
+<p><strong>Accepts via two-stage extraction:</strong> PowerPoint (.pptx), Excel (.xlsx, .xls), PDF (.pdf), CSV, JSON, XML.</p>
 <p><strong>You get back:</strong> a <code>.pdf</code> file.</p>
 <p><strong>Options:</strong></p>
 <ul>
@@ -761,16 +769,25 @@ acb-lp detect-headings document.docx --ai --ai-prompt prompt.txt --threshold 75
 <td>An HTML snippet for WordPress or Drupal</td>
 <td>Export page -- CMS Fragment mode</td>
 </tr>
+<tr>
+<td>A PowerPoint or Excel file as a web page</td>
+<td>Accessible web page (HTML) -- two-stage</td>
+</tr>
+<tr>
+<td>A PDF reformatted with ACB print styles</td>
+<td>Accessible PDF -- two-stage</td>
+</tr>
 </tbody>
 </table>
 <h3 id="getting-better-results-with-chained-conversion">Getting better results with chained conversion</h3>
-<p>One-step conversion from complex formats (PDF, PowerPoint) to HTML or PDF often produces imperfect output. Two steps almost always produce better results:</p>
+<p>For complex source formats (PowerPoint, Excel, PDF), GLOW automatically runs a two-stage process when you choose HTML, Word, EPUB, or PDF output: it extracts content to Markdown first (via MarkItDown), then Pandoc formats the result with ACB styles. You do not need to do anything extra -- just upload your file and choose your output format.</p>
+<p>For even higher quality, you can run the chain manually and edit the intermediate Markdown:</p>
 <ol>
 <li><strong>Extract to Markdown</strong> -- pulls the text out of the source file.</li>
 <li><strong>Edit the Markdown</strong> -- fix headings, clean up tables, replace vague link text, add missing alt text.</li>
 <li><strong>Convert the Markdown</strong> -- to HTML, Word, EPUB, or PDF.</li>
 </ol>
-<p>You review and improve the content between steps. The final output reflects that care.</p>
+<p>Manual chaining gives you a review step between extraction and formatting. Automatic chaining is faster when the source structure is clean.</p>
 <hr />
 <h2 id="7-bits-whisperer-transcribe-audio">7. BITS Whisperer: Transcribe Audio</h2>
 <p>BITS Whisperer transcribes audio files into accessible text documents using the Whisper API. GLOW may normalize OGG, FLAC, AAC, or Opus uploads into a more compatible temporary format before sending them for transcription.</p>
@@ -918,14 +935,13 @@ acb-lp detect-headings document.docx --ai --ai-prompt prompt.txt --threshold 75
 <li><strong>Export and Convert defaults</strong></li>
 </ul>
 <h3 id="privacy-and-persistence">Privacy and persistence</h3>
-<p>Settings are saved only when you enable cookie opt-in. They stay on the current browser and device only. Turning off cookie opt-in removes saved settings and returns GLOW to its built-in defaults.</p>
+<p>Settings are saved in your browser's local storage. Nothing is sent to the server. Your preferences stay on the current browser and device only. Clearing browser data or site storage removes saved settings and returns GLOW to its built-in defaults.</p>
 <h3 id="first-time-setup">First-time setup</h3>
 <ol>
 <li>Open <strong>Settings</strong>.</li>
-<li>Enable cookie opt-in.</li>
 <li>Set your preferred audit mode and categories.</li>
 <li>Set your preferred fix mode and heading options.</li>
-<li>Save.</li>
+<li>Click <strong>Save My Settings</strong>.</li>
 <li>Open Audit or Fix and verify the defaults are pre-selected.</li>
 </ol>
 <hr />
@@ -1031,6 +1047,7 @@ acb-lp detect-headings document.docx --ai --ai-prompt prompt.txt --threshold 75
 <li>Add alt text to every image, chart, and SmartArt graphic.</li>
 <li>Use slide layouts with built-in placeholders rather than manually placed text boxes.</li>
 <li>Add speaker notes for slides where the content is primarily visual.</li>
+<li>Avoid auto-advance timings under 5 seconds and repeating or rapidly triggered animation sequences. These prevent users from reading slide content in their own time and can cause discomfort for users with vestibular disorders.</li>
 </ul>
 <h3 id="markdown-md">Markdown (.md)</h3>
 <ul>
@@ -1189,7 +1206,14 @@ acb-lp detect-headings document.docx --ai --ai-prompt prompt.txt --threshold 75
 <ul>
 <li><strong>ACB Large Print Guidelines</strong> -- <a href="https://acb.org/large-print-guidelines">acb.org/large-print-guidelines</a></li>
 <li><strong>APH Large Print Guidelines</strong> -- <a href="https://www.aph.org/resources/large-print-guidelines/">aph.org/resources/large-print-guidelines</a></li>
-<li><strong>Guidelines reference page</strong> -- available in the GLOW web app at <a href="https://glow.bits-acb.org/guidelines">glow.bits-acb.org/guidelines</a></li>
+<li><strong>Guidelines reference page</strong> -- available in the GLOW web app via the <strong>Guidelines</strong> tab. Includes a deep-dive link to the Rules Reference.</li>
+<li><strong>Rules Reference page</strong> -- browse every audit rule with severity, WCAG mapping, and fix guidance. Accessible from the bottom of the Guidelines page. <ul>
+<li><strong>Include Shown</strong> / <strong>Exclude Shown</strong>: bulk select or clear rules based on your current filters.</li>
+<li><strong>Toggle Shown</strong>: invert the selection of visible rules.</li>
+<li><strong>Save Changes</strong>: save your current rule selection as your global default for Audit and Fix.</li>
+<li><strong>Undo Changes</strong>: discard unsaved changes and restore your previous rule set.</li>
+</ul>
+</li>
 <li><strong>Submit feedback</strong> -- use the Feedback page in the web app to report bugs, request features, or share your experience</li>
 <li><strong>About page</strong> -- mission, organizations, standards, and open source dependencies</li>
 <li><strong>GitHub Issues</strong> -- <a href="https://github.com/accesswatch/acb-large-print-toolkit/issues">report bugs or request features</a></li>

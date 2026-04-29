@@ -10,6 +10,10 @@ Releases are tagged in the [GitHub repository](https://github.com/accesswatch/ac
 
 ### Added
 
+- **Navigation: Quick Start tab.** The Quick Start upload-and-discover flow (`/process/`) is now accessible from a permanent tab in the main navigation bar, appearing as the first tab on every page. Previously it was only reachable from a button on the home page. The tab is always shown regardless of feature flags. Changes in `templates/base.html`.
+
+- **Navigation: Template tab moved before Audit.** The Template tab now appears immediately after Quick Start, before Audit and Fix, reflecting a start-of-workflow position for new document creation. Changes in `templates/base.html`.
+
 - **Two-stage chained conversion for PowerPoint, Excel, PDF, and more.** The Convert page (`/convert/`) now accepts `.pptx`, `.xlsx`, `.xls`, `.pdf`, `.csv`, `.html`, `.htm`, `.json`, and `.xml` files as input for all Pandoc output directions (HTML, Word, EPUB, PDF). Files are first extracted to Markdown via MarkItDown, then Pandoc applies full ACB Large Print formatting. This is fully transparent -- users simply upload their file and choose the output format. Changes in `web/src/acb_large_print_web/routes/convert.py` and `templates/convert_form.html`.
   - Defined `_CHAIN_VIA_MARKDOWN` frozenset for the chained extension set.
   - Defined `_PANDOC_EFFECTIVE_EXTENSIONS` = `PANDOC_INPUT_EXTENSIONS | _CHAIN_VIA_MARKDOWN` used for validation and UI.

@@ -19,6 +19,7 @@
         <span class="brand-nav-text">{{ brand_nav_label }}</span>
       </a>
       <ul class="nav-tabs" role="tablist" aria-label="Document tools">
+        <li role="none"><a href="{{ url_for('process.process_form') }}" role="tab" id="tab-quickstart" aria-controls="main"{% if request.blueprint == 'process' %} aria-selected="true"{% else %} aria-selected="false"{% endif %}>Quick Start</a></li>
         {% if feature_template_builder_enabled %}
         <li role="none"><a href="{{ url_for('template.template_form') }}" role="tab" id="tab-template" aria-controls="main"{% if request.blueprint == 'template' %} aria-selected="true"{% else %} aria-selected="false"{% endif %}>Template</a></li>
         {% endif %}

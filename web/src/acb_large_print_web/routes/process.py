@@ -84,7 +84,7 @@ def _get_available_actions(file_ext: str) -> dict[str, dict]:
             "name": "Convert",
             "route": "convert.convert_form",
             "icon": "📄",
-            "description": "Transform to Markdown, HTML, PDF, Word, ePub, or other formats",
+            "description": "Convert to Markdown, accessible HTML, Word, EPUB, or PDF. PowerPoint, Excel, and PDF files use a smart two-stage extraction — GLOW handles it automatically.",
             "enabled": bool(all_flags.get("GLOW_ENABLE_CONVERTER", True))
             and convert_directions_enabled
             and ext in CONVERT_EXTENSIONS,

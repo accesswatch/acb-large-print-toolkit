@@ -109,3 +109,36 @@ For numbers in prose, spell out one through nine, use numerals for 10 and above,
 </details>
 
 See also: [User Guide FAQ section](./user-guide.md#11-frequently-asked-questions).
+
+## Convert FAQ
+
+<details class="help-accordion" markdown="1">
+<summary>Can I convert a PowerPoint or Excel file directly to HTML, Word, EPUB, or PDF?</summary>
+
+Yes. As of GLOW 2.7.0, you can upload a PowerPoint (.pptx), Excel (.xlsx, .xls), PDF (.pdf), HTML, CSV, JSON, or XML file and choose any of the Pandoc output directions (accessible web page, Word document, EPUB, accessible PDF). GLOW automatically runs a two-stage process: it extracts the content to Markdown first using MarkItDown, then Pandoc formats the result with full ACB Large Print styles. You do not need to do anything extra -- just upload and choose your output format.
+
+For the cleanest results, well-structured source files work best. Complex layouts, merged table cells, and heavily visual slides may require manual cleanup of the extracted Markdown.
+
+</details>
+
+<details class="help-accordion" markdown="1">
+<summary>What is the difference between automatic two-stage conversion and doing it manually?</summary>
+
+Automatic two-stage conversion is the same two-step process (MarkItDown extract → Pandoc format) run back-to-back without you doing anything in between. It is fast and convenient for well-structured source files.
+
+Manual chaining gives you a review step between extraction and formatting:
+
+1. Convert your file **To Markdown** to get the extracted text.
+2. Open the Markdown file, review and fix headings, clean up tables, add missing alt text.
+3. Convert the improved Markdown to your target format (HTML, Word, EPUB, or PDF).
+
+Manual chaining produces better results when the source file has complex layouts, inconsistent heading structure, or heavy use of visual formatting that does not map cleanly to text.
+
+</details>
+
+<details class="help-accordion" markdown="1">
+<summary>Where is the Quick Start option?</summary>
+
+Quick Start is the first tab in the navigation bar at the top of every GLOW page. Click it, upload any supported file, and GLOW shows you every available action for that file type -- no need to know in advance which tool to use.
+
+</details>
