@@ -106,7 +106,7 @@
     title.focus();
   }
   if (btn) {
-    btn.disabled = true;
+    // btn.disabled = true; // Remove pre-emptive disable
   }
   if (agreeBox && btn) {
     agreeBox.addEventListener('change', function () {
@@ -114,6 +114,11 @@
     });
     // Initialize state on load
     btn.disabled = !agreeBox.checked;
+    
+    // Safety check for browsers that might have checked attribute set but haven't fired change
+    if (agreeBox.checked) {
+       btn.disabled = false;
+    }
   }
   if (!form) return;
   form.addEventListener('submit', function () {
