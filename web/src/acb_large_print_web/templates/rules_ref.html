@@ -125,108 +125,133 @@
 
 {# ------------------------------------------------------------------ Rule list #}
 <section id="rules-list" aria-label="Rules list">
+{% set last_group = namespace(value="") %}
 {% for rule in rules %}
-<h2 class="rule-heading-visually-hidden">{{ rule.rule_id }}: {{ rule.description }}</h2>
-<details class="rule-card sev-{{ rule.severity | lower }}"
-  id="rule-{{ rule.rule_id }}"
-  data-rule-id="{{ rule.rule_id }}"
-  data-severity="{{ rule.severity }}"
-  data-formats="{{ rule.formats | join(' ') }}"
-  data-profiles="{{ rule.profiles | join(' ') }}"
-  data-category="{{ rule.category }}"
-  data-type="{{ rule.rule_type }}"
-        class="rule-select-checkbox"
-        data-rule-id="{{ rule.rule_id }}"
-        aria-label="Include {{ rule.rule_id }} in the saved custom rule set">
-    </span>
-    <span class="rule-id">{{ rule.rule_id }}</span>
-    <span class="rule-desc" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ rule.description }}</span>
-    <span class="rule-badges">
-      <span class="badge badge-sev badge-sev--{{ rule.severity | lower }}" aria-label="Severity: {{ rule.severity }}">{{ rule.severity }}</span>
-      {% for fmt_label in rule.format_labels %}
-      <span class="badge badge-fmt">{{ fmt_label }}</span>
-      {% endfor %}
-      {% if rule.auto_fixable %}
-      <span class="badge badge-fix" aria-label="Auto-fixable">Auto-fix</span>
-      {% endif %}
-    </span>
-  </summary>
+  {% if rule.ui_group != last_group.value %}
+    {% set last_group.value = rule.ui_group %}
+    {% if not loop.first %}
+      </div>{# /.rule-group-content #}
+    </details>
+    {% endif %}
+    <details class="rule-group" open>
+      <summary class="rule-group-header">
+        <h2 class="rule-group-title">{{ rule.ui_group }}</h2>
+      </summary>
+      <div class="rule-group-content">
+  {% endif %}
 
-  <div class="rule-body">
-    <dl class="rule-meta">
-      <div class="rule-meta-row">
-        <dt>Rule ID</dt>
-        <dd><code>{{ rule.rule_id }}</code></dd>
-      </div>
+  <h2 class="rule-heading-visually-hidden">{{ rule.rule_id }}: {{ rule.description }}</h2>
+  <details class="rule-card sev-{{ rule.severity | lower }}"
+    id="rule-{{ rule.rule_id }}"
+    data-rule-id="{{ rule.rule_id }}"
+    data-severity="{{ rule.severity }}"
+    data-formats="{{ rule.formats | join(' ') }}"
+    data-profiles="{{ rule.profiles | join(' ') }}"
+    data-category="{{ rule.category }}"
+    data-type="{{ rule.rule_type }}"
+    data-auto-fixable="{{ 'true' if rule.auto_fixable else 'false' }}"
+    data-searchable="{{ rule.rule_id | lower }} {{ rule.description | lower }}{% if rule.full_description %} {{ rule.full_description | lower }}{% endif %}">
 
-      <div class="rule-meta-row">
-        <dt>Category</dt>
-        <dd>{{ rule.category | upper }}</dd>
-      </div>
+    <summary class="rule-summary">
+      <span class="rule-select-control">
+        <input
+          type="checkbox"
+          class="rule-select-checkbox"
+          data-rule-id="{{ rule.rule_id }}"
+          aria-label="Include {{ rule.rule_id }} in the saved custom rule set">
+      </span>
+      <span class="rule-id">{{ rule.rule_id }}</span>
+      <span class="rule-desc" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ rule.description }}</span>
+      <span class="rule-badges">
+        <span class="badge badge-sev badge-sev--{{ rule.severity | lower }}" aria-label="Severity: {{ rule.severity }}">{{ rule.severity }}</span>
+        {% for fmt_label in rule.format_labels %}
+        <span class="badge badge-fmt">{{ fmt_label }}</span>
+        {% endfor %}
+        {% if rule.auto_fixable %}
+        <span class="badge badge-fix" aria-label="Auto-fixable">Auto-fix</span>
+        {% endif %}
+      </span>
+    </summary>
 
-      <div class="rule-meta-row">
-        <dt>Severity</dt>
-        <dd><span class="badge badge-sev badge-sev--{{ rule.severity | lower }}">{{ rule.severity }}</span></dd>
-      </div>
+    <div class="rule-body">
+      <dl class="rule-meta">
+        <div class="rule-meta-row">
+          <dt>Rule ID</dt>
+          <dd><code>{{ rule.rule_id }}</code></dd>
+        </div>
 
-      <div class="rule-meta-row">
-        <dt>Formats</dt>
-        <dd>{{ rule.format_labels | join(', ') }}</dd>
-      </div>
+        <div class="rule-meta-row">
+          <dt>Category</dt>
+          <dd>{{ rule.category | upper }}</dd>
+        </div>
 
-      {% if rule.acb_reference %}
-      <div class="rule-meta-row">
-        <dt>Standard reference</dt>
-        <dd>{{ rule.acb_reference }}</dd>
-      </div>
-      {% endif %}
+        <div class="rule-meta-row">
+          <dt>Severity</dt>
+          <dd><span class="badge badge-sev badge-sev--{{ rule.severity | lower }}">{{ rule.severity }}</span></dd>
+        </div>
 
-      <div class="rule-meta-row">
-        <dt>Auto-fixable</dt>
-        <dd>{% if rule.auto_fixable %}Yes{% else %}No{% endif %}</dd>
-      </div>
+        <div class="rule-meta-row">
+          <dt>Formats</dt>
+          <dd>{{ rule.format_labels | join(', ') }}</dd>
+        </div>
 
-      {% if rule.profiles %}
-      <div class="rule-meta-row">
-        <dt>Profiles</dt>
-        <dd>
-          {% for pid in rule.profiles %}
-          <span class="badge badge-profile">{{ profile_labels.get(pid, pid) }}</span>
-          {% endfor %}
-        </dd>
-      </div>
-      {% endif %}
+        {% if rule.acb_reference %}
+        <div class="rule-meta-row">
+          <dt>Standard reference</dt>
+          <dd>{{ rule.acb_reference }}</dd>
+        </div>
+        {% endif %}
 
-      {% if rule.help_urls %}
-      <div class="rule-meta-row">
-        <dt>Learn more</dt>
-        <dd>
-          <ul class="rule-help-links">
-            {% for link in rule.help_urls %}
-            <li><a href="{{ link.url }}" rel="noopener noreferrer">{{ link.label }}</a></li>
+        <div class="rule-meta-row">
+          <dt>Auto-fixable</dt>
+          <dd>{% if rule.auto_fixable %}Yes{% else %}No{% endif %}</dd>
+        </div>
+
+        {% if rule.profiles %}
+        <div class="rule-meta-row">
+          <dt>Profiles</dt>
+          <dd>
+            {% for pid in rule.profiles %}
+            <span class="badge badge-profile">{{ profile_labels.get(pid, pid) }}</span>
             {% endfor %}
-          </ul>
-        </dd>
+          </dd>
+        </div>
+        {% endif %}
+
+        {% if rule.help_urls %}
+        <div class="rule-meta-row">
+          <dt>Learn more</dt>
+          <dd>
+            <ul class="rule-help-links">
+              {% for link in rule.help_urls %}
+              <li><a href="{{ link.url }}" rel="noopener noreferrer">{{ link.label }}</a></li>
+              {% endfor %}
+            </ul>
+          </dd>
+        </div>
+        {% endif %}
+      </dl>
+
+      {% if rule.full_description %}
+      <div class="rule-section">
+        <h3>Why this rule matters</h3>
+        <p>{{ rule.full_description }}</p>
       </div>
       {% endif %}
-    </dl>
 
-    {% if rule.full_description %}
-    <div class="rule-section">
-      <h3>Why this rule matters</h3>
-      <p>{{ rule.full_description }}</p>
-    </div>
-    {% endif %}
+      {% if rule.suppress_guidance %}
+      <div class="rule-section rule-section--suppress">
+        <h3>When to suppress</h3>
+        <p>{{ rule.suppress_guidance }}</p>
+      </div>
+      {% endif %}
 
-    {% if rule.suppress_guidance %}
-    <div class="rule-section rule-section--suppress">
-      <h3>When to suppress</h3>
-      <p>{{ rule.suppress_guidance }}</p>
-    </div>
-    {% endif %}
-
-  </div>{# /.rule-body #}
-</details>
+    </div>{# /.rule-body #}
+  </details>
+  {% if loop.last %}
+      </div>{# /.rule-group-content #}
+    </details>
+  {% endif %}
 {% endfor %}
 </section>
 
@@ -293,6 +318,42 @@
 }
 
 /* ------------------------------------------------------------------ Rule cards */
+.rule-group {
+  margin-bottom: 2rem;
+  border: 1px solid var(--color-border, #e0e0e0);
+  border-radius: 0.5rem;
+  overflow: hidden;
+  background: var(--surface-alt, #fafafa);
+}
+.rule-group-header {
+  padding: 1rem;
+  background: var(--surface, #eee);
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid var(--color-border, #e0e0e0);
+}
+.rule-group-header::-webkit-details-marker { display: none; }
+.rule-group-header::before {
+  content: "▶";
+  font-size: 1rem;
+  margin-right: 0.75rem;
+  color: var(--color-muted, #555);
+  transition: transform 0.2s;
+}
+details.rule-group[open] > .rule-group-header::before {
+  transform: rotate(90deg);
+}
+.rule-group-title {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: bold;
+}
+.rule-group-content {
+  padding: 1rem;
+}
+
 .rule-card {
   border-left: 4px solid var(--color-border, #ccc);
   border-radius: 0 0.375rem 0.375rem 0;
@@ -627,25 +688,36 @@ document.addEventListener('DOMContentLoaded', function () {
     const type = typeSelect.value;
     const fixOnly = autoFixChk.checked;
 
-    let shown = 0;
-    cards.forEach(function (card) {
-      const matchSearch = !q || card.dataset.searchable.includes(q);
-      const matchSev = !sev || card.dataset.severity === sev;
-      const matchFmt = !fmt || card.dataset.formats.split(' ').includes(fmt);
-      const matchProfile = !profile || card.dataset.profiles.split(' ').includes(profile);
-      const matchCat = !cat || card.dataset.category === cat;
-      const matchType = !type || card.dataset.type === type;
-      const matchFix = !fixOnly || card.dataset.autoFixable === 'true';
+    let totalShown = 0;
+    const groups = Array.from(document.querySelectorAll('.rule-group'));
 
-      const visible =
-        matchSearch && matchSev && matchFmt && matchProfile && matchCat && matchType && matchFix;
-      card.hidden = !visible;
-      if (visible) {
-        shown += 1;
-      }
+    groups.forEach(function (group) {
+      let groupShown = 0;
+      const groupCards = Array.from(group.querySelectorAll('.rule-card'));
+
+      groupCards.forEach(function (card) {
+        const matchSearch = !q || card.dataset.searchable.includes(q);
+        const matchSev = !sev || card.dataset.severity === sev;
+        const matchFmt = !fmt || card.dataset.formats.split(' ').includes(fmt);
+        const matchProfile = !profile || card.dataset.profiles.split(' ').includes(profile);
+        const matchCat = !cat || card.dataset.category === cat;
+        const matchType = !type || card.dataset.type === type;
+        const matchFix = !fixOnly || card.dataset.autoFixable === 'true';
+
+        const visible =
+          matchSearch && matchSev && matchFmt && matchProfile && matchCat && matchType && matchFix;
+        card.hidden = !visible;
+        if (visible) {
+          groupShown += 1;
+        }
+      });
+
+      // Hide group if no rules match filters
+      group.hidden = groupShown === 0;
+      totalShown += groupShown;
     });
 
-    updateVisibleStatus(shown);
+    updateVisibleStatus(totalShown);
     updateSelectionSummary();
     persistUiState();
   }

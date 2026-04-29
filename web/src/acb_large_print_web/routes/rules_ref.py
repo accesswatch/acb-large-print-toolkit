@@ -71,9 +71,29 @@ def _build_rule_list() -> list[dict]:
         if rule.rule_id in _COMBINED_STRICT_RULE_IDS:
             d["profiles"].append(PROFILE_COMBINED_STRICT)
         d["format_labels"] = [_FORMAT_LABELS.get(f, f) for f in d["formats"]]
+
+        # Determine semantic group for accordion view
+        desc = d["description"].lower()
+        if any(w in desc for w in ["font", "body", "italic", "bold", "allcaps"]):
+            d["ui_group"] = "Fonts & Emphasis"
+        elif any(w in desc for w in ["heading", "hierarchy"]):
+            d["ui_group"] = "Structure & Headings"
+        elif any(w in desc for w in ["alt text", "images", "graphics", "photo"]):
+            d["ui_group"] = "Images & Alt Text"
+        elif any(w in desc for w in ["table", "cells", "rows", "column"]):
+            d["ui_group"] = "Tables & Data"
+        elif any(w in desc for w in ["link", "url"]):
+            d["ui_group"] = "Links & Navigation"
+        elif any(w in desc for w in ["metadata", "title", "language", "author", "front matter"]):
+            d["ui_group"] = "Document Metadata"
+        elif any(w in desc for w in ["margin", "spacing", "page", "indent", "bullet", "list"]):
+            d["ui_group"] = "Layout & Spacing"
+        else:
+            d["ui_group"] = "General & Technical"
+
         rules.append(d)
-    # Sort: severity first, then rule_id
-    rules.sort(key=lambda r: (_SEV_ORDER.get(r["severity"], 99), r["rule_id"]))
+    # Sort: ui_group, then severity, then rule_id
+    rules.sort(key=lambda r: (r["ui_group"], _SEV_ORDER.get(r["severity"], 99), r["rule_id"]))
     return rules
 
 
