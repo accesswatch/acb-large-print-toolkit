@@ -58,6 +58,34 @@ When you convert a document to HTML, the result page shows a sandboxed inline pr
 
 All upload forms now support drag-and-drop. The drop zone is keyboard accessible and falls back to the standard file picker on any device.
 
+### Download your audit report as a PDF or CSV
+
+The shareable report section now includes **Download PDF** and **Download CSV** buttons.
+
+The PDF version of the report is generated server-side and styled for print, ready to attach to a board packet or compliance file. The CSV contains every finding (with severity, rule ID, message, location, ACB reference, and help links) ready to drop into Excel or a tracking spreadsheet.
+
+### See exactly what changed when you re-audit
+
+When you re-audit a document after fixing it, the report now shows a before-and-after diff banner: how many points the score improved, the new grade letter, and which specific rule IDs were fixed since the previous audit.
+
+If a fix introduced a new issue, that is called out as well, so nothing slips through.
+
+### Inline rule explanations on every finding
+
+Every rule ID in the findings table is now a click-to-expand disclosure. Open it to see the rule description, ACB reference, and a plain-language "Why this matters" explanation -- without leaving the page or losing your place in a long findings list.
+
+### Convert → Audit handoff
+
+When you convert a document to HTML, Word, or EPUB, the result page now offers an "Audit This Document" button. One click runs the audit on the converted file -- no re-upload, no extra step.
+
+### Roadmap page
+
+The site footer now links to a Roadmap page that lists what shipped in this release, what is in flight, and what is being considered next. The roadmap is open for community feedback.
+
+### Better keyboard focus and reduced motion support
+
+GLOW now ships a clearer global keyboard focus indicator on every focusable element, and respects the `prefers-reduced-motion` setting -- toast slide-ins, dropzone hovers, and consent modal fades are disabled when reduced motion is requested. The cloud-AI consent dialog body now scrolls so the Decline/Accept buttons stay visible on small viewports.
+
 ## Privacy policy update
 
 The Data Storage and Retention Policy has been updated to accurately reflect how audit session files are handled under the new streamlined flow.

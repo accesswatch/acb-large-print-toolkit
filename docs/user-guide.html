@@ -1,177 +1,3 @@
-<!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml">
-<head>
-  <meta charset="utf-8" />
-  <meta name="generator" content="pandoc" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <title>user-guide</title>
-  <style>
-    /* Default styles provided by pandoc.
-    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
-    */
-    html {
-      color: #1a1a1a;
-      background-color: #fdfdfd;
-    }
-    body {
-      margin: 0 auto;
-      max-width: 36em;
-      padding-left: 50px;
-      padding-right: 50px;
-      padding-top: 50px;
-      padding-bottom: 50px;
-      hyphens: auto;
-      overflow-wrap: break-word;
-      text-rendering: optimizeLegibility;
-      font-kerning: normal;
-    }
-    @media (max-width: 600px) {
-      body {
-        font-size: 0.9em;
-        padding: 12px;
-      }
-      h1 {
-        font-size: 1.8em;
-      }
-    }
-    @media print {
-      html {
-        background-color: white;
-      }
-      body {
-        background-color: transparent;
-        color: black;
-        font-size: 12pt;
-      }
-      p, h2, h3 {
-        orphans: 3;
-        widows: 3;
-      }
-      h2, h3, h4 {
-        page-break-after: avoid;
-      }
-    }
-    p {
-      margin: 1em 0;
-    }
-    a {
-      color: #1a1a1a;
-    }
-    a:visited {
-      color: #1a1a1a;
-    }
-    img {
-      max-width: 100%;
-    }
-    svg {
-      height: auto;
-      max-width: 100%;
-    }
-    h1, h2, h3, h4, h5, h6 {
-      margin-top: 1.4em;
-    }
-    h5, h6 {
-      font-size: 1em;
-      font-style: italic;
-    }
-    h6 {
-      font-weight: normal;
-    }
-    ol, ul {
-      padding-left: 1.7em;
-      margin-top: 1em;
-    }
-    li > ol, li > ul {
-      margin-top: 0;
-    }
-    blockquote {
-      margin: 1em 0 1em 1.7em;
-      padding-left: 1em;
-      border-left: 2px solid #e6e6e6;
-      color: #606060;
-    }
-    code {
-      white-space: pre-wrap;
-      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
-      font-size: 85%;
-      margin: 0;
-      hyphens: manual;
-    }
-    pre {
-      margin: 1em 0;
-      overflow: auto;
-    }
-    pre code {
-      padding: 0;
-      overflow: visible;
-      overflow-wrap: normal;
-    }
-    .sourceCode {
-     background-color: transparent;
-     overflow: visible;
-    }
-    hr {
-      border: none;
-      border-top: 1px solid #1a1a1a;
-      height: 1px;
-      margin: 1em 0;
-    }
-    table {
-      margin: 1em 0;
-      border-collapse: collapse;
-      width: 100%;
-      overflow-x: auto;
-      display: block;
-      font-variant-numeric: lining-nums tabular-nums;
-    }
-    table caption {
-      margin-bottom: 0.75em;
-    }
-    tbody {
-      margin-top: 0.5em;
-      border-top: 1px solid #1a1a1a;
-      border-bottom: 1px solid #1a1a1a;
-    }
-    th {
-      border-top: 1px solid #1a1a1a;
-      padding: 0.25em 0.5em 0.25em 0.5em;
-    }
-    td {
-      padding: 0.125em 0.5em 0.25em 0.5em;
-    }
-    header {
-      margin-bottom: 4em;
-      text-align: center;
-    }
-    #TOC li {
-      list-style: none;
-    }
-    #TOC ul {
-      padding-left: 1.3em;
-    }
-    #TOC > ul {
-      padding-left: 0;
-    }
-    #TOC a:not(:hover) {
-      text-decoration: none;
-    }
-    span.smallcaps{font-variant: small-caps;}
-    div.columns{display: flex; gap: min(4vw, 1.5em);}
-    div.column{flex: auto; overflow-x: auto;}
-    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
-    /* The extra [class] is a hack that increases specificity enough to
-       override a similar rule in reveal.js */
-    ul.task-list[class]{list-style: none;}
-    ul.task-list li input[type="checkbox"] {
-      font-size: inherit;
-      width: 0.8em;
-      margin: 0 0.8em 0.2em -1.6em;
-      vertical-align: middle;
-    }
-    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
-  </style>
-</head>
-<body>
 <h1 id="glow-accessibility-toolkit-user-guide">GLOW Accessibility
 Toolkit – User Guide</h1>
 <p>GLOW (Guided Layout and Output Workflow) helps you produce documents
@@ -189,7 +15,8 @@ Document</a></li>
 <li><a href="#3-how-to-fix-a-document">How to Fix a Document</a></li>
 <li><a href="#4-how-to-create-a-template">How to Create a
 Template</a></li>
-<li><a href="#5-how-to-export-to-html">How to Export to HTML</a></li>
+<li><a href="#5-cms-fragment-formerly-export">CMS Fragment (formerly
+Export)</a></li>
 <li><a href="#6-how-to-convert-between-formats">How to Convert Between
 Formats</a></li>
 <li><a href="#7-bits-whisperer-transcribe-audio">BITS Whisperer:
@@ -223,10 +50,9 @@ training handout, a policy memo, or a recording of a conference call.
 You need it to be readable by people with low vision and compatible with
 screen readers. You are not sure where to begin.</p>
 <p>That is exactly what Quick Start is for.</p>
-<h3 id="step-1-go-to-quick-start-on-the-homepage">Step 1: Go to Quick
-Start on the homepage</h3>
-<p>On the GLOW homepage, click <strong>Quick Start: Upload and
-Discover</strong>. You will land on a single upload form.</p>
+<h3 id="step-1-go-to-quick-start">Step 1: Go to Quick Start</h3>
+<p>Click the <strong>Quick Start</strong> tab at the top of any GLOW
+page. You will land on a single upload form.</p>
 <h3 id="step-2-upload-anything">Step 2: Upload anything</h3>
 <p>Quick Start accepts every format GLOW supports:</p>
 <table>
@@ -288,14 +114,19 @@ problem it can find in Word and Markdown documents: fonts, sizes,
 spacing, emphasis, alignment. Returns a corrected file. You keep your
 original. Available for Word and Markdown only.</p>
 <p><strong>Convert</strong> – Transforms your document into a different
-format. A Word document can become a web page. A Markdown file can
-become a PDF. An ePub can become a DAISY talking book. You choose the
-direction that fits your publishing workflow.</p>
-<p><strong>Export</strong> – Converts a Word document to an accessible
-HTML web page with ACB styling already applied. Choose Standalone (a
-complete web page you upload to a server) or CMS Fragment (a scoped
-snippet you paste into WordPress, Drupal, or any content management
-system).</p>
+format. Upload a PowerPoint, Excel, PDF, Word, or Markdown file and get
+back accessible HTML, a Word document, an EPUB, a PDF, or plain
+Markdown. PowerPoint, Excel, and PDF files use smart two-stage
+extraction: GLOW pulls the text into Markdown first, then Pandoc applies
+full ACB Large Print formatting. This is handled automatically – you
+just choose your output format.</p>
+<p><strong>Export</strong> – Converts a Word document to a CMS Fragment
+(a scoped HTML snippet for WordPress, Drupal, or any CMS). The Export
+tab was merged into Convert in v2.7.0. Use <strong>Convert &gt; CMS
+Fragment</strong> to produce scoped HTML. Standalone HTML output is also
+available in Convert. See <a
+href="#5-cms-fragment-formerly-export">Section 5</a> and <a
+href="#6-how-to-convert-between-formats">Section 6</a>.</p>
 <p><strong>Template</strong> – Generates a Word template (.dotx) with
 all ACB styles pre-configured. Open it in Word and every document you
 create from it inherits compliant formatting from the first
@@ -334,8 +165,9 @@ have a Word document that I need to make accessible quickly.”</h4>
 the corrected file. Re-audit to confirm.</p>
 <h4 id="i-have-meeting-minutes-i-need-to-post-on-our-website.">“I have
 meeting minutes I need to post on our website.”</h4>
-<p>If they are in Word: Fix first, then Export with Standalone HTML
-mode. Upload the HTML file to your server.</p>
+<p>If they are in Word: Fix first, then use <strong>Convert &gt;
+Accessible web page (HTML)</strong> or <strong>Convert &gt; CMS
+Fragment</strong> for WordPress/Drupal.</p>
 <p>If they are in Markdown: Audit first, then Convert to accessible web
 page (HTML via Pandoc).</p>
 <h4
@@ -344,8 +176,25 @@ sent me a PowerPoint and I need an accessibility report.”</h4>
 <p>Go to <strong>Audit</strong>. Upload the .pptx. The report shows
 every slide with issues, what is wrong on each slide, and step-by-step
 instructions for fixing it manually in PowerPoint.</p>
-<h4 id="i-need-to-publish-a-newsletter-in-large-print-pdf.">“I need to
-publish a newsletter in large print PDF.”</h4>
+<p>Go to <strong>Convert</strong>. Upload the .xlsx and choose
+<strong>Accessible web page (HTML)</strong> or <strong>Word
+document</strong>. GLOW extracts the worksheet content to Markdown
+automatically and then formats it with ACB styles. Review the extracted
+content to ensure table structure and headers came through
+correctly.</p>
+<h4
+id="i-have-a-powerpoint-and-i-need-to-publish-it-as-an-accessible-web-page.">“I
+have a PowerPoint and I need to publish it as an accessible web
+page.”</h4>
+<p>Go to <strong>Convert</strong>. Upload the .pptx and choose
+<strong>Accessible web page (HTML)</strong>. GLOW automatically extracts
+the content to Markdown and then formats it with full ACB Large Print
+styles. For best results, review the extracted Markdown before the final
+HTML step.</p>
+<h4
+id="i-have-an-excel-workbook-and-i-need-to-share-the-data-as-an-accessible-document.">“I
+have an Excel workbook and I need to share the data as an accessible
+document.”</h4>
 <p>Write your content in Markdown or Word. Audit it. Fix it (if Word).
 Then Convert to accessible PDF. The output uses ACB print formatting:
 Arial 18pt, 1.15 line spacing, 1-inch margins.</p>
@@ -406,17 +255,24 @@ hyperlink text</td>
 <tr>
 <td>Excel (.xlsx)</td>
 <td>Sheet names, table headers, merged cells, alt text, color-only data,
-hyperlink text, workbook title</td>
+hyperlink text, workbook title, blank-row layout patterns, default table
+names</td>
 </tr>
 <tr>
 <td>PowerPoint (.pptx)</td>
 <td>Slide titles, reading order, alt text, font sizes, speaker notes,
-chart descriptions, duplicate titles</td>
+chart descriptions, duplicate titles, timing and animation safety
+(auto-advance speed, repeating animations, rapid sequences, fast
+transitions)</td>
 </tr>
 <tr>
 <td>Markdown (.md)</td>
-<td>Heading hierarchy, italic and bold-abuse emphasis, link text, alt
-text, emoji, em-dashes, table structure</td>
+<td>YAML front matter (presence, closed fence, title, lang fields),
+heading hierarchy, empty/overlong/punctuated headings, italic and
+bold-abuse emphasis, bare URLs, ambiguous link text, alt text (presence
++ quality), emoji, em-dashes, table structure (headers, column counts),
+code block language identifiers, raw HTML tables and moving content,
+fake lists, ALL CAPS body text</td>
 </tr>
 <tr>
 <td>PDF (.pdf)</td>
@@ -454,8 +310,37 @@ server).</li>
 <li>Click <strong>Run Audit</strong>.</li>
 <li>Review the report.</li>
 </ol>
-<h3 id="reading-the-audit-report">Reading the audit report</h3>
-<p>Each finding shows:</p>
+<h3 id="quick-wins-filter">Quick Wins filter</h3>
+<p>After an audit of a Word document, the report shows a <strong>Quick
+Wins</strong> bar above the findings table. This bar shows how many
+findings can be auto-fixed and lets you toggle the table to show only
+those fixable findings.</p>
+<ul>
+<li>Click <strong>Show Quick Wins Only</strong> to filter the table to
+auto-fixable findings.</li>
+<li>Click <strong>Fix These Auto-Fixable Issues</strong> to go directly
+to the Fix page. If your session is still active (within one hour of
+upload), GLOW pre-loads your document into Fix automatically – no
+re-upload required.</li>
+<li>Click <strong>Show Quick Wins Only</strong> again to restore all
+findings.</li>
+</ul>
+<h3 id="shareable-audit-report-links">Shareable audit report links</h3>
+<p>Every audit report generates a <strong>shareable link</strong> that
+lets you send the report to a colleague without giving them access to
+the GLOW interface. The link is shown in the Share section of the
+report.</p>
+<ul>
+<li>The link contains only the rendered HTML report – the original
+document is never accessible through it.</li>
+<li>The link is valid for one hour from the time the audit
+completed.</li>
+<li>Anyone with the link can view the report; no login is required.</li>
+<li>After one hour, the link expires and the cached report is
+permanently deleted.</li>
+</ul>
+<p>Use shareable links for team reviews, stakeholder sign-off, or
+archiving a point-in-time compliance snapshot.—</p>
 <ul>
 <li><strong>Rule ID</strong> – a short code like
 <code>ACB-FONT-FAMILY</code> or <code>EPUB-MISSING-ALT-TEXT</code></li>
@@ -529,6 +414,24 @@ available</td>
 </tr>
 </tbody>
 </table>
+<h3 id="starting-fix-from-an-audit-no-re-upload">Starting Fix from an
+audit (no re-upload)</h3>
+<p>The fastest way to start a fix pass is directly from your audit
+report. After the audit completes:</p>
+<ol type="1">
+<li>Click <strong>Fix This Document</strong> in the “What’s Next”
+section, or click <strong>Fix These Auto-Fixable Issues</strong> in the
+Quick Wins bar.</li>
+<li>GLOW takes you to the Fix page with your document already loaded –
+no need to upload again.</li>
+<li>Adjust options and click <strong>Fix Document</strong>.</li>
+<li>After the fix, click <strong>Re-Audit Fixed Document</strong> on the
+fix result page to run an audit on the fixed file immediately – again,
+no re-upload required.</li>
+</ol>
+<p>This entire Audit → Fix → Re-Audit cycle requires uploading the
+document only once. The document session stays active for up to one hour
+from your initial upload.</p>
 <h3 id="step-by-step-1">Step-by-step</h3>
 <ol type="1">
 <li>Go to <strong>Fix</strong>.</li>
@@ -584,8 +487,10 @@ threshold are flagged as candidates.</p></li>
 <li><p>When AI-assisted heading refinement is enabled by the operator,
 borderline candidates may be sent through the configured AI path for a
 second opinion based on surrounding context.</p></li>
-<li><p>Detected headings are assigned to Heading 1, Heading 2, or
-Heading 3 based on font size and document position.</p></li>
+<li><p>Detected headings are assigned across Heading 1 through Heading 6
+based on font size, document position, and the heading levels you allow
+for the run. Heading 1 uses the 22pt primary heading treatment; deeper
+levels are normalized to the 20pt subheading pattern.</p></li>
 </ol>
 <p><strong>Accuracy modes:</strong></p>
 <ul>
@@ -640,6 +545,12 @@ acb-lp detect-headings document.docx --ai --ai-prompt prompt.txt --threshold 75<
 ACB requirements. Check <strong>Preserve centered headings</strong> on
 the Fix form to leave heading alignment as-is while still normalizing
 non-heading paragraphs.</p>
+<p>Fix also enforces paragraph spacing through Word’s <strong>paragraph
+format</strong> settings (<code>Space Before</code> /
+<code>Space After</code>) rather than by inserting blank paragraphs.
+That means normal body text is normalized to the configured
+post-paragraph spacing without adding extra empty lines to the
+document.</p>
 <h3 id="per-level-list-indentation">Per-level list indentation</h3>
 <p>By default, Fix applies a uniform left indent to all list items.
 <strong>Per-level list indentation</strong> lets you specify different
@@ -725,34 +636,63 @@ submission or review.</li>
 strictest audit posture. Use for final pre-release quality gates.</li>
 </ul>
 <hr />
-<h2 id="how-to-export-to-html">5. How to Export to HTML</h2>
-<p>Export converts a Word document to an accessible web page with
-ACB-compliant CSS already included.</p>
-<h3 id="output-modes">Output modes</h3>
-<p><strong>Standalone HTML</strong> – a complete web page with a
-separate CSS file. Upload both to your web server. Best for dedicated
-pages, intranet publishing, or email attachments.</p>
-<p><strong>CMS Fragment</strong> – an HTML snippet with CSS scoped to a
-wrapper class (<code>.acb-lp</code>). Paste it into WordPress, Drupal,
-or any CMS HTML editor. The scoped CSS does not conflict with your site
-theme.</p>
-<h3 id="step-by-step-3">Step-by-step</h3>
+<h2 id="cms-fragment-formerly-export">5. CMS Fragment (formerly
+Export)</h2>
+<p>In v2.7.0, the dedicated Export page was merged into Convert. All
+Export functionality is now available in <strong>Convert</strong> at the
+same URL (<code>/convert</code>).</p>
+<h3 id="what-changed">What changed</h3>
+<ul>
+<li>The <strong>Export</strong> tab has been removed from the
+navigation.</li>
+<li>Bookmarks and links to <code>/export</code> are automatically
+redirected to <code>/convert</code>.</li>
+<li>CMS Fragment output is available in Convert: upload a Word file and
+select <strong>CMS Fragment</strong> as the direction.</li>
+<li>Standalone HTML output is also available in Convert: select
+<strong>Accessible web page (HTML)</strong> as the direction.</li>
+</ul>
+<h3
+id="how-to-produce-a-cms-fragment-for-wordpress-drupal-or-any-cms">How
+to produce a CMS Fragment (for WordPress, Drupal, or any CMS)</h3>
 <ol type="1">
-<li>Go to <strong>Export</strong>.</li>
+<li>Go to <strong>Convert</strong>.</li>
 <li>Upload a Word (.docx) file.</li>
-<li>Optionally enter a page title.</li>
-<li>Choose <strong>Standalone</strong> or <strong>CMS
-Fragment</strong>.</li>
-<li>Click <strong>Export</strong> and download your result.</li>
+<li>Select <strong>CMS Fragment</strong> as the output direction.</li>
+<li>Click <strong>Convert</strong>.</li>
+<li>On the result page, download the <code>-cms.html</code> file, or use
+the <strong>Copy to Clipboard</strong> button to copy the scoped HTML
+snippet directly.</li>
 </ol>
-<p>If your source is Markdown rather than Word, use <strong>Convert &gt;
-Accessible web page</strong> instead – Pandoc handles Markdown directly
-and produces cleaner HTML.</p>
+<p>The CMS Fragment contains HTML scoped to an <code>.acb-lp</code>
+wrapper class with matching CSS. Paste it into your CMS HTML editor
+without affecting your site theme.</p>
+<h3 id="how-to-produce-standalone-html">How to produce Standalone
+HTML</h3>
+<ol type="1">
+<li>Go to <strong>Convert</strong>.</li>
+<li>Upload a Word (.docx), Markdown (.md), or other supported file.</li>
+<li>Select <strong>Accessible web page (HTML)</strong>.</li>
+<li>Click <strong>Convert</strong> and download the result.</li>
+</ol>
+<p>If your source is Markdown, Pandoc handles it directly and produces
+cleaner output than the Word-to-HTML path.</p>
+<h3 id="feature-flag">Feature flag</h3>
+<p>The CMS Fragment direction in Convert is gated by the
+<code>GLOW_ENABLE_EXPORT_HTML</code> flag. Deployments that had this
+flag set to <code>false</code> will continue to hide CMS Fragment
+without any configuration change.</p>
 <hr />
 <h2 id="how-to-convert-between-formats">6. How to Convert Between
 Formats</h2>
-<p>The Convert page offers six conversion directions, each powered by a
-different engine chosen for that task.</p>
+<p>The Convert page offers conversion directions powered by different
+engines. Starting in 2.7.0, PowerPoint (.pptx), Excel (.xlsx/.xls), PDF
+(.pdf), HTML, CSV, JSON, and XML files can be converted directly to
+accessible HTML, Word, EPUB, and PDF – no manual intermediate step
+required. GLOW uses a smart two-stage process: MarkItDown extracts the
+content to Markdown, then Pandoc applies full ACB Large Print
+formatting. This happens transparently when you upload one of these file
+types and choose an output format.</p>
 <h3 id="to-markdown-plain-text-extraction">To Markdown (plain text
 extraction)</h3>
 <p><strong>Engine:</strong> Microsoft MarkItDown</p>
@@ -772,13 +712,18 @@ workflows.</p>
 in any format. Also the right first step before a chain conversion –
 extract to Markdown, edit, then convert to HTML, Word, EPUB, or PDF.</p>
 <h3 id="to-accessible-web-page-html">To accessible web page (HTML)</h3>
-<p><strong>Engine:</strong> Pandoc</p>
+<p><strong>Engine:</strong> Pandoc (with MarkItDown pre-processing for
+some formats)</p>
 <p>Converts a document to a complete, accessible HTML page with ACB
 Large Print CSS built in. Produces clean, semantically correct HTML with
 proper headings, lists, tables, footnotes, and cross-references.</p>
-<p><strong>Accepts:</strong> Markdown (.md), Word (.docx),
+<p><strong>Accepts natively:</strong> Markdown (.md), Word (.docx),
 reStructuredText (.rst), OpenDocument (.odt), Rich Text (.rtf), ePub
 (.epub).</p>
+<p><strong>Accepts via two-stage extraction:</strong> PowerPoint
+(.pptx), Excel (.xlsx, .xls), PDF (.pdf), HTML (.html, .htm), CSV, JSON,
+XML. GLOW extracts content to Markdown first, then Pandoc formats the
+result.</p>
 <p><strong>You get back:</strong> a standalone <code>.html</code> file
 with all ACB formatting included.</p>
 <p><strong>Options:</strong></p>
@@ -794,11 +739,16 @@ rules for ACB’s print line-height (1.15 instead of 1.5)</li>
 printing from a browser, for email attachment, or for uploading to a
 website. Markdown input produces the cleanest output.</p>
 <h3 id="to-word-document">To Word document</h3>
-<p><strong>Engine:</strong> Pandoc</p>
+<p><strong>Engine:</strong> Pandoc (with MarkItDown pre-processing for
+some formats)</p>
 <p>Converts a document to a Word file (.docx). Pandoc maps headings,
 lists, tables, and emphasis into Word’s native styles.</p>
-<p><strong>Accepts:</strong> Markdown (.md), reStructuredText (.rst),
-OpenDocument (.odt), Rich Text (.rtf), HTML (.html), ePub (.epub).</p>
+<p><strong>Accepts natively:</strong> Markdown (.md), reStructuredText
+(.rst), OpenDocument (.odt), Rich Text (.rtf), HTML (.html), ePub
+(.epub).</p>
+<p><strong>Accepts via two-stage extraction:</strong> PowerPoint
+(.pptx), Excel (.xlsx, .xls), PDF (.pdf), CSV, JSON, XML. GLOW extracts
+content to Markdown first, then Pandoc formats the result.</p>
 <p><strong>You get back:</strong> a <code>.docx</code> file, immediately
 editable in Microsoft Word or LibreOffice Writer.</p>
 <p><strong>When to use:</strong> you have a Markdown or HTML document
@@ -806,27 +756,33 @@ and need a Word version – either for colleagues who work in Word, or to
 run GLOW Fix on content that started in another format. Common workflow:
 extract to Markdown, edit, convert to Word, then Fix.</p>
 <h3 id="to-epub-3-e-book-pandoc">To EPUB 3 e-book (Pandoc)</h3>
-<p><strong>Engine:</strong> Pandoc</p>
+<p><strong>Engine:</strong> Pandoc (with MarkItDown pre-processing for
+some formats)</p>
 <p>Creates a lightweight EPUB 3 e-book with ACB Large Print CSS embedded
 in the stylesheet. Pandoc generates proper EPUB structure including a
 navigation document and EPUB metadata from the document title.</p>
-<p><strong>Accepts:</strong> Markdown (.md), Word (.docx),
+<p><strong>Accepts natively:</strong> Markdown (.md), Word (.docx),
 reStructuredText (.rst), OpenDocument (.odt), Rich Text (.rtf), HTML
 (.html).</p>
+<p><strong>Accepts via two-stage extraction:</strong> PowerPoint
+(.pptx), Excel (.xlsx, .xls), PDF (.pdf), CSV, JSON, XML.</p>
 <p><strong>You get back:</strong> an <code>.epub</code> file that opens
 in Apple Books, Calibre, Thorium, and other e-readers.</p>
 <p><strong>When to use:</strong> you need a simple, portable e-book. For
 production-quality EPUB with full accessibility metadata and DAISY
 reading-system compatibility, use the Pipeline option instead.</p>
 <h3 id="to-accessible-pdf">To accessible PDF</h3>
-<p><strong>Engine:</strong> Pandoc plus WeasyPrint</p>
+<p><strong>Engine:</strong> Pandoc plus WeasyPrint (with MarkItDown
+pre-processing for some formats)</p>
 <p>Creates a print-ready PDF formatted with ACB rules. Pandoc converts
 the source to HTML, then WeasyPrint renders it to PDF using ACB print
 rules: Liberation Sans (metrically identical to Arial), 18pt body text,
 22pt headings, 1.15 line spacing, and 1-inch margins.</p>
-<p><strong>Accepts:</strong> Markdown (.md), Word (.docx),
+<p><strong>Accepts natively:</strong> Markdown (.md), Word (.docx),
 reStructuredText (.rst), OpenDocument (.odt), Rich Text (.rtf), ePub
 (.epub), HTML (.html).</p>
+<p><strong>Accepts via two-stage extraction:</strong> PowerPoint
+(.pptx), Excel (.xlsx, .xls), PDF (.pdf), CSV, JSON, XML.</p>
 <p><strong>You get back:</strong> a <code>.pdf</code> file.</p>
 <p><strong>Options:</strong></p>
 <ul>
@@ -896,15 +852,28 @@ instance.</p>
 </tr>
 <tr>
 <td>An HTML snippet for WordPress or Drupal</td>
-<td>Export page – CMS Fragment mode</td>
+<td>Convert page – CMS Fragment direction</td>
+</tr>
+<tr>
+<td>A PowerPoint or Excel file as a web page</td>
+<td>Accessible web page (HTML) – two-stage</td>
+</tr>
+<tr>
+<td>A PDF reformatted with ACB print styles</td>
+<td>Accessible PDF – two-stage</td>
 </tr>
 </tbody>
 </table>
 <h3 id="getting-better-results-with-chained-conversion">Getting better
 results with chained conversion</h3>
-<p>One-step conversion from complex formats (PDF, PowerPoint) to HTML or
-PDF often produces imperfect output. Two steps almost always produce
-better results:</p>
+<p>For complex source formats (PowerPoint, Excel, PDF), GLOW
+automatically runs a two-stage process when you choose HTML, Word, EPUB,
+or PDF output: it extracts content to Markdown first (via MarkItDown),
+then Pandoc formats the result with ACB styles. You do not need to do
+anything extra – just upload your file and choose your output
+format.</p>
+<p>For even higher quality, you can run the chain manually and edit the
+intermediate Markdown:</p>
 <ol type="1">
 <li><strong>Extract to Markdown</strong> – pulls the text out of the
 source file.</li>
@@ -913,8 +882,9 @@ replace vague link text, add missing alt text.</li>
 <li><strong>Convert the Markdown</strong> – to HTML, Word, EPUB, or
 PDF.</li>
 </ol>
-<p>You review and improve the content between steps. The final output
-reflects that care.</p>
+<p>Manual chaining gives you a review step between extraction and
+formatting. Automatic chaining is faster when the source structure is
+clean.</p>
 <hr />
 <h2 id="bits-whisperer-transcribe-audio">7. BITS Whisperer: Transcribe
 Audio</h2>
@@ -1063,7 +1033,7 @@ mean and how do I fix it?”</li>
 <li>You want to estimate how much work auto-fix will save before you
 commit to a workflow.</li>
 </ul>
-<h3 id="step-by-step-4">Step-by-step</h3>
+<h3 id="step-by-step-3">Step-by-step</h3>
 <p>Document Chat requires an uploaded document. There are two ways to
 reach it:</p>
 <p><strong>From Quick Start (recommended for new documents):</strong> 1.
@@ -1147,16 +1117,16 @@ margin, and allowed heading levels</li>
 <li><strong>Export and Convert defaults</strong></li>
 </ul>
 <h3 id="privacy-and-persistence">Privacy and persistence</h3>
-<p>Settings are saved only when you enable cookie opt-in. They stay on
-the current browser and device only. Turning off cookie opt-in removes
-saved settings and returns GLOW to its built-in defaults.</p>
+<p>Settings are saved in your browser’s local storage. Nothing is sent
+to the server. Your preferences stay on the current browser and device
+only. Clearing browser data or site storage removes saved settings and
+returns GLOW to its built-in defaults.</p>
 <h3 id="first-time-setup">First-time setup</h3>
 <ol type="1">
 <li>Open <strong>Settings</strong>.</li>
-<li>Enable cookie opt-in.</li>
 <li>Set your preferred audit mode and categories.</li>
 <li>Set your preferred fix mode and heading options.</li>
-<li>Save.</li>
+<li>Click <strong>Save My Settings</strong>.</li>
 <li>Open Audit or Fix and verify the defaults are pre-selected.</li>
 </ol>
 <hr />
@@ -1346,6 +1316,10 @@ of the pane’s list.</li>
 placed text boxes.</li>
 <li>Add speaker notes for slides where the content is primarily
 visual.</li>
+<li>Avoid auto-advance timings under 5 seconds and repeating or rapidly
+triggered animation sequences. These prevent users from reading slide
+content in their own time and can cause discomfort for users with
+vestibular disorders.</li>
 </ul>
 <h3 id="markdown-.md">Markdown (.md)</h3>
 <ul>
@@ -1390,20 +1364,25 @@ specific guidance for mathematical content accessibility.</li>
 </ul>
 <hr />
 <h2 id="recommended-workflows">13. Recommended Workflows</h2>
-<h3 id="workflow-a-fix-an-existing-document">Workflow A: Fix an existing
-document</h3>
+<h3 id="workflow-a-fix-an-existing-document-streamlined">Workflow A: Fix
+an existing document (streamlined)</h3>
 <ol type="1">
 <li><strong>Audit first</strong> – upload to Audit to understand the
 scope of issues.</li>
-<li><strong>Auto-fix</strong> – upload to Fix to correct everything the
-tool can handle automatically.</li>
+<li><strong>Fix directly</strong> – from the audit report, click
+<strong>Fix This Document</strong> or <strong>Fix These Auto-Fixable
+Issues</strong>. Your document loads into Fix automatically – no
+re-upload required.</li>
+<li><strong>Re-Audit directly</strong> – after the fix, click
+<strong>Re-Audit Fixed Document</strong> on the Fix result page. The
+fixed document is audited immediately – no re-upload required.</li>
 <li><strong>Manual fixes</strong> – open the fixed document and address
-remaining items from the fix report.</li>
-<li><strong>Re-audit</strong> – upload the manually-fixed document to
-confirm.</li>
-<li><strong>Publish</strong> – Export to accessible HTML, distribute the
-corrected Word file, or convert to PDF.</li>
+remaining items from the re-audit report.</li>
+<li><strong>Publish</strong> – use Convert to produce accessible HTML,
+distribute the corrected Word file, or convert to PDF.</li>
 </ol>
+<p>The entire Audit → Fix → Re-Audit cycle requires uploading the
+document only once.</p>
 <h3 id="workflow-b-start-a-new-document-from-scratch">Workflow B: Start
 a new document from scratch</h3>
 <ol type="1">
@@ -1420,8 +1399,8 @@ C: Publish meeting minutes or agendas online</h3>
 <li>Write content in Markdown or Word.</li>
 <li>Audit to check compliance.</li>
 <li>Fix if the source is Word and has issues.</li>
-<li>Convert to accessible HTML using the Accessible web page
-option.</li>
+<li>Convert to accessible HTML using the Accessible web page option (or
+CMS Fragment for WordPress/Drupal).</li>
 <li>Upload the HTML file to your website.</li>
 </ol>
 <h3 id="workflow-d-transcribe-a-recorded-meeting-and-publish">Workflow
@@ -1470,6 +1449,22 @@ work?”</li>
 <li>Ask “Estimate my score after running Fix.”</li>
 <li>Export the chat session as your audit planning document.</li>
 <li>Proceed to Fix based on what you learned.</li>
+</ol>
+<h3 id="workflow-h-rapid-compliance-pass-on-a-known-document">Workflow
+H: Rapid compliance pass on a known document</h3>
+<p>Use this when you have a document you have worked on before and want
+a fast pass to confirm it still meets standards before publishing.</p>
+<ol type="1">
+<li>Go to <strong>Audit</strong> and upload the document.</li>
+<li>Select <strong>Quick Audit</strong> (Critical and High findings
+only).</li>
+<li>On the report, check the Quick Wins bar – if there are auto-fixable
+issues, click <strong>Fix These Auto-Fixable Issues</strong> to proceed
+directly to Fix with your document pre-loaded.</li>
+<li>On the Fix page, run Fix. Then click <strong>Re-Audit Fixed
+Document</strong> to confirm the score.</li>
+<li>If the re-audit shows only Medium or Low findings, the document is
+ready to publish.</li>
 </ol>
 <hr />
 <h2 id="daisy-accessibility-tools">14. DAISY Accessibility Tools</h2>
@@ -1643,8 +1638,21 @@ href="https://acb.org/large-print-guidelines">acb.org/large-print-guidelines</a>
 <li><strong>APH Large Print Guidelines</strong> – <a
 href="https://www.aph.org/resources/large-print-guidelines/">aph.org/resources/large-print-guidelines</a></li>
 <li><strong>Guidelines reference page</strong> – available in the GLOW
-web app at <a
-href="https://glow.bits-acb.org/guidelines">glow.bits-acb.org/guidelines</a></li>
+web app via the <strong>Guidelines</strong> tab. Includes a deep-dive
+link to the Rules Reference.</li>
+<li><strong>Rules Reference page</strong> – browse every audit rule with
+severity, WCAG mapping, and fix guidance. Accessible from the bottom of
+the Guidelines page.
+<ul>
+<li><strong>Include Shown</strong> / <strong>Exclude Shown</strong>:
+bulk select or clear rules based on your current filters.</li>
+<li><strong>Toggle Shown</strong>: invert the selection of visible
+rules.</li>
+<li><strong>Save Changes</strong>: save your current rule selection as
+your global default for Audit and Fix.</li>
+<li><strong>Undo Changes</strong>: discard unsaved changes and restore
+your previous rule set.</li>
+</ul></li>
 <li><strong>Submit feedback</strong> – use the Feedback page in the web
 app to report bugs, request features, or share your experience</li>
 <li><strong>About page</strong> – mission, organizations, standards, and
@@ -1676,7 +1684,7 @@ Path)</a></li>
 Transcribe Audio</a></li>
 <li><a href="#3-quick-start-walkthrough-expert-path">Quick-Start
 Walkthrough (Expert Path)</a></li>
-<li><a href="#4-glow-v200-features">GLOW v2.0.0 Features</a></li>
+<li><a href="#4-glow-v250-features">GLOW v2.5.0 Features</a></li>
 <li><a href="#5-how-to-audit-a-document">How to Audit a
 Document</a></li>
 <li><a href="#6-how-to-fix-a-document">How to Fix a Document</a></li>
@@ -1703,7 +1711,7 @@ Questions</a></li>
 <li><a href="#19-document-chat-and-agentic-accessibility-tools">Document
 Chat and Agentic Accessibility Tools</a></li>
 </ol>
-<p><strong>Quick links to v2.0.0 features:</strong> - <a
+<p><strong>Quick links to v2.5.0 features:</strong> - <a
 href="#1-quick-start-beginner-path">Quick Start Path</a> (for newcomers
 to accessibility) - <a href="#2-bits-whisperer-transcribe-audio">BITS
 Whisperer</a> (transcribe audio to text) - <a
@@ -1856,7 +1864,7 @@ GLOW. Nothing is stored as permanent account data.</p>
 <hr />
 <h2 id="document-chat-and-agentic-accessibility-tools">19. Document Chat
 and Agentic Accessibility Tools</h2>
-<p>GLOW (Guided Layout &amp; Output Workflow) 2.0 includes a chat
+<p>GLOW (Guided Layout &amp; Output Workflow) 2.5.0 includes a chat
 experience that lets you interrogate uploaded documents in plain
 language.</p>
 <h3 id="what-document-chat-does">What Document Chat does</h3>
@@ -1997,7 +2005,7 @@ Template. This gives you a Word document with all ACB styles
 pre-configured. Write your content in the template and it will be
 compliant from the start – no fixing needed.</p>
 <hr />
-<h2 id="glow-v2.0.0-features-and-aph-submission-track">2. GLOW v2.0.0
+<h2 id="glow-v2.5.0-features-and-aph-submission-track">4. GLOW v2.5.0
 Features and APH Submission Track</h2>
 <p>This section is the guided APH rollout workflow, written as an
 “instructor in your pocket” checklist. Follow each week in order and
@@ -2132,7 +2140,7 @@ with your document’s formatting.</li>
 Useful when you are working on specific issues (e.g., only font rules)
 or running a targeted re-check.</li>
 </ul>
-<h3 id="step-by-step-5">Step-by-step</h3>
+<h3 id="step-by-step-4">Step-by-step</h3>
 <ol type="1">
 <li>Go to Audit.</li>
 <li>Choose your rule categories (ACB Large Print, MS Accessibility
@@ -2196,7 +2204,7 @@ finding</td>
 </tr>
 </tbody>
 </table>
-<h3 id="step-by-step-6">Step-by-step</h3>
+<h3 id="step-by-step-5">Step-by-step</h3>
 <ol type="1">
 <li>Go to Fix.</li>
 <li>Upload your document.</li>
@@ -2263,8 +2271,8 @@ flush-left (ragged-right) per ACB requirements. However, you may want to
 preserve intentional heading center-alignment for design reasons.</p>
 <p>The <strong>Preserve centered headings</strong> option on the Fix
 form skips alignment override for paragraphs identified as headings
-(those using Heading 1, Heading 2, or Heading 3 styles). Non-heading
-paragraphs are still normalized to flush-left.</p>
+(those using Heading 1 through Heading 6 styles). Non-heading paragraphs
+are still normalized to flush-left.</p>
 <p><strong>How to use:</strong></p>
 <ol type="1">
 <li>On the Fix form, find the <strong>Heading Alignment
@@ -2302,8 +2310,8 @@ on the paragraph’s detected list style level.</li>
 have that depth.</p>
 <h3 id="allowed-heading-levels-1">Allowed heading levels</h3>
 <p>You can now restrict heading conversion and review to a selected
-subset of heading levels (for example, Heading 1 through Heading 3
-only).</p>
+subset of heading levels (for example, only Heading 1 through Heading 3,
+or include deeper levels when the document uses them).</p>
 <p>This is useful when: - Your publication style intentionally uses only
 part of the heading ladder. - You want review options to match your
 editorial policy. - You want heading detection, review, and template
@@ -2346,10 +2354,11 @@ identified as likely headings.</p></li>
 heading refinement is enabled in your deployment, the tool can send
 borderline candidates for a second opinion. The AI considers surrounding
 context to improve accuracy.</p></li>
-<li><p><strong>Heading level assignment</strong> – Detected headings are
-assigned to Heading 1, 2, or 3 based on font size and document position.
-The first high-confidence heading is typically Heading 1, with
-subsequent headings assigned based on relative formatting.</p></li>
+<li><p><strong>Heading level assignment</strong> – Detected headings can
+be assigned across Heading 1 through Heading 6 based on font size,
+document position, and the heading levels enabled for the run. Heading 1
+is typically the first primary heading; deeper levels are normalized to
+the lower-level subheading pattern when selected.</p></li>
 </ol>
 <h3 id="heading-detection-accuracy-modes">Heading detection accuracy
 modes</h3>
@@ -2518,7 +2527,7 @@ across the 1,000-document corpus after the latest fixes</li>
 <p>A template (.dotx) is the easiest way to start compliant. Every new
 document you create from this template inherits all ACB formatting
 automatically.</p>
-<h3 id="step-by-step-7">Step-by-step</h3>
+<h3 id="step-by-step-6">Step-by-step</h3>
 <ol type="1">
 <li>Go to Template.</li>
 <li>Enter a document title (or leave blank for the default).</li>
@@ -2601,7 +2610,7 @@ built-in defaults.</li>
 pre-selected.</li>
 </ol>
 <hr />
-<h2 id="how-to-export-to-html-1">7. How to Export to HTML</h2>
+<h2 id="how-to-export-to-html">7. How to Export to HTML</h2>
 <p>Export converts a Word document to a web page with ACB-compliant CSS
 already applied. Choose between two output modes:</p>
 <ul>
@@ -2613,7 +2622,7 @@ scoped to a wrapper class. Paste it into WordPress, Drupal, or any CMS
 editor block. The scoped CSS will not conflict with your site
 theme.</li>
 </ul>
-<h3 id="step-by-step-8">Step-by-step</h3>
+<h3 id="step-by-step-7">Step-by-step</h3>
 <ol type="1">
 <li>Go to Export.</li>
 <li>Upload a Word (.docx) file.</li>
@@ -3046,8 +3055,8 @@ specific accessibility guidance for mathematical content.</li>
 </ul>
 <hr />
 <h2 id="recommended-workflows-1">12. Recommended Workflows</h2>
-<h3 id="workflow-a-fix-an-existing-document-1">Workflow A: Fix an
-existing document</h3>
+<h3 id="workflow-a-fix-an-existing-document">Workflow A: Fix an existing
+document</h3>
 <ol type="1">
 <li><strong>Audit first</strong> – upload to Audit to understand the
 scope of issues.</li>
@@ -3335,5 +3344,3 @@ guide</a> to the Office accessibility checker</li>
 integrated for the Release 1.2.0 submission workflow. Enforcement
 includes ACB + WCAG + Microsoft Accessibility Checker + format-specific
 rules with APH profile mapping finalized in this release.</p>
-</body>
-</html>

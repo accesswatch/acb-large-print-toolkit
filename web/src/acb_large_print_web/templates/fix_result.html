@@ -207,6 +207,8 @@
       <input type="hidden" name="token" value="{{ token }}">
       <input type="hidden" name="download_name" value="{{ download_name }}">
       <input type="hidden" name="standards_profile" value="acb_2025">
+      <input type="hidden" name="prev_score" value="{{ pre_score }}">
+      <input type="hidden" name="prev_rule_ids" value="{{ pre_finding_ids or '' }}">
       <div class="next-step-actions">
         <button type="submit" class="btn-primary">Re-Audit Fixed Document</button>
         {% if feature_checker_enabled %}<a href="{{ url_for('fix.fix_form') }}" class="btn-secondary">Fix Another Document</a>{% endif %}

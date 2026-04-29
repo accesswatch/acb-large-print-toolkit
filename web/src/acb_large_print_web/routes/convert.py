@@ -146,6 +146,39 @@ _ALL_ACCEPT = ",".join(
 )
 
 
+def _is_auditable_output(filename: str) -> bool:
+    """Return True if the converted output's extension is supported by Audit."""
+    from ..upload import ALLOWED_EXTENSIONS
+
+    suffix = Path(filename).suffix.lower()
+    return suffix in ALLOWED_EXTENSIONS
+
+
+def _convert_result_response(
+    token_value: str,
+    *,
+    download_name: str,
+    preview_type: str,
+    original_stem: str,
+    cms_content: str | None = None,
+):
+    """Render the shared convert_result.html for a finished conversion.
+
+    Used by every direction that produces a downloadable artefact, so the
+    user lands on a page with explicit Download and (optionally) Audit
+    actions instead of being thrown into a browser save dialog.
+    """
+    return render_template(
+        "convert_result.html",
+        token=token_value,
+        download_name=download_name,
+        preview_type=preview_type,
+        original_stem=original_stem,
+        cms_content=cms_content,
+        auditable_output=_is_auditable_output(download_name),
+    )
+
+
 def _template_context(**extra):
     """Common template variables for the convert form."""
     all_flags = get_all_flags()
@@ -292,9 +325,8 @@ def convert_submit():
             # Preserve the temp dir for the result page download/preview routes.
             result_token = token
             token = None
-            return render_template(
-                "convert_result.html",
-                token=result_token,
+            return _convert_result_response(
+                result_token,
                 download_name=f"{saved_path.stem}.html",
                 preview_type="html",
                 original_stem=saved_path.stem,
@@ -333,11 +365,13 @@ def convert_submit():
                 output_path=docx_output,
                 title=title,
             )
-            return send_file(
-                str(output_path),
-                mimetype="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                as_attachment=True,
-                download_name=f"{saved_path.stem}.docx",
+            result_token = token
+            token = None
+            return _convert_result_response(
+                result_token,
+                download_name=output_path.name,
+                preview_type="binary",
+                original_stem=saved_path.stem,
             )
         elif direction == "to-epub":
             # Pandoc (or MarkItDown->Pandoc): document -> EPUB 3
@@ -379,11 +413,13 @@ def convert_submit():
                 title=title,
                 css_path=css_path,
             )
-            return send_file(
-                str(output_path),
-                mimetype="application/epub+zip",
-                as_attachment=True,
-                download_name=f"{saved_path.stem}.epub",
+            result_token = token
+            token = None
+            return _convert_result_response(
+                result_token,
+                download_name=output_path.name,
+                preview_type="binary",
+                original_stem=saved_path.stem,
             )
         elif direction == "to-pdf":
             # Pandoc + WeasyPrint (or MarkItDown->Pandoc+WeasyPrint): document -> PDF
@@ -427,11 +463,13 @@ def convert_submit():
                 css_path=css_path,
                 binding_margin=binding_margin,
             )
-            return send_file(
-                str(output_path),
-                mimetype="application/pdf",
-                as_attachment=True,
-                download_name=f"{saved_path.stem}.pdf",
+            result_token = token
+            token = None
+            return _convert_result_response(
+                result_token,
+                download_name=output_path.name,
+                preview_type="binary",
+                original_stem=saved_path.stem,
             )
         elif direction == "to-html-cms":
             # Exporter: .docx -> ACB-styled HTML CMS fragment for WordPress/Drupal
@@ -450,13 +488,12 @@ def convert_submit():
             # Preserve the temp dir for the result page download route.
             result_token = token
             token = None
-            return render_template(
-                "convert_result.html",
-                token=result_token,
+            return _convert_result_response(
+                result_token,
                 download_name=f"{saved_path.stem}-cms.html",
                 preview_type="cms",
-                cms_content=cms_content,
                 original_stem=saved_path.stem,
+                cms_content=cms_content,
             )
         elif direction == "to-pipeline" or direction.startswith("pipeline-"):
             # DAISY Pipeline conversion
@@ -518,11 +555,13 @@ def convert_submit():
                 saved_path,
                 output_path=md_output,
             )
-            return send_file(
-                str(output_path),
-                mimetype="text/markdown; charset=utf-8",
-                as_attachment=True,
-                download_name=f"{saved_path.stem}.md",
+            result_token = token
+            token = None
+            return _convert_result_response(
+                result_token,
+                download_name=output_path.name,
+                preview_type="binary",
+                original_stem=saved_path.stem,
             )
 
     except UploadError as exc:

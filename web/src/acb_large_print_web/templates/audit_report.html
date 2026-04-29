@@ -14,6 +14,30 @@
   <p class="warning-message">{{ customization_warning }}</p>
 </section>
 {% endif %}
+{% if audit_diff %}
+<aside class="diff-callout" aria-labelledby="diff-heading">
+  <h2 id="diff-heading">What changed since the last audit</h2>
+  {% set delta = audit_diff.delta %}
+  <p class="diff-headline">
+    {% if delta > 0 %}
+      <strong class="diff-improved">Score improved by {{ delta }} point{{ 's' if delta != 1 else '' }}.</strong>
+    {% elif delta < 0 %}
+      <strong class="diff-regressed">Score dropped by {{ -delta }} point{{ 's' if -delta != 1 else '' }}.</strong>
+    {% else %}
+      <strong>Score unchanged.</strong>
+    {% endif %}
+    Was {{ audit_diff.prev_score }}/100, now {{ audit_diff.current_score }}/100.
+  </p>
+  <ul class="diff-stats">
+    <li><strong>{{ audit_diff.cleared_count }}</strong> finding{{ 's' if audit_diff.cleared_count != 1 else '' }} cleared</li>
+    <li><strong>{{ audit_diff.persistent_count }}</strong> finding{{ 's' if audit_diff.persistent_count != 1 else '' }} still present</li>
+    <li><strong>{{ audit_diff.new_count }}</strong> finding{{ 's' if audit_diff.new_count != 1 else '' }} newly introduced</li>
+  </ul>
+  {% if audit_diff.new_rule_ids %}
+  <p class="help-text"><strong>New rules flagged this time:</strong> {{ audit_diff.new_rule_ids | join(', ') }}.</p>
+  {% endif %}
+</aside>
+{% endif %}
 <section>
   <h2 id="score-heading">Compliance Score</h2>
 
@@ -105,10 +129,38 @@
     </thead>
     <tbody id="findings-tbody">
       {% for f in result.findings %}
+      {% set rule_meta = (rules_by_id or {}).get(f.rule_id) %}
       <tr data-fixable="{{ '1' if fixable_rule_ids and f.rule_id in fixable_rule_ids else '0' }}">
         <td><span class="severity-badge severity-{{ f.severity.value | lower }}">{{ f.severity.value }}</span></td>
         <td><a href="{{ url_for('guidelines.guidelines_page') }}#section-rules-summary">{{ f.rule_id }}</a></td>
-        <td>{{ f.message }}</td>
+        <td>
+          {{ f.message }}
+          {% if rule_meta %}
+          <details class="finding-explain no-print">
+            <summary>What this means</summary>
+            <div class="finding-explain-body">
+              {% set sev = f.severity.value %}
+              <p>
+                {%- if sev == 'Critical' -%}
+                  <strong>Critical</strong> findings prevent low-vision readers from using this document and must be fixed for compliance.
+                {%- elif sev == 'High' -%}
+                  <strong>High</strong> severity findings significantly impair readability and should be fixed promptly.
+                {%- elif sev == 'Medium' -%}
+                  <strong>Medium</strong> findings reduce readability and should be addressed before publication.
+                {%- else -%}
+                  <strong>Low</strong> findings are minor polish items that improve the reading experience.
+                {%- endif -%}
+              </p>
+              <p><strong>What the rule requires:</strong> {{ rule_meta.description }}.</p>
+              {% if rule_meta.auto_fixable and doc_format == 'docx' %}
+              <p class="finding-fixable"><strong>Auto-fixable.</strong> Run Fix on this document and this issue will be corrected automatically.</p>
+              {% elif not rule_meta.auto_fixable %}
+              <p class="finding-manual"><strong>Manual fix.</strong> This rule requires editorial judgement and cannot be auto-corrected.</p>
+              {% endif %}
+            </div>
+          </details>
+          {% endif %}
+        </td>
         <td>{{ f.location or "Document-wide" }}</td>
         <td>{{ f.acb_reference }}</td>
         <td>{% set urls = help_urls_map.get(f.rule_id, []) %}{% include '_help_links.html' with context %}</td>
@@ -190,7 +242,7 @@
 
   {% if share_url %}
   <details class="share-section no-print" id="share-section">
-    <summary>Share this report</summary>
+    <summary>Share or download this report</summary>
     <p>Anyone with this link can view this report for approximately 1&nbsp;hour. The original document is not accessible via this link.</p>
     <div class="share-url-row">
       <input type="text" readonly id="share-url-input" value="{{ share_url }}"
@@ -199,6 +251,19 @@
         Copy Link
       </button>
     </div>
+    {% if share_token %}
+    <p class="share-downloads">
+      <a class="btn-secondary" href="{{ url_for('audit.shared_report_csv', share_token=share_token) }}">
+        Download findings as CSV
+      </a>
+      {% if feature_weasyprint_enabled %}
+      <a class="btn-secondary" href="{{ url_for('audit.shared_report_pdf', share_token=share_token) }}">
+        Download report as PDF
+      </a>
+      {% endif %}
+    </p>
+    <p class="help-text">CSV opens in Excel and other spreadsheet tools. PDF is suitable for archives or attaching to a ticket. Both expire with the share link.</p>
+    {% endif %}
   </details>
   {% endif %}
 </section>

@@ -4,10 +4,17 @@ Shares expire after SHARE_TTL_SECONDS and are stored in a dedicated
 subdirectory of UPLOAD_TEMP_BASE to isolate them from upload temp dirs.
 The share token is a separate UUID unrelated to the upload token, so
 sharing a report never exposes the uploaded document.
+
+Each share directory may contain:
+- ``report.html``  -- rendered report HTML (always)
+- ``expires.txt``  -- expiry timestamp (always)
+- ``findings.json`` -- structured findings data for CSV/PDF export (optional)
+- ``report.pdf``   -- lazily generated PDF copy of the report (optional)
 """
 
 from __future__ import annotations
 
+import json
 import re
 import shutil
 import time
@@ -72,3 +79,87 @@ def remaining_minutes(share_token: str) -> int:
         return 0
     remaining = expires_at - time.time()
     return max(0, int(remaining // 60))
+
+
+def save_findings_data(share_token: str, data: dict) -> None:
+    """Save structured findings data alongside the cached HTML.
+
+    Used for on-demand CSV and PDF exports of the same audit. The data dict
+    typically contains keys: filename, doc_format, score, grade, profile_label,
+    mode_label, generated_at, findings (list of dicts).
+    """
+    if not _UUID_RE.match(share_token or ""):
+        return
+    share_dir = _share_dir(share_token)
+    if not share_dir.exists():
+        return
+    try:
+        (share_dir / "findings.json").write_text(
+            json.dumps(data, ensure_ascii=False, default=str),
+            encoding="utf-8",
+        )
+    except OSError:
+        pass
+
+
+def load_findings_data(share_token: str) -> dict | None:
+    """Load structured findings data for a cached share token, or None."""
+    if not _UUID_RE.match(share_token or ""):
+        return None
+    share_dir = _share_dir(share_token)
+    findings_file = share_dir / "findings.json"
+    expires_file = share_dir / "expires.txt"
+    if not findings_file.exists() or not expires_file.exists():
+        return None
+    try:
+        expires_at = float(expires_file.read_text(encoding="utf-8").strip())
+    except (ValueError, OSError):
+        return None
+    if time.time() > expires_at:
+        try:
+            shutil.rmtree(share_dir, ignore_errors=True)
+        except Exception:
+            pass
+        return None
+    try:
+        return json.loads(findings_file.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError):
+        return None
+
+
+def save_pdf(share_token: str, pdf_bytes: bytes) -> None:
+    """Cache a PDF rendering of the report for repeat downloads."""
+    if not _UUID_RE.match(share_token or ""):
+        return
+    share_dir = _share_dir(share_token)
+    if not share_dir.exists():
+        return
+    try:
+        (share_dir / "report.pdf").write_bytes(pdf_bytes)
+    except OSError:
+        pass
+
+
+def load_pdf(share_token: str) -> bytes | None:
+    """Load a cached PDF rendering, or None if missing/expired."""
+    if not _UUID_RE.match(share_token or ""):
+        return None
+    share_dir = _share_dir(share_token)
+    expires_file = share_dir / "expires.txt"
+    pdf_file = share_dir / "report.pdf"
+    if not pdf_file.exists() or not expires_file.exists():
+        return None
+    try:
+        expires_at = float(expires_file.read_text(encoding="utf-8").strip())
+    except (ValueError, OSError):
+        return None
+    if time.time() > expires_at:
+        try:
+            shutil.rmtree(share_dir, ignore_errors=True)
+        except Exception:
+            pass
+        return None
+    try:
+        return pdf_file.read_bytes()
+    except OSError:
+        return None

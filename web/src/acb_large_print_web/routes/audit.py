@@ -1,6 +1,7 @@
 """Audit route -- upload a document and view a compliance report."""
 
 from collections import Counter
+from datetime import datetime, timezone
 from pathlib import Path
 import uuid
 
@@ -11,10 +12,12 @@ import re
 
 from ..email import send_audit_report_email, send_batch_audit_report_email
 from ..app import limiter
+from ..csv_export import findings_to_csv_bytes, safe_filename_stem
 from ..rules import (
     build_rule_policy,
     filter_findings,
     get_all_rule_ids,
+    get_help_urls,
     get_profile_label,
     get_rule_ids_by_category,
     get_rule_ids_by_severity,
@@ -69,6 +72,107 @@ def _is_ace_installed() -> bool:
         return ace_available()
     except ImportError:
         return False
+
+
+def _rules_by_id() -> dict:
+    """Lazy lookup of rule metadata keyed by rule_id for inline explanations."""
+    from acb_large_print.constants import AUDIT_RULES
+
+    out: dict[str, dict] = {}
+    for rid, rule in AUDIT_RULES.items():
+        out[rid] = {
+            "rule_id": rid,
+            "description": rule.description,
+            "auto_fixable": rule.auto_fixable,
+            "acb_reference": rule.acb_reference,
+        }
+    return out
+
+
+def _findings_to_dicts(findings) -> list[dict]:
+    """Convert Finding dataclass instances to JSON-serialisable dicts."""
+    out: list[dict] = []
+    for f in findings:
+        sev = f.severity.value if hasattr(f.severity, "value") else str(f.severity)
+        out.append({
+            "rule_id": f.rule_id,
+            "severity": sev,
+            "message": f.message,
+            "location": getattr(f, "location", "") or "",
+            "acb_reference": getattr(f, "acb_reference", "") or "",
+            "auto_fixable": getattr(f, "auto_fixable", False),
+            "help_urls": get_help_urls(f.rule_id, getattr(f, "acb_reference", "") or ""),
+        })
+    return out
+
+
+def _save_share_artifacts(
+    share_token: str | None,
+    html: str,
+    *,
+    findings,
+    filename: str,
+    doc_format: str,
+    score: int,
+    grade: str,
+    profile_label: str,
+    mode_label: str,
+) -> None:
+    """Persist HTML and findings JSON for the share token (best-effort)."""
+    if not share_token:
+        return
+    try:
+        from ..report_cache import save_findings_data, save_report
+
+        save_report(share_token, html)
+        save_findings_data(share_token, {
+            "filename": filename,
+            "doc_format": doc_format,
+            "score": int(score),
+            "grade": grade,
+            "profile_label": profile_label,
+            "mode_label": mode_label,
+            "generated_at": datetime.now(timezone.utc).isoformat(),
+            "findings": _findings_to_dicts(findings),
+        })
+    except Exception:
+        pass
+
+
+def _compute_audit_diff(
+    findings,
+    *,
+    prev_score: int | None,
+    prev_rule_ids: list[str],
+    current_score: int,
+):
+    """Return a diff summary dict comparing this audit to a previous one.
+
+    ``prev_rule_ids`` may include duplicates (one entry per finding); both
+    sides are reduced to multisets so we can compute "cleared" vs "remaining"
+    counts, plus a set of newly-introduced rule IDs.
+    Returns None when prev_score is missing.
+    """
+    if prev_score is None:
+        return None
+    current_ids = [f.rule_id for f in findings]
+    cur_counter = Counter(current_ids)
+    prev_counter = Counter(prev_rule_ids)
+    cleared_total = sum((prev_counter - cur_counter).values())
+    new_ids = sorted(set(cur_counter) - set(prev_counter))
+    persistent_total = sum((cur_counter & prev_counter).values())
+    new_total = sum(cur_counter[r] for r in new_ids)
+    return {
+        "prev_score": int(prev_score),
+        "current_score": int(current_score),
+        "delta": int(current_score) - int(prev_score),
+        "prev_count": sum(prev_counter.values()),
+        "current_count": sum(cur_counter.values()),
+        "cleared_count": cleared_total,
+        "persistent_count": persistent_total,
+        "new_count": new_total,
+        "new_rule_ids": new_ids,
+    }
 
 
 def _audit_by_extension(saved_path: Path):
@@ -193,6 +297,21 @@ def audit_from_fix():
         result = _audit_by_extension(saved_path)
         result.findings = policy.filter_findings(result.findings, doc_format)
 
+        # Compute a diff vs the audit that ran before the fix, when present.
+        prev_score_raw = request.form.get("prev_score", "").strip()
+        try:
+            prev_score_int: int | None = int(prev_score_raw) if prev_score_raw else None
+        except ValueError:
+            prev_score_int = None
+        prev_rule_ids_raw = request.form.get("prev_rule_ids", "")
+        prev_rule_ids = [r.strip() for r in prev_rule_ids_raw.split(",") if r.strip()]
+        audit_diff = _compute_audit_diff(
+            result.findings,
+            prev_score=prev_score_int,
+            prev_rule_ids=prev_rule_ids,
+            current_score=result.score,
+        )
+
         chat_token = token  # keep token alive for further downstream use
 
         share_token = str(uuid.uuid4())
@@ -217,14 +336,22 @@ def audit_from_fix():
             fixable_rule_ids=FIXABLE_RULE_IDS,
             share_token=share_token,
             share_url=share_url,
+            rules_by_id=_rules_by_id(),
+            audit_diff=audit_diff,
+            audit_source="from-fix",
         )
 
-        if share_token:
-            try:
-                from ..report_cache import save_report
-                save_report(share_token, html)
-            except Exception:
-                pass
+        _save_share_artifacts(
+            share_token,
+            html,
+            findings=result.findings,
+            filename=saved_path.name,
+            doc_format=doc_format,
+            score=result.score,
+            grade=result.grade,
+            profile_label=profile_label,
+            mode_label=mode_label,
+        )
 
         return html
 
@@ -239,6 +366,194 @@ def audit_from_fix():
             ),
             500,
         )
+
+
+@audit_bp.route("/from-convert", methods=["POST"])
+def audit_from_convert():
+    """Audit a converted document without re-uploading (uses existing token).
+
+    Mirrors :func:`audit_from_fix` but locates any auditable file in the
+    session temp directory rather than expecting a ``-fixed`` suffix.
+    """
+    from ..upload import get_temp_dir, ALLOWED_EXTENSIONS
+    from ..email import email_configured as _ec
+
+    token = request.form.get("token", "").strip()
+    download_name = request.form.get("download_name", "").strip()
+
+    temp_dir = get_temp_dir(token)
+    if temp_dir is None:
+        return (
+            render_template(
+                "audit_form.html",
+                error="Your session has expired. Please upload the converted document to audit it.",
+                ace_installed=_is_ace_installed(),
+                email_configured=_ec(),
+                rules_by_format=get_rules_by_format(),
+            ),
+            400,
+        )
+
+    saved_path = None
+    if download_name:
+        candidate = temp_dir / _sf(download_name)
+        try:
+            candidate.resolve().relative_to(temp_dir.resolve())
+            if candidate.exists() and candidate.suffix.lower() in ALLOWED_EXTENSIONS:
+                saved_path = candidate
+        except ValueError:
+            pass
+    if saved_path is None:
+        # Prefer the most recently modified auditable file in the temp dir.
+        candidates = [
+            f for f in temp_dir.iterdir()
+            if f.is_file() and f.suffix.lower() in ALLOWED_EXTENSIONS
+        ]
+        if candidates:
+            saved_path = max(candidates, key=lambda p: p.stat().st_mtime)
+
+    if saved_path is None:
+        return (
+            render_template(
+                "audit_form.html",
+                error="The converted file could not be audited (its format is not supported by the auditor).",
+                ace_installed=_is_ace_installed(),
+                email_configured=_ec(),
+                rules_by_format=get_rules_by_format(),
+            ),
+            400,
+        )
+
+    try:
+        standards_profile = request.form.get("standards_profile", "acb_2025")
+        profile_label = get_profile_label(standards_profile)
+        doc_format = _format_from_path(saved_path)
+        policy = build_rule_policy(request.form)
+        mode_label = policy.mode_label
+        suppressed_rules = sorted(policy.suppressed)
+
+        result = _audit_by_extension(saved_path)
+        result.findings = policy.filter_findings(result.findings, doc_format)
+
+        chat_token = token
+
+        share_token = str(uuid.uuid4())
+        try:
+            share_url = url_for("audit.shared_report", share_token=share_token, _external=True)
+        except Exception:
+            share_url = None
+            share_token = None
+
+        html = render_template(
+            "audit_report.html",
+            result=result,
+            mode_label=mode_label,
+            profile_label=profile_label,
+            doc_format=doc_format,
+            ace_installed=_is_ace_installed(),
+            suppressed_rules=suppressed_rules,
+            email_status=None,
+            ai_used=False,
+            customization_warning="",
+            chat_token=chat_token,
+            fixable_rule_ids=FIXABLE_RULE_IDS,
+            share_token=share_token,
+            share_url=share_url,
+            rules_by_id=_rules_by_id(),
+            audit_diff=None,
+            audit_source="from-convert",
+        )
+
+        _save_share_artifacts(
+            share_token,
+            html,
+            findings=result.findings,
+            filename=saved_path.name,
+            doc_format=doc_format,
+            score=result.score,
+            grade=result.grade,
+            profile_label=profile_label,
+            mode_label=mode_label,
+        )
+
+        return html
+
+    except Exception:
+        return (
+            render_template(
+                "audit_form.html",
+                error="An error occurred while auditing the converted document. Please try again.",
+                ace_installed=_is_ace_installed(),
+                email_configured=_ec(),
+                rules_by_format=get_rules_by_format(),
+            ),
+            500,
+        )
+
+
+@audit_bp.route("/share/<share_token>/csv", methods=["GET"])
+def shared_report_csv(share_token: str):
+    """Download the cached audit findings as a UTF-8 CSV file."""
+    from ..report_cache import load_findings_data
+
+    data = load_findings_data(share_token)
+    if not data:
+        abort(404)
+
+    csv_bytes = findings_to_csv_bytes(
+        data.get("findings", []),
+        filename=data.get("filename", ""),
+        doc_format=data.get("doc_format", ""),
+        score=data.get("score"),
+        grade=data.get("grade", ""),
+        profile_label=data.get("profile_label", ""),
+        mode_label=data.get("mode_label", ""),
+    )
+
+    stem = safe_filename_stem(Path(data.get("filename", "audit") or "audit").stem)
+    download_name = f"{stem}-findings.csv"
+    return Response(
+        csv_bytes,
+        mimetype="text/csv; charset=utf-8",
+        headers={"Content-Disposition": f'attachment; filename="{download_name}"'},
+    )
+
+
+@audit_bp.route("/share/<share_token>/pdf", methods=["GET"])
+def shared_report_pdf(share_token: str):
+    """Render the cached HTML report as a PDF (lazy, cached for repeat downloads)."""
+    from ..report_cache import (
+        load_findings_data,
+        load_pdf,
+        load_report,
+        save_pdf,
+    )
+
+    pdf_bytes = load_pdf(share_token)
+    if pdf_bytes is None:
+        html = load_report(share_token)
+        if not html:
+            abort(404)
+        try:
+            from weasyprint import HTML  # type: ignore[import-not-found]
+        except ImportError:
+            abort(503)
+        try:
+            pdf_bytes = HTML(string=html, base_url=request.url_root).write_pdf()
+        except Exception:
+            abort(500)
+        if pdf_bytes:
+            save_pdf(share_token, pdf_bytes)
+
+    data = load_findings_data(share_token) or {}
+    stem_source = data.get("filename") or "audit"
+    stem = safe_filename_stem(Path(stem_source).stem or "audit")
+    download_name = f"{stem}-audit-report.pdf"
+    return Response(
+        pdf_bytes,
+        mimetype="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{download_name}"'},
+    )
 
 
 @audit_bp.route("/share/<share_token>", methods=["GET"])
@@ -336,15 +651,22 @@ def _audit_single():
             fixable_rule_ids=FIXABLE_RULE_IDS,
             share_token=share_token,
             share_url=share_url,
+            rules_by_id=_rules_by_id(),
+            audit_diff=None,
+            audit_source="upload",
         )
 
-        # Cache the rendered report for the shareable URL (best-effort).
-        if share_token:
-            try:
-                from ..report_cache import save_report
-                save_report(share_token, html)
-            except Exception:
-                pass
+        _save_share_artifacts(
+            share_token,
+            html,
+            findings=result.findings,
+            filename=saved_path.name,
+            doc_format=doc_format,
+            score=result.score,
+            grade=result.grade,
+            profile_label=profile_label,
+            mode_label=mode_label,
+        )
 
         return html
     except UploadError as e:

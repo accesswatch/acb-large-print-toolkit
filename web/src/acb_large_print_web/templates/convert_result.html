@@ -58,15 +58,27 @@
 
 <section>
   <h2 id="next-heading">What's Next?</h2>
-  {% if feature_audit_enabled %}
-  <p>Run an accessibility audit on your converted document to confirm it meets ACB Large Print Guidelines.</p>
-  <div class="next-step-actions">
-    <a href="{{ url_for('audit.audit_form') }}" class="btn-secondary">Audit the Result</a>
+  {% if feature_audit_enabled and auditable_output %}
+  <div class="next-step-callout">
+    <h3 id="audit-next-heading">Recommended Next Step: Audit the Converted File</h3>
+    <p>Run an accessibility audit on your converted document to confirm it meets ACB Large Print Guidelines &mdash; without re-uploading.</p>
+    <form method="post" action="{{ url_for('audit.audit_from_convert') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="token" value="{{ token }}">
+      <input type="hidden" name="download_name" value="{{ download_name }}">
+      <input type="hidden" name="standards_profile" value="acb_2025">
+      <div class="next-step-actions">
+        <button type="submit" class="btn-primary">Audit This File</button>
+        {% if feature_converter_enabled %}<a href="{{ url_for('convert.convert_form') }}" class="btn-secondary">Convert Another</a>{% endif %}
+      </div>
+    </form>
   </div>
+  {% elif feature_audit_enabled %}
+  <p>The converted file format ({{ download_name.rsplit('.', 1)[-1] | upper }}) is not directly auditable. If you also produced a Word, EPUB, PDF, or Markdown version, audit that one instead.</p>
   {% endif %}
   <ul>
     {% if feature_converter_enabled %}<li><a href="{{ url_for('convert.convert_form') }}">Convert another document</a></li>{% endif %}
-    {% if feature_audit_enabled %}<li><a href="{{ url_for('audit.audit_form') }}">Audit a document</a></li>{% endif %}
+    {% if feature_audit_enabled %}<li><a href="{{ url_for('audit.audit_form') }}">Audit a different document</a></li>{% endif %}
     <li><a href="{{ url_for('guidelines.guidelines_page') }}">Read the ACB guidelines</a></li>
   </ul>
 </section>

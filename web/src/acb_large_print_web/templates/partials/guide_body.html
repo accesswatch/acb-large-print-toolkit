@@ -37,6 +37,10 @@
 <li><a href="#step-by-step">Step-by-step</a></li>
 <li><a href="#quick-wins-filter">Quick Wins filter</a></li>
 <li><a href="#shareable-audit-report-links">Shareable audit report links</a></li>
+<li><a href="#download-report-as-pdf-or-csv">Download report as PDF or CSV</a></li>
+<li><a href="#re-audit-diff-see-exactly-what-changed">Re-audit diff: see exactly what changed</a></li>
+<li><a href="#inline-rule-explanations">Inline rule explanations</a></li>
+<li><a href="#convert-audit-handoff">Convert → Audit handoff</a></li>
 <li><a href="#batch-auditing">Batch auditing</a></li>
 <li><a href="#email-delivery">Email delivery</a></li>
 <li><a href="#ai-disclosure">AI disclosure</a></li>
@@ -510,7 +514,27 @@
 <li>Anyone with the link can view the report; no login is required.</li>
 <li>After one hour, the link expires and the cached report is permanently deleted.</li>
 </ul>
-<p>Use shareable links for team reviews, stakeholder sign-off, or archiving a point-in-time compliance snapshot.\n\n---</p>
+<p>Use shareable links for team reviews, stakeholder sign-off, or archiving a point-in-time compliance snapshot.</p>
+<h3 id="download-report-as-pdf-or-csv">Download report as PDF or CSV</h3>
+<p>The Share section of the audit report also offers two download buttons:</p>
+<ul>
+<li><strong>Download PDF</strong> -- a print-styled PDF of the full report, suitable for attaching to a board packet, audit submission, or compliance file. Generated server-side and cached for the session lifetime.</li>
+<li><strong>Download CSV</strong> -- the findings as a UTF-8 BOM CSV with header preamble (filename, format, score, grade, profile, mode) followed by one row per finding (severity, rule ID, message, location, ACB reference, auto-fix flag, help links). Opens cleanly in Excel.</li>
+</ul>
+<p>Both downloads use the same one-hour share token, so the buttons disappear when the report expires.</p>
+<h3 id="re-audit-diff-see-exactly-what-changed">Re-audit diff: see exactly what changed</h3>
+<p>When you re-audit a document after running Fix on it (the streamlined Fix → Re-Audit flow), the report shows a <strong>diff banner</strong> at the top:</p>
+<ul>
+<li>Score delta (e.g. "+12 points") and grade change</li>
+<li>Counts of fixed, persistent, and newly-introduced findings</li>
+<li>A list of the rule IDs that were resolved since the previous audit</li>
+</ul>
+<p>If a fix introduced a new issue, it is called out in the "newly introduced" count so nothing slips through.</p>
+<h3 id="inline-rule-explanations">Inline rule explanations</h3>
+<p>Every rule ID in the findings table is a click-to-expand disclosure. Open it to see the canonical rule description, ACB reference, and a plain-language "Why this matters" rationale -- without leaving the page or losing your place in a long findings list. Auto-fixable rules show an "Auto-fixable" badge inside the disclosure.</p>
+<h3 id="convert-audit-handoff">Convert → Audit handoff</h3>
+<p>When you convert a document to HTML, Word, or EPUB on the Convert page, the result page now shows an <strong>Audit This Document</strong> card. One click runs the audit on the converted file -- no re-upload, no extra step.</p>
+<hr />
 <ul>
 <li><strong>Rule ID</strong> -- a short code like <code>ACB-FONT-FAMILY</code> or <code>EPUB-MISSING-ALT-TEXT</code></li>
 <li><strong>Severity</strong> -- Critical, High, Medium, or Low</li>

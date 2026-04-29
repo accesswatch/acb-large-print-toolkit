@@ -6,7 +6,7 @@ Releases are tagged in the [GitHub repository](https://github.com/accesswatch/ac
 
 ---
 
-## [Unreleased] – release/2.7.0
+## [2.7.0] - 2026-04-29
 
 ### Added
 
@@ -61,6 +61,26 @@ Releases are tagged in the [GitHub repository](https://github.com/accesswatch/ac
 - **Print CSS improvements.** An additional `@media print` block in `static/forms.css` hides the quick wins bar, share section, toast container, CMS copy bar, and convert preview iframe when printing, and adds page-break rules for the findings table.
 
 - **Responsive mobile layout improvements.** New responsive rules in `static/forms.css` adjust form layouts, navigation, action bars, and score boxes for narrow viewports.
+
+- **Streamlined Convert → Audit handoff (no re-upload).** A new `POST /audit/from-convert` route audits the converted file from an existing Convert session without a second upload. The `convert_result.html` page now shows an "Audit This Document" call-to-action card for HTML, Word, and EPUB outputs (i.e. formats GLOW's auditors support), guarded by `feature_audit_enabled`. The route resolves the converted file using `secure_filename` with a path-traversal check, runs the audit inline, generates a share token, and renders `audit_report.html`. On expired or missing session the user is redirected to the standard upload form with a friendly notice. Changes in `routes/audit.py` and `templates/convert_result.html`.
+
+- **Audit report: download as PDF.** A new `GET /audit/share/<share_token>/pdf` route renders the cached share-report HTML to PDF via WeasyPrint, caches the result in the share directory for the session lifetime, and serves it as `application/pdf`. The audit report's "Share this report" section now exposes a "Download PDF" button alongside the share URL. When WeasyPrint is not installed the route returns 503 and the button degrades gracefully. Changes in `routes/audit.py`, new helpers `report_cache.save_pdf()` / `load_pdf()`, and `templates/audit_report.html`.
+
+- **Audit report: download findings as CSV.** A new `GET /audit/share/<share_token>/csv` route returns the audit findings as a UTF-8 BOM CSV with a header preamble (filename, format, score, grade, profile, mode) followed by the standard column row. The CSV is generated from cached findings JSON written alongside the report HTML at audit time. The "Share this report" section now exposes a "Download CSV" button that pairs with the existing email-CSV-attachment delivery. New module `web/src/acb_large_print_web/csv_export.py` extracted from the email path; new helpers `report_cache.save_findings_data()` / `load_findings_data()`. Changes in `routes/audit.py`, new `csv_export.py`, and `templates/audit_report.html`.
+
+- **Re-audit: before/after diff banner.** When an audit is re-run via `POST /audit/from-fix`, the report now displays a diff banner above the score showing the score delta (e.g. "+12 points"), grade change, fixed/persistent/new finding counts, and the rule IDs that were fixed since the previous audit. Implemented via a new `_compute_audit_diff()` helper in `routes/audit.py` that consumes `prev_score` and `prev_rule_ids` form fields posted from the fix result page, and a new `audit_diff` block in `templates/audit_report.html`. The fix result form now propagates `prev_score` and a comma-joined list of rule IDs from the original audit.
+
+- **Audit report: inline rule explanations.** Each rule ID in the findings table is now wrapped in a `<details>` disclosure that shows the canonical rule description, ACB reference, and "Why this matters" rationale pulled from `rule_reference_metadata.py`. The disclosure is keyboard-operable, opens in place without triggering a layout shift, and is hidden when printed. Auto-fixable rules show a "Auto-fixable" badge inside the disclosure. Changes in `templates/audit_report.html` and `static/forms.css`. A new `_rules_by_id()` helper in `routes/audit.py` builds the lookup table at request time.
+
+- **Roadmap page.** Added `GET /roadmap` route and `templates/roadmap.html`, linked from the footer alongside Privacy and Changelog. The page lists shipped highlights, in-progress work, and longer-term ideas so contributors and adopters can see where GLOW is heading. Content lives entirely in the template -- no backend data layer.
+
+- **Global keyboard focus indicators.** Added a global `:focus-visible` ring (3px solid `--color-primary` with 2px offset) in `static/forms.css` that applies to all focusable elements, paired with `:focus:not(:focus-visible) { outline: none }` so mouse clicks no longer leave a focus ring on buttons. Browsers without `:focus-visible` support fall back to the default browser ring. The ring also respects dark mode via the existing primary color variable.
+
+- **Consent modal: scrollable body and improved focus management.** The "Cloud AI Consent" modal in the chat panel now wraps its long policy text in a scrollable `.consent-modal-scroll` region with a max-height of 60vh, ensuring the Decline/Accept buttons remain visible on small viewports. The modal also traps focus while open, restores focus to the trigger when closed, and respects the `prefers-reduced-motion` media query (skipping the fade-in animation). Changes in `templates/chat_panel.html` and `static/forms.css`.
+
+- **Reduced motion support.** All custom animations (toast slide-in, dropzone hover transition, consent modal fade) now check `@media (prefers-reduced-motion: reduce)` and disable transition/animation when the user has requested reduced motion. Changes in `static/forms.css` and `static/toast.js`.
+
+- **Tests: 22 new unit tests for v2.7.0 routes.** New `web/tests/test_v270_new_routes.py` exercises `report_cache.save_findings_data()` / `load_findings_data()` / `save_pdf()` / `load_pdf()` (roundtrip, bad token, missing share dir, TTL expiry), `csv_export.findings_to_csv_bytes()` (BOM, preamble, columns, empty-list, filename safety), the new share-report CSV and PDF routes (cached path, 404 on unknown token, 503 when WeasyPrint missing), and the `audit_from_convert` error paths (expired/missing token). Also includes a CSS guard test that fails if any shipped stylesheet introduces an `outline: none / 0 / transparent` rule outside the allowed `:focus:not(:focus-visible)` recipe, protecting the new global focus ring from future regressions.
 
 ### Fixed
 

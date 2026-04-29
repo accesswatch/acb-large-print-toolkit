@@ -191,7 +191,36 @@ Every audit report generates a **shareable link** that lets you send the report 
 - Anyone with the link can view the report; no login is required.
 - After one hour, the link expires and the cached report is permanently deleted.
 
-Use shareable links for team reviews, stakeholder sign-off, or archiving a point-in-time compliance snapshot.\n\n---
+Use shareable links for team reviews, stakeholder sign-off, or archiving a point-in-time compliance snapshot.
+
+### Download report as PDF or CSV
+
+The Share section of the audit report also offers two download buttons:
+
+- **Download PDF** -- a print-styled PDF of the full report, suitable for attaching to a board packet, audit submission, or compliance file. Generated server-side and cached for the session lifetime.
+- **Download CSV** -- the findings as a UTF-8 BOM CSV with header preamble (filename, format, score, grade, profile, mode) followed by one row per finding (severity, rule ID, message, location, ACB reference, auto-fix flag, help links). Opens cleanly in Excel.
+
+Both downloads use the same one-hour share token, so the buttons disappear when the report expires.
+
+### Re-audit diff: see exactly what changed
+
+When you re-audit a document after running Fix on it (the streamlined Fix → Re-Audit flow), the report shows a **diff banner** at the top:
+
+- Score delta (e.g. "+12 points") and grade change
+- Counts of fixed, persistent, and newly-introduced findings
+- A list of the rule IDs that were resolved since the previous audit
+
+If a fix introduced a new issue, it is called out in the "newly introduced" count so nothing slips through.
+
+### Inline rule explanations
+
+Every rule ID in the findings table is a click-to-expand disclosure. Open it to see the canonical rule description, ACB reference, and a plain-language "Why this matters" rationale -- without leaving the page or losing your place in a long findings list. Auto-fixable rules show an "Auto-fixable" badge inside the disclosure.
+
+### Convert → Audit handoff
+
+When you convert a document to HTML, Word, or EPUB on the Convert page, the result page now shows an **Audit This Document** card. One click runs the audit on the converted file -- no re-upload, no extra step.
+
+---
 
 - **Rule ID** -- a short code like `ACB-FONT-FAMILY` or `EPUB-MISSING-ALT-TEXT`
 - **Severity** -- Critical, High, Medium, or Low

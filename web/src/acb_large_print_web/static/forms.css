@@ -3,6 +3,35 @@
    Extends acb-large-print.css with UI-specific styles.
    ========================================================================== */
 
+/* --- Global focus indicator (WCAG 2.4.7 / 2.4.13 baseline) ----------------
+   Every interactive element gets a high-contrast focus ring by default.
+   Per-component rules below may override the colour but should never
+   remove this indicator without providing an equally visible replacement. */
+:focus {
+  outline: 3px solid #0055cc;
+  outline-offset: 2px;
+}
+:focus:not(:focus-visible) {
+  outline: none;
+}
+:focus-visible {
+  outline: 3px solid #0055cc;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 5px rgba(255, 255, 255, 0.9);
+}
+/* Native form controls render the ring inside their box; offset it so the
+   indicator is never clipped by adjacent borders or radii. */
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+button:focus-visible,
+a:focus-visible,
+summary:focus-visible,
+[tabindex]:focus-visible {
+  outline: 3px solid #0055cc;
+  outline-offset: 2px;
+}
+
 /* --- Skip Link --- */
 .skip-link {
   position: absolute;
@@ -267,10 +296,16 @@ main[aria-busy="true"] {
   inset: 0;
   background: rgba(0, 0, 0, 0.55);
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
   padding: 1rem;
   z-index: 1000;
+  /* Allow the backdrop itself to scroll when the modal is taller than the
+     viewport (e.g. at 200% / 400% browser zoom). Without this, a tall
+     modal centered with align-items:center clips its bottom -- including
+     the Continue button -- and there is no way to reach it. */
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .consent-modal {
@@ -280,7 +315,14 @@ main[aria-busy="true"] {
   border: 3px solid #1a1a1a;
   border-radius: 0.375rem;
   padding: 1rem 1.25rem;
-  overflow: hidden;
+  /* The whole modal scrolls when the viewport is short or the user has
+     zoomed in. The inner .consent-modal-scroll keeps a sensible reading
+     window when there is room, but on small viewports we let the document
+     flow take over so the Continue button is always reachable. */
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  display: flex;
+  flex-direction: column;
 }
 
 .consent-modal-scroll {
@@ -289,7 +331,7 @@ main[aria-busy="true"] {
   -webkit-overflow-scrolling: touch;
   padding-right: 0.5rem;
   margin-bottom: 1rem;
-  outline: none;
+  /* outline managed by the global :focus-visible rule above */
 }
 
 .consent-modal h2,
@@ -315,7 +357,12 @@ main[aria-busy="true"] {
   }
 
   .consent-modal-scroll {
-    max-height: 48vh;
+    /* On phones / heavy zoom, drop the inner scroll entirely so all
+       content -- including the Continue button -- is reachable by
+       scrolling the page or modal in a single direction. */
+    max-height: none;
+    overflow-y: visible;
+    padding-right: 0;
   }
 }
 
@@ -2234,3 +2281,70 @@ body.theme-bits .brand-logo {
   }
 }
 
+
+/* --- Reduced motion: respect user preference (WCAG 2.3.3) --- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* --- Audit report: diff callout (re-audit comparison) --- */
+.diff-callout {
+  border: 2px solid #1a1a1a;
+  border-radius: 0.375rem;
+  padding: 1rem 1.25rem;
+  margin: 1.25rem 0;
+  background: #f5f9ff;
+}
+.diff-callout .diff-headline {
+  font-size: 1.125rem;
+  margin: 0 0 0.5rem 0;
+}
+.diff-callout .diff-improved { color: #155f2c; }
+.diff-callout .diff-regressed { color: #8a1c1c; }
+.diff-callout .diff-stats {
+  list-style: none;
+  padding: 0;
+  margin: 0.5rem 0 0 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+}
+.diff-callout .diff-stats li {
+  margin: 0;
+}
+
+/* --- Audit findings: inline rule explanations --- */
+.finding-explain {
+  margin-top: 0.5rem;
+}
+.finding-explain > summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: #0055cc;
+}
+.finding-explain-body {
+  margin-top: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border-left: 4px solid #0055cc;
+  background: #f6f9fc;
+}
+.finding-explain-body p {
+  margin: 0.25rem 0;
+}
+.finding-explain-body .finding-fixable { color: #155f2c; }
+.finding-explain-body .finding-manual { color: #5a3500; }
+
+/* --- Share section: PDF / CSV download row --- */
+.share-downloads {
+  margin: 0.75rem 0 0 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}

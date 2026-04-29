@@ -932,15 +932,19 @@ class TestConvertPage:
         data = {"document": (docx_data, "test.docx")}
         resp = client.post("/convert/", data=data, content_type="multipart/form-data")
         assert resp.status_code == 200
-        assert resp.content_type.startswith("text/markdown")
-        assert b"test.md" in resp.headers.get("Content-Disposition", "").encode()
+        # Route now returns a result page (not a direct file download)
+        assert resp.content_type.startswith("text/html")
+        assert b"test.md" in resp.data
+        assert b"Conversion Complete" in resp.data
 
     def test_convert_xlsx_returns_markdown(self, client):
         xlsx_data = _make_fake_xlsx()
         data = {"document": (xlsx_data, "test.xlsx")}
         resp = client.post("/convert/", data=data, content_type="multipart/form-data")
         assert resp.status_code == 200
-        assert resp.content_type.startswith("text/markdown")
+        assert resp.content_type.startswith("text/html")
+        assert b"test.md" in resp.data
+        assert b"Conversion Complete" in resp.data
 
     def test_convert_form_has_direction_radios(self, client):
         resp = client.get("/convert/")

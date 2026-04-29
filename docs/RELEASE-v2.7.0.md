@@ -172,3 +172,65 @@ All `/export` traffic is permanently redirected (301) to `/convert`. No action r
 - `docs/feature-flags.md` -- updated `GLOW_ENABLE_EXPORT_HTML` description
 - `docs/RELEASE-v2.7.0.md` -- this file
 - `docs/announcement-v2.7.0.md` / `.html` -- public release announcement
+
+---
+
+## Additional v2.7.0 Improvements
+
+### 11. Streamlined Convert → Audit handoff
+
+Convert results for HTML, Word, and EPUB output now offer "Audit This Document" as a one-click action that re-runs the audit on the converted file without re-uploading.
+
+- New route: `POST /audit/from-convert`
+- Resolves the converted file from the existing Convert session token using `secure_filename` with a path-traversal check
+- Runs the standard audit pipeline and renders the full report (with share link)
+- Gracefully falls back to the upload form when the session has expired
+
+### 12. PDF and CSV downloads on the audit report
+
+The "Share this report" section now offers two new download buttons alongside the share URL.
+
+- **Download PDF** -- `GET /audit/share/<token>/pdf` renders the cached HTML to PDF via WeasyPrint, caches the result for the session lifetime, and serves `application/pdf`. When WeasyPrint is not installed the route returns 503 and the button is hidden.
+- **Download CSV** -- `GET /audit/share/<token>/csv` returns the findings as a UTF-8 BOM CSV with a header preamble (filename, format, score, grade, profile, mode) followed by the standard column row. Encoded so Excel opens it cleanly.
+- New module `csv_export.py` extracted from the email path; new helpers `report_cache.save_pdf()` / `load_pdf()` / `save_findings_data()` / `load_findings_data()`
+
+### 13. Re-audit before/after diff banner
+
+When an audit is re-run from a Fix session, the report shows a diff banner above the score:
+
+- Score delta (e.g. "+12 points") and grade change
+- Counts of fixed, persistent, and newly-introduced findings
+- Lists the rule IDs that were resolved since the previous audit
+- Implemented via a new `_compute_audit_diff()` helper in `routes/audit.py`; the fix result form propagates `prev_score` and a comma-joined list of rule IDs
+
+### 14. Inline rule explanations
+
+Each rule ID in the findings table is now wrapped in a `<details>` disclosure that shows the canonical description, ACB reference, and "Why this matters" rationale pulled from `rule_reference_metadata.py`.
+
+- Keyboard-operable (Space/Enter to toggle)
+- Opens in place without triggering layout shift
+- Auto-fixable rules show an "Auto-fixable" badge inside the disclosure
+- Hidden when printed
+
+### 15. Roadmap page
+
+Added `GET /roadmap` and `templates/roadmap.html`, linked from the footer alongside Privacy and Changelog. The page lists shipped highlights, in-progress work, and longer-term ideas.
+
+### 16. Global keyboard focus indicators and reduced motion
+
+- `static/forms.css` now ships a global `:focus-visible` ring (3px solid `--color-primary` with 2px offset) that applies to all focusable elements; mouse clicks no longer leave a focus ring on buttons (`:focus:not(:focus-visible) { outline: none }`)
+- All custom animations (toast slide-in, dropzone hover, consent modal fade) check `@media (prefers-reduced-motion: reduce)` and disable transitions when the user has requested reduced motion
+- Consent modal body now scrolls (`max-height: 60vh`) so Decline/Accept stay visible on small viewports; modal traps focus while open and restores it to the trigger when closed
+
+### 17. Test coverage
+
+A new `web/tests/test_v270_new_routes.py` module adds 22 unit tests covering:
+
+- `report_cache.save_findings_data()` / `load_findings_data()` / `save_pdf()` / `load_pdf()` -- roundtrip, bad token, missing share dir, TTL expiry
+- `csv_export.findings_to_csv_bytes()` -- BOM, preamble, columns, empty list, filename safety
+- `GET /audit/share/<token>/csv` -- cached path, 404 on unknown token, 404 on malformed token
+- `GET /audit/share/<token>/pdf` -- cached path, 404 on unknown token, 503 when WeasyPrint missing
+- `POST /audit/from-convert` -- expired and missing token error paths
+- A CSS guard that fails if any shipped stylesheet introduces an `outline: none / 0 / transparent` rule outside the allowed `:focus:not(:focus-visible)` recipe, protecting the new global focus ring from future regressions
+
+Full web suite: 266 passed, 20 skipped.

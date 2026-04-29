@@ -7,7 +7,7 @@
 <div class="toc">
 <ul>
 <li><a href="#changelog">Changelog</a><ul>
-<li><a href="#unreleased-release270">[Unreleased] – release/2.7.0</a><ul>
+<li><a href="#270---2026-04-29">[2.7.0] - 2026-04-29</a><ul>
 <li><a href="#added">Added</a></li>
 <li><a href="#fixed">Fixed</a></li>
 </ul>
@@ -142,7 +142,7 @@
 <p>All notable changes to the GLOW Accessibility Toolkit are documented in this file. The format is based on <a href="https://keepachangelog.com/en/1.1.0/">Keep a Changelog</a>.</p>
 <p>Releases are tagged in the <a href="https://github.com/accesswatch/acb-large-print-toolkit">GitHub repository</a>. Dates are in Pacific Time (UTC-7).</p>
 <hr />
-<h2 id="unreleased-release270">[Unreleased] – release/2.7.0</h2>
+<h2 id="270---2026-04-29">[2.7.0] - 2026-04-29</h2>
 <h3 id="added">Added</h3>
 <ul>
 <li>
@@ -223,6 +223,36 @@
 </li>
 <li>
 <p><strong>Responsive mobile layout improvements.</strong> New responsive rules in <code>static/forms.css</code> adjust form layouts, navigation, action bars, and score boxes for narrow viewports.</p>
+</li>
+<li>
+<p><strong>Streamlined Convert → Audit handoff (no re-upload).</strong> A new <code>POST /audit/from-convert</code> route audits the converted file from an existing Convert session without a second upload. The <code>convert_result.html</code> page now shows an "Audit This Document" call-to-action card for HTML, Word, and EPUB outputs (i.e. formats GLOW's auditors support), guarded by <code>feature_audit_enabled</code>. The route resolves the converted file using <code>secure_filename</code> with a path-traversal check, runs the audit inline, generates a share token, and renders <code>audit_report.html</code>. On expired or missing session the user is redirected to the standard upload form with a friendly notice. Changes in <code>routes/audit.py</code> and <code>templates/convert_result.html</code>.</p>
+</li>
+<li>
+<p><strong>Audit report: download as PDF.</strong> A new <code>GET /audit/share/&lt;share_token&gt;/pdf</code> route renders the cached share-report HTML to PDF via WeasyPrint, caches the result in the share directory for the session lifetime, and serves it as <code>application/pdf</code>. The audit report's "Share this report" section now exposes a "Download PDF" button alongside the share URL. When WeasyPrint is not installed the route returns 503 and the button degrades gracefully. Changes in <code>routes/audit.py</code>, new helpers <code>report_cache.save_pdf()</code> / <code>load_pdf()</code>, and <code>templates/audit_report.html</code>.</p>
+</li>
+<li>
+<p><strong>Audit report: download findings as CSV.</strong> A new <code>GET /audit/share/&lt;share_token&gt;/csv</code> route returns the audit findings as a UTF-8 BOM CSV with a header preamble (filename, format, score, grade, profile, mode) followed by the standard column row. The CSV is generated from cached findings JSON written alongside the report HTML at audit time. The "Share this report" section now exposes a "Download CSV" button that pairs with the existing email-CSV-attachment delivery. New module <code>web/src/acb_large_print_web/csv_export.py</code> extracted from the email path; new helpers <code>report_cache.save_findings_data()</code> / <code>load_findings_data()</code>. Changes in <code>routes/audit.py</code>, new <code>csv_export.py</code>, and <code>templates/audit_report.html</code>.</p>
+</li>
+<li>
+<p><strong>Re-audit: before/after diff banner.</strong> When an audit is re-run via <code>POST /audit/from-fix</code>, the report now displays a diff banner above the score showing the score delta (e.g. "+12 points"), grade change, fixed/persistent/new finding counts, and the rule IDs that were fixed since the previous audit. Implemented via a new <code>_compute_audit_diff()</code> helper in <code>routes/audit.py</code> that consumes <code>prev_score</code> and <code>prev_rule_ids</code> form fields posted from the fix result page, and a new <code>audit_diff</code> block in <code>templates/audit_report.html</code>. The fix result form now propagates <code>prev_score</code> and a comma-joined list of rule IDs from the original audit.</p>
+</li>
+<li>
+<p><strong>Audit report: inline rule explanations.</strong> Each rule ID in the findings table is now wrapped in a <code>&lt;details&gt;</code> disclosure that shows the canonical rule description, ACB reference, and "Why this matters" rationale pulled from <code>rule_reference_metadata.py</code>. The disclosure is keyboard-operable, opens in place without triggering a layout shift, and is hidden when printed. Auto-fixable rules show a "Auto-fixable" badge inside the disclosure. Changes in <code>templates/audit_report.html</code> and <code>static/forms.css</code>. A new <code>_rules_by_id()</code> helper in <code>routes/audit.py</code> builds the lookup table at request time.</p>
+</li>
+<li>
+<p><strong>Roadmap page.</strong> Added <code>GET /roadmap</code> route and <code>templates/roadmap.html</code>, linked from the footer alongside Privacy and Changelog. The page lists shipped highlights, in-progress work, and longer-term ideas so contributors and adopters can see where GLOW is heading. Content lives entirely in the template -- no backend data layer.</p>
+</li>
+<li>
+<p><strong>Global keyboard focus indicators.</strong> Added a global <code>:focus-visible</code> ring (3px solid <code>--color-primary</code> with 2px offset) in <code>static/forms.css</code> that applies to all focusable elements, paired with <code>:focus:not(:focus-visible) { outline: none }</code> so mouse clicks no longer leave a focus ring on buttons. Browsers without <code>:focus-visible</code> support fall back to the default browser ring. The ring also respects dark mode via the existing primary color variable.</p>
+</li>
+<li>
+<p><strong>Consent modal: scrollable body and improved focus management.</strong> The "Cloud AI Consent" modal in the chat panel now wraps its long policy text in a scrollable <code>.consent-modal-scroll</code> region with a max-height of 60vh, ensuring the Decline/Accept buttons remain visible on small viewports. The modal also traps focus while open, restores focus to the trigger when closed, and respects the <code>prefers-reduced-motion</code> media query (skipping the fade-in animation). Changes in <code>templates/chat_panel.html</code> and <code>static/forms.css</code>.</p>
+</li>
+<li>
+<p><strong>Reduced motion support.</strong> All custom animations (toast slide-in, dropzone hover transition, consent modal fade) now check <code>@media (prefers-reduced-motion: reduce)</code> and disable transition/animation when the user has requested reduced motion. Changes in <code>static/forms.css</code> and <code>static/toast.js</code>.</p>
+</li>
+<li>
+<p><strong>Tests: 22 new unit tests for v2.7.0 routes.</strong> New <code>web/tests/test_v270_new_routes.py</code> exercises <code>report_cache.save_findings_data()</code> / <code>load_findings_data()</code> / <code>save_pdf()</code> / <code>load_pdf()</code> (roundtrip, bad token, missing share dir, TTL expiry), <code>csv_export.findings_to_csv_bytes()</code> (BOM, preamble, columns, empty-list, filename safety), the new share-report CSV and PDF routes (cached path, 404 on unknown token, 503 when WeasyPrint missing), and the <code>audit_from_convert</code> error paths (expired/missing token). Also includes a CSS guard test that fails if any shipped stylesheet introduces an <code>outline: none / 0 / transparent</code> rule outside the allowed <code>:focus:not(:focus-visible)</code> recipe, protecting the new global focus ring from future regressions.</p>
 </li>
 </ul>
 <h3 id="fixed">Fixed</h3>

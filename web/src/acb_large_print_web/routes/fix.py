@@ -593,6 +593,7 @@ def _run_fix_and_render(
         "fix_result.html",
         pre_score=pre_audit.score,
         pre_grade=pre_audit.grade,
+        pre_finding_ids=",".join(f.rule_id for f in pre_audit.findings),
         post_score=post_audit.score,
         post_grade=post_audit.grade,
         score_delta=score_delta,
