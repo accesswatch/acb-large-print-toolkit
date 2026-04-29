@@ -110,6 +110,8 @@ Releases are tagged in the [GitHub repository](https://github.com/accesswatch/ac
 
 - **Streamlined flow: prefill notice button label.** The notice shown when the Fix form pre-loads a session file incorrectly referred to the submit action as "Run Fix." The actual button label is "Fix Document." Label corrected in `templates/fix_form.html`.
 
+- **Home page Settings card: Personalization chip is now clickable.** On the main page, the "Personalization" format tag in the Settings card now links to the Settings page route (`settings.settings_page`) instead of rendering as plain text. Change in `web/src/acb_large_print_web/templates/index.html`.
+
 ## [2.6.0] - 2026-04-28
 
 ### Added

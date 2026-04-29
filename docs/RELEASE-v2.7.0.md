@@ -218,6 +218,10 @@ Each rule ID in the findings table is now wrapped in a `<details>` disclosure th
 
 Added `GET /roadmap` and `templates/roadmap.html`, linked from the footer alongside Privacy and Changelog. The page lists shipped highlights, in-progress work, and longer-term ideas.
 
+### 16. Home page Settings link polish
+
+On the main page Settings card, the "Personalization" chip is now a direct link to the Settings page (matching the card heading behavior), so users can open personalization defaults from either click target.
+
 ### 16. Global keyboard focus indicators and reduced motion
 
 - `static/forms.css` now ships a global `:focus-visible` ring (3px solid `--color-primary` with 2px offset) that applies to all focusable elements; mouse clicks no longer leave a focus ring on buttons (`:focus:not(:focus-visible) { outline: none }`)
