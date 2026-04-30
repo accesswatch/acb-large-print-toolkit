@@ -31,7 +31,7 @@ lp.csedesigns.com, glow.bits-acb.org {
         X-Frame-Options DENY
         Referrer-Policy strict-origin-when-cross-origin
         Permissions-Policy "geolocation=(), microphone=(), camera=()"
-        Content-Security-Policy "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; media-src 'self'; font-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'self'"
+        Content-Security-Policy "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; media-src 'self' blob:; font-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'self'"
         Strict-Transport-Security "max-age=63072000; includeSubDomains"
     }
 }

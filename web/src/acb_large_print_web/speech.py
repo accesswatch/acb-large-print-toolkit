@@ -41,6 +41,33 @@ PIPER_VOICES: list[dict] = [
     {"id": "en_GB-southern_english_female-low", "label": "Southern English (GB)",  "engine": "piper", "accent": "British",  "gender": "Female", "sample_rate": 16000},
 ]
 
+_PIPER_HF_VOICE_PATHS: dict[str, tuple[str, str]] = {
+    "en_US-lessac-medium": (
+        "en/en_US/lessac/medium/en_US-lessac-medium.onnx",
+        "en/en_US/lessac/medium/en_US-lessac-medium.onnx.json",
+    ),
+    "en_US-amy-medium": (
+        "en/en_US/amy/medium/en_US-amy-medium.onnx",
+        "en/en_US/amy/medium/en_US-amy-medium.onnx.json",
+    ),
+    "en_US-ryan-high": (
+        "en/en_US/ryan/high/en_US-ryan-high.onnx",
+        "en/en_US/ryan/high/en_US-ryan-high.onnx.json",
+    ),
+    "en_US-hfc_female-medium": (
+        "en/en_US/hfc_female/medium/en_US-hfc_female-medium.onnx",
+        "en/en_US/hfc_female/medium/en_US-hfc_female-medium.onnx.json",
+    ),
+    "en_GB-alan-medium": (
+        "en/en_GB/alan/medium/en_GB-alan-medium.onnx",
+        "en/en_GB/alan/medium/en_GB-alan-medium.onnx.json",
+    ),
+    "en_GB-southern_english_female-low": (
+        "en/en_GB/southern_english_female/low/en_GB-southern_english_female-low.onnx",
+        "en/en_GB/southern_english_female/low/en_GB-southern_english_female-low.onnx.json",
+    ),
+}
+
 # ---------------------------------------------------------------------------
 # Model directory configuration
 # ---------------------------------------------------------------------------
@@ -124,11 +151,11 @@ def _piper_model_dir() -> Path:
 
 
 def _piper_model_path(voice_id: str) -> Path:
-    return _piper_model_dir() / f"{voice_id}.onnx"
+    return _first_existing_path(_piper_model_candidates(voice_id))
 
 
 def _piper_config_path(voice_id: str) -> Path:
-    return _piper_model_dir() / f"{voice_id}.onnx.json"
+    return _first_existing_path(_piper_config_candidates(voice_id))
 
 
 def _piper_voice_present(voice_id: str) -> bool:
@@ -136,9 +163,42 @@ def _piper_voice_present(voice_id: str) -> bool:
 
 
 def _piper_installed() -> bool:
-    """Piper TTS is a CLI binary, not a Python import. Check if 'piper' is on PATH."""
+    """Return True if Piper is available as a CLI or Python package."""
     import shutil
-    return shutil.which("piper") is not None
+    if shutil.which("piper") is not None:
+        return True
+    try:
+        from piper import PiperVoice  # noqa: F401  # type: ignore[import]
+        return True
+    except ImportError:
+        try:
+            from piper.voice import PiperVoice  # noqa: F401  # type: ignore[import]
+            return True
+        except ImportError:
+            return False
+
+
+def _piper_model_candidates(voice_id: str) -> list[Path]:
+    paths = [_piper_model_dir() / f"{voice_id}.onnx"]
+    hf_paths = _PIPER_HF_VOICE_PATHS.get(voice_id)
+    if hf_paths:
+        paths.append(_piper_model_dir() / hf_paths[0])
+    return paths
+
+
+def _piper_config_candidates(voice_id: str) -> list[Path]:
+    paths = [_piper_model_dir() / f"{voice_id}.onnx.json"]
+    hf_paths = _PIPER_HF_VOICE_PATHS.get(voice_id)
+    if hf_paths:
+        paths.append(_piper_model_dir() / hf_paths[1])
+    return paths
+
+
+def _first_existing_path(paths: list[Path]) -> Path:
+    for path in paths:
+        if path.exists():
+            return path
+    return paths[0]
 
 
 # ---------------------------------------------------------------------------
@@ -239,6 +299,7 @@ def get_engine_status() -> dict:
         piper_setup += [
             f"mkdir -p {model_dir / 'piper'}",
             "# Download .onnx and .onnx.json for each voice to instance/speech_models/piper/",
+            "# Flat filenames and Hugging Face's nested en/... layout are both supported.",
             "# See docs/speech.md for download commands",
         ]
 
@@ -332,7 +393,16 @@ def _synthesize_piper(voice: str, text: str, speed: float) -> bytes:
             "See docs/speech.md for download instructions."
         )
     try:
-        from piper.voice import PiperVoice  # type: ignore[import]
+        try:
+            from piper import PiperVoice  # type: ignore[import]
+        except ImportError:
+            from piper.voice import PiperVoice  # type: ignore[import]
+            SynthesisConfig = None  # type: ignore[assignment]
+        else:
+            try:
+                from piper import SynthesisConfig  # type: ignore[import]
+            except ImportError:
+                SynthesisConfig = None  # type: ignore[assignment]
         pv = PiperVoice.load(
             str(_piper_model_path(voice)),
             config_path=str(_piper_config_path(voice)),
@@ -340,7 +410,12 @@ def _synthesize_piper(voice: str, text: str, speed: float) -> bytes:
         length_scale = 1.0 / max(0.1, speed)  # Piper: higher = slower
         wav_buf = io.BytesIO()
         with _wave.open(wav_buf, "wb") as wf:
-            pv.synthesize(text, wf, length_scale=length_scale)
+            if SynthesisConfig is not None and hasattr(pv, "synthesize_wav"):
+                pv.synthesize_wav(text, wf, syn_config=SynthesisConfig(length_scale=length_scale))
+            elif hasattr(pv, "synthesize_wav"):
+                pv.synthesize_wav(text, wf)
+            else:
+                pv.synthesize(text, wf, length_scale=length_scale)
         return wav_buf.getvalue()
     except Exception as exc:
         raise SpeechError(f"Piper synthesis failed: {exc}") from exc

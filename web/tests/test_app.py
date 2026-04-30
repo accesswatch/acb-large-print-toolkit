@@ -4,8 +4,11 @@ from __future__ import annotations
 
 import io
 import json
+import re
 import sqlite3
+import sys
 import time
+import types
 import zipfile
 from contextlib import nullcontext
 from pathlib import Path
@@ -1115,6 +1118,139 @@ class TestSettingsIntegration:
 
         assert speech._KOKORO_MODEL_FILE == "kokoro-v1.0.onnx"
         assert speech._KOKORO_VOICES_FILE == "voices-v1.0.bin"
+
+    def test_piper_tts_is_installed_with_web_app(self):
+        pyproject = Path("web/pyproject.toml").read_text(encoding="utf-8")
+        requirements = Path("web/requirements.txt").read_text(encoding="utf-8")
+
+        assert "piper-tts>=1.4.2" in pyproject
+        assert "piper-tts>=1.4.2" in requirements
+
+    def test_piper_voice_present_supports_huggingface_nested_layout(self, tmp_path):
+        from acb_large_print_web import speech
+
+        old_model_dir = speech._model_dir
+        model_root = tmp_path / "speech_models"
+        nested = model_root / "piper" / "en" / "en_US" / "lessac" / "medium"
+        nested.mkdir(parents=True)
+        (nested / "en_US-lessac-medium.onnx").write_bytes(b"model")
+        (nested / "en_US-lessac-medium.onnx.json").write_text("{}", encoding="utf-8")
+
+        try:
+            speech.configure(model_root)
+
+            assert speech._piper_voice_present("en_US-lessac-medium")
+            assert speech._piper_model_path("en_US-lessac-medium") == nested / "en_US-lessac-medium.onnx"
+            assert speech._piper_config_path("en_US-lessac-medium") == nested / "en_US-lessac-medium.onnx.json"
+        finally:
+            speech._model_dir = old_model_dir
+
+    def test_piper_installed_accepts_current_package_import(self, monkeypatch):
+        from acb_large_print_web import speech
+
+        fake_piper = types.ModuleType("piper")
+        fake_piper.PiperVoice = object
+        monkeypatch.setattr("shutil.which", lambda name: None)
+        monkeypatch.setitem(sys.modules, "piper", fake_piper)
+
+        assert speech._piper_installed()
+
+    def test_synthesize_piper_uses_current_package_api(self, tmp_path, monkeypatch):
+        from acb_large_print_web import speech
+
+        old_model_dir = speech._model_dir
+        model_root = tmp_path / "speech_models"
+        piper_dir = model_root / "piper"
+        piper_dir.mkdir(parents=True)
+        (piper_dir / "en_US-lessac-medium.onnx").write_bytes(b"model")
+        (piper_dir / "en_US-lessac-medium.onnx.json").write_text("{}", encoding="utf-8")
+
+        calls = {}
+
+        class FakeSynthesisConfig:
+            def __init__(self, *, length_scale):
+                self.length_scale = length_scale
+
+        class FakeVoice:
+            def synthesize_wav(self, text, wav_file, *, syn_config):
+                calls["text"] = text
+                calls["length_scale"] = syn_config.length_scale
+                wav_file.setnchannels(1)
+                wav_file.setsampwidth(2)
+                wav_file.setframerate(22050)
+                wav_file.writeframes(b"\0\0")
+
+        class FakePiperVoice:
+            @staticmethod
+            def load(model_path, *, config_path=None):
+                calls["model_path"] = model_path
+                calls["config_path"] = config_path
+                return FakeVoice()
+
+        fake_piper = types.ModuleType("piper")
+        fake_piper.PiperVoice = FakePiperVoice
+        fake_piper.SynthesisConfig = FakeSynthesisConfig
+        monkeypatch.setattr("shutil.which", lambda name: None)
+        monkeypatch.setitem(sys.modules, "piper", fake_piper)
+
+        try:
+            speech.configure(model_root)
+            wav_bytes = speech._synthesize_piper("en_US-lessac-medium", "Hello", speed=2.0)
+        finally:
+            speech._model_dir = old_model_dir
+
+        assert wav_bytes.startswith(b"RIFF")
+        assert calls == {
+            "model_path": str(piper_dir / "en_US-lessac-medium.onnx"),
+            "config_path": str(piper_dir / "en_US-lessac-medium.onnx.json"),
+            "text": "Hello",
+            "length_scale": 0.5,
+        }
+
+    def test_speech_page_uses_csp_safe_preview_script(self, client, monkeypatch):
+        from acb_large_print_web.routes import speech as speech_routes
+
+        monkeypatch.setattr(
+            speech_routes,
+            "get_engine_status",
+            lambda: {
+                "kokoro": {
+                    "installed": True,
+                    "models_present": True,
+                    "ready": True,
+                    "voices_available": ["af_bella"],
+                    "model_dir": "/tmp/speech_models",
+                    "setup_commands": [],
+                },
+                "piper": {
+                    "installed": False,
+                    "models_present": False,
+                    "ready": False,
+                    "voices_available": [],
+                    "model_dir": "/tmp/speech_models/piper",
+                    "setup_commands": [],
+                },
+            },
+        )
+
+        resp = client.get("/speech/")
+
+        assert resp.status_code == 200
+        assert b'data-preview-url="/speech/preview"' in resp.data
+        assert b"/static/speech.js" in resp.data
+        assert b"oninput=" not in resp.data
+        assert b"URL.createObjectURL" not in resp.data
+        assert re.search(
+            rb'<input type="radio" name="voice" value="kokoro:af_bella"\s+checked>',
+            resp.data,
+        )
+
+    def test_caddy_csp_allows_blob_audio_previews(self):
+        caddyfile = Path("web/Caddyfile").read_text(encoding="utf-8")
+        caddyfile_example = Path("web/Caddyfile.example").read_text(encoding="utf-8")
+
+        assert "media-src 'self' blob:" in caddyfile
+        assert "media-src 'self' blob:" in caddyfile_example
 
 
 class TestPdfAudit:

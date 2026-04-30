@@ -86,11 +86,20 @@ Each Piper voice requires two files: `{voice_id}.onnx` and `{voice_id}.onnx.json
 # Example: Lessac medium
 pip install huggingface-hub
 python -c "
+from pathlib import Path
 from huggingface_hub import hf_hub_download
-hf_hub_download('rhasspy/piper-voices', 'en/en_US/lessac/medium/en_US-lessac-medium.onnx',       local_dir='instance/speech_models/piper')
-hf_hub_download('rhasspy/piper-voices', 'en/en_US/lessac/medium/en_US-lessac-medium.onnx.json', local_dir='instance/speech_models/piper')
+target = Path('instance/speech_models/piper')
+target.mkdir(parents=True, exist_ok=True)
+for filename in [
+    'en/en_US/lessac/medium/en_US-lessac-medium.onnx',
+    'en/en_US/lessac/medium/en_US-lessac-medium.onnx.json',
+]:
+    downloaded = Path(hf_hub_download('rhasspy/piper-voices', filename, local_dir=target))
+    downloaded.replace(target / downloaded.name)
 "
 ```
+
+GLOW also detects Hugging Face's nested `en/...` download layout if those files have already been placed under `instance/speech_models/piper/`.
 
 ---
 

@@ -21,7 +21,7 @@
 <section>
   <h2 id="demo-heading">Voice Demo</h2>
 
-  <form id="speech-form" method="post" action="{{ url_for('speech.speech_download') }}" novalidate>
+  <form id="speech-form" method="post" action="{{ url_for('speech.speech_download') }}" data-preview-url="{{ url_for('speech.speech_preview') }}" novalidate>
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
     {# Text input #}
@@ -57,7 +57,7 @@
           {% set vid = "kokoro:" ~ v.id %}
           <label>
             <input type="radio" name="voice" value="{{ vid }}"
-              {% if loop.first and not piper_ready %}checked{% endif %}>
+              {% if loop.first %}checked{% endif %}>
             {{ v.label }}
             <span class="help-text">{{ v.accent }} &middot; {{ v.gender }}</span>
           </label>
@@ -103,7 +103,6 @@
       <input type="range" id="speech-speed" name="speed"
         min="0.5" max="2.0" step="0.1" value="1.0"
         aria-describedby="speed-hint"
-        oninput="document.getElementById('speed-value').textContent = parseFloat(this.value).toFixed(1)"
         {% if not any_engine_ready %}disabled aria-disabled="true"{% endif %}>
     </div>
 
@@ -114,7 +113,6 @@
       <input type="range" id="speech-pitch" name="pitch"
         min="-20" max="20" step="1" value="0"
         aria-describedby="pitch-hint"
-        oninput="document.getElementById('pitch-value').textContent = this.value"
         {% if not any_engine_ready %}disabled aria-disabled="true"{% endif %}>
     </div>
 
@@ -195,86 +193,9 @@
   {% endif %}
 </section>
 
-<script>
-(function () {
-  "use strict";
+{% endblock %}
 
-  // Character counter
-  var textarea = document.getElementById("speech-text");
-  var counter  = document.getElementById("char-count-value");
-  if (textarea && counter) {
-    textarea.addEventListener("input", function () {
-      counter.textContent = textarea.value.length;
-    });
-  }
-
-  // Preview button -- fetch WAV, set src on <audio>
-  var previewBtn   = document.getElementById("preview-btn");
-  var audioPlayer  = document.getElementById("audio-player");
-  var playerWrap   = document.getElementById("preview-player");
-  var errorRegion  = document.getElementById("preview-error");
-  var form         = document.getElementById("speech-form");
-
-  function showError(msg) {
-    errorRegion.textContent = msg;
-    errorRegion.style.display = "";
-    playerWrap.style.display = "none";
-  }
-
-  function clearError() {
-    errorRegion.style.display = "none";
-    errorRegion.textContent = "";
-  }
-
-  if (previewBtn) {
-    previewBtn.addEventListener("click", function () {
-      clearError();
-      previewBtn.textContent = "Generating preview…";
-      previewBtn.disabled = true;
-
-      var fd = new FormData(form);
-      // Remove the download-only fields if any; preview uses same form
-      var csrfVal = document.querySelector("input[name=csrf_token]").value;
-
-      var previewFd = new FormData();
-      previewFd.append("csrf_token", csrfVal);
-      previewFd.append("voice", fd.get("voice") || "");
-      previewFd.append("text",  fd.get("text")  || "");
-      previewFd.append("speed", fd.get("speed") || "1.0");
-      previewFd.append("pitch", fd.get("pitch") || "0");
-
-      fetch("{{ url_for('speech.speech_preview') }}", {
-        method: "POST",
-        headers: { "X-CSRFToken": csrfVal },
-        body: previewFd,
-      })
-      .then(function (resp) {
-        if (!resp.ok) {
-          return resp.json().then(function (j) {
-            throw new Error(j.error || ("Server error " + resp.status));
-          });
-        }
-        return resp.blob();
-      })
-      .then(function (blob) {
-        var url = URL.createObjectURL(blob);
-        if (audioPlayer._prevObjectURL) {
-          URL.revokeObjectURL(audioPlayer._prevObjectURL);
-        }
-        audioPlayer._prevObjectURL = url;
-        audioPlayer.src = url;
-        playerWrap.style.display = "";
-        audioPlayer.play();
-      })
-      .catch(function (err) {
-        showError("Preview failed: " + err.message);
-      })
-      .finally(function () {
-        previewBtn.textContent = "Preview audio";
-        previewBtn.disabled = false;
-      });
-    });
-  }
-})();
-</script>
+{% block extra_js %}
+{{ super() }}
+<script src="{{ url_for('static', filename='speech.js') }}"></script>
 {% endblock %}

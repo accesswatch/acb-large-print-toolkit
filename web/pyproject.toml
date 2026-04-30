@@ -33,6 +33,7 @@ dependencies = [
     "mutagen>=1.47.0",
     "huggingface-hub>=0.23.0",
     "kokoro-onnx>=0.4.2",
+    "piper-tts>=1.4.2",
     "pydub>=0.25.1",
     "numpy>=1.26.0",
 ]
