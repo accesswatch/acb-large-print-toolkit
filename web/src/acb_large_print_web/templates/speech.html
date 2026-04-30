@@ -8,7 +8,7 @@
 <p class="help-text">No document is required. This demo is available to everyone and nothing you type is stored or sent outside this server.</p>
 
 {% if not any_engine_ready %}
-<section class="flash-warning" role="alert" aria-labelledby="speech-unavail-heading">
+<section class="flash-warning" role="alert">
   <div class="flash-icon" aria-hidden="true">‼</div>
   <div>
     <p id="speech-unavail-heading"><strong>Speech engines not yet set up on this server.</strong></p>
@@ -18,7 +18,7 @@
 {% endif %}
 
 {# ── Demo form ── #}
-<section aria-labelledby="demo-heading">
+<section>
   <h2 id="demo-heading">Voice Demo</h2>
 
   <form id="speech-form" method="post" action="{{ url_for('speech.speech_download') }}" novalidate>
@@ -144,7 +144,7 @@
 </section>
 
 {# ── Engine status ── #}
-<section aria-labelledby="engine-status-heading">
+<section>
   <h2 id="engine-status-heading">Engine Status</h2>
 
   <table>
