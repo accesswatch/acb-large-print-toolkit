@@ -327,6 +327,38 @@ if [[ "$HEALTHY" -eq 1 ]]; then
     log_ts "--- Caddy container state after recreation ---"
     docker compose -f "$COMPOSE_FILE" ps caddy
 
+    # ---------------------------------------------------------------------------
+    # Ensure Kokoro speech model files are present in the speech-models volume.
+    # The Dockerfile attempts to pre-download them at build time, but that step
+    # is a best-effort (network may be unavailable in the build environment).
+    # This post-deploy step guarantees the files exist in the running container.
+    # It is a no-op if the files are already there, so it is safe to run every
+    # deployment.
+    # ---------------------------------------------------------------------------
+    log_ts "--- Ensuring Kokoro speech model files are present ---"
+    docker compose -f "$COMPOSE_FILE" exec -T web python -c "
+import os, sys
+from pathlib import Path
+model_dir = Path(os.environ.get('GLOW_SPEECH_MODEL_DIR', '/app/instance/speech_models'))
+onnx_file = model_dir / 'kokoro-v0_19.onnx'
+json_file  = model_dir / 'voices.json'
+if onnx_file.exists() and json_file.exists():
+    print(f'Kokoro models already present in {model_dir} -- skipping download.')
+    sys.exit(0)
+print(f'Kokoro models not found in {model_dir} -- downloading from Hugging Face Hub...')
+try:
+    import huggingface_hub as h
+    model_dir.mkdir(parents=True, exist_ok=True)
+    h.hf_hub_download('hexgrad/Kokoro-82M', 'kokoro-v0_19.onnx', local_dir=str(model_dir))
+    h.hf_hub_download('hexgrad/Kokoro-82M', 'voices.json',       local_dir=str(model_dir))
+    print('Kokoro models downloaded successfully.')
+except Exception as exc:
+    print(f'WARNING: Kokoro model download failed: {exc}')
+    print('Speech Demo will show Not Ready until models are added manually.')
+    print('Manual install: docker compose exec web python -c \"import huggingface_hub as h; h.hf_hub_download(\\\"hexgrad/Kokoro-82M\\\", \\\"kokoro-v0_19.onnx\\\", local_dir=\\\"/app/instance/speech_models\\\"); h.hf_hub_download(\\\"hexgrad/Kokoro-82M\\\", \\\"voices.json\\\", local_dir=\\\"/app/instance/speech_models\\\")\"')
+" 2>&1 || log_ts "WARNING: Could not exec into web container to check speech models."
+    log_ts "--- Speech model check complete ---"
+
     if [[ "$CLEANUP_ON_SUCCESS" == "1" ]]; then
         run_optional_cleanup "success"
     else

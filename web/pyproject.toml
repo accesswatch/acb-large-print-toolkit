@@ -31,8 +31,8 @@ dependencies = [
     "weasyprint>=62.0",
     "requests>=2.32.0",
     "mutagen>=1.47.0",
+    "huggingface-hub>=0.23.0",
     "kokoro-onnx>=0.4.2",
-    "piper-tts>=1.2.0",
     "pydub>=0.25.1",
     "numpy>=1.26.0",
 ]

@@ -56,9 +56,6 @@
         {% if ai_whisperer_enabled %}
         <li role="none"><a href="{{ url_for('whisperer.whisperer_form') }}" role="tab" id="tab-whisperer" aria-controls="main"{% if request.blueprint == 'whisperer' %} aria-selected="true"{% else %} aria-selected="false"{% endif %}>{{ brand_whisperer_label }}</a></li>
         {% endif %}
-        {% if feature_speech_enabled %}
-        <li role="none"><a href="{{ url_for('speech.speech_form') }}" role="tab" id="tab-speech" aria-controls="main"{% if request.blueprint == 'speech' %} aria-selected="true"{% else %} aria-selected="false"{% endif %}>Speech Demo</a></li>
-        {% endif %}
       </ul>
     </nav>
   </header>

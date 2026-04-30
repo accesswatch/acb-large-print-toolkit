@@ -136,11 +136,9 @@ def _piper_voice_present(voice_id: str) -> bool:
 
 
 def _piper_installed() -> bool:
-    try:
-        import piper  # noqa: F401  # type: ignore[import]
-        return True
-    except ImportError:
-        return False
+    """Piper TTS is a CLI binary, not a Python import. Check if 'piper' is on PATH."""
+    import shutil
+    return shutil.which("piper") is not None
 
 
 # ---------------------------------------------------------------------------

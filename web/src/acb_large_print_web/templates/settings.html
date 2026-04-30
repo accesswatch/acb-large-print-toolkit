@@ -243,6 +243,15 @@
     </div>
   </fieldset>
 
+  {% if feature_speech_enabled %}
+  <fieldset>
+    <legend>Speech Demo</legend>
+    <p>Try available text-to-speech voices directly in your browser. No document is required.</p>
+    <p class="help-text">The Speech Demo is a server-side feature. It requires the Kokoro ONNX package and model files to be installed on the server. Your browser settings have no effect on voice availability.</p>
+    <a class="btn-secondary" href="{{ url_for('speech.speech_form') }}">Open Speech Demo</a>
+  </fieldset>
+  {% endif %}
+
   <div class="settings-actions">
     <button type="button" id="settings-save" class="btn-primary">Save My Settings</button>
     <button type="button" id="settings-reset" class="btn-secondary">Reset to GLOW Defaults</button>
