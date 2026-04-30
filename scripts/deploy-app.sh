@@ -359,6 +359,31 @@ except Exception as exc:
 " 2>&1 || log_ts "WARNING: Could not exec into web container to check speech models."
     log_ts "--- Speech model check complete ---"
 
+    # If Kokoro models are now present, ensure GLOW_ENABLE_SPEECH=true in feature_flags.json
+    SPEECH_FLAG_FILE="$APP_ROOT/instance/feature_flags.json"
+    if docker compose -f "$COMPOSE_FILE" exec -T web python -c "
+import os
+from pathlib import Path
+d = Path(os.environ.get('GLOW_SPEECH_MODEL_DIR', '/app/instance/speech_models'))
+exit(0 if (d / 'kokoro-v0_19.onnx').exists() else 1)
+" 2>/dev/null; then
+        if [[ -f "$SPEECH_FLAG_FILE" ]]; then
+            if ! python3 -c "import json; d=json.load(open('$SPEECH_FLAG_FILE')); exit(0 if d.get('GLOW_ENABLE_SPEECH') else 1)" 2>/dev/null; then
+                log_ts "--- Enabling GLOW_ENABLE_SPEECH in feature_flags.json (models present) ---"
+                python3 -c "
+import json
+p = '$SPEECH_FLAG_FILE'
+d = json.load(open(p))
+d['GLOW_ENABLE_SPEECH'] = True
+open(p,'w').write(json.dumps(d, indent=2) + '\n')
+print('GLOW_ENABLE_SPEECH enabled.')
+"
+            else
+                log_ts "--- GLOW_ENABLE_SPEECH already enabled in feature_flags.json ---"
+            fi
+        fi
+    fi
+
     if [[ "$CLEANUP_ON_SUCCESS" == "1" ]]; then
         run_optional_cleanup "success"
     else
