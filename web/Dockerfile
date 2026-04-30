@@ -53,13 +53,9 @@ RUN pip install --no-cache-dir ./web
 # Build with --build-arg SKIP_SPEECH_MODELS=1 to skip this step.
 ARG SKIP_SPEECH_MODELS=0
 RUN if [ "$SKIP_SPEECH_MODELS" != "1" ]; then \
-      pip install --no-cache-dir huggingface-hub && \
-      python -c "
-from huggingface_hub import hf_hub_download
-hf_hub_download('hexgrad/Kokoro-82M', 'kokoro-v0_19.onnx', local_dir='/app/instance/speech_models')
-hf_hub_download('hexgrad/Kokoro-82M', 'voices.json',       local_dir='/app/instance/speech_models')
-print('Kokoro models downloaded.')
-" || echo 'Kokoro model download failed -- speech will show Not Ready until models are added manually.'; \
+      pip install --no-cache-dir huggingface-hub \
+      && python -c "import huggingface_hub as h; h.hf_hub_download('hexgrad/Kokoro-82M', 'kokoro-v0_19.onnx', local_dir='/app/instance/speech_models'); h.hf_hub_download('hexgrad/Kokoro-82M', 'voices.json', local_dir='/app/instance/speech_models'); print('Kokoro models downloaded.')" \
+      || echo 'Kokoro model download failed -- speech will show Not Ready until models are added manually.'; \
     fi
 
 # Long-form docs are pre-rendered locally into template partials by
