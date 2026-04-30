@@ -499,6 +499,77 @@ class TestAdminAuth:
         assert queue_resp.status_code == 200
         assert b"Admin Queue Dashboard" in queue_resp.data
 
+    def test_admin_speech_page_loads_for_signed_in_admin(self, client, monkeypatch):
+        import acb_large_print_web.routes.admin as admin_route
+
+        monkeypatch.setenv("ADMIN_BOOTSTRAP_EMAILS", "admin@example.com")
+        monkeypatch.setattr(admin_route, "email_configured", lambda: True)
+        monkeypatch.setattr(admin_route, "_send_admin_email", lambda *a, **k: None)
+        monkeypatch.setattr(admin_route.secrets, "token_urlsafe", lambda _n: "admintoken2")
+        monkeypatch.setattr(
+            admin_route,
+            "get_engine_status",
+            lambda: {
+                "kokoro": {
+                    "installed": True,
+                    "models_present": True,
+                    "ready": True,
+                    "voices_available": ["af_bella"],
+                    "model_dir": "/tmp/speech_models",
+                    "setup_commands": [],
+                },
+                "piper": {
+                    "installed": True,
+                    "models_present": True,
+                    "ready": True,
+                    "voices_available": ["en_US-lessac-medium"],
+                    "model_dir": "/tmp/speech_models/piper",
+                    "setup_commands": [],
+                },
+            },
+        )
+        monkeypatch.setattr(
+            admin_route,
+            "get_piper_voice_inventory",
+            lambda: [
+                {
+                    "id": "en_US-lessac-medium",
+                    "label": "Lessac (US)",
+                    "accent": "American",
+                    "gender": "Male",
+                    "sample_rate": 22050,
+                    "installed": True,
+                    "model_path": "/tmp/en_US-lessac-medium.onnx",
+                    "config_path": "/tmp/en_US-lessac-medium.onnx.json",
+                }
+            ],
+        )
+
+        client.post("/admin/login/email", data={"email": "admin@example.com"})
+        client.get("/admin/magic-link/consume?token=admintoken2")
+
+        resp = client.get("/admin/speech")
+        assert resp.status_code == 200
+        assert b"Admin Speech Studio" in resp.data
+        assert b"en_US-lessac-medium" in resp.data
+
+    def test_admin_speech_install_action_redirects_with_notice(self, client, monkeypatch):
+        import acb_large_print_web.routes.admin as admin_route
+
+        monkeypatch.setenv("ADMIN_BOOTSTRAP_EMAILS", "admin@example.com")
+        monkeypatch.setattr(admin_route, "email_configured", lambda: True)
+        monkeypatch.setattr(admin_route, "_send_admin_email", lambda *a, **k: None)
+        monkeypatch.setattr(admin_route.secrets, "token_urlsafe", lambda _n: "admintoken3")
+        monkeypatch.setattr(admin_route, "install_piper_voice", lambda _voice: (True, "Installed test voice."))
+
+        client.post("/admin/login/email", data={"email": "admin@example.com"})
+        client.get("/admin/magic-link/consume?token=admintoken3")
+
+        resp = client.post("/admin/speech/install/en_US-lessac-medium")
+        assert resp.status_code == 302
+        assert "/admin/speech" in resp.location
+        assert "notice=Installed+test+voice." in resp.location
+
 
 # ============================================================
 # Error handling
@@ -1107,11 +1178,11 @@ class TestSettingsIntegration:
         assert b'name="settings_fix_allowed_heading_levels"' in resp.data
         assert b'name="settings_template_allowed_heading_levels"' in resp.data
 
-    def test_settings_page_shows_speech_demo_by_default(self, client):
+    def test_settings_page_shows_speech_studio_by_default(self, client):
         resp = client.get("/settings/")
         assert resp.status_code == 200
-        assert b"Speech Demo" in resp.data
-        assert b"Open Speech Demo" in resp.data
+        assert b"Speech Studio" in resp.data
+        assert b"Open Speech Studio" in resp.data
 
     def test_speech_setup_references_current_kokoro_model_assets(self):
         from acb_large_print_web import speech
@@ -1258,10 +1329,12 @@ class TestSettingsIntegration:
         deploy_script = Path("scripts/deploy-app.sh").read_text(encoding="utf-8")
         dockerfile = Path("web/Dockerfile").read_text(encoding="utf-8")
 
-        assert "Ensuring Piper default voice model files are present" in deploy_script
-        assert "en_US-lessac-medium.onnx" in deploy_script
+        assert "Ensuring curated Piper voice model files are present" in deploy_script
+        assert "en_US-lessac-medium" in deploy_script
+        assert "en_US-amy-medium" in deploy_script
+        assert "en_GB-alan-medium" in deploy_script
         assert "https://huggingface.co/rhasspy/piper-voices/resolve/main" in deploy_script
-        assert "Piper default voice downloaded" in dockerfile
+        assert "Piper voice seeding complete." in dockerfile
 
 
 class TestPdfAudit:

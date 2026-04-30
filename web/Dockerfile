@@ -55,7 +55,19 @@ ARG SKIP_SPEECH_MODELS=0
 RUN if [ "$SKIP_SPEECH_MODELS" != "1" ]; then \
       python -c "from pathlib import Path; import urllib.request; d=Path('/app/instance/speech_models'); d.mkdir(parents=True, exist_ok=True); base='https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0'; urllib.request.urlretrieve(f'{base}/kokoro-v1.0.onnx', d/'kokoro-v1.0.onnx'); urllib.request.urlretrieve(f'{base}/voices-v1.0.bin', d/'voices-v1.0.bin'); print('Kokoro models downloaded.')" \
       || echo 'Kokoro model download failed -- deploy-app.sh will retry at runtime.'; \
-      python -c "from pathlib import Path; import urllib.request; d=Path('/app/instance/speech_models/piper'); d.mkdir(parents=True, exist_ok=True); base='https://huggingface.co/rhasspy/piper-voices/resolve/main'; urllib.request.urlretrieve(f'{base}/en/en_US/lessac/medium/en_US-lessac-medium.onnx', d/'en_US-lessac-medium.onnx'); urllib.request.urlretrieve(f'{base}/en/en_US/lessac/medium/en_US-lessac-medium.onnx.json', d/'en_US-lessac-medium.onnx.json'); print('Piper default voice downloaded.')" \
+      python -c "from pathlib import Path; import urllib.request; d=Path('/app/instance/speech_models/piper'); d.mkdir(parents=True, exist_ok=True); base='https://huggingface.co/rhasspy/piper-voices/resolve/main'; voices=[('en_US-lessac-medium','en/en_US/lessac/medium/en_US-lessac-medium'),('en_US-amy-medium','en/en_US/amy/medium/en_US-amy-medium'),('en_US-ryan-high','en/en_US/ryan/high/en_US-ryan-high'),('en_US-hfc_female-medium','en/en_US/hfc_female/medium/en_US-hfc_female-medium'),('en_GB-alan-medium','en/en_GB/alan/medium/en_GB-alan-medium'),('en_GB-southern_english_female-low','en/en_GB/southern_english_female/low/en_GB-southern_english_female-low')]; downloaded=0; skipped=0; failed=0; \
+for voice_id, rel in voices:\
+    model=d/f'{voice_id}.onnx'; cfg=d/f'{voice_id}.onnx.json';\
+    if model.exists() and cfg.exists():\
+        skipped+=1;\
+        continue;\
+    try:\
+        urllib.request.urlretrieve(f'{base}/{rel}.onnx', model);\
+        urllib.request.urlretrieve(f'{base}/{rel}.onnx.json', cfg);\
+        downloaded+=1;\
+    except Exception:\
+        failed+=1;\
+print(f'Piper voice seeding complete. downloaded={downloaded} skipped={skipped} failed={failed}.')" \
       || echo 'Piper voice download failed -- deploy-app.sh will retry at runtime.'; \
     fi
 

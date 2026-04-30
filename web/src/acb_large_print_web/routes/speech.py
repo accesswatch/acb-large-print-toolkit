@@ -1,9 +1,9 @@
-"""Speech synthesis demo and settings route -- v2.9.0.
+"""Speech Studio route and synthesis endpoints -- v2.9.0.
 
 Provides:
-  GET  /speech/          -- settings + demo page
-  POST /speech/preview   -- synthesize demo text, return WAV for inline playback
-  POST /speech/download  -- synthesize demo text, return MP3/WAV as attachment
+    GET  /speech/          -- Speech Studio page
+    POST /speech/preview   -- synthesize text, return WAV for inline playback
+    POST /speech/download  -- synthesize text, return MP3/WAV as attachment
 """
 
 from __future__ import annotations
@@ -26,14 +26,13 @@ speech_bp = Blueprint("speech", __name__)
 
 _TEXT_MAX_LEN = 500
 _DEFAULT_DEMO_TEXT = (
-    "GLOW helps make documents accessible for everyone. "
-    "With large print formatting, clear headings, and descriptive links, "
-    "your documents become readable by all."
+    "Welcome to Speech Studio. "
+    "Choose a voice, tune speed and pitch, and create clear narration for your audience."
 )
 
 
 # ---------------------------------------------------------------------------
-# Settings + demo page
+# Speech Studio page
 # ---------------------------------------------------------------------------
 
 
@@ -68,7 +67,7 @@ def speech_preview():
     if not voice_id:
         return jsonify({"error": "No voice selected."}), 400
     if not text:
-        return jsonify({"error": "Demo text must not be empty."}), 400
+        return jsonify({"error": "Text must not be empty."}), 400
 
     try:
         wav_bytes, _ = synthesize(voice_id, text, speed=speed, pitch=pitch)
@@ -98,7 +97,7 @@ def speech_download():
     if not voice_id:
         return jsonify({"error": "No voice selected."}), 400
     if not text:
-        return jsonify({"error": "Demo text must not be empty."}), 400
+        return jsonify({"error": "Text must not be empty."}), 400
 
     try:
         wav_bytes, wav_filename = synthesize(voice_id, text, speed=speed, pitch=pitch)

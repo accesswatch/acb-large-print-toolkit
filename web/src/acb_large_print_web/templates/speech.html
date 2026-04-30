@@ -1,25 +1,25 @@
 {% extends "base.html" %}
 
-{% block title %}Speech Demo{% endblock %}
-{% block heading %}Speech Demo{% endblock %}
+{% block title %}Speech Studio{% endblock %}
+{% block heading %}Speech Studio{% endblock %}
 
 {% block content %}
-<p>Try any available English voice. Type a short phrase, choose a voice, adjust speed and pitch, then preview or download the audio as an MP3.</p>
-<p class="help-text">No document is required. This demo is available to everyone and nothing you type is stored or sent outside this server.</p>
+<p>Create expressive narration with any available English voice. Enter your text, choose a voice, tune speed and pitch, then preview or download your audio.</p>
+<p class="help-text">No document is required. Speech Studio runs on this server and does not send your text to external services.</p>
 
 {% if not any_engine_ready %}
 <section class="flash-warning" role="alert">
   <div class="flash-icon" aria-hidden="true">‼</div>
   <div>
     <p id="speech-unavail-heading"><strong>Speech engines not yet set up on this server.</strong></p>
-    <p>The server administrator must install the speech engine packages and model files before this demo is available. See the setup details below.</p>
+    <p>The server administrator must install speech engine packages and model files before Speech Studio is available. See setup details below.</p>
   </div>
 </section>
 {% endif %}
 
 {# ── Demo form ── #}
 <section>
-  <h2 id="demo-heading">Voice Demo</h2>
+  <h2 id="demo-heading">Voice Studio</h2>
 
   <form id="speech-form" method="post" action="{{ url_for('speech.speech_download') }}" data-preview-url="{{ url_for('speech.speech_preview') }}" novalidate>
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -127,6 +127,8 @@
         Download MP3
       </button>
     </div>
+
+    <p id="preview-status" class="help-text" role="status" aria-live="polite" aria-atomic="true" style="display:none;"></p>
 
     {# Inline audio player (populated by JS after preview) #}
     <div id="preview-player" style="display:none; margin-top:1rem;">

@@ -8,6 +8,21 @@ Releases are tagged in the [GitHub repository](https://github.com/accesswatch/ac
 
 ## [Unreleased]
 
+### Changed
+
+- **Speech Demo rebranded to Speech Studio.** Updated `/speech/` UI labels and explanatory copy to present a production-ready Speech Studio experience (not a temporary demo), including refreshed page title/heading and studio-oriented guidance text in the speech template and settings entry point.
+
+- **Speech Studio now restores and saves user choices through global settings storage.** The shared browser preference model (`glow_user_settings`) now includes a `speech` section so voice, text, speed, and pitch can persist (when "Remember my settings" is enabled) and auto-apply when returning to `/speech/`.
+
+### Added
+
+- **Curated multi-voice Piper seeding during build and deploy.** Docker build-time model prefetch and `scripts/deploy-app.sh` now seed a curated English Piper set (US + GB accents) instead of only a single default voice, reducing first-run setup friction for Speech Studio.
+- **Admin Speech Studio voice management.** Added an admin page with one-click Piper voice pack install/remove actions and live install status, linked from the Admin Queue dashboard.
+
+### Fixed
+
+- **Speech Studio preview feedback during slower synthesis.** The preview flow now exposes a live in-progress status message (including slow-operation messaging) so users can tell that generation is still running during 15-20 second waits.
+
 ---
 
 ## [2.9.0] - Unreleased

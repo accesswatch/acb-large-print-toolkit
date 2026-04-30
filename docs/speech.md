@@ -1,6 +1,6 @@
 # GLOW Speech Platform PRD — v2.9.0+
 
-> **Scope for v2.9.0:** Settings UI and interactive voice demo only. Document-to-audio conversion is deferred to v3.0.0.
+> **Scope for v2.9.0:** Settings UI and interactive Speech Studio only. Document-to-audio conversion is deferred to v3.0.0.
 
 ## Tiered Architecture
 
@@ -125,7 +125,7 @@ User text + voice + speed + pitch
 
 ---
 
-## v2.9.0 Scope: Settings + Demo Page
+## v2.9.0 Scope: Settings + Speech Studio
 
 The `/speech/` route provides:
 
@@ -133,11 +133,28 @@ The `/speech/` route provides:
 2. **Voice selector** — all available voices grouped by engine and accent
 3. **Speed slider** — 0.5× to 2.0×, step 0.1, default 1.0
 4. **Pitch slider** — −20 to +20 semitones, step 1, default 0
-5. **Demo textarea** — up to 500 characters, live character counter
+5. **Speech text area** — up to 500 characters, live character counter
 6. **Preview button** — JS fetch → returns WAV → inline `<audio>` player
 7. **Download button** — form POST → returns MP3 (or WAV fallback) as attachment
+8. **Persistent preferences (opt-in)** — selected voice, text, speed, and pitch can be saved in GLOW local settings (`glow_user_settings`) and restored on return
+9. **Preview progress messaging** — users get live status text while synthesis runs so long previews (15-20 seconds) remain clearly active
 
-No document processing. No Redis queue. No async jobs. All synthesis is synchronous for demo-length texts (≤500 characters ≈ ≤75 words ≈ ≤30 seconds audio).
+No document processing. No Redis queue. No async jobs. All synthesis is synchronous for studio-length texts (≤500 characters ≈ ≤75 words ≈ ≤30 seconds audio).
+
+### Deployment note: curated Piper voice seeding
+
+Deploy and image build workflows now seed a curated English Piper set (US + GB) rather than only one default voice when network access is available:
+
+- `en_US-lessac-medium`
+- `en_US-amy-medium`
+- `en_US-ryan-high`
+- `en_US-hfc_female-medium`
+- `en_GB-alan-medium`
+- `en_GB-southern_english_female-low`
+
+### Admin voice pack management
+
+The admin dashboard includes a Speech Studio voice management page with one-click install/remove controls for curated Piper voices. This lets administrators add or remove voice packs without shell access.
 
 ---
 

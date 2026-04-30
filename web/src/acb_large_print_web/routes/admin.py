@@ -53,6 +53,12 @@ from ..feature_flags import (
     get_audit_entries as _get_audit_entries,
 )
 from ..email import email_configured, send_whisperer_status_email
+from ..speech import (
+    get_engine_status,
+    get_piper_voice_inventory,
+    install_piper_voice,
+    remove_piper_voice,
+)
 from .whisperer import (
     admin_cancel_queued_job,
     admin_requeue_failed_job,
@@ -714,6 +720,39 @@ def admin_queue() -> Any:
     email = _require_admin()
     rows = get_admin_queue_snapshot()
     return render_template("admin_queue.html", admin_email=email, rows=rows)
+
+
+@admin_bp.route("/speech", methods=["GET"])
+def admin_speech() -> Any:
+    email = _require_admin()
+    status = get_engine_status()
+    voices = get_piper_voice_inventory()
+    return render_template(
+        "admin_speech.html",
+        admin_email=email,
+        engine_status=status,
+        voices=voices,
+        notice=request.args.get("notice"),
+        error=request.args.get("error"),
+    )
+
+
+@admin_bp.route("/speech/install/<voice_id>", methods=["POST"])
+def admin_speech_install(voice_id: str) -> Any:
+    _require_admin()
+    ok, msg = install_piper_voice(voice_id)
+    return redirect(
+        url_for("admin.admin_speech", notice=msg if ok else None, error=None if ok else msg)
+    )
+
+
+@admin_bp.route("/speech/remove/<voice_id>", methods=["POST"])
+def admin_speech_remove(voice_id: str) -> Any:
+    _require_admin()
+    ok, msg = remove_piper_voice(voice_id)
+    return redirect(
+        url_for("admin.admin_speech", notice=msg if ok else None, error=None if ok else msg)
+    )
 
 
 @admin_bp.route("/ai", methods=["GET", "POST"])

@@ -12,6 +12,7 @@ from __future__ import annotations
 import io
 import os
 import threading
+import urllib.request
 import wave as _wave
 from pathlib import Path
 
@@ -199,6 +200,64 @@ def _first_existing_path(paths: list[Path]) -> Path:
         if path.exists():
             return path
     return paths[0]
+
+
+def get_piper_voice_inventory() -> list[dict]:
+    """Return curated Piper voices with install status and file locations."""
+    voices: list[dict] = []
+    for v in PIPER_VOICES:
+        voice_id = v["id"]
+        model_path = _piper_model_path(voice_id)
+        config_path = _piper_config_path(voice_id)
+        installed = model_path.exists() and config_path.exists()
+        voices.append(
+            {
+                **v,
+                "installed": installed,
+                "model_path": str(model_path),
+                "config_path": str(config_path),
+            }
+        )
+    return voices
+
+
+def install_piper_voice(voice_id: str) -> tuple[bool, str]:
+    """Download model and config files for one curated Piper voice."""
+    hf_paths = _PIPER_HF_VOICE_PATHS.get(voice_id)
+    if not hf_paths:
+        return False, f"Unknown curated Piper voice: {voice_id}"
+
+    model_path = _piper_model_dir() / f"{voice_id}.onnx"
+    config_path = _piper_model_dir() / f"{voice_id}.onnx.json"
+    if model_path.exists() and config_path.exists():
+        return True, f"Voice {voice_id} is already installed."
+
+    _piper_model_dir().mkdir(parents=True, exist_ok=True)
+    base = "https://huggingface.co/rhasspy/piper-voices/resolve/main"
+    rel_model, rel_config = hf_paths
+    try:
+        urllib.request.urlretrieve(f"{base}/{rel_model}", model_path)
+        urllib.request.urlretrieve(f"{base}/{rel_config}", config_path)
+    except Exception as exc:
+        return False, f"Failed to install voice {voice_id}: {exc}"
+
+    return True, f"Installed Piper voice {voice_id}."
+
+
+def remove_piper_voice(voice_id: str) -> tuple[bool, str]:
+    """Remove model and config files for one curated Piper voice."""
+    if voice_id not in _PIPER_HF_VOICE_PATHS:
+        return False, f"Unknown curated Piper voice: {voice_id}"
+
+    removed = 0
+    for path in _piper_model_candidates(voice_id) + _piper_config_candidates(voice_id):
+        if path.exists():
+            path.unlink()
+            removed += 1
+
+    if removed == 0:
+        return True, f"Voice {voice_id} was not installed."
+    return True, f"Removed Piper voice {voice_id}."
 
 
 # ---------------------------------------------------------------------------

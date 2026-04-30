@@ -355,42 +355,53 @@ try:
     print('Kokoro models downloaded successfully.')
 except Exception as exc:
     print(f'WARNING: Kokoro model download failed: {exc}')
-    print('Speech Demo will show Not Ready until models are added manually.')
+    print('Speech Studio will show Not Ready until models are added manually.')
     print('Manual install: docker compose exec web python -c \"from pathlib import Path; import urllib.request; d=Path(\\\"/app/instance/speech_models\\\"); d.mkdir(parents=True, exist_ok=True); base=\\\"https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0\\\"; urllib.request.urlretrieve(f\\\"{base}/kokoro-v1.0.onnx\\\", d/\\\"kokoro-v1.0.onnx\\\"); urllib.request.urlretrieve(f\\\"{base}/voices-v1.0.bin\\\", d/\\\"voices-v1.0.bin\\\")\"')
 " 2>&1 || log_ts "WARNING: Could not exec into web container to check speech models."
     log_ts "--- Speech model check complete ---"
 
     # ---------------------------------------------------------------------------
-    # Ensure the default Piper voice is present in the speech-models volume.
+    # Ensure curated Piper voices are present in the speech-models volume.
     # The named Docker volume hides any build-time model files, so seed the
     # runtime volume as part of deployment too.
     # ---------------------------------------------------------------------------
-    log_ts "--- Ensuring Piper default voice model files are present ---"
+    log_ts "--- Ensuring curated Piper voice model files are present ---"
     docker compose -f "$COMPOSE_FILE" exec -T web python -c "
 import os, sys
 from pathlib import Path
 model_dir = Path(os.environ.get('GLOW_SPEECH_MODEL_DIR', '/app/instance/speech_models')) / 'piper'
-model_file = model_dir / 'en_US-lessac-medium.onnx'
-config_file = model_dir / 'en_US-lessac-medium.onnx.json'
-if model_file.exists() and config_file.exists():
-    print(f'Piper default voice already present in {model_dir} -- skipping download.')
-    sys.exit(0)
-print(f'Piper default voice not found in {model_dir} -- downloading from Hugging Face...')
+voices = [
+    ('en_US-lessac-medium', 'en/en_US/lessac/medium/en_US-lessac-medium'),
+    ('en_US-amy-medium', 'en/en_US/amy/medium/en_US-amy-medium'),
+    ('en_US-ryan-high', 'en/en_US/ryan/high/en_US-ryan-high'),
+    ('en_US-hfc_female-medium', 'en/en_US/hfc_female/medium/en_US-hfc_female-medium'),
+    ('en_GB-alan-medium', 'en/en_GB/alan/medium/en_GB-alan-medium'),
+    ('en_GB-southern_english_female-low', 'en/en_GB/southern_english_female/low/en_GB-southern_english_female-low'),
+]
+print(f'Ensuring {len(voices)} curated Piper voices in {model_dir}...')
 try:
     import urllib.request
     model_dir.mkdir(parents=True, exist_ok=True)
     base = 'https://huggingface.co/rhasspy/piper-voices/resolve/main'
-    urllib.request.urlretrieve(
-        f'{base}/en/en_US/lessac/medium/en_US-lessac-medium.onnx',
-        model_file,
-    )
-    urllib.request.urlretrieve(
-        f'{base}/en/en_US/lessac/medium/en_US-lessac-medium.onnx.json',
-        config_file,
-    )
-    print('Piper default voice downloaded successfully.')
+    downloaded = 0
+    skipped = 0
+    failed = 0
+    for voice_id, rel in voices:
+        model_file = model_dir / f'{voice_id}.onnx'
+        config_file = model_dir / f'{voice_id}.onnx.json'
+        if model_file.exists() and config_file.exists():
+            skipped += 1
+            continue
+        try:
+            urllib.request.urlretrieve(f'{base}/{rel}.onnx', model_file)
+            urllib.request.urlretrieve(f'{base}/{rel}.onnx.json', config_file)
+            downloaded += 1
+        except Exception as voice_exc:
+            failed += 1
+            print(f'WARNING: Failed to download {voice_id}: {voice_exc}')
+    print(f'Piper voice seeding complete. downloaded={downloaded} skipped={skipped} failed={failed}')
 except Exception as exc:
-    print(f'WARNING: Piper default voice download failed: {exc}')
+    print(f'WARNING: Piper voice download failed: {exc}')
     print('Piper voices will show Not Ready until model files are added manually.')
 " 2>&1 || log_ts "WARNING: Could not exec into web container to check Piper voice models."
     log_ts "--- Piper voice model check complete ---"

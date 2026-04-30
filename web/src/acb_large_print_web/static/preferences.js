@@ -58,6 +58,12 @@
       bindingMargin: false,
       printReady: false,
     },
+    speech: {
+      voice: "",
+      speed: 1.0,
+      pitch: 0,
+      text: "",
+    },
     ui: {
       rulesReference: {
         target: "audit",
@@ -153,6 +159,7 @@
       }),
       export: Object.assign({}, defaults.export, parsed.export || {}),
       convert: Object.assign({}, defaults.convert, parsed.convert || {}),
+      speech: Object.assign({}, defaults.speech, parsed.speech || {}),
       ui: {
         rulesReference: normalizeRulesReferenceUi(
           parsed.ui && parsed.ui.rulesReference ? parsed.ui.rulesReference : null
@@ -352,6 +359,18 @@
         setCheckbox("acb_format", settings.convert.acbFormat);
         setCheckbox("binding_margin", settings.convert.bindingMargin);
         setCheckbox("print_ready", settings.convert.printReady);
+      }
+
+      // Speech studio form
+      if (document.querySelector('form#speech-form')) {
+        if (settings.speech.voice) {
+          setRadio("voice", settings.speech.voice);
+        }
+        if (settings.speech.text) {
+          setInput("text", settings.speech.text);
+        }
+        setInput("speed", settings.speech.speed);
+        setInput("pitch", settings.speech.pitch);
       }
     }
   }

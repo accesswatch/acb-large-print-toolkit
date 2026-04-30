@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Speech Studio{% endblock %}
+{% block heading %}Admin Speech Studio{% endblock %}
+
+{% block content %}
+<p><strong>Signed in as:</strong> {{ admin_email }}</p>
+<p><a href="{{ url_for('admin.admin_queue') }}">Back to admin queue dashboard</a></p>
+
+{% if notice %}
+<div class="success-box" role="status"><p>{{ notice }}</p></div>
+{% endif %}
+{% if error %}
+<div class="error-box" role="alert"><p><strong>Error:</strong> {{ error }}</p></div>
+{% endif %}
+
+<section>
+  <h2 id="admin-speech-engine-heading">Speech Engine Status</h2>
+  <table class="findings-table">
+    <caption>Engine readiness for Speech Studio</caption>
+    <thead>
+      <tr>
+        <th scope="col">Engine</th>
+        <th scope="col">Installed</th>
+        <th scope="col">Models Present</th>
+        <th scope="col">Ready</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <th scope="row">Kokoro</th>
+        <td>{{ 'Yes' if engine_status.kokoro.installed else 'No' }}</td>
+        <td>{{ 'Yes' if engine_status.kokoro.models_present else 'No' }}</td>
+        <td>{{ 'Yes' if engine_status.kokoro.ready else 'No' }}</td>
+      </tr>
+      <tr>
+        <th scope="row">Piper</th>
+        <td>{{ 'Yes' if engine_status.piper.installed else 'No' }}</td>
+        <td>{{ 'Yes' if engine_status.piper.models_present else 'No' }}</td>
+        <td>{{ 'Yes' if engine_status.piper.ready else 'No' }}</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<section>
+  <h2 id="admin-speech-voices-heading">Piper Voice Packs</h2>
+  <p class="field-hint">Use these one-click actions to install or remove curated English Piper voices.</p>
+  <table class="findings-table">
+    <caption>Curated Piper voices</caption>
+    <thead>
+      <tr>
+        <th scope="col">Voice</th>
+        <th scope="col">Accent</th>
+        <th scope="col">Gender</th>
+        <th scope="col">Sample Rate</th>
+        <th scope="col">Installed</th>
+        <th scope="col">Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for v in voices %}
+      <tr>
+        <th scope="row">{{ v.label }}<br><span class="field-hint"><code>{{ v.id }}</code></span></th>
+        <td>{{ v.accent }}</td>
+        <td>{{ v.gender }}</td>
+        <td>{{ v.sample_rate }} Hz</td>
+        <td>{{ 'Yes' if v.installed else 'No' }}</td>
+        <td>
+          {% if v.installed %}
+          <form method="post" action="{{ url_for('admin.admin_speech_remove', voice_id=v.id) }}" class="inline-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn-secondary" onclick="return confirm('Remove this Piper voice pack?');">Remove</button>
+          </form>
+          {% else %}
+          <form method="post" action="{{ url_for('admin.admin_speech_install', voice_id=v.id) }}" class="inline-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn-primary">Install</button>
+          </form>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endblock %}
