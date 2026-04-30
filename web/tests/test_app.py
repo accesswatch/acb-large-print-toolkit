@@ -1245,10 +1245,12 @@ class TestSettingsIntegration:
             resp.data,
         )
 
-    def test_caddy_csp_allows_blob_audio_previews(self):
+    def test_caddy_csp_allows_speech_preview_fetch_and_blob_audio(self):
         caddyfile = Path("web/Caddyfile").read_text(encoding="utf-8")
         caddyfile_example = Path("web/Caddyfile.example").read_text(encoding="utf-8")
 
+        assert "connect-src 'self'" in caddyfile
+        assert "connect-src 'self'" in caddyfile_example
         assert "media-src 'self' blob:" in caddyfile
         assert "media-src 'self' blob:" in caddyfile_example
 
