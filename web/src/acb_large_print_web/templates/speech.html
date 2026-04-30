@@ -6,6 +6,7 @@
 {% block content %}
 <p>Create expressive narration with any available English voice. Enter your text, choose a voice, tune speed and pitch, then preview or download your audio.</p>
 <p class="help-text">No document is required. Speech Studio runs on this server and does not send your text to external services.</p>
+<p class="help-text">Speech Studio is a server-side feature. It requires the Kokoro ONNX package and model files to be installed on the server. Your browser settings have no effect on voice availability.</p>
 
 {% if not any_engine_ready %}
 <section class="flash-warning" role="alert">
@@ -51,7 +52,7 @@
 
       {% if kokoro_ready %}
       <details open>
-        <summary><strong>Kokoro (Tier 1 — Default)</strong> <span class="badge badge-success">Ready</span></summary>
+        <summary><strong>Kokoro ONNX</strong> <span class="badge badge-success">Ready</span></summary>
         <div class="radio-group">
           {% for v in kokoro_voices %}
           {% set vid = "kokoro:" ~ v.id %}
@@ -66,14 +67,14 @@
       </details>
       {% else %}
       <details>
-        <summary><strong>Kokoro (Tier 1 — Default)</strong> <span class="badge badge-warning">Not ready</span></summary>
+        <summary><strong>Kokoro ONNX</strong> <span class="badge badge-warning">Not ready</span></summary>
         <p class="help-text">Kokoro is not installed or model files are missing. See setup details below.</p>
       </details>
       {% endif %}
 
       {% if piper_ready %}
       <details {% if not kokoro_ready %}open{% endif %}>
-        <summary><strong>Piper TTS (Tier 2 — Supplemental)</strong> <span class="badge badge-success">Ready</span></summary>
+        <summary><strong>Piper TTS</strong> <span class="badge badge-success">Ready</span></summary>
         <div class="radio-group">
           {% for v in piper_voices %}
           {% if v.id in engine_status.piper.voices_available %}
@@ -90,7 +91,7 @@
       </details>
       {% else %}
       <details>
-        <summary><strong>Piper TTS (Tier 2 — Supplemental)</strong> <span class="badge badge-warning">Not ready</span></summary>
+        <summary><strong>Piper TTS</strong> <span class="badge badge-warning">Not ready</span></summary>
         <p class="help-text">Piper is not installed or no voice model files are present. See setup details below.</p>
       </details>
       {% endif %}
@@ -160,14 +161,14 @@
     </thead>
     <tbody>
       <tr>
-        <th scope="row">Kokoro ONNX (Tier 1)</th>
+        <th scope="row">Kokoro ONNX</th>
         <td>{% if engine_status.kokoro.installed %}Yes{% else %}<strong>No</strong>{% endif %}</td>
-        <td>{% if engine_status.kokoro.models_present %}Yes{% else %}<strong>No</strong>{% endif %}</td>
+        <td>{% if engine_status.kokoro.models_present %}Yes ({{ engine_status.kokoro.voices_available | length }} voice(s)){% else %}<strong>No</strong>{% endif %}</td>
         <td>{% if engine_status.kokoro.ready %}<span class="badge badge-success">Ready</span>{% else %}<span class="badge badge-warning">Not ready</span>{% endif %}</td>
         <td><code>{{ engine_status.kokoro.model_dir }}</code></td>
       </tr>
       <tr>
-        <th scope="row">Piper TTS (Tier 2)</th>
+        <th scope="row">Piper TTS</th>
         <td>{% if engine_status.piper.installed %}Yes{% else %}<strong>No</strong>{% endif %}</td>
         <td>{% if engine_status.piper.models_present %}Yes ({{ engine_status.piper.voices_available | length }} voice(s)){% else %}<strong>No</strong>{% endif %}</td>
         <td>{% if engine_status.piper.ready %}<span class="badge badge-success">Ready</span>{% else %}<span class="badge badge-warning">Not ready</span>{% endif %}</td>
@@ -180,13 +181,13 @@
   <h3>Setup instructions</h3>
 
   {% if engine_status.kokoro.setup_commands %}
-  <h4>Kokoro ONNX (Tier 1)</h4>
+  <h4>Kokoro ONNX</h4>
   <pre><code>{% for cmd in engine_status.kokoro.setup_commands %}{{ cmd }}
 {% endfor %}</code></pre>
   {% endif %}
 
   {% if engine_status.piper.setup_commands %}
-  <h4>Piper TTS (Tier 2)</h4>
+  <h4>Piper TTS</h4>
   <pre><code>{% for cmd in engine_status.piper.setup_commands %}{{ cmd }}
 {% endfor %}</code></pre>
   {% endif %}
