@@ -186,7 +186,7 @@ def create_app(config: dict | None = None) -> Flask:
             ctx["feature_pydocx_enabled"] = bool(all_flags.get("GLOW_ENABLE_PYDOCX", True))
             ctx["feature_openpyxl_enabled"] = bool(all_flags.get("GLOW_ENABLE_OPENPYXL", True))
             ctx["feature_python_pptx_enabled"] = bool(all_flags.get("GLOW_ENABLE_PYTHON_PPTX", True))
-            ctx["feature_speech_enabled"] = bool(all_flags.get("GLOW_ENABLE_SPEECH", False))
+            ctx["feature_speech_enabled"] = bool(all_flags.get("GLOW_ENABLE_SPEECH", True))
         except Exception:
             # Best-effort injection; templates should handle missing keys gracefully
             pass

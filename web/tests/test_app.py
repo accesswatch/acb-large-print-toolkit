@@ -1104,6 +1104,12 @@ class TestSettingsIntegration:
         assert b'name="settings_fix_allowed_heading_levels"' in resp.data
         assert b'name="settings_template_allowed_heading_levels"' in resp.data
 
+    def test_settings_page_shows_speech_demo_by_default(self, client):
+        resp = client.get("/settings/")
+        assert resp.status_code == 200
+        assert b"Speech Demo" in resp.data
+        assert b"Open Speech Demo" in resp.data
+
 
 class TestPdfAudit:
     """Upload PDF files and verify audit works."""
