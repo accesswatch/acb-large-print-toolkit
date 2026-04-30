@@ -377,14 +377,17 @@ if model_file.exists() and config_file.exists():
     sys.exit(0)
 print(f'Piper default voice not found in {model_dir} -- downloading from Hugging Face...')
 try:
-    from huggingface_hub import hf_hub_download
+    import urllib.request
     model_dir.mkdir(parents=True, exist_ok=True)
-    for filename in [
-        'en/en_US/lessac/medium/en_US-lessac-medium.onnx',
-        'en/en_US/lessac/medium/en_US-lessac-medium.onnx.json',
-    ]:
-        downloaded = Path(hf_hub_download('rhasspy/piper-voices', filename, local_dir=model_dir))
-        downloaded.replace(model_dir / downloaded.name)
+    base = 'https://huggingface.co/rhasspy/piper-voices/resolve/main'
+    urllib.request.urlretrieve(
+        f'{base}/en/en_US/lessac/medium/en_US-lessac-medium.onnx',
+        model_file,
+    )
+    urllib.request.urlretrieve(
+        f'{base}/en/en_US/lessac/medium/en_US-lessac-medium.onnx.json',
+        config_file,
+    )
     print('Piper default voice downloaded successfully.')
 except Exception as exc:
     print(f'WARNING: Piper default voice download failed: {exc}')

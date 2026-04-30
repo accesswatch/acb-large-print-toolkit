@@ -1258,6 +1258,7 @@ class TestSettingsIntegration:
 
         assert "Ensuring Piper default voice model files are present" in deploy_script
         assert "en_US-lessac-medium.onnx" in deploy_script
+        assert "https://huggingface.co/rhasspy/piper-voices/resolve/main" in deploy_script
         assert "Piper default voice downloaded" in dockerfile
 
 
