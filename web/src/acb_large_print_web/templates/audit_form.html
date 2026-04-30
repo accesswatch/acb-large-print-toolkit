@@ -30,9 +30,24 @@
 </div>
 {% endif %}
 
+{% if prefill_token and prefill_filename %}
+<div class="info-box" role="status" aria-live="polite">
+  <p><strong>Ready to audit:</strong> <em>{{ prefill_filename }}</em> &mdash; your document is already loaded from your upload session. You do not need to upload again. Adjust options below and click <strong>Run Audit</strong>.</p>
+</div>
+{% endif %}
+
 <form method="post" enctype="multipart/form-data" novalidate id="audit-form">
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  {% if prefill_token %}
+  <input type="hidden" name="token" value="{{ prefill_token }}">
+  <input type="hidden" name="prefill" value="1">
+  {% endif %}
 
+  {% if prefill_token and prefill_filename %}
+  <div class="form-group">
+    <p class="help-text" id="file-help"><strong>Document:</strong> {{ prefill_filename }}</p>
+  </div>
+  {% else %}
   <fieldset>
     <legend>Upload Mode</legend>
     <p class="help-text">Audit a single document or submit up to 3 at once for a combined or per-file report.</p>
@@ -94,6 +109,7 @@
       </div>
     </fieldset>
   </div>
+  {% endif %}
 
   <fieldset>
     <legend>Standards Profile</legend>
@@ -226,6 +242,29 @@
       <dd>Minor issues or best-practice recommendations. Examples: widow/orphan control, header row not frozen, missing speaker notes.</dd>
     </dl>
   </details>
+
+  <fieldset>
+    <legend>Share Link Protection (Optional)</legend>
+    <p class="help-text">
+      Add an optional passphrase if you plan to share this audit report with
+      others. Anyone with the share link must enter the passphrase before they
+      can read the report or download the CSV/PDF copy. Leave blank to keep
+      the existing behavior (link alone unlocks the report). Shared reports
+      always expire within approximately 1&nbsp;hour either way; lost
+      passphrases are not recoverable.
+    </p>
+    <div class="form-group">
+      <label for="share-passphrase">Passphrase (4-200 characters)</label>
+      <input type="password" id="share-passphrase" name="share_passphrase"
+             autocomplete="new-password" autocapitalize="off" autocorrect="off"
+             spellcheck="false" minlength="4" maxlength="200"
+             aria-describedby="share-passphrase-help">
+      <p id="share-passphrase-help" class="help-text">
+        Choose something memorable but not easily guessable. The passphrase is
+        stored only as a salted hash; we never see the cleartext value.
+      </p>
+    </div>
+  </fieldset>
 
 {% if email_configured %}
   <fieldset>

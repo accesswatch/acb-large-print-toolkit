@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Unlock shared audit report - GLOW{% endblock %}
+
+{% block content %}
+<h1>Unlock shared audit report</h1>
+
+<p>This audit report is protected with a passphrase. Enter the passphrase
+the sharer provided to {% if target == "download" %}download the file{% else %}view the report{% endif %}.</p>
+
+{% if error %}
+<div class="error-box" role="alert">
+  <p><strong>Incorrect passphrase.</strong> Please try again. Passphrases are case-sensitive.</p>
+</div>
+{% endif %}
+
+<form method="post"
+      action="{{ url_for('audit.shared_report', share_token=share_token) }}"
+      novalidate>
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+  <div class="form-group">
+    <label for="share-passphrase">Passphrase</label>
+    <input type="password" id="share-passphrase" name="share_passphrase"
+           autocomplete="off" autocapitalize="off" autocorrect="off"
+           spellcheck="false" required minlength="4" maxlength="200"
+           aria-describedby="share-passphrase-help"
+           {% if error %}aria-invalid="true"{% endif %}>
+    <p id="share-passphrase-help" class="help-text">
+      Passphrases are between 4 and 200 characters. Both you and the sharer
+      see exactly what was set; nothing is recovered automatically if the
+      passphrase is lost. The shared report expires within 1 hour either way.
+    </p>
+  </div>
+
+  <button type="submit" class="btn-primary">Unlock report</button>
+</form>
+
+<p class="help-text">
+  <a href="{{ url_for('main.index') }}">Return to GLOW home</a>
+</p>
+{% endblock %}

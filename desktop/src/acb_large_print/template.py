@@ -76,9 +76,11 @@ def _configure_styles(
     list_hanging_in: float = C.LIST_HANGING_IN,
     font_family_override: str | None = None,
     line_spacing_override: float | None = None,
+    style_size_overrides: dict[str, float] | None = None,
 ) -> None:
     """Set all ACB styles on a Document."""
-    for style_name, style_def in C.ACB_STYLES.items():
+    styles_table = C.effective_styles(style_size_overrides)
+    for style_name, style_def in styles_table.items():
         try:
             style = doc.styles[style_name]
         except KeyError:
@@ -278,6 +280,7 @@ def create_template(
     list_hanging_in: float = C.LIST_HANGING_IN,
     standards_profile: str = C.StandardsProfile.ACB_2025.value,
     allowed_heading_levels: list[int] | None = None,
+    style_size_overrides: dict[str, float] | None = None,
 ) -> Path:
     """Create a complete ACB Large Print .dotx template.
 
@@ -311,6 +314,7 @@ def create_template(
         list_hanging_in=list_hanging_in,
         font_family_override=font_family_override,
         line_spacing_override=line_spacing_override,
+        style_size_overrides=style_size_overrides,
     )
     _configure_page_setup(doc, bound=bound)
     _disable_hyphenation(doc)

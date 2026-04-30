@@ -7,9 +7,10 @@
 
 import {
     AUDIT_RULES,
-    ACB_STYLES,
+    effectiveStyles,
+    effectiveMinBodyPt,
+    type StyleSizeOverrides,
     FONT_FAMILY,
-    MIN_SIZE_PT,
     MARGIN_TOP_IN,
     MARGIN_BOTTOM_IN,
     MARGIN_LEFT_IN,
@@ -52,10 +53,26 @@ function addFinding(
 }
 
 function computeScore(findings: Finding[]): number {
-    const total = findings.reduce(
-        (sum, f) => sum + (SEVERITY_DEDUCTIONS[f.severity] ?? 5),
-        0,
-    );
+    // Compliance score 0-100. Charge each rule once at full severity weight,
+    // then add a small per-extra-occurrence penalty capped at the rule's base
+    // weight so a single category can't drive the score to F on its own.
+    // Mirrors `AuditResult.score` in desktop/src/acb_large_print/auditor.py.
+    if (findings.length === 0) return 100;
+    const groups = new Map<string, Finding[]>();
+    for (const f of findings) {
+        const arr = groups.get(f.ruleId);
+        if (arr) {
+            arr.push(f);
+        } else {
+            groups.set(f.ruleId, [f]);
+        }
+    }
+    let total = 0;
+    for (const group of groups.values()) {
+        const base = SEVERITY_DEDUCTIONS[group[0].severity] ?? 5;
+        const extras = Math.max(0, group.length - 1);
+        total += base + Math.min(extras, base);
+    }
     return Math.max(0, 100 - total);
 }
 
@@ -69,8 +86,16 @@ function gradeFromScore(score: number): string {
 
 /**
  * Run a full ACB Large Print compliance audit on the active Word document.
+ *
+ * @param styleSizeOverrides Optional per-style font-size overrides (matches
+ *   the Python `style_size_overrides` parameter). Keys: "Normal",
+ *   "Heading 1" .. "Heading 6". Values: point sizes.
  */
-export async function auditDocument(): Promise<AuditResult> {
+export async function auditDocument(
+    styleSizeOverrides?: StyleSizeOverrides,
+): Promise<AuditResult> {
+    const stylesTable = effectiveStyles(styleSizeOverrides);
+    const minBodyPt = effectiveMinBodyPt(styleSizeOverrides);
     const findings: Finding[] = [];
     let totalParagraphs = 0;
     const nonArialFontLocations = new Map<string, string[]>();
@@ -185,8 +210,8 @@ export async function auditDocument(): Promise<AuditResult> {
                 nonArialFontLocations.set(paraFont.name, existing);
             }
 
-            if (paraFont.size && paraFont.size < MIN_SIZE_PT - 0.5) {
-                addFinding(findings, "ACB-FONT-SIZE-BODY", `Font size ${paraFont.size}pt below ${MIN_SIZE_PT}pt minimum`, loc);
+            if (paraFont.size && paraFont.size < minBodyPt - 0.5) {
+                addFinding(findings, "ACB-FONT-SIZE-BODY", `Font size ${paraFont.size}pt below ${minBodyPt}pt minimum`, loc);
             }
 
             if (paraFont.italic === true) {
@@ -201,9 +226,9 @@ export async function auditDocument(): Promise<AuditResult> {
                 addFinding(findings, "ACB-NO-ALLCAPS", "ALL CAPS formatting applied", loc);
             }
 
-            // Check heading font sizes against ACB specs
+            // Check heading font sizes against expected (possibly overridden) specs
             if (isHeading && paraFont.size) {
-                const expectedStyle = ACB_STYLES[styleName];
+                const expectedStyle = stylesTable[styleName];
                 if (expectedStyle && Math.abs(paraFont.size - expectedStyle.font.sizePt) > 0.5) {
                     const sizeRule = styleName === "Heading 1" ? "ACB-FONT-SIZE-H1" : "ACB-FONT-SIZE-H2";
                     addFinding(findings, sizeRule, `${styleName} is ${paraFont.size}pt (expected ${expectedStyle.font.sizePt}pt)`, loc);

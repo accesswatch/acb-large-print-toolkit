@@ -6,7 +6,8 @@
  */
 
 import {
-    ACB_STYLES,
+    effectiveStyles,
+    type StyleSizeOverrides,
     FONT_FAMILY,
     FOOTER_SIZE_PT,
     MARGIN_TOP_IN,
@@ -21,13 +22,19 @@ export interface TemplateResult {
 
 /**
  * Apply all ACB Large Print template settings to the active document.
+ *
+ * @param styleSizeOverrides Optional per-style font-size overrides;
+ *   matches the Python `style_size_overrides` parameter.
  */
-export async function applyTemplate(): Promise<TemplateResult> {
+export async function applyTemplate(
+    styleSizeOverrides?: StyleSizeOverrides,
+): Promise<TemplateResult> {
+    const stylesTable = effectiveStyles(styleSizeOverrides);
     const applied: string[] = [];
 
     await Word.run(async (context) => {
         // ----- Configure styles -----
-        for (const [styleName, styleDef] of Object.entries(ACB_STYLES)) {
+        for (const [styleName, styleDef] of Object.entries(stylesTable)) {
             try {
                 const style = context.document.getStyles().getByNameOrNullObject(styleName);
                 style.load("isNullObject");

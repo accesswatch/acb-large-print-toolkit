@@ -6,7 +6,35 @@ Releases are tagged in the [GitHub repository](https://github.com/accesswatch/ac
 
 ---
 
+## [Unreleased]
+
+---
+
+## [2.8.0] - 2026-04-30
+
+> A heartfelt thank you to the BITS community and the broader blind and low-vision community whose feedback, feature requests, and real-world testing made this release possible. Every feature in 2.8.0 came directly from your suggestions. We are building GLOW for you and with you -- your voice is in every line of this release.
+
+### Added
+
+- **Quick Start handoff: audit, fix, and convert without re-uploading.** The Quick Start landing page now uploads a document once and routes the user to Audit, Fix, or Convert with the file already loaded -- no second upload is required. `GET /audit/?token=...` and `GET /convert/?token=...` resolve the token to the existing session directory and render their forms with a "Ready to audit/convert: &lt;filename&gt;" notice in place of the file picker. The corresponding POST handlers honour a `prefill=1` flag to re-use the cached file rather than calling `validate_upload`. Fix already routed through `fix.fix_from_audit_form`; the Quick Start dispatcher in `routes/process.py` now sends `fix` requests there too. Implemented in `routes/audit.py` (`audit_form`, `_audit_single`), `routes/convert.py` (`convert_form`, `convert_submit`), `routes/process.py` (`process_go`), and templates `audit_form.html` and `convert_form.html`. New tests in `tests/test_v270_new_routes.py::TestQuickStartHandoff`.
+
+- **Optional passphrase protection for shared audit reports.** The Audit form now exposes a "Share Link Protection" fieldset where the user can supply an optional 4-200 character passphrase. When set, anyone opening `/audit/share/<token>` (or downloading the CSV/PDF copy) must enter the passphrase before the report is served. The unlock form posts back to the share URL; CSV and PDF endpoints additionally accept `?p=<passphrase>` so a single click from the unlock screen can deep-link to a download. Passphrases are stored only as PBKDF2-SHA256 hashes (200,000 iterations, per-share random salt) in `passphrase.txt` next to the cached HTML; the cleartext value never touches disk and is never logged. The audit report's "Share or download this report" panel now displays a notice when protection is enabled, reminding the sharer to send the passphrase through a separate channel. New helpers `set_share_passphrase()`, `share_requires_passphrase()`, and `verify_share_passphrase()` in `report_cache.py`. New `templates/share_unlock.html`. New tests in `tests/test_v270_new_routes.py::TestSharePassphrase`.
+
+- **User-defined font sizes (body and per-heading-level).** The Fix and Template forms now expose a "Font Sizes" fieldset where users can override the body (Normal) point size and each of Heading 1 through Heading 6 independently. Empty fields keep the ACB defaults (body 18pt, Heading 1 22pt, Heading 2-6 20pt). Values are clamped to 8pt-96pt and propagate through the audit, fix, and template pipelines so that the auditor treats the user's chosen sizes as the expected sizes. The body override also propagates to `List Bullet` and `List Number` to keep list text in sync with body text. Implemented as `effective_styles()` and `effective_min_body_pt()` helpers in `desktop/src/acb_large_print/constants.py`, threaded through `auditor.audit_document()`, `fixer.fix_document()`, and `template.create_template()` via a new `style_size_overrides` keyword argument; the same surface is mirrored in TypeScript (`office-addin/src/constants.ts`, `auditor.ts`, `fixer.ts`, `template.ts`) as `effectiveStyles()`, `effectiveMinBodyPt()`, and the `StyleSizeOverrides` type. Web routes `routes/fix.py` and `routes/template.py` parse the new `body_size_pt` and `h1_size_pt`..`h6_size_pt` form fields and pass them through. New `.font-size-grid` CSS in `static/forms.css` lays out the seven inputs responsively.
+
+### Changed
+
+- **Findings tables grouped by rule.** Audit reports (single, batch combined, and individual file) now render via a shared `_findings_table.html` partial that groups all occurrences of the same rule into a single row with an occurrence count badge and an expandable list of locations. Single occurrences render inline; multi-occurrence rules show a `<details>` "Show all N occurrences" disclosure. New CSS for `.occurrence-count`, `.occurrence-count--single`, `.occurrence-count--multi`, and `.occurrence-list*` in `static/forms.css`. CSV export still emits one row per occurrence so spreadsheet analysis is unaffected. Changes in `templates/audit_report.html`, `templates/audit_batch_report.html`, and `templates/_findings_table.html`.
+
+### Fixed
+
+- **Scoring and grade integrity refinements.** Corrected cases where score/grade presentation could drift from the underlying weighted-penalty model (including reports appearing as grade F when they should not, and inflated pre/post issue perception from repeated findings). Scoring now consistently applies per-rule weighted penalties while grouped findings remain a presentation-only change.
+
+---
+
 ## [2.7.0] - 2026-04-29
+
+
 
 ### Added
 

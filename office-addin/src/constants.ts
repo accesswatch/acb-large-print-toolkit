@@ -209,6 +209,85 @@ export const ACB_STYLES: Record<string, StyleDef> = {
     },
 };
 
+/**
+ * Style names that accept user-supplied font-size overrides.
+ *
+ * Matches Python `OVERRIDABLE_STYLE_NAMES` in `desktop/src/acb_large_print/constants.py`.
+ */
+export const OVERRIDABLE_STYLE_NAMES = [
+    "Normal",
+    "Heading 1",
+    "Heading 2",
+    "Heading 3",
+    "Heading 4",
+    "Heading 5",
+    "Heading 6",
+] as const;
+
+/** Lower bound for user-supplied font sizes (matches Python `MIN_USER_FONT_PT`). */
+export const MIN_USER_FONT_PT = 8.0;
+/** Upper bound for user-supplied font sizes (matches Python `MAX_USER_FONT_PT`). */
+export const MAX_USER_FONT_PT = 96.0;
+
+/** User-supplied per-style size overrides: { "Normal": 20, "Heading 1": 26, ... } */
+export type StyleSizeOverrides = Partial<Record<string, number>>;
+
+function clampSize(pt: number): number {
+    return Math.max(MIN_USER_FONT_PT, Math.min(MAX_USER_FONT_PT, pt));
+}
+
+/**
+ * Apply user size overrides on top of `ACB_STYLES`. Mirrors Python
+ * `effective_styles()` -- body overrides also propagate to List Bullet/Number.
+ */
+export function effectiveStyles(
+    overrides?: StyleSizeOverrides,
+): Record<string, StyleDef> {
+    if (!overrides) {
+        return { ...ACB_STYLES };
+    }
+    const cleaned: Record<string, number> = {};
+    for (const [name, value] of Object.entries(overrides)) {
+        if (typeof value !== "number" || !Number.isFinite(value) || value <= 0) {
+            continue;
+        }
+        cleaned[name] = clampSize(value);
+    }
+    if (Object.keys(cleaned).length === 0) {
+        return { ...ACB_STYLES };
+    }
+
+    const out: Record<string, StyleDef> = {};
+    const bodyPt = cleaned["Normal"];
+    for (const [name, def] of Object.entries(ACB_STYLES)) {
+        let target = cleaned[name];
+        if (target === undefined && bodyPt !== undefined &&
+            (name === "List Bullet" || name === "List Number")) {
+            target = bodyPt;
+        }
+        if (target === undefined) {
+            out[name] = def;
+            continue;
+        }
+        out[name] = {
+            font: { ...def.font, sizePt: target },
+            para: def.para,
+        };
+    }
+    return out;
+}
+
+/**
+ * Effective body-size floor used for run-level minimum-size checks.
+ * Mirrors Python `effective_min_body_pt()`.
+ */
+export function effectiveMinBodyPt(overrides?: StyleSizeOverrides): number {
+    if (overrides && typeof overrides["Normal"] === "number" && overrides["Normal"]! > 0) {
+        return clampSize(overrides["Normal"]!);
+    }
+    return MIN_SIZE_PT;
+}
+
 // ---------------------------------------------------------------------------
 // Audit rule definitions
 // ---------------------------------------------------------------------------

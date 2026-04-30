@@ -44,10 +44,12 @@ def _fix_styles(
     list_hanging_in: float = C.LIST_HANGING_IN,
     list_level_indents: dict[int, float] | None = None,
     preserve_heading_alignment: bool = False,
+    style_size_overrides: dict[str, float] | None = None,
 ) -> int:
     """Fix all named styles to match ACB specs. Returns count of fixes."""
     fixes = 0
-    for style_name, style_def in C.ACB_STYLES.items():
+    styles_table = C.effective_styles(style_size_overrides)
+    for style_name, style_def in styles_table.items():
         try:
             style = doc.styles[style_name]
         except KeyError:
@@ -235,13 +237,16 @@ def _fix_paragraph_formatting(
     para_indent_in: float = C.PARA_INDENT_IN,
     first_line_indent_in: float = C.FIRST_LINE_INDENT_IN,
     preserve_heading_alignment: bool = False,
+    style_size_overrides: dict[str, float] | None = None,
 ) -> int:
     """Fix direct formatting overrides in paragraph content. Returns fix count."""
     fixes = 0
+    styles_table = C.effective_styles(style_size_overrides)
+    min_body_pt = C.effective_min_body_pt(style_size_overrides)
 
     for i, para in enumerate(doc.paragraphs):
         style_name = para.style.name if para.style else "Normal"
-        style_def = C.ACB_STYLES.get(style_name)
+        style_def = styles_table.get(style_name)
         is_heading = bool(re.match(r"^Heading \d+$", style_name))
         is_list = style_name in (
             "List Bullet",
@@ -432,20 +437,20 @@ def _fix_paragraph_formatting(
                     )
                 )
 
-            # Fix body font size below minimum
+            # Fix body font size below minimum (uses user override if any)
             if (
                 expected_font is None
                 and run.font.size
-                and run.font.size.pt < C.MIN_SIZE_PT - 0.5
+                and run.font.size.pt < min_body_pt - 0.5
             ):
                 old_size = run.font.size.pt
-                run.font.size = Pt(C.MIN_SIZE_PT)
+                run.font.size = Pt(min_body_pt)
                 fixes += 1
                 records.append(
                     C.FixRecord(
                         "ACB-FONT-SIZE-BODY",
                         C.FIX_CATEGORY_FONT,
-                        f"Font size {old_size}pt -> {C.MIN_SIZE_PT}pt",
+                        f"Font size {old_size}pt -> {min_body_pt}pt",
                         loc,
                     )
                 )
@@ -805,6 +810,7 @@ def fix_document(
     system_prompt: str | None = None,
     confirmed_headings: list | None = None,
     heading_accuracy_level: str = "balanced",
+    style_size_overrides: dict[str, float] | None = None,
 ) -> tuple[Path, int, list[C.FixRecord], AuditResult, list[str]]:
     """Fix a Word document for ACB compliance.
 
@@ -879,6 +885,7 @@ def fix_document(
         list_hanging_in=list_hanging_in,
         list_level_indents=list_level_indents,
         preserve_heading_alignment=preserve_heading_alignment,
+        style_size_overrides=style_size_overrides,
     )
     total_fixes += _fix_page_setup(doc, records, bound=bound)
     total_fixes += _fix_paragraph_formatting(
@@ -890,6 +897,7 @@ def fix_document(
         para_indent_in=para_indent_in,
         first_line_indent_in=first_line_indent_in,
         preserve_heading_alignment=preserve_heading_alignment,
+        style_size_overrides=style_size_overrides,
     )
     total_fixes += _fix_hyphenation(doc, records)
     total_fixes += _fix_page_numbers(doc, records)
@@ -910,6 +918,7 @@ def fix_document(
         list_level_indents=list_level_indents,
         para_indent_in=para_indent_in,
         first_line_indent_in=first_line_indent_in,
+        style_size_overrides=style_size_overrides,
     )
 
     return output_path, total_fixes, records, post_audit, warnings

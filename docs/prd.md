@@ -1,15 +1,27 @@
 # PRD: GLOW (Guided Layout & Output Workflow) Accessibility Web Application
 
-**Status:** Implemented (v2.0.0 released)
+**Status:** Implemented (v2.8.0 released)
 **Author:** Jeff Bishop, BITS
-**Date:** April 17, 2026
-**Target:** v2.0.0 (BITS Whisperer, consent gate, Quick Start, MarkItDown 0.2+, cloud-based document chat, cloud-based Whisperer, maintenance mode, deep deployment logging)
+**Date:** April 30, 2026
+**Target:** v2.8.0 (Quick Start full handoff, passphrase-protected shares, user-defined font sizes, grouped findings tables -- all features sourced directly from BITS and blind/low-vision community feedback)
 
 ---
 
 ## Implementation Status
 
-The Flask web application has been built and is ready for deployment. All core features described in this PRD are implemented. The following table summarizes what shipped in v0.1 and subsequent v1.2.0 enhancements:
+The Flask web application has been built and is ready for deployment. All core features described in this PRD are implemented. The following table summarizes what shipped in each release:
+
+### v2.8.0 Addendum (Community-requested UX and security features -- April 30, 2026)
+
+All features in this release were sourced directly from BITS and blind and low-vision community feedback. Thank you to everyone who filed issues, sent suggestions, and tested pre-release builds.
+
+| Feature | Status | Notes |
+|---------|--------|-------|
+| Quick Start full handoff (audit/fix/convert without re-upload) | Done | `GET /audit/?token=...` and `GET /convert/?token=...` resolve an existing upload session and prefill the form. POST handlers honour `prefill=1` to skip re-upload. All three tools (Audit, Fix, Convert) now complete the single-upload vision from Quick Start. |
+| Passphrase-protected shared reports | Done | Optional 4-200 char passphrase on Audit form. Hash stored as PBKDF2-SHA256 (200k iterations, 16-byte random salt). Share page, CSV download, and PDF download all gate on passphrase. Unlock template (`share_unlock.html`). New `set_share_passphrase()`, `share_requires_passphrase()`, `verify_share_passphrase()` in `report_cache.py`. |
+| User-defined font sizes | Done | Fix and Template forms expose a Font Sizes fieldset for body (Normal) and H1-H6 overrides. Values clamped 8-96pt. Propagates through auditor, fixer, and template pipelines via `style_size_overrides` kwarg. `effective_styles()` and `effective_min_body_pt()` helpers in `constants.py` (Python) and `effectiveStyles()` / `effectiveMinBodyPt()` / `StyleSizeOverrides` in TypeScript. List Bullet and List Number inherit body override. |
+| Findings grouped by rule in audit report | Done | `_findings_table.html` partial groups occurrences of the same rule ID into a single row with count badge and expandable location list. Applied to single, batch combined, and batch individual reports. CSV export unchanged (one row per occurrence). |
+| Scoring and grade integrity refinements | Done | Fixed score/grade presentation drift and clarified weighted-penalty behavior so repeated findings are accounted consistently while grouped-table rendering remains presentation-only. Fix result summary now explicitly distinguishes filtered display mode from full post-fix scoring. |
 
 ### v2.7.0 Addendum (UX, scorecard, and streamlined workflow updates)
 
@@ -637,3 +649,140 @@ web/
   requirements.txt
   pyproject.toml
 ```
+
+---
+
+## GLOW 3.0.0 -- Speech Platform (Planned)
+
+**Status:** Planned -- not yet implemented
+**Target release:** 3.0.0
+**Specification source:** `docs/speech.md` (Kokoro TTS Platform PRD, Unix-Based, CPU-Optimized)
+**Predecessor:** BITS Whisperer (audio-to-text) shipped in v2.0.0. The speech platform extends GLOW in the complementary direction: text-to-accessible-audio.
+
+### Vision
+
+GLOW 3.0.0 will add a self-hosted text-to-speech (TTS) capability powered by Kokoro ONNX, enabling blind and low-vision users and the organizations that serve them to generate accessible audio versions of large-print documents without requiring a GPU, without sending document content to third-party cloud services, and without per-request API costs.
+
+This closes the full accessibility loop: GLOW can already audit, fix, convert, and format documents for visual large-print reading. The 3.0.0 speech platform adds audio output as a first-class delivery format for the same content.
+
+### What the BITS community said
+
+The speech platform was the most frequently requested feature across the BITS community feedback collected through 2.7.0 and 2.8.0. Members consistently asked for a way to produce MP3 audio versions of board minutes, newsletters, and policy memos -- in particular for members who use refreshable braille displays or screen readers in combination with audio, and for families who distribute recorded versions of meeting summaries. GLOW 3.0.0 is the answer to those requests.
+
+### Design Principles
+
+- **CPU-first, no GPU required.** Kokoro runs at approximately 0.8-1.5x realtime on a modern CPU. The BITS server (or any Docker host) can generate a 2-minute audio clip from 300 words in under 3 minutes without specialist hardware.
+- **No third-party cloud TTS.** Document content stays on-premise. This is essential for organizations that handle member health, legal, or financial documents.
+- **Preview-first UX.** Generate the first 3-8 seconds of audio before committing to a full-length job. Confirms voice, speed, and tone before waiting for a long generation job.
+- **Async for long documents.** Documents over 300 words are processed as background jobs with a queue position indicator, a status polling endpoint, and email notification when the job completes (when email is configured). Short documents are processed inline.
+- **User-controlled voice and parameters.** Multiple pre-configured voices (af_bella, am_adam, and others as available). Adjustable speed (native Kokoro parameter), pitch (FFmpeg post-processing), and energy level (audio filter).
+
+### Technical Architecture (from `docs/speech.md`)
+
+```
+User Input (text or GLOW document)
+  ↓
+Text Analyzer (length estimate → async vs inline decision)
+  ↓
+Preview Generator (first ~200 chars, < 1 second target)
+  ↓
+TTS Engine (Kokoro ONNX, CPU)
+  ↓
+Audio Processor (WAV → MP3 via FFmpeg at 192kbps)
+  ↓
+Storage + Download API
+```
+
+**Components:**
+
+| Component | Technology |
+|-----------|-----------|
+| TTS engine | Kokoro ONNX (CPU, loaded into memory at startup) |
+| Audio conversion | FFmpeg (`libmp3lame`, 192kbps) |
+| Job queue | Redis + worker pool (2-4 workers) |
+| API layer | FastAPI (integrated with Flask via proxy or sidecar) |
+| Storage | `/audio/{session_id}/{job_id}.mp3` (temp, TTL-bound) |
+| Caching | Hash of `(text + voice + parameters)` -- identical jobs reuse output |
+
+**Text chunking:** long documents are split at ~500-word boundaries, each chunk processed in parallel, then merged before MP3 encoding. This keeps individual generation units fast and enables progress reporting.
+
+### Performance Expectations (CPU)
+
+| Input Size | Audio Duration | CPU Generation Time |
+|-----------|---------------|---------------------|
+| 50 words (~20 sec audio) | 20 sec | 15-25 sec |
+| 300 words (~2 min audio) | 2 min | 1.5-3 min |
+| 2,000 words (~12-15 min audio) | 12-15 min | 10-20 min |
+
+Short documents (under ~50 words) are generated inline. All others use async queue mode.
+
+### Time Estimation API
+
+```
+POST /speech/estimate
+{
+  "text": "...",
+  "speed": 1.0
+}
+→
+{
+  "estimated_audio_length_sec": 100,
+  "estimated_generation_time_sec": 95,
+  "processing_mode": "cpu",
+  "word_count": 270
+}
+```
+
+### API Surface (planned routes)
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/speech/preview` | POST | Generate first ~8 seconds from first ~200 chars of input |
+| `/speech/estimate` | POST | Estimate audio duration and generation time |
+| `/speech/generate` | POST | Start a full generation job; returns `job_id` for async mode |
+| `/speech/status/<job_id>` | GET | Poll job progress (percentage, estimated completion time) |
+| `/speech/download/<job_id>` | GET | Download completed MP3 |
+
+### GLOW Integration Points
+
+- **Audit report:** "Listen to this report" button generates an MP3 of the plain-text summary.
+- **Convert result:** "Download as audio" option alongside HTML/Word/PDF/EPUB for supported output formats.
+- **Quick Start:** "Transcribe" action (Whisperer, text → audio) and "Read aloud" action (TTS, document → audio) will appear as complementary Quick Start cards.
+- **BITS Whisperer → TTS pipeline:** transcribe audio → edit transcript → re-synthesize corrected audio. Full round-trip in one session.
+
+### Voice Customization
+
+| Parameter | Mechanism |
+|-----------|----------|
+| Voice | Pre-configured Kokoro voice IDs (af_bella, am_adam, others) |
+| Speed | Native Kokoro `speed` parameter |
+| Pitch shift | FFmpeg `rubberband` or `asetrate` filter post-processing |
+| Energy / loudness | FFmpeg `loudnorm` filter |
+
+### Non-Goals for 3.0.0
+
+- Multilingual synthesis (English only in 3.0.0)
+- Voice cloning or custom voice training
+- Studio-grade prosody control
+- Emotion-level synthesis
+- GPU requirement (CPU-only is a hard constraint)
+
+### Out-of-Scope (Deferred Post-3.0.0)
+
+- Real-time streaming TTS for Document Chat
+- Braille-to-audio pipeline
+- Multilingual voice support
+
+### Dependencies
+
+- Kokoro ONNX model files (downloaded at container build time or mounted as a volume)
+- FFmpeg (system package in Docker image)
+- Redis (new sidecar service in `docker-compose.yml`)
+- 2-4 additional GB RAM per active worker (Kokoro model in memory)
+
+### Deployment Impact
+
+The 3.0.0 release will add a Redis sidecar and one or more Kokoro worker containers to the existing Docker Compose stack. The Flask/Gunicorn web container will proxy speech requests to the FastAPI sidecar. The BITS server (RackNerd 8 GB, 6 vCPU) has the headroom to run 2 workers with comfortable margin. Audio output files are temp-bound with the same TTL lifecycle as document uploads (1-hour maximum).
+
+For full technical detail, see `docs/speech.md`.
+

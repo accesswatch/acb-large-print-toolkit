@@ -10,12 +10,18 @@ Each share directory may contain:
 - ``expires.txt``  -- expiry timestamp (always)
 - ``findings.json`` -- structured findings data for CSV/PDF export (optional)
 - ``report.pdf``   -- lazily generated PDF copy of the report (optional)
+- ``passphrase.txt`` -- ``salt:hash`` (PBKDF2-SHA256) when the share is
+  passphrase-protected (optional)
 """
 
 from __future__ import annotations
 
+import hashlib
+import hmac
 import json
+import os
 import re
+import secrets
 import shutil
 import time
 from pathlib import Path
@@ -163,3 +169,66 @@ def load_pdf(share_token: str) -> bytes | None:
         return pdf_file.read_bytes()
     except OSError:
         return None
+
+
+# ---------------------------------------------------------------------------
+# Optional passphrase protection for shared reports
+# ---------------------------------------------------------------------------
+
+_PBKDF2_ITERATIONS = 200_000
+_PBKDF2_SALT_BYTES = 16
+
+
+def set_share_passphrase(share_token: str, passphrase: str) -> bool:
+    """Attach a passphrase to an existing share token. Returns True on success.
+
+    The passphrase is stored only as a PBKDF2-SHA256 hash with a per-share
+    random salt; the cleartext passphrase never touches disk.
+    """
+    if not _UUID_RE.match(share_token or ""):
+        return False
+    if not passphrase:
+        return False
+    share_dir = _share_dir(share_token)
+    if not share_dir.exists():
+        return False
+    try:
+        salt = secrets.token_bytes(_PBKDF2_SALT_BYTES)
+        digest = hashlib.pbkdf2_hmac(
+            "sha256", passphrase.encode("utf-8"), salt, _PBKDF2_ITERATIONS
+        )
+        (share_dir / "passphrase.txt").write_text(
+            f"{salt.hex()}:{digest.hex()}", encoding="utf-8"
+        )
+        return True
+    except OSError:
+        return False
+
+
+def share_requires_passphrase(share_token: str) -> bool:
+    """Return True if the given share token has a passphrase configured."""
+    if not _UUID_RE.match(share_token or ""):
+        return False
+    pf = _share_dir(share_token) / "passphrase.txt"
+    return pf.exists()
+
+
+def verify_share_passphrase(share_token: str, passphrase: str) -> bool:
+    """Constant-time check that the supplied passphrase matches the stored hash."""
+    if not _UUID_RE.match(share_token or ""):
+        return False
+    pf = _share_dir(share_token) / "passphrase.txt"
+    if not pf.exists():
+        # No passphrase set -- treat any input as "not required, succeed".
+        return True
+    try:
+        salt_hex, digest_hex = pf.read_text(encoding="utf-8").strip().split(":", 1)
+        salt = bytes.fromhex(salt_hex)
+        expected = bytes.fromhex(digest_hex)
+    except (OSError, ValueError):
+        return False
+    candidate = hashlib.pbkdf2_hmac(
+        "sha256", (passphrase or "").encode("utf-8"), salt, _PBKDF2_ITERATIONS
+    )
+    return hmac.compare_digest(candidate, expected)
+

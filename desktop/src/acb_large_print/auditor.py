@@ -61,7 +61,13 @@ class AuditResult:
 
     @property
     def score(self) -> int:
-        """Compliance score 0-100. Deduct points per severity."""
+        """Compliance score 0-100.
+
+        Deduct per *unique* rule violation (full severity weight) plus a small
+        diminishing-returns penalty for repeat occurrences of the same rule.
+        This prevents score inflation when a single category (e.g. wrong font
+        family) fires on every paragraph in the document.
+        """
         if not self.findings:
             return 100
         deductions = {
@@ -70,7 +76,19 @@ class AuditResult:
             C.Severity.MEDIUM: 5,
             C.Severity.LOW: 2,
         }
-        total = sum(deductions.get(f.severity, 5) for f in self.findings)
+        # Group findings by rule_id so each rule is charged once at full weight,
+        # then a capped per-extra-occurrence penalty.
+        by_rule: dict[str, list[Finding]] = {}
+        for f in self.findings:
+            by_rule.setdefault(f.rule_id, []).append(f)
+
+        total = 0
+        for rule_id, group in by_rule.items():
+            sev = group[0].severity
+            base = deductions.get(sev, 5)
+            extras = max(0, len(group) - 1)
+            # +1pt per extra occurrence, capped at the base weight per rule.
+            total += base + min(extras, base)
         return max(0, 100 - total)
 
     @property
@@ -263,9 +281,15 @@ def _check_page_setup(doc: Document, result: AuditResult) -> None:
                 )
 
 
-def _check_styles(doc: Document, result: AuditResult) -> None:
+def _check_styles(
+    doc: Document,
+    result: AuditResult,
+    *,
+    style_size_overrides: dict[str, float] | None = None,
+) -> None:
     """Check that named styles match ACB specifications."""
-    for style_name, style_def in C.ACB_STYLES.items():
+    styles_table = C.effective_styles(style_size_overrides)
+    for style_name, style_def in styles_table.items():
         try:
             style = doc.styles[style_name]
         except KeyError:
@@ -322,6 +346,7 @@ def _check_paragraph_content(
     list_level_indents: dict[int, float] | None = None,
     para_indent_in: float = C.PARA_INDENT_IN,
     first_line_indent_in: float = C.FIRST_LINE_INDENT_IN,
+    style_size_overrides: dict[str, float] | None = None,
 ) -> None:
     """Check each paragraph and run for direct formatting violations."""
     prev_heading_level = 0
@@ -477,11 +502,12 @@ def _check_paragraph_content(
                     paragraph_non_arial_fonts.add(effective_font_name)
                     non_arial_font_locations.setdefault(effective_font_name, []).append(loc)
 
-            # Font size below minimum at run level
-            if run.font.size and run.font.size.pt < C.MIN_SIZE_PT - 0.5:
+            # Font size below user/ACB minimum at run level
+            _min_pt = C.effective_min_body_pt(style_size_overrides)
+            if run.font.size and run.font.size.pt < _min_pt - 0.5:
                 result.add(
                     "ACB-FONT-SIZE-BODY",
-                    f"Font size {run.font.size.pt}pt below {C.MIN_SIZE_PT}pt minimum",
+                    f"Font size {run.font.size.pt}pt below {_min_pt}pt minimum",
                     loc,
                 )
 
@@ -856,6 +882,7 @@ def audit_document(
     list_level_indents: dict[int, float] | None = None,
     para_indent_in: float | None = None,
     first_line_indent_in: float | None = None,
+    style_size_overrides: dict[str, float] | None = None,
 ) -> AuditResult:
     """Run a full ACB Large Print compliance audit on a Word document.
 
@@ -867,6 +894,10 @@ def audit_document(
             Defaults to ``constants.PARA_INDENT_IN`` (flush left).
         first_line_indent_in: Expected first-line indent in inches.
             Defaults to ``constants.FIRST_LINE_INDENT_IN`` (zero).
+        style_size_overrides: Optional mapping of style name (``"Normal"``,
+            ``"Heading 1"``, ... ``"Heading 6"``) to font size in points.
+            When provided, these become the expected sizes for the
+            corresponding styles instead of the ACB defaults.
 
     Returns:
         AuditResult with all findings.
@@ -884,7 +915,7 @@ def audit_document(
 
     _check_document_properties(doc, result)
     _check_page_setup(doc, result)
-    _check_styles(doc, result)
+    _check_styles(doc, result, style_size_overrides=style_size_overrides)
     _check_paragraph_content(
         doc,
         result,
@@ -892,6 +923,7 @@ def audit_document(
         list_level_indents=list_level_indents,
         para_indent_in=para_indent_in,
         first_line_indent_in=first_line_indent_in,
+        style_size_overrides=style_size_overrides,
     )
     _check_hyphenation(doc, result)
     _check_page_numbers(doc, result)

@@ -11,7 +11,7 @@ Routes:
 
 from __future__ import annotations
 
-from flask import Blueprint, render_template, request, redirect, url_for
+from flask import Blueprint, render_template, request, redirect, url_for, jsonify
 
 from ..ai_features import ai_chat_enabled, ai_whisperer_enabled
 from ..feature_flags import get_all_flags
@@ -20,7 +20,9 @@ from ..upload import (
     CONVERT_EXTENSIONS,
     ALLOWED_EXTENSIONS,
     UploadError,
+    extend_upload_session,
     get_temp_dir,
+    get_upload_expiry,
     validate_upload,
 )
 
@@ -221,10 +223,12 @@ def process_go(action: str):
     if not token:
         return redirect(url_for("process.process_form"))
 
-    # Map action names to route endpoints
+    # Map action names to route endpoints. The audit, fix, and convert
+    # endpoints all support a `?token=...` (or path-token) handoff so the
+    # user does not need to re-upload after the Quick Start step.
     action_routes = {
         "audit": "audit.audit_form",
-        "fix": "fix.fix_form",
+        "fix": "fix.fix_from_audit_form",
         "convert": "convert.convert_form",
         "export": "convert.convert_form",
         "template": "template.template_form",
@@ -236,4 +240,36 @@ def process_go(action: str):
     if not route:
         return redirect(url_for("process.process_form"))
 
+    # url_for fills <token> path parameters when present, otherwise appends
+    # ?token=... so audit/convert and fix all receive the upload token.
     return redirect(url_for(route, token=token))
+
+
+@process_bp.route("/extend", methods=["POST"])
+def process_extend():
+    """Extend the document availability window for the active session.
+
+    Used when remediation (heading review, custom rule selection) takes longer
+    than the default 1-hour retention window. Returns the new expiry as an
+    ISO-8601 UTC string in JSON so the page can render it as local time.
+    """
+    import os as _os
+
+    token = (request.form.get("token") or "").strip()
+    if not token and request.is_json:
+        try:
+            token = (request.get_json(silent=True) or {}).get("token", "").strip()
+        except (AttributeError, TypeError):
+            token = ""
+    if not token:
+        return jsonify({"ok": False, "error": "Missing token"}), 400
+
+    if not extend_upload_session(token):
+        return jsonify({"ok": False, "error": "Session not found or already expired"}), 404
+
+    max_age = int(_os.environ.get("UPLOAD_MAX_AGE_HOURS", "1"))
+    expiry = get_upload_expiry(token, max_age_hours=max_age)
+    return jsonify({
+        "ok": True,
+        "expires_utc": expiry.isoformat() if expiry else None,
+    })

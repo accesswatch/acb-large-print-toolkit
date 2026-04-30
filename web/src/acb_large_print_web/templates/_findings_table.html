@@ -1,0 +1,99 @@
+{#
+  Renders one summary row per unique rule violation, plus an expandable
+  accordion that lists every individual occurrence. Used by the audit
+  report, post-fix findings table, and batch report so they all stay
+  visually and behaviourally consistent.
+
+  Required context:
+    findings        -- iterable of Finding objects to display
+    rules_by_id     -- dict from rule_id -> rule metadata (optional)
+    fixable_rule_ids -- iterable/set of rule ids the fixer can auto-correct (optional)
+    doc_format      -- "docx", "xlsx", etc. (optional, used for fixable hint copy)
+    help_urls_map   -- dict of rule_id -> [{label, url}] (optional)
+    table_id        -- id for the <tbody> (optional, default "findings-tbody")
+    table_caption   -- caption text (optional)
+#}
+{% set tbody_id = table_id | default('findings-tbody') %}
+{% set caption_text = table_caption | default('Accessibility findings sorted by severity. Repeated violations of the same rule are grouped; expand a row to see every occurrence.') %}
+<table class="findings-table">
+  <caption>{{ caption_text }}</caption>
+  <thead>
+    <tr>
+      <th scope="col">Severity</th>
+      <th scope="col">Rule</th>
+      <th scope="col">Description</th>
+      <th scope="col">Occurrences</th>
+      <th scope="col">Guideline</th>
+      <th scope="col">Learn More</th>
+    </tr>
+  </thead>
+  <tbody id="{{ tbody_id }}">
+    {% for group in group_findings_by_rule(findings) %}
+      {% set f = group.first %}
+      {% set rule_meta = (rules_by_id or {}).get(f.rule_id) %}
+      {% set is_fixable = fixable_rule_ids and f.rule_id in fixable_rule_ids %}
+      <tr data-fixable="{{ '1' if is_fixable else '0' }}" data-rule-id="{{ f.rule_id }}">
+        <td><span class="severity-badge severity-{{ f.severity.value | lower }}">{{ f.severity.value }}</span></td>
+        <td><a href="{{ url_for('guidelines.guidelines_page') }}#section-rules-summary">{{ f.rule_id }}</a></td>
+        <td>
+          {{ f.message }}
+          {% if rule_meta %}
+          <details class="finding-explain no-print">
+            <summary>What this means</summary>
+            <div class="finding-explain-body">
+              {% set sev = f.severity.value %}
+              <p>
+                {%- if sev == 'Critical' -%}
+                  <strong>Critical</strong> findings prevent low-vision readers from using this document and must be fixed for compliance.
+                {%- elif sev == 'High' -%}
+                  <strong>High</strong> severity findings significantly impair readability and should be fixed promptly.
+                {%- elif sev == 'Medium' -%}
+                  <strong>Medium</strong> findings reduce readability and should be addressed before publication.
+                {%- else -%}
+                  <strong>Low</strong> findings are minor polish items that improve the reading experience.
+                {%- endif -%}
+              </p>
+              <p><strong>What the rule requires:</strong> {{ rule_meta.description }}.</p>
+              {% if rule_meta.auto_fixable and doc_format == 'docx' %}
+              <p class="finding-fixable"><strong>Auto-fixable.</strong> Run Fix on this document and this issue will be corrected automatically.</p>
+              {% elif not rule_meta.auto_fixable %}
+              <p class="finding-manual"><strong>Manual fix.</strong> This rule requires editorial judgement and cannot be auto-corrected.</p>
+              {% endif %}
+            </div>
+          </details>
+          {% endif %}
+        </td>
+        <td>
+          {% if group.count == 1 %}
+            <span class="occurrence-count occurrence-count--single">1 occurrence</span>
+            <div class="occurrence-location">{{ f.location or "Document-wide" }}</div>
+          {% else %}
+            <span class="occurrence-count occurrence-count--multi">{{ group.count }} occurrences</span>
+            <details class="occurrence-list no-print">
+              <summary>Show all {{ group.count }} locations</summary>
+              <ol class="occurrence-list-items">
+                {% for occ in group.occurrences %}
+                <li>
+                  <span class="occurrence-loc">{{ occ.location or "Document-wide" }}</span>
+                  {% if occ.message and occ.message != f.message %}
+                  <span class="occurrence-msg help-text">-- {{ occ.message }}</span>
+                  {% endif %}
+                </li>
+                {% endfor %}
+              </ol>
+            </details>
+            <noscript>
+              <ol class="occurrence-list-items">
+                {% for occ in group.occurrences %}
+                <li>{{ occ.location or "Document-wide" }}</li>
+                {% endfor %}
+              </ol>
+            </noscript>
+          {% endif %}
+        </td>
+        <td>{{ f.acb_reference }}</td>
+        <td>{% set urls = (help_urls_map or {}).get(f.rule_id, []) %}{% include '_help_links.html' with context %}</td>
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>

@@ -7,6 +7,9 @@
 
 import {
     ACB_STYLES,
+    effectiveStyles,
+    effectiveMinBodyPt,
+    type StyleSizeOverrides,
     FONT_FAMILY,
     MIN_SIZE_PT,
     MARGIN_TOP_IN,
@@ -23,14 +26,22 @@ export interface FixResult {
 
 /**
  * Apply all ACB Large Print fixes to the active document.
+ *
+ * @param styleSizeOverrides Optional per-style font-size overrides; matches
+ *   the Python `style_size_overrides` parameter and accepts the same keys
+ *   ("Normal", "Heading 1" .. "Heading 6").
  */
-export async function fixDocument(): Promise<FixResult> {
+export async function fixDocument(
+    styleSizeOverrides?: StyleSizeOverrides,
+): Promise<FixResult> {
+    const stylesTable = effectiveStyles(styleSizeOverrides);
+    const minBodyPt = effectiveMinBodyPt(styleSizeOverrides);
     let totalFixes = 0;
     const details: string[] = [];
 
     await Word.run(async (context) => {
         // ----- Fix named styles -----
-        const styleFixes = await fixStyles(context);
+        const styleFixes = await fixStyles(context, stylesTable);
         totalFixes += styleFixes.count;
         details.push(...styleFixes.messages);
 
@@ -40,7 +51,7 @@ export async function fixDocument(): Promise<FixResult> {
         details.push(...marginFixes.messages);
 
         // ----- Fix paragraph content -----
-        const paraFixes = await fixParagraphs(context);
+        const paraFixes = await fixParagraphs(context, stylesTable, minBodyPt);
         totalFixes += paraFixes.count;
         details.push(...paraFixes.messages);
 
@@ -55,11 +66,14 @@ export async function fixDocument(): Promise<FixResult> {
     return { totalFixes, details };
 }
 
-async function fixStyles(context: Word.RequestContext): Promise<{ count: number; messages: string[] }> {
+async function fixStyles(
+    context: Word.RequestContext,
+    stylesTable: Record<string, (typeof ACB_STYLES)[string]> = ACB_STYLES,
+): Promise<{ count: number; messages: string[] }> {
     let count = 0;
     const messages: string[] = [];
 
-    for (const [styleName, styleDef] of Object.entries(ACB_STYLES)) {
+    for (const [styleName, styleDef] of Object.entries(stylesTable)) {
         try {
             const style = context.document.getStyles().getByNameOrNullObject(styleName);
             style.load("isNullObject");
@@ -190,7 +204,11 @@ async function fixMargins(context: Word.RequestContext): Promise<{ count: number
     return { count, messages };
 }
 
-async function fixParagraphs(context: Word.RequestContext): Promise<{ count: number; messages: string[] }> {
+async function fixParagraphs(
+    context: Word.RequestContext,
+    stylesTable: Record<string, (typeof ACB_STYLES)[string]> = ACB_STYLES,
+    minBodyPt: number = MIN_SIZE_PT,
+): Promise<{ count: number; messages: string[] }> {
     let count = 0;
     const messages: string[] = [];
 
@@ -244,12 +262,12 @@ async function fixParagraphs(context: Word.RequestContext): Promise<{ count: num
         }
 
         // Fix font size overrides.
-        const expectedStyle = isHeading ? ACB_STYLES[styleName] : undefined;
+        const expectedStyle = isHeading ? stylesTable[styleName] : undefined;
         if (expectedStyle && para.font.size && Math.abs(para.font.size - expectedStyle.font.sizePt) > 0.5) {
             para.font.size = expectedStyle.font.sizePt;
             count++;
-        } else if (para.font.size && para.font.size < MIN_SIZE_PT - 0.5) {
-            para.font.size = MIN_SIZE_PT;
+        } else if (para.font.size && para.font.size < minBodyPt - 0.5) {
+            para.font.size = minBodyPt;
             count++;
         }
 

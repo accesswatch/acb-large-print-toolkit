@@ -15,6 +15,53 @@
   <p>A Word template (<code>.dotx</code>) is a starting point for new documents. When you create a new document from this template, all ACB Large Print styles are pre-configured: Arial font, correct sizes for headings and body text, flush-left alignment, proper spacing, and margins. You do not need to format anything manually.</p>
 </details>
 
+<details class="help-accordion" open>
+  <summary>How do I use the template in Microsoft Word once it's downloaded?</summary>
+  <p>The downloaded file is named <code>ACB-Large-Print-Template.dotx</code>. There are three common ways to use it in Word for Windows or Word for Mac.</p>
+
+  <h3>Option 1 -- Quick: open it once for a single new document</h3>
+  <ol>
+    <li>Locate <code>ACB-Large-Print-Template.dotx</code> in your Downloads folder.</li>
+    <li>Double-click the file. Word opens a brand-new untitled document that already has the ACB styles applied.</li>
+    <li>Use <strong>File &rarr; Save As</strong> and choose Word Document (<code>.docx</code>) to save your new document. The template stays untouched and reusable.</li>
+  </ol>
+  <p class="help-text">Tip: do <em>not</em> save back over the <code>.dotx</code> -- treat it as a starter, like a blank form.</p>
+
+  <h3>Option 2 -- Recommended: install it as a Personal Template (Windows)</h3>
+  <ol>
+    <li>In Word, open <strong>File &rarr; Options &rarr; Save</strong>.</li>
+    <li>Note (or set) the <strong>Default personal templates location</strong>. A common path is <code>C:\Users\&lt;you&gt;\Documents\Custom Office Templates</code>.</li>
+    <li>Move <code>ACB-Large-Print-Template.dotx</code> into that folder.</li>
+    <li>From now on, in Word choose <strong>File &rarr; New &rarr; Personal</strong>. The ACB Large Print template appears as a tile -- click it to start a new document.</li>
+  </ol>
+
+  <h3>Option 2 -- Recommended: install it as a Personal Template (macOS)</h3>
+  <ol>
+    <li>In Finder, press <kbd>&#8679;</kbd> + <kbd>&#8984;</kbd> + <kbd>G</kbd> and go to <code>~/Library/Group Containers/UBF8T346G9.Office/User Content.localized/Templates.localized/</code>.</li>
+    <li>Drag <code>ACB-Large-Print-Template.dotx</code> into that folder.</li>
+    <li>In Word for Mac, choose <strong>File &rarr; New from Template</strong> and pick the <strong>Personal</strong> tab. The ACB Large Print template appears there.</li>
+  </ol>
+
+  <h3>Option 3 -- Apply the template's styles to an existing document</h3>
+  <p>If you already have a draft and want to copy in just the ACB styles (Arial 18pt body, correct heading sizes, etc.):</p>
+  <ol>
+    <li>Open your existing document in Word.</li>
+    <li>Go to <strong>Developer &rarr; Document Template</strong> (Windows) or <strong>Tools &rarr; Templates and Add-ins</strong> (Mac). If the Developer tab isn't visible on Windows, enable it under <strong>File &rarr; Options &rarr; Customize Ribbon</strong>.</li>
+    <li>Click <strong>Attach...</strong>, browse to <code>ACB-Large-Print-Template.dotx</code>, and click <strong>Open</strong>.</li>
+    <li>Tick <strong>Automatically update document styles</strong>, then click <strong>OK</strong>. Your existing content is restyled to match ACB defaults.</li>
+  </ol>
+  <p class="help-text">If you don't see the change, the existing document may have direct (manual) formatting that overrides styles. Run GLOW's <strong>Fix</strong> tool on the result to clear any remaining ACB violations.</p>
+
+  <h3>Trust prompt and macros</h3>
+  <p>This template contains <strong>no macros and no embedded scripts</strong>. If Word shows a "Protected View" or "Trust Center" prompt the first time you open it, you can safely click <strong>Enable Editing</strong>.</p>
+
+  <h3>Where to go next</h3>
+  <ul>
+    <li>Read the <a href="{{ url_for('guide.guide_page') }}#how-template">Template guide</a> for screenshots and a longer walkthrough.</li>
+    <li>Once you've drafted your document, run it through <a href="{{ url_for('audit.audit_form') }}"><strong>Audit</strong></a> to confirm it still meets ACB Large Print Guidelines.</li>
+  </ul>
+</details>
+
 {% if error %}
 <div class="error-box" role="alert">
   <p><strong>Error:</strong> {{ error }}</p>
@@ -56,6 +103,66 @@
 
   <fieldset>
     <legend>Template Options</legend>
+
+    <fieldset class="nested-fieldset">
+      <legend>Font Sizes</legend>
+      <p class="help-text">
+        Override body and per-heading-level point sizes. Leave a field blank
+        to keep the ACB default (body 18pt, Heading&nbsp;1 22pt, Heading&nbsp;2-6
+        20pt). Values are clamped to 8pt-96pt.
+      </p>
+      <div class="font-size-grid">
+        <div class="form-row">
+          <label for="tpl-body-size-pt">Body (Normal)</label>
+          <input type="number" id="tpl-body-size-pt" name="body_size_pt"
+                 placeholder="18" min="8" max="96" step="0.5"
+                 class="input-narrow">
+          <span class="suffix" aria-hidden="true">pt</span>
+        </div>
+        <div class="form-row">
+          <label for="tpl-h1-size-pt">Heading&nbsp;1</label>
+          <input type="number" id="tpl-h1-size-pt" name="h1_size_pt"
+                 placeholder="22" min="8" max="96" step="0.5"
+                 class="input-narrow">
+          <span class="suffix" aria-hidden="true">pt</span>
+        </div>
+        <div class="form-row">
+          <label for="tpl-h2-size-pt">Heading&nbsp;2</label>
+          <input type="number" id="tpl-h2-size-pt" name="h2_size_pt"
+                 placeholder="20" min="8" max="96" step="0.5"
+                 class="input-narrow">
+          <span class="suffix" aria-hidden="true">pt</span>
+        </div>
+        <div class="form-row">
+          <label for="tpl-h3-size-pt">Heading&nbsp;3</label>
+          <input type="number" id="tpl-h3-size-pt" name="h3_size_pt"
+                 placeholder="20" min="8" max="96" step="0.5"
+                 class="input-narrow">
+          <span class="suffix" aria-hidden="true">pt</span>
+        </div>
+        <div class="form-row">
+          <label for="tpl-h4-size-pt">Heading&nbsp;4</label>
+          <input type="number" id="tpl-h4-size-pt" name="h4_size_pt"
+                 placeholder="20" min="8" max="96" step="0.5"
+                 class="input-narrow">
+          <span class="suffix" aria-hidden="true">pt</span>
+        </div>
+        <div class="form-row">
+          <label for="tpl-h5-size-pt">Heading&nbsp;5</label>
+          <input type="number" id="tpl-h5-size-pt" name="h5_size_pt"
+                 placeholder="20" min="8" max="96" step="0.5"
+                 class="input-narrow">
+          <span class="suffix" aria-hidden="true">pt</span>
+        </div>
+        <div class="form-row">
+          <label for="tpl-h6-size-pt">Heading&nbsp;6</label>
+          <input type="number" id="tpl-h6-size-pt" name="h6_size_pt"
+                 placeholder="20" min="8" max="96" step="0.5"
+                 class="input-narrow">
+          <span class="suffix" aria-hidden="true">pt</span>
+        </div>
+      </div>
+    </fieldset>
 
     <fieldset class="nested-fieldset">
       <legend>Allowed Heading Levels for Sample Content</legend>

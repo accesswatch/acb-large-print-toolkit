@@ -275,6 +275,55 @@ def create_app(config: dict | None = None) -> Flask:
 
     app.jinja_env.filters["markdown"] = _markdown_to_html
 
+    def _group_findings_by_rule(findings):
+        """Group an iterable of Finding-like objects by ``rule_id``.
+
+        Returns a list of dicts (one per rule) ordered by descending severity
+        weight, then by descending occurrence count, then by first appearance
+        in the original list. Each dict has:
+
+        * ``rule_id`` -- canonical rule id
+        * ``first`` -- the first Finding in the group (used for the summary row)
+        * ``count`` -- number of occurrences
+        * ``occurrences`` -- the full list of Finding objects (preserves order)
+
+        Templates use this to render a single summary row per rule with a
+        nested accordion that lists every individual occurrence (location and
+        message). This matches how the score is calculated and avoids the
+        "wall of duplicates" the audit/fix tables used to show.
+        """
+        severity_weight = {"critical": 4, "high": 3, "medium": 2, "low": 1}
+        groups: dict[str, dict] = {}
+        for idx, f in enumerate(findings or []):
+            rid = getattr(f, "rule_id", None) or (f.get("rule_id") if isinstance(f, dict) else None) or ""
+            if rid not in groups:
+                groups[rid] = {
+                    "rule_id": rid,
+                    "first": f,
+                    "first_index": idx,
+                    "occurrences": [f],
+                }
+            else:
+                groups[rid]["occurrences"].append(f)
+
+        def _sort_key(g):
+            sev = getattr(g["first"], "severity", None)
+            sev_value = getattr(sev, "value", sev)
+            sev_str = str(sev_value or "").strip().lower()
+            return (
+                -severity_weight.get(sev_str, 0),
+                -len(g["occurrences"]),
+                g["first_index"],
+            )
+
+        ordered = sorted(groups.values(), key=_sort_key)
+        for g in ordered:
+            g["count"] = len(g["occurrences"])
+            g.pop("first_index", None)
+        return ordered
+
+    app.jinja_env.globals["group_findings_by_rule"] = _group_findings_by_rule
+
     # Register blueprints
     from .routes.main import main_bp
     from .routes.audit import audit_bp

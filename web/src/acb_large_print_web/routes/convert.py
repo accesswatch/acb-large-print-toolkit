@@ -224,7 +224,27 @@ def convert_form():
     ctx = _template_context()
     if not ctx["convert_enabled"]:
         abort(404)
-    return render_template("convert_form.html", **ctx)
+
+    # Quick Start handoff: ?token=... pre-fills with already-uploaded file.
+    from ..upload import get_temp_dir
+    prefill_token = (request.args.get("token") or "").strip()
+    prefill_filename = None
+    if prefill_token:
+        temp_dir = get_temp_dir(prefill_token)
+        if temp_dir is not None:
+            for f in sorted(temp_dir.iterdir()):
+                if f.is_file() and f.suffix.lower() in CONVERT_EXTENSIONS:
+                    prefill_filename = f.name
+                    break
+        if prefill_filename is None:
+            prefill_token = None
+
+    return render_template(
+        "convert_form.html",
+        prefill_token=prefill_token or None,
+        prefill_filename=prefill_filename,
+        **ctx,
+    )
 
 
 @convert_bp.route("/", methods=["POST"])
@@ -235,10 +255,26 @@ def convert_submit():
         if not ctx["convert_enabled"]:
             abort(404)
 
-        token, saved_path = validate_upload(
-            request.files.get("document"),
-            allowed_extensions=CONVERT_EXTENSIONS,
-        )
+        # Quick Start handoff: re-use a previously uploaded file when the
+        # form posts a session token rather than a new upload.
+        from ..upload import get_temp_dir
+        saved_path = None
+        prefill_token = (request.form.get("token") or "").strip()
+        if prefill_token and request.form.get("prefill") == "1":
+            temp_dir = get_temp_dir(prefill_token)
+            if temp_dir is not None:
+                for f in sorted(temp_dir.iterdir()):
+                    if f.is_file() and f.suffix.lower() in CONVERT_EXTENSIONS:
+                        saved_path = f
+                        break
+            if saved_path is not None:
+                token = prefill_token
+
+        if saved_path is None:
+            token, saved_path = validate_upload(
+                request.files.get("document"),
+                allowed_extensions=CONVERT_EXTENSIONS,
+            )
         ext = saved_path.suffix.lower()
         direction = request.form.get("direction", "to-markdown")
 

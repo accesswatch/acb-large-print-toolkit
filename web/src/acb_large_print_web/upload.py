@@ -190,6 +190,32 @@ def get_upload_expiry(token: str, max_age_hours: int = 1) -> "datetime | None":
         return None
 
 
+def extend_upload_session(token: str) -> bool:
+    """Touch the upload directory so its mtime resets to "now".
+
+    Combined with the time-based cleanup logic this effectively extends the
+    session for another ``max_age_hours`` window. Returns ``True`` on success.
+    """
+    import os as _os
+    import time as _time
+
+    temp_dir = get_temp_dir(token)
+    if temp_dir is None:
+        return False
+    try:
+        now = _time.time()
+        _os.utime(temp_dir, (now, now))
+        # Also touch contained files so per-file mtime checks (if any) align.
+        for child in temp_dir.iterdir():
+            try:
+                _os.utime(child, (now, now))
+            except OSError:
+                continue
+        return True
+    except OSError:
+        return False
+
+
 def cleanup_stale_uploads(max_age_hours: int = 1) -> int:
     """Clean up old temporary upload directories.
     

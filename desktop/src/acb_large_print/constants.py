@@ -203,6 +203,95 @@ ACB_STYLES: dict[str, StyleDef] = {
 }
 
 
+# Style names that accept user-supplied font-size overrides. List/footer
+# sizes intentionally follow the body size unless the user explicitly opts
+# in to override them, so the public override surface is body + 6 heading
+# levels. List Bullet/Number are kept in sync with body via
+# ``effective_styles`` to avoid surprising mismatches.
+OVERRIDABLE_STYLE_NAMES: tuple[str, ...] = (
+    "Normal",
+    "Heading 1",
+    "Heading 2",
+    "Heading 3",
+    "Heading 4",
+    "Heading 5",
+    "Heading 6",
+)
+
+# Reasonable safety bounds for user-supplied sizes (still honoured even when
+# they fall below the ACB 18pt minimum -- the auditor will accept the user's
+# stated intent).
+MIN_USER_FONT_PT = 8.0
+MAX_USER_FONT_PT = 96.0
+
+
+def effective_styles(
+    overrides: "dict[str, float] | None" = None,
+) -> "dict[str, StyleDef]":
+    """Return a copy of :data:`ACB_STYLES` with user-supplied size overrides applied.
+
+    ``overrides`` maps style names ("Normal", "Heading 1", ... "Heading 6")
+    to a font size in points. Sizes are clamped to the safety bounds above.
+    The body override (``Normal``) also propagates to ``List Bullet`` /
+    ``List Number`` so list items stay the same size as body text -- ACB
+    practice and the original constants treat these as one.
+    """
+    if not overrides:
+        return dict(ACB_STYLES)
+
+    cleaned: dict[str, float] = {}
+    for name, value in overrides.items():
+        try:
+            pt = float(value)
+        except (TypeError, ValueError):
+            continue
+        if pt <= 0:
+            continue
+        cleaned[name] = max(MIN_USER_FONT_PT, min(MAX_USER_FONT_PT, pt))
+
+    if not cleaned:
+        return dict(ACB_STYLES)
+
+    new_styles: dict[str, StyleDef] = {}
+    body_pt = cleaned.get("Normal")
+    for style_name, style_def in ACB_STYLES.items():
+        target_pt = cleaned.get(style_name)
+        if target_pt is None and style_name in ("List Bullet", "List Number") and body_pt:
+            target_pt = body_pt
+        if target_pt is None:
+            new_styles[style_name] = style_def
+            continue
+        new_font = FontDef(
+            name=style_def.font.name,
+            size_pt=target_pt,
+            bold=style_def.font.bold,
+            italic=style_def.font.italic,
+            all_caps=style_def.font.all_caps,
+        )
+        new_styles[style_name] = StyleDef(font=new_font, para=style_def.para)
+    return new_styles
+
+
+def effective_min_body_pt(
+    overrides: "dict[str, float] | None" = None,
+) -> float:
+    """Return the body-size floor used for run-level minimum-size checks.
+
+    Defaults to :data:`MIN_SIZE_PT`; if the user has overridden body text
+    to a different size we trust that as their stated intent.
+    """
+    if overrides:
+        try:
+            value = overrides.get("Normal")
+            if value:
+                pt = float(value)
+                if pt > 0:
+                    return max(MIN_USER_FONT_PT, min(MAX_USER_FONT_PT, pt))
+        except (TypeError, ValueError):
+            pass
+    return MIN_SIZE_PT
+
+
 # ---------------------------------------------------------------------------
 # Audit rule definitions
 # ---------------------------------------------------------------------------

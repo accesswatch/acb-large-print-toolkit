@@ -39,6 +39,32 @@ def template_submit():
             allowed_heading_levels = [1, 2, 3]
         allowed_heading_levels = sorted(set(allowed_heading_levels))
 
+        # Optional per-style font-size overrides (empty fields fall back to ACB defaults)
+        from acb_large_print import constants as _C
+        style_size_overrides: dict[str, float] = {}
+        _size_field_map = {
+            "body_size_pt": "Normal",
+            "h1_size_pt": "Heading 1",
+            "h2_size_pt": "Heading 2",
+            "h3_size_pt": "Heading 3",
+            "h4_size_pt": "Heading 4",
+            "h5_size_pt": "Heading 5",
+            "h6_size_pt": "Heading 6",
+        }
+        for field, style_name in _size_field_map.items():
+            raw = (request.form.get(field) or "").strip()
+            if not raw:
+                continue
+            try:
+                pt = float(raw)
+            except (TypeError, ValueError):
+                continue
+            if pt <= 0:
+                continue
+            style_size_overrides[style_name] = max(
+                _C.MIN_USER_FONT_PT, min(_C.MAX_USER_FONT_PT, pt)
+            )
+
         # Create a temp dir for the output
         token = str(uuid.uuid4())
         temp_dir = UPLOAD_TEMP_BASE / token
@@ -53,6 +79,7 @@ def template_submit():
             title=title,
             standards_profile=standards_profile,
             allowed_heading_levels=allowed_heading_levels,
+            style_size_overrides=style_size_overrides or None,
         )
 
         response = send_file(

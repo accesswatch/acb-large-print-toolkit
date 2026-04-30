@@ -115,59 +115,9 @@
   </div>
   {% endif %}
 
-  <table class="findings-table">
-    <caption>Accessibility findings sorted by severity</caption>
-    <thead>
-      <tr>
-        <th scope="col">Severity</th>
-        <th scope="col">Rule</th>
-        <th scope="col">Description</th>
-        <th scope="col">Location</th>
-        <th scope="col">Guideline</th>
-        <th scope="col">Learn More</th>
-      </tr>
-    </thead>
-    <tbody id="findings-tbody">
-      {% for f in result.findings %}
-      {% set rule_meta = (rules_by_id or {}).get(f.rule_id) %}
-      <tr data-fixable="{{ '1' if fixable_rule_ids and f.rule_id in fixable_rule_ids else '0' }}">
-        <td><span class="severity-badge severity-{{ f.severity.value | lower }}">{{ f.severity.value }}</span></td>
-        <td><a href="{{ url_for('guidelines.guidelines_page') }}#section-rules-summary">{{ f.rule_id }}</a></td>
-        <td>
-          {{ f.message }}
-          {% if rule_meta %}
-          <details class="finding-explain no-print">
-            <summary>What this means</summary>
-            <div class="finding-explain-body">
-              {% set sev = f.severity.value %}
-              <p>
-                {%- if sev == 'Critical' -%}
-                  <strong>Critical</strong> findings prevent low-vision readers from using this document and must be fixed for compliance.
-                {%- elif sev == 'High' -%}
-                  <strong>High</strong> severity findings significantly impair readability and should be fixed promptly.
-                {%- elif sev == 'Medium' -%}
-                  <strong>Medium</strong> findings reduce readability and should be addressed before publication.
-                {%- else -%}
-                  <strong>Low</strong> findings are minor polish items that improve the reading experience.
-                {%- endif -%}
-              </p>
-              <p><strong>What the rule requires:</strong> {{ rule_meta.description }}.</p>
-              {% if rule_meta.auto_fixable and doc_format == 'docx' %}
-              <p class="finding-fixable"><strong>Auto-fixable.</strong> Run Fix on this document and this issue will be corrected automatically.</p>
-              {% elif not rule_meta.auto_fixable %}
-              <p class="finding-manual"><strong>Manual fix.</strong> This rule requires editorial judgement and cannot be auto-corrected.</p>
-              {% endif %}
-            </div>
-          </details>
-          {% endif %}
-        </td>
-        <td>{{ f.location or "Document-wide" }}</td>
-        <td>{{ f.acb_reference }}</td>
-        <td>{% set urls = help_urls_map.get(f.rule_id, []) %}{% include '_help_links.html' with context %}</td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+  {% with findings=result.findings, table_id='findings-tbody', table_caption='Accessibility findings grouped by rule. Repeated violations of the same rule are shown once with a count -- expand a row to see every individual location.' %}
+  {% include '_findings_table.html' %}
+  {% endwith %}
 </section>
 {% else %}
 <section class="celebration">
@@ -244,6 +194,15 @@
   <details class="share-section no-print" id="share-section">
     <summary>Share or download this report</summary>
     <p>Anyone with this link can view this report for approximately 1&nbsp;hour. The original document is not accessible via this link.</p>
+    {% if share_passphrase_set %}
+    <div class="info-box" role="note">
+      <p><strong>Passphrase protection is enabled.</strong> Anyone who opens
+      this share link, or downloads the CSV or PDF copy, must enter the
+      passphrase you set before the audit ran. Send the passphrase to your
+      reviewer through a separate channel (for example, a chat message or
+      phone call) -- do not include it in the same email as the link.</p>
+    </div>
+    {% endif %}
     <div class="share-url-row">
       <input type="text" readonly id="share-url-input" value="{{ share_url }}"
              aria-label="Shareable report URL" class="share-url-input">

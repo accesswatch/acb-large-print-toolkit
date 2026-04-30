@@ -28,6 +28,34 @@ New to GLOW? Start at [Quick Start](#1-quick-start). Already familiar? Jump stra
 
 ---
 
+## What's New in GLOW 2.8.0
+
+GLOW 2.8.0 is a community-driven release. Every feature below was requested directly by members of the BITS community and the broader blind and low-vision community who use GLOW in their day-to-day document workflows. We are deeply grateful for your continued support, your patience, and the care you bring to making documents readable for everyone.
+
+### Quick Start now routes to Audit, Fix, and Convert without re-uploading
+
+In previous releases, Quick Start helped you choose an action but still required you to re-upload your file on the next page. Starting in 2.8.0, Quick Start hands your uploaded file directly to whichever tool you choose. The file is already loaded and waiting for you -- no second upload.
+
+This completes the single-upload vision: upload once in Quick Start, then Audit, Fix, and Convert the same document without ever uploading again. Your session stays active for up to one hour.
+
+### Passphrase protection for shared audit reports
+
+Shared report links are now optionally passphrase-protected. Set a passphrase in the Audit form's new "Share Link Protection" section before running your audit. Anyone who opens the share link will need to enter that passphrase before they can view the report or download the CSV or PDF copy. Passphrases are stored only as cryptographic hashes -- GLOW never stores or logs the cleartext value.
+
+This feature was requested by organizations who need to share compliance reports with external reviewers without making them publicly readable by anyone who guesses or finds the link.
+
+### User-defined font sizes
+
+GLOW now lets you specify the point sizes you want for body text and each heading level. The defaults are unchanged (18pt body, 22pt H1, 20pt H2-H6), but organizations with different house styles -- 20pt body for high-contrast printing, or 24pt headings for large-format signs -- can now set those values directly in the Fix and Template forms.
+
+The audit engine also respects these overrides: if you set a 20pt body, findings about body text size will be evaluated against 20pt rather than the standard 18pt minimum.
+
+### Findings tables grouped by rule
+
+Audit reports now group all occurrences of the same finding under a single row with an occurrence count badge. If a document has 40 paragraphs with the wrong font, you see one row labeled "40 occurrences" with an expandable list, rather than 40 separate rows. The report is shorter, easier to scan, and faster to act on. CSV exports are unchanged -- they still emit one row per occurrence for spreadsheet analysis.
+
+---
+
 ## 1. Quick Start
 
 If you have never used GLOW before -- or you are not sure which tool to reach for -- this section will get you from upload to result in under five minutes, and give you the vocabulary to use the rest of the guide.
@@ -193,6 +221,20 @@ Every audit report generates a **shareable link** that lets you send the report 
 
 Use shareable links for team reviews, stakeholder sign-off, or archiving a point-in-time compliance snapshot.
 
+### Passphrase-protecting a shared report (new in 2.8.0)
+
+If you are sharing a sensitive compliance report -- a board submission, an internal audit, a vendor review -- you can protect it with a passphrase so the link alone is not enough to open it.
+
+On the Audit form, find the **Share Link Protection (Optional)** section near the bottom. Type a passphrase of 4-200 characters. Leave it blank if you do not need protection.
+
+What happens when you set a passphrase:
+
+- Anyone who opens your share link sees an unlock form asking for the passphrase before the report is shown.
+- The same passphrase is required to download the CSV or PDF copy.
+- The passphrase is stored only as a salted cryptographic hash -- GLOW never stores or logs the cleartext value and cannot recover it.
+- The share link still expires after one hour regardless of the passphrase.
+- Send the passphrase through a **separate channel** -- for example, a text message or phone call. Do not include it in the same email as the link.
+
 ### Download report as PDF or CSV
 
 The Share section of the audit report also offers two download buttons:
@@ -269,6 +311,8 @@ The fastest way to start a fix pass is directly from your audit report. After th
 2. GLOW takes you to the Fix page with your document already loaded -- no need to upload again.
 3. Adjust options and click **Fix Document**.
 4. After the fix, click **Re-Audit Fixed Document** on the fix result page to run an audit on the fixed file immediately -- again, no re-upload required.
+
+You can also set an optional **Share passphrase** in the Re-Audit form on the Fix result page. When set, the shared report link (and its CSV/PDF downloads) will require that passphrase.
 
 This entire Audit → Fix → Re-Audit cycle requires uploading the document only once. The document session stays active for up to one hour from your initial upload.
 
@@ -369,6 +413,32 @@ By default, Fix applies a uniform left indent to all list items. **Per-level lis
 ### Allowed heading levels
 
 Restrict heading detection and review to a subset of levels. If your editorial style uses only H1 through H3, select those levels in the Heading Detection section of the Fix form. The review page will only show your selected levels in each dropdown. Configure defaults in **Settings** to have the form pre-filled on every visit.
+
+### Custom font sizes (new in 2.8.0)
+
+By default, GLOW applies the ACB Large Print standard sizes: 18pt body text, 22pt Heading 1, and 20pt for all other heading levels. If your organization uses different sizes -- for example, a 20pt body for a high-contrast handout, or 24pt headings for a large-format poster -- you can override any or all of these in the **Font Sizes** section of the Fix and Template forms.
+
+**How to use:**
+
+1. Open the Fix or Template form.
+2. Find the **Font Sizes (Optional)** fieldset.
+3. Enter a point size for Body (Normal text), or for any heading level (H1 through H6) you want to change.
+4. Leave any field blank to keep the ACB default for that level.
+5. Values are clamped to the range 8pt-96pt.
+
+**What changes when you set a custom body size:**
+
+- The auditor uses your body size as the minimum expected size for body paragraphs.
+- The fixer raises body text to your specified size instead of the default 18pt.
+- List Bullet and List Number styles are also updated to match your body size.
+- The page-growth warning threshold adjusts to your specified body size.
+
+**What changes when you set custom heading sizes:**
+
+- The auditor expects your specified size for each heading level.
+- The fixer applies your specified size to each heading level.
+
+Custom sizes are a per-session setting. They are not stored by default -- configure defaults in **Settings > Font Size Defaults** to have the form pre-filled on every visit.
 
 ### Understanding page growth after fix
 
@@ -768,6 +838,8 @@ Settings are saved in your browser's local storage. Nothing is sent to the serve
 ### Compliance score
 
 The score is the percentage of passing rules out of applicable rules for your document type. A score of 90 or above (Grade A) is the target for publishing. Below 70 (Grade C or lower) indicates substantial work is needed.
+
+GLOW computes the score using a weighted-penalty model where each rule contributes a base severity deduction, and repeated occurrences of the same rule add a capped surcharge. This means grouped findings in the table do not change the score calculation; they only improve readability of the report.
 
 ### Standards profiles
 

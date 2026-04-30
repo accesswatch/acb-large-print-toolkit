@@ -168,31 +168,9 @@
   <h2 id="remaining-heading">Remaining Issues</h2>
   <p>These issues were not auto-fixed in this run and may require manual attention or optional fix settings:</p>
 
-  <table class="findings-table">
-    <caption>Issues remaining after auto-fix</caption>
-    <thead>
-      <tr>
-        <th scope="col">Severity</th>
-        <th scope="col">Rule</th>
-        <th scope="col">Description</th>
-        <th scope="col">Location</th>
-        <th scope="col">Guideline</th>
-        <th scope="col">Learn More</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for f in post_findings %}
-      <tr>
-        <td><span class="severity-badge severity-{{ f.severity.value | lower }}">{{ f.severity.value }}</span></td>
-        <td><a href="{{ url_for('guidelines.guidelines_page') }}#section-rules-summary">{{ f.rule_id }}</a></td>
-        <td>{{ f.message }}</td>
-        <td>{{ f.location or "Document-wide" }}</td>
-        <td>{{ f.acb_reference }}</td>
-        <td>{% set urls = help_urls_map.get(f.rule_id, []) %}{% include '_help_links.html' with context %}</td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+  {% with findings=post_findings, table_id='post-findings-tbody', table_caption='Issues remaining after auto-fix, grouped by rule. Expand a row to see every individual location.' %}
+  {% include '_findings_table.html' %}
+  {% endwith %}
 </section>
 {% endif %}
 
@@ -209,6 +187,24 @@
       <input type="hidden" name="standards_profile" value="acb_2025">
       <input type="hidden" name="prev_score" value="{{ pre_score }}">
       <input type="hidden" name="prev_rule_ids" value="{{ pre_finding_ids or '' }}">
+      <div class="form-group">
+        <label for="reaudit-share-passphrase">Share passphrase (optional)</label>
+        <input type="password"
+               id="reaudit-share-passphrase"
+               name="share_passphrase"
+               autocomplete="new-password"
+               autocapitalize="off"
+               autocorrect="off"
+               spellcheck="false"
+               minlength="4"
+               maxlength="200"
+               aria-describedby="reaudit-share-passphrase-help">
+        <p id="reaudit-share-passphrase-help" class="help-text">
+          If you set a passphrase here, the shared audit report link generated
+          after re-audit will require that passphrase to open (including CSV
+          and PDF downloads). Leave blank to keep link-only access.
+        </p>
+      </div>
       <div class="next-step-actions">
         <button type="submit" class="btn-primary">Re-Audit Fixed Document</button>
         {% if feature_checker_enabled %}<a href="{{ url_for('fix.fix_form') }}" class="btn-secondary">Fix Another Document</a>{% endif %}
@@ -219,8 +215,10 @@
   {% if token and ai_chat_enabled %}
   <p><a href="{{ url_for('chat.chat_form', token=token) }}">Chat about this document</a> &mdash; ask plain-English questions about the fixed document using the AI-assisted document tools without re-uploading.</p>
   {% endif %}
+  {% if not feature_audit_enabled and feature_checker_enabled %}
+  <p><a href="{{ url_for('fix.fix_form') }}">Fix another document</a></p>
+  {% endif %}
   <ul>
-    {% if not feature_audit_enabled and feature_checker_enabled %}<li><a href="{{ url_for('fix.fix_form') }}">Fix another document</a></li>{% endif %}
     <li><a href="{{ url_for('guidelines.guidelines_page') }}">Read the full ACB guidelines</a></li>
     <li><a href="{{ url_for('guide.guide_page') }}#common-issues">Common issues and how to fix them</a></li>
   </ul>

@@ -61,8 +61,15 @@ def _severity_key(severity: object) -> str:
 
 
 def _build_penalty_breakdown(findings: list) -> dict[str, int]:
-    """Summarize weighted score penalty and counts by severity."""
+    """Summarize the weighted score penalty and severity counts.
+
+    The penalty calculation matches ``AuditResult.score`` -- each rule is
+    charged once at full severity weight, plus a capped per-extra-occurrence
+    surcharge -- so the displayed "weighted penalty" stays consistent with
+    the published score and grade.
+    """
     critical = high = medium = low = 0
+    by_rule: dict[str, list] = {}
     for finding in findings:
         sev = _severity_key(getattr(finding, "severity", ""))
         if sev == "critical":
@@ -73,13 +80,15 @@ def _build_penalty_breakdown(findings: list) -> dict[str, int]:
             medium += 1
         elif sev == "low":
             low += 1
+        rid = getattr(finding, "rule_id", "") or ""
+        by_rule.setdefault(rid, []).append(finding)
 
-    weighted_penalty = (
-        critical * _SEVERITY_DEDUCTIONS["critical"]
-        + high * _SEVERITY_DEDUCTIONS["high"]
-        + medium * _SEVERITY_DEDUCTIONS["medium"]
-        + low * _SEVERITY_DEDUCTIONS["low"]
-    )
+    weighted_penalty = 0
+    for group in by_rule.values():
+        sev = _severity_key(getattr(group[0], "severity", ""))
+        base = _SEVERITY_DEDUCTIONS.get(sev, 5)
+        extras = max(0, len(group) - 1)
+        weighted_penalty += base + min(extras, base)
 
     return {
         "critical": critical,
@@ -107,6 +116,7 @@ def _fix_by_extension(
     heading_threshold: int | None = None,
     confirmed_headings: list | None = None,
     heading_accuracy: str = "balanced",
+    style_size_overrides: dict[str, float] | None = None,
 ):
     """Dispatch to the correct fixer based on file extension.
 
@@ -209,6 +219,7 @@ def _fix_by_extension(
             heading_threshold=heading_threshold,
             confirmed_headings=confirmed_headings,
             heading_accuracy_level=heading_accuracy,
+            style_size_overrides=style_size_overrides,
         )
         # Tag whether AI was actually used (ai_provider set and invoked)
         return result[:5] + ({"ai_used": ai_provider is not None},) if len(result) == 5 else result
@@ -221,6 +232,7 @@ def _audit_by_extension(
     list_level_indents: dict[int, float] | None = None,
     para_indent_in: float | None = None,
     first_line_indent_in: float | None = None,
+    style_size_overrides: dict[str, float] | None = None,
 ):
     """Dispatch to the correct auditor based on file extension."""
     ext = saved_path.suffix.lower()
@@ -253,6 +265,7 @@ def _audit_by_extension(
             list_level_indents=list_level_indents,
             para_indent_in=para_indent_in,
             first_line_indent_in=first_line_indent_in,
+            style_size_overrides=style_size_overrides,
         )
 
 
@@ -402,6 +415,35 @@ def _parse_form_options(form):
 
     allowed_heading_levels = _parse_allowed_heading_levels(form)
 
+    # Custom font sizes (body + per-heading-level). Only override when the
+    # user actually filled in a value -- empty fields fall back to the ACB
+    # defaults so existing callers behave unchanged.
+    style_size_overrides: dict[str, float] = {}
+    _size_field_map = {
+        "body_size_pt": "Normal",
+        "h1_size_pt": "Heading 1",
+        "h2_size_pt": "Heading 2",
+        "h3_size_pt": "Heading 3",
+        "h4_size_pt": "Heading 4",
+        "h5_size_pt": "Heading 5",
+        "h6_size_pt": "Heading 6",
+    }
+    for field, style_name in _size_field_map.items():
+        raw = (form.get(field) or "").strip()
+        if not raw:
+            continue
+        try:
+            pt = float(raw)
+        except (TypeError, ValueError):
+            continue
+        if pt <= 0:
+            continue
+        # Clamp to the same safety bounds the core uses.
+        from acb_large_print import constants as _C
+        style_size_overrides[style_name] = max(
+            _C.MIN_USER_FONT_PT, min(_C.MAX_USER_FONT_PT, pt)
+        )
+
     return {
         "bound": bound,
         "mode": mode,
@@ -419,6 +461,7 @@ def _parse_form_options(form):
         "heading_threshold": heading_threshold,
         "heading_accuracy": heading_accuracy,
         "allowed_heading_levels": allowed_heading_levels,
+        "style_size_overrides": style_size_overrides or None,
         "rule_policy": build_rule_policy(form),
     }
 
@@ -448,6 +491,7 @@ def _run_fix_and_render(
         list_level_indents=opts["list_level_indents"],
         para_indent_in=opts["para_indent_in"],
         first_line_indent_in=opts["first_line_indent_in"],
+        style_size_overrides=opts.get("style_size_overrides"),
     )
     pre_body_font_pt = _estimate_pre_fix_body_font_pt(saved_path)
 
@@ -485,6 +529,7 @@ def _run_fix_and_render(
             heading_threshold=opts["heading_threshold"],
             confirmed_headings=confirmed_headings,
             heading_accuracy=opts["heading_accuracy"],
+            style_size_overrides=opts.get("style_size_overrides"),
         )
     finally:
         if _ai_ctx is not None:
@@ -528,6 +573,24 @@ def _run_fix_and_render(
     post_audit.findings = filtered_findings
     if heading_alignment_suppressed:
         suppressed_rules.append("ACB-ALIGNMENT (headings)")
+
+    # Apply the same suppression filter to pre_audit so the before/after
+    # score comparison stays fair. Without this, suppressed rules (e.g.
+    # ACB-FAUX-HEADING when heading detection is off) inflate the pre-fix
+    # penalty and make the post-fix score look artificially better -- or,
+    # when both audits hit the deduction floor, force every document to
+    # show as a failing grade.
+    pre_filtered = []
+    for finding in pre_audit.findings:
+        if finding.rule_id in suppress_rule_ids:
+            continue
+        if (
+            opts["preserve_heading_alignment"]
+            and _is_heading_alignment_finding(finding)
+        ):
+            continue
+        pre_filtered.append(finding)
+    pre_audit.findings = pre_filtered
 
     if pre_body_font_pt is not None and pre_body_font_pt < 17.5:
         warnings.insert(

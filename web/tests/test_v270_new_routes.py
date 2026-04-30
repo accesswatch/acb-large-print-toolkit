@@ -300,6 +300,125 @@ class TestSharedReportPdf:
 
 
 # ---------------------------------------------------------------------------
+# Passphrase-protected shares (added in [Unreleased])
+# ---------------------------------------------------------------------------
+
+
+class TestSharePassphrase:
+    def test_set_and_verify_passphrase(self):
+        token = _new_share_token()
+        _seed_share(token)
+        assert report_cache.set_share_passphrase(token, "open sesame!")
+        assert report_cache.share_requires_passphrase(token)
+        assert report_cache.verify_share_passphrase(token, "open sesame!")
+        assert not report_cache.verify_share_passphrase(token, "wrong")
+
+    def test_unset_share_does_not_require(self):
+        token = _new_share_token()
+        _seed_share(token)
+        assert not report_cache.share_requires_passphrase(token)
+        # No passphrase configured -> any input is treated as success.
+        assert report_cache.verify_share_passphrase(token, "")
+
+    def test_set_passphrase_rejects_empty_or_missing_share(self):
+        assert not report_cache.set_share_passphrase(_new_share_token(), "x")
+        token = _new_share_token()
+        _seed_share(token)
+        assert not report_cache.set_share_passphrase(token, "")
+
+    def test_protected_share_returns_unlock_form(self, client):
+        token = _new_share_token()
+        _seed_share(token)
+        report_cache.set_share_passphrase(token, "letmein")
+        resp = client.get(f"/audit/share/{token}")
+        assert resp.status_code == 200
+        body = resp.get_data(as_text=True)
+        assert "Unlock shared audit report" in body
+        assert "name=\"share_passphrase\"" in body
+
+    def test_protected_share_unlocks_with_correct_passphrase(self, client):
+        token = _new_share_token()
+        _seed_share(token, html="<html><body>SECRET REPORT</body></html>")
+        report_cache.set_share_passphrase(token, "letmein")
+        resp = client.post(
+            f"/audit/share/{token}",
+            data={"share_passphrase": "letmein"},
+        )
+        assert resp.status_code == 200
+        assert b"SECRET REPORT" in resp.data
+
+    def test_protected_share_rejects_wrong_passphrase(self, client):
+        token = _new_share_token()
+        _seed_share(token, html="<html><body>SECRET REPORT</body></html>")
+        report_cache.set_share_passphrase(token, "letmein")
+        resp = client.post(
+            f"/audit/share/{token}",
+            data={"share_passphrase": "nope"},
+        )
+        assert resp.status_code == 401
+        assert b"SECRET REPORT" not in resp.data
+        assert b"Incorrect passphrase" in resp.data
+
+    def test_protected_csv_requires_passphrase_via_query(self, client):
+        token = _new_share_token()
+        _seed_share(token, findings_data=_sample_findings_data())
+        report_cache.set_share_passphrase(token, "letmein")
+        # Without ?p= the CSV endpoint serves the unlock form with 401.
+        resp_locked = client.get(f"/audit/share/{token}/csv")
+        assert resp_locked.status_code == 401
+        # With correct ?p= the actual CSV is served.
+        resp_ok = client.get(f"/audit/share/{token}/csv?p=letmein")
+        assert resp_ok.status_code == 200
+        assert resp_ok.mimetype.startswith("text/csv")
+
+
+# ---------------------------------------------------------------------------
+# Quick Start handoff: prefill audit/convert forms with an existing upload
+# ---------------------------------------------------------------------------
+
+
+def _seed_upload_session(filename: str = "demo.docx",
+                         payload: bytes = b"PK\x03\x04 fake docx") -> str:
+    """Create an upload session under UPLOAD_TEMP_BASE and return the token."""
+    from acb_large_print_web.upload import UPLOAD_TEMP_BASE
+    token = _new_share_token()
+    session_dir = UPLOAD_TEMP_BASE / token
+    session_dir.mkdir(parents=True, exist_ok=True)
+    (session_dir / filename).write_bytes(payload)
+    return token
+
+
+class TestQuickStartHandoff:
+    def test_audit_form_prefills_when_token_resolves(self, client):
+        token = _seed_upload_session("acb-handoff.docx")
+        resp = client.get(f"/audit/?token={token}")
+        assert resp.status_code == 200
+        body = resp.get_data(as_text=True)
+        assert "Ready to audit" in body
+        assert "acb-handoff.docx" in body
+        assert f'value="{token}"' in body
+
+    def test_audit_form_falls_back_when_token_invalid(self, client):
+        resp = client.get(f"/audit/?token={_new_share_token()}")
+        assert resp.status_code == 200
+        body = resp.get_data(as_text=True)
+        assert "Ready to audit" not in body
+        # Standard upload UI is shown.
+        assert 'name="document"' in body
+
+    def test_convert_form_prefills_when_token_resolves(self, client):
+        token = _seed_upload_session("convert-handoff.docx")
+        resp = client.get(f"/convert/?token={token}")
+        assert resp.status_code == 200
+        body = resp.get_data(as_text=True)
+        assert "Ready to convert" in body
+        assert "convert-handoff.docx" in body
+        assert f'value="{token}"' in body
+
+
+
+
+# ---------------------------------------------------------------------------
 # audit_from_convert error paths (happy path needs a converter, tested elsewhere)
 # ---------------------------------------------------------------------------
 

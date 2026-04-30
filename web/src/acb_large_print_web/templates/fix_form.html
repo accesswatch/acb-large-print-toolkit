@@ -173,6 +173,70 @@
     </label>
 
     <fieldset class="nested-fieldset">
+      <legend>Font Sizes</legend>
+      <p class="help-text">
+        Override body and per-heading-level point sizes. Leave a field blank
+        to keep the ACB default (body 18pt, Heading&nbsp;1 22pt, Heading&nbsp;2-6
+        20pt). Values are clamped to 8pt-96pt. Going below the ACB minimum
+        of 18pt is allowed when explicitly set; the auditor will treat your
+        chosen size as the expected size.
+      </p>
+      <div class="font-size-grid">
+        <div class="form-row">
+          <label for="body-size-pt">Body (Normal)</label>
+          <input type="number" id="body-size-pt" name="body_size_pt"
+                 placeholder="18" min="8" max="96" step="0.5"
+                 class="input-narrow"
+                 aria-describedby="body-size-help">
+          <span class="suffix" aria-hidden="true">pt</span>
+        </div>
+        <p id="body-size-help" class="help-text visually-hidden">ACB default is 18 points.</p>
+        <div class="form-row">
+          <label for="h1-size-pt">Heading&nbsp;1</label>
+          <input type="number" id="h1-size-pt" name="h1_size_pt"
+                 placeholder="22" min="8" max="96" step="0.5"
+                 class="input-narrow">
+          <span class="suffix" aria-hidden="true">pt</span>
+        </div>
+        <div class="form-row">
+          <label for="h2-size-pt">Heading&nbsp;2</label>
+          <input type="number" id="h2-size-pt" name="h2_size_pt"
+                 placeholder="20" min="8" max="96" step="0.5"
+                 class="input-narrow">
+          <span class="suffix" aria-hidden="true">pt</span>
+        </div>
+        <div class="form-row">
+          <label for="h3-size-pt">Heading&nbsp;3</label>
+          <input type="number" id="h3-size-pt" name="h3_size_pt"
+                 placeholder="20" min="8" max="96" step="0.5"
+                 class="input-narrow">
+          <span class="suffix" aria-hidden="true">pt</span>
+        </div>
+        <div class="form-row">
+          <label for="h4-size-pt">Heading&nbsp;4</label>
+          <input type="number" id="h4-size-pt" name="h4_size_pt"
+                 placeholder="20" min="8" max="96" step="0.5"
+                 class="input-narrow">
+          <span class="suffix" aria-hidden="true">pt</span>
+        </div>
+        <div class="form-row">
+          <label for="h5-size-pt">Heading&nbsp;5</label>
+          <input type="number" id="h5-size-pt" name="h5_size_pt"
+                 placeholder="20" min="8" max="96" step="0.5"
+                 class="input-narrow">
+          <span class="suffix" aria-hidden="true">pt</span>
+        </div>
+        <div class="form-row">
+          <label for="h6-size-pt">Heading&nbsp;6</label>
+          <input type="number" id="h6-size-pt" name="h6_size_pt"
+                 placeholder="20" min="8" max="96" step="0.5"
+                 class="input-narrow">
+          <span class="suffix" aria-hidden="true">pt</span>
+        </div>
+      </div>
+    </fieldset>
+
+    <fieldset class="nested-fieldset">
       <legend>List Indentation</legend>
       <p class="help-text">ACB guidelines require all text to be flush left. By default, list items are set to zero indentation. Uncheck the box below to keep standard Word list indentation or set custom values.</p>
 

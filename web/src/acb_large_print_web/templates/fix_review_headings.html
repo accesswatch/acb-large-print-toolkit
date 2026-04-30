@@ -14,8 +14,17 @@
   <h2 id="review-privacy-heading">Data and Privacy</h2>
   {% if doc_expiry %}
   <p><strong>Document availability:</strong> Your document is held on the server while you complete this review.
-    It will be automatically deleted at approximately <strong>{{ doc_expiry.strftime("%I:%M %p UTC on %B %d, %Y") }}</strong>.
+    It will be automatically deleted at approximately
+    <strong><time datetime="{{ doc_expiry.isoformat() }}" data-utc-local id="doc-expiry-time">{{ doc_expiry.strftime("%I:%M %p UTC on %B %d, %Y") }}</time></strong>.
     Complete this review and download your fixed document before that time.</p>
+  <p>
+    <button type="button" class="btn-secondary" id="extend-session-btn"
+            data-extend-token="{{ token }}"
+            aria-describedby="extend-session-status">
+      Keep my document available for another hour
+    </button>
+    <span id="extend-session-status" class="field-hint" aria-live="polite" aria-atomic="true"></span>
+  </p>
   {% endif %}
   {% if ai_used %}
   <p><strong>AI was used to identify these heading candidates.</strong> Detection was performed by GLOW's AI service. Your document content was transmitted only to the configured AI provider for this analysis and is not stored or used for training.</p>
@@ -99,7 +108,7 @@
     <p id="apply-fix-status" class="field-hint" aria-live="polite" aria-atomic="true"></p>
   </div>
   {% if doc_expiry %}
-  <p class="help-text"><strong>Session expires at {{ doc_expiry.strftime("%I:%M %p UTC") }}.</strong> If your session expires before you submit, re-upload the document and run Fix again to restart heading review.</p>
+  <p class="help-text"><strong>Session expires at <time datetime="{{ doc_expiry.isoformat() }}" data-utc-local>{{ doc_expiry.strftime("%I:%M %p UTC") }}</time>.</strong> If your session expires before you submit, re-upload the document and run Fix again to restart heading review. Use the "Keep my document available" button above if you need more time.</p>
   {% endif %}
 </form>
 
@@ -114,6 +123,45 @@
     if (statusEl) statusEl.textContent = 'Applying fixes\u2026 This may take up to a minute for large documents.';
     if (btn) { btn.disabled = true; btn.textContent = 'Fixing\u2026'; }
   });
+
+  var extendBtn = document.getElementById('extend-session-btn');
+  if (extendBtn) {
+    extendBtn.addEventListener('click', function () {
+      var token = extendBtn.getAttribute('data-extend-token') || '';
+      var statusEl = document.getElementById('extend-session-status');
+      var csrfInput = form.querySelector('input[name="csrf_token"]');
+      var csrf = csrfInput ? csrfInput.value : '';
+      extendBtn.disabled = true;
+      if (statusEl) statusEl.textContent = 'Extending\u2026';
+      var data = new FormData();
+      data.append('token', token);
+      data.append('csrf_token', csrf);
+      fetch('{{ url_for("process.process_extend") }}', {
+        method: 'POST',
+        body: data,
+        credentials: 'same-origin',
+      }).then(function (r) { return r.json(); }).then(function (json) {
+        if (json && json.ok) {
+          if (statusEl) statusEl.textContent = 'Session extended for another hour.';
+          var timeEl = document.getElementById('doc-expiry-time');
+          if (timeEl && json.expires_utc) {
+            timeEl.setAttribute('datetime', json.expires_utc);
+            timeEl.setAttribute('data-utc-local', json.expires_utc);
+            timeEl.removeAttribute('data-localized');
+            if (window.GLOW && window.GLOW.rewriteLocalTimes) {
+              window.GLOW.rewriteLocalTimes();
+            }
+          }
+        } else {
+          if (statusEl) statusEl.textContent = (json && json.error) || 'Could not extend session.';
+        }
+      }).catch(function () {
+        if (statusEl) statusEl.textContent = 'Network error -- could not extend session.';
+      }).finally(function () {
+        extendBtn.disabled = false;
+      });
+    });
+  }
 }());
 </script>
 

@@ -117,12 +117,21 @@ def _save_share_artifacts(
     grade: str,
     profile_label: str,
     mode_label: str,
+    passphrase: str | None = None,
 ) -> None:
-    """Persist HTML and findings JSON for the share token (best-effort)."""
+    """Persist HTML and findings JSON for the share token (best-effort).
+
+    When ``passphrase`` is provided (truthy, non-empty after stripping) the
+    share is also passphrase-protected via ``set_share_passphrase``.
+    """
     if not share_token:
         return
     try:
-        from ..report_cache import save_findings_data, save_report
+        from ..report_cache import (
+            save_findings_data,
+            save_report,
+            set_share_passphrase,
+        )
 
         save_report(share_token, html)
         save_findings_data(share_token, {
@@ -135,8 +144,26 @@ def _save_share_artifacts(
             "generated_at": datetime.now(timezone.utc).isoformat(),
             "findings": _findings_to_dicts(findings),
         })
+        cleaned = (passphrase or "").strip()
+        if cleaned:
+            set_share_passphrase(share_token, cleaned)
     except Exception:
         pass
+
+
+def _share_passphrase_from_form() -> str | None:
+    """Read and validate an optional share passphrase from the current request.
+
+    Returns the cleaned passphrase, or None when none was supplied. A minimum
+    length of 4 characters is enforced so accidental whitespace cannot lock a
+    share. Maximum 200 characters to avoid pathological inputs.
+    """
+    raw = (request.form.get("share_passphrase") or "").strip()
+    if not raw:
+        return None
+    if len(raw) < 4 or len(raw) > 200:
+        return None
+    return raw
 
 
 def _compute_audit_diff(
@@ -223,11 +250,29 @@ def audit_submit_rate_limited():
 @audit_bp.route("/", methods=["GET"])
 def audit_form():
     from ..email import email_configured
+    from ..upload import get_temp_dir, ALLOWED_EXTENSIONS
+
+    # Quick Start handoff: ?token=... pre-fills the form with the file
+    # already uploaded via /process. The user does not need to upload again.
+    prefill_token = (request.args.get("token") or "").strip()
+    prefill_filename = None
+    if prefill_token:
+        temp_dir = get_temp_dir(prefill_token)
+        if temp_dir is not None:
+            for f in sorted(temp_dir.iterdir()):
+                if f.is_file() and f.suffix.lower() in ALLOWED_EXTENSIONS:
+                    prefill_filename = f.name
+                    break
+        if prefill_filename is None:
+            prefill_token = None  # session expired or no file -- ignore
+
     return render_template(
         "audit_form.html",
         ace_installed=_is_ace_installed(),
         email_configured=email_configured(),
         rules_by_format=get_rules_by_format(),
+        prefill_token=prefill_token or None,
+        prefill_filename=prefill_filename,
     )
 
 
@@ -336,6 +381,7 @@ def audit_from_fix():
             fixable_rule_ids=FIXABLE_RULE_IDS,
             share_token=share_token,
             share_url=share_url,
+            share_passphrase_set=bool(_share_passphrase_from_form()),
             rules_by_id=_rules_by_id(),
             audit_diff=audit_diff,
             audit_source="from-fix",
@@ -351,6 +397,7 @@ def audit_from_fix():
             grade=result.grade,
             profile_label=profile_label,
             mode_label=mode_label,
+            passphrase=_share_passphrase_from_form(),
         )
 
         return html
@@ -459,6 +506,7 @@ def audit_from_convert():
             fixable_rule_ids=FIXABLE_RULE_IDS,
             share_token=share_token,
             share_url=share_url,
+            share_passphrase_set=bool(_share_passphrase_from_form()),
             rules_by_id=_rules_by_id(),
             audit_diff=None,
             audit_source="from-convert",
@@ -474,6 +522,7 @@ def audit_from_convert():
             grade=result.grade,
             profile_label=profile_label,
             mode_label=mode_label,
+            passphrase=_share_passphrase_from_form(),
         )
 
         return html
@@ -495,6 +544,10 @@ def audit_from_convert():
 def shared_report_csv(share_token: str):
     """Download the cached audit findings as a UTF-8 CSV file."""
     from ..report_cache import load_findings_data
+
+    gate = _share_unlock_required(share_token)
+    if gate is not None:
+        return gate
 
     data = load_findings_data(share_token)
     if not data:
@@ -529,6 +582,10 @@ def shared_report_pdf(share_token: str):
         save_pdf,
     )
 
+    gate = _share_unlock_required(share_token)
+    if gate is not None:
+        return gate
+
     pdf_bytes = load_pdf(share_token)
     if pdf_bytes is None:
         html = load_report(share_token)
@@ -556,14 +613,63 @@ def shared_report_pdf(share_token: str):
     )
 
 
-@audit_bp.route("/share/<share_token>", methods=["GET"])
+@audit_bp.route("/share/<share_token>", methods=["GET", "POST"])
 def shared_report(share_token: str):
-    """Serve a cached, shareable audit report by token (valid for 1 hour)."""
-    from ..report_cache import load_report
+    """Serve a cached, shareable audit report by token (valid for 1 hour).
+
+    When the share is passphrase-protected, render a small unlock form on
+    GET and validate the supplied passphrase on POST. The passphrase is also
+    accepted via the ``?p=...`` query string for convenience (e.g. when the
+    sharer pastes a combined link into chat) -- but the prompt is the
+    canonical path.
+    """
+    from ..report_cache import (
+        load_report,
+        share_requires_passphrase,
+        verify_share_passphrase,
+    )
+
     html = load_report(share_token)
     if not html:
         abort(404)
+
+    if share_requires_passphrase(share_token):
+        candidate = (request.form.get("share_passphrase")
+                     or request.args.get("p")
+                     or "").strip()
+        if not candidate or not verify_share_passphrase(share_token, candidate):
+            return render_template(
+                "share_unlock.html",
+                share_token=share_token,
+                error=bool(candidate),
+                target="report",
+            ), (401 if candidate else 200)
+
     return Response(html, mimetype="text/html")
+
+
+def _share_unlock_required(share_token: str) -> Response | None:
+    """Return an unlock-form Response when a passphrase is required and missing.
+
+    Used by the CSV and PDF download endpoints, which accept the passphrase
+    only via ``?p=...`` (no POST body) so a single click from the unlock form
+    can deep-link to either download.
+    """
+    from ..report_cache import (
+        share_requires_passphrase,
+        verify_share_passphrase,
+    )
+    if not share_requires_passphrase(share_token):
+        return None
+    candidate = (request.args.get("p") or "").strip()
+    if candidate and verify_share_passphrase(share_token, candidate):
+        return None
+    return render_template(
+        "share_unlock.html",
+        share_token=share_token,
+        error=bool(candidate),
+        target="download",
+    ), 401  # type: ignore[return-value]
 
 
 def audit_submit():
@@ -579,8 +685,29 @@ def _audit_single():
     token = None
     try:
         from ..tool_usage import record as _record_usage
+        from ..upload import get_temp_dir, ALLOWED_EXTENSIONS
         _record_usage("audit")
-        token, saved_path = validate_upload(request.files.get("document"))
+
+        # Quick Start handoff: when a session token is posted with prefill=1
+        # we re-use the previously uploaded file rather than requiring a new
+        # upload. validate_upload() is skipped entirely in that path.
+        saved_path = None
+        prefill_token = (request.form.get("token") or "").strip()
+        if prefill_token and request.form.get("prefill") == "1":
+            temp_dir = get_temp_dir(prefill_token)
+            if temp_dir is not None:
+                for f in sorted(temp_dir.iterdir()):
+                    if f.is_file() and f.suffix.lower() in ALLOWED_EXTENSIONS:
+                        saved_path = f
+                        break
+            if saved_path is None:
+                # Session expired or file missing -- fall through to normal upload
+                prefill_token = ""
+            else:
+                token = prefill_token
+
+        if saved_path is None:
+            token, saved_path = validate_upload(request.files.get("document"))
 
         standards_profile = request.form.get("standards_profile", "acb_2025")
         profile_label = get_profile_label(standards_profile)
@@ -653,6 +780,7 @@ def _audit_single():
             fixable_rule_ids=FIXABLE_RULE_IDS,
             share_token=share_token,
             share_url=share_url,
+            share_passphrase_set=bool(_share_passphrase_from_form()),
             rules_by_id=_rules_by_id(),
             audit_diff=None,
             audit_source="upload",
@@ -668,6 +796,7 @@ def _audit_single():
             grade=result.grade,
             profile_label=profile_label,
             mode_label=mode_label,
+            passphrase=_share_passphrase_from_form(),
         )
 
         return html
