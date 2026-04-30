@@ -340,22 +340,23 @@ if [[ "$HEALTHY" -eq 1 ]]; then
 import os, sys
 from pathlib import Path
 model_dir = Path(os.environ.get('GLOW_SPEECH_MODEL_DIR', '/app/instance/speech_models'))
-onnx_file = model_dir / 'kokoro-v0_19.onnx'
-json_file  = model_dir / 'voices.json'
-if onnx_file.exists() and json_file.exists():
+onnx_file = model_dir / 'kokoro-v1.0.onnx'
+voices_file = model_dir / 'voices-v1.0.bin'
+if onnx_file.exists() and voices_file.exists():
     print(f'Kokoro models already present in {model_dir} -- skipping download.')
     sys.exit(0)
-print(f'Kokoro models not found in {model_dir} -- downloading from Hugging Face Hub...')
+print(f'Kokoro models not found in {model_dir} -- downloading from kokoro-onnx release assets...')
 try:
-    import huggingface_hub as h
+    import urllib.request
     model_dir.mkdir(parents=True, exist_ok=True)
-    h.hf_hub_download('hexgrad/Kokoro-82M', 'kokoro-v0_19.onnx', local_dir=str(model_dir))
-    h.hf_hub_download('hexgrad/Kokoro-82M', 'voices.json',       local_dir=str(model_dir))
+    base = 'https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0'
+    urllib.request.urlretrieve(f'{base}/kokoro-v1.0.onnx', onnx_file)
+    urllib.request.urlretrieve(f'{base}/voices-v1.0.bin', voices_file)
     print('Kokoro models downloaded successfully.')
 except Exception as exc:
     print(f'WARNING: Kokoro model download failed: {exc}')
     print('Speech Demo will show Not Ready until models are added manually.')
-    print('Manual install: docker compose exec web python -c \"import huggingface_hub as h; h.hf_hub_download(\\\"hexgrad/Kokoro-82M\\\", \\\"kokoro-v0_19.onnx\\\", local_dir=\\\"/app/instance/speech_models\\\"); h.hf_hub_download(\\\"hexgrad/Kokoro-82M\\\", \\\"voices.json\\\", local_dir=\\\"/app/instance/speech_models\\\")\"')
+    print('Manual install: docker compose exec web python -c \"from pathlib import Path; import urllib.request; d=Path(\\\"/app/instance/speech_models\\\"); d.mkdir(parents=True, exist_ok=True); base=\\\"https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0\\\"; urllib.request.urlretrieve(f\\\"{base}/kokoro-v1.0.onnx\\\", d/\\\"kokoro-v1.0.onnx\\\"); urllib.request.urlretrieve(f\\\"{base}/voices-v1.0.bin\\\", d/\\\"voices-v1.0.bin\\\")\"')
 " 2>&1 || log_ts "WARNING: Could not exec into web container to check speech models."
     log_ts "--- Speech model check complete ---"
 
@@ -365,7 +366,7 @@ except Exception as exc:
 import os
 from pathlib import Path
 d = Path(os.environ.get('GLOW_SPEECH_MODEL_DIR', '/app/instance/speech_models'))
-exit(0 if (d / 'kokoro-v0_19.onnx').exists() else 1)
+exit(0 if (d / 'kokoro-v1.0.onnx').exists() and (d / 'voices-v1.0.bin').exists() else 1)
 " 2>/dev/null; then
         if [[ -f "$SPEECH_FLAG_FILE" ]]; then
             if ! python3 -c "import json; d=json.load(open('$SPEECH_FLAG_FILE')); exit(0 if d.get('GLOW_ENABLE_SPEECH') else 1)" 2>/dev/null; then

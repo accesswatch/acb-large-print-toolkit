@@ -46,14 +46,14 @@ COPY web/src/ web/src/
 RUN pip install --no-cache-dir ./web
 
 # Pre-download Kokoro model files at build time (Tier 1 TTS engine).
-# Model files are ~85 MB and come from Hugging Face Hub.
+# Model files come from the kokoro-onnx release assets.
 # They are baked into the image so the container is self-contained;
 # a bind-mount or named volume at /app/instance/speech_models/ can
 # override them if an admin wants to manage models externally.
 # Build with --build-arg SKIP_SPEECH_MODELS=1 to skip this step.
 ARG SKIP_SPEECH_MODELS=0
 RUN if [ "$SKIP_SPEECH_MODELS" != "1" ]; then \
-      python -c "import huggingface_hub as h; h.hf_hub_download('hexgrad/Kokoro-82M', 'kokoro-v0_19.onnx', local_dir='/app/instance/speech_models'); h.hf_hub_download('hexgrad/Kokoro-82M', 'voices.json', local_dir='/app/instance/speech_models'); print('Kokoro models downloaded.')" \
+      python -c "from pathlib import Path; import urllib.request; d=Path('/app/instance/speech_models'); d.mkdir(parents=True, exist_ok=True); base='https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0'; urllib.request.urlretrieve(f'{base}/kokoro-v1.0.onnx', d/'kokoro-v1.0.onnx'); urllib.request.urlretrieve(f'{base}/voices-v1.0.bin', d/'voices-v1.0.bin'); print('Kokoro models downloaded.')" \
       || echo 'Kokoro model download failed -- deploy-app.sh will retry at runtime.'; \
     fi
 

@@ -43,22 +43,14 @@ pip install kokoro-onnx
 
 Model files are NOT bundled with the pip package. They must be placed in `instance/speech_models/` before the engine can synthesize. GLOW's Speech settings page shows setup status and download instructions.
 
-**Automatic download (if `huggingface-hub` is installed):**
-
-```python
-from huggingface_hub import hf_hub_download
-hf_hub_download("hexgrad/Kokoro-82M", "kokoro-v0_19.onnx", local_dir="instance/speech_models")
-hf_hub_download("hexgrad/Kokoro-82M", "voices.json",       local_dir="instance/speech_models")
-```
-
 **Manual download:**
 
 ```bash
 mkdir -p instance/speech_models
-wget -O instance/speech_models/kokoro-v0_19.onnx \
-  https://github.com/thewh1teagle/kokoro-rs/releases/download/model-files/kokoro-v0_19.onnx
-wget -O instance/speech_models/voices.json \
-  https://github.com/thewh1teagle/kokoro-rs/releases/download/model-files/voices.json
+wget -O instance/speech_models/kokoro-v1.0.onnx \
+  https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0/kokoro-v1.0.onnx
+wget -O instance/speech_models/voices-v1.0.bin \
+  https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0/voices-v1.0.bin
 ```
 
 ### Model directory

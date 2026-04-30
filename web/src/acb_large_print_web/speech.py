@@ -70,8 +70,8 @@ def _get_model_dir() -> Path:
 _kokoro_instance = None
 _kokoro_lock = threading.Lock()
 
-_KOKORO_MODEL_FILE = "kokoro-v0_19.onnx"
-_KOKORO_VOICES_FILE = "voices.json"
+_KOKORO_MODEL_FILE = "kokoro-v1.0.onnx"
+_KOKORO_VOICES_FILE = "voices-v1.0.bin"
 
 
 def _kokoro_model_path() -> Path:
@@ -228,7 +228,7 @@ def get_engine_status() -> dict:
     if not kokoro_models:
         kokoro_setup += [
             f"mkdir -p {model_dir}",
-            f"# Download kokoro-v0_19.onnx and voices.json to {model_dir}/",
+            f"# Download {_KOKORO_MODEL_FILE} and {_KOKORO_VOICES_FILE} to {model_dir}/",
             "# See docs/speech.md for download commands",
         ]
 

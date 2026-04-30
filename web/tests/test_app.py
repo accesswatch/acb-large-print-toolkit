@@ -1110,6 +1110,12 @@ class TestSettingsIntegration:
         assert b"Speech Demo" in resp.data
         assert b"Open Speech Demo" in resp.data
 
+    def test_speech_setup_references_current_kokoro_model_assets(self):
+        from acb_large_print_web import speech
+
+        assert speech._KOKORO_MODEL_FILE == "kokoro-v1.0.onnx"
+        assert speech._KOKORO_VOICES_FILE == "voices-v1.0.bin"
+
 
 class TestPdfAudit:
     """Upload PDF files and verify audit works."""
