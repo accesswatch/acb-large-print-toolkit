@@ -1,0 +1,280 @@
+{% extends "base.html" %}
+
+{% block title %}Speech Demo{% endblock %}
+{% block heading %}Speech Demo{% endblock %}
+
+{% block content %}
+<p>Try any available English voice. Type a short phrase, choose a voice, adjust speed and pitch, then preview or download the audio as an MP3.</p>
+<p class="help-text">No document is required. This demo is available to everyone and nothing you type is stored or sent outside this server.</p>
+
+{% if not any_engine_ready %}
+<section class="flash-warning" role="alert" aria-labelledby="speech-unavail-heading">
+  <div class="flash-icon" aria-hidden="true">‼</div>
+  <div>
+    <p id="speech-unavail-heading"><strong>Speech engines not yet set up on this server.</strong></p>
+    <p>The server administrator must install the speech engine packages and model files before this demo is available. See the setup details below.</p>
+  </div>
+</section>
+{% endif %}
+
+{# ── Demo form ── #}
+<section aria-labelledby="demo-heading">
+  <h2 id="demo-heading">Voice Demo</h2>
+
+  <form id="speech-form" method="post" action="{{ url_for('speech.speech_download') }}" novalidate>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    {# Text input #}
+    <div class="form-group">
+      <label for="speech-text">Text to speak</label>
+      <p class="help-text" id="speech-text-hint">Up to {{ text_max_len }} characters. Your text stays on this server only.</p>
+      <textarea
+        id="speech-text"
+        name="text"
+        rows="4"
+        maxlength="{{ text_max_len }}"
+        aria-describedby="speech-text-hint speech-char-count"
+        {% if not any_engine_ready %}disabled aria-disabled="true"{% endif %}
+      >{{ default_text }}</textarea>
+      <p id="speech-char-count" class="help-text" aria-live="polite">
+        <span id="char-count-value">{{ default_text | length }}</span> / {{ text_max_len }} characters
+      </p>
+    </div>
+
+    {# Voice selector #}
+    <fieldset>
+      <legend>Voice</legend>
+      <p class="help-text" id="voice-group-hint">All voices are English only. Grouped by engine and accent.</p>
+
+      {% set kokoro_ready = engine_status.kokoro.ready %}
+      {% set piper_ready = engine_status.piper.ready %}
+
+      {% if kokoro_ready %}
+      <details open>
+        <summary><strong>Kokoro (Tier 1 — Default)</strong> <span class="badge badge-success">Ready</span></summary>
+        <div class="radio-group">
+          {% for v in kokoro_voices %}
+          {% set vid = "kokoro:" ~ v.id %}
+          <label>
+            <input type="radio" name="voice" value="{{ vid }}"
+              {% if loop.first and not piper_ready %}checked{% endif %}>
+            {{ v.label }}
+            <span class="help-text">{{ v.accent }} &middot; {{ v.gender }}</span>
+          </label>
+          {% endfor %}
+        </div>
+      </details>
+      {% else %}
+      <details>
+        <summary><strong>Kokoro (Tier 1 — Default)</strong> <span class="badge badge-warning">Not ready</span></summary>
+        <p class="help-text">Kokoro is not installed or model files are missing. See setup details below.</p>
+      </details>
+      {% endif %}
+
+      {% if piper_ready %}
+      <details {% if not kokoro_ready %}open{% endif %}>
+        <summary><strong>Piper TTS (Tier 2 — Supplemental)</strong> <span class="badge badge-success">Ready</span></summary>
+        <div class="radio-group">
+          {% for v in piper_voices %}
+          {% if v.id in engine_status.piper.voices_available %}
+          {% set vid = "piper:" ~ v.id %}
+          <label>
+            <input type="radio" name="voice" value="{{ vid }}"
+              {% if loop.first and not kokoro_ready %}checked{% endif %}>
+            {{ v.label }}
+            <span class="help-text">{{ v.accent }} &middot; {{ v.gender }}</span>
+          </label>
+          {% endif %}
+          {% endfor %}
+        </div>
+      </details>
+      {% else %}
+      <details>
+        <summary><strong>Piper TTS (Tier 2 — Supplemental)</strong> <span class="badge badge-warning">Not ready</span></summary>
+        <p class="help-text">Piper is not installed or no voice model files are present. See setup details below.</p>
+      </details>
+      {% endif %}
+    </fieldset>
+
+    {# Speed #}
+    <div class="form-group">
+      <label for="speech-speed">Speed: <span id="speed-value">1.0</span>&times;</label>
+      <p class="help-text" id="speed-hint">0.5&times; (slow) to 2.0&times; (fast). Default is 1.0.</p>
+      <input type="range" id="speech-speed" name="speed"
+        min="0.5" max="2.0" step="0.1" value="1.0"
+        aria-describedby="speed-hint"
+        oninput="document.getElementById('speed-value').textContent = parseFloat(this.value).toFixed(1)"
+        {% if not any_engine_ready %}disabled aria-disabled="true"{% endif %}>
+    </div>
+
+    {# Pitch #}
+    <div class="form-group">
+      <label for="speech-pitch">Pitch: <span id="pitch-value">0</span> semitones</label>
+      <p class="help-text" id="pitch-hint">-20 (lower) to +20 (higher). Default is 0. Pitch shift is applied via sample-rate manipulation and slightly affects tempo.</p>
+      <input type="range" id="speech-pitch" name="pitch"
+        min="-20" max="20" step="1" value="0"
+        aria-describedby="pitch-hint"
+        oninput="document.getElementById('pitch-value').textContent = this.value"
+        {% if not any_engine_ready %}disabled aria-disabled="true"{% endif %}>
+    </div>
+
+    {# Actions #}
+    <div class="next-step-actions">
+      <button type="button" id="preview-btn" class="btn-primary"
+        {% if not any_engine_ready %}disabled aria-disabled="true"{% endif %}>
+        Preview audio
+      </button>
+      <button type="submit" id="download-btn" class="btn-secondary"
+        {% if not any_engine_ready %}disabled aria-disabled="true"{% endif %}>
+        Download MP3
+      </button>
+    </div>
+
+    {# Inline audio player (populated by JS after preview) #}
+    <div id="preview-player" style="display:none; margin-top:1rem;">
+      <p><strong>Preview:</strong></p>
+      <audio id="audio-player" controls>
+        <p>Your browser does not support the audio element. Use the Download MP3 button instead.</p>
+      </audio>
+    </div>
+
+    {# Preview error region #}
+    <div id="preview-error" class="flash-error" role="alert" style="display:none;" aria-live="assertive"></div>
+  </form>
+</section>
+
+{# ── Engine status ── #}
+<section aria-labelledby="engine-status-heading">
+  <h2 id="engine-status-heading">Engine Status</h2>
+
+  <table>
+    <caption>Speech engine installation and readiness</caption>
+    <thead>
+      <tr>
+        <th scope="col">Engine</th>
+        <th scope="col">Package installed</th>
+        <th scope="col">Model files present</th>
+        <th scope="col">Status</th>
+        <th scope="col">Model directory</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <th scope="row">Kokoro ONNX (Tier 1)</th>
+        <td>{% if engine_status.kokoro.installed %}Yes{% else %}<strong>No</strong>{% endif %}</td>
+        <td>{% if engine_status.kokoro.models_present %}Yes{% else %}<strong>No</strong>{% endif %}</td>
+        <td>{% if engine_status.kokoro.ready %}<span class="badge badge-success">Ready</span>{% else %}<span class="badge badge-warning">Not ready</span>{% endif %}</td>
+        <td><code>{{ engine_status.kokoro.model_dir }}</code></td>
+      </tr>
+      <tr>
+        <th scope="row">Piper TTS (Tier 2)</th>
+        <td>{% if engine_status.piper.installed %}Yes{% else %}<strong>No</strong>{% endif %}</td>
+        <td>{% if engine_status.piper.models_present %}Yes ({{ engine_status.piper.voices_available | length }} voice(s)){% else %}<strong>No</strong>{% endif %}</td>
+        <td>{% if engine_status.piper.ready %}<span class="badge badge-success">Ready</span>{% else %}<span class="badge badge-warning">Not ready</span>{% endif %}</td>
+        <td><code>{{ engine_status.piper.model_dir }}</code></td>
+      </tr>
+    </tbody>
+  </table>
+
+  {% if engine_status.kokoro.setup_commands or engine_status.piper.setup_commands %}
+  <h3>Setup instructions</h3>
+
+  {% if engine_status.kokoro.setup_commands %}
+  <h4>Kokoro ONNX (Tier 1)</h4>
+  <pre><code>{% for cmd in engine_status.kokoro.setup_commands %}{{ cmd }}
+{% endfor %}</code></pre>
+  {% endif %}
+
+  {% if engine_status.piper.setup_commands %}
+  <h4>Piper TTS (Tier 2)</h4>
+  <pre><code>{% for cmd in engine_status.piper.setup_commands %}{{ cmd }}
+{% endfor %}</code></pre>
+  {% endif %}
+
+  <p>After installation, restart the GLOW service and refresh this page.</p>
+  {% endif %}
+</section>
+
+<script>
+(function () {
+  "use strict";
+
+  // Character counter
+  var textarea = document.getElementById("speech-text");
+  var counter  = document.getElementById("char-count-value");
+  if (textarea && counter) {
+    textarea.addEventListener("input", function () {
+      counter.textContent = textarea.value.length;
+    });
+  }
+
+  // Preview button -- fetch WAV, set src on <audio>
+  var previewBtn   = document.getElementById("preview-btn");
+  var audioPlayer  = document.getElementById("audio-player");
+  var playerWrap   = document.getElementById("preview-player");
+  var errorRegion  = document.getElementById("preview-error");
+  var form         = document.getElementById("speech-form");
+
+  function showError(msg) {
+    errorRegion.textContent = msg;
+    errorRegion.style.display = "";
+    playerWrap.style.display = "none";
+  }
+
+  function clearError() {
+    errorRegion.style.display = "none";
+    errorRegion.textContent = "";
+  }
+
+  if (previewBtn) {
+    previewBtn.addEventListener("click", function () {
+      clearError();
+      previewBtn.textContent = "Generating preview…";
+      previewBtn.disabled = true;
+
+      var fd = new FormData(form);
+      // Remove the download-only fields if any; preview uses same form
+      var csrfVal = document.querySelector("input[name=csrf_token]").value;
+
+      var previewFd = new FormData();
+      previewFd.append("csrf_token", csrfVal);
+      previewFd.append("voice", fd.get("voice") || "");
+      previewFd.append("text",  fd.get("text")  || "");
+      previewFd.append("speed", fd.get("speed") || "1.0");
+      previewFd.append("pitch", fd.get("pitch") || "0");
+
+      fetch("{{ url_for('speech.speech_preview') }}", {
+        method: "POST",
+        headers: { "X-CSRFToken": csrfVal },
+        body: previewFd,
+      })
+      .then(function (resp) {
+        if (!resp.ok) {
+          return resp.json().then(function (j) {
+            throw new Error(j.error || ("Server error " + resp.status));
+          });
+        }
+        return resp.blob();
+      })
+      .then(function (blob) {
+        var url = URL.createObjectURL(blob);
+        if (audioPlayer._prevObjectURL) {
+          URL.revokeObjectURL(audioPlayer._prevObjectURL);
+        }
+        audioPlayer._prevObjectURL = url;
+        audioPlayer.src = url;
+        playerWrap.style.display = "";
+        audioPlayer.play();
+      })
+      .catch(function (err) {
+        showError("Preview failed: " + err.message);
+      })
+      .finally(function () {
+        previewBtn.textContent = "Preview audio";
+        previewBtn.disabled = false;
+      });
+    });
+  }
+})();
+</script>
+{% endblock %}

@@ -186,6 +186,7 @@ def create_app(config: dict | None = None) -> Flask:
             ctx["feature_pydocx_enabled"] = bool(all_flags.get("GLOW_ENABLE_PYDOCX", True))
             ctx["feature_openpyxl_enabled"] = bool(all_flags.get("GLOW_ENABLE_OPENPYXL", True))
             ctx["feature_python_pptx_enabled"] = bool(all_flags.get("GLOW_ENABLE_PYTHON_PPTX", True))
+            ctx["feature_speech_enabled"] = bool(all_flags.get("GLOW_ENABLE_SPEECH", True))
         except Exception:
             # Best-effort injection; templates should handle missing keys gracefully
             pass
@@ -343,6 +344,7 @@ def create_app(config: dict | None = None) -> Flask:
     from .routes.chat import chat_bp
     from .routes.admin import admin_bp
     from .routes.rules_ref import rules_ref_bp
+    from .routes.speech import speech_bp
 
     app.register_blueprint(main_bp)
     app.register_blueprint(consent_bp, url_prefix="/consent")
@@ -365,6 +367,14 @@ def create_app(config: dict | None = None) -> Flask:
     app.register_blueprint(chat_bp, url_prefix="/chat")
     app.register_blueprint(admin_bp, url_prefix="/admin")
     app.register_blueprint(rules_ref_bp, url_prefix="/rules")
+    app.register_blueprint(speech_bp, url_prefix="/speech")
+
+    # Configure speech engine model directory from instance path
+    try:
+        from . import speech as _speech_mod
+        _speech_mod.configure(os.path.join(app.instance_path, "speech_models"))
+    except Exception:
+        pass
 
     # Startup ready log -- emitted once per worker process launch
     try:
