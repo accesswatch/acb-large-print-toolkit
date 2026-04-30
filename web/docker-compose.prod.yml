@@ -37,6 +37,10 @@ services:
     build:
       context: ..
       dockerfile: web/Dockerfile
+      args:
+        # Set SKIP_SPEECH_MODELS=1 on air-gapped servers; then place model files
+        # manually in the speech-models volume at /app/instance/speech_models/
+        SKIP_SPEECH_MODELS: ${SKIP_SPEECH_MODELS:-0}
     expose:
       - "8000"
     env_file: .env

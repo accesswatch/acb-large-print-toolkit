@@ -23,6 +23,8 @@ services:
     build:
       context: ..
       dockerfile: web/Dockerfile
+      args:
+        SKIP_SPEECH_MODELS: ${SKIP_SPEECH_MODELS:-0}
     ports:
       - "8000:8000"
     environment:

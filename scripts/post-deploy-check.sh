@@ -222,6 +222,7 @@ check_header_contains() {
 URL_FAIL=0
 check_url "${APP_DOMAIN}/health" "https://${APP_DOMAIN}/health" false || true
 check_url "${APP_DOMAIN}/" "https://${APP_DOMAIN}/" false true || true
+check_url "${APP_DOMAIN}/speech/" "https://${APP_DOMAIN}/speech/" false || true
 check_header_contains "${APP_DOMAIN} CSP media-src" "https://${APP_DOMAIN}/static/let-it-glow.mp3" "Content-Security-Policy" "media-src 'self'" true || URL_FAIL=1
 if [[ -n "$APP_ALIAS_DOMAIN" ]]; then
     check_url "${APP_ALIAS_DOMAIN}/health" "https://${APP_ALIAS_DOMAIN}/health" false || true
