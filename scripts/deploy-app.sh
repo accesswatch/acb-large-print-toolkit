@@ -360,6 +360,38 @@ except Exception as exc:
 " 2>&1 || log_ts "WARNING: Could not exec into web container to check speech models."
     log_ts "--- Speech model check complete ---"
 
+    # ---------------------------------------------------------------------------
+    # Ensure the default Piper voice is present in the speech-models volume.
+    # The named Docker volume hides any build-time model files, so seed the
+    # runtime volume as part of deployment too.
+    # ---------------------------------------------------------------------------
+    log_ts "--- Ensuring Piper default voice model files are present ---"
+    docker compose -f "$COMPOSE_FILE" exec -T web python -c "
+import os, sys
+from pathlib import Path
+model_dir = Path(os.environ.get('GLOW_SPEECH_MODEL_DIR', '/app/instance/speech_models')) / 'piper'
+model_file = model_dir / 'en_US-lessac-medium.onnx'
+config_file = model_dir / 'en_US-lessac-medium.onnx.json'
+if model_file.exists() and config_file.exists():
+    print(f'Piper default voice already present in {model_dir} -- skipping download.')
+    sys.exit(0)
+print(f'Piper default voice not found in {model_dir} -- downloading from Hugging Face...')
+try:
+    from huggingface_hub import hf_hub_download
+    model_dir.mkdir(parents=True, exist_ok=True)
+    for filename in [
+        'en/en_US/lessac/medium/en_US-lessac-medium.onnx',
+        'en/en_US/lessac/medium/en_US-lessac-medium.onnx.json',
+    ]:
+        downloaded = Path(hf_hub_download('rhasspy/piper-voices', filename, local_dir=model_dir))
+        downloaded.replace(model_dir / downloaded.name)
+    print('Piper default voice downloaded successfully.')
+except Exception as exc:
+    print(f'WARNING: Piper default voice download failed: {exc}')
+    print('Piper voices will show Not Ready until model files are added manually.')
+" 2>&1 || log_ts "WARNING: Could not exec into web container to check Piper voice models."
+    log_ts "--- Piper voice model check complete ---"
+
     # If Kokoro models are now present, ensure GLOW_ENABLE_SPEECH=true in feature_flags.json
     SPEECH_FLAG_FILE="$APP_ROOT/instance/feature_flags.json"
     if docker compose -f "$COMPOSE_FILE" exec -T web python -c "

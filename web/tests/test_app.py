@@ -1252,6 +1252,14 @@ class TestSettingsIntegration:
         assert "media-src 'self' blob:" in caddyfile
         assert "media-src 'self' blob:" in caddyfile_example
 
+    def test_deploy_seeds_piper_default_voice(self):
+        deploy_script = Path("scripts/deploy-app.sh").read_text(encoding="utf-8")
+        dockerfile = Path("web/Dockerfile").read_text(encoding="utf-8")
+
+        assert "Ensuring Piper default voice model files are present" in deploy_script
+        assert "en_US-lessac-medium.onnx" in deploy_script
+        assert "Piper default voice downloaded" in dockerfile
+
 
 class TestPdfAudit:
     """Upload PDF files and verify audit works."""

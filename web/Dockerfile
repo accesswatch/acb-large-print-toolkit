@@ -55,6 +55,8 @@ ARG SKIP_SPEECH_MODELS=0
 RUN if [ "$SKIP_SPEECH_MODELS" != "1" ]; then \
       python -c "from pathlib import Path; import urllib.request; d=Path('/app/instance/speech_models'); d.mkdir(parents=True, exist_ok=True); base='https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0'; urllib.request.urlretrieve(f'{base}/kokoro-v1.0.onnx', d/'kokoro-v1.0.onnx'); urllib.request.urlretrieve(f'{base}/voices-v1.0.bin', d/'voices-v1.0.bin'); print('Kokoro models downloaded.')" \
       || echo 'Kokoro model download failed -- deploy-app.sh will retry at runtime.'; \
+      python -c "from pathlib import Path; from huggingface_hub import hf_hub_download; d=Path('/app/instance/speech_models/piper'); d.mkdir(parents=True, exist_ok=True); files=['en/en_US/lessac/medium/en_US-lessac-medium.onnx','en/en_US/lessac/medium/en_US-lessac-medium.onnx.json']; [Path(hf_hub_download('rhasspy/piper-voices', f, local_dir=d)).replace(d / Path(f).name) for f in files]; print('Piper default voice downloaded.')" \
+      || echo 'Piper voice download failed -- deploy-app.sh will retry at runtime.'; \
     fi
 
 # Long-form docs are pre-rendered locally into template partials by
