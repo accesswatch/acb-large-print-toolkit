@@ -35,6 +35,7 @@ services:
       # - POSTMARK_FROM_EMAIL=reports@glow.bits-acb.org
     volumes:
       - feedback-data:/app/instance
+      - speech-models:/app/instance/speech_models
     depends_on:
       pipeline:
         condition: service_healthy
@@ -53,3 +54,4 @@ services:
 
 volumes:
   feedback-data:
+  speech-models:

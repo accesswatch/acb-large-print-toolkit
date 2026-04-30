@@ -10,6 +10,17 @@ Releases are tagged in the [GitHub repository](https://github.com/accesswatch/ac
 
 ---
 
+## [2.9.0] - Unreleased
+
+### Added
+
+- **Speech Demo (Tier 1: Kokoro ONNX + Tier 2: Piper TTS).** New `/speech/` route delivers a fully self-hosted, CPU-only text-to-speech demo. Users can try all available English voices across both engines, adjust speed (0.5–2.0×) and pitch (±20 semitones), preview audio inline in the browser, and download an MP3. No document is required; the demo accepts free-text input up to 500 characters and processes everything on the server -- no text leaves the server and no API key is required. Engine and model-file status is shown on the page with setup instructions for administrators. Kokoro ONNX (~85 MB, `hexgrad/Kokoro-82M`) provides 10 voices (5 American, 4 British, mixed gender). Piper TTS provides 6 additional voices when model files are present. MP3 export uses pydub + ffmpeg (already in the Docker image); WAV is served as a fallback if ffmpeg is unavailable. Implemented in `web/src/acb_large_print_web/speech.py` (engine abstraction), `routes/speech.py` (blueprint with GET demo page, POST preview, POST download), and `templates/speech.html`.
+- **Speech model volume in Docker.** The Docker image now installs `kokoro-onnx`, `piper-tts`, `pydub`, and `numpy` at build time. Kokoro model files are pre-downloaded from Hugging Face Hub during `docker build` (skippable with `--build-arg SKIP_SPEECH_MODELS=1`). A `speech-models` named volume is declared in `docker-compose.yml` and `docker-compose.prod.yml`, mounted at `/app/instance/speech_models/`, so model files persist across container rebuilds and can be managed independently.
+- **`GLOW_ENABLE_SPEECH` feature flag.** The Speech Demo tab is shown by default (`true`). Deployments that want to hide the tab can set `GLOW_ENABLE_SPEECH=false` in `instance/feature_flags.json` or the environment.
+- **Tiered speech architecture documented.** `docs/speech.md` updated with the Tier 1/2/3 architecture, full voice catalogues, model download commands, audio pipeline diagram, and v2.9.0 vs v3.0.0 scope boundary.
+
+---
+
 ## [2.8.0] - 2026-04-30
 
 > A heartfelt thank you to the BITS community and the broader blind and low-vision community whose feedback, feature requests, and real-world testing made this release possible. Every feature in 2.8.0 came directly from your suggestions. We are building GLOW for you and with you -- your voice is in every line of this release.

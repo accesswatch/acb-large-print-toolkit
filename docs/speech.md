@@ -1,6 +1,165 @@
-# Kokoro TTS Platform PRD (Unix-Based, CPU-Optimized)
+# GLOW Speech Platform PRD — v2.9.0+
 
-## 1. Overview
+> **Scope for v2.9.0:** Settings UI and interactive voice demo only. Document-to-audio conversion is deferred to v3.0.0.
+
+## Tiered Architecture
+
+| Tier | Engine | Install | Models | GPU required | Quality |
+|------|--------|---------|--------|--------------|---------|
+| **1 — Default** | Kokoro ONNX | `pip install kokoro-onnx` | ~85 MB (auto-detectable via HF Hub) | No | Good |
+| **2 — Supplemental** | Piper TTS | `pip install piper-tts` | ~50–100 MB per voice (manual download) | No | Fair–Good |
+| **3 — Optional/Cloud** | Azure AI Speech Neural | Azure subscription + SDK | None | No | Excellent |
+
+**Tier 1 and 2 are the target for v2.9.0.** Tier 3 (Azure) is deferred to a later release.
+
+Both Tier 1 and Tier 2 are CPU-only, self-hosted, free to run, and never send document text outside the server. All voices are English-only in v2.9.0.
+
+---
+
+## Tier 1: Kokoro ONNX
+
+### Voices (English)
+
+| Voice ID | Label | Accent | Gender |
+|----------|-------|--------|--------|
+| `af_bella` | Bella | American | Female |
+| `af_sarah` | Sarah | American | Female |
+| `af_nicole` | Nicole | American | Female |
+| `af_sky` | Sky | American | Female |
+| `am_adam` | Adam | American | Male |
+| `am_michael` | Michael | American | Male |
+| `bf_emma` | Emma | British | Female |
+| `bf_isabella` | Isabella | British | Female |
+| `bm_george` | George | British | Male |
+| `bm_lewis` | Lewis | British | Male |
+
+### Installation
+
+```bash
+pip install kokoro-onnx
+```
+
+### Model files
+
+Model files are NOT bundled with the pip package. They must be placed in `instance/speech_models/` before the engine can synthesize. GLOW's Speech settings page shows setup status and download instructions.
+
+**Automatic download (if `huggingface-hub` is installed):**
+
+```python
+from huggingface_hub import hf_hub_download
+hf_hub_download("hexgrad/Kokoro-82M", "kokoro-v0_19.onnx", local_dir="instance/speech_models")
+hf_hub_download("hexgrad/Kokoro-82M", "voices.json",       local_dir="instance/speech_models")
+```
+
+**Manual download:**
+
+```bash
+mkdir -p instance/speech_models
+wget -O instance/speech_models/kokoro-v0_19.onnx \
+  https://github.com/thewh1teagle/kokoro-rs/releases/download/model-files/kokoro-v0_19.onnx
+wget -O instance/speech_models/voices.json \
+  https://github.com/thewh1teagle/kokoro-rs/releases/download/model-files/voices.json
+```
+
+### Model directory
+
+Configurable via `GLOW_SPEECH_MODEL_DIR` environment variable. Default: `{flask_instance_path}/speech_models/`.
+
+---
+
+## Tier 2: Piper TTS
+
+### Voices (English, curated)
+
+| Voice ID | Label | Accent | Gender | Sample Rate |
+|----------|-------|--------|--------|-------------|
+| `en_US-lessac-medium` | Lessac (US) | American | Male | 22050 Hz |
+| `en_US-amy-medium` | Amy (US) | American | Female | 22050 Hz |
+| `en_US-ryan-high` | Ryan (US, High Quality) | American | Male | 22050 Hz |
+| `en_US-hfc_female-medium` | HFC Female (US) | American | Female | 22050 Hz |
+| `en_GB-alan-medium` | Alan (GB) | British | Male | 22050 Hz |
+| `en_GB-southern_english_female-low` | Southern English Female (GB) | British | Female | 16000 Hz |
+
+### Installation
+
+```bash
+pip install piper-tts
+```
+
+### Model files
+
+Each Piper voice requires two files: `{voice_id}.onnx` and `{voice_id}.onnx.json`. Place them in `instance/speech_models/piper/`. Download from Hugging Face:
+
+```bash
+# Example: Lessac medium
+pip install huggingface-hub
+python -c "
+from huggingface_hub import hf_hub_download
+hf_hub_download('rhasspy/piper-voices', 'en/en_US/lessac/medium/en_US-lessac-medium.onnx',       local_dir='instance/speech_models/piper')
+hf_hub_download('rhasspy/piper-voices', 'en/en_US/lessac/medium/en_US-lessac-medium.onnx.json', local_dir='instance/speech_models/piper')
+"
+```
+
+---
+
+## Audio Processing Pipeline
+
+```
+User text + voice + speed + pitch
+        ↓
+  Engine synthesize() → float32 numpy array + sample_rate
+        ↓
+  Pitch shift (stdlib wave resampling, ±20 semitones)
+        ↓
+  numpy → 16-bit PCM WAV (stdlib wave, no extra deps)
+        ↓
+  Preview: return audio/wav for inline <audio> player
+  Download: encode to MP3 via pydub+ffmpeg if available, else WAV
+```
+
+### Speed
+- Kokoro: native `speed` parameter (0.5–2.0×)
+- Piper: `length_scale = 1 / speed` (inverse — longer scale = slower)
+
+### Pitch
+- Implemented via sample-rate manipulation (stdlib `wave`, no extra deps)
+- Range: −20 to +20 semitones, step 1
+- Note: this approach slightly affects tempo alongside pitch (acceptable for demo use)
+
+### Audio output
+- Preview: `audio/wav`, inline `<audio>` player
+- Download: `audio/mpeg` (MP3 at 192 kbps via pydub) if ffmpeg is installed, otherwise `audio/wav`
+
+---
+
+## v2.9.0 Scope: Settings + Demo Page
+
+The `/speech/` route provides:
+
+1. **Engine status** — which engines are installed and model files present
+2. **Voice selector** — all available voices grouped by engine and accent
+3. **Speed slider** — 0.5× to 2.0×, step 0.1, default 1.0
+4. **Pitch slider** — −20 to +20 semitones, step 1, default 0
+5. **Demo textarea** — up to 500 characters, live character counter
+6. **Preview button** — JS fetch → returns WAV → inline `<audio>` player
+7. **Download button** — form POST → returns MP3 (or WAV fallback) as attachment
+
+No document processing. No Redis queue. No async jobs. All synthesis is synchronous for demo-length texts (≤500 characters ≈ ≤75 words ≈ ≤30 seconds audio).
+
+---
+
+## Deferred to v3.0.0
+
+- Document-to-audio conversion (full document synthesis)
+- Redis-backed async job queue
+- MP3 export of full documents
+- Chunked synthesis pipeline for long texts
+- Time estimation engine
+- Azure AI Speech Tier 3 integration
+
+---
+
+## 1. Overview (original Kokoro PRD — retained for reference)
 
 A self-hosted Text-to-Speech (TTS) platform built on Kokoro TTS, designed for Unix environments. The system enables:
 

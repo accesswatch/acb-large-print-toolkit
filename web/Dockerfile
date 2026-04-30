@@ -45,12 +45,29 @@ COPY web/pyproject.toml web/requirements.txt web/
 COPY web/src/ web/src/
 RUN pip install --no-cache-dir ./web
 
+# Pre-download Kokoro model files at build time (Tier 1 TTS engine).
+# Model files are ~85 MB and come from Hugging Face Hub.
+# They are baked into the image so the container is self-contained;
+# a bind-mount or named volume at /app/instance/speech_models/ can
+# override them if an admin wants to manage models externally.
+# Build with --build-arg SKIP_SPEECH_MODELS=1 to skip this step.
+ARG SKIP_SPEECH_MODELS=0
+RUN if [ "$SKIP_SPEECH_MODELS" != "1" ]; then \
+      pip install --no-cache-dir huggingface-hub && \
+      python -c "
+from huggingface_hub import hf_hub_download
+hf_hub_download('hexgrad/Kokoro-82M', 'kokoro-v0_19.onnx', local_dir='/app/instance/speech_models')
+hf_hub_download('hexgrad/Kokoro-82M', 'voices.json',       local_dir='/app/instance/speech_models')
+print('Kokoro models downloaded.')
+" || echo 'Kokoro model download failed -- speech will show Not Ready until models are added manually.'; \
+    fi
+
 # Long-form docs are pre-rendered locally into template partials by
 # scripts/build-doc-pages.py and committed under web/src/.../templates/partials.
 
 # Create a non-root user
 RUN addgroup --system app && adduser --system --ingroup app app
-RUN mkdir -p /app/instance /app/.gunicorn \
+RUN mkdir -p /app/instance /app/.gunicorn /app/instance/speech_models/piper \
     && chown -R app:app /app/instance /app/.gunicorn
 
 ENV HOME=/app
