@@ -9,6 +9,7 @@ import sqlite3
 import sys
 import time
 import types
+import wave
 import zipfile
 from contextlib import nullcontext
 from pathlib import Path
@@ -118,6 +119,12 @@ class TestPageLoads:
         resp = client.get("/")
         assert resp.status_code == 200
         assert b"GLOW Accessibility Toolkit" in resp.data
+
+    def test_anthem_download_route(self, client):
+        resp = client.get("/anthem/download")
+        assert resp.status_code == 200
+        assert resp.headers.get("Content-Type", "").startswith("audio/mpeg")
+        assert "attachment;" in (resp.headers.get("Content-Disposition") or "")
 
     def test_audit_form(self, client):
         resp = client.get("/audit/")
@@ -968,6 +975,67 @@ class TestAboutPage:
         resp = client.get("/about/")
         assert b"MarkItDown" in resp.data
 
+    def test_about_shows_speech_and_anthem_usage_sections(self, app, client):
+        from acb_large_print_web.tool_usage import record as record_usage, record_details
+
+        with app.app_context():
+            record_usage("anthem_download")
+            record_details(
+                "speech",
+                {
+                    "mode": "typed_preview",
+                    "voice": "kokoro:af_bella",
+                    "speed": "1.0",
+                    "pitch": "0",
+                },
+            )
+
+        resp = client.get("/about/")
+        assert resp.status_code == 200
+        assert b"Let it GLOW theme downloads" in resp.data
+        assert b"Speech Studio Usage Patterns" in resp.data
+        assert b"kokoro:af_bella" in resp.data
+
+
+class TestSpeechMetrics:
+    def test_speech_metrics_records_and_summarizes(self, app):
+        from acb_large_print_web import speech_metrics
+
+        with app.app_context():
+            speech_metrics.record_document_conversion(
+                engine="kokoro",
+                voice="kokoro:af_bella",
+                speed=1.0,
+                pitch=0,
+                word_count=120,
+                char_count=680,
+                source_size_bytes=4096,
+                processing_seconds=18.5,
+                audio_seconds=42.0,
+            )
+            summary = speech_metrics.get_summary()
+
+        assert summary["samples"] >= 1
+        assert summary["avg_processing_seconds"] > 0
+        assert summary["avg_words"] > 0
+
+    def test_speech_metrics_estimator_uses_baseline_when_samples_low(self, app):
+        from acb_large_print_web import speech_metrics
+
+        with app.app_context():
+            est, source, samples = speech_metrics.estimate_processing_seconds(
+                engine="kokoro",
+                speed=1.0,
+                word_count=200,
+                char_count=1200,
+                source_size_bytes=8192,
+                baseline_seconds=60.0,
+            )
+
+        assert est >= 1.0
+        assert source in {"baseline", "historical_blended"}
+        assert samples >= 0
+
 
 # ============================================================
 # Convert route
@@ -1025,6 +1093,20 @@ class TestConvertPage:
         assert b'name="direction"' in resp.data
         assert b'value="to-markdown"' in resp.data
         assert b'value="to-html"' in resp.data
+
+    def test_convert_form_has_to_speech_direction(self, client):
+        resp = client.get("/convert/")
+        assert resp.status_code == 200
+        assert b'value="to-speech"' in resp.data
+
+    def test_convert_to_speech_redirects_with_token_handoff(self, client):
+        data = {
+            "document": (_make_fake_docx(), "speech-handoff.docx"),
+            "direction": "to-speech",
+        }
+        resp = client.post("/convert/", data=data, content_type="multipart/form-data")
+        assert resp.status_code == 302
+        assert "/speech/?token=" in (resp.headers.get("Location") or "")
 
     def test_convert_to_html_md_file(self, client):
         """Upload a .md with direction=to-html; expect HTML back if Pandoc installed."""
@@ -1183,6 +1265,7 @@ class TestSettingsIntegration:
         assert resp.status_code == 200
         assert b"Speech Studio" in resp.data
         assert b"Open Speech Studio" in resp.data
+        assert b"Download sample audio" in resp.data
 
     def test_speech_setup_references_current_kokoro_model_assets(self):
         from acb_large_print_web import speech
@@ -1315,6 +1398,66 @@ class TestSettingsIntegration:
             rb'<input type="radio" name="voice" value="kokoro:af_bella"\s+checked>',
             resp.data,
         )
+
+    def test_quick_start_choose_shows_speech_action(self, client):
+        data = {"file": (io.BytesIO(b"# Hello\n\nThis is speech-ready markdown."), "sample.md")}
+        start = client.post("/process/", data=data, content_type="multipart/form-data")
+        assert start.status_code == 302
+        choose = client.get(start.location)
+        assert choose.status_code == 200
+        assert b"Speech" in choose.data
+
+    def test_speech_prepare_preview_and_download_document(self, client, monkeypatch):
+        from acb_large_print_web.routes import speech as speech_routes
+
+        def _fake_wav(_voice_id, _text, speed=1.0, pitch=0):
+            buf = io.BytesIO()
+            with wave.open(buf, "wb") as wf:
+                wf.setnchannels(1)
+                wf.setsampwidth(2)
+                wf.setframerate(22050)
+                wf.writeframes(b"\0\0" * 2205)
+            return buf.getvalue(), "glow-speech-test.wav"
+
+        monkeypatch.setattr(speech_routes, "synthesize", _fake_wav)
+        monkeypatch.setattr(speech_routes, "synthesize_document_text", _fake_wav)
+
+        prep = client.post(
+            "/speech/prepare",
+            data={"document": (io.BytesIO(b"# Title\n\nFirst sentence. Second sentence. Third sentence."), "doc.md")},
+            content_type="multipart/form-data",
+        )
+        assert prep.status_code == 200
+        payload = prep.get_json()
+        assert payload["ok"] is True
+        assert payload["token"]
+        assert payload["preview_text"]
+        assert payload["estimate_processing_seconds"] > 0
+
+        preview = client.post(
+            "/speech/document-preview",
+            data={
+                "token": payload["token"],
+                "voice": "kokoro:af_bella",
+                "speed": "1.0",
+                "pitch": "0",
+            },
+        )
+        assert preview.status_code == 200
+        assert preview.headers.get("Content-Type") == "audio/wav"
+
+        download = client.post(
+            "/speech/document-download",
+            data={
+                "token": payload["token"],
+                "voice": "kokoro:af_bella",
+                "speed": "1.0",
+                "pitch": "0",
+            },
+        )
+        assert download.status_code == 200
+        assert download.headers.get("Content-Type") in {"audio/wav", "audio/mpeg"}
+        assert "attachment;" in (download.headers.get("Content-Disposition") or "")
 
     def test_caddy_csp_allows_speech_preview_fetch_and_blob_audio(self):
         caddyfile = Path("web/Caddyfile").read_text(encoding="utf-8")

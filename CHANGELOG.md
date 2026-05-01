@@ -8,31 +8,32 @@ Releases are tagged in the [GitHub repository](https://github.com/accesswatch/ac
 
 ## [Unreleased]
 
-### Changed
-
-- **Speech Demo rebranded to Speech Studio.** Updated `/speech/` UI labels and explanatory copy to present a production-ready Speech Studio experience (not a temporary demo), including refreshed page title/heading and studio-oriented guidance text in the speech template and settings entry point.
-
-- **Speech Studio now restores and saves user choices through global settings storage.** The shared browser preference model (`glow_user_settings`) now includes a `speech` section so voice, text, speed, and pitch can persist (when "Remember my settings" is enabled) and auto-apply when returning to `/speech/`.
-
-### Added
-
-- **Curated multi-voice Piper seeding during build and deploy.** Docker build-time model prefetch and `scripts/deploy-app.sh` now seed a curated English Piper set (US + GB accents) instead of only a single default voice, reducing first-run setup friction for Speech Studio.
-- **Admin Speech Studio voice management.** Added an admin page with one-click Piper voice pack install/remove actions and live install status, linked from the Admin Queue dashboard.
-
-### Fixed
-
-- **Speech Studio preview feedback during slower synthesis.** The preview flow now exposes a live in-progress status message (including slow-operation messaging) so users can tell that generation is still running during 15-20 second waits.
+- No unreleased entries yet.
 
 ---
 
-## [2.9.0] - Unreleased
+## [3.0.0] - 2026-04-30
 
 ### Added
 
-- **Speech Demo (Tier 1: Kokoro ONNX + Tier 2: Piper TTS).** New `/speech/` route delivers a fully self-hosted, CPU-only text-to-speech demo. Users can try all available English voices across both engines, adjust speed (0.5–2.0×) and pitch (±20 semitones), preview audio inline in the browser, and download an MP3. No document is required; the demo accepts free-text input up to 500 characters and processes everything on the server -- no text leaves the server and no API key is required. Engine and model-file status is shown on the page with setup instructions for administrators. Kokoro ONNX (~85 MB, `hexgrad/Kokoro-82M`) provides 10 voices (5 American, 4 British, mixed gender). Piper TTS provides 6 additional voices when model files are present. MP3 export uses pydub + ffmpeg (already in the Docker image); WAV is served as a fallback if ffmpeg is unavailable. Implemented in `web/src/acb_large_print_web/speech.py` (engine abstraction), `routes/speech.py` (blueprint with GET demo page, POST preview, POST download), and `templates/speech.html`.
-- **Speech model volume in Docker.** The Docker image now installs `kokoro-onnx`, `piper-tts`, `pydub`, and `numpy` at build time. Kokoro model files are pre-downloaded from Hugging Face Hub during `docker build` (skippable with `--build-arg SKIP_SPEECH_MODELS=1`). A `speech-models` named volume is declared in `docker-compose.yml` and `docker-compose.prod.yml`, mounted at `/app/instance/speech_models/`, so model files persist across container rebuilds and can be managed independently.
-- **`GLOW_ENABLE_SPEECH` feature flag.** The Speech Demo tab is shown by default (`true`). Deployments that want to hide the tab can set `GLOW_ENABLE_SPEECH=false` in `instance/feature_flags.json` or the environment.
-- **Tiered speech architecture documented.** `docs/speech.md` updated with the Tier 1/2/3 architecture, full voice catalogues, model download commands, audio pipeline diagram, and v2.9.0 vs v3.0.0 scope boundary.
+- **Speech Studio platform completed.** `/speech/` now supports typed synthesis, uploaded document-to-speech conversion, snippet preview, and full narration download.
+- **Curated multi-voice Piper seeding during build and deploy.** Docker build-time model prefetch and `scripts/deploy-app.sh` now seed a curated English Piper set (US + GB accents) instead of only one default voice.
+- **Admin Speech Studio voice management.** Added an admin page with one-click Piper voice pack install/remove actions and live install status.
+- **Convert-to-Speech handoff.** Convert tab now includes a `Speech audio` direction that redirects to Speech Studio with token handoff and no re-upload.
+- **Anthem download analytics.** Home page now includes a Let it GLOW theme download action with usage tracking.
+- **Speech usage pattern analytics.** Speech interactions now track mode, voice, speed, and pitch for analytics.
+- **Speech conversion telemetry datastore.** New `instance/speech_metrics.db` records document conversion runtime by word count and source size.
+- **Adaptive duration estimation.** Speech timing estimates now blend baseline heuristics with historical real conversion telemetry from the same server infrastructure.
+
+### Changed
+
+- **Speech Demo rebranded to Speech Studio.** Updated UI labels and explanatory copy to present production-ready speech workflows.
+- **Speech settings persistence.** Global browser preferences (`glow_user_settings`) now persist voice, text, speed, and pitch and auto-apply in Speech Studio.
+- **Speech first-class navigation.** Added dedicated Speech tab and Quick Start Speech action routing.
+
+### Fixed
+
+- **Speech preview feedback for slower synthesis.** Added stronger live in-progress status messaging for longer preview waits.
 
 ---
 
@@ -44,17 +45,6 @@ Releases are tagged in the [GitHub repository](https://github.com/accesswatch/ac
 
 - **Quick Start handoff: audit, fix, and convert without re-uploading.** The Quick Start landing page now uploads a document once and routes the user to Audit, Fix, or Convert with the file already loaded -- no second upload is required. `GET /audit/?token=...` and `GET /convert/?token=...` resolve the token to the existing session directory and render their forms with a "Ready to audit/convert: &lt;filename&gt;" notice in place of the file picker. The corresponding POST handlers honour a `prefill=1` flag to re-use the cached file rather than calling `validate_upload`. Fix already routed through `fix.fix_from_audit_form`; the Quick Start dispatcher in `routes/process.py` now sends `fix` requests there too. Implemented in `routes/audit.py` (`audit_form`, `_audit_single`), `routes/convert.py` (`convert_form`, `convert_submit`), `routes/process.py` (`process_go`), and templates `audit_form.html` and `convert_form.html`. New tests in `tests/test_v270_new_routes.py::TestQuickStartHandoff`.
 
-- **Optional passphrase protection for shared audit reports.** The Audit form now exposes a "Share Link Protection" fieldset where the user can supply an optional 4-200 character passphrase. When set, anyone opening `/audit/share/<token>` (or downloading the CSV/PDF copy) must enter the passphrase before the report is served. The unlock form posts back to the share URL; CSV and PDF endpoints additionally accept `?p=<passphrase>` so a single click from the unlock screen can deep-link to a download. Passphrases are stored only as PBKDF2-SHA256 hashes (200,000 iterations, per-share random salt) in `passphrase.txt` next to the cached HTML; the cleartext value never touches disk and is never logged. The audit report's "Share or download this report" panel now displays a notice when protection is enabled, reminding the sharer to send the passphrase through a separate channel. New helpers `set_share_passphrase()`, `share_requires_passphrase()`, and `verify_share_passphrase()` in `report_cache.py`. New `templates/share_unlock.html`. New tests in `tests/test_v270_new_routes.py::TestSharePassphrase`.
-
-- **User-defined font sizes (body and per-heading-level).** The Fix and Template forms now expose a "Font Sizes" fieldset where users can override the body (Normal) point size and each of Heading 1 through Heading 6 independently. Empty fields keep the ACB defaults (body 18pt, Heading 1 22pt, Heading 2-6 20pt). Values are clamped to 8pt-96pt and propagate through the audit, fix, and template pipelines so that the auditor treats the user's chosen sizes as the expected sizes. The body override also propagates to `List Bullet` and `List Number` to keep list text in sync with body text. Implemented as `effective_styles()` and `effective_min_body_pt()` helpers in `desktop/src/acb_large_print/constants.py`, threaded through `auditor.audit_document()`, `fixer.fix_document()`, and `template.create_template()` via a new `style_size_overrides` keyword argument; the same surface is mirrored in TypeScript (`office-addin/src/constants.ts`, `auditor.ts`, `fixer.ts`, `template.ts`) as `effectiveStyles()`, `effectiveMinBodyPt()`, and the `StyleSizeOverrides` type. Web routes `routes/fix.py` and `routes/template.py` parse the new `body_size_pt` and `h1_size_pt`..`h6_size_pt` form fields and pass them through. New `.font-size-grid` CSS in `static/forms.css` lays out the seven inputs responsively.
-
-### Changed
-
-- **Findings tables grouped by rule.** Audit reports (single, batch combined, and individual file) now render via a shared `_findings_table.html` partial that groups all occurrences of the same rule into a single row with an occurrence count badge and an expandable list of locations. Single occurrences render inline; multi-occurrence rules show a `<details>` "Show all N occurrences" disclosure. New CSS for `.occurrence-count`, `.occurrence-count--single`, `.occurrence-count--multi`, and `.occurrence-list*` in `static/forms.css`. CSV export still emits one row per occurrence so spreadsheet analysis is unaffected. Changes in `templates/audit_report.html`, `templates/audit_batch_report.html`, and `templates/_findings_table.html`.
-
-### Fixed
-
-- **Scoring and grade integrity refinements.** Corrected cases where score/grade presentation could drift from the underlying weighted-penalty model (including reports appearing as grade F when they should not, and inflated pre/post issue perception from repeated findings). Scoring now consistently applies per-rule weighted penalties while grouped findings remain a presentation-only change.
 
 ---
 

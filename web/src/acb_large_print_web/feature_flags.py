@@ -100,7 +100,7 @@ _DEFAULTS: dict[str, bool] = {
     "GLOW_ENABLE_OPENPYXL": True,
     "GLOW_ENABLE_PYTHON_PPTX": True,
 
-    # Server-side speech demo
+    # Server-side Speech Studio
     "GLOW_ENABLE_SPEECH": True,
 }
 

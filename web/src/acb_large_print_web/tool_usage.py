@@ -10,6 +10,8 @@ Tools tracked:
     template    -- template builder
     whisperer   -- audio transcription (BITS Whisperer)
     chat        -- document chat
+    speech      -- Speech Studio usage (preview/download/prepare)
+    anthem_download -- Let it GLOW anthem downloads
 """
 
 from __future__ import annotations
@@ -29,6 +31,8 @@ TOOL_LABELS: dict[str, str] = {
     "template":  "Template Builder",
     "whisperer": "BITS Whisperer",
     "chat":      "Document Chat",
+    "speech":    "Speech Studio",
+    "anthem_download": "Let it GLOW Download",
 }
 
 
@@ -48,13 +52,22 @@ def _conn() -> sqlite3.Connection:
         "  last_used_at TEXT"
         ")"
     )
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS usage_details ("
+        "  tool TEXT NOT NULL,"
+        "  detail_key TEXT NOT NULL,"
+        "  detail_value TEXT NOT NULL,"
+        "  count INTEGER NOT NULL DEFAULT 0,"
+        "  last_used_at TEXT,"
+        "  PRIMARY KEY (tool, detail_key, detail_value)"
+        ")"
+    )
     conn.commit()
     return conn
 
 
 def record(tool: str, detail: str | None = None) -> None:
     """Increment the counter for *tool*.  Silently swallows errors."""
-    _ = detail  # reserved for future per-direction breakdown
     try:
         now = datetime.now(UTC).isoformat()
         with _conn() as conn:
@@ -63,6 +76,45 @@ def record(tool: str, detail: str | None = None) -> None:
                 " ON CONFLICT(tool) DO UPDATE SET count = count + 1, last_used_at = ?",
                 (tool, now, now),
             )
+            if detail:
+                conn.execute(
+                    "INSERT INTO usage_details (tool, detail_key, detail_value, count, last_used_at) "
+                    "VALUES (?, ?, ?, 1, ?) "
+                    "ON CONFLICT(tool, detail_key, detail_value) DO UPDATE "
+                    "SET count = count + 1, last_used_at = ?",
+                    (tool, "detail", str(detail), now, now),
+                )
+    except Exception:
+        pass
+
+
+def record_details(tool: str, details: dict[str, object]) -> None:
+    """Increment base tool usage and one or more detail dimensions.
+
+    Example details: {"mode": "typed_preview", "voice": "kokoro:af_bella"}
+    """
+    try:
+        now = datetime.now(UTC).isoformat()
+        with _conn() as conn:
+            conn.execute(
+                "INSERT INTO usage (tool, count, last_used_at) VALUES (?, 1, ?)"
+                " ON CONFLICT(tool) DO UPDATE SET count = count + 1, last_used_at = ?",
+                (tool, now, now),
+            )
+            for k, v in (details or {}).items():
+                if v is None:
+                    continue
+                key = str(k).strip()
+                val = str(v).strip()
+                if not key or not val:
+                    continue
+                conn.execute(
+                    "INSERT INTO usage_details (tool, detail_key, detail_value, count, last_used_at) "
+                    "VALUES (?, ?, ?, 1, ?) "
+                    "ON CONFLICT(tool, detail_key, detail_value) DO UPDATE "
+                    "SET count = count + 1, last_used_at = ?",
+                    (tool, key, val, now, now),
+                )
     except Exception:
         pass
 
@@ -101,3 +153,30 @@ def get_all() -> list[dict]:
 def get_total() -> int:
     """Return the sum of all tool use counts."""
     return sum(r["count"] for r in get_all())
+
+
+def get_detail_counts(tool: str, detail_key: str, limit: int = 10) -> list[dict]:
+    """Return detail-level usage counts for one tool and key.
+
+    Each item has: detail_value, count, last_used_at.
+    """
+    try:
+        with _conn() as conn:
+            rows = conn.execute(
+                "SELECT detail_value, count, last_used_at "
+                "FROM usage_details "
+                "WHERE tool = ? AND detail_key = ? "
+                "ORDER BY count DESC, detail_value ASC "
+                "LIMIT ?",
+                (tool, detail_key, int(limit)),
+            ).fetchall()
+        return [
+            {
+                "detail_value": r[0],
+                "count": r[1],
+                "last_used_at": r[2],
+            }
+            for r in rows
+        ]
+    except Exception:
+        return []

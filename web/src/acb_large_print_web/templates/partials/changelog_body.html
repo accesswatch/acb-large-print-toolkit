@@ -2,49 +2,59 @@
 <!-- Source: CHANGELOG.md -->
 <!-- Run `python scripts/build-doc-pages.py` to regenerate -->
 
-{% raw %}
-
 <nav aria-labelledby="changelog-toc-heading">
   <h2 id="changelog-toc-heading">Versions</h2>
 <div class="toc">
 <ul>
 <li><a href="#changelog">Changelog</a><ul>
-<li><a href="#270---2026-04-29">[2.7.0] - 2026-04-29</a><ul>
+<li><a href="#unreleased">[Unreleased]</a></li>
+<li><a href="#300---2026-04-30">[3.0.0] - 2026-04-30</a><ul>
 <li><a href="#added">Added</a></li>
+<li><a href="#changed">Changed</a></li>
 <li><a href="#fixed">Fixed</a></li>
 </ul>
 </li>
-<li><a href="#260---2026-04-28">[2.6.0] - 2026-04-28</a><ul>
+<li><a href="#280---2026-04-30">[2.8.0] - 2026-04-30</a><ul>
 <li><a href="#added_1">Added</a></li>
-<li><a href="#changed">Changed</a></li>
 </ul>
 </li>
-<li><a href="#250---2026-04-28">[2.5.0] - 2026-04-28</a><ul>
+<li><a href="#270---2026-04-29">[2.7.0] - 2026-04-29</a><ul>
 <li><a href="#added_2">Added</a></li>
 <li><a href="#changed_1">Changed</a></li>
 <li><a href="#fixed_1">Fixed</a></li>
+</ul>
+</li>
+<li><a href="#260---2026-04-28">[2.6.0] - 2026-04-28</a><ul>
 <li><a href="#added_3">Added</a></li>
 <li><a href="#changed_2">Changed</a></li>
 </ul>
 </li>
-<li><a href="#200---2026-04-17">[2.0.0] - 2026-04-17</a><ul>
+<li><a href="#250---2026-04-28">[2.5.0] - 2026-04-28</a><ul>
 <li><a href="#added_4">Added</a></li>
 <li><a href="#changed_3">Changed</a></li>
+<li><a href="#fixed_2">Fixed</a></li>
 <li><a href="#added_5">Added</a></li>
 <li><a href="#changed_4">Changed</a></li>
-<li><a href="#fixed_2">Fixed</a></li>
+</ul>
+</li>
+<li><a href="#200---2026-04-17">[2.0.0] - 2026-04-17</a><ul>
 <li><a href="#added_6">Added</a></li>
-<li><a href="#fixed_3">Fixed</a></li>
 <li><a href="#changed_5">Changed</a></li>
-<li><a href="#fixed_4">Fixed</a></li>
+<li><a href="#added_7">Added</a></li>
 <li><a href="#changed_6">Changed</a></li>
+<li><a href="#fixed_3">Fixed</a></li>
+<li><a href="#added_8">Added</a></li>
+<li><a href="#fixed_4">Fixed</a></li>
 <li><a href="#changed_7">Changed</a></li>
+<li><a href="#fixed_5">Fixed</a></li>
+<li><a href="#changed_8">Changed</a></li>
+<li><a href="#changed_9">Changed</a></li>
 <li><a href="#removed">Removed</a></li>
 </ul>
 </li>
 <li><a href="#110----2026-04-15">[1.1.0] -- 2026-04-15</a><ul>
-<li><a href="#fixed_5">Fixed</a></li>
-<li><a href="#added_7">Added</a></li>
+<li><a href="#fixed_6">Fixed</a></li>
+<li><a href="#added_9">Added</a></li>
 </ul>
 </li>
 <li><a href="#100----2026-04-14">[1.0.0] -- 2026-04-14</a><ul>
@@ -144,9 +154,64 @@
 <p>All notable changes to the GLOW Accessibility Toolkit are documented in this file. The format is based on <a href="https://keepachangelog.com/en/1.1.0/">Keep a Changelog</a>.</p>
 <p>Releases are tagged in the <a href="https://github.com/accesswatch/acb-large-print-toolkit">GitHub repository</a>. Dates are in Pacific Time (UTC-7).</p>
 <hr />
-<h2 id="270---2026-04-29">[2.7.0] - 2026-04-29</h2>
+<h2 id="unreleased">[Unreleased]</h2>
+<ul>
+<li>No unreleased entries yet.</li>
+</ul>
+<hr />
+<h2 id="300---2026-04-30">[3.0.0] - 2026-04-30</h2>
 <h3 id="added">Added</h3>
 <ul>
+<li><strong>Speech Studio platform completed.</strong> <code>/speech/</code> now supports typed synthesis, uploaded document-to-speech conversion, snippet preview, and full narration download.</li>
+<li><strong>Curated multi-voice Piper seeding during build and deploy.</strong> Docker build-time model prefetch and <code>scripts/deploy-app.sh</code> now seed a curated English Piper set (US + GB accents) instead of only one default voice.</li>
+<li><strong>Admin Speech Studio voice management.</strong> Added an admin page with one-click Piper voice pack install/remove actions and live install status.</li>
+<li><strong>Convert-to-Speech handoff.</strong> Convert tab now includes a <code>Speech audio</code> direction that redirects to Speech Studio with token handoff and no re-upload.</li>
+<li><strong>Anthem download analytics.</strong> Home page now includes a Let it GLOW theme download action with usage tracking.</li>
+<li><strong>Speech usage pattern analytics.</strong> Speech interactions now track mode, voice, speed, and pitch for analytics.</li>
+<li><strong>Speech conversion telemetry datastore.</strong> New <code>instance/speech_metrics.db</code> records document conversion runtime by word count and source size.</li>
+<li><strong>Adaptive duration estimation.</strong> Speech timing estimates now blend baseline heuristics with historical real conversion telemetry from the same server infrastructure.</li>
+</ul>
+<h3 id="changed">Changed</h3>
+<ul>
+<li><strong>Speech Demo rebranded to Speech Studio.</strong> Updated UI labels and explanatory copy to present production-ready speech workflows.</li>
+<li><strong>Speech settings persistence.</strong> Global browser preferences (<code>glow_user_settings</code>) now persist voice, text, speed, and pitch and auto-apply in Speech Studio.</li>
+<li><strong>Speech first-class navigation.</strong> Added dedicated Speech tab and Quick Start Speech action routing.</li>
+</ul>
+<h3 id="fixed">Fixed</h3>
+<ul>
+<li><strong>Speech preview feedback for slower synthesis.</strong> Added stronger live in-progress status messaging for longer preview waits.</li>
+</ul>
+<hr />
+<h2 id="280---2026-04-30">[2.8.0] - 2026-04-30</h2>
+<blockquote>
+<p>A heartfelt thank you to the BITS community and the broader blind and low-vision community whose feedback, feature requests, and real-world testing made this release possible. Every feature in 2.8.0 came directly from your suggestions. We are building GLOW for you and with you -- your voice is in every line of this release.</p>
+</blockquote>
+<h3 id="added_1">Added</h3>
+<ul>
+<li><strong>Quick Start handoff: audit, fix, and convert without re-uploading.</strong> The Quick Start landing page now uploads a document once and routes the user to Audit, Fix, or Convert with the file already loaded -- no second upload is required. <code>GET /audit/?token=...</code> and <code>GET /convert/?token=...</code> resolve the token to the existing session directory and render their forms with a "Ready to audit/convert: &lt;filename&gt;" notice in place of the file picker. The corresponding POST handlers honour a <code>prefill=1</code> flag to re-use the cached file rather than calling <code>validate_upload</code>. Fix already routed through <code>fix.fix_from_audit_form</code>; the Quick Start dispatcher in <code>routes/process.py</code> now sends <code>fix</code> requests there too. Implemented in <code>routes/audit.py</code> (<code>audit_form</code>, <code>_audit_single</code>), <code>routes/convert.py</code> (<code>convert_form</code>, <code>convert_submit</code>), <code>routes/process.py</code> (<code>process_go</code>), and templates <code>audit_form.html</code> and <code>convert_form.html</code>. New tests in <code>tests/test_v270_new_routes.py::TestQuickStartHandoff</code>.</li>
+</ul>
+<hr />
+<h2 id="270---2026-04-29">[2.7.0] - 2026-04-29</h2>
+<h3 id="added_2">Added</h3>
+<ul>
+<li>
+<p><strong>GLOW Anthem:</strong> Embedded the "Let it GLOW" cinematic ballad on the home page with an accessible audio player and integrated lyrics.</p>
+</li>
+<li>
+<p><strong>User-selectable dark mode (Light / Dark / Auto).</strong> GLOW now offers an explicit theme choice instead of only following the operating system. The preference is stored in <code>localStorage</code> under <code>glow_theme</code> (values <code>light</code>, <code>dark</code>, <code>auto</code>; default <code>auto</code>). An inline boot script in <code>&lt;head&gt;</code> resolves the preference and writes <code>data-theme="dark"</code> or <code>data-theme="light"</code> on <code>&lt;html&gt;</code> before first paint, eliminating the flash-of-wrong-theme on reload. The CSS dark block was rewritten to key off <code>html[data-theme="dark"]</code> instead of <code>@media (prefers-color-scheme: dark)</code>, so <code>auto</code> mode now responds dynamically when the OS preference changes. New controls: a theme selector dropdown in the footer (always visible) and a radio group at the top of the Settings page; both stay in sync via the <code>data-theme-control</code> attribute. A <code>&lt;meta name="color-scheme" content="light dark"&gt;</code> tag tells the browser to render native widgets (scrollbars, form controls) in the matching scheme. New file <code>static/theme.js</code>; changes in <code>static/forms.css</code>, <code>templates/base.html</code>, and <code>templates/settings.html</code>.</p>
+</li>
+<li>
+<p><strong>Centered page layout on wide viewports.</strong> The body of every page is now horizontally centered with a wider max-width (<code>min(82rem, 100%)</code>) and responsive horizontal padding (<code>clamp(1rem, 3vw, 2.5rem)</code>) instead of being pinned flush left in a 70ch column. Long-prose paragraphs and lists that are direct children of <code>&lt;main&gt;</code> are still constrained to a 70ch reading measure, while cards, tables, and form layouts use the full width. Changes in <code>static/acb-large-print.css</code>.</p>
+</li>
+<li>
+<p><strong>Reliable focus indicators across all form controls.</strong> All interactive elements (links, buttons, inputs, selects, textareas, checkboxes, radios, summary, <code>[tabindex]</code>) now render a 3px solid blue outline plus a layered white-and-blue halo (<code>box-shadow</code>) on <code>:focus-visible</code>. Native checkboxes and radios -- which previously lost their outlines on some browsers/themes -- now get an explicit ring with offset and a dashed outline on the wrapping <code>&lt;label&gt;</code> (via <code>:has()</code>) so the control text is also visually located. A <code>forced-colors</code> block defers to the system <code>Highlight</code> colour for Windows High Contrast users, and a dark-mode block swaps the white halo for a dark halo so the indicator stays visible against dark backgrounds. Changes in <code>static/forms.css</code>.</p>
+</li>
+</ul>
+<h3 id="changed_1">Changed</h3>
+<ul>
+<li>
+<p><strong>Guidelines and Settings moved out of the main ribbon.</strong> The top navigation now focuses on document tools (Quick Start, Template, Audit, Fix, Convert, Whisperer). Guidelines and Settings have moved into the footer "Additional links" navigation, which already housed User Guide, FAQ, About, PRD, Changelog, Feedback, Admin Sign-In, Privacy Policy, and Terms of Use. Both are also called out as cards on the Quick Start page so new users can find them. Changes in <code>templates/base.html</code> and <code>templates/process_form.html</code>.</p>
+</li>
 <li>
 <p><strong>Streamlined Audit → Fix (no re-upload).</strong> Two new routes enable users to go from an audit report directly to Fix without re-uploading the document. <code>GET /fix/from-audit/&lt;token&gt;</code> renders the Fix form with the session file pre-loaded and a notice showing the filename; <code>POST /fix/from-audit/&lt;token&gt;</code> runs the full fix pipeline -- including the heading-review confirmation flow -- on the existing session file. The "Fix This Document" and "Fix These Auto-Fixable Issues" buttons on the audit report now route to these token-based URLs when a session is active; they fall back to the standard <code>/fix/</code> form otherwise. A new <code>_find_fixable_file(temp_dir)</code> helper resolves the first supported file in the temp directory. When an expired token is followed, the user is redirected to the standard fix form with <code>?notice=session_expired</code>. Changes in <code>routes/fix.py</code> and <code>templates/fix_form.html</code>.</p>
 </li>
@@ -155,6 +220,9 @@
 </li>
 <li>
 <p><strong>Privacy policy: audit session retention and share token wording.</strong> The Data Storage and Retention Policy (<code>templates/privacy.html</code>) has been updated to accurately reflect the new session model: uploaded files are retained for up to 1 hour to enable the Fix shortcut and Chat follow-on actions; shareable report links contain only rendered HTML (never the original document) and expire after 1 hour. The "No permanent storage" section clarifies that the report cache holds rendered HTML only. Last updated date changed to April 29, 2026.</p>
+</li>
+<li>
+<p><strong>Privacy policy: analytics disclosure expanded.</strong> The Data Storage and Retention Policy now explicitly documents operational analytics collection: aggregate visitor counter (unique browser sessions), per-tool usage counters (Audit, Fix, Convert, Template Builder, BITS Whisperer, Document Chat), and per-tool last-used timestamps. The page now also states where these metrics are stored (<code>instance/visitor_counter.db</code>, <code>instance/tool_usage.db</code>), what they are used for (internal reporting and capacity planning), and what they exclude (document content, extracted text, prompts, transcripts, and fixed output). Change in <code>web/src/acb_large_print_web/templates/privacy.html</code>.</p>
 </li>
 <li>
 <p><strong>Feature flag docs: <code>GLOW_ENABLE_EXPORT_HTML</code> description updated.</strong> <code>docs/feature-flags.md</code> updated to document that this flag now gates the CMS Fragment direction in Convert (rather than a standalone Export route), and that the legacy <code>/export</code> redirect to Convert is unaffected by the flag.</p>
@@ -218,7 +286,7 @@
 <p><strong>Toast notification system.</strong> A lightweight global toast notification module (<code>static/toast.js</code>) is included from <code>base.html</code>. It exposes <code>window.GLOW.toast(message, type)</code> for programmatic toasts and wires a global <code>click</code> handler for <code>[data-copy-target]</code> buttons that copies the target input's value to the clipboard and shows a "Copied!" toast. Changes in <code>templates/base.html</code>, new <code>static/toast.js</code>, and <code>static/forms.css</code>.</p>
 </li>
 <li>
-<p><strong>Dark mode CSS.</strong> A comprehensive <code>@media (prefers-color-scheme: dark)</code> block has been added to <code>static/forms.css</code>. It overrides body, navigation, cards, buttons, tables, badges, score grades, footer, forms, file-input zones, dropzone, and details/summary elements to respect the user's system dark mode preference.</p>
+<p><strong>Dark mode CSS.</strong> The dark theme rules in <code>static/forms.css</code> cover body, navigation, cards, buttons, tables, badges, score grades, footer, forms, file-input zones, dropzone, and details/summary elements. As of the v2.7.0 user-selectable toggle (above), they key off <code>html[data-theme="dark"]</code> rather than <code>@media (prefers-color-scheme: dark)</code>, so the user's explicit Light/Dark/Auto choice always wins and Auto mode still tracks the OS via <code>matchMedia</code>.</p>
 </li>
 <li>
 <p><strong>Print CSS improvements.</strong> An additional <code>@media print</code> block in <code>static/forms.css</code> hides the quick wins bar, share section, toast container, CMS copy bar, and convert preview iframe when printing, and adds page-break rules for the findings table.</p>
@@ -234,6 +302,18 @@
 </li>
 <li>
 <p><strong>Audit report: download findings as CSV.</strong> A new <code>GET /audit/share/&lt;share_token&gt;/csv</code> route returns the audit findings as a UTF-8 BOM CSV with a header preamble (filename, format, score, grade, profile, mode) followed by the standard column row. The CSV is generated from cached findings JSON written alongside the report HTML at audit time. The "Share this report" section now exposes a "Download CSV" button that pairs with the existing email-CSV-attachment delivery. New module <code>web/src/acb_large_print_web/csv_export.py</code> extracted from the email path; new helpers <code>report_cache.save_findings_data()</code> / <code>load_findings_data()</code>. Changes in <code>routes/audit.py</code>, new <code>csv_export.py</code>, and <code>templates/audit_report.html</code>.</p>
+</li>
+<li>
+<p><strong>SQLite visitor counter.</strong> A new <code>visitor_counter.py</code> module tracks unique browser sessions using a single-row SQLite counter (<code>instance/visitor_counter.db</code>, WAL mode). One increment fires per session via a <code>@app.before_request</code> hook; static assets and the <code>/health</code> endpoint are excluded. The current count is injected into every template as <code>visitor_count</code> via the <code>inject_rules()</code> context processor and displayed in the footer as "Visitors: 1,234". New file <code>web/src/acb_large_print_web/visitor_counter.py</code>; changes in <code>app.py</code> and <code>templates/base.html</code>.</p>
+</li>
+<li>
+<p><strong>Tool usage analytics.</strong> A new <code>tool_usage.py</code> module maintains per-tool use counts in a SQLite database (<code>instance/tool_usage.db</code>, WAL mode). Each of the six public tool endpoints (Audit, Fix, Convert, Template Builder, BITS Whisperer, Document Chat) records a count increment as the first operation inside its submit handler; failures are swallowed silently so a DB error never surfaces to the user. Counts and a "last used" timestamp are exposed via <code>get_all()</code> and <code>get_total()</code>. New file <code>web/src/acb_large_print_web/tool_usage.py</code>; changes in <code>routes/audit.py</code>, <code>routes/fix.py</code>, <code>routes/convert.py</code>, <code>routes/template.py</code>, <code>routes/whisperer.py</code>, and <code>routes/chat.py</code>.</p>
+</li>
+<li>
+<p><strong>Admin analytics dashboard.</strong> A new <code>GET /admin/analytics</code> route (admin-only) renders a summary of tool usage counts per tool (with share percentages and last-used timestamps) alongside the total visitor count. Accessible from a new "Tool usage analytics" link in the Admin Queue dashboard. New template <code>templates/admin_analytics.html</code>. Changes in <code>routes/admin.py</code> and <code>templates/admin_queue.html</code>.</p>
+</li>
+<li>
+<p><strong>About page: Usage Statistics section.</strong> The About page (<code>/about/</code>) now includes a "Usage Statistics" section showing total visitor count, total tool uses, and a table of per-tool counts (rows with zero uses are hidden). The <code>about_page</code> route now imports and passes <code>tool_usage</code>, <code>total_uses</code>, and <code>visitor_count</code> to the template. Changes in <code>routes/about.py</code> and <code>templates/about.html</code>.</p>
 </li>
 <li>
 <p><strong>Re-audit: before/after diff banner.</strong> When an audit is re-run via <code>POST /audit/from-fix</code>, the report now displays a diff banner above the score showing the score delta (e.g. "+12 points"), grade change, fixed/persistent/new finding counts, and the rule IDs that were fixed since the previous audit. Implemented via a new <code>_compute_audit_diff()</code> helper in <code>routes/audit.py</code> that consumes <code>prev_score</code> and <code>prev_rule_ids</code> form fields posted from the fix result page, and a new <code>audit_diff</code> block in <code>templates/audit_report.html</code>. The fix result form now propagates <code>prev_score</code> and a comma-joined list of rule IDs from the original audit.</p>
@@ -257,17 +337,29 @@
 <p><strong>Tests: 22 new unit tests for v2.7.0 routes.</strong> New <code>web/tests/test_v270_new_routes.py</code> exercises <code>report_cache.save_findings_data()</code> / <code>load_findings_data()</code> / <code>save_pdf()</code> / <code>load_pdf()</code> (roundtrip, bad token, missing share dir, TTL expiry), <code>csv_export.findings_to_csv_bytes()</code> (BOM, preamble, columns, empty-list, filename safety), the new share-report CSV and PDF routes (cached path, 404 on unknown token, 503 when WeasyPrint missing), and the <code>audit_from_convert</code> error paths (expired/missing token). Also includes a CSS guard test that fails if any shipped stylesheet introduces an <code>outline: none / 0 / transparent</code> rule outside the allowed <code>:focus:not(:focus-visible)</code> recipe, protecting the new global focus ring from future regressions.</p>
 </li>
 </ul>
-<h3 id="fixed">Fixed</h3>
+<h3 id="fixed_1">Fixed</h3>
 <ul>
+<li>
+<p><strong>Production deploy now forces Caddy to apply config changes and validates from a disposable container.</strong> Updated <code>scripts/deploy-app.sh</code> to validate <code>web/Caddyfile</code> without depending on a running <code>caddy</code> container, then force-recreate the proxy so bind-mounted config changes actually reach production. Updated <code>scripts/post-deploy-check.sh</code> to verify that the live MP3 response includes <code>media-src 'self'</code> in the Content Security Policy so stale proxy config is caught during deployment instead of after release.</p>
+</li>
+<li>
+<p><strong>Web changelog page no longer crashes under Jinja parsing.</strong> <code>web/src/acb_large_print_web/templates/partials/changelog_body.html</code> is now wrapped in a Jinja <code>{% raw %}...{% endraw %}</code> block so literal documentation examples like <code>{{.Name}}</code>, <code>{% if %}</code>, and <code>{{ }}</code> are treated as text instead of template syntax. This resolves <code>/changelog/</code> HTTP 500 errors and unblocks the Playwright static reference page regression test in Accessibility Regression Gate.</p>
+</li>
+<li>
+<p><strong>Home page accessibility test updated for renamed navigation section heading.</strong> <code>web/tests/test_app.py</code> now asserts <code>Main Navigation Tab Order and Purpose</code> (replacing <code>What Each Tab Does</code>) and renames the test method to match the updated UI copy, resolving Deploy/Feature Flags CI failures caused by stale expectation text.</p>
+</li>
 <li>
 <p><strong>Streamlined flow: session context preserved on fix error.</strong> When a fix attempt initiated from an audit report (<code>POST /fix/from-audit/&lt;token&gt;</code>) encounters an error, the fix form now re-renders with the original session token and filename intact. Previously the form re-rendered as a generic upload form, losing the user's context and requiring a fresh upload. Change in <code>routes/fix.py</code>.</p>
 </li>
 <li>
 <p><strong>Streamlined flow: prefill notice button label.</strong> The notice shown when the Fix form pre-loads a session file incorrectly referred to the submit action as "Run Fix." The actual button label is "Fix Document." Label corrected in <code>templates/fix_form.html</code>.</p>
 </li>
+<li>
+<p><strong>Home page Settings card: Personalization chip is now clickable.</strong> On the main page, the "Personalization" format tag in the Settings card now links to the Settings page route (<code>settings.settings_page</code>) instead of rendering as plain text. Change in <code>web/src/acb_large_print_web/templates/index.html</code>.</p>
+</li>
 </ul>
 <h2 id="260---2026-04-28">[2.6.0] - 2026-04-28</h2>
-<h3 id="added_1">Added</h3>
+<h3 id="added_3">Added</h3>
 <ul>
 <li>
 <p><strong>Web Rules Reference deep-dive page.</strong> Added a new <code>/rules/</code> route in <code>web/src/acb_large_print_web/routes/rules_ref.py</code> with a dedicated <code>rules_ref.html</code> template and <code>rule_reference_metadata.py</code> data module. The page provides a searchable, filterable browser for all audit rules with severity badges, profile membership, help links, extended rationale, suppression guidance, and deep-linkable rule anchors from the main web navigation.</p>
@@ -316,7 +408,7 @@
 <p><strong>Office add-in rule registry sync for 2.6.0 coverage.</strong> Updated <code>office-addin/src/constants.ts</code> with the new PPTX and XLSX rules, plus Markdown rule identifiers and <code>DocFormat.MD</code> support to keep shared rule metadata aligned across implementations.</p>
 </li>
 </ul>
-<h3 id="changed">Changed</h3>
+<h3 id="changed_2">Changed</h3>
 <ul>
 <li>
 <p><strong>Web Rules Reference accessibility polish.</strong> <code>web/src/acb_large_print_web/templates/rules_ref.html</code> now exposes each rule as a navigable heading for screen-reader heading lists, moves keyboard focus to deep-linked rules when loading <code>#rule-*</code> anchors, and debounces search-driven live-region updates to reduce announcement noise.</p>
@@ -335,7 +427,7 @@
 </li>
 </ul>
 <h2 id="250---2026-04-28">[2.5.0] - 2026-04-28</h2>
-<h3 id="added_2">Added</h3>
+<h3 id="added_4">Added</h3>
 <ul>
 <li>
 <p><strong>New feature flag: <code>GLOW_ENABLE_HEADING_DETECTION</code> (default <code>True</code>).</strong> Added to <code>feature_flags.py</code> <code>_DEFAULTS</code> and injected as <code>feature_heading_detection_enabled</code> in the global template context via <code>app.py</code>. Controls visibility of heading detection settings in the Settings tab and can be used to gate the Fix route's heading detection controls in future.</p>
@@ -386,7 +478,7 @@
 </li>
 <li><strong>Web: Whisperer estimate troubleshooting diagnostics.</strong> Added optional client-side estimate diagnostics in <code>whisperer_form.html</code> (enable with <code>?whispererDebug=1</code>) with event tracing for file selection, key/click triggers, fetch status, payload handling, and fallback paths. Added structured server-side estimate diagnostics in <code>routes/whisperer.py</code> with <code>WHISPERER_ESTIMATE</code> log lines plus optional debug payload support (<code>?debug=1</code> or <code>X-Whisperer-Debug: 1</code>).</li>
 </ul>
-<h3 id="changed_1">Changed</h3>
+<h3 id="changed_3">Changed</h3>
 <ul>
 <li>
 <p><strong>Deploy script: safe Docker cleanup controls added.</strong> <code>scripts/deploy-app.sh</code> now supports orphan cleanup during deploy (<code>COMPOSE_REMOVE_ORPHANS=1</code> by default) and post-deploy artifact cleanup toggles. Successful deploys now optionally prune unused images (<code>CLEANUP_ON_SUCCESS=1</code>, <code>CLEANUP_IMAGE_PRUNE=1</code> by default). Optional builder cache cleanup is available via <code>CLEANUP_BUILDER_PRUNE=1</code> with <code>CLEANUP_BUILDER_KEEP_STORAGE</code> (default <code>4GB</code>). Rollback-path cleanup remains opt-in (<code>CLEANUP_ON_ROLLBACK=0</code> by default).</p>
@@ -413,7 +505,7 @@
 <p><strong>Web: Default AI model switched from free Llama/Mistral pool to GPT-4o-mini.</strong> <code>_DEFAULT_MODEL</code> in <code>web/src/acb_large_print_web/ai_gateway.py</code> now defaults to <code>openai/gpt-4o-mini</code> (primary) and <code>openai/gpt-4o</code> (fallback/escalation), replacing the previously unavailable <code>meta-llama/llama-3-8b-instruct:free,mistralai/mistral-7b-instruct:free</code> free-model pool. The legacy free model entries are retained in the cost table for accounts that override via <code>AI_DEFAULT_MODEL</code>. Admin reset-to-defaults and the admin AI settings dropdown updated to match. Probe path 01 and integration test fixtures updated to the new primary model. All 84/84 probe paths now pass.</p>
 </li>
 </ul>
-<h3 id="fixed_1">Fixed</h3>
+<h3 id="fixed_2">Fixed</h3>
 <ul>
 <li>
 <p><strong>Post-deploy verification no longer hangs/fails on removed Ollama service.</strong> <code>scripts/post-deploy-check.sh</code> now gates required service checks dynamically from Compose service definitions and skips <code>ollama</code> when it is not present in <code>docker-compose.prod.yml</code>. Readiness parsing now treats <code>not-configured</code> as OK for feature-gated AI checks, preventing false deployment failures when AI/Ollama are intentionally disabled.</p>
@@ -425,7 +517,7 @@
 <p><strong>Desktop PDF audit: resolved pre-existing style violations in <code>pdf_auditor.py</code>.</strong> Wrapped long string and expression lines that previously triggered lint errors (including lines around missing-PyMuPDF messaging, tagged-PDF messaging, text block extraction, and font-family prefix checks) with no behavior changes.</p>
 </li>
 <li>
-<p><strong>Web: Changelog page <code>/changelog/</code> returned HTTP 500 due to unescaped template syntax in <code>changelog_body.html</code>.</strong> Two occurrences of brace sequences that Jinja2 mis-parsed as template directives were escaped with HTML entities: a Docker service label using Go template syntax <code>&amp;#123;&amp;#123;.Name&amp;#125;&amp;#125;</code> and an inline code example showing <code>&amp;#123;% set %&amp;#125;</code> / <code>&amp;#123;&amp;#123; &amp;#125;&amp;#125;</code> Jinja2 syntax.</p>
+<p><strong>Web: Changelog page <code>/changelog/</code> returned HTTP 500 due to unescaped template syntax in <code>changelog_body.html</code>.</strong> Two occurrences of brace sequences that Jinja2 mis-parsed as template directives were escaped with HTML entities: a Docker service label using Go template syntax <code>{{.Name}}</code> (→ <code>&amp;#123;&amp;#123;.Name&amp;#125;&amp;#125;</code>) and an inline code example showing <code>{% set %}</code> / <code>{{ }}</code> Jinja2 syntax (→ <code>&amp;#123;% set %&amp;#125;</code> / <code>&amp;#123;&amp;#123; &amp;#125;&amp;#125;</code>).</p>
 </li>
 <li>
 <p><strong>CI: axe-core accessibility gate SARIF generation fixed.</strong> <code>.github/workflows/accessibility-regression.yml</code> previously used the unsupported <code>--reporter sarif</code> flag (axe CLI 4.11.3 does not support it). Fixed by saving JSON output with <code>--save axe-results.json</code> and converting via the new <code>.github/scripts/axe_json_to_sarif.py</code> converter script, which emits valid SARIF 2.1.0 for GitHub code scanning upload.</p>
@@ -484,18 +576,18 @@
 <li><strong>Web: Whisperer client-side oversized-file precheck.</strong> The form now uses the server-configured maximum audio size to warn and block oversized files immediately after selection (before upload), disabling estimate/proceed controls until a valid file is chosen.</li>
 <li><strong>Web: Whisperer progress UX clarity improvements.</strong> The transcribe page now shows an explicit phase label (queued/model warm-up/transcribing/building/complete), an elapsed-time counter, queue position in status text, automatic scroll to the progress panel after submit, and a "still working" message when progress appears stalled during long model warm-up or processing.</li>
 </ul>
-<h3 id="added_3">Added</h3>
+<h3 id="added_5">Added</h3>
 <ul>
 <li><strong>Web: <code>/health</code> Ollama warm-model tracking.</strong> <code>_get_ollama_running_models()</code> now queries <code>/api/ps</code> to list models currently loaded in Ollama memory. The <code>readiness.chat</code> and <code>readiness.vision</code> blocks each expose a new <code>model_warm</code> boolean, and <code>models.ollama_running</code> is included in the response and health log line so operators can tell instantly whether <code>llama3</code>/<code>llava</code> are warm (in memory) vs merely pulled (on disk).</li>
 <li><strong>Web: <code>/health</code> Whisper model-present check.</strong> <code>_whisper_model_present()</code> inspects the configured Hugging Face cache directory for <code>model.bin</code> to distinguish "faster-whisper installed" from "Whisper model actually downloaded". <code>readiness.whisperer</code> now exposes <code>model_present</code> separately from <code>dependency_present</code>, so the health endpoint surfaces the full warm-up state of the Whisperer pipeline.</li>
 <li><strong>Ops: Post-deploy readiness gate for models.</strong> <code>scripts/post-deploy-check.sh</code> now curls <code>/health</code> after all containers pass their Docker health gates and parses the <code>readiness</code> JSON with Python. If any feature (<code>chat</code>, <code>vision</code>, <code>whisperer</code>) is <code>not-ready</code>, the script prints the status/present/warm details and fails the deployment verification, preventing a deploy from being marked PASSED when required models have not been downloaded or loaded.</li>
 </ul>
-<h3 id="changed_2">Changed</h3>
+<h3 id="changed_4">Changed</h3>
 <ul>
 <li><strong>Web: Whisperer duration probe now prefers Mutagen metadata.</strong> <code>_estimate_audio_duration_seconds()</code> now uses <code>mutagen</code> as the primary duration source and falls back to PyAV for additional codec/container coverage. Added <code>mutagen&gt;=1.47.0</code> to <code>web/pyproject.toml</code> and <code>web/requirements.txt</code>.</li>
 </ul>
 <h2 id="200---2026-04-17">[2.0.0] - 2026-04-17</h2>
-<h3 id="added_4">Added</h3>
+<h3 id="added_6">Added</h3>
 <ul>
 <li><strong>Ops: Deep deployment logging.</strong> <code>scripts/deploy-app.sh</code> now writes every phase of a deployment to a timestamped log file in <code>~/deploy-logs/</code> (always teed to stdout). Each step emits an ISO-8601 timestamp. The health-wait loop logs per-attempt container <code>state=</code> / <code>health=</code> / <code>last_log=</code> for all four services at every interval. On health check failure the script dumps the last 40-80 lines from each service log, runs <code>docker inspect</code> to show container error and restart state, and probes <code>/health</code> JSON to print the full service + readiness breakdown. Rollback attempts are logged the same way. A <code>deploy-latest.log</code> symlink always points to the most recent run.</li>
 <li><strong>Web: <code>/health</code> deep readiness checks.</strong> The <code>/health</code> endpoint now returns a <code>readiness</code> object alongside <code>services</code>. <code>readiness.chat</code> reports whether the Llama 3 model is loaded in Ollama. <code>readiness.vision</code> reports whether LLaVA is available. <code>readiness.whisperer</code> reports whether faster-whisper is installed. The top-level <code>status</code> field is <code>"degraded"</code> if any service is down or any readiness check is <code>"not-ready"</code>. The <code>models.ollama</code> array lists all currently loaded model names.</li>
@@ -503,7 +595,7 @@
 <li><strong>Web: Flask startup ready log.</strong> On worker startup the app emits <code>GLOW startup: web=X core=Y maintenance=Z log_level=W</code> so deployment logs confirm the correct package versions are loaded.</li>
 <li><strong>Web: Per-request logging middleware.</strong> Every request logs <code>REQUEST METHOD /path -&gt; STATUS (Xms) ua=...</code> at INFO after the response is sent. Silent for fast successful <code>/health</code> polls.</li>
 <li><strong>Admin: Live System Health panel on admin queue dashboard.</strong> <code>admin_queue.html</code> now shows a "System Health" table that fetches <code>/health</code> JSON on load and refreshes every 20 seconds alongside the queue refresh. Rows show web / pipeline / Ollama service status plus chat (Llama 3), vision (LLaVA), and Whisperer readiness.</li>
-<li><strong>Docker: Service log labels and increased retention.</strong> All four Compose services now include a <code>tag</code> label (<code>glow-web/&amp;#123;&amp;#123;.Name&amp;#125;&amp;#125;</code>, <code>glow-pipeline/&amp;#123;&amp;#123;.Name&amp;#125;&amp;#125;</code>, <code>glow-ollama/&amp;#123;&amp;#123;.Name&amp;#125;&amp;#125;</code>, <code>glow-caddy/&amp;#123;&amp;#123;.Name&amp;#125;&amp;#125;</code>) for <code>docker logs</code> filtering. Log caps raised: web 5 files x 20 MB; pipeline and Ollama 5 files x 10 MB; Caddy 3 files x 5 MB (was 2 files x 5-10 MB). Web healthcheck timeout raised to 10 s and retries to 5 to accommodate slower starts. <code>process_form.html</code>, <code>template_form.html</code>, <code>fix_review_headings.html</code>, <code>admin_login.html</code>, <code>chat_form.html</code>, <code>feedback_form.html</code>, <code>admin_request_access.html</code>, <code>consent.html</code>, and <code>whisperer_retrieve.html</code> now disable their submit button and display a polite <code>aria-live</code> status paragraph immediately on submit. Prevents double-submission and gives screen readers and sighted users clear progress feedback.</li>
+<li><strong>Docker: Service log labels and increased retention.</strong> All four Compose services now include a <code>tag</code> label (<code>glow-web/{{.Name}}</code>, <code>glow-pipeline/{{.Name}}</code>, <code>glow-ollama/{{.Name}}</code>, <code>glow-caddy/{{.Name}}</code>) for <code>docker logs</code> filtering. Log caps raised: web 5 files x 20 MB; pipeline and Ollama 5 files x 10 MB; Caddy 3 files x 5 MB (was 2 files x 5-10 MB). Web healthcheck timeout raised to 10 s and retries to 5 to accommodate slower starts. <code>process_form.html</code>, <code>template_form.html</code>, <code>fix_review_headings.html</code>, <code>admin_login.html</code>, <code>chat_form.html</code>, <code>feedback_form.html</code>, <code>admin_request_access.html</code>, <code>consent.html</code>, and <code>whisperer_retrieve.html</code> now disable their submit button and display a polite <code>aria-live</code> status paragraph immediately on submit. Prevents double-submission and gives screen readers and sighted users clear progress feedback.</li>
 <li><strong>Web: Download processing state on fix_result.</strong> The "Download Fixed Document" button in <code>fix_result.html</code> shows "Preparing your download…" and disables for 4 seconds on click, preventing double-submission on slow connections.</li>
 <li><strong>Web: Document Chat card on home page.</strong> <code>index.html</code> now includes Document Chat in the card grid and "What Each Tab Does" section. Users no longer need to discover Chat only by accident.</li>
 <li><strong>Web: Format-specific CTAs in batch audit report.</strong> <code>audit_batch_report.html</code> per-file sections now show actionable next steps for every supported format (xlsx/pptx manual-fix guide, md convert flow, pdf Acrobat note, epub source-fix hint). "What's Next?" section expanded.</li>
@@ -524,11 +616,11 @@
 <li><strong>Web: Styled <code>:disabled</code> state for <code>btn-primary</code> and <code>btn-secondary</code>.</strong> <code>forms.css</code> now explicitly styles <code>button:disabled</code> and <code>[aria-disabled="true"]</code> for both button classes, providing consistent visual feedback across browsers rather than relying on browser defaults.</li>
 <li><strong>Web: HTTP 403 error handler.</strong> <code>app.py</code> now registers a <code>@errorhandler(403)</code> that renders the styled <code>error.html</code> template (matching 404/500 behavior) instead of Flask's default unstyled 403 page. Triggered by <code>abort(403)</code> in feedback review, admin access checks, and OAuth flows.</li>
 </ul>
-<h3 id="changed_3">Changed</h3>
+<h3 id="changed_5">Changed</h3>
 <ul>
 <li><strong>Web: fix_review_headings Apply button</strong> now has an <code>id</code> and processing-state JS to prevent accidental double-submission.</li>
 </ul>
-<h3 id="added_5">Added</h3>
+<h3 id="added_7">Added</h3>
 <ul>
 <li><strong>Web: Real-time BITS Whisperer progress reporting.</strong> Whisper transcription now runs as a background job with dedicated status and download endpoints (<code>/whisperer/start</code>, <code>/whisperer/progress/&lt;job_id&gt;</code>, <code>/whisperer/download/&lt;job_id&gt;</code>). The Whisperer page shows true server-reported conversion percentage instead of only elapsed-time estimates, including live status announcements for screen reader users.</li>
 <li><strong>Web: Whisperer preflight estimate + proceed confirmation.</strong> Before transcription starts, the Whisperer form now shows an estimated conversion time from uploaded audio metadata and requires explicit user confirmation to proceed.</li>
@@ -556,7 +648,7 @@
 <li><strong>Web: Accessibility-focused agent categories in Document Chat.</strong> Tool registry exposes five named agent groups: Document (extract tables, search text, list headings, stats, summaries), Compliance Agent (run_accessibility_audit, get_compliance_score, critical/auto-fixable findings), Structure Agent (check_heading_hierarchy, find_faux_headings, check_list_structure, estimate_reading_order), Content Agent (check_emphasis_patterns, check_link_text, check_reading_level, check_alignment_hints), Remediation Agent (explain_rule, suggest_fix, prioritize_findings, estimate_fix_impact, check_image_alt_text).</li>
 <li><strong>Web: Chat Guided Question Cards and example prompts.</strong> The chat page includes a Guided Question Cards section and Example Questions section for first-time users, covering compliance, structure, content, and remediation use cases. Cards are keyboard and screen-reader accessible. Conversation privacy notice informs users that sessions are local and deleted after one hour of inactivity.</li>
 </ul>
-<h3 id="changed_4">Changed</h3>
+<h3 id="changed_6">Changed</h3>
 <ul>
 <li><strong>Docs: Complete rewrite of <code>docs/user-guide.md</code>.</strong> Restructured from 9 inconsistently numbered sections to 17 sections with a corrected TOC. Expanded Quick Start with eight real-world scenarios and a step-by-step upload flow. Fully written BITS Whisperer section (standard mode, background mode, limits table, audio tips, privacy statement). Fully written Document Chat section (all five agent categories, 24 tools, starter prompts, conversation tips, export and privacy guidance). Removed version numbers embedded throughout; standardised language. All tables use proper accessible headers.</li>
 <li><strong>Web: Upload accepted file list expanded.</strong> <code>CONVERT_EXTENSIONS</code> in <code>upload.py</code> now includes image files (<code>.jpg</code>, <code>.jpeg</code>, <code>.png</code>, <code>.gif</code>, <code>.webp</code>, <code>.bmp</code>, <code>.tiff</code>).</li>
@@ -564,7 +656,7 @@
 <li><strong>Web: <code>/audit</code> POST endpoint has per-IP rate limit.</strong> 6 requests per minute per IP to prevent abuse of the email delivery path. Limit applies to all POST submissions, email or not.</li>
 <li><strong>Web: Email report delivery on Audit pages (optional, Postmark integration).</strong> Checkbox to request audit scorecard and findings CSV attachment be sent to an email address immediately after the run. Requires <code>POSTMARK_SERVER_TOKEN</code> env var. Server-side validation and graceful error handling. Email address is never stored.</li>
 </ul>
-<h3 id="fixed_2">Fixed</h3>
+<h3 id="fixed_3">Fixed</h3>
 <ul>
 <li>Fixed CSRF token handling in consent form so first-visit users can agree without pre-existing session.</li>
 <li><strong>Ops: <code>wait_for_health</code> bash syntax error caused rollback health check to crash.</strong> <code>log_ts</code> writes to stdout; capturing <code>ROLLBACK_HEALTHY="$(wait_for_health "rollback")"</code> included all log lines in the variable, causing <code>[[ "$ROLLBACK_HEALTHY" -eq 1 ]]</code> to fail with <code>syntax error: operand expected</code>. Fixed by redirecting all <code>log_ts</code> calls inside <code>wait_for_health</code> to stderr so command substitution captures only the final <code>0</code> or <code>1</code>.</li>
@@ -572,18 +664,18 @@
 <li><strong>Web: Document Chat accessible from Audit and Fix result pages.</strong> After running Audit, the uploaded file was immediately deleted by the <code>finally</code> cleanup before the user could pivot to Chat. The audit route now preserves the temp file and passes a <code>chat_token</code> to the result template. A "Chat about this document" link appears in the What's Next section on both <code>audit_report.html</code> and <code>fix_result.html</code> when the token is available.</li>
 <li><strong>Docs: User guide incorrectly instructed users to click a "Chat" tab.</strong> No Chat tab exists in the navigation; Chat is token-gated and requires an uploaded document. Updated <code>docs/user-guide.md</code> Section 8 with the correct two-path instructions: via Quick Start, or from Audit/Fix result pages.</li>
 </ul>
-<h3 id="added_6">Added</h3>
+<h3 id="added_8">Added</h3>
 <ul>
 <li><strong>Web: Privacy Policy page (<code>/privacy</code>).</strong> New <code>privacy.html</code> template and <code>privacy_bp</code> blueprint at <code>/privacy</code>. Covers document storage and retention (per workflow), AI usage and data protections, data rights (no training, no third-party sharing), accounts/cookies, and security practices. Accessible from the footer navigation on every page.</li>
 <li><strong>Web: AI used / not used disclosure on every result page.</strong> Audit Report, Fix Results, and Fix Review Headings pages now display a "Data and Privacy" notice section showing whether AI was or was not used during that specific transaction. When AI was used, the notice clarifies that only a local Ollama model on the GLOW server was involved and no data was sent to any third party. When AI was not used, the notice confirms rule-based analysis only.</li>
 <li><strong>Web: Document availability expiry on Fix result pages.</strong> Fix Results and Fix Review Headings pages now display the exact UTC date and time when the held document will be automatically deleted (approximately one hour after upload). This gives users a clear deadline to download their fixed file.</li>
 <li><strong>Web: <code>get_upload_expiry()</code> helper in <code>upload.py</code>.</strong> Returns the UTC <code>datetime</code> when a token's temp directory expires, computed from the directory's modification time plus the configured retention window. Used by the fix route to pass expiry time to templates.</li>
 </ul>
-<h3 id="fixed_3">Fixed</h3>
+<h3 id="fixed_4">Fixed</h3>
 <ul>
 <li><strong>Web: Expired session error message updated.</strong> The 24-hour reference in the fix confirm expired-session error was corrected to 1 hour to match the actual retention window.</li>
 </ul>
-<h3 id="changed_5">Changed</h3>
+<h3 id="changed_7">Changed</h3>
 <ul>
 <li><strong>Web: Upload retention reduced from 24 hours to 1 hour.</strong> The <code>UPLOAD_MAX_AGE_HOURS</code> environment variable default in <code>app.py</code> and the <code>cleanup_stale_uploads()</code> function signature in <code>upload.py</code> now default to <code>1</code> hour instead of <code>24</code>. This matches the retention commitment described in the Privacy Policy and in Jeff Bishop's ACB-Conversation response to Ron Brooks.</li>
 <li><strong>Web: Privacy Policy link added to footer navigation</strong> in <code>base.html</code>, alongside the existing Feedback link.</li>
@@ -608,12 +700,12 @@
 - <strong>Web: <code>test_email.py</code> -- 24 unit tests for <code>email.py</code>.</strong> Covers <code>email_configured()</code>, <code>_findings_to_csv_bytes()</code> (BOM, header, truncation, column values), <code>_send()</code> (all Postmark response codes, timeout, network errors), <code>send_audit_report_email()</code> (unconfigured guard, payload structure, attachment format), and <code>send_batch_audit_report_email()</code> (unconfigured guard, merged CSV file column, failed-result exclusion).<br />
 - <strong>Docs: <code>about.html</code> -- Postmark listed in open-source dependencies table.</strong> Postmark row added alongside WeasyPrint with version, license (MIT client library), and privacy note.<br />
 - <strong>Docs: <code>user-guide.md</code> -- Email delivery section added to "How to Audit a Document".</strong> Documents the optional email field, what is sent (scorecard + CSV), and the privacy policy (address never stored).</p>
-<h3 id="fixed_4">Fixed</h3>
+<h3 id="fixed_5">Fixed</h3>
 <ul>
 <li>Fixed the macOS DMG packaging step in <code>.github/workflows/build.yml</code> by switching directory copy commands to recursive copy (<code>cp -R</code>), resolving the GitHub Actions failure in "Create DMG (macOS)" for onedir PyInstaller outputs.</li>
-<li>Fixed workflow tip banner icons rendering as literal text (<code>&amp;#9758;</code>) in all web form pages (<code>audit_form.html</code>, <code>fix_form.html</code>, <code>convert_form.html</code>, <code>export_form.html</code>, <code>template_form.html</code>) and the <code>_workflow_tip.html</code> partial. Jinja2 auto-escaping was converting <code>&amp;</code> to <code>&amp;amp;</code> when HTML entity strings were stored in <code>&amp;#123;% set %&amp;#125;</code> variables and rendered via <code>&amp;#123;&amp;#123; &amp;#125;&amp;#125;</code>. Replaced entity strings (<code>"&amp;#9758;"</code>, <code>"&amp;#9432;"</code>) with literal Unicode characters (<code>"☞"</code>, <code>"ℹ"</code>) which pass through auto-escaping unchanged. The <code>aria-hidden="true"</code> on the icon span remains correct and is why screen readers were not affected.</li>
+<li>Fixed workflow tip banner icons rendering as literal text (<code>&amp;#9758;</code>) in all web form pages (<code>audit_form.html</code>, <code>fix_form.html</code>, <code>convert_form.html</code>, <code>export_form.html</code>, <code>template_form.html</code>) and the <code>_workflow_tip.html</code> partial. Jinja2 auto-escaping was converting <code>&amp;</code> to <code>&amp;amp;</code> when HTML entity strings were stored in <code>{% set %}</code> variables and rendered via <code>{{ }}</code>. Replaced entity strings (<code>"&amp;#9758;"</code>, <code>"&amp;#9432;"</code>) with literal Unicode characters (<code>"☞"</code>, <code>"ℹ"</code>) which pass through auto-escaping unchanged. The <code>aria-hidden="true"</code> on the icon span remains correct and is why screen readers were not affected.</li>
 </ul>
-<h3 id="changed_6">Changed</h3>
+<h3 id="changed_8">Changed</h3>
 <ul>
 <li>Removed remaining stale APH "not yet complete" language from web guide and guidelines templates, aligning all live-facing APH copy with Release 1.2.0 finalized submission wording.</li>
 <li>Added an embedded <strong>APH execution workflow</strong> section to the web User Guide (<code>web/src/acb_large_print_web/templates/guide.html</code>) including an "instructor in your pocket" checklist and week-based deliverables.</li>
@@ -634,7 +726,7 @@
 <p>Added AFB scoping guidance to persistent product docs: Guidelines page now clarifies ACB/APH production usage and that AFB JVIB style is manuscript-oriented (not a fix/audit profile), and FAQ now includes AFB scope, large print vs large-print spelling, em-dash, and running-number conventions.</p>
 </li>
 </ul>
-<h3 id="changed_7">Changed</h3>
+<h3 id="changed_9">Changed</h3>
 <ul>
 <li>Standardized web page title bars to the format <code>Page Name | GLOW (Guided Layout &amp; Output Workflow)</code> across the shared base template and tab-navigation title fallback (<code>web/src/acb_large_print_web/templates/base.html</code>, <code>web/src/acb_large_print_web/static/tabs.js</code>), and simplified page title blocks in feedback/home templates to page-name values only.</li>
 <li>Removed the embedded week-phased Release 1.2.0 APH execution section from the web landing page (<code>web/src/acb_large_print_web/templates/index.html</code>) now that this workflow is already integrated into the guide and guidelines documentation surfaces.</li>
@@ -649,7 +741,7 @@
 <li>Removed <code>BITS-FEEDBACK-PLAN.md</code> after integrating retained AFB scoping and terminology actions into <code>README.md</code>, <code>web/src/acb_large_print_web/templates/guidelines.html</code>, and <code>web/src/acb_large_print_web/templates/faq.html</code>.</li>
 </ul>
 <h2 id="110----2026-04-15">[1.1.0] -- 2026-04-15</h2>
-<h3 id="fixed_5">Fixed</h3>
+<h3 id="fixed_6">Fixed</h3>
 <ul>
 <li>Fix results no longer penalize users for faux-heading findings when heading detection is explicitly disabled in the Fix form; <code>ACB-FAUX-HEADING</code> is suppressed from post-fix scoring and the results page now lists suppressed rules.</li>
 <li>Legacy Word VML shapes now treat explicit <code>alt=""</code> as decorative content, preventing false <code>ACB-MISSING-ALT-TEXT</code> findings when decorative intent is correctly marked.</li>
@@ -678,7 +770,7 @@
 <li>Added a tracked <code>web/Caddyfile</code> with dual-domain app host support (<code>lp.csedesigns.com</code>, <code>glow.bits-acb.org</code>) for direct production deployment with Docker Compose.</li>
 <li>Deployment scripts now support optional alias-domain verification via <code>APP_ALIAS_DOMAIN</code> while keeping <code>APP_DOMAIN</code> defaulted to <code>lp.csedesigns.com</code>.</li>
 </ul>
-<h3 id="added_7">Added</h3>
+<h3 id="added_9">Added</h3>
 <ul>
 <li>Added a <strong>Product Requirements Document</strong> page at <code>/prd/</code> in the web app, rendering <code>docs/prd.md</code> as accessible HTML with a table of contents (mirrors changelog rendering pattern); linked in the web app footer navigation.</li>
 <li>Added a <strong>Documentation and References</strong> section to the web app About page (<code>/about/</code>) linking to the PRD, Changelog, User Guide, and FAQ.</li>
@@ -1118,4 +1210,3 @@
 </ul>
 </div>
 <a href="#changelog-toc-heading" class="back-to-top">Back to version list</a>
-{% endraw %}

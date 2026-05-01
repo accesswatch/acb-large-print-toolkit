@@ -47,3 +47,8 @@ Desktop.ini
 # Runtime SQLite databases (created automatically on first use)
 instance/visitor_counter.db
 instance/tool_usage.db
+
+# Speech model files (large binaries, managed outside the repo)
+web/instance/speech_models/
+*.onnx
+*.onnx.json

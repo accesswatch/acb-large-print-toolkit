@@ -112,6 +112,13 @@ def _get_available_actions(file_ext: str) -> dict[str, dict]:
             "description": "Generate a pre-formatted Word template (.dotx) with ACB styles",
             "enabled": bool(all_flags.get("GLOW_ENABLE_TEMPLATE_BUILDER", True)) and ext == ".docx",
         },
+        "speech": {
+            "name": "Speech",
+            "route": "speech.speech_form",
+            "icon": "🔊",
+            "description": "Convert document text into downloadable speech audio and preview how it sounds.",
+            "enabled": bool(all_flags.get("GLOW_ENABLE_SPEECH", True)) and ext in CONVERT_EXTENSIONS,
+        },
     }
 
     # Special handling for audio
@@ -232,6 +239,7 @@ def process_go(action: str):
         "convert": "convert.convert_form",
         "export": "convert.convert_form",
         "template": "template.template_form",
+        "speech": "speech.speech_form",
         "chat": "chat.chat_form",
         "whisperer": "whisperer.whisperer_form",
     }

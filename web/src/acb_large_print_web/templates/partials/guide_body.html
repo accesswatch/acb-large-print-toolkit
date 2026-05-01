@@ -8,6 +8,17 @@
 <ul>
 <li><a href="#glow-accessibility-toolkit----user-guide">GLOW Accessibility Toolkit -- User Guide</a><ul>
 <li><a href="#in-this-guide">In This Guide</a></li>
+<li><a href="#whats-new-in-glow-300">What's New in GLOW 3.0.0</a><ul>
+<li><a href="#speech-studio-is-now-a-complete-workflow">Speech Studio is now a complete workflow</a></li>
+<li><a href="#estimates-improve-from-real-usage-on-your-server">Estimates improve from real usage on your server</a></li>
+<li><a href="#new-analytics-visibility">New analytics visibility</a></li>
+<li><a href="#still-included-from-28-and-27-improvements">Still included from 2.8 and 2.7 improvements</a></li>
+<li><a href="#quick-start-now-routes-to-audit-fix-and-convert-without-re-uploading">Quick Start now routes to Audit, Fix, and Convert without re-uploading</a></li>
+<li><a href="#passphrase-protection-for-shared-audit-reports">Passphrase protection for shared audit reports</a></li>
+<li><a href="#user-defined-font-sizes">User-defined font sizes</a></li>
+<li><a href="#findings-tables-grouped-by-rule">Findings tables grouped by rule</a></li>
+</ul>
+</li>
 <li><a href="#1-quick-start">1. Quick Start</a><ul>
 <li><a href="#the-scenario">The scenario</a></li>
 <li><a href="#step-1-go-to-quick-start">Step 1: Go to Quick Start</a></li>
@@ -37,6 +48,7 @@
 <li><a href="#step-by-step">Step-by-step</a></li>
 <li><a href="#quick-wins-filter">Quick Wins filter</a></li>
 <li><a href="#shareable-audit-report-links">Shareable audit report links</a></li>
+<li><a href="#passphrase-protecting-a-shared-report-new-in-280">Passphrase-protecting a shared report (new in 2.8.0)</a></li>
 <li><a href="#download-report-as-pdf-or-csv">Download report as PDF or CSV</a></li>
 <li><a href="#re-audit-diff-see-exactly-what-changed">Re-audit diff: see exactly what changed</a></li>
 <li><a href="#inline-rule-explanations">Inline rule explanations</a></li>
@@ -56,6 +68,7 @@
 <li><a href="#preserve-centered-headings">Preserve centered headings</a></li>
 <li><a href="#per-level-list-indentation">Per-level list indentation</a></li>
 <li><a href="#allowed-heading-levels">Allowed heading levels</a></li>
+<li><a href="#custom-font-sizes-new-in-280">Custom font sizes (new in 2.8.0)</a></li>
 <li><a href="#understanding-page-growth-after-fix">Understanding page growth after fix</a></li>
 <li><a href="#fix-result-disclosures">Fix result disclosures</a></li>
 </ul>
@@ -355,6 +368,36 @@
 <li><a href="#17-getting-help">Getting Help</a></li>
 </ol>
 <hr />
+<h2 id="whats-new-in-glow-300">What's New in GLOW 3.0.0</h2>
+<p>GLOW 3.0.0 is the community-driven milestone release. It combines the major workflow upgrades delivered through 2.5-2.9 and adds the full Speech Studio platform with real-world adaptive timing telemetry.</p>
+<h3 id="speech-studio-is-now-a-complete-workflow">Speech Studio is now a complete workflow</h3>
+<ul>
+<li>Convert typed text or uploaded documents into speech</li>
+<li>Preview first sentences before full render</li>
+<li>Download full narration in MP3 (or WAV fallback)</li>
+<li>Reuse saved voice, speed, and pitch defaults from Settings</li>
+</ul>
+<h3 id="estimates-improve-from-real-usage-on-your-server">Estimates improve from real usage on your server</h3>
+<p>Document-to-speech conversion now records measured processing time, word count, source size, and selected settings. Future estimates are blended from real historical telemetry so timing guidance becomes more accurate over time for your exact infrastructure.</p>
+<h3 id="new-analytics-visibility">New analytics visibility</h3>
+<ul>
+<li>About and Admin analytics now show Speech Studio usage patterns (mode, voice, speed, pitch)</li>
+<li>Home-page Let it GLOW anthem downloads are tracked and reported</li>
+</ul>
+<h3 id="still-included-from-28-and-27-improvements">Still included from 2.8 and 2.7 improvements</h3>
+<p>Quick Start handoff (no re-upload), passphrase-protected share links, custom font sizes, grouped findings, streamlined Audit/Fix/Re-Audit, and dark mode all remain part of the 3.0 baseline.</p>
+<h3 id="quick-start-now-routes-to-audit-fix-and-convert-without-re-uploading">Quick Start now routes to Audit, Fix, and Convert without re-uploading</h3>
+<p>In previous releases, Quick Start helped you choose an action but still required you to re-upload your file on the next page. Starting in 2.8.0, Quick Start hands your uploaded file directly to whichever tool you choose. The file is already loaded and waiting for you -- no second upload.</p>
+<p>This completes the single-upload vision: upload once in Quick Start, then Audit, Fix, and Convert the same document without ever uploading again. Your session stays active for up to one hour.</p>
+<h3 id="passphrase-protection-for-shared-audit-reports">Passphrase protection for shared audit reports</h3>
+<p>Shared report links are now optionally passphrase-protected. Set a passphrase in the Audit form's new "Share Link Protection" section before running your audit. Anyone who opens the share link will need to enter that passphrase before they can view the report or download the CSV or PDF copy. Passphrases are stored only as cryptographic hashes -- GLOW never stores or logs the cleartext value.</p>
+<p>This feature was requested by organizations who need to share compliance reports with external reviewers without making them publicly readable by anyone who guesses or finds the link.</p>
+<h3 id="user-defined-font-sizes">User-defined font sizes</h3>
+<p>GLOW now lets you specify the point sizes you want for body text and each heading level. The defaults are unchanged (18pt body, 22pt H1, 20pt H2-H6), but organizations with different house styles -- 20pt body for high-contrast printing, or 24pt headings for large-format signs -- can now set those values directly in the Fix and Template forms.</p>
+<p>The audit engine also respects these overrides: if you set a 20pt body, findings about body text size will be evaluated against 20pt rather than the standard 18pt minimum.</p>
+<h3 id="findings-tables-grouped-by-rule">Findings tables grouped by rule</h3>
+<p>Audit reports now group all occurrences of the same finding under a single row with an occurrence count badge. If a document has 40 paragraphs with the wrong font, you see one row labeled "40 occurrences" with an expandable list, rather than 40 separate rows. The report is shorter, easier to scan, and faster to act on. CSV exports are unchanged -- they still emit one row per occurrence for spreadsheet analysis.</p>
+<hr />
 <h2 id="1-quick-start">1. Quick Start</h2>
 <p>If you have never used GLOW before -- or you are not sure which tool to reach for -- this section will get you from upload to result in under five minutes, and give you the vocabulary to use the rest of the guide.</p>
 <h3 id="the-scenario">The scenario</h3>
@@ -413,6 +456,7 @@
 <p><strong>Audit</strong> -- Checks your document against ACB Large Print Guidelines and WCAG 2.2 rules. Returns a scored report with every finding, its severity, and what to do about it. Available for all document formats.</p>
 <p><strong>Fix</strong> -- Automatically corrects every formatting problem it can find in Word and Markdown documents: fonts, sizes, spacing, emphasis, alignment. Returns a corrected file. You keep your original. Available for Word and Markdown only.</p>
 <p><strong>Convert</strong> -- Transforms your document into a different format. Upload a PowerPoint, Excel, PDF, Word, or Markdown file and get back accessible HTML, a Word document, an EPUB, a PDF, or plain Markdown. PowerPoint, Excel, and PDF files use smart two-stage extraction: GLOW pulls the text into Markdown first, then Pandoc applies full ACB Large Print formatting. This is handled automatically -- you just choose your output format.</p>
+<p><strong>Speech audio (from Convert)</strong> -- Convert also includes a Speech direction that hands your uploaded file to Speech Studio without re-uploading. Use it when you want to preview voice output and download narration audio for the same source file.</p>
 <p><strong>Export</strong> -- Converts a Word document to a CMS Fragment (a scoped HTML snippet for WordPress, Drupal, or any CMS). The Export tab was merged into Convert in v2.7.0. Use <strong>Convert &gt; CMS Fragment</strong> to produce scoped HTML. Standalone HTML output is also available in Convert. See <a href="#5-cms-fragment-formerly-export">Section 5</a> and <a href="#6-how-to-convert-between-formats">Section 6</a>.</p>
 <p><strong>Template</strong> -- Generates a Word template (.dotx) with all ACB styles pre-configured. Open it in Word and every document you create from it inherits compliant formatting from the first keystroke.</p>
 <p><strong>BITS Whisperer</strong> -- Transcribes an audio file to Markdown or Word. GLOW may normalize some audio formats locally, then send the file to the Whisper API for transcription. Temporary files are cleaned up after processing.</p>
@@ -515,6 +559,17 @@
 <li>After one hour, the link expires and the cached report is permanently deleted.</li>
 </ul>
 <p>Use shareable links for team reviews, stakeholder sign-off, or archiving a point-in-time compliance snapshot.</p>
+<h3 id="passphrase-protecting-a-shared-report-new-in-280">Passphrase-protecting a shared report (new in 2.8.0)</h3>
+<p>If you are sharing a sensitive compliance report -- a board submission, an internal audit, a vendor review -- you can protect it with a passphrase so the link alone is not enough to open it.</p>
+<p>On the Audit form, find the <strong>Share Link Protection (Optional)</strong> section near the bottom. Type a passphrase of 4-200 characters. Leave it blank if you do not need protection.</p>
+<p>What happens when you set a passphrase:</p>
+<ul>
+<li>Anyone who opens your share link sees an unlock form asking for the passphrase before the report is shown.</li>
+<li>The same passphrase is required to download the CSV or PDF copy.</li>
+<li>The passphrase is stored only as a salted cryptographic hash -- GLOW never stores or logs the cleartext value and cannot recover it.</li>
+<li>The share link still expires after one hour regardless of the passphrase.</li>
+<li>Send the passphrase through a <strong>separate channel</strong> -- for example, a text message or phone call. Do not include it in the same email as the link.</li>
+</ul>
 <h3 id="download-report-as-pdf-or-csv">Download report as PDF or CSV</h3>
 <p>The Share section of the audit report also offers two download buttons:</p>
 <ul>
@@ -589,6 +644,7 @@
 <li>Adjust options and click <strong>Fix Document</strong>.</li>
 <li>After the fix, click <strong>Re-Audit Fixed Document</strong> on the fix result page to run an audit on the fixed file immediately -- again, no re-upload required.</li>
 </ol>
+<p>You can also set an optional <strong>Share passphrase</strong> in the Re-Audit form on the Fix result page. When set, the shared report link (and its CSV/PDF downloads) will require that passphrase.</p>
 <p>This entire Audit → Fix → Re-Audit cycle requires uploading the document only once. The document session stays active for up to one hour from your initial upload.</p>
 <h3 id="step-by-step_1">Step-by-step</h3>
 <ol>
@@ -671,6 +727,29 @@ acb-lp detect-headings document.docx --ai --ai-prompt prompt.txt --threshold 75
 </ol>
 <h3 id="allowed-heading-levels">Allowed heading levels</h3>
 <p>Restrict heading detection and review to a subset of levels. If your editorial style uses only H1 through H3, select those levels in the Heading Detection section of the Fix form. The review page will only show your selected levels in each dropdown. Configure defaults in <strong>Settings</strong> to have the form pre-filled on every visit.</p>
+<h3 id="custom-font-sizes-new-in-280">Custom font sizes (new in 2.8.0)</h3>
+<p>By default, GLOW applies the ACB Large Print standard sizes: 18pt body text, 22pt Heading 1, and 20pt for all other heading levels. If your organization uses different sizes -- for example, a 20pt body for a high-contrast handout, or 24pt headings for a large-format poster -- you can override any or all of these in the <strong>Font Sizes</strong> section of the Fix and Template forms.</p>
+<p><strong>How to use:</strong></p>
+<ol>
+<li>Open the Fix or Template form.</li>
+<li>Find the <strong>Font Sizes (Optional)</strong> fieldset.</li>
+<li>Enter a point size for Body (Normal text), or for any heading level (H1 through H6) you want to change.</li>
+<li>Leave any field blank to keep the ACB default for that level.</li>
+<li>Values are clamped to the range 8pt-96pt.</li>
+</ol>
+<p><strong>What changes when you set a custom body size:</strong></p>
+<ul>
+<li>The auditor uses your body size as the minimum expected size for body paragraphs.</li>
+<li>The fixer raises body text to your specified size instead of the default 18pt.</li>
+<li>List Bullet and List Number styles are also updated to match your body size.</li>
+<li>The page-growth warning threshold adjusts to your specified body size.</li>
+</ul>
+<p><strong>What changes when you set custom heading sizes:</strong></p>
+<ul>
+<li>The auditor expects your specified size for each heading level.</li>
+<li>The fixer applies your specified size to each heading level.</li>
+</ul>
+<p>Custom sizes are a per-session setting. They are not stored by default -- configure defaults in <strong>Settings &gt; Font Size Defaults</strong> to have the form pre-filled on every visit.</p>
 <h3 id="understanding-page-growth-after-fix">Understanding page growth after fix</h3>
 <p>When body text is below 18pt, raising it to the ACB minimum increases line count. A 16pt newsletter will get notably longer after fix. Fix Results shows a page-growth warning when this condition is detected so the pagination change is expected rather than surprising.</p>
 <h3 id="fix-result-disclosures">Fix result disclosures</h3>
@@ -1046,6 +1125,7 @@ acb-lp detect-headings document.docx --ai --ai-prompt prompt.txt --threshold 75
 </table>
 <h3 id="compliance-score">Compliance score</h3>
 <p>The score is the percentage of passing rules out of applicable rules for your document type. A score of 90 or above (Grade A) is the target for publishing. Below 70 (Grade C or lower) indicates substantial work is needed.</p>
+<p>GLOW computes the score using a weighted-penalty model where each rule contributes a base severity deduction, and repeated occurrences of the same rule add a capped surcharge. This means grouped findings in the table do not change the score calculation; they only improve readability of the report.</p>
 <h3 id="standards-profiles_1">Standards profiles</h3>
 <p><strong>ACB 2025 Baseline</strong> -- day-to-day production. No change from previous workflows.</p>
 <p><strong>APH Submission</strong> -- filters the report to APH-aligned checks. Use when producing evidence for APH submission or review cycles.</p>
@@ -2248,6 +2328,10 @@ acb-lp detect-headings document.docx --ai --ai-prompt my-prompt.txt --threshold 
 <li><strong>Sign-in options:</strong> Email magic link, Google, Apple, GitHub, Microsoft, Auth0, and WordPress (providers appear only when configured).</li>
 <li><strong>Approval required:</strong> A user may request admin access, but an existing approved admin must approve before sign-in succeeds.</li>
 <li><strong>Admin dashboard:</strong> Approved admins can view the audio conversion queue, cancel queued jobs, and re-queue failed jobs.</li>
+<li><strong>AI settings:</strong> Configure and monitor cloud AI budget controls and API key status.</li>
+<li><strong>Feature flags:</strong> Enable or disable specific tool features without redeploying.</li>
+<li><strong>Access request review:</strong> Approve or deny pending admin access requests.</li>
+<li><strong>Tool usage analytics (<code>/admin/analytics</code>):</strong> View cumulative visitor count, total tool uses, and per-tool breakdown with share percentages and last-used timestamps. Data persists across server restarts in SQLite.</li>
 </ul>
 <hr />
 <h2 id="17-getting-help_1">17. Getting Help</h2>

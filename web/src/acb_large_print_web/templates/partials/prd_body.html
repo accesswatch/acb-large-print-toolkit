@@ -8,6 +8,8 @@
 <ul>
 <li><a href="#prd-glow-guided-layout-output-workflow-accessibility-web-application">PRD: GLOW (Guided Layout &amp; Output Workflow) Accessibility Web Application</a><ul>
 <li><a href="#implementation-status">Implementation Status</a><ul>
+<li><a href="#v300-addendum-community-driven-platform-milestone----april-30-2026">v3.0.0 Addendum (Community-driven platform milestone -- April 30, 2026)</a></li>
+<li><a href="#v280-addendum-community-requested-ux-and-security-features----april-30-2026">v2.8.0 Addendum (Community-requested UX and security features -- April 30, 2026)</a></li>
 <li><a href="#v270-addendum-ux-scorecard-and-streamlined-workflow-updates">v2.7.0 Addendum (UX, scorecard, and streamlined workflow updates)</a></li>
 <li><a href="#post-v20-addendum-v250-quality-and-release-safety-updates">Post-v2.0 Addendum (v2.5.0 quality and release-safety updates)</a></li>
 <li><a href="#v20-release-features-april-2026">v2.0 Release Features (April 2026)</a></li>
@@ -54,6 +56,22 @@
 <li><a href="#proposed-directory-structure">Proposed Directory Structure</a></li>
 </ul>
 </li>
+<li><a href="#glow-300----speech-platform-planned">GLOW 3.0.0 -- Speech Platform (Planned)</a><ul>
+<li><a href="#vision">Vision</a></li>
+<li><a href="#what-the-bits-community-said">What the BITS community said</a></li>
+<li><a href="#design-principles">Design Principles</a></li>
+<li><a href="#technical-architecture-from-docsspeechmd">Technical Architecture (from docs/speech.md)</a></li>
+<li><a href="#performance-expectations-cpu">Performance Expectations (CPU)</a></li>
+<li><a href="#time-estimation-api">Time Estimation API</a></li>
+<li><a href="#api-surface-planned-routes">API Surface (planned routes)</a></li>
+<li><a href="#glow-integration-points">GLOW Integration Points</a></li>
+<li><a href="#voice-customization">Voice Customization</a></li>
+<li><a href="#non-goals-for-300">Non-Goals for 3.0.0</a></li>
+<li><a href="#out-of-scope-deferred-post-300">Out-of-Scope (Deferred Post-3.0.0)</a></li>
+<li><a href="#dependencies">Dependencies</a></li>
+<li><a href="#deployment-impact">Deployment Impact</a></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
@@ -62,13 +80,99 @@
 </nav>
 <div class="prd-content">
 <h1 id="prd-glow-guided-layout-output-workflow-accessibility-web-application">PRD: GLOW (Guided Layout &amp; Output Workflow) Accessibility Web Application</h1>
-<p><strong>Status:</strong> Implemented (v2.0.0 released)<br />
+<p><strong>Status:</strong> Implemented (v3.0.0 released)<br />
 <strong>Author:</strong> Jeff Bishop, BITS<br />
-<strong>Date:</strong> April 17, 2026<br />
-<strong>Target:</strong> v2.0.0 (BITS Whisperer, consent gate, Quick Start, MarkItDown 0.2+, cloud-based document chat, cloud-based Whisperer, maintenance mode, deep deployment logging)</p>
+<strong>Date:</strong> April 30, 2026<br />
+<strong>Target:</strong> v3.0.0 (community-driven release with full Speech Studio platform, analytics, and workflow unification)</p>
 <hr />
 <h2 id="implementation-status">Implementation Status</h2>
-<p>The Flask web application has been built and is ready for deployment. All core features described in this PRD are implemented. The following table summarizes what shipped in v0.1 and subsequent v1.2.0 enhancements:</p>
+<p>The Flask web application has been built and is ready for deployment. All core features described in this PRD are implemented. The following table summarizes what shipped in each release:</p>
+<h3 id="v300-addendum-community-driven-platform-milestone----april-30-2026">v3.0.0 Addendum (Community-driven platform milestone -- April 30, 2026)</h3>
+<p>All requested feature areas from the 2.5 through 2.9 cycle were completed and unified in this release.</p>
+<table>
+<thead>
+<tr>
+<th>Feature</th>
+<th>Status</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Speech Studio full workflow</td>
+<td>Done</td>
+<td>Typed synthesis, uploaded document-to-speech, snippet preview, full audio download, settings persistence, and admin voice management</td>
+</tr>
+<tr>
+<td>Convert-to-Speech seamless handoff</td>
+<td>Done</td>
+<td>Convert tab includes a Speech direction that redirects to Speech Studio with token handoff, avoiding re-upload</td>
+</tr>
+<tr>
+<td>Adaptive conversion estimation</td>
+<td>Done</td>
+<td>Real conversion telemetry (word count, source size, measured processing time, speed/voice) feeds blended estimates over time for this deployment</td>
+</tr>
+<tr>
+<td>Speech analytics visibility</td>
+<td>Done</td>
+<td>Admin and About pages expose speech usage patterns by mode/voice/speed/pitch</td>
+</tr>
+<tr>
+<td>Anthem download analytics</td>
+<td>Done</td>
+<td>Home page includes tracked Let it GLOW theme download; count surfaced in About/Admin analytics</td>
+</tr>
+<tr>
+<td>Navigation and Quick Start integration</td>
+<td>Done</td>
+<td>Dedicated Speech tab and Quick Start Speech action with token handoff</td>
+</tr>
+<tr>
+<td>Cross-feature polish</td>
+<td>Done</td>
+<td>Settings, speech UX, and progress announcement cadence are aligned across workflows</td>
+</tr>
+</tbody>
+</table>
+<h3 id="v280-addendum-community-requested-ux-and-security-features----april-30-2026">v2.8.0 Addendum (Community-requested UX and security features -- April 30, 2026)</h3>
+<p>All features in this release were sourced directly from BITS and blind and low-vision community feedback. Thank you to everyone who filed issues, sent suggestions, and tested pre-release builds.</p>
+<table>
+<thead>
+<tr>
+<th>Feature</th>
+<th>Status</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Quick Start full handoff (audit/fix/convert without re-upload)</td>
+<td>Done</td>
+<td><code>GET /audit/?token=...</code> and <code>GET /convert/?token=...</code> resolve an existing upload session and prefill the form. POST handlers honour <code>prefill=1</code> to skip re-upload. All three tools (Audit, Fix, Convert) now complete the single-upload vision from Quick Start.</td>
+</tr>
+<tr>
+<td>Passphrase-protected shared reports</td>
+<td>Done</td>
+<td>Optional 4-200 char passphrase on Audit form. Hash stored as PBKDF2-SHA256 (200k iterations, 16-byte random salt). Share page, CSV download, and PDF download all gate on passphrase. Unlock template (<code>share_unlock.html</code>). New <code>set_share_passphrase()</code>, <code>share_requires_passphrase()</code>, <code>verify_share_passphrase()</code> in <code>report_cache.py</code>.</td>
+</tr>
+<tr>
+<td>User-defined font sizes</td>
+<td>Done</td>
+<td>Fix and Template forms expose a Font Sizes fieldset for body (Normal) and H1-H6 overrides. Values clamped 8-96pt. Propagates through auditor, fixer, and template pipelines via <code>style_size_overrides</code> kwarg. <code>effective_styles()</code> and <code>effective_min_body_pt()</code> helpers in <code>constants.py</code> (Python) and <code>effectiveStyles()</code> / <code>effectiveMinBodyPt()</code> / <code>StyleSizeOverrides</code> in TypeScript. List Bullet and List Number inherit body override.</td>
+</tr>
+<tr>
+<td>Findings grouped by rule in audit report</td>
+<td>Done</td>
+<td><code>_findings_table.html</code> partial groups occurrences of the same rule ID into a single row with count badge and expandable location list. Applied to single, batch combined, and batch individual reports. CSV export unchanged (one row per occurrence).</td>
+</tr>
+<tr>
+<td>Scoring and grade integrity refinements</td>
+<td>Done</td>
+<td>Fixed score/grade presentation drift and clarified weighted-penalty behavior so repeated findings are accounted consistently while grouped-table rendering remains presentation-only. Fix result summary now explicitly distinguishes filtered display mode from full post-fix scoring.</td>
+</tr>
+</tbody>
+</table>
 <h3 id="v270-addendum-ux-scorecard-and-streamlined-workflow-updates">v2.7.0 Addendum (UX, scorecard, and streamlined workflow updates)</h3>
 <p>All features below shipped in v2.7.0 (May 2026) and are fully implemented.</p>
 <table>
@@ -118,7 +222,7 @@
 <tr>
 <td>Dark mode support</td>
 <td>Done</td>
-<td>ACB-compliant dark color scheme via <code>prefers-color-scheme: dark</code> media query; all contrast ratios meet WCAG AA in both modes.</td>
+<td>User-selectable Light / Dark / Auto theme via footer dropdown and Settings page; preference stored in <code>localStorage</code>; CSS keys off <code>html[data-theme]</code> attribute so explicit user choice wins over <code>prefers-color-scheme</code>; all contrast ratios meet WCAG 2.2 AA in both modes.</td>
 </tr>
 <tr>
 <td>HTML preview on Convert result</td>
@@ -159,6 +263,26 @@
 <td>Privacy policy updated for share token and audit retention</td>
 <td>Done</td>
 <td>Audit workflow description clarifies that uploaded files are retained briefly for the Fix shortcut and Chat. Shareable link behavior (HTML-only cache, 1-hour expiry) is described. Policy last-updated date updated to April 29, 2026.</td>
+</tr>
+<tr>
+<td>Visitor counter</td>
+<td>Done</td>
+<td>SQLite unique-session visitor counter (<code>instance/visitor_counter.db</code>). One increment per browser session via <code>@app.before_request</code>; count displayed in footer as "Visitors: 1,234" and injected via context processor.</td>
+</tr>
+<tr>
+<td>Tool usage analytics</td>
+<td>Done</td>
+<td>Per-tool use counts in <code>instance/tool_usage.db</code>. Six tools instrumented (Audit, Fix, Convert, Template Builder, BITS Whisperer, Document Chat). Failure-safe — never surfaces DB errors to users.</td>
+</tr>
+<tr>
+<td>Admin analytics dashboard</td>
+<td>Done</td>
+<td><code>GET /admin/analytics</code> (admin-only) shows total visitors, total tool uses, per-tool table with share percentages and last-used timestamps. Linked from Admin Queue.</td>
+</tr>
+<tr>
+<td>About page usage stats</td>
+<td>Done</td>
+<td>Public "Usage Statistics" section on <code>/about/</code> shows visitor count, total tool uses, and per-tool counts (zero-count tools hidden).</td>
 </tr>
 </tbody>
 </table>
@@ -1113,5 +1237,210 @@
   requirements.txt
   pyproject.toml
 </code></pre>
+<hr />
+<h2 id="glow-300----speech-platform-planned">GLOW 3.0.0 -- Speech Platform (Planned)</h2>
+<p><strong>Status:</strong> Planned -- not yet implemented<br />
+<strong>Target release:</strong> 3.0.0<br />
+<strong>Specification source:</strong> <code>docs/speech.md</code> (Kokoro TTS Platform PRD, Unix-Based, CPU-Optimized)<br />
+<strong>Predecessor:</strong> BITS Whisperer (audio-to-text) shipped in v2.0.0. The speech platform extends GLOW in the complementary direction: text-to-accessible-audio.</p>
+<h3 id="vision">Vision</h3>
+<p>GLOW 3.0.0 will add a self-hosted text-to-speech (TTS) capability powered by Kokoro ONNX, enabling blind and low-vision users and the organizations that serve them to generate accessible audio versions of large-print documents without requiring a GPU, without sending document content to third-party cloud services, and without per-request API costs.</p>
+<p>This closes the full accessibility loop: GLOW can already audit, fix, convert, and format documents for visual large-print reading. The 3.0.0 speech platform adds audio output as a first-class delivery format for the same content.</p>
+<h3 id="what-the-bits-community-said">What the BITS community said</h3>
+<p>The speech platform was the most frequently requested feature across the BITS community feedback collected through 2.7.0 and 2.8.0. Members consistently asked for a way to produce MP3 audio versions of board minutes, newsletters, and policy memos -- in particular for members who use refreshable braille displays or screen readers in combination with audio, and for families who distribute recorded versions of meeting summaries. GLOW 3.0.0 is the answer to those requests.</p>
+<h3 id="design-principles">Design Principles</h3>
+<ul>
+<li><strong>CPU-first, no GPU required.</strong> Kokoro runs at approximately 0.8-1.5x realtime on a modern CPU. The BITS server (or any Docker host) can generate a 2-minute audio clip from 300 words in under 3 minutes without specialist hardware.</li>
+<li><strong>No third-party cloud TTS.</strong> Document content stays on-premise. This is essential for organizations that handle member health, legal, or financial documents.</li>
+<li><strong>Preview-first UX.</strong> Generate the first 3-8 seconds of audio before committing to a full-length job. Confirms voice, speed, and tone before waiting for a long generation job.</li>
+<li><strong>Async for long documents.</strong> Documents over 300 words are processed as background jobs with a queue position indicator, a status polling endpoint, and email notification when the job completes (when email is configured). Short documents are processed inline.</li>
+<li><strong>User-controlled voice and parameters.</strong> Multiple pre-configured voices (af_bella, am_adam, and others as available). Adjustable speed (native Kokoro parameter), pitch (FFmpeg post-processing), and energy level (audio filter).</li>
+</ul>
+<h3 id="technical-architecture-from-docsspeechmd">Technical Architecture (from <code>docs/speech.md</code>)</h3>
+<pre><code>User Input (text or GLOW document)
+  ↓
+Text Analyzer (length estimate → async vs inline decision)
+  ↓
+Preview Generator (first ~200 chars, &lt; 1 second target)
+  ↓
+TTS Engine (Kokoro ONNX, CPU)
+  ↓
+Audio Processor (WAV → MP3 via FFmpeg at 192kbps)
+  ↓
+Storage + Download API
+</code></pre>
+<p><strong>Components:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Component</th>
+<th>Technology</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>TTS engine</td>
+<td>Kokoro ONNX (CPU, loaded into memory at startup)</td>
+</tr>
+<tr>
+<td>Audio conversion</td>
+<td>FFmpeg (<code>libmp3lame</code>, 192kbps)</td>
+</tr>
+<tr>
+<td>Job queue</td>
+<td>Redis + worker pool (2-4 workers)</td>
+</tr>
+<tr>
+<td>API layer</td>
+<td>FastAPI (integrated with Flask via proxy or sidecar)</td>
+</tr>
+<tr>
+<td>Storage</td>
+<td><code>/audio/{session_id}/{job_id}.mp3</code> (temp, TTL-bound)</td>
+</tr>
+<tr>
+<td>Caching</td>
+<td>Hash of <code>(text + voice + parameters)</code> -- identical jobs reuse output</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Text chunking:</strong> long documents are split at ~500-word boundaries, each chunk processed in parallel, then merged before MP3 encoding. This keeps individual generation units fast and enables progress reporting.</p>
+<h3 id="performance-expectations-cpu">Performance Expectations (CPU)</h3>
+<table>
+<thead>
+<tr>
+<th>Input Size</th>
+<th>Audio Duration</th>
+<th>CPU Generation Time</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>50 words (~20 sec audio)</td>
+<td>20 sec</td>
+<td>15-25 sec</td>
+</tr>
+<tr>
+<td>300 words (~2 min audio)</td>
+<td>2 min</td>
+<td>1.5-3 min</td>
+</tr>
+<tr>
+<td>2,000 words (~12-15 min audio)</td>
+<td>12-15 min</td>
+<td>10-20 min</td>
+</tr>
+</tbody>
+</table>
+<p>Short documents (under ~50 words) are generated inline. All others use async queue mode.</p>
+<h3 id="time-estimation-api">Time Estimation API</h3>
+<pre><code>POST /speech/estimate
+{
+  &quot;text&quot;: &quot;...&quot;,
+  &quot;speed&quot;: 1.0
+}
+→
+{
+  &quot;estimated_audio_length_sec&quot;: 100,
+  &quot;estimated_generation_time_sec&quot;: 95,
+  &quot;processing_mode&quot;: &quot;cpu&quot;,
+  &quot;word_count&quot;: 270
+}
+</code></pre>
+<h3 id="api-surface-planned-routes">API Surface (planned routes)</h3>
+<table>
+<thead>
+<tr>
+<th>Endpoint</th>
+<th>Method</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>/speech/preview</code></td>
+<td>POST</td>
+<td>Generate first ~8 seconds from first ~200 chars of input</td>
+</tr>
+<tr>
+<td><code>/speech/estimate</code></td>
+<td>POST</td>
+<td>Estimate audio duration and generation time</td>
+</tr>
+<tr>
+<td><code>/speech/generate</code></td>
+<td>POST</td>
+<td>Start a full generation job; returns <code>job_id</code> for async mode</td>
+</tr>
+<tr>
+<td><code>/speech/status/&lt;job_id&gt;</code></td>
+<td>GET</td>
+<td>Poll job progress (percentage, estimated completion time)</td>
+</tr>
+<tr>
+<td><code>/speech/download/&lt;job_id&gt;</code></td>
+<td>GET</td>
+<td>Download completed MP3</td>
+</tr>
+</tbody>
+</table>
+<h3 id="glow-integration-points">GLOW Integration Points</h3>
+<ul>
+<li><strong>Audit report:</strong> "Listen to this report" button generates an MP3 of the plain-text summary.</li>
+<li><strong>Convert result:</strong> "Download as audio" option alongside HTML/Word/PDF/EPUB for supported output formats.</li>
+<li><strong>Quick Start:</strong> "Transcribe" action (Whisperer, text → audio) and "Read aloud" action (TTS, document → audio) will appear as complementary Quick Start cards.</li>
+<li><strong>BITS Whisperer → TTS pipeline:</strong> transcribe audio → edit transcript → re-synthesize corrected audio. Full round-trip in one session.</li>
+</ul>
+<h3 id="voice-customization">Voice Customization</h3>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Mechanism</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Voice</td>
+<td>Pre-configured Kokoro voice IDs (af_bella, am_adam, others)</td>
+</tr>
+<tr>
+<td>Speed</td>
+<td>Native Kokoro <code>speed</code> parameter</td>
+</tr>
+<tr>
+<td>Pitch shift</td>
+<td>FFmpeg <code>rubberband</code> or <code>asetrate</code> filter post-processing</td>
+</tr>
+<tr>
+<td>Energy / loudness</td>
+<td>FFmpeg <code>loudnorm</code> filter</td>
+</tr>
+</tbody>
+</table>
+<h3 id="non-goals-for-300">Non-Goals for 3.0.0</h3>
+<ul>
+<li>Multilingual synthesis (English only in 3.0.0)</li>
+<li>Voice cloning or custom voice training</li>
+<li>Studio-grade prosody control</li>
+<li>Emotion-level synthesis</li>
+<li>GPU requirement (CPU-only is a hard constraint)</li>
+</ul>
+<h3 id="out-of-scope-deferred-post-300">Out-of-Scope (Deferred Post-3.0.0)</h3>
+<ul>
+<li>Real-time streaming TTS for Document Chat</li>
+<li>Braille-to-audio pipeline</li>
+<li>Multilingual voice support</li>
+</ul>
+<h3 id="dependencies">Dependencies</h3>
+<ul>
+<li>Kokoro ONNX model files (downloaded at container build time or mounted as a volume)</li>
+<li>FFmpeg (system package in Docker image)</li>
+<li>Redis (new sidecar service in <code>docker-compose.yml</code>)</li>
+<li>2-4 additional GB RAM per active worker (Kokoro model in memory)</li>
+</ul>
+<h3 id="deployment-impact">Deployment Impact</h3>
+<p>The 3.0.0 release will add a Redis sidecar and one or more Kokoro worker containers to the existing Docker Compose stack. The Flask/Gunicorn web container will proxy speech requests to the FastAPI sidecar. The BITS server (RackNerd 8 GB, 6 vCPU) has the headroom to run 2 workers with comfortable margin. Audio output files are temp-bound with the same TTL lifecycle as document uploads (1-hour maximum).</p>
+<p>For full technical detail, see <code>docs/speech.md</code>.</p>
 </div>
 <a href="#prd-toc-heading" class="back-to-top">Back to sections</a>

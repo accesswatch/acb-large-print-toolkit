@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import io
 import os
+import re
 import threading
 import urllib.request
 import wave as _wave
@@ -390,6 +391,10 @@ class SpeechError(Exception):
     """Raised when synthesis fails."""
 
 
+_MAX_SYNTH_TEXT_CHARS = 500
+_MAX_DOCUMENT_TEXT_CHARS = 120_000
+
+
 def synthesize(voice_id: str, text: str, speed: float = 1.0, pitch: int = 0) -> tuple[bytes, str]:
     """Synthesize *text* with the given *voice_id* and return ``(wav_bytes, suggested_filename)``.
 
@@ -401,7 +406,7 @@ def synthesize(voice_id: str, text: str, speed: float = 1.0, pitch: int = 0) -> 
     """
     if not text or not text.strip():
         raise SpeechError("Text must not be empty.")
-    text = text.strip()[:500]  # hard cap; routes also validate
+    text = text.strip()[:_MAX_SYNTH_TEXT_CHARS]  # hard cap; routes also validate
 
     speed = max(0.5, min(2.0, float(speed)))
     pitch = max(-20, min(20, int(pitch)))
@@ -423,6 +428,154 @@ def synthesize(voice_id: str, text: str, speed: float = 1.0, pitch: int = 0) -> 
     safe_voice = voice.replace("/", "_").replace("\\", "_")
     filename = f"glow-speech-{safe_voice}.wav"
     return wav_bytes, filename
+
+
+def estimate_audio_seconds_from_text(text: str, *, speed: float = 1.0) -> float:
+    """Estimate generated audio duration from text length and speed.
+
+    Uses a conservative baseline speaking rate and scales for requested speed.
+    """
+    normalized = normalize_document_text(text)
+    if not normalized:
+        return 0.0
+    # Approximation: ~13 chars per second near 156 wpm reading pace.
+    base_seconds = max(1.0, len(normalized) / 13.0)
+    speed = max(0.5, min(2.0, float(speed)))
+    return base_seconds / speed
+
+
+def estimate_processing_seconds_from_text(text: str, *, speed: float = 1.0) -> float:
+    """Estimate synthesis processing time in seconds.
+
+    Synthesis is usually slower than pure audio duration in CPU-only environments.
+    We intentionally overestimate slightly to avoid surprising users.
+    """
+    audio_seconds = estimate_audio_seconds_from_text(text, speed=speed)
+    if audio_seconds <= 0:
+        return 0.0
+    return max(8.0, audio_seconds * 1.35)
+
+
+def normalize_document_text(text: str) -> str:
+    """Normalize extracted document text for speech synthesis."""
+    cleaned = (text or "").replace("\r\n", "\n").replace("\r", "\n")
+    cleaned = re.sub(r"\n{3,}", "\n\n", cleaned)
+    cleaned = re.sub(r"[\t\f\v]+", " ", cleaned)
+    cleaned = re.sub(r" {2,}", " ", cleaned)
+    return cleaned.strip()
+
+
+def first_sentences(text: str, *, count: int = 2, max_chars: int = 500) -> str:
+    """Return a short sentence-based preview snippet for voice preview."""
+    normalized = normalize_document_text(text)
+    if not normalized:
+        return ""
+    # Split on sentence-ending punctuation followed by whitespace.
+    parts = re.split(r"(?<=[.!?])\s+", normalized)
+    snippet = " ".join(parts[: max(1, count)]).strip()
+    return snippet[:max_chars].strip()
+
+
+def split_text_for_synthesis(text: str, *, chunk_chars: int = _MAX_SYNTH_TEXT_CHARS) -> list[str]:
+    """Split text into sentence-aware chunks suitable for synthesize()."""
+    normalized = normalize_document_text(text)
+    if not normalized:
+        return []
+    if len(normalized) <= chunk_chars:
+        return [normalized]
+
+    sentences = re.split(r"(?<=[.!?])\s+", normalized)
+    chunks: list[str] = []
+    current = ""
+    for sentence in sentences:
+        sent = sentence.strip()
+        if not sent:
+            continue
+        if len(sent) > chunk_chars:
+            # Hard-break oversized sentence.
+            if current:
+                chunks.append(current)
+                current = ""
+            for i in range(0, len(sent), chunk_chars):
+                chunks.append(sent[i : i + chunk_chars])
+            continue
+        candidate = (current + " " + sent).strip() if current else sent
+        if len(candidate) <= chunk_chars:
+            current = candidate
+        else:
+            chunks.append(current)
+            current = sent
+    if current:
+        chunks.append(current)
+    return chunks
+
+
+def _concat_wav_segments(segments: list[bytes]) -> bytes:
+    """Concatenate multiple PCM WAV segments into one WAV payload."""
+    if not segments:
+        raise SpeechError("No audio segments were produced.")
+
+    params = None
+    frame_bytes: list[bytes] = []
+    for seg in segments:
+        with _wave.open(io.BytesIO(seg), "rb") as wf:
+            current = (wf.getnchannels(), wf.getsampwidth(), wf.getframerate())
+            if params is None:
+                params = current
+            elif params != current:
+                raise SpeechError("Audio segment mismatch while combining output.")
+            frame_bytes.append(wf.readframes(wf.getnframes()))
+
+    out = io.BytesIO()
+    with _wave.open(out, "wb") as wf_out:
+        assert params is not None
+        wf_out.setnchannels(params[0])
+        wf_out.setsampwidth(params[1])
+        wf_out.setframerate(params[2])
+        for frames in frame_bytes:
+            wf_out.writeframes(frames)
+    return out.getvalue()
+
+
+def wav_duration_seconds(wav_bytes: bytes) -> float:
+    """Return WAV duration in seconds."""
+    with _wave.open(io.BytesIO(wav_bytes), "rb") as wf:
+        frames = wf.getnframes()
+        rate = wf.getframerate()
+        if rate <= 0:
+            return 0.0
+        return float(frames) / float(rate)
+
+
+def synthesize_document_text(
+    voice_id: str,
+    text: str,
+    *,
+    speed: float = 1.0,
+    pitch: int = 0,
+) -> tuple[bytes, str]:
+    """Synthesize long-form document text by chunking and concatenation."""
+    normalized = normalize_document_text(text)
+    if not normalized:
+        raise SpeechError("Document text is empty after extraction.")
+    if len(normalized) > _MAX_DOCUMENT_TEXT_CHARS:
+        raise SpeechError(
+            "Document is too long for one speech render in this release. "
+            "Please shorten the source text or convert in sections."
+        )
+
+    chunks = split_text_for_synthesis(normalized)
+    if not chunks:
+        raise SpeechError("Document text is empty after chunking.")
+
+    wav_segments: list[bytes] = []
+    filename = "glow-speech-document.wav"
+    for chunk in chunks:
+        wav_bytes, suggested = synthesize(voice_id, chunk, speed=speed, pitch=pitch)
+        filename = suggested.replace("glow-speech-", "glow-speech-document-")
+        wav_segments.append(wav_bytes)
+
+    return _concat_wav_segments(wav_segments), filename
 
 
 def _synthesize_kokoro(voice: str, text: str, speed: float) -> bytes:

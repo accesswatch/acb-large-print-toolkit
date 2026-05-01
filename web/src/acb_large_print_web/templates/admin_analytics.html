@@ -19,6 +19,8 @@
     <dd>{{ "{:,}".format(visitor_count) }}</dd>
     <dt>Total tool uses</dt>
     <dd>{{ "{:,}".format(total_uses) }}</dd>
+    <dt>Let it GLOW theme downloads</dt>
+    <dd>{{ "{:,}".format(anthem_downloads[0].count if anthem_downloads else 0) }}</dd>
   </dl>
 </section>
 
@@ -72,11 +74,70 @@
 </section>
 
 <section>
+  <h2 id="speech-patterns-heading">Speech Studio Patterns</h2>
+  <p class="field-hint">
+    Conversion timing telemetry samples: {{ "{:,}".format(speech_metrics_summary.samples) }}.
+    Average words: {{ "%.1f"|format(speech_metrics_summary.avg_words) }}.
+    Average processing seconds: {{ "%.1f"|format(speech_metrics_summary.avg_processing_seconds) }}.
+  </p>
+  {% if speech_modes or speech_voices or speech_speeds or speech_pitches %}
+  <table class="findings-table">
+    <caption>Speech usage by mode, voice, speed, and pitch</caption>
+    <thead>
+      <tr>
+        <th scope="col">Category</th>
+        <th scope="col">Value</th>
+        <th scope="col">Uses</th>
+        <th scope="col">Last Used</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in speech_modes %}
+      <tr>
+        <td>Mode</td>
+        <td>{{ row.detail_value }}</td>
+        <td>{{ "{:,}".format(row.count) }}</td>
+        <td>{% if row.last_used_at %}<time datetime="{{ row.last_used_at }}">{{ row.last_used_at[:16].replace("T", " ") }} UTC</time>{% else %}Never{% endif %}</td>
+      </tr>
+      {% endfor %}
+      {% for row in speech_voices %}
+      <tr>
+        <td>Voice</td>
+        <td>{{ row.detail_value }}</td>
+        <td>{{ "{:,}".format(row.count) }}</td>
+        <td>{% if row.last_used_at %}<time datetime="{{ row.last_used_at }}">{{ row.last_used_at[:16].replace("T", " ") }} UTC</time>{% else %}Never{% endif %}</td>
+      </tr>
+      {% endfor %}
+      {% for row in speech_speeds %}
+      <tr>
+        <td>Speed</td>
+        <td>{{ row.detail_value }}</td>
+        <td>{{ "{:,}".format(row.count) }}</td>
+        <td>{% if row.last_used_at %}<time datetime="{{ row.last_used_at }}">{{ row.last_used_at[:16].replace("T", " ") }} UTC</time>{% else %}Never{% endif %}</td>
+      </tr>
+      {% endfor %}
+      {% for row in speech_pitches %}
+      <tr>
+        <td>Pitch</td>
+        <td>{{ row.detail_value }}</td>
+        <td>{{ "{:,}".format(row.count) }}</td>
+        <td>{% if row.last_used_at %}<time datetime="{{ row.last_used_at }}">{{ row.last_used_at[:16].replace("T", " ") }} UTC</time>{% else %}Never{% endif %}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p>No Speech Studio pattern data recorded yet.</p>
+  {% endif %}
+</section>
+
+<section>
   <h2 id="notes-heading">Notes</h2>
   <ul>
-    <li>Tool counts increment once per successful form submission. Page views and errors are not counted.</li>
+    <li>Tool counts increment on successful workflow actions such as submissions, speech renders, and anthem downloads. Page views and errors are not counted.</li>
     <li>Visitor count tracks unique browser sessions (one count per session, not per page view).</li>
     <li>Both counters persist across server restarts in SQLite under <code>instance/</code>.</li>
+    <li>Speech pattern analytics record mode, selected voice, speed, and pitch to help tune default experiences.</li>
     <li>Counts reset only if the instance volume is wiped (for example, during a destructive redeploy).</li>
   </ul>
 </section>

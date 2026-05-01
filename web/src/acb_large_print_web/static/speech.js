@@ -19,6 +19,26 @@
     };
   }
 
+  function buildFormData(includeDocument) {
+    var fd = new FormData();
+    var csrf = getCsrfToken();
+    fd.append("csrf_token", csrf);
+    fd.append("voice", getSelectedVoice());
+    fd.append("text", textarea ? textarea.value : "");
+    fd.append("speed", speedInput ? speedInput.value : "1.0");
+    fd.append("pitch", pitchInput ? pitchInput.value : "0");
+    if (documentTokenInput) {
+      fd.append("token", documentTokenInput.value || "");
+    }
+    if (documentPrefillInput) {
+      fd.append("prefill", documentPrefillInput.value || "0");
+    }
+    if (includeDocument && documentInput && documentInput.files && documentInput.files[0]) {
+      fd.append("document", documentInput.files[0]);
+    }
+    return fd;
+  }
+
   function persistState() {
     if (!window.glowPreferences || typeof window.glowPreferences.updateSettings !== "function") {
       return;
@@ -42,6 +62,33 @@
       timer = setTimeout(function () {
         fn.apply(null, args);
       }, waitMs);
+    };
+  }
+
+  function toDuration(seconds) {
+    var s = Math.max(0, Math.round(seconds || 0));
+    if (s < 60) {
+      return s + " seconds";
+    }
+    var mins = Math.floor(s / 60);
+    var rem = s % 60;
+    if (mins < 60) {
+      return rem ? (mins + "m " + rem + "s") : (mins + " minutes");
+    }
+    var hours = Math.floor(mins / 60);
+    var minsRem = mins % 60;
+    return minsRem ? (hours + "h " + minsRem + "m") : (hours + " hours");
+  }
+
+  function startTimedAnnouncements(statusFn, estimateSeconds, intervalSeconds) {
+    var start = Date.now();
+    var intervalMs = Math.max(5000, Math.round((intervalSeconds || 15) * 1000));
+    var timer = window.setInterval(function () {
+      var elapsed = Math.round((Date.now() - start) / 1000);
+      statusFn("Still working... about " + toDuration(elapsed) + " elapsed (estimated " + toDuration(estimateSeconds) + ").");
+    }, intervalMs);
+    return function stop() {
+      window.clearInterval(timer);
     };
   }
 
@@ -113,11 +160,23 @@
 
   var previewBtn = byId("preview-btn");
   var downloadBtn = byId("download-btn");
+  var prepareDocumentBtn = byId("prepare-document-btn");
+  var documentPreviewBtn = byId("document-preview-btn");
+  var documentDownloadBtn = byId("document-download-btn");
+  var documentInput = byId("speech-document");
+  var documentTokenInput = byId("speech-document-token");
+  var documentPrefillInput = byId("speech-document-prefill");
+  var documentEstimateWrap = byId("document-estimate");
+  var documentEstimateText = byId("document-estimate-text");
+  var documentStatus = byId("document-status");
+  var documentError = byId("document-error");
   var audioPlayer = byId("audio-player");
   var playerWrap = byId("preview-player");
   var errorRegion = byId("preview-error");
   var statusRegion = byId("preview-status");
   var form = byId("speech-form");
+
+  var preparedDocument = null;
 
   function showStatus(msg) {
     if (!statusRegion) {
@@ -142,9 +201,82 @@
     if (downloadBtn) {
       downloadBtn.disabled = !!isBusy;
     }
+    if (prepareDocumentBtn) {
+      prepareDocumentBtn.disabled = !!isBusy;
+    }
+    if (documentPreviewBtn) {
+      documentPreviewBtn.disabled = !!isBusy;
+    }
+    if (documentDownloadBtn) {
+      documentDownloadBtn.disabled = !!isBusy;
+    }
     if (form) {
       form.setAttribute("aria-busy", isBusy ? "true" : "false");
     }
+  }
+
+  function showDocumentStatus(msg) {
+    if (!documentStatus) {
+      return;
+    }
+    documentStatus.textContent = msg;
+    documentStatus.style.display = "";
+  }
+
+  function clearDocumentStatus() {
+    if (!documentStatus) {
+      return;
+    }
+    documentStatus.textContent = "";
+    documentStatus.style.display = "none";
+  }
+
+  function showDocumentError(msg) {
+    if (!documentError) {
+      return;
+    }
+    documentError.textContent = msg;
+    documentError.style.display = "";
+  }
+
+  function clearDocumentError() {
+    if (!documentError) {
+      return;
+    }
+    documentError.textContent = "";
+    documentError.style.display = "none";
+  }
+
+  function showEstimate(data) {
+    if (!documentEstimateWrap || !documentEstimateText) {
+      return;
+    }
+    documentEstimateText.textContent =
+      data.word_count + " words (" + data.char_count + " chars). " +
+      "Estimated audio length: " + toDuration(data.estimate_audio_seconds) + ". " +
+      "Estimated processing time: " + toDuration(data.estimate_processing_seconds) + ". " +
+      "Estimate source: " + (data.estimate_source || "baseline") +
+      (data.estimate_samples !== undefined ? (" (" + data.estimate_samples + " samples)") : "") + ".";
+    documentEstimateWrap.style.display = "";
+  }
+
+  function parseFilenameFromDisposition(value) {
+    if (!value) {
+      return "speech-output.wav";
+    }
+    var m = /filename=\"?([^\";]+)\"?/i.exec(value);
+    return (m && m[1]) ? m[1] : "speech-output.wav";
+  }
+
+  function triggerDownload(blob, filename) {
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
   }
 
   function showError(msg) {
@@ -180,6 +312,162 @@
           throw new Error("Server error " + resp.status);
         }
         throw err;
+      });
+  }
+
+  function ensureDocumentPrepared() {
+    if (preparedDocument && preparedDocument.token) {
+      return Promise.resolve(preparedDocument);
+    }
+    if (!form || !form.dataset.prepareUrl) {
+      return Promise.reject(new Error("Document preparation endpoint is unavailable."));
+    }
+    if ((!documentTokenInput || !documentTokenInput.value) && (!documentInput || !documentInput.files || !documentInput.files[0])) {
+      return Promise.reject(new Error("Choose a document first."));
+    }
+
+    clearDocumentError();
+    showDocumentStatus("Preparing document text for speech...");
+    setBusy(true);
+
+    var fd = buildFormData(true);
+    var csrfVal = getCsrfToken();
+    return fetch(form.dataset.prepareUrl, {
+      method: "POST",
+      headers: { "X-CSRFToken": csrfVal },
+      body: fd
+    })
+      .then(function (resp) {
+        if (!resp.ok) {
+          return errorFromResponse(resp);
+        }
+        return resp.json();
+      })
+      .then(function (json) {
+        preparedDocument = json;
+        if (documentTokenInput) {
+          documentTokenInput.value = json.token || "";
+        }
+        if (documentPrefillInput) {
+          documentPrefillInput.value = "1";
+        }
+        showEstimate(json);
+        if (textarea && json.preview_text) {
+          textarea.value = json.preview_text;
+          renderCharCount();
+          persistState();
+        }
+        showDocumentStatus("Document prepared. You can preview first sentences or download full audio.");
+        return json;
+      })
+      .finally(function () {
+        setBusy(false);
+      });
+  }
+
+  function runDocumentPreview() {
+    if (!form || !form.dataset.documentPreviewUrl) {
+      showDocumentError("Document preview endpoint is unavailable.");
+      return;
+    }
+    clearDocumentError();
+    clearStatus();
+    ensureDocumentPrepared()
+      .then(function (doc) {
+        setBusy(true);
+        showDocumentStatus("Generating snippet preview...");
+        var stopAnnouncements = startTimedAnnouncements(
+          showDocumentStatus,
+          doc.estimate_processing_seconds || 20,
+          Math.min(20, doc.announcement_interval_seconds || 10)
+        );
+
+        return fetch(form.dataset.documentPreviewUrl, {
+          method: "POST",
+          headers: { "X-CSRFToken": getCsrfToken() },
+          body: buildFormData(false)
+        })
+          .then(function (resp) {
+            if (!resp.ok) {
+              return errorFromResponse(resp);
+            }
+            return resp.blob();
+          })
+          .then(function (blob) {
+            var url = URL.createObjectURL(blob);
+            if (audioPlayer.dataset.prevObjectUrl) {
+              URL.revokeObjectURL(audioPlayer.dataset.prevObjectUrl);
+            }
+            audioPlayer.dataset.prevObjectUrl = url;
+            audioPlayer.src = url;
+            playerWrap.style.display = "";
+            audioPlayer.load();
+            showDocumentStatus("Snippet preview is ready. Playing audio now.");
+            return audioPlayer.play();
+          })
+          .catch(function (err) {
+            if (err && err.name === "NotAllowedError") {
+              showDocumentStatus("Snippet preview is ready. Press play to hear it.");
+              return;
+            }
+            showDocumentError("Snippet preview failed: " + (err && err.message ? err.message : err));
+          })
+          .finally(function () {
+            stopAnnouncements();
+            setBusy(false);
+          });
+      })
+      .catch(function (err) {
+        setBusy(false);
+        showDocumentError(err && err.message ? err.message : String(err));
+      });
+  }
+
+  function runDocumentDownload() {
+    if (!form || !form.dataset.documentDownloadUrl) {
+      showDocumentError("Document download endpoint is unavailable.");
+      return;
+    }
+    clearDocumentError();
+    ensureDocumentPrepared()
+      .then(function (doc) {
+        setBusy(true);
+        showDocumentStatus("Rendering full document audio. Keep this tab open.");
+        var stopAnnouncements = startTimedAnnouncements(
+          showDocumentStatus,
+          doc.estimate_processing_seconds || 30,
+          doc.announcement_interval_seconds || 20
+        );
+
+        return fetch(form.dataset.documentDownloadUrl, {
+          method: "POST",
+          headers: { "X-CSRFToken": getCsrfToken() },
+          body: buildFormData(false)
+        })
+          .then(function (resp) {
+            if (!resp.ok) {
+              return errorFromResponse(resp);
+            }
+            return Promise.all([resp.blob(), Promise.resolve(resp.headers.get("Content-Disposition"))]);
+          })
+          .then(function (result) {
+            var blob = result[0];
+            var disposition = result[1];
+            var filename = parseFilenameFromDisposition(disposition);
+            triggerDownload(blob, filename);
+            showDocumentStatus("Full document audio is ready and downloaded.");
+          })
+          .catch(function (err) {
+            showDocumentError("Document conversion failed: " + (err && err.message ? err.message : err));
+          })
+          .finally(function () {
+            stopAnnouncements();
+            setBusy(false);
+          });
+      })
+      .catch(function (err) {
+        setBusy(false);
+        showDocumentError(err && err.message ? err.message : String(err));
       });
   }
 
@@ -241,6 +529,40 @@
           previewBtn.textContent = "Preview audio";
           setBusy(false);
         });
+    });
+  }
+
+  if (prepareDocumentBtn) {
+    prepareDocumentBtn.addEventListener("click", function () {
+      preparedDocument = null;
+      ensureDocumentPrepared().catch(function (err) {
+        showDocumentError(err && err.message ? err.message : String(err));
+      });
+    });
+  }
+
+  if (documentPreviewBtn) {
+    documentPreviewBtn.addEventListener("click", runDocumentPreview);
+  }
+
+  if (documentDownloadBtn) {
+    documentDownloadBtn.addEventListener("click", runDocumentDownload);
+  }
+
+  if (documentInput) {
+    documentInput.addEventListener("change", function () {
+      preparedDocument = null;
+      clearDocumentError();
+      clearDocumentStatus();
+      if (documentTokenInput) {
+        documentTokenInput.value = "";
+      }
+      if (documentPrefillInput) {
+        documentPrefillInput.value = "0";
+      }
+      if (documentEstimateWrap) {
+        documentEstimateWrap.style.display = "none";
+      }
     });
   }
 })();

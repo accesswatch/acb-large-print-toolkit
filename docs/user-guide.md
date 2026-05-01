@@ -28,9 +28,29 @@ New to GLOW? Start at [Quick Start](#1-quick-start). Already familiar? Jump stra
 
 ---
 
-## What's New in GLOW 2.8.0
+## What's New in GLOW 3.0.0
 
-GLOW 2.8.0 is a community-driven release. Every feature below was requested directly by members of the BITS community and the broader blind and low-vision community who use GLOW in their day-to-day document workflows. We are deeply grateful for your continued support, your patience, and the care you bring to making documents readable for everyone.
+GLOW 3.0.0 is the community-driven milestone release. It combines the major workflow upgrades delivered through 2.5-2.9 and adds the full Speech Studio platform with real-world adaptive timing telemetry.
+
+### Speech Studio is now a complete workflow
+
+- Convert typed text or uploaded documents into speech
+- Preview first sentences before full render
+- Download full narration in MP3 (or WAV fallback)
+- Reuse saved voice, speed, and pitch defaults from Settings
+
+### Estimates improve from real usage on your server
+
+Document-to-speech conversion now records measured processing time, word count, source size, and selected settings. Future estimates are blended from real historical telemetry so timing guidance becomes more accurate over time for your exact infrastructure.
+
+### New analytics visibility
+
+- About and Admin analytics now show Speech Studio usage patterns (mode, voice, speed, pitch)
+- Home-page Let it GLOW anthem downloads are tracked and reported
+
+### Still included from 2.8 and 2.7 improvements
+
+Quick Start handoff (no re-upload), passphrase-protected share links, custom font sizes, grouped findings, streamlined Audit/Fix/Re-Audit, and dark mode all remain part of the 3.0 baseline.
 
 ### Quick Start now routes to Audit, Fix, and Convert without re-uploading
 
@@ -98,6 +118,8 @@ After upload, GLOW shows an action chooser. Every available action for your file
 **Fix** -- Automatically corrects every formatting problem it can find in Word and Markdown documents: fonts, sizes, spacing, emphasis, alignment. Returns a corrected file. You keep your original. Available for Word and Markdown only.
 
 **Convert** -- Transforms your document into a different format. Upload a PowerPoint, Excel, PDF, Word, or Markdown file and get back accessible HTML, a Word document, an EPUB, a PDF, or plain Markdown. PowerPoint, Excel, and PDF files use smart two-stage extraction: GLOW pulls the text into Markdown first, then Pandoc applies full ACB Large Print formatting. This is handled automatically -- you just choose your output format.
+
+**Speech audio (from Convert)** -- Convert also includes a Speech direction that hands your uploaded file to Speech Studio without re-uploading. Use it when you want to preview voice output and download narration audio for the same source file.
 
 **Export** -- Converts a Word document to a CMS Fragment (a scoped HTML snippet for WordPress, Drupal, or any CMS). The Export tab was merged into Convert in v2.7.0. Use **Convert &gt; CMS Fragment** to produce scoped HTML. Standalone HTML output is also available in Convert. See [Section 5](#5-cms-fragment-formerly-export) and [Section 6](#6-how-to-convert-between-formats).
 

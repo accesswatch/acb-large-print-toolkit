@@ -1,15 +1,29 @@
 # PRD: GLOW (Guided Layout & Output Workflow) Accessibility Web Application
 
-**Status:** Implemented (v2.8.0 released)
+**Status:** Implemented (v3.0.0 released)
 **Author:** Jeff Bishop, BITS
 **Date:** April 30, 2026
-**Target:** v2.8.0 (Quick Start full handoff, passphrase-protected shares, user-defined font sizes, grouped findings tables -- all features sourced directly from BITS and blind/low-vision community feedback)
+**Target:** v3.0.0 (community-driven release with full Speech Studio platform, analytics, and workflow unification)
 
 ---
 
 ## Implementation Status
 
 The Flask web application has been built and is ready for deployment. All core features described in this PRD are implemented. The following table summarizes what shipped in each release:
+
+### v3.0.0 Addendum (Community-driven platform milestone -- April 30, 2026)
+
+All requested feature areas from the 2.5 through 2.9 cycle were completed and unified in this release.
+
+| Feature | Status | Notes |
+|---------|--------|-------|
+| Speech Studio full workflow | Done | Typed synthesis, uploaded document-to-speech, snippet preview, full audio download, settings persistence, and admin voice management |
+| Convert-to-Speech seamless handoff | Done | Convert tab includes a Speech direction that redirects to Speech Studio with token handoff, avoiding re-upload |
+| Adaptive conversion estimation | Done | Real conversion telemetry (word count, source size, measured processing time, speed/voice) feeds blended estimates over time for this deployment |
+| Speech analytics visibility | Done | Admin and About pages expose speech usage patterns by mode/voice/speed/pitch |
+| Anthem download analytics | Done | Home page includes tracked Let it GLOW theme download; count surfaced in About/Admin analytics |
+| Navigation and Quick Start integration | Done | Dedicated Speech tab and Quick Start Speech action with token handoff |
+| Cross-feature polish | Done | Settings, speech UX, and progress announcement cadence are aligned across workflows |
 
 ### v2.8.0 Addendum (Community-requested UX and security features -- April 30, 2026)
 

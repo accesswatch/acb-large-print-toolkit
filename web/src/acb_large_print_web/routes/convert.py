@@ -19,7 +19,7 @@ extends Pandoc output to PowerPoint, Excel, PDF, and other MarkItDown-readable f
 Audio transcription has its own dedicated route at /whisperer (BITS Whisperer).
 """
 
-from flask import Blueprint, abort, current_app, render_template, request, send_file, url_for
+from flask import Blueprint, abort, current_app, redirect, render_template, request, send_file, url_for
 
 from werkzeug.utils import secure_filename as _secure_filename
 
@@ -208,6 +208,7 @@ def _template_context(**extra):
         convert_to_epub_enabled=convert_to_epub_enabled,
         convert_to_pdf_enabled=convert_to_pdf_enabled,
         convert_to_pipeline_enabled=convert_to_pipeline_enabled,
+        speech_enabled=bool(all_flags.get("GLOW_ENABLE_SPEECH", True)),
         export_html_enabled=bool(all_flags.get("GLOW_ENABLE_EXPORT_HTML", True)),
         # Extension sets for JS-driven UI filtering
         chain_via_markdown_exts=sorted(_CHAIN_VIA_MARKDOWN),
@@ -286,6 +287,7 @@ def convert_submit():
             "to-epub": ctx["convert_to_epub_enabled"],
             "to-pdf": ctx["convert_to_pdf_enabled"],
             "to-pipeline": ctx["convert_to_pipeline_enabled"],
+            "to-speech": ctx["speech_enabled"],
         }
         if direction.startswith("pipeline-") and not ctx["convert_to_pipeline_enabled"]:
             raise UploadError("DAISY Pipeline conversion is disabled on this server.")
@@ -296,6 +298,12 @@ def convert_submit():
         _record_usage("convert", detail=direction)
 
         temp_dir = get_temp_dir(token)
+
+        if direction == "to-speech":
+            # Seamless handoff: keep upload session and move directly to Speech Studio.
+            result_token = token
+            token = None
+            return redirect(url_for("speech.speech_form", token=result_token))
 
         if direction == "to-html":
             # Pandoc (or MarkItDown→Pandoc): document -> ACB HTML

@@ -1,6 +1,6 @@
-# GLOW Speech Platform PRD — v2.9.0+
+# GLOW Speech Platform PRD — v3.0.0
 
-> **Scope for v2.9.0:** Settings UI and interactive Speech Studio only. Document-to-audio conversion is deferred to v3.0.0.
+> **Scope for v3.0.0:** Speech Studio supports typed synthesis, uploaded document-to-speech conversion, and adaptive runtime estimation based on real server telemetry.
 
 ## Tiered Architecture
 
@@ -10,9 +10,9 @@
 | **2 — Supplemental** | Piper TTS | `pip install piper-tts` | ~50–100 MB per voice (manual download) | No | Fair–Good |
 | **3 — Optional/Cloud** | Azure AI Speech Neural | Azure subscription + SDK | None | No | Excellent |
 
-**Tier 1 and 2 are the target for v2.9.0.** Tier 3 (Azure) is deferred to a later release.
+**Tier 1 and 2 are shipping in v3.0.0.** Tier 3 (Azure) is deferred to a later release.
 
-Both Tier 1 and Tier 2 are CPU-only, self-hosted, free to run, and never send document text outside the server. All voices are English-only in v2.9.0.
+Both Tier 1 and Tier 2 are CPU-only, self-hosted, free to run, and never send document text outside the server. All voices are English-only in v3.0.0.
 
 ---
 
@@ -125,7 +125,7 @@ User text + voice + speed + pitch
 
 ---
 
-## v2.9.0 Scope: Settings + Speech Studio
+## v3.0.0 Scope: Settings + Speech Studio
 
 The `/speech/` route provides:
 
@@ -138,8 +138,27 @@ The `/speech/` route provides:
 7. **Download button** — form POST → returns MP3 (or WAV fallback) as attachment
 8. **Persistent preferences (opt-in)** — selected voice, text, speed, and pitch can be saved in GLOW local settings (`glow_user_settings`) and restored on return
 9. **Preview progress messaging** — users get live status text while synthesis runs so long previews (15-20 seconds) remain clearly active
+10. **Document prepare step** — extracts uploaded document text, stores session token, and shows estimated audio + processing durations
+11. **Snippet preview** — previews the first two extracted sentences from the uploaded file
+12. **Full document render** — synthesizes full extracted text and downloads MP3 (or WAV fallback)
+13. **Smart timed announcements** — status announcements scale by expected runtime (short jobs: ~10-20 second updates, long jobs: ~45-150 second updates)
+14. **Adaptive estimate telemetry** — real conversion samples (word count, source size bytes, speed/voice, and measured processing time) are stored server-side and blended into future estimates for this deployment
+15. **Convert-tab handoff** — Convert now offers a "Speech audio" direction that opens Speech Studio with the uploaded file already loaded (no second upload)
 
-No document processing. No Redis queue. No async jobs. All synthesis is synchronous for studio-length texts (≤500 characters ≈ ≤75 words ≈ ≤30 seconds audio).
+No Redis queue and no async jobs yet. Full-document synthesis currently runs synchronously, with progress messaging tuned to expected processing time.
+
+### Adaptive estimate telemetry
+
+Speech Studio now records each completed document conversion into `instance/speech_metrics.db` with:
+
+- Word count
+- Character count
+- Source document size in bytes
+- Selected engine/voice/speed/pitch
+- Real measured processing duration
+- Generated audio duration
+
+Future estimates blend baseline text-length heuristics with this historical telemetry so estimates improve over time on the actual server infrastructure in production.
 
 ### Deployment note: curated Piper voice seeding
 
@@ -158,13 +177,11 @@ The admin dashboard includes a Speech Studio voice management page with one-clic
 
 ---
 
-## Deferred to v3.0.0
+## Deferred to future release
 
-- Document-to-audio conversion (full document synthesis)
-- Redis-backed async job queue
-- MP3 export of full documents
-- Chunked synthesis pipeline for long texts
-- Time estimation engine
+- Redis-backed async job queue for very long renders
+- Incremental/chunked streaming playback for long document synthesis
+- Optional email notifications for background speech renders
 - Azure AI Speech Tier 3 integration
 
 ---

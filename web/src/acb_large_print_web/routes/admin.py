@@ -1116,8 +1116,13 @@ def admin_approve_request(req_id: int) -> Any:
 def admin_analytics() -> Any:
     """Tool usage analytics dashboard."""
     email = _require_admin()
-    from ..tool_usage import get_all as _get_tool_usage, get_total as _get_tool_total
+    from ..tool_usage import (
+        get_all as _get_tool_usage,
+        get_detail_counts as _get_detail_counts,
+        get_total as _get_tool_total,
+    )
     from ..visitor_counter import get_count as _get_visitor_count
+    from ..speech_metrics import get_summary as _get_speech_metrics_summary
     usage = _get_tool_usage()
     total_uses = _get_tool_total()
     visitor_count = _get_visitor_count()
@@ -1127,6 +1132,12 @@ def admin_analytics() -> Any:
         usage=usage,
         total_uses=total_uses,
         visitor_count=visitor_count,
+        speech_metrics_summary=_get_speech_metrics_summary(),
+        anthem_downloads=_get_detail_counts("anthem_download", "detail", limit=1),
+        speech_modes=_get_detail_counts("speech", "mode", limit=20),
+        speech_voices=_get_detail_counts("speech", "voice", limit=20),
+        speech_speeds=_get_detail_counts("speech", "speed", limit=20),
+        speech_pitches=_get_detail_counts("speech", "pitch", limit=20),
     )
 
 

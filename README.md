@@ -8,7 +8,7 @@ External APH source reference: [APH Guidelines for the Development of Documents 
 
 Status note: APH alignment in this toolkit is fully integrated in Release 1.2.0 for the submission workflow, alongside existing ACB + WCAG + Microsoft Accessibility Checker + format-specific rule sets.
 
-## Release 2.5.0 at a Glance
+## Release 3.0.0 at a Glance
 
 - Stronger user experience guardrails across web workflows: feature-gated navigation, result-page cross-link consistency, and clearer next-step actions.
 - Deployment-aware branding profiles: `bits` and `uarizona` now drive logo, theme, favicon, and profile-specific wording from one environment variable.

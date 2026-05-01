@@ -380,6 +380,8 @@
     <dd>{{ "{:,}".format(visitor_count) }}</dd>
     <dt>Total tool uses</dt>
     <dd>{{ "{:,}".format(total_uses) }}</dd>
+    <dt>Let it GLOW theme downloads</dt>
+    <dd>{{ "{:,}".format(anthem_downloads[0].count if anthem_downloads else 0) }}</dd>
   </dl>
   {% if total_uses > 0 %}
   <table class="findings-table">
@@ -402,6 +404,49 @@
     </tbody>
   </table>
   {% endif %}
+
+  {% if speech_modes or speech_voices %}
+  <h3>Speech Studio Usage Patterns</h3>
+  <table class="findings-table">
+    <caption>Most-used Speech Studio modes and voices</caption>
+    <thead>
+      <tr>
+        <th scope="col">Category</th>
+        <th scope="col">Value</th>
+        <th scope="col">Uses</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in speech_modes %}
+      <tr>
+        <td>Mode</td>
+        <td>{{ row.detail_value }}</td>
+        <td>{{ "{:,}".format(row.count) }}</td>
+      </tr>
+      {% endfor %}
+      {% for row in speech_voices %}
+      <tr>
+        <td>Voice</td>
+        <td>{{ row.detail_value }}</td>
+        <td>{{ "{:,}".format(row.count) }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+
+  <h3>Speech Timing Telemetry</h3>
+  {% if speech_metrics_summary.samples > 0 %}
+  <p class="help-text">
+    GLOW has collected {{ "{:,}".format(speech_metrics_summary.samples) }} real document-to-speech conversions on this server.
+    Current averages: {{ "%.1f"|format(speech_metrics_summary.avg_words) }} words,
+    {{ "%.1f"|format(speech_metrics_summary.avg_processing_seconds) }} seconds processing,
+    {{ "%.0f"|format(speech_metrics_summary.avg_source_size_bytes) }} source bytes.
+  </p>
+  {% else %}
+  <p class="help-text">No document speech timing telemetry has been collected yet.</p>
+  {% endif %}
+
   <a href="#main" class="back-to-top">Back to top</a>
 </section>
 

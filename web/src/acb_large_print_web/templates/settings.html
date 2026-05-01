@@ -247,8 +247,73 @@
   <fieldset>
     <legend>Speech Studio</legend>
     <h2 id="settings-speech-heading">Speech Studio</h2>
-    <p>Try available text-to-speech voices directly in your browser. No document is required.</p>
-    <a class="btn-secondary" href="{{ url_for('speech.speech_form') }}">Open Speech Studio</a>
+    <p>Use Speech Studio for typed text preview and uploaded document-to-speech conversion with your saved voice settings.</p>
+    <div class="settings-rule-actions">
+      <a class="btn-secondary" href="{{ url_for('speech.speech_form') }}">Open Speech Studio</a>
+      <button type="button" id="settings-speech-download" class="btn-secondary">Download sample audio</button>
+    </div>
+    <p id="settings-speech-download-status" class="help-text" role="status" aria-live="polite" aria-atomic="true" style="display:none;"></p>
+
+    <form id="settings-speech-download-form" method="post" action="{{ url_for('speech.speech_download') }}" style="display:none;">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" id="settings-speech-download-voice" name="voice" value="kokoro:af_bella">
+      <input type="hidden" id="settings-speech-download-text" name="text" value="Welcome to Speech Studio. This sample reflects your current speech settings.">
+      <input type="hidden" id="settings-speech-download-speed" name="speed" value="1.0">
+      <input type="hidden" id="settings-speech-download-pitch" name="pitch" value="0">
+    </form>
+
+    <script>
+    (function () {
+      "use strict";
+      var btn = document.getElementById("settings-speech-download");
+      var status = document.getElementById("settings-speech-download-status");
+      var form = document.getElementById("settings-speech-download-form");
+      if (!btn || !form) {
+        return;
+      }
+
+      function setStatus(msg) {
+        if (!status) {
+          return;
+        }
+        status.textContent = msg;
+        status.style.display = "";
+      }
+
+      function setField(id, value) {
+        var el = document.getElementById(id);
+        if (el && value !== undefined && value !== null && value !== "") {
+          el.value = String(value);
+        }
+      }
+
+      btn.addEventListener("click", function () {
+        var settings = null;
+        if (window.glowPreferences && typeof window.glowPreferences.loadSettings === "function") {
+          settings = window.glowPreferences.loadSettings();
+        }
+        var speech = settings && settings.speech ? settings.speech : null;
+        setField("settings-speech-download-voice", speech && speech.voice ? speech.voice : "kokoro:af_bella");
+        setField(
+          "settings-speech-download-text",
+          speech && speech.text
+            ? speech.text
+            : "Welcome to Speech Studio. This sample reflects your current speech settings."
+        );
+        setField("settings-speech-download-speed", speech && speech.speed !== undefined ? speech.speed : "1.0");
+        setField("settings-speech-download-pitch", speech && speech.pitch !== undefined ? speech.pitch : "0");
+
+        setStatus("Preparing audio download using your current speech defaults...");
+        btn.disabled = true;
+        btn.textContent = "Preparing...";
+        form.submit();
+        window.setTimeout(function () {
+          btn.disabled = false;
+          btn.textContent = "Download sample audio";
+        }, 1500);
+      });
+    }());
+    </script>
   </fieldset>
   {% endif %}
 

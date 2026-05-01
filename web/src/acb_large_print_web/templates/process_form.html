@@ -55,13 +55,10 @@
     <li><strong>Audit:</strong> Check for accessibility compliance issues across Word, Excel, PowerPoint, PDF, Markdown, ePub, and image files.</li>
     <li><strong>Fix:</strong> Auto-fix accessibility problems in Word documents (fonts, sizes, spacing, alignment, emphasis).</li>
     <li><strong>Convert:</strong> Transform documents into Markdown, HTML, PDF, Word, ePub, DAISY, and other formats. For Word documents, also includes a CMS Fragment option for pasting into WordPress or Drupal. Supported image flows can use AI-assisted descriptions when enabled.</li>
-    {% if ai_chat_enabled %}
-    <li><strong>Document Chat:</strong> Ask grounded questions about uploaded document content using accessibility-aware tooling and OpenRouter-backed reasoning.</li>
-    {% endif %}
+    <li><strong>Speech:</strong> Convert uploaded document text into speech audio, preview first sentences, and download full narration with your saved voice settings.</li>
+    <li><strong>Document Chat (when enabled):</strong> Ask grounded questions about uploaded document content using accessibility-aware tooling and OpenRouter-backed reasoning.</li>
     <li><strong>Create Template:</strong> Generate a ready-to-use Word template (.dotx) with all ACB formatting pre-configured.</li>
-    {% if ai_whisperer_enabled %}
-    <li><strong>BITS Whisperer:</strong> Transcribe audio (MP3, WAV, M4A, OGG, FLAC, AAC, Opus, WebM, MP4, MPEG, MPGA) to Markdown or Word with retention controls and secure cleanup.</li>
-    {% endif %}
+    <li><strong>BITS Whisperer (when enabled):</strong> Transcribe audio (MP3, WAV, M4A, OGG, FLAC, AAC, Opus, WebM, MP4, MPEG, MPGA) to Markdown or Word with retention controls and secure cleanup.</li>
   </ul>
 </details>
 

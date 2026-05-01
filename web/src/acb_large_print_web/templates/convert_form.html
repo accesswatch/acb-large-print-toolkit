@@ -24,6 +24,7 @@
   or convert_to_docx_enabled
   or convert_to_epub_enabled
   or convert_to_pdf_enabled
+  or speech_enabled
   or (convert_to_pipeline_enabled and pipeline_installed and pipeline_conversions)
   or (export_html_enabled and pandoc_installed)
 ) %}
@@ -123,6 +124,16 @@
           <strong>Accessible PDF</strong><br>
           Create a PDF with ACB BOP print formatting -- Arial font, 18-point body text, 22-point headings, 1.15 line spacing, 1-inch margins, and flush-left alignment. Ready for printing or sharing as a fixed-layout document.
           {% if not pandoc_installed or not weasyprint_installed %}<br><em>This option is temporarily unavailable on this server.</em>{% endif %}
+        </span>
+      </label>
+      {% endif %}
+
+      {% if speech_enabled %}
+      <label>
+        <input type="radio" name="direction" value="to-speech"{% if not ns.default_set %} checked{% set ns.default_set = true %}{% endif %}>
+        <span>
+          <strong>Speech audio (Speech Studio)</strong><br>
+          Open Speech Studio with this uploaded file already loaded so you can preview first sentences and download full narration using your selected voice and speech settings.
         </span>
       </label>
       {% endif %}
@@ -248,6 +259,7 @@
       <li><strong>Sharing an editable document?</strong> Use "Word document" -- you get a .docx file people can open and edit in Microsoft Word.</li>
       <li><strong>Reading on an e-reader or phone?</strong> Use "EPUB 3 e-book" -- the content reflows to fit small screens and works with e-reader accessibility features.</li>
       <li><strong>Reading on a DAISY player or braille display?</strong> Use "EPUB or DAISY format" (Pipeline) -- these are the formats those devices expect.{% if not pipeline_installed %} (Not available on this server.){% endif %}</li>
+      <li><strong>Need audio narration?</strong> Choose "Speech audio" to hand off directly to Speech Studio with your file already loaded.</li>
       <li><strong>Editing, searching, or feeding to an AI tool?</strong> Use "Plain text" -- you get raw content in a simple format that works everywhere.</li>
       {% if export_html_enabled %}<li><strong>Pasting into WordPress or Drupal?</strong> Use "CMS Fragment" above -- it produces a scoped HTML snippet you can paste directly into your CMS editor without breaking your site theme.</li>{% endif %}
     </ul>
@@ -408,6 +420,15 @@
       <li><strong>PowerPoint (.pptx), Excel (.xlsx/.xls)</strong> -- two-stage via Markdown extraction</li>
     </ul>
 
+    {% if speech_enabled %}
+    <h3>For Speech audio output</h3>
+    <p>All formats supported by Convert can be handed off to Speech Studio:</p>
+    <ul>
+      <li><strong>Word, Excel, PowerPoint, PDF, Markdown, HTML, CSV, JSON, XML, ePub, images</strong> -- GLOW extracts readable text first, then Speech Studio lets you preview and download narration.</li>
+      <li><strong>Best for:</strong> board updates, meeting packets, newsletters, and summaries that need an audio version.</li>
+    </ul>
+    {% endif %}
+
     {% if pipeline_installed and pipeline_conversions %}
     <h3>For EPUB or DAISY output (via DAISY Pipeline)</h3>
     <p>Each Pipeline conversion accepts a specific input type:</p>
@@ -438,6 +459,7 @@
     'to-epub':     new Set({{ pandoc_effective_exts | tojson | replace('".epub"', '"__excluded__"') }}),
     'to-pdf':      new Set({{ pandoc_effective_exts | tojson }}),
     'to-pipeline': new Set({{ pipeline_exts | tojson }}),
+    'to-speech':   new Set({{ markitdown_exts | tojson }}),
   };
 
   // Pipeline conversions: map input_ext -> list of keys
