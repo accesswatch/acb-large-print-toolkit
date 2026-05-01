@@ -41,9 +41,17 @@ COPY desktop/src/ desktop/src/
 RUN pip install --no-cache-dir ./desktop
 
 # Install the web app
+# Step 1: copy manifests and pre-install all dependencies (cached layer --
+#         only reruns when pyproject.toml / requirements.txt change, not on
+#         every source edit)
 COPY web/pyproject.toml web/requirements.txt web/
+RUN mkdir -p web/src/acb_large_print_web \
+    && touch web/src/acb_large_print_web/__init__.py \
+    && pip install --no-cache-dir ./web \
+    && rm -rf web/src/acb_large_print_web
+# Step 2: copy real source and reinstall the package only (deps already done)
 COPY web/src/ web/src/
-RUN pip install --no-cache-dir ./web
+RUN pip install --no-cache-dir --no-deps ./web
 
 # Pre-download Kokoro model files at build time (Tier 1 TTS engine).
 # Model files come from the kokoro-onnx release assets.
