@@ -61,6 +61,23 @@ _DEFAULT_DEMO_TEXT = (
 )
 
 
+def _speech_flag(name: str, default: bool = True) -> bool:
+    """Return the value of a GLOW feature flag, defaulting to *default* on error."""
+    try:
+        from .. import feature_flags as _ff
+        return bool(_ff.get_all_flags().get(name, default))
+    except Exception:
+        return default
+
+
+def _convert_disabled_response():
+    return jsonify({"error": "Speech synthesis is currently disabled by the site administrator."}), 403
+
+
+def _export_disabled_response():
+    return jsonify({"error": "Speech export is currently disabled by the site administrator."}), 403
+
+
 # ---------------------------------------------------------------------------
 # Speech Studio page
 # ---------------------------------------------------------------------------
@@ -104,6 +121,8 @@ def speech_form():
 @speech_bp.route("/preview", methods=["POST"])
 @limiter.limit("15 per minute")
 def speech_preview():
+    if not _speech_flag("GLOW_ENABLE_CONVERT_TO_SPEECH"):
+        return _convert_disabled_response()
     voice_id = (request.form.get("voice") or "").strip()
     text = (request.form.get("text") or "").strip()[:_TEXT_MAX_LEN]
     speed = _parse_float(request.form.get("speed"), default=1.0, lo=0.5, hi=2.0)
@@ -151,6 +170,8 @@ def voice_preview():
     Called when user clicks a voice in the selector to preview that voice.
     Faster rate limit (20/min vs 15/min) because each click is a small request.
     """
+    if not _speech_flag("GLOW_ENABLE_CONVERT_TO_SPEECH"):
+        return _convert_disabled_response()
     voice_id = (request.form.get("voice") or "").strip()
     if not voice_id:
         return jsonify({"error": "No voice selected."}), 400
@@ -185,6 +206,8 @@ def voice_preview():
 @speech_bp.route("/download", methods=["POST"])
 @limiter.limit("10 per minute")
 def speech_download():
+    if not _speech_flag("GLOW_ENABLE_EXPORT_SPEECH"):
+        return _export_disabled_response()
     voice_id = (request.form.get("voice") or "").strip()
     text = (request.form.get("text") or "").strip()[:_TEXT_MAX_LEN]
     speed = _parse_float(request.form.get("speed"), default=1.0, lo=0.5, hi=2.0)
@@ -241,6 +264,8 @@ def speech_download():
 @limiter.limit("20 per minute")
 def speech_prepare_document():
     """Extract text from an uploaded document and return synthesis estimates."""
+    if not _speech_flag("GLOW_ENABLE_CONVERT_TO_SPEECH"):
+        return _convert_disabled_response()
     try:
         token, saved_path, filename = _resolve_document_source()
         text = _extract_document_text(saved_path)
@@ -333,6 +358,8 @@ def speech_prepare_document():
 @limiter.limit("12 per minute")
 def speech_document_preview():
     """Preview first sentences from extracted document text."""
+    if not _speech_flag("GLOW_ENABLE_CONVERT_TO_SPEECH"):
+        return _convert_disabled_response()
     token = (request.form.get("token") or "").strip()
     voice_id = (request.form.get("voice") or "").strip()
     speed = _parse_float(request.form.get("speed"), default=1.0, lo=0.5, hi=2.0)
@@ -377,6 +404,8 @@ def speech_document_preview():
 @limiter.limit("6 per minute")
 def speech_document_download():
     """Render full extracted document text to speech and return download."""
+    if not _speech_flag("GLOW_ENABLE_EXPORT_SPEECH"):
+        return _export_disabled_response()
     token = (request.form.get("token") or "").strip()
     voice_id = (request.form.get("voice") or "").strip()
     speed = _parse_float(request.form.get("speed"), default=1.0, lo=0.5, hi=2.0)

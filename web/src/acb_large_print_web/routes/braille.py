@@ -86,13 +86,14 @@ def braille_form():
     # Feature-gate: GLOW_ENABLE_BRAILLE
     try:
         from .. import feature_flags as _ff
-        if not _ff.get_all_flags().get("GLOW_ENABLE_BRAILLE", True):
+        _flags = _ff.get_all_flags()
+        if not _flags.get("GLOW_ENABLE_BRAILLE", True):
             return _render(
                 False,
                 error="Braille Studio is currently disabled by the site administrator.",
             )
     except Exception:
-        pass
+        _flags = {}
 
     lib_available = braille_available()
 
@@ -151,6 +152,10 @@ def braille_form():
             if upload_token:
                 cleanup_token(upload_token)
 
+    # Feature-gate: GLOW_ENABLE_CONVERT_TO_BRAILLE
+    if not error and not _flags.get("GLOW_ENABLE_CONVERT_TO_BRAILLE", True):
+        error = "Braille translation is currently disabled by the site administrator."
+
     if not error and not input_text:
         error = "Please enter text in the input box or upload a file."
 
@@ -208,6 +213,18 @@ def braille_form():
 @limiter.limit("30 per minute")
 def braille_download():
     """Return the last braille translation result as a file download."""
+    # Feature-gate: GLOW_ENABLE_EXPORT_BRAILLE
+    try:
+        from .. import feature_flags as _ff
+        if not _ff.get_all_flags().get("GLOW_ENABLE_EXPORT_BRAILLE", True):
+            return Response(
+                "Braille export is currently disabled by the site administrator.",
+                status=403,
+                mimetype="text/plain",
+            )
+    except Exception:
+        pass
+
     result = session.get(_SK_RESULT)
     filename = session.get(_SK_FILENAME, "braille_output.brl")
     output_format = session.get(_SK_FORMAT, "unicode")

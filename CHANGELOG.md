@@ -72,11 +72,22 @@ Releases are tagged in the [GitHub repository](https://github.com/accesswatch/ac
   `web/instance/feature_flags.json` so local runs do not rely on implicit
   default resolution for the Braille top-nav tab.
 
-- **Server deploy image now includes liblouis system packages.**
-  `web/Dockerfile` now installs `liblouis-bin`, `liblouis-dev`, and
-  `liblouis-data`, and Python dependencies now use `pylouis>=0.0.1`
-  (which provides the `louis` module) in both `web/pyproject.toml` and
-  `web/requirements.txt`.
+- **Server deploy image now ships working liblouis Python bindings.**
+  `web/Dockerfile` installs `liblouis-bin`, `liblouis-dev`, `liblouis-data`,
+  and `python3-louis` (the official Debian bindings) via apt, then copies the
+  `louis` module into the pip Python 3.13 site-packages so `import louis`
+  resolves at runtime. A build-time smoke-test (`python3 -c "import louis"`)
+  fails the Docker build immediately if the binding is absent. The `pylouis`
+  stub PyPI package (which installed no importable code) has been removed from
+  `web/pyproject.toml` and `web/requirements.txt`.
+
+- **New feature flags for speech and braille export/conversion.**
+  Added `GLOW_ENABLE_EXPORT_SPEECH`, `GLOW_ENABLE_CONVERT_TO_SPEECH`,
+  `GLOW_ENABLE_EXPORT_BRAILLE`, and `GLOW_ENABLE_CONVERT_TO_BRAILLE` (all
+  default: enabled). Flags are wired into route-level guards: synthesis and
+  document-prepare endpoints check `CONVERT_TO_*`; download endpoints check
+  `EXPORT_*`. All four flags appear in the admin feature flags UI under the
+  Exports and Convert subfeatures groups.
 
 - **Speech Studio staged actions are now robustly hidden until preparation completes.**
   The post-prepare action group (`Preview first sentences`, `Download full document audio`)
