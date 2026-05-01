@@ -13,4 +13,4 @@ requests>=2.32.0
 mutagen>=1.47.0
 pip-audit>=2.6.0
 piper-tts>=1.4.2
-louis>=3.26.0
+pylouis>=0.0.1

@@ -60,8 +60,9 @@ Releases are tagged in the [GitHub repository](https://github.com/accesswatch/ac
 
 - **Server deploy image now includes liblouis system packages.**
   `web/Dockerfile` now installs `liblouis-bin`, `liblouis-dev`, and
-  `liblouis-data`, and `web/requirements.txt` now includes `louis>=3.26.0`
-  for parity with `web/pyproject.toml`.
+  `liblouis-data`, and Python dependencies now use `pylouis>=0.0.1`
+  (which provides the `louis` module) in both `web/pyproject.toml` and
+  `web/requirements.txt`.
 
 - **Speech Studio staged actions are now robustly hidden until preparation completes.**
   The post-prepare action group (`Preview first sentences`, `Download full document audio`)
