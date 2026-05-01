@@ -32,16 +32,50 @@ New to GLOW? Start at [Quick Start](#1-quick-start). Already familiar? Jump stra
 
 GLOW 3.0.0 is the community-driven milestone release. It combines the major workflow upgrades delivered through 2.5-2.9 and adds the full Speech Studio platform with real-world adaptive timing telemetry.
 
+### Eight workflow optimizations that save time
+
+1. **One-click re-audit after fixing** — The Fix result now shows a prominent "Re-Audit Fixed Document" button. No more downloading, navigating tabs, and re-uploading. Just click and see your updated compliance report.
+
+2. **Direct convert-to-audit** — After converting a document (e.g., Markdown→HTML), the Convert result now offers an "Audit This File" button. Audit your converted output without re-uploading.
+
+3. **Batch audit is more discoverable** — The Audit form now highlights batch mode with clear benefits: compare format variants, test before-and-after versions, or bulk-check a series of related documents in one run.
+
+4. **Detailed before-and-after findings comparison** — When you re-audit after fixing, you see detailed sections showing which findings were newly detected, which are still present (focus here next), and which were resolved (celebrate these wins).
+
+5. **Quick restart with session audit history** — Your session remembers your last 5 audits with scores, grades, filenames, and share links. Need to re-audit a file you worked on earlier? It is right there.
+
+6. **Contextual workflow guidance** — Convert now suggests relevant next steps based on your output format. Converting to multiple formats? A card suggests batch-auditing them together.
+
+7. **Reviewer feedback collection** — Shared audit reports are built to support reviewer comments and feedback (foundation for future collaborative review features).
+
+8. **Session restore after expiry** — When your upload session expires, instead of a dead end, you see your history and can restart recent audits with one click.
+
 ### Speech Studio is now a complete workflow
 
 - Convert typed text or uploaded documents into speech
 - Preview first sentences before full render
 - Download full narration in MP3 (or WAV fallback)
 - Reuse saved voice, speed, and pitch defaults from Settings
+- New `/voice-preview` endpoint lets you click any voice to hear a quick demo
 
 ### Estimates improve from real usage on your server
 
 Document-to-speech conversion now records measured processing time, word count, source size, and selected settings. Future estimates are blended from real historical telemetry so timing guidance becomes more accurate over time for your exact infrastructure.
+
+### Power user and integrator features
+
+For organizations running GLOW on premise and building custom workflows:
+
+- **Webhook callbacks with cryptographic signing** — Audit completion can POST results to your custom URL with HMAC-SHA256 signatures
+- **Standards profile persistence** — Your selected profile (ACB 2025, APH Submission, Combined Strict) flows through audit→fix→reaudit
+- **Configurable share link TTL** — Set `SHARE_TTL_HOURS` env var to control how long shared reports remain available
+- **Session-based auto-diff** — Same file audited twice in one session automatically shows before/after comparisons
+- **Large-file rate limiting** — Files >10 MB are protected by a separate 1/min limit
+- **AI-powered alt-text suggestions** — New `/audit/suggest-alt-text` API for image descriptions
+- **CSV export of post-fix findings** — New `/fix/csv/<token>` for findings analysis in spreadsheets
+- **EPUB conformance level detection** — Ace audits now extract and display W3C conformance (e.g., "EPUB Accessibility 1.0 AA")
+- **Session keep-alive** — `/health` pings every 15 min keep sessions alive through longer workflows
+- **Keyboard shortcut** — Ctrl+U (Cmd+U on Mac) focuses the file picker anywhere in GLOW
 
 ### New analytics visibility
 

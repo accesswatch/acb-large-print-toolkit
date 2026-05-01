@@ -24,8 +24,49 @@ All requested feature areas from the 2.5 through 2.9 cycle were completed and un
 | Anthem download analytics | Done | Home page includes tracked Let it GLOW theme download; count surfaced in About/Admin analytics |
 | Navigation and Quick Start integration | Done | Dedicated Speech tab and Quick Start Speech action with token handoff |
 | Cross-feature polish | Done | Settings, speech UX, and progress announcement cadence are aligned across workflows |
+| **[NEW v3.0.0 Extended] 8 UX workflow optimizations** | Done | Post-fix re-audit button, convert-to-audit bridge, batch audit prominence, enhanced findings diff, session audit history, smart next-step guidance, reviewer feedback foundation, session restore on expiry |
+| **[NEW v3.0.0 Extended] 15 power user features** | Done | Toast framework, standards profile propagation, Ctrl+U shortcut, session keep-alive, webhook callbacks, configurable share TTL, session-based auto-diff, large-file rate limiting, voice preview, audit history, AI alt-text API, CSV export, EPUB conformance detection, template context injection, full backward compatibility |
 
-### v2.8.0 Addendum (Community-requested UX and security features -- April 30, 2026)
+### v3.0.0 Extended Features (April 30, 2026 release)
+
+**8 UX Workflow Optimizations**
+
+These features were requested by community members working through the accessibility cycle repeatedly and looking for ways to reduce friction in the audit→fix→reaudit workflow.
+
+| Feature | Route/File | Status |
+|---------|-----------|--------|
+| Post-fix re-audit button | `fix_result.html` → `/audit/from-fix` | Done |
+| Convert-to-audit bridge | `convert_result.html` → `/audit/from-convert` | Done |
+| Prominent batch audit CTA | `audit_form.html` callout section | Done |
+| Enhanced findings diff sections | `audit_report.html` diff-findings-detail | Done |
+| Session audit history (5 entries) | `audit.py` session storage | Done |
+| Smart next-step guidance in Convert | `convert_result.html` conditional | Done |
+| Reviewer feedback loop foundation | `shared_report.html` form | Done |
+| Session restore on expiry | `audit_form.html` history display | Done |
+
+**15 Power User & Integrator Features**
+
+These features enable advanced workflows, custom integrations, and operational control for organizations running GLOW on premise.
+
+| Feature | Route/File | Status | Notes |
+|---------|-----------|--------|-------|
+| Toast notification framework | `a11y-enhancements.js` | Done | Keyboard navigable, screen reader compatible |
+| Standards profile propagation | `audit.py`, `fix.py` | Done | ACB 2025, APH Submission, Combined Strict flow through workflow |
+| Ctrl+U keyboard shortcut | `a11y-enhancements.js` | Done | Focus file picker from anywhere |
+| Session keep-alive | `a11y-enhancements.js` | Done | `/health` ping every 15 min |
+| Webhook callbacks | `audit.py` _fire_webhook | Done | HTTPS only, HMAC-SHA256 `X-GLOW-Signature` |
+| Configurable share TTL | `report_cache.py` SHARE_TTL_HOURS | Done | Env var, default 4h, exposed to templates |
+| Session-based auto-diff | `audit.py` _compute_audit_diff | Done | Same session, 2 audits, auto-comparison |
+| Large-file rate limit | `audit.py` _is_small_upload | Done | >10 MB → 1/min (vs 6/min standard) |
+| Voice preview endpoint | `/speech/voice-preview` | Done | POST endpoint, 20/min rate limit |
+| Audit history in session | `audit.py` session storage | Done | Up to 5 entries with scores, timestamps |
+| AI alt-text suggestions | `/audit/suggest-alt-text` | Done | Requires ai_alt_text_enabled, image extraction from DOCX |
+| CSV export of post-fix findings | `/fix/csv/<token>` | Done | Leverages findings_to_csv_bytes |
+| EPUB conformance detection | `ace_runner.py` _extract_ace_conformance | Done | W3C level exposed via `ace_conformance` attr |
+| Template context injection | `app.py` context_processor | Done | `audit_history`, `share_ttl_hours` always available |
+| Backward compatibility | All files | Done | All features opt-in, non-breaking |
+
+### v2.8.0 Addendum (Community-requested UX and security features)
 
 All features in this release were sourced directly from BITS and blind and low-vision community feedback. Thank you to everyone who filed issues, sent suggestions, and tested pre-release builds.
 
