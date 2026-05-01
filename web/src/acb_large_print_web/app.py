@@ -588,19 +588,63 @@ def create_app(config: dict | None = None) -> Flask:
             500,
         )
 
+    @app.errorhandler(429)
+    def rate_limited(e):
+        return _render_error(
+            "Too Many Requests",
+            "You have made too many requests in a short period. "
+            "Please wait a moment and try again.",
+            429,
+        )
+
+    # Security response headers applied to every response.
+    # X-Content-Type-Options prevents MIME-sniffing attacks.
+    # X-Frame-Options prevents clickjacking.
+    # Referrer-Policy limits information leakage in Referer headers.
+    @app.after_request
+    def _add_security_headers(response):
+        response.headers.setdefault("X-Content-Type-Options", "nosniff")
+        response.headers.setdefault("X-Frame-Options", "SAMEORIGIN")
+        response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
+        return response
+
     # Cleanup stale uploads on startup
     @app.before_request
     def cleanup_stale_uploads():
-        """Clean up old temporary uploads on each request (lightweight, once per min)."""
-        from . import upload
+        """Clean up old temporary uploads once per minute, worker-safe.
+
+        Uses a lock file in the instance directory so that only one of the
+        N Gunicorn workers runs the sweep at a time.  The lock file stores the
+        epoch timestamp of the last successful sweep; any worker that reads a
+        timestamp younger than 60 s skips the sweep entirely.
+        """
         import time
-        
-        # Store last cleanup time in app config
+        from pathlib import Path as _Path
+        from . import upload
+
         now = time.time()
-        last_cleanup = app.config.get("_last_cleanup", 0)
-        
-        # Run cleanup once per minute (3600 seconds = 1 hour between full scans)
-        if now - last_cleanup > 60:
+        lock_path = _Path(app.instance_path) / ".cleanup_lock"
+        try:
+            # Fast path: read existing timestamp without acquiring a lock.
+            if lock_path.exists():
+                try:
+                    last = float(lock_path.read_text(encoding="ascii").strip())
+                    if now - last < 60:
+                        return
+                except Exception:
+                    pass
+            # Slow path: try to atomically claim the sweep slot.
+            # O_CREAT | O_EXCL fails if another worker already created the
+            # temp file; that worker owns this sweep cycle.
+            tmp = lock_path.with_suffix(".tmp")
+            try:
+                fd = os.open(str(tmp), os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+                os.write(fd, str(now).encode())
+                os.close(fd)
+                os.replace(str(tmp), str(lock_path))
+            except FileExistsError:
+                return  # Another worker won the race; skip.
+            # This worker owns the sweep.
             max_age = int(os.environ.get("UPLOAD_MAX_AGE_HOURS", "1"))
             upload.cleanup_stale_uploads(max_age_hours=max_age)
             try:
@@ -608,7 +652,8 @@ def create_app(config: dict | None = None) -> Flask:
                 _sweep_shares()
             except Exception:
                 pass
-            app.config["_last_cleanup"] = now
+        except Exception:
+            pass  # Never crash a user request due to cleanup failure
 
     return app
 

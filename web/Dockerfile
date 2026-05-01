@@ -53,7 +53,12 @@ RUN mkdir -p web/src/acb_large_print_web \
 COPY web/src/ web/src/
 RUN pip install --no-cache-dir --no-deps ./web
 
-# Pre-download Kokoro model files at build time (Tier 1 TTS engine).
+# Container health check -- used by Docker and Compose when no override is
+# given. Checks the /health endpoint every 30 s; allows 3 failures before
+# the container is marked unhealthy. Start period gives Gunicorn time to
+# load the model files before the first probe fires.
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:5000/health', timeout=8)" || exit 1 (Tier 1 TTS engine).
 # Model files come from the kokoro-onnx release assets.
 # They are baked into the image so the container is self-contained;
 # a bind-mount or named volume at /app/instance/speech_models/ can

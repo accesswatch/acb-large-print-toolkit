@@ -24,18 +24,18 @@ classifiers = [
 dependencies = [
     "flask>=3.1",
     "flask-wtf>=1.2",
-    "flask-limiter>=3.5",
-    "gunicorn>=23.0",
+    "flask-limiter>=4.0",
+    "gunicorn>=25.0",
     "acb-large-print",
     "markitdown[pdf,docx,xlsx,pptx]>=0.1.5",
-    "weasyprint>=62.0",
-    "requests>=2.32.0",
+    "weasyprint>=68.0",
+    "requests>=2.33.0",
     "mutagen>=1.47.0",
-    "huggingface-hub>=0.23.0",
-    "kokoro-onnx>=0.4.2",
+    "huggingface-hub>=1.13.0",
+    "kokoro-onnx>=0.4.7",
     "piper-tts>=1.4.2",
     "pydub>=0.25.1",
-    "numpy>=1.26.0",
+    "numpy>=2.2.0",
 ]
 
 [project.optional-dependencies]

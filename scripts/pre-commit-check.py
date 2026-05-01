@@ -277,18 +277,107 @@ def check_python_imports():
         return True  # Non-blocking
 
 
+def check_dependency_freshness():
+    """7. Check key dependencies are on their latest released version.
+
+    Queries the PyPI JSON API for the current latest version of each
+    explicitly-pinned GLOW dependency and compares it against the version
+    currently installed in the active Python environment.  Reports stale
+    packages as warnings (non-blocking) with the exact ``pip install``
+    command to update them.
+
+    This check is intentionally non-blocking so that a CI runner without
+    internet access (or a short-lived PyPI hiccup) never blocks a commit.
+    """
+    import json
+    import urllib.request
+    from importlib.metadata import version as _installed_version, PackageNotFoundError
+
+    # Canonical list of GLOW's own first-party dependencies to track.
+    # Maps the PyPI distribution name to the import-metadata name (they differ
+    # for a few packages, e.g. PyMuPDF distributes as "pymupdf" but registers
+    # as "PyMuPDF").
+    PACKAGES: list[tuple[str, str]] = [
+        ("markitdown", "markitdown"),
+        ("weasyprint", "weasyprint"),
+        ("flask", "flask"),
+        ("flask-wtf", "flask-wtf"),
+        ("flask-limiter", "flask-limiter"),
+        ("gunicorn", "gunicorn"),
+        ("python-docx", "python-docx"),
+        ("mammoth", "mammoth"),
+        ("pymupdf", "PyMuPDF"),
+        ("requests", "requests"),
+        ("kokoro-onnx", "kokoro-onnx"),
+        ("piper-tts", "piper-tts"),
+        ("huggingface-hub", "huggingface-hub"),
+        ("mutagen", "mutagen"),
+        ("numpy", "numpy"),
+    ]
+
+    outdated: list[tuple[str, str, str]] = []  # (pypi_name, installed, latest)
+    not_installed: list[str] = []
+    failed: list[str] = []
+
+    for pypi_name, meta_name in PACKAGES:
+        # Installed version
+        try:
+            installed = _installed_version(meta_name)
+        except PackageNotFoundError:
+            not_installed.append(pypi_name)
+            continue
+
+        # Latest version from PyPI JSON API
+        try:
+            url = f"https://pypi.org/pypi/{pypi_name}/json"
+            with urllib.request.urlopen(url, timeout=5) as resp:
+                data = json.loads(resp.read())
+            latest = data["info"]["version"]
+        except Exception:
+            failed.append(pypi_name)
+            continue
+
+        from packaging.version import Version
+        try:
+            if Version(installed) < Version(latest):
+                outdated.append((pypi_name, installed, latest))
+            else:
+                print(f"   [OK] {pypi_name}: {installed} (latest)")
+        except Exception:
+            failed.append(pypi_name)
+
+    if not_installed:
+        print(f"   [INFO] Not installed (optional/env-specific): {', '.join(not_installed)}")
+    if failed:
+        print(f"   [INFO] Could not check (no network or parse error): {', '.join(failed)}")
+
+    if outdated:
+        print(f"\n   [WARN] {len(outdated)} package(s) are behind latest:")
+        for name, inst, latest in outdated:
+            print(f"      {name}: {inst} -> {latest}")
+        print(f"\n   To update: pip install {' '.join(f'{n}>={v}' for n, _, v in outdated)}")
+        print("   Then update floor pins in web/pyproject.toml and desktop/pyproject.toml.")
+        # Non-blocking: return True so this never prevents a commit
+        return True
+
+    if not failed:
+        print(f"   [PASS] All {len(PACKAGES) - len(not_installed)} checked packages are current.")
+    return True
+
+
 def main():
     """Run all pre-commit checks."""
     print("\n" + "=" * 70)
     print("[GLOW] Pre-Commit Quality Gate (v2.5.0+)")
     print("=" * 70)
-    
+
     checks = [
         ("Version Consistency", check_version_consistency),
         ("Configuration Consistency", check_config_consistency),
         ("CHANGELOG.md Verification", check_changelog),
         ("Feature Flags Documentation", check_feature_flags_documented),
         ("Documentation Build", build_documentation),
+        ("Dependency Freshness", check_dependency_freshness),
         ("Prose Quality (Vale)", check_prose_quality),
         ("Python Imports (isort)", check_python_imports),
     ]
