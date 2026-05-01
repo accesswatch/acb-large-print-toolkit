@@ -28,7 +28,7 @@ jobs:
       - name: Install system deps
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential
+          sudo apt-get install -y build-essential pandoc
 
       - name: Install dependencies (desktop and web dev)
         run: |

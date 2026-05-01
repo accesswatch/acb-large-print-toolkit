@@ -61,6 +61,9 @@ jobs:
           install_with_retry 4 python -m pip install -e ./web
           install_with_retry 4 python -m pip install pytest
 
+      - name: Install Pandoc
+        run: sudo apt-get install -y pandoc
+
       - name: Run web tests
         run: python -m pytest web/tests/ -x -q
 

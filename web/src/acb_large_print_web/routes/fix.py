@@ -655,11 +655,15 @@ def _run_fix_and_render(
         customization_warning = generate_customization_warning(customization_reasons)
 
     # --- #12: Persist post-fix findings as JSON for CSV download ------
+    # Always write inside the session temp dir so the file never lands
+    # in the project working directory or the repository root.
     _post_findings_key = "post_findings.json"
     try:
         import json as _json
         from pathlib import Path as _Path
-        _pf_path = _Path(str(saved_path.parent)) / _post_findings_key
+        from ..upload import get_temp_dir as _get_temp_dir
+        _td = _get_temp_dir(token)
+        _pf_path = (_Path(str(_td)) if _td is not None else _Path(str(saved_path.parent))) / _post_findings_key
         _findings_dicts = []
         for _pf in post_audit.findings:
             _sev = _pf.severity.value if hasattr(_pf.severity, "value") else str(_pf.severity)

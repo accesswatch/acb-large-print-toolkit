@@ -486,7 +486,13 @@ def _resolve_document_source() -> tuple[str, Path, str]:
 
 
 def _extract_document_text(path: Path) -> str:
-    """Extract normalized plain text from supported document formats."""
+    """Extract normalized plain text from supported document formats.
+
+    Rendering pipeline by extension:
+      .txt          -- direct UTF-8 read (no Pandoc needed)
+      .md / .rst    -- Pandoc plain-render (Pandoc required)
+      everything else -- MarkItDown → Markdown, then Pandoc plain-render
+    """
     ext = path.suffix.lower()
     if ext == ".txt":
         return path.read_text(encoding="utf-8", errors="ignore")
