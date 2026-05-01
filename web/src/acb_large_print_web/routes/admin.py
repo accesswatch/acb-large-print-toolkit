@@ -916,6 +916,12 @@ def admin_flags() -> Any:
         "GLOW_ENABLE_CONVERT_TO_EPUB",
         "GLOW_ENABLE_CONVERT_TO_PDF",
         "GLOW_ENABLE_CONVERT_TO_PIPELINE",
+        # Speech export / convert subfeatures
+        "GLOW_ENABLE_EXPORT_SPEECH",
+        "GLOW_ENABLE_CONVERT_TO_SPEECH",
+        # Braille export / convert subfeatures
+        "GLOW_ENABLE_EXPORT_BRAILLE",
+        "GLOW_ENABLE_CONVERT_TO_BRAILLE",
         # Optional tool integrations
         "GLOW_ENABLE_PANDOC",
         "GLOW_ENABLE_WEASYPRINT",
@@ -964,6 +970,8 @@ def admin_flags() -> Any:
             "GLOW_ENABLE_EXPORT_PDF",
             "GLOW_ENABLE_EXPORT_WORD",
             "GLOW_ENABLE_EXPORT_MARKDOWN",
+            "GLOW_ENABLE_EXPORT_SPEECH",
+            "GLOW_ENABLE_EXPORT_BRAILLE",
         ],
         "convert_subfeatures": [
             "GLOW_ENABLE_CONVERT_TO_MARKDOWN",
@@ -972,6 +980,8 @@ def admin_flags() -> Any:
             "GLOW_ENABLE_CONVERT_TO_EPUB",
             "GLOW_ENABLE_CONVERT_TO_PDF",
             "GLOW_ENABLE_CONVERT_TO_PIPELINE",
+            "GLOW_ENABLE_CONVERT_TO_SPEECH",
+            "GLOW_ENABLE_CONVERT_TO_BRAILLE",
         ],
         "integrations": [
             "GLOW_ENABLE_PANDOC",

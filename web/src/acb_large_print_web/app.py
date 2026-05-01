@@ -194,7 +194,11 @@ def create_app(config: dict | None = None) -> Flask:
             ctx["feature_openpyxl_enabled"] = bool(all_flags.get("GLOW_ENABLE_OPENPYXL", True))
             ctx["feature_python_pptx_enabled"] = bool(all_flags.get("GLOW_ENABLE_PYTHON_PPTX", True))
             ctx["feature_speech_enabled"] = bool(all_flags.get("GLOW_ENABLE_SPEECH", True))
+            ctx["feature_export_speech_enabled"] = bool(all_flags.get("GLOW_ENABLE_EXPORT_SPEECH", True))
+            ctx["feature_convert_to_speech_enabled"] = bool(all_flags.get("GLOW_ENABLE_CONVERT_TO_SPEECH", True))
             ctx["feature_braille_enabled"] = bool(all_flags.get("GLOW_ENABLE_BRAILLE", True))
+            ctx["feature_export_braille_enabled"] = bool(all_flags.get("GLOW_ENABLE_EXPORT_BRAILLE", True))
+            ctx["feature_convert_to_braille_enabled"] = bool(all_flags.get("GLOW_ENABLE_CONVERT_TO_BRAILLE", True))
         except Exception:
             # Best-effort injection; templates should handle missing keys gracefully
             pass

@@ -102,9 +102,13 @@ _DEFAULTS: dict[str, bool] = {
 
     # Server-side Speech Studio
     "GLOW_ENABLE_SPEECH": True,
+    "GLOW_ENABLE_EXPORT_SPEECH": True,
+    "GLOW_ENABLE_CONVERT_TO_SPEECH": True,
 
     # Braille Studio (requires louis / liblouis Python bindings)
     "GLOW_ENABLE_BRAILLE": True,
+    "GLOW_ENABLE_EXPORT_BRAILLE": True,
+    "GLOW_ENABLE_CONVERT_TO_BRAILLE": True,
 }
 
 
