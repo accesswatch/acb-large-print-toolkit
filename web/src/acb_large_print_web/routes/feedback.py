@@ -9,6 +9,8 @@ from pathlib import Path
 
 from flask import Blueprint, abort, current_app, render_template, request
 
+from ..app import limiter
+
 feedback_bp = Blueprint("feedback", __name__)
 
 log = logging.getLogger(__name__)
@@ -45,6 +47,7 @@ def feedback_form():
 
 
 @feedback_bp.route("/", methods=["POST"])
+@limiter.limit("10 per hour", error_message="Too many feedback submissions. Please try again later.")
 def feedback_submit():
     rating = request.form.get("rating", "").strip()
     task = request.form.get("task", "").strip()

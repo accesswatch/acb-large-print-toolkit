@@ -232,3 +232,31 @@ def verify_share_passphrase(share_token: str, passphrase: str) -> bool:
     )
     return hmac.compare_digest(candidate, expected)
 
+
+def sweep_expired_shares() -> int:
+    """Remove all expired share directories. Returns the count removed."""
+    if not _SHARE_BASE.exists():
+        return 0
+    removed = 0
+    now = time.time()
+    try:
+        for item in _SHARE_BASE.iterdir():
+            if not item.is_dir():
+                continue
+            expires_file = item / "expires.txt"
+            try:
+                if not expires_file.exists():
+                    # Orphaned directory with no expiry marker -- remove it.
+                    shutil.rmtree(item, ignore_errors=True)
+                    removed += 1
+                    continue
+                expires_at = float(expires_file.read_text(encoding="utf-8").strip())
+                if now > expires_at:
+                    shutil.rmtree(item, ignore_errors=True)
+                    removed += 1
+            except (ValueError, OSError):
+                pass
+    except OSError:
+        pass
+    return removed
+

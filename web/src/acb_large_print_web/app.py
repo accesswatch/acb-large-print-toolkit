@@ -218,12 +218,16 @@ def create_app(config: dict | None = None) -> Flask:
                 ol_counter = 0
 
         def inline(s: str) -> str:
+            # Escape the whole string first, then apply inline markup.
+            # All captured groups from patterns applied after _esc() are
+            # already-escaped Markup strings so no further escaping is needed.
+            escaped = str(_esc(s))
             # Bold (**text** or __text__)
-            s = _re.sub(r"\*\*(.+?)\*\*", lambda m: f"<strong>{_esc(m.group(1))}</strong>", str(_esc(s)))
-            s = _re.sub(r"__(.+?)__", lambda m: f"<strong>{m.group(1)}</strong>", s)
-            # Inline code
-            s = _re.sub(r"`([^`]+)`", lambda m: f"<code>{m.group(1)}</code>", s)
-            return s
+            escaped = _re.sub(r"\*\*(.+?)\*\*", lambda m: f"<strong>{m.group(1)}</strong>", escaped)
+            escaped = _re.sub(r"__(.+?)__", lambda m: f"<strong>{m.group(1)}</strong>", escaped)
+            # Inline code (content already HTML-escaped above)
+            escaped = _re.sub(r"`([^`]+)`", lambda m: f"<code>{m.group(1)}</code>", escaped)
+            return escaped
 
         for line in lines:
             raw = line.rstrip()
@@ -592,6 +596,11 @@ def create_app(config: dict | None = None) -> Flask:
         if now - last_cleanup > 60:
             max_age = int(os.environ.get("UPLOAD_MAX_AGE_HOURS", "1"))
             upload.cleanup_stale_uploads(max_age_hours=max_age)
+            try:
+                from .report_cache import sweep_expired_shares as _sweep_shares
+                _sweep_shares()
+            except Exception:
+                pass
             app.config["_last_cleanup"] = now
 
     return app

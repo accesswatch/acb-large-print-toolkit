@@ -69,7 +69,6 @@ _DOWNLOAD_MIMETYPES: dict[str, str] = {
     ".epub": "application/epub+zip",
     ".pdf": "application/pdf",
     ".zip": "application/zip",
-    ".epub": "application/epub+zip",
 }
 
 

@@ -159,10 +159,8 @@ def speech_download():
     try:
         wav_bytes, wav_filename = synthesize(voice_id, text, speed=speed, pitch=pitch)
     except SpeechError as exc:
-        # Redirect back with an error flash
-        from flask import flash, redirect, url_for
-        flash(str(exc), "error")
-        return redirect(url_for("speech.speech_form"))
+        # Return JSON so the JS fetch() handler can surface the error message
+        return jsonify({"error": str(exc)}), 503
 
     from ..tool_usage import record_details as _record_usage_details
 
