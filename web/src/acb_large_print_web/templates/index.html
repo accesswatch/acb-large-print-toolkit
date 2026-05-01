@@ -40,6 +40,26 @@
     </div>
     {% endif %}
   </div>
+
+  {% if feature_braille_enabled or feature_speech_enabled %}
+  <h3 style="margin-top: 2rem;">Specialized Tools</h3>
+  <p>Beyond document accessibility, GLOW also includes:</p>
+  <div class="quickstart-steps">
+    {% if feature_braille_enabled %}
+    <div class="quickstart-step">
+      <h4><a href="{{ url_for('braille.braille_form') }}">Braille Studio</a></h4>
+      <p>Translate English text to BANA-compliant braille (UEB, EBAE, Computer Code) or back-translate braille to text. Download Unicode Braille or BRF for embossers.</p>
+    </div>
+    {% endif %}
+    {% if feature_speech_enabled %}
+    <div class="quickstart-step">
+      <h4><a href="{{ url_for('speech.speech_form') }}">Speech Studio</a></h4>
+      <p>Synthesize documents to MP3 or WAV audio narration. Choose from multiple voices, adjust speed and pitch, and download ready-to-share files.</p>
+    </div>
+    {% endif %}
+  </div>
+  {% endif %}
+
   <p>New to GLOW? <a href="{{ url_for('guide.guide_page') }}">Read the full user guide</a> for step-by-step help with every feature.</p>
 </section>
 

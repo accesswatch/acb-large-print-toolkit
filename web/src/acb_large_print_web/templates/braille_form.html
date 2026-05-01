@@ -1,0 +1,217 @@
+{% extends "base.html" %}
+
+{% block title %}Braille Studio{% endblock %}
+{% block heading %}Braille Studio{% endblock %}
+
+{% block content %}
+
+{% if not available %}
+<section aria-labelledby="unavail-heading">
+  <h2 id="unavail-heading">Braille Studio Unavailable</h2>
+  {% if unavailability_reason %}
+  <p class="flash-warning" role="status">{{ unavailability_reason }}</p>
+  {% else %}
+  <p>Braille translation is not available on this server.</p>
+  {% endif %}
+  <p>
+    Braille Studio translates English text to and from braille using
+    <a href="https://liblouis.io/">liblouis</a>, following
+    <a href="https://www.brailleauthority.org/">BANA</a>
+    (Braille Authority of North America) standards.  Supported codes include
+    Unified English Braille (UEB) Grade 1/2 (BANA current standard, adopted 2016),
+    legacy EBAE Grade 1/2, and the BANA Computer Braille Code (8-dot).
+  </p>
+  <p>To enable Braille Studio, install the <a href="https://liblouis.io/">liblouis</a> Python bindings on the server:</p>
+  <pre><code>pip install louis</code></pre>
+</section>
+{% else %}
+
+<section aria-labelledby="intro-heading">
+  <h2 id="intro-heading">About Braille Studio</h2>
+  <p>
+    Translate English text to braille, or back-translate braille to English text.
+    Translation follows <a href="https://www.brailleauthority.org/">BANA</a>
+    (Braille Authority of North America) standards via
+    <a href="https://liblouis.io/">liblouis</a> {{ louis_version }}.
+  </p>
+  <ul>
+    <li><strong>UEB</strong> (Unified English Braille) is the current BANA literary standard, adopted January 4, 2016.</li>
+    <li><strong>BRF output</strong> is wrapped at the BANA-standard 40 cells per line, ready for embossers.</li>
+    <li><strong>Back-translation</strong> is approximate for contracted braille (Grade 2) because contractions are lossy by design.</li>
+    <li><strong>EBAE</strong> (legacy) tables are provided for interoperability with pre-2016 materials only.</li>
+  </ul>
+</section>
+
+{% if error %}
+<div class="flash-error" role="alert">
+  <div class="flash-icon" aria-hidden="true">&#9888;</div>
+  <p><strong>Error:</strong> {{ error }}</p>
+</div>
+{% endif %}
+
+<section aria-labelledby="form-heading">
+  <h2 id="form-heading">Translation Options</h2>
+
+  <form method="post" enctype="multipart/form-data" aria-labelledby="form-heading" novalidate>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <fieldset>
+      <legend>Direction</legend>
+      <label>
+        <input type="radio" name="direction" value="text-to-braille"
+          {% if not form_values or form_values.get('direction', 'text-to-braille') == 'text-to-braille' %}checked{% endif %}>
+        Text &#8594; Braille
+      </label>
+      <label>
+        <input type="radio" name="direction" value="braille-to-text"
+          {% if form_values and form_values.get('direction') == 'braille-to-text' %}checked{% endif %}>
+        Braille &#8594; Text (back-translation)
+      </label>
+    </fieldset>
+
+    <fieldset>
+      <legend>Braille Grade / Standard</legend>
+      {% for grade_key, (table_file, display_name, description) in grades.items() %}
+      <label class="radio-label">
+        <input type="radio" name="grade" value="{{ grade_key }}"
+          {% if form_values and form_values.get('grade') == grade_key %}checked
+          {% elif not form_values and grade_key == default_grade %}checked{% endif %}>
+        <strong>{{ display_name }}</strong>
+        <span class="help-text">{{ description }}</span>
+      </label>
+      {% endfor %}
+    </fieldset>
+
+    <fieldset id="output-format-fieldset">
+      <legend>Output Format <span class="help-text">(Text &#8594; Braille only)</span></legend>
+      {% for fmt_key, fmt_label in output_formats.items() %}
+      <label>
+        <input type="radio" name="output_format" value="{{ fmt_key }}"
+          {% if form_values and form_values.get('output_format') == fmt_key %}checked
+          {% elif not form_values and fmt_key == 'unicode' %}checked{% endif %}>
+        {{ fmt_label }}
+      </label>
+      {% endfor %}
+    </fieldset>
+
+    <div class="form-group">
+      <label for="input_text">Input Text</label>
+      <textarea
+        id="input_text"
+        name="input_text"
+        rows="8"
+        cols="60"
+        aria-describedby="input-hint"
+        placeholder="Enter English text to translate, or braille to back-translate..."
+        maxlength="50000">{{ form_values.get('input_text', '') if form_values else '' }}</textarea>
+      <p id="input-hint" class="help-text">
+        Paste text directly, or upload a file below.
+        Maximum 50,000 characters. Accepts Unicode Braille (&#x2800;&#x2801;&#x2802;)
+        or ASCII BRF characters for back-translation.
+      </p>
+    </div>
+
+    <div class="form-group">
+      <label for="input_file">Upload File <span class="help-text">(optional: overrides text box)</span></label>
+      <input type="file" id="input_file" name="input_file"
+        accept=".txt,.brf,.brl,.md"
+        aria-describedby="file-hint">
+      <p id="file-hint" class="help-text">
+        Accepted: .txt, .brf, .brl, .md &mdash; maximum 512 KiB.
+      </p>
+    </div>
+
+    <button type="submit" class="btn-primary">Translate</button>
+  </form>
+</section>
+
+{% if result is not none %}
+<section aria-labelledby="result-heading">
+  <h2 id="result-heading">Translation Result</h2>
+
+  {% set direction = form_values.get('direction', 'text-to-braille') if form_values else 'text-to-braille' %}
+  {% set grade_key = form_values.get('grade', default_grade) if form_values else default_grade %}
+  {% if grade_key in grades %}
+  {% set grade_display = grades[grade_key][1] %}
+  {% else %}
+  {% set grade_display = grade_key %}
+  {% endif %}
+
+  <p>
+    <strong>Standard:</strong> {{ grade_display }}<br>
+    {% if direction == 'text-to-braille' %}
+    <strong>Output format:</strong> {{ output_formats.get(form_values.get('output_format', 'unicode') if form_values else 'unicode', '') }}<br>
+    {% endif %}
+    {% if direction == 'braille-to-text' %}
+    <em>Note: Back-translation of contracted braille (Grade 2) is approximate.</em>
+    {% endif %}
+  </p>
+
+  <div class="braille-result-box">
+    <pre aria-label="Translation output" lang="{% if direction == 'text-to-braille' %}und-Brai{% else %}en{% endif %}">{{ result }}</pre>
+  </div>
+
+  <p>
+    <a href="{{ url_for('braille.braille_download') }}" class="btn-secondary"
+       download="{{ filename or 'braille_output.brl' }}">
+      Download {{ filename or 'result' }}
+    </a>
+  </p>
+</section>
+{% endif %}
+
+<section aria-labelledby="bana-heading">
+  <h2 id="bana-heading">BANA Standards Reference</h2>
+  <dl>
+    <dt><a href="https://www.brailleauthority.org/ueb/ueb.html">Unified English Braille (UEB)</a></dt>
+    <dd>
+      The current BANA literary braille standard, adopted January 4, 2016.
+      Replaces the English Braille American Edition (EBAE).
+      Covers literary text, technical notation, and foreign language passages.
+    </dd>
+    <dt><a href="https://www.brailleauthority.org/formats/index.html">BANA Formats</a></dt>
+    <dd>
+      BANA formatting guidelines specify 40 cells per line and 25 lines per page
+      for standard braille paper (11&Prime; &#215; 11.5&Prime; interpoint or 11&Prime; &#215; 11&Prime; single-sided).
+      BRF output from this tool uses 40-cell line wrapping per these guidelines.
+    </dd>
+    <dt><a href="https://www.brailleauthority.org/cbc/index.html">Computer Braille Code (CBC)</a></dt>
+    <dd>
+      BANA-approved 8-dot code for computer notation, source code, file paths, and technical content.
+      Provides a one-to-one ASCII mapping without ambiguity.
+    </dd>
+    <dt>Nemeth Code</dt>
+    <dd>
+      BANA-approved braille mathematics code.
+      Nemeth requires structured input with explicit math-mode delimiters and is beyond
+      the scope of plain-text translation.
+      For Nemeth transcription, use the
+      <a href="https://liblouis.io/">liblouis</a> Nemeth tables via a dedicated
+      math document processor such as
+      <a href="https://www.designscience.com/products/mathtype/">MathType</a> or
+      <a href="https://lambda-project.eu/">LAMBDA</a>.
+    </dd>
+  </dl>
+</section>
+
+{% endif %}{# available #}
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  /* Hide output-format fieldset when direction is braille-to-text */
+  (function () {
+    var radios = document.querySelectorAll('input[name="direction"]');
+    var fmtBox = document.getElementById('output-format-fieldset');
+    function update() {
+      var val = document.querySelector('input[name="direction"]:checked');
+      if (fmtBox) {
+        fmtBox.style.display = (val && val.value === 'braille-to-text') ? 'none' : '';
+      }
+    }
+    radios.forEach(function (r) { r.addEventListener('change', update); });
+    update();
+  }());
+</script>
+{% endblock %}

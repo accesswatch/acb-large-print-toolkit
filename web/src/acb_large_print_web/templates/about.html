@@ -228,6 +228,20 @@
         <td>MIT (client library)</td>
         <td>Optional transactional email service -- delivers audit scorecards and findings CSV attachments to users who request an emailed report. Only active when <code>POSTMARK_SERVER_TOKEN</code> is configured; email delivery is entirely opt-in per audit session and addresses are never stored (<a href="https://activemarketing.com/">ActiveCampaign</a>)</td>
       </tr>
+      {% if feature_braille_enabled %}
+      <tr>
+        <td><a href="https://liblouis.io/">liblouis</a> (<code>louis</code>)</td>
+        <td>3.26+</td>
+        <td>LGPL-3.0</td>
+        <td>Open-source braille translation library used by Braille Studio. Provides
+          BANA-compliant UEB Grade 1/2, EBAE Grade 1/2, and Computer Braille Code (8-dot)
+          translation via the <a href="https://pypi.org/project/louis/"><code>louis</code>
+          Python package</a>. Developed by the
+          <a href="https://liblouis.io/">liblouis project</a> with UEB tables maintained
+          by the <a href="https://www.brailleauthority.org/">Braille Authority of North
+          America (BANA)</a> UEB Technical Committee.</td>
+      </tr>
+      {% endif %}
       {% if feature_daisy_pipeline_enabled %}
       <tr>
         <td><a href="https://daisy.github.io/pipeline/">DAISY Pipeline 2</a></td>

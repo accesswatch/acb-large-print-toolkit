@@ -10,6 +10,20 @@ Releases are tagged in the [GitHub repository](https://github.com/accesswatch/ac
 
 ### Added
 
+- **Braille Studio** -- new `/braille/` tool for BANA-compliant text-to-braille and
+  braille-to-text translation via [liblouis](https://liblouis.io/) (`louis` Python bindings).
+  Supports all current BANA standards:
+  - UEB Grade 1 and Grade 2 (Unified English Braille, BANA literary standard adopted 2016)
+  - BANA Computer Braille Code (8-dot, `en-us-comp8.ctb`)
+  - Legacy EBAE Grade 1 and Grade 2 (interoperability with pre-2016 materials)
+  - Unicode Braille output (U+2800--U+28FF) and BRF ASCII output
+  - BRF output is wrapped at the BANA-standard 40 cells per line (25 lines/page with
+    optional paginated form-feed for embossers)
+  - Graceful degradation when `louis` is not installed
+  - Feature-gated via `GLOW_ENABLE_BRAILLE` (default: enabled)
+  - Tab added to main navigation; download endpoint for `.brl`/`.brf`/`.txt` result files
+  - 30 req/min rate limit on form and download endpoints
+
 - **Speech Studio document preparation now uses Pandoc for uniform text rendering.**
   Uploaded documents (`.md`, `.rst`, `.docx`, `.pptx`, `.xlsx`, `.pdf`, `.epub`, etc.) are
   converted to normalized plain text via Pandoc before synthesis. `.txt` files

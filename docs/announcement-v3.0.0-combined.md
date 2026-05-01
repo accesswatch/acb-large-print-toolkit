@@ -75,6 +75,52 @@ Shared audit reports now support optional passphrase protection (as before) and 
 When your upload session expires, instead of a dead end, you see your audit history with one-click restore options. Continue from a previous audit or start fresh knowing your history is available if you need it.
 
 
+## BRAILLE STUDIO: BANA-COMPLIANT TEXT-TO-BRAILLE TRANSLATION
+
+GLOW 3.0.0 introduces Braille Studio, a new tool for translating English text to braille and back-translating braille to text using [liblouis](https://liblouis.io/) and the official BANA (Braille Authority of North America) translation tables.
+
+### What Braille Studio does
+
+- **Forward translation:** English text → Unicode Braille or ASCII BRF (Braille Ready Format)
+- **Back-translation:** Braille (Unicode or BRF) → English text
+- **BANA standards compliance:** Supports the full suite of current and legacy BANA codes:
+  - **UEB Grade 1** (uncontracted) — BANA current literary standard for STEM and technical materials
+  - **UEB Grade 2** (contracted) — BANA current literary standard for narrative text (default)
+  - **BANA Computer Braille Code (8-dot)** — For source code, file paths, and computer notation
+  - **EBAE Grade 1/2** (legacy) — For interoperability with pre-2016 materials
+- **BRF formatting:** Output wrapped at the BANA-standard 40 cells per line, with optional pagination for embossers
+- **File upload:** Users can paste text directly or upload `.txt`, `.brf`, `.brl`, or `.md` files
+- **Download results:** Translated braille can be downloaded as `.brl` (Unicode Braille) or `.brf` (ASCII BRF)
+
+### How to use Braille Studio
+
+1. Navigate to the new **Braille** tab on any page
+2. Choose your translation direction: **Text → Braille** or **Braille → Text** (back-translation)
+3. Select your braille grade (default: **UEB Grade 2**)
+4. Choose output format: **Unicode Braille** for screen/display or **BRF** for embossers
+5. Paste or upload your text/braille
+6. Click **Translate**
+7. Download your result or copy to clipboard
+
+### What's special about Braille Studio
+
+- **Zero friction:** No account required. No API key. No cloud dependency. Text translates instantly on your server.
+- **Standards-based:** Every table is from the liblouis project, maintained by BANA-approved communities.
+- **Accessible from the start:** The tool itself conforms to WCAG 2.2 AA. Screen reader tested. Keyboard operable.
+- **Graceful degradation:** If liblouis is not installed on your server, Braille Studio shows a clear, friendly message explaining how to enable it.
+- **Rate-limited for fairness:** 30 requests per minute per IP, protecting shared servers.
+
+### Technical details
+
+- **Built on liblouis:** The same library powering APH's BrailleBlaster, Convert2EBRL, and other production braille tools
+- **BANA-approved tables:** `en-ueb-g1.ctb`, `en-ueb-g2.ctb` (current standard); `en-us-g1.ctb`, `en-us-g2.ctb` (EBAE legacy); `en-us-comp8.ctb` (computer braille)
+- **Output mapping:** BRF uses `en-us-brf.dis` for North American embossers; Unicode Braille uses the standard U+2800–U+28FF range
+- **Line wrapping:** All BRF output is automatically wrapped at the BANA-standard 40 cells per line
+- **Back-translation caveat:** Grade 2 back-translation is approximate by design (contractions are lossy). Grade 1 and Computer Braille back-translation are lossless for ASCII text.
+
+Read [the full Braille Studio documentation](/braille/) for examples, standards references, and workflow tips.
+
+
 ## SPEECH STUDIO: WHEN DOCUMENTS LEARN TO SPEAK
 
 > "We have been asked, more times than I can count, whether GLOW can produce audio versions of documents. Board minutes someone can listen to on their commute. A newsletter read aloud. A training handout in MP3 format. We heard you. Here it is."

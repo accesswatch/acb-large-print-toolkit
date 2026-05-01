@@ -14,23 +14,25 @@ New to GLOW? Start at [Quick Start](#1-quick-start). Already familiar? Jump stra
 4. [How to Create a Template](#4-how-to-create-a-template)
 5. [CMS Fragment (formerly Export)](#5-cms-fragment-formerly-export)
 6. [How to Convert Between Formats](#6-how-to-convert-between-formats)
-7. [BITS Whisperer: Transcribe Audio](#7-bits-whisperer-transcribe-audio)
-8. [Document Chat](#8-document-chat)
-9. [Settings](#9-settings)
-10. [Understanding Your Results](#10-understanding-your-results)
-11. [Common Issues and How to Fix Them](#11-common-issues-and-how-to-fix-them)
-12. [Tips by Document Format](#12-tips-by-document-format)
-13. [Recommended Workflows](#13-recommended-workflows)
-14. [DAISY Accessibility Tools](#14-daisy-accessibility-tools)
-15. [Keyboard and Screen Reader Tips](#15-keyboard-and-screen-reader-tips)
-16. [Frequently Asked Questions](#16-frequently-asked-questions)
-17. [Getting Help](#17-getting-help)
+7. [Braille Studio: Text-to-Braille Translation](#7-braille-studio-text-to-braille-translation)
+8. [Speech Studio: Document-to-Audio](#8-speech-studio-document-to-audio)
+9. [BITS Whisperer: Transcribe Audio](#9-bits-whisperer-transcribe-audio)
+10. [Document Chat](#10-document-chat)
+11. [Settings](#11-settings)
+12. [Understanding Your Results](#12-understanding-your-results)
+13. [Common Issues and How to Fix Them](#13-common-issues-and-how-to-fix-them)
+14. [Tips by Document Format](#14-tips-by-document-format)
+15. [Recommended Workflows](#15-recommended-workflows)
+16. [DAISY Accessibility Tools](#16-daisy-accessibility-tools)
+17. [Keyboard and Screen Reader Tips](#17-keyboard-and-screen-reader-tips)
+18. [Frequently Asked Questions](#18-frequently-asked-questions)
+19. [Getting Help](#19-getting-help)
 
 ---
 
 ## What's New in GLOW 3.0.0
 
-GLOW 3.0.0 is the community-driven milestone release. It combines the major workflow upgrades delivered through 2.5-2.9 and adds the full Speech Studio platform with real-world adaptive timing telemetry.
+GLOW 3.0.0 is the community-driven milestone release. It combines the major workflow upgrades delivered through 2.5-2.9 and adds Braille Studio (BANA-compliant text-to-braille translation) and the full Speech Studio platform with real-world adaptive timing telemetry.
 
 ### Eight workflow optimizations that save time
 
@@ -719,7 +721,83 @@ Manual chaining gives you a review step between extraction and formatting. Autom
 
 ---
 
-## 7. BITS Whisperer: Transcribe Audio
+## 7. Braille Studio: Text-to-Braille Translation
+
+### Overview
+
+Braille Studio translates English text to braille and back-translates braille to English text using [liblouis](https://liblouis.io/) with official BANA (Braille Authority of North America) translation tables.
+
+### Supported braille codes and grades
+
+- **UEB Grade 2** (Unified English Braille, contracted) — *Recommended for most literary text.* BANA current standard adopted January 4, 2016.
+- **UEB Grade 1** (uncontracted) — For technical, scientific, and instructional materials where unambiguous cell-by-cell mapping is required.
+- **BANA Computer Braille Code (8-dot)** — For source code, file paths, command-line output, and computer notation.
+- **EBAE Grade 1 and Grade 2** (legacy) — English Braille American Edition, pre-2016 US standard. Provided for interoperability with older materials.
+
+### How to use Braille Studio
+
+1. **Open Braille Studio** — Click the **Braille** tab on the main navigation.
+2. **Choose your direction:**
+   - **Text → Braille** — Paste English text or upload a `.txt`, `.md` file
+   - **Braille → Text** — Paste braille (Unicode or ASCII) or upload a `.brf`, `.brl` file
+3. **Select a braille grade** — Default is UEB Grade 2 (BANA current standard). For technical content, choose UEB Grade 1 or Computer Braille Code.
+4. **Choose output format** (text-to-braille only):
+   - **Unicode Braille** — Display on screen, copy to documents, or send to braille displays
+   - **BRF (Braille Ready Format)** — ASCII braille, embosser-ready, wrapped at 40 cells per line per BANA standards
+5. **Paste or upload your input** — Paste directly in the text box (max 50,000 characters) or upload a file (max 512 KiB)
+6. **Click Translate** — Results appear instantly.
+7. **Download or copy** — Copy the result from the text box or click **Download** to save as `.brl` (Unicode) or `.brf` (ASCII)
+
+### Key features
+
+- **No account required** — Completely server-side. No cloud service, no API key.
+- **Accessible UI** — Keyboard operable, screen reader friendly, WCAG 2.2 AA compliant.
+- **BANA formatting** — BRF output automatically wrapped at the BANA-standard 40 cells per line.
+- **Graceful degradation** — If liblouis is not installed, displays a friendly message explaining how to enable it.
+
+### Important note about back-translation
+
+- **Grade 1 and Computer Braille:** Lossless — you get exactly what you put in.
+- **Grade 2:** Approximate by design. Because contractions are lossy, some context is lost. Back-translated results are best-effort interpretations.
+
+For precise back-translation, use Grade 1 or Computer Braille.
+
+### Standards and references
+
+- [Braille Authority of North America (BANA)](https://www.brailleauthority.org/)
+- [Unified English Braille (UEB) Rules](https://www.brailleauthority.org/ueb/ueb.html)
+- [BANA Formats Guidelines](https://www.brailleauthority.org/formats/index.html)
+- [liblouis Project](https://liblouis.io/)
+
+---
+
+## 8. Speech Studio: Document-to-Audio
+
+Speech Studio synthesizes English documents to MP3 or WAV audio. Users can narrate board minutes, newsletters, training materials, or any document in the voice of their choice.
+
+### How to use Speech Studio
+
+1. **Open Speech Studio** — Click the **Speech** tab on the main navigation.
+2. **Paste text or upload a document** — Paste English text directly or upload a file (Markdown, Word, PDF, Excel, PowerPoint, ePub, etc.)
+3. **Choose your voice** — Select from curated Piper TTS voices (fast, local) or remote OpenRouter providers.
+4. **Adjust speed and pitch** — Customize playback speed (0.5x to 2.0x) and pitch offset (−12 to +12 semitones).
+5. **Preview or download** — Click **Preview** to hear the first few seconds or **Download** to get the full MP3 or WAV file
+
+### Features
+
+- **Fast processing** — Adaptive timing estimates based on real server telemetry
+- **Multiple voices** — Curated selection of Piper TTS voices plus optional OpenRouter providers
+- **Document support** — Upload Markdown, Word, PDF, Excel, PowerPoint, ePub, RTF, HTML, and more
+- **High-quality output** — Downloads as MP3 or WAV
+- **Session persistence** — Your voice and speed preferences are remembered across sessions
+
+### Workflow tip: Convert → Speech
+
+After converting a document to Markdown, HTML, or another format, the Convert tool offers a direct **Speech** button. Jump straight to Speech Studio with your newly converted document — no re-upload needed.
+
+---
+
+## 9. BITS Whisperer: Transcribe Audio
 
 BITS Whisperer transcribes audio files into accessible text documents using the Whisper API. GLOW may normalize OGG, FLAC, AAC, or Opus uploads into a more compatible temporary format before sending them for transcription.
 
@@ -792,7 +870,7 @@ Your audio is uploaded to GLOW, optionally normalized for compatibility, sent to
 
 ---
 
-## 8. Document Chat
+## 10. Document Chat
 
 Document Chat lets you ask questions about an uploaded document in plain language. An OpenRouter-backed AI gateway answers using accessibility-focused tools across compliance, structure, content, and remediation. Core workflows remain available without AI if you prefer not to use it.
 
@@ -862,7 +940,7 @@ Conversation history is organized by heading-based turns for screen reader navig
 
 ---
 
-## 9. Settings
+## 11. Settings
 
 The **Settings** tab lets you configure default values once and apply them across every workflow.
 
@@ -888,7 +966,7 @@ Settings are saved in your browser's local storage. Nothing is sent to the serve
 
 ---
 
-## 10. Understanding Your Results
+## 12. Understanding Your Results
 
 ### Severity levels
 
@@ -917,7 +995,7 @@ Profile selection changes report filtering and template defaults. It does not ch
 
 ---
 
-## 11. Common Issues and How to Fix Them
+## 13. Common Issues and How to Fix Them
 
 ### "All text must use Arial font" (ACB-FONT-FAMILY)
 
@@ -989,7 +1067,7 @@ The List Indentation fields are always visible. They are disabled while **Flush 
 
 ---
 
-## 12. Tips by Document Format
+## 14. Tips by Document Format
 
 ### Word (.docx)
 
@@ -1045,7 +1123,7 @@ The List Indentation fields are always visible. They are disabled while **Flush 
 
 ---
 
-## 13. Recommended Workflows
+## 15. Recommended Workflows
 
 ### Workflow A: Fix an existing document (streamlined)
 
@@ -1117,7 +1195,7 @@ Use this when you have a document you have worked on before and want a fast pass
 
 ---
 
-## 14. DAISY Accessibility Tools
+## 16. DAISY Accessibility Tools
 
 GLOW integrates with open source tools from the [DAISY Consortium](https://daisy.org/), an international association serving people with print disabilities.
 
@@ -1149,7 +1227,7 @@ When ePub files contain MathML, the audit detects it and provides guidance on ma
 
 ---
 
-## 15. Keyboard and Screen Reader Tips
+## 17. Keyboard and Screen Reader Tips
 
 GLOW is designed to work fully without a mouse.
 
@@ -1165,7 +1243,7 @@ GLOW is designed to work fully without a mouse.
 
 ---
 
-## 16. Frequently Asked Questions
+## 18. Frequently Asked Questions
 
 ### Is my document stored on the server?
 
@@ -1227,7 +1305,7 @@ Yes. GLOW includes an admin-only sign-in and approval workflow for operational d
 
 ---
 
-## 17. Getting Help
+## 19. Getting Help
 
 - **ACB Large Print Guidelines** -- [acb.org/large-print-guidelines](https://acb.org/large-print-guidelines)
 - **APH Large Print Guidelines** -- [aph.org/resources/large-print-guidelines](https://www.aph.org/resources/large-print-guidelines/)

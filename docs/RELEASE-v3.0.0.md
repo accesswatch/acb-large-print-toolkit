@@ -50,7 +50,19 @@ This release delivers a complete Speech Studio platform, adaptive real-world tim
 14. **Template context injection** — Templates now always have access to `audit_history` and `share_ttl_hours` via the app context processor.
 15. **Backward compatibility** — All new features are opt-in, non-breaking, and require no migration.
 
-### 3. Speech Studio: end-to-end document narration
+### 3. Braille Studio: BANA-compliant braille translation
+
+A new tool for translating English text to braille and back. Features:
+
+- **Forward translation:** English text → Unicode Braille (U+2800–U+28FF) or ASCII BRF (Braille Ready Format)
+- **Back-translation:** Braille (Unicode or ASCII) → English text
+- **Full BANA support:** UEB Grade 1/2 (current standard), EBAE Grade 1/2 (legacy), Computer Braille Code (8-dot)
+- **BANA formatting:** BRF output wrapped at 40 cells per line (embosser-ready)
+- **File handling:** Direct paste or upload `.txt`, `.brf`, `.brl`, `.md` files; download results as `.brl` or `.brf`
+- **Graceful degradation:** When liblouis is not installed, displays a friendly message explaining how to enable
+- **Feature-gated via `GLOW_ENABLE_BRAILLE` (default: enabled); rate-limited at 30 req/min
+
+### 4. Speech Studio: end-to-end document narration
 
 Users can:
 
