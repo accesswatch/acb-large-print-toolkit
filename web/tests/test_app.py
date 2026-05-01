@@ -206,6 +206,21 @@ class TestPageLoads:
         assert "Raw Health JSON" in body
         assert "Service Reachability" in body
 
+    def test_status_page_handles_non_string_louis_version(self, client, monkeypatch):
+        import acb_large_print.braille_converter as braille_converter
+
+        class _FakeVersion:
+            def __repr__(self):
+                return "mock-version"
+
+        monkeypatch.setattr(braille_converter, "louis_version", lambda: _FakeVersion())
+        monkeypatch.setattr(braille_converter, "braille_available", lambda: True)
+
+        resp = client.get("/status")
+        assert resp.status_code == 200
+        body = resp.get_data(as_text=True)
+        assert "Server Status" in body
+
 
 @pytest.mark.skipif(
     not ai_features.ai_whisperer_enabled(),

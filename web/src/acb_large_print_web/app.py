@@ -508,14 +508,17 @@ def create_app(config: dict | None = None) -> Flask:
         if braille_enabled:
             try:
                 braille_ready = braille_available()
+                braille_version = louis_version()
+                if not isinstance(braille_version, str):
+                    braille_version = str(braille_version)
                 braille_probe = {
                     "status": "ok" if braille_ready else "not-ready",
                     "detail": (
-                        f"Braille Studio ready (liblouis {louis_version()})"
+                        f"Braille Studio ready (liblouis {braille_version})"
                         if braille_ready
                         else get_unavailability_reason()
                     ),
-                    "louis_version": louis_version(),
+                    "louis_version": braille_version,
                 }
             except Exception as exc:
                 braille_probe = {

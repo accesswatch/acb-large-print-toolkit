@@ -48,6 +48,11 @@ Releases are tagged in the [GitHub repository](https://github.com/accesswatch/ac
 
 ### Fixed
 
+- **`/status` now safely serializes mocked diagnostic values.** Health payload
+  construction now coerces non-string Braille `louis_version` values to text
+  before rendering JSON, preventing test/runtime failures when mocks return
+  non-JSON-native objects.
+
 - **Workflow install conflict for desktop editable install.** Aligned
   `desktop/pyproject.toml` and `desktop/requirements.txt` to
   `mammoth>=1.11.0,<1.12.0` so dependency resolution is compatible with
