@@ -335,7 +335,7 @@ def create_app(config: dict | None = None) -> Flask:
     from .routes.feedback import feedback_bp
     from .routes.about import about_bp
     from .routes.convert import convert_bp
-    from .routes.docs_pages import guide_bp, changelog_bp, prd_bp, faq_bp
+    from .routes.docs_pages import guide_bp, changelog_bp, prd_bp, faq_bp, announcement_bp
     from .routes.settings import settings_bp
     from .routes.privacy import privacy_bp
     from .routes.whisperer import whisperer_bp
@@ -360,6 +360,7 @@ def create_app(config: dict | None = None) -> Flask:
     app.register_blueprint(changelog_bp, url_prefix="/changelog")
     app.register_blueprint(prd_bp, url_prefix="/prd")
     app.register_blueprint(faq_bp, url_prefix="/faq")
+    app.register_blueprint(announcement_bp, url_prefix="/announcement")
     app.register_blueprint(settings_bp, url_prefix="/settings")
     app.register_blueprint(feedback_bp, url_prefix="/feedback")
     app.register_blueprint(about_bp, url_prefix="/about")

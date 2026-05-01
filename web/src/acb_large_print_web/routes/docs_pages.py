@@ -12,6 +12,7 @@ guide_bp = Blueprint("guide", __name__)
 faq_bp = Blueprint("faq", __name__)
 changelog_bp = Blueprint("changelog", __name__)
 prd_bp = Blueprint("prd", __name__)
+announcement_bp = Blueprint("announcement", __name__)
 
 
 @guide_bp.route("/", methods=["GET"])
@@ -32,3 +33,8 @@ def changelog_page():
 @prd_bp.route("/", methods=["GET"])
 def prd_page():
     return render_template("prd.html")
+
+
+@announcement_bp.route("/", methods=["GET"])
+def announcement_page():
+    return render_template("announcement.html")
