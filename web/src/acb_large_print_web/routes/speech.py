@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import json
 import io
+import subprocess
 import time
 from pathlib import Path
 
@@ -26,6 +27,7 @@ from flask import (
 )
 
 from acb_large_print.converter import convert_to_markdown
+from acb_large_print.pandoc_converter import pandoc_available
 
 from ..app import limiter
 from ..speech import (
@@ -49,6 +51,7 @@ speech_bp = Blueprint("speech", __name__)
 
 _TEXT_MAX_LEN = 500
 _DOC_EXTRACT_NAME = "speech_source.txt"
+_DOC_RENDERED_NAME = "speech_rendered.txt"
 _DOC_META_NAME = "speech_meta.json"
 _DOC_ALLOWED_EXTENSIONS = set(CONVERT_EXTENSIONS) | {".txt", ".rst"}
 _DOC_ACCEPT = ",".join(sorted(_DOC_ALLOWED_EXTENSIONS))
@@ -214,6 +217,8 @@ def speech_prepare_document():
 
         extracted_path = temp_dir / _DOC_EXTRACT_NAME
         extracted_path.write_text(cleaned, encoding="utf-8")
+        rendered_path = temp_dir / _DOC_RENDERED_NAME
+        rendered_path.write_text(text, encoding="utf-8")
 
         preview_text = first_sentences(cleaned, count=2, max_chars=500)
         words = len(cleaned.split())
@@ -446,18 +451,62 @@ def _resolve_document_source() -> tuple[str, Path, str]:
 def _extract_document_text(path: Path) -> str:
     """Extract normalized plain text from supported document formats."""
     ext = path.suffix.lower()
-    if ext in {".md", ".txt", ".rst"}:
+    if ext == ".txt":
         return path.read_text(encoding="utf-8", errors="ignore")
 
-    md_output = path.with_name(f"{path.stem}-speech-extracted.md")
-    _, text = convert_to_markdown(path, output_path=md_output)
-    if not text:
-        # Fallback to any extracted markdown file text if direct return was empty.
-        try:
-            text = md_output.read_text(encoding="utf-8", errors="ignore")
-        except Exception:
-            text = ""
-    return text
+    if not pandoc_available():
+        raise UploadError(
+            "Pandoc is required for Speech Studio document preparation so the source "
+            "can be rendered to plain text before narration."
+        )
+
+    if ext in {".md", ".rst"}:
+        md_input = path
+    else:
+        md_output = path.with_name(f"{path.stem}-speech-extracted.md")
+        _, text = convert_to_markdown(path, output_path=md_output)
+        if not text:
+            # Fallback to any extracted markdown file text if direct return was empty.
+            try:
+                text = md_output.read_text(encoding="utf-8", errors="ignore")
+            except Exception:
+                text = ""
+        md_input = md_output
+
+    txt_output = path.with_name(f"{path.stem}-speech-rendered.txt")
+    _render_markdown_to_text_with_pandoc(md_input, txt_output)
+    return txt_output.read_text(encoding="utf-8", errors="ignore")
+
+
+def _render_markdown_to_text_with_pandoc(src_path: Path, output_path: Path) -> None:
+    """Render source content to plain text using Pandoc for speech processing."""
+    ext = src_path.suffix.lower()
+    if ext == ".rst":
+        input_format = "rst"
+    elif ext == ".md":
+        input_format = "gfm"
+    else:
+        input_format = "markdown"
+
+    cmd = [
+        "pandoc",
+        "--from",
+        input_format,
+        "--to",
+        "plain",
+        "--output",
+        str(output_path),
+        str(src_path),
+    ]
+    result = subprocess.run(
+        cmd,
+        capture_output=True,
+        text=True,
+        timeout=120,
+    )
+    if result.returncode != 0:
+        stderr = (result.stderr or "").strip() or "Unknown Pandoc error"
+        raise UploadError(f"Pandoc text rendering failed: {stderr}")
 
 
 def _load_extracted_text(token: str) -> str:
@@ -491,7 +540,7 @@ def _source_size_for_token(token: str) -> int:
     for f in temp_dir.iterdir():
         if not f.is_file():
             continue
-        if f.name in {_DOC_EXTRACT_NAME, _DOC_META_NAME}:
+        if f.name in {_DOC_EXTRACT_NAME, _DOC_RENDERED_NAME, _DOC_META_NAME}:
             continue
         try:
             total += int(f.stat().st_size)

@@ -133,7 +133,7 @@
         <input type="radio" name="direction" value="to-speech"{% if not ns.default_set %} checked{% set ns.default_set = true %}{% endif %}>
         <span>
           <strong>Speech audio (Speech Studio)</strong><br>
-          Open Speech Studio with this uploaded file already loaded so you can preview first sentences and download full narration using your selected voice and speech settings.
+          Open Speech Studio with this uploaded file already loaded. Speech Studio first renders the document to plain text with Pandoc, then shows timing details, preview first sentences, and full narration download controls.
         </span>
       </label>
       {% endif %}
@@ -259,7 +259,7 @@
       <li><strong>Sharing an editable document?</strong> Use "Word document" -- you get a .docx file people can open and edit in Microsoft Word.</li>
       <li><strong>Reading on an e-reader or phone?</strong> Use "EPUB 3 e-book" -- the content reflows to fit small screens and works with e-reader accessibility features.</li>
       <li><strong>Reading on a DAISY player or braille display?</strong> Use "EPUB or DAISY format" (Pipeline) -- these are the formats those devices expect.{% if not pipeline_installed %} (Not available on this server.){% endif %}</li>
-      <li><strong>Need audio narration?</strong> Choose "Speech audio" to hand off directly to Speech Studio with your file already loaded.</li>
+      <li><strong>Need audio narration?</strong> Choose "Speech audio" to hand off directly to Speech Studio. It renders to plain text first, then lets you review estimate details, preview first sentences, and download full narration.</li>
       <li><strong>Editing, searching, or feeding to an AI tool?</strong> Use "Plain text" -- you get raw content in a simple format that works everywhere.</li>
       {% if export_html_enabled %}<li><strong>Pasting into WordPress or Drupal?</strong> Use "CMS Fragment" above -- it produces a scoped HTML snippet you can paste directly into your CMS editor without breaking your site theme.</li>{% endif %}
     </ul>
@@ -424,7 +424,7 @@
     <h3>For Speech audio output</h3>
     <p>All formats supported by Convert can be handed off to Speech Studio:</p>
     <ul>
-      <li><strong>Word, Excel, PowerPoint, PDF, Markdown, HTML, CSV, JSON, XML, ePub, images</strong> -- GLOW extracts readable text first, then Speech Studio lets you preview and download narration.</li>
+      <li><strong>Word, Excel, PowerPoint, PDF, Markdown, HTML, CSV, JSON, XML, ePub, images</strong> -- Speech Studio renders readable plain text with Pandoc first, then lets you review estimate details, preview first sentences, and download narration.</li>
       <li><strong>Best for:</strong> board updates, meeting packets, newsletters, and summaries that need an audio version.</li>
     </ul>
     {% endif %}

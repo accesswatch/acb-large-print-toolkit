@@ -8,7 +8,21 @@ Releases are tagged in the [GitHub repository](https://github.com/accesswatch/ac
 
 ## [Unreleased]
 
-- No unreleased entries yet.
+### Changed
+
+- **Speech Studio flow now guides users in stages.** The document action now starts with an explicit `Next: Prepare text and estimate` step, then reveals preview/download actions only after preparation succeeds. This makes the process clearer and avoids appearing like action buttons do nothing before the document is prepared. Changes in `web/src/acb_large_print_web/templates/speech.html` and `web/src/acb_large_print_web/static/speech.js`.
+
+- **Convert-to-Speech copy now states text-rendering behavior.** Convert page guidance for `Speech audio` now explicitly explains that Speech Studio renders the document to plain text first, then shows estimate details and preview/download controls. Changes in `web/src/acb_large_print_web/templates/convert_form.html`.
+
+### Fixed
+
+- **Speech Studio preparation now enforces Pandoc-first text rendering for document narration.** Non-plain-text inputs are rendered through a Pandoc plain-text stage before narration checks and conversion, and the rendered intermediate text is persisted for diagnostics (`speech_rendered.txt`) alongside normalized source text (`speech_source.txt`). Changes in `web/src/acb_large_print_web/routes/speech.py`.
+
+- **Announcement page cleanup.** Removed stray rendered `>` paragraphs in the announcement body content that appeared between quote blocks. Changes in `web/src/acb_large_print_web/templates/partials/announcement_body.html`.
+
+### Added
+
+- **Speech route regression tests.** Added `web/tests/test_speech_routes.py` covering Speech page rendering of the staged `Next: Prepare text and estimate` action, Pandoc-required behavior, text extraction paths, and prepare-document persistence of rendered and normalized text artifacts.
 
 ---
 

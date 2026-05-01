@@ -218,9 +218,10 @@
 
   var previewBtn = byId("preview-btn");
   var downloadBtn = byId("download-btn");
-  var prepareDocumentBtn = byId("prepare-document-btn");
+  var nextDocumentBtn = byId("next-document-btn");
   var documentPreviewBtn = byId("document-preview-btn");
   var documentDownloadBtn = byId("document-download-btn");
+  var documentAfterPrepareActions = byId("document-after-prepare-actions");
   var documentInput = byId("speech-document");
   var documentTokenInput = byId("speech-document-token");
   var documentPrefillInput = byId("speech-document-prefill");
@@ -235,9 +236,35 @@
   var form = byId("speech-form");
 
   var preparedDocument = null;
-  var basePrepareDisabled = !!(prepareDocumentBtn && prepareDocumentBtn.hasAttribute("disabled"));
+  var baseNextDisabled = !!(nextDocumentBtn && nextDocumentBtn.hasAttribute("disabled"));
   var basePreviewDisabled = !!(documentPreviewBtn && documentPreviewBtn.hasAttribute("disabled"));
   var baseDownloadDisabled = !!(documentDownloadBtn && documentDownloadBtn.hasAttribute("disabled"));
+
+  function wireSpaceActivation(button) {
+    if (!button) {
+      return;
+    }
+    button.addEventListener("keydown", function (e) {
+      if (e.key !== " " && e.code !== "Space") {
+        return;
+      }
+      e.preventDefault();
+      button.dataset.spacePressed = "1";
+    });
+    button.addEventListener("keyup", function (e) {
+      if (e.key !== " " && e.code !== "Space") {
+        return;
+      }
+      if (button.dataset.spacePressed !== "1") {
+        return;
+      }
+      e.preventDefault();
+      button.dataset.spacePressed = "";
+      if (!button.disabled) {
+        button.click();
+      }
+    });
+  }
 
   function showStatus(msg) {
     if (!statusRegion) {
@@ -264,14 +291,17 @@
       canPrepare = true;
     }
 
-    if (prepareDocumentBtn) {
-      prepareDocumentBtn.disabled = !!isBusy || basePrepareDisabled || !canPrepare;
+    if (nextDocumentBtn) {
+      nextDocumentBtn.disabled = !!isBusy || baseNextDisabled || !canPrepare;
     }
     if (documentPreviewBtn) {
       documentPreviewBtn.disabled = !!isBusy || basePreviewDisabled || !preparedDocument;
     }
     if (documentDownloadBtn) {
       documentDownloadBtn.disabled = !!isBusy || baseDownloadDisabled || !preparedDocument;
+    }
+    if (documentAfterPrepareActions) {
+      documentAfterPrepareActions.style.display = preparedDocument ? "" : "none";
     }
   }
 
@@ -430,7 +460,7 @@
           renderCharCount();
           persistState();
         }
-        showDocumentStatus("Document prepared. You can preview first sentences or download full audio.");
+        showDocumentStatus("Document prepared. Review the estimate, then preview first sentences or download full audio.");
         updateDocumentActionState(false);
         return json;
       })
@@ -606,8 +636,8 @@
     });
   }
 
-  if (prepareDocumentBtn) {
-    prepareDocumentBtn.addEventListener("click", function () {
+  if (nextDocumentBtn) {
+    nextDocumentBtn.addEventListener("click", function () {
       preparedDocument = null;
       ensureDocumentPrepared().catch(function (err) {
         showDocumentError(err && err.message ? err.message : String(err));
@@ -622,6 +652,10 @@
   if (documentDownloadBtn) {
     documentDownloadBtn.addEventListener("click", runDocumentDownload);
   }
+
+  wireSpaceActivation(nextDocumentBtn);
+  wireSpaceActivation(documentPreviewBtn);
+  wireSpaceActivation(documentDownloadBtn);
 
   if (documentInput) {
     documentInput.addEventListener("change", function () {
@@ -638,6 +672,7 @@
         documentEstimateWrap.style.display = "none";
       }
       updateDocumentActionState(false);
+      showDocumentStatus("Press Next to prepare document text and show timing details.");
     });
   }
 

@@ -131,10 +131,13 @@
 
     {# Conversion actions #}
     <div class="next-step-actions">
-      <button type="button" id="prepare-document-btn" class="btn-primary"
+      <button type="button" id="next-document-btn" class="btn-primary"
         {% if not any_engine_ready %}disabled aria-disabled="true"{% endif %}>
-        Prepare document
+        Next: Prepare text and estimate
       </button>
+    </div>
+
+    <div id="document-after-prepare-actions" class="next-step-actions" style="display:none;">
       <button type="button" id="document-preview-btn" class="btn-secondary"
         {% if not any_engine_ready %}disabled aria-disabled="true"{% endif %}>
         Preview first sentences
