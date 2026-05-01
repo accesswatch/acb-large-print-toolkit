@@ -60,6 +60,13 @@ jobs:
         working-directory: web
         run: npm run test:e2e
 
+      - name: Run Playwright axe-core audit (all 17 routes + interactive states)
+        working-directory: web
+        run: npm run test:axe
+        env:
+          E2E_PORT: "5100"
+          E2E_BASE_URL: "http://127.0.0.1:5100"
+
       - name: Run axe CLI scan and emit SARIF
         if: always()
         shell: bash
@@ -95,6 +102,18 @@ jobs:
               http://127.0.0.1:5100/fix/ \
               http://127.0.0.1:5100/convert/ \
               http://127.0.0.1:5100/template/ \
+              http://127.0.0.1:5100/speech/ \
+              http://127.0.0.1:5100/braille/ \
+              http://127.0.0.1:5100/settings/ \
+              http://127.0.0.1:5100/guidelines/ \
+              http://127.0.0.1:5100/guide/ \
+              http://127.0.0.1:5100/about/ \
+              http://127.0.0.1:5100/changelog/ \
+              http://127.0.0.1:5100/faq/ \
+              http://127.0.0.1:5100/rules/ \
+              http://127.0.0.1:5100/feedback/ \
+              http://127.0.0.1:5100/privacy/ \
+              http://127.0.0.1:5100/status/ \
               --tags wcag2a,wcag2aa,wcag21a,wcag21aa,wcag22aa \
               --save web/e2e/artifacts/axe-results.json || echo "axe reported issues (continuing to SARIF conversion)"
           fi

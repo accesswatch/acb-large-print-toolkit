@@ -5,12 +5,14 @@
   "description": "Playwright regression suite for GLOW web application",
   "scripts": {
     "test:e2e:install": "playwright install",
-    "test:e2e": "playwright test --config=e2e/playwright.config.mjs",
+    "test:e2e": "playwright test --config=e2e/playwright.config.mjs --ignore=**/axe-audit.spec.mjs",
+    "test:axe": "playwright test --config=e2e/playwright.config.mjs e2e/tests/axe-audit.spec.mjs",
     "test:e2e:report": "playwright test --config=e2e/playwright.config.mjs || true; node e2e/scripts/generate-issue-report.mjs",
     "test:e2e:issues": "node e2e/scripts/generate-issue-report.mjs"
   },
   "devDependencies": {
     "@axe-core/cli": "^4.11.2",
+    "@axe-core/playwright": "^4.11.2",
     "@playwright/test": "^1.54.2"
   }
 }

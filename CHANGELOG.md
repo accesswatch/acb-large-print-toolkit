@@ -10,6 +10,26 @@ Releases are tagged in the [GitHub repository](https://github.com/accesswatch/ac
 
 ### Added
 
+- **Comprehensive axe-core WCAG 2.2 AA audit of GLOW itself.**
+  Added `web/e2e/tests/axe-audit.spec.mjs` — a Playwright-integrated
+  `@axe-core/playwright` test suite that audits all 17 public routes at
+  WCAG 2.2 AA level on every CI run. Pages audited include the 5 previously
+  covered (home, audit, fix, convert, template) plus 12 new routes: Speech
+  Studio, Braille Studio, Settings, Guidelines, User Guide, About, Changelog,
+  FAQ, Rules Reference, Feedback, Privacy Policy, and Status. Additionally
+  audits four interactive states: help accordions open, speech/braille
+  unavailable banners, dark mode (`prefers-color-scheme: dark`), and mobile
+  viewport (375 × 812 px). Critical and serious violations fail the CI build
+  immediately with selector-level diagnostic output. Moderate and minor
+  violations are surfaced as advisory warnings without blocking the build.
+  Added `@axe-core/playwright ^4.11.2` to `web/package.json`. Added
+  `test:axe` npm script that runs only the axe spec (separate from the
+  functional regression suite). Expanded `@axe-core/cli` URL list in
+  `accessibility-regression.yml` to match all 17 routes for the SARIF
+  secondary scan. Axe results are written to `artifacts/axe-results.json` in
+  the existing CLI format consumed by `axe_json_to_sarif.py`, so SARIF upload
+  to GitHub Code Scanning is unchanged.
+
 - **Server Status page (`/status`).** Added a human-readable diagnostics page
   that renders the same payload as `/health`, including service probes,
   readiness states, feature flag summary, full feature flag list, and raw
