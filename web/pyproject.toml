@@ -36,7 +36,8 @@ dependencies = [
     "piper-tts>=1.4.2",
     "pydub>=0.25.1",
     "numpy>=2.2.0",
-    "louis",
+    # liblouis Python bindings are provided by python3-louis (apt) in the
+    # Docker image; no PyPI package needed -- see web/Dockerfile.
 ]
 
 [project.optional-dependencies]

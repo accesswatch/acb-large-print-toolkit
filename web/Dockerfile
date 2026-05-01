@@ -20,12 +20,15 @@ WORKDIR /app
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
     pandoc nodejs npm epubcheck \
-    liblouis-bin liblouis-dev liblouis-data \
+    liblouis-bin liblouis-dev liblouis-data python3-louis \
     ffmpeg \
     libpango-1.0-0 libpangocairo-1.0-0 libcairo2 libgdk-pixbuf-2.0-0 \
     libffi-dev shared-mime-info \
     fonts-liberation \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* \
+    && find /usr/lib/python3/dist-packages -maxdepth 1 \( -name 'louis' -o -name 'louis.py' \) \
+       -exec cp -r {} /usr/local/lib/python3.13/site-packages/ \; \
+    && python3 -c "import louis; print('louis OK:', louis.version())"
 
 # Install DAISY Ace globally (MIT license -- https://github.com/daisy/ace)
 # Ace provides 100+ axe-core accessibility checks for EPUB publications
