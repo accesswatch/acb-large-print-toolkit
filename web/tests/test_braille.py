@@ -255,6 +255,18 @@ class TestBrailleConverter:
 
 
 class TestBrailleRoute:
+    def test_main_nav_shows_braille_tab_when_enabled(self, client, app):
+        with app.test_request_context():
+            from acb_large_print_web import feature_flags as ff
+
+            ff.set_flag("GLOW_ENABLE_BRAILLE", True)
+
+        resp = client.get("/")
+        assert resp.status_code == 200
+        data = resp.data.decode()
+        assert 'id="tab-braille"' in data
+        assert 'href="/braille/"' in data
+
     def test_get_form_renders(self, client):
         resp = client.get("/braille/")
         assert resp.status_code == 200

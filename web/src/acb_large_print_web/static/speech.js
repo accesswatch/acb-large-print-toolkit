@@ -284,6 +284,7 @@
 
   function updateDocumentActionState(isBusy) {
     var canPrepare = false;
+    var showPreparedActions = !!preparedDocument;
     if (documentTokenInput && documentTokenInput.value) {
       canPrepare = true;
     }
@@ -301,7 +302,9 @@
       documentDownloadBtn.disabled = !!isBusy || baseDownloadDisabled || !preparedDocument;
     }
     if (documentAfterPrepareActions) {
-      documentAfterPrepareActions.style.display = preparedDocument ? "" : "none";
+      documentAfterPrepareActions.hidden = !showPreparedActions;
+      documentAfterPrepareActions.setAttribute("aria-hidden", showPreparedActions ? "false" : "true");
+      documentAfterPrepareActions.style.display = showPreparedActions ? "" : "none";
     }
   }
 
@@ -340,6 +343,9 @@
     }
     documentError.textContent = msg;
     documentError.style.display = "";
+    if (typeof documentError.scrollIntoView === "function") {
+      documentError.scrollIntoView({ block: "nearest" });
+    }
   }
 
   function clearDocumentError() {

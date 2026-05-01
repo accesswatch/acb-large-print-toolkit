@@ -40,6 +40,15 @@ def test_speech_page_renders_next_prepare_button(client):
     assert "Next: Prepare text and estimate" in body
 
 
+def test_speech_page_hides_post_prepare_actions_initially(client):
+    resp = client.get("/speech/")
+    assert resp.status_code == 200
+    body = resp.get_data(as_text=True)
+    assert 'id="document-after-prepare-actions" class="next-step-actions" hidden' in body
+    assert "Preview first sentences" in body
+    assert "Download full document audio" in body
+
+
 def test_extract_document_text_txt_bypasses_pandoc(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     source = tmp_path / "sample.txt"
     source.write_text("Alpha\nBeta", encoding="utf-8")

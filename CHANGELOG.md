@@ -10,6 +10,11 @@ Releases are tagged in the [GitHub repository](https://github.com/accesswatch/ac
 
 ### Added
 
+- **Braille navigation regression test.** Added
+  `test_main_nav_shows_braille_tab_when_enabled` in `web/tests/test_braille.py`
+  to ensure the Braille tab remains visible in top navigation when
+  `GLOW_ENABLE_BRAILLE` is enabled.
+
 - **Braille Studio** -- new `/braille/` tool for BANA-compliant text-to-braille and
   braille-to-text translation via [liblouis](https://liblouis.io/) (`louis` Python bindings).
   Supports all current BANA standards:
@@ -37,6 +42,20 @@ Releases are tagged in the [GitHub repository](https://github.com/accesswatch/ac
   web test suite so the full Speech Studio document prepare path is exercised in CI.
 
 ### Fixed
+
+- **Braille tab visibility now has explicit local flag defaults.** Added
+  `GLOW_ENABLE_BRAILLE: true` to `instance/feature_flags.json` and
+  `web/instance/feature_flags.json` so local runs do not rely on implicit
+  default resolution for the Braille top-nav tab.
+
+- **Speech Studio staged actions are now robustly hidden until preparation completes.**
+  The post-prepare action group (`Preview first sentences`, `Download full document audio`)
+  now uses both semantic `hidden`/`aria-hidden` attributes and JS state toggling, so those
+  controls do not appear on first load even if style state is inconsistent. Preparation errors
+  now auto-scroll into view so a failed `Next: Prepare text and estimate` action is immediately
+  visible. Changes in `web/src/acb_large_print_web/templates/speech.html`,
+  `web/src/acb_large_print_web/static/speech.js`, and
+  `web/tests/test_speech_routes.py`.
 
 - **`/changelog/` no longer crashes with a Jinja `TemplateSyntaxError`.**
   `scripts/build-doc-pages.py` now wraps all auto-generated partials in
