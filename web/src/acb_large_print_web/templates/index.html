@@ -249,6 +249,21 @@
     </div>
     {% endif %}
 
+    {% if feature_speech_enabled %}
+    <div class="card card-speech">
+      <h3><a href="{{ url_for('speech.speech_form') }}">Speech Studio</a></h3>
+      <p>Convert documents into audio narration using expressive, natural-sounding voices. Upload any supported file and download MP3 audio in the voice and speed of your choice. Server-side only -- no third-party AI required.</p>
+      <ul class="card-formats">
+        {% if feature_word_enabled %}<li class="format-tag format-docx">Word</li>{% endif %}
+        {% if feature_excel_enabled %}<li class="format-tag format-xlsx">Excel</li>{% endif %}
+        {% if feature_powerpoint_enabled %}<li class="format-tag format-pptx">PowerPoint</li>{% endif %}
+        {% if feature_markdown_enabled %}<li class="format-tag format-md">Markdown</li>{% endif %}
+        {% if feature_pdf_enabled %}<li class="format-tag format-pdf">PDF</li>{% endif %}
+        {% if feature_epub_enabled %}<li class="format-tag format-epub">ePub</li>{% endif %}
+      </ul>
+    </div>
+    {% endif %}
+
     <div class="card card-guidelines">
       <h3><a href="{{ url_for('guidelines.guidelines_page') }}">Guidelines Reference</a></h3>
       <p>Browse the full {{ brand_guidelines_summary }} in one place. Use this page when you need rule rationale or standards references while reviewing findings.</p>
