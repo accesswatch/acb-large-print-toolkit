@@ -2,6 +2,7 @@
 <!-- Source: docs\prd.md -->
 <!-- Run `python scripts/build-doc-pages.py` to regenerate -->
 
+{% raw %}
 <nav aria-labelledby="prd-toc-heading">
   <h2 id="prd-toc-heading">Sections</h2>
 <div class="toc">
@@ -9,7 +10,8 @@
 <li><a href="#prd-glow-guided-layout-output-workflow-accessibility-web-application">PRD: GLOW (Guided Layout &amp; Output Workflow) Accessibility Web Application</a><ul>
 <li><a href="#implementation-status">Implementation Status</a><ul>
 <li><a href="#v300-addendum-community-driven-platform-milestone----april-30-2026">v3.0.0 Addendum (Community-driven platform milestone -- April 30, 2026)</a></li>
-<li><a href="#v280-addendum-community-requested-ux-and-security-features----april-30-2026">v2.8.0 Addendum (Community-requested UX and security features -- April 30, 2026)</a></li>
+<li><a href="#v300-extended-features-april-30-2026-release">v3.0.0 Extended Features (April 30, 2026 release)</a></li>
+<li><a href="#v280-addendum-community-requested-ux-and-security-features">v2.8.0 Addendum (Community-requested UX and security features)</a></li>
 <li><a href="#v270-addendum-ux-scorecard-and-streamlined-workflow-updates">v2.7.0 Addendum (UX, scorecard, and streamlined workflow updates)</a></li>
 <li><a href="#post-v20-addendum-v250-quality-and-release-safety-updates">Post-v2.0 Addendum (v2.5.0 quality and release-safety updates)</a></li>
 <li><a href="#v20-release-features-april-2026">v2.0 Release Features (April 2026)</a></li>
@@ -101,7 +103,7 @@
 <tr>
 <td>Speech Studio full workflow</td>
 <td>Done</td>
-<td>Typed synthesis, uploaded document-to-speech, snippet preview, full audio download, settings persistence, and admin voice management</td>
+<td>Typed synthesis, uploaded document-to-speech, snippet preview, full audio download, settings persistence, and admin voice management. Document upload uses Pandoc for text extraction (all non-<code>.txt</code> formats). Pandoc must be installed on the server for the upload workflow; <code>.txt</code> files work without Pandoc.</td>
 </tr>
 <tr>
 <td>Convert-to-Speech seamless handoff</td>
@@ -133,9 +135,177 @@
 <td>Done</td>
 <td>Settings, speech UX, and progress announcement cadence are aligned across workflows</td>
 </tr>
+<tr>
+<td><strong>[NEW v3.0.0 Extended] 8 UX workflow optimizations</strong></td>
+<td>Done</td>
+<td>Post-fix re-audit button, convert-to-audit bridge, batch audit prominence, enhanced findings diff, session audit history, smart next-step guidance, reviewer feedback foundation, session restore on expiry</td>
+</tr>
+<tr>
+<td><strong>[NEW v3.0.0 Extended] 15 power user features</strong></td>
+<td>Done</td>
+<td>Toast framework, standards profile propagation, Ctrl+U shortcut, session keep-alive, webhook callbacks, configurable share TTL, session-based auto-diff, large-file rate limiting, voice preview, audit history, AI alt-text API, CSV export, EPUB conformance detection, template context injection, full backward compatibility</td>
+</tr>
 </tbody>
 </table>
-<h3 id="v280-addendum-community-requested-ux-and-security-features----april-30-2026">v2.8.0 Addendum (Community-requested UX and security features -- April 30, 2026)</h3>
+<h3 id="v300-extended-features-april-30-2026-release">v3.0.0 Extended Features (April 30, 2026 release)</h3>
+<p><strong>8 UX Workflow Optimizations</strong></p>
+<p>These features were requested by community members working through the accessibility cycle repeatedly and looking for ways to reduce friction in the audit→fix→reaudit workflow.</p>
+<table>
+<thead>
+<tr>
+<th>Feature</th>
+<th>Route/File</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Post-fix re-audit button</td>
+<td><code>fix_result.html</code> → <code>/audit/from-fix</code></td>
+<td>Done</td>
+</tr>
+<tr>
+<td>Convert-to-audit bridge</td>
+<td><code>convert_result.html</code> → <code>/audit/from-convert</code></td>
+<td>Done</td>
+</tr>
+<tr>
+<td>Prominent batch audit CTA</td>
+<td><code>audit_form.html</code> callout section</td>
+<td>Done</td>
+</tr>
+<tr>
+<td>Enhanced findings diff sections</td>
+<td><code>audit_report.html</code> diff-findings-detail</td>
+<td>Done</td>
+</tr>
+<tr>
+<td>Session audit history (5 entries)</td>
+<td><code>audit.py</code> session storage</td>
+<td>Done</td>
+</tr>
+<tr>
+<td>Smart next-step guidance in Convert</td>
+<td><code>convert_result.html</code> conditional</td>
+<td>Done</td>
+</tr>
+<tr>
+<td>Reviewer feedback loop foundation</td>
+<td><code>shared_report.html</code> form</td>
+<td>Done</td>
+</tr>
+<tr>
+<td>Session restore on expiry</td>
+<td><code>audit_form.html</code> history display</td>
+<td>Done</td>
+</tr>
+</tbody>
+</table>
+<p><strong>15 Power User &amp; Integrator Features</strong></p>
+<p>These features enable advanced workflows, custom integrations, and operational control for organizations running GLOW on premise.</p>
+<table>
+<thead>
+<tr>
+<th>Feature</th>
+<th>Route/File</th>
+<th>Status</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Toast notification framework</td>
+<td><code>a11y-enhancements.js</code></td>
+<td>Done</td>
+<td>Keyboard navigable, screen reader compatible</td>
+</tr>
+<tr>
+<td>Standards profile propagation</td>
+<td><code>audit.py</code>, <code>fix.py</code></td>
+<td>Done</td>
+<td>ACB 2025, APH Submission, Combined Strict flow through workflow</td>
+</tr>
+<tr>
+<td>Ctrl+U keyboard shortcut</td>
+<td><code>a11y-enhancements.js</code></td>
+<td>Done</td>
+<td>Focus file picker from anywhere</td>
+</tr>
+<tr>
+<td>Session keep-alive</td>
+<td><code>a11y-enhancements.js</code></td>
+<td>Done</td>
+<td><code>/health</code> ping every 15 min</td>
+</tr>
+<tr>
+<td>Webhook callbacks</td>
+<td><code>audit.py</code> _fire_webhook</td>
+<td>Done</td>
+<td>HTTPS only, HMAC-SHA256 <code>X-GLOW-Signature</code></td>
+</tr>
+<tr>
+<td>Configurable share TTL</td>
+<td><code>report_cache.py</code> SHARE_TTL_HOURS</td>
+<td>Done</td>
+<td>Env var, default 4h, exposed to templates</td>
+</tr>
+<tr>
+<td>Session-based auto-diff</td>
+<td><code>audit.py</code> _compute_audit_diff</td>
+<td>Done</td>
+<td>Same session, 2 audits, auto-comparison</td>
+</tr>
+<tr>
+<td>Large-file rate limit</td>
+<td><code>audit.py</code> _is_small_upload</td>
+<td>Done</td>
+<td>&gt;10 MB → 1/min (vs 6/min standard)</td>
+</tr>
+<tr>
+<td>Voice preview endpoint</td>
+<td><code>/speech/voice-preview</code></td>
+<td>Done</td>
+<td>POST endpoint, 20/min rate limit</td>
+</tr>
+<tr>
+<td>Audit history in session</td>
+<td><code>audit.py</code> session storage</td>
+<td>Done</td>
+<td>Up to 5 entries with scores, timestamps</td>
+</tr>
+<tr>
+<td>AI alt-text suggestions</td>
+<td><code>/audit/suggest-alt-text</code></td>
+<td>Done</td>
+<td>Requires ai_alt_text_enabled, image extraction from DOCX</td>
+</tr>
+<tr>
+<td>CSV export of post-fix findings</td>
+<td><code>/fix/csv/&lt;token&gt;</code></td>
+<td>Done</td>
+<td>Leverages findings_to_csv_bytes</td>
+</tr>
+<tr>
+<td>EPUB conformance detection</td>
+<td><code>ace_runner.py</code> _extract_ace_conformance</td>
+<td>Done</td>
+<td>W3C level exposed via <code>ace_conformance</code> attr</td>
+</tr>
+<tr>
+<td>Template context injection</td>
+<td><code>app.py</code> context_processor</td>
+<td>Done</td>
+<td><code>audit_history</code>, <code>share_ttl_hours</code> always available</td>
+</tr>
+<tr>
+<td>Backward compatibility</td>
+<td>All files</td>
+<td>Done</td>
+<td>All features opt-in, non-breaking</td>
+</tr>
+</tbody>
+</table>
+<h3 id="v280-addendum-community-requested-ux-and-security-features">v2.8.0 Addendum (Community-requested UX and security features)</h3>
 <p>All features in this release were sourced directly from BITS and blind and low-vision community feedback. Thank you to everyone who filed issues, sent suggestions, and tested pre-release builds.</p>
 <table>
 <thead>
@@ -1444,3 +1614,4 @@ Storage + Download API
 <p>For full technical detail, see <code>docs/speech.md</code>.</p>
 </div>
 <a href="#prd-toc-heading" class="back-to-top">Back to sections</a>
+{% endraw %}

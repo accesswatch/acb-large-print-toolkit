@@ -2,6 +2,7 @@
 <!-- Source: docs\user-guide.md -->
 <!-- Run `python scripts/build-doc-pages.py` to regenerate -->
 
+{% raw %}
 <nav aria-labelledby="guide-toc-heading">
   <h2 id="guide-toc-heading">In This Guide</h2>
 <div class="toc">
@@ -9,8 +10,10 @@
 <li><a href="#glow-accessibility-toolkit----user-guide">GLOW Accessibility Toolkit -- User Guide</a><ul>
 <li><a href="#in-this-guide">In This Guide</a></li>
 <li><a href="#whats-new-in-glow-300">What's New in GLOW 3.0.0</a><ul>
+<li><a href="#eight-workflow-optimizations-that-save-time">Eight workflow optimizations that save time</a></li>
 <li><a href="#speech-studio-is-now-a-complete-workflow">Speech Studio is now a complete workflow</a></li>
 <li><a href="#estimates-improve-from-real-usage-on-your-server">Estimates improve from real usage on your server</a></li>
+<li><a href="#power-user-and-integrator-features">Power user and integrator features</a></li>
 <li><a href="#new-analytics-visibility">New analytics visibility</a></li>
 <li><a href="#still-included-from-28-and-27-improvements">Still included from 2.8 and 2.7 improvements</a></li>
 <li><a href="#quick-start-now-routes-to-audit-fix-and-convert-without-re-uploading">Quick Start now routes to Audit, Fix, and Convert without re-uploading</a></li>
@@ -370,15 +373,64 @@
 <hr />
 <h2 id="whats-new-in-glow-300">What's New in GLOW 3.0.0</h2>
 <p>GLOW 3.0.0 is the community-driven milestone release. It combines the major workflow upgrades delivered through 2.5-2.9 and adds the full Speech Studio platform with real-world adaptive timing telemetry.</p>
+<h3 id="eight-workflow-optimizations-that-save-time">Eight workflow optimizations that save time</h3>
+<ol>
+<li>
+<p><strong>One-click re-audit after fixing</strong> — The Fix result now shows a prominent "Re-Audit Fixed Document" button. No more downloading, navigating tabs, and re-uploading. Just click and see your updated compliance report.</p>
+</li>
+<li>
+<p><strong>Direct convert-to-audit</strong> — After converting a document (e.g., Markdown→HTML), the Convert result now offers an "Audit This File" button. Audit your converted output without re-uploading.</p>
+</li>
+<li>
+<p><strong>Batch audit is more discoverable</strong> — The Audit form now highlights batch mode with clear benefits: compare format variants, test before-and-after versions, or bulk-check a series of related documents in one run.</p>
+</li>
+<li>
+<p><strong>Detailed before-and-after findings comparison</strong> — When you re-audit after fixing, you see detailed sections showing which findings were newly detected, which are still present (focus here next), and which were resolved (celebrate these wins).</p>
+</li>
+<li>
+<p><strong>Quick restart with session audit history</strong> — Your session remembers your last 5 audits with scores, grades, filenames, and share links. Need to re-audit a file you worked on earlier? It is right there.</p>
+</li>
+<li>
+<p><strong>Contextual workflow guidance</strong> — Convert now suggests relevant next steps based on your output format. Converting to multiple formats? A card suggests batch-auditing them together.</p>
+</li>
+<li>
+<p><strong>Reviewer feedback collection</strong> — Shared audit reports are built to support reviewer comments and feedback (foundation for future collaborative review features).</p>
+</li>
+<li>
+<p><strong>Session restore after expiry</strong> — When your upload session expires, instead of a dead end, you see your history and can restart recent audits with one click.</p>
+</li>
+</ol>
 <h3 id="speech-studio-is-now-a-complete-workflow">Speech Studio is now a complete workflow</h3>
 <ul>
 <li>Convert typed text or uploaded documents into speech</li>
 <li>Preview first sentences before full render</li>
 <li>Download full narration in MP3 (or WAV fallback)</li>
 <li>Reuse saved voice, speed, and pitch defaults from Settings</li>
+<li>New <code>/voice-preview</code> endpoint lets you click any voice to hear a quick demo</li>
 </ul>
+<p><strong>Pandoc is required for document upload in Speech Studio.</strong> When you upload a<br />
+document (<code>.md</code>, <code>.rst</code>, <code>.docx</code>, <code>.pptx</code>, <code>.xlsx</code>, <code>.pdf</code>, <code>.epub</code>, and others),<br />
+GLOW extracts plain text via Pandoc before synthesis. This ensures consistent,<br />
+clean narration regardless of source format. Plain <code>.txt</code> files do not require<br />
+Pandoc and can be used on servers where Pandoc is unavailable. If Pandoc is not<br />
+installed and you upload a non-text file, GLOW will show a clear error message<br />
+explaining that Pandoc is needed.</p>
 <h3 id="estimates-improve-from-real-usage-on-your-server">Estimates improve from real usage on your server</h3>
 <p>Document-to-speech conversion now records measured processing time, word count, source size, and selected settings. Future estimates are blended from real historical telemetry so timing guidance becomes more accurate over time for your exact infrastructure.</p>
+<h3 id="power-user-and-integrator-features">Power user and integrator features</h3>
+<p>For organizations running GLOW on premise and building custom workflows:</p>
+<ul>
+<li><strong>Webhook callbacks with cryptographic signing</strong> — Audit completion can POST results to your custom URL with HMAC-SHA256 signatures</li>
+<li><strong>Standards profile persistence</strong> — Your selected profile (ACB 2025, APH Submission, Combined Strict) flows through audit→fix→reaudit</li>
+<li><strong>Configurable share link TTL</strong> — Set <code>SHARE_TTL_HOURS</code> env var to control how long shared reports remain available</li>
+<li><strong>Session-based auto-diff</strong> — Same file audited twice in one session automatically shows before/after comparisons</li>
+<li><strong>Large-file rate limiting</strong> — Files &gt;10 MB are protected by a separate 1/min limit</li>
+<li><strong>AI-powered alt-text suggestions</strong> — New <code>/audit/suggest-alt-text</code> API for image descriptions</li>
+<li><strong>CSV export of post-fix findings</strong> — New <code>/fix/csv/&lt;token&gt;</code> for findings analysis in spreadsheets</li>
+<li><strong>EPUB conformance level detection</strong> — Ace audits now extract and display W3C conformance (e.g., "EPUB Accessibility 1.0 AA")</li>
+<li><strong>Session keep-alive</strong> — <code>/health</code> pings every 15 min keep sessions alive through longer workflows</li>
+<li><strong>Keyboard shortcut</strong> — Ctrl+U (Cmd+U on Mac) focuses the file picker anywhere in GLOW</li>
+</ul>
 <h3 id="new-analytics-visibility">New analytics visibility</h3>
 <ul>
 <li>About and Admin analytics now show Speech Studio usage patterns (mode, voice, speed, pitch)</li>
@@ -2350,3 +2402,4 @@ acb-lp detect-headings document.docx --ai --ai-prompt my-prompt.txt --threshold 
 <p><strong>Implementation note:</strong> APH alignment is fully integrated for the Release 1.2.0 submission workflow. Enforcement includes ACB + WCAG + Microsoft Accessibility Checker + format-specific rules with APH profile mapping finalized in this release.</p>
 </div>
 <a href="#guide-toc-heading" class="back-to-top">Back to guide contents</a>
+{% endraw %}

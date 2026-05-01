@@ -10,6 +10,37 @@ Releases are tagged in the [GitHub repository](https://github.com/accesswatch/ac
 
 ### Added
 
+- **Speech Studio document preparation now uses Pandoc for uniform text rendering.**
+  Uploaded documents (`.md`, `.rst`, `.docx`, `.pptx`, `.xlsx`, `.pdf`, `.epub`, etc.) are
+  converted to normalized plain text via Pandoc before synthesis. `.txt` files
+  are read directly; all other formats require Pandoc to be installed on the server.
+  This guarantees consistent narration quality across every supported format.
+  The error message returned when Pandoc is absent now explicitly names the missing
+  dependency so administrators can resolve it quickly.
+
+- **CI workflows now install Pandoc explicitly.** `deploy.yml`, `feature-flags-ci.yml`,
+  and `accessibility-regression.yml` all run `apt-get install pandoc` before the
+  web test suite so the full Speech Studio document prepare path is exercised in CI.
+
+### Fixed
+
+- **`/changelog/` no longer crashes with a Jinja `TemplateSyntaxError`.**
+  `scripts/build-doc-pages.py` now wraps all auto-generated partials in
+  `{% raw %}...{% endraw %}` so changelog and guide entries that document Jinja
+  syntax (e.g. `{{.Name}}`, `{% if %}`, `{{ }}`) are treated as plain text instead
+  of live template directives.
+
+- **`post_findings.json` no longer appears in the project root.** The post-fix findings
+  file is now always written inside the session temp directory (`get_temp_dir(token)`)
+  instead of `saved_path.parent`, which resolved to the working directory on some
+  hosts.
+
+- **`POST /audit/` returned `405 METHOD NOT ALLOWED`** instead of `400` for empty
+  submissions because the `@audit_bp.route('/', methods=['POST'])` decorator was
+  accidentally dropped from `audit_submit_rate_limited`. Restored.
+
+---
+
 - **8 workflow optimization improvements (v3.1.0 staging):**
   1. **Post-fix re-audit button** — `fix_result.html` now shows "Re-Audit Fixed Document" action, eliminating download-then-manual-reaudit friction.
   2. **Convert→Audit bridge** — Convert results now offer direct "Audit this file" form submission to `audit.audit_from_convert()`, skipping re-upload.

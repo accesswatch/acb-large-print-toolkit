@@ -17,7 +17,7 @@ All requested feature areas from the 2.5 through 2.9 cycle were completed and un
 
 | Feature | Status | Notes |
 |---------|--------|-------|
-| Speech Studio full workflow | Done | Typed synthesis, uploaded document-to-speech, snippet preview, full audio download, settings persistence, and admin voice management |
+| Speech Studio full workflow | Done | Typed synthesis, uploaded document-to-speech, snippet preview, full audio download, settings persistence, and admin voice management. Document upload uses Pandoc for text extraction (all non-`.txt` formats). Pandoc must be installed on the server for the upload workflow; `.txt` files work without Pandoc. |
 | Convert-to-Speech seamless handoff | Done | Convert tab includes a Speech direction that redirects to Speech Studio with token handoff, avoiding re-upload |
 | Adaptive conversion estimation | Done | Real conversion telemetry (word count, source size, measured processing time, speed/voice) feeds blended estimates over time for this deployment |
 | Speech analytics visibility | Done | Admin and About pages expose speech usage patterns by mode/voice/speed/pitch |

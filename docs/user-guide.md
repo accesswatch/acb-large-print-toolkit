@@ -58,6 +58,14 @@ GLOW 3.0.0 is the community-driven milestone release. It combines the major work
 - Reuse saved voice, speed, and pitch defaults from Settings
 - New `/voice-preview` endpoint lets you click any voice to hear a quick demo
 
+**Pandoc is required for document upload in Speech Studio.** When you upload a
+document (`.md`, `.rst`, `.docx`, `.pptx`, `.xlsx`, `.pdf`, `.epub`, and others),
+GLOW extracts plain text via Pandoc before synthesis. This ensures consistent,
+clean narration regardless of source format. Plain `.txt` files do not require
+Pandoc and can be used on servers where Pandoc is unavailable. If Pandoc is not
+installed and you upload a non-text file, GLOW will show a clear error message
+explaining that Pandoc is needed.
+
 ### Estimates improve from real usage on your server
 
 Document-to-speech conversion now records measured processing time, word count, source size, and selected settings. Future estimates are blended from real historical telemetry so timing guidance becomes more accurate over time for your exact infrastructure.

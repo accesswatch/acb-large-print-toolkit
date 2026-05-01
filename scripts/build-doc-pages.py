@@ -141,8 +141,16 @@ def build(name: str) -> bool:
         parts.append(f'<a href="#{toc_id}" class="back-to-top">{back_label}</a>')
 
     out_path.parent.mkdir(parents=True, exist_ok=True)
+    # Wrap in {% raw %}...{% endraw %} so Jinja2 never tries to interpret
+    # changelog/guide content that contains code examples with Jinja-like
+    # syntax (e.g. {{.Name}}, {% if %}, {{ }}) when the partial is included
+    # into a Flask template.
+    body = "\n".join(parts)
     out_path.write_text(
-        BANNER.format(source=src_path.relative_to(REPO_ROOT)) + "\n".join(parts) + "\n",
+        BANNER.format(source=src_path.relative_to(REPO_ROOT))
+        + "{% raw %}\n"
+        + body
+        + "\n{% endraw %}\n",
         encoding="utf-8",
     )
 
