@@ -6,7 +6,7 @@
 {% block content %}
 
 {% if not available %}
-<section aria-labelledby="unavail-heading">
+<section>
   <h2 id="unavail-heading">Braille Studio Unavailable</h2>
   {% if unavailability_reason %}
   <p class="flash-warning" role="status">{{ unavailability_reason }}</p>
@@ -26,7 +26,7 @@
 </section>
 {% else %}
 
-<section aria-labelledby="intro-heading">
+<section>
   <h2 id="intro-heading">About Braille Studio</h2>
   <p>
     Translate English text to braille, or back-translate braille to English text.
@@ -49,7 +49,7 @@
 </div>
 {% endif %}
 
-<section aria-labelledby="form-heading">
+<section>
   <h2 id="form-heading">Translation Options</h2>
 
   <form method="post" enctype="multipart/form-data" aria-labelledby="form-heading" novalidate>
@@ -126,7 +126,7 @@
 </section>
 
 {% if result is not none %}
-<section aria-labelledby="result-heading">
+<section>
   <h2 id="result-heading">Translation Result</h2>
 
   {% set direction = form_values.get('direction', 'text-to-braille') if form_values else 'text-to-braille' %}
@@ -160,7 +160,7 @@
 </section>
 {% endif %}
 
-<section aria-labelledby="bana-heading">
+<section>
   <h2 id="bana-heading">BANA Standards Reference</h2>
   <dl>
     <dt><a href="https://www.brailleauthority.org/ueb/ueb.html">Unified English Braille (UEB)</a></dt>
