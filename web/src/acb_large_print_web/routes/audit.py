@@ -398,7 +398,7 @@ def suggest_alt_text():
 
     return {"suggestion": suggestion, "image_index": image_index, "total_images": len(images)}
 
-
+@audit_bp.route("/", methods=["POST"])
 @limiter.limit(
     "6 per minute",
     error_message="Too many audit requests. Please wait a moment and try again.",
