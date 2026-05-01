@@ -1,6 +1,6 @@
 # Core dependencies
 python-docx>=1.1.0
-mammoth>=1.8.0
+mammoth>=1.11.0,<1.12.0
 markitdown[all]>=0.1.5
 pymupdf>=1.24.0
 pillow>=12.2.0

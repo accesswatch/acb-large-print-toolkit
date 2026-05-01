@@ -48,6 +48,11 @@ Releases are tagged in the [GitHub repository](https://github.com/accesswatch/ac
 
 ### Fixed
 
+- **Workflow install conflict for desktop editable install.** Aligned
+  `desktop/pyproject.toml` and `desktop/requirements.txt` to
+  `mammoth>=1.11.0,<1.12.0` so dependency resolution is compatible with
+  `markitdown[docx,pdf,pptx,xlsx]>=0.1.5` in CI and deploy workflows.
+
 - **Health now reports Speech and Braille readiness explicitly.** `/health`
   now includes `services.speech`, `services.braille`, and corresponding
   `readiness.speech` / `readiness.braille` entries alongside feature flag
