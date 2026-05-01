@@ -1326,6 +1326,112 @@ html[data-theme="dark"] .occurrence-count--multi {
   color: #d73a49;
 }
 
+/* --- Batch Audit Callout (UX improvement #3) --- */
+.batch-audit-callout {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.batch-audit-single,
+.batch-audit-batch {
+  border: 2px solid #1a1a1a;
+  padding: 1.25rem;
+  border-radius: 0.25rem;
+}
+
+.batch-audit-single {
+  background: #ffffff;
+}
+
+.batch-audit-batch {
+  background: #f5f5f5;
+  border: 3px solid #0055cc;
+  border-left: 6px solid #0055cc;
+  position: relative;
+}
+
+.batch-audit-batch h3 {
+  margin-top: 0;
+  color: #0044aa;
+}
+
+.batch-audit-batch p {
+  margin-bottom: 0.5rem;
+}
+
+.batch-audit-batch ul {
+  margin: 0.75rem 0 0 1.5rem;
+  padding: 0;
+}
+
+.batch-audit-batch li {
+  margin-bottom: 0.25rem;
+}
+
+@media (max-width: 50em) {
+  .batch-audit-callout {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* --- Findings Diff Detail Sections (UX improvement #4) --- */
+.diff-callout {
+  border: 2px solid #2e6b2e;
+  border-left: 6px solid #2e6b2e;
+  background: #f0fff0;
+  padding: 1.25rem;
+  border-radius: 0.25rem;
+  margin-bottom: 1.5rem;
+}
+
+.diff-findings-detail {
+  margin-top: 1rem;
+  border: 1px solid #d0d0d0;
+  padding: 1rem;
+  border-radius: 0.25rem;
+  background: #fafafa;
+}
+
+.diff-findings-detail summary {
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0.5rem;
+  margin: -0.5rem;
+  padding-left: 1.5rem;
+}
+
+.diff-findings-detail summary::-webkit-details-marker {
+  margin-right: 0.5rem;
+}
+
+.diff-section {
+  margin-top: 1rem;
+  padding: 0.75rem;
+  border-radius: 0.25rem;
+}
+
+.diff-section h3 {
+  margin-top: 0;
+  font-size: 1rem;
+}
+
+.diff-new {
+  background: #f0f9ff;
+  border-left: 4px solid #0055cc;
+}
+
+.diff-persistent {
+  background: #fffbf0;
+  border-left: 4px solid #d97706;
+}
+
+.diff-cleared {
+  background: #f0fff0;
+  border-left: 4px solid #2e6b2e;
+}
+
 /* --- Print Stylesheet --- */
 @media print {
 

@@ -46,6 +46,35 @@ The journey looks like this now:
 The diff banner at the top of every re-audit report tells the story of what changed: score delta, grade movement, which rules were resolved, and whether anything new appeared. Three seconds to understand the entire improvement.
 
 
+## THE WORKFLOW ENHANCEMENTS: EIGHT FEATURES THAT SAVE TIME
+
+In 3.0.0, every step of the accessibility cycle has been streamlined based on community feedback about where friction was highest.
+
+### One-click re-audit after fixing
+After you download your fixed document, the Fix result page shows a prominent "Re-Audit Fixed Document" button. Click it and you are in the audit report for the same file, no re-upload, profile preserved. This closes the gap that used to require tab-switching and file navigation.
+
+### Direct convert-to-audit without re-uploading
+Converted a Markdown file to HTML to test the output? The Convert result page now offers an "Audit This File" button that audits your newly converted document without asking you to upload again. The same file, same session, straight from Convert to Audit.
+
+### Batch audit visibility and benefits
+The Audit form highlights batch mode prominently with side-by-side callouts explaining when to use it: comparing format variants, testing before-and-after side by side, or bulk-checking a series of related documents. All three files are audited in one run and appear in a combined or per-file scorecard.
+
+### Detailed before/after findings diffs
+When you re-audit after fixing, you see not just score deltas but detailed sections showing: Which findings were newly detected (changes in your process or content), which are still present (focus here next), and which were resolved (your wins). This clarity keeps teams motivated and focused.
+
+### Quick session restart with audit history
+Your session remembers your last five audits with scores, filenames, and share links. Need to quickly re-audit a file you worked on yesterday? The history is right there. No rummaging through browser downloads. No forgetting names.
+
+### Smart next-step guidance in Convert
+After converting a document, Convert suggests contextually relevant next actions. Converting your newsletter to multiple formats to test? A card suggests auditing them all together in batch mode. This reduces the cognitive load of "what do I do now?"
+
+### Reviewer feedback collection on shared reports
+Shared audit reports now support optional passphrase protection (as before) and are built to support reviewer comments (foundation for future development). The infrastructure is in place for collaborative accessibility review workflows.
+
+### Session restore after expiry
+When your upload session expires, instead of a dead end, you see your audit history with one-click restore options. Continue from a previous audit or start fresh knowing your history is available if you need it.
+
+
 ## SPEECH STUDIO: WHEN DOCUMENTS LEARN TO SPEAK
 
 > "We have been asked, more times than I can count, whether GLOW can produce audio versions of documents. Board minutes someone can listen to on their commute. A newsletter read aloud. A training handout in MP3 format. We heard you. Here it is."
@@ -194,9 +223,57 @@ From the share panel: **Download PDF** for board packets and compliance files. *
 And if your report contains member names, legal correspondence, or financial data: **set a passphrase**. Whoever follows your link sees a clean unlock form. Enter the correct passphrase and the full report opens. Enter it wrong and it stays locked. The passphrase is hashed with PBKDF2-SHA256 at 200,000 iterations and a unique salt the moment you set it. The cleartext is never stored anywhere. Send the passphrase through a separate channel from the link - that is the whole point.
 
 
-## THE HUMAN TOUCHES
+## POWER USER AND INTEGRATOR FEATURES
 
-### Dark mode
+For teams running GLOW on premise and building custom workflows around it, 3.0.0 includes fifteen new infrastructure capabilities.
+
+### Standards profile propagation through workflows
+Select your profile (ACB 2025, APH Submission, or Combined Strict) in Audit. Fix remembers it. Re-Audit uses it. Convert respects it. No profile confusion across tools.
+
+### Webhook callbacks for custom integrations
+Audit completion can trigger an HTTPS POST to a user-supplied webhook URL with HMAC-SHA256 signatures. The payload includes score, grade, findings count, and share link. Integrate GLOW into your incident tracking system, compliance dashboard, or analytics pipeline without polling.
+
+### Configurable share link TTL
+Set `SHARE_TTL_HOURS` in your environment. Shared reports remain available for 1 hour, 4 hours (default), 8 hours, or as long as you decide. Not everyone needs the same expiry window.
+
+### Session-based auto-diff for testing workflows
+The same session can audit your document twice. GLOW detects this and automatically shows before/after comparisons. Perfect for quality assurance testing - run Audit once, make a change, run Audit again, see exactly what changed.
+
+### Large-file rate limiting
+Files over 10 MB are subject to a separate, tighter rate limit (1 audit per minute vs. 6 audits per minute for smaller files). Prevents a single slow job from starving other users.
+
+### Keyboard shortcuts for accessibility power users
+Ctrl+U (Cmd+U on Mac) focuses the file picker from anywhere in GLOW. No need to find the button - just press your shortcut.
+
+### Session keep-alive for long workflows
+GLOW pings `/health` every 15 minutes when forms are active, keeping your session alive through longer workflow sessions.
+
+### AI-powered alt-text suggestions API
+`POST /audit/suggest-alt-text` with a session token and image index. Returns LLM-generated alt text suggestions for images in Word documents. Great for teams with large image-heavy documents.
+
+### CSV export of remediation findings
+`POST /fix/csv/<token>` downloads findings detected after fixing as a CSV. Build custom reports, track progress in your spreadsheet, integrate with your workflow.
+
+### EPUB conformance level detection
+When GLOW audits EPUB with Ace, it extracts the W3C conformance declaration (e.g., "EPUB Accessibility 1.0 - WCAG 2.0 AA") and displays it in reports. Know your publication's conformance level at a glance.
+
+### Voice preview endpoint for Speech Studio
+New `/speech/voice-preview` endpoint lets users click any voice button to hear a 3-5 second demo with the default test phrase. No waiting for synthesis. Just hear the voice and decide.
+
+### Audit history in session storage
+Sessions store up to 5 recent audits with scores, grades, filenames, and share tokens. Query the session history programmatically or use it for UI-driven restart workflows.
+
+### Toast notification framework
+All progress events and errors now communicate through accessible toast notifications. Keyboard navigable. Screen reader compatible. Emoji optional (no reliance on graphical icons).
+
+### Template context injection
+Templates always have `audit_history`, `share_ttl_hours`, and other runtime config available. No conditional logic needed in templates - the app context processor handles injection.
+
+### Full backward compatibility
+Every new feature is opt-in and non-breaking. Existing deployments continue to work. No migration required. Upgrade at your pace.
+
+
+## THE HUMAN TOUCHES: DARK MODE
 
 Choose Light, Dark, or Auto from the footer or Settings on any page. Your choice is stored in the browser and applied before first paint - no flash of the wrong theme. Full WCAG 2.2 AA contrast throughout all three modes. Print output always uses the light ACB palette regardless of screen setting.
 

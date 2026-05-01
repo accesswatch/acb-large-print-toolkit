@@ -33,9 +33,32 @@
     <li><strong>{{ audit_diff.persistent_count }}</strong> finding{{ 's' if audit_diff.persistent_count != 1 else '' }} still present</li>
     <li><strong>{{ audit_diff.new_count }}</strong> finding{{ 's' if audit_diff.new_count != 1 else '' }} newly introduced</li>
   </ul>
-  {% if audit_diff.new_rule_ids %}
-  <p class="help-text"><strong>New rules flagged this time:</strong> {{ audit_diff.new_rule_ids | join(', ') }}.</p>
-  {% endif %}
+        <!-- #7 Enhanced: Show cleared, persistent, and new findings in detail -->
+  <details class="diff-findings-detail" open>
+    <summary>Finding details</summary>
+    {% if audit_diff.new_rule_ids %}
+    <div class="diff-section diff-new">
+      <h3>🆕 Newly Detected ({{ audit_diff.new_count }}):</h3>
+      <ul>
+        {% for rule_id in audit_diff.new_rule_ids %}
+        <li><code>{{ rule_id }}</code></li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+    {% if audit_diff.persistent_count > 0 %}
+    <div class="diff-section diff-persistent">
+      <h3>⚠️ Still Present ({{ audit_diff.persistent_count }})</h3>
+      <p class="help-text">These findings appeared in both audits. Focus on these next.</p>
+    </div>
+    {% endif %}
+    {% if audit_diff.cleared_count > 0 %}
+    <div class="diff-section diff-cleared">
+      <h3>✅ Cleared ({{ audit_diff.cleared_count }})</h3>
+      <p class="help-text">Congratulations—these issues have been resolved since the last audit.</p>
+    </div>
+    {% endif %}
+  </details>
 </aside>
 {% endif %}
 <section>

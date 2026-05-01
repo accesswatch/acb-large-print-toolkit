@@ -8,6 +8,35 @@ Releases are tagged in the [GitHub repository](https://github.com/accesswatch/ac
 
 ## [Unreleased]
 
+### Added
+
+- **8 workflow optimization improvements (v3.1.0 staging):**
+  1. **Post-fix re-audit button** — `fix_result.html` now shows "Re-Audit Fixed Document" action, eliminating download-then-manual-reaudit friction.
+  2. **Convert→Audit bridge** — Convert results now offer direct "Audit this file" form submission to `audit.audit_from_convert()`, skipping re-upload.
+  3. **Prominent batch audit CTA** — Audit form redesigned with side-by-side callouts highlighting benefits of batch mode (compare formats, before/after, test variants).
+  4. **Enhanced findings diff** — Auto-diff now shows detailed sections for "Newly Detected," "Still Present," and "Cleared" findings with explanatory text.
+  5. **Session audit history** — Session maintains compact history of last 5 audits with score, grade, filename, timestamp, and share token; shown in audit form for quick restart.
+  6. **Smart audit workflow** — Convert tool now features contextual next-step guidance (e.g., "Test variant formats together → batch audit").
+  7. **Feedback loop prototype** — Shared audit reports now support optional reviewer comment collection (foundation for future iterations).
+  8. **Session restore on expiry** — Expired upload sessions now offer history-based recovery ("Continue from previous audit" with one click).
+
+- **15 product infrastructure improvements (v3.0.1 staging):**
+  1. Toast notifications framework with progress indicators (keyboard + voice-accessible).
+  2. `standards_profile` (acb_2025|aph_submission|combined_strict) propagation through audit→fix→reaudit workflow for consistent rule filtering.
+  3. Ctrl+U keyboard shortcut to focus file picker anywhere on the page.
+  4. Session keep-alive: `/health` ping every 15 minutes when forms are active (prevents idle timeout).
+  5. Webhook callback support: POST audit results to user-supplied HTTPS URL with HMAC-SHA256 `X-GLOW-Signature` header.
+  6. Share TTL configurable via `SHARE_TTL_HOURS` env var (default 4 hours); `get_share_ttl_hours()` helper exposed to templates.
+  7. Session-based auto-diff: compare current audit vs. previous in same session for progress tracking (cleared/persistent/new).
+  8. Large-file upload rate limit: 1/min for files >10 MB (separate from standard 6/min limit) — prevents abuse of slow audits.
+  9. Voice preview endpoint: `/speech/voice-preview` POST for quick demo with default text (20/min rate limit).
+  10. Audit history in session: maintains up to 5 recent audits with scores and share tokens.
+  11. AI-powered alt-text suggestions: `POST /audit/suggest-alt-text` with token + image_index (requires ai_alt_text_enabled).
+  12. CSV export of post-fix findings: `POST /fix/csv/<token>` downloads findings CSV from post_findings.json.
+  13. EPUB Ace conformance level exposure: extract W3C conformance declaration and expose via `AuditResult.ace_conformance`.
+  14. Form-level context injection: `audit_history` and `share_ttl_hours` now in all template contexts via app.py context_processor.
+  15. All improvements are independent, tested, and backwards-compatible.
+
 ### Changed
 
 - **Speech Studio flow now guides users in stages.** The document action now starts with an explicit `Next: Prepare text and estimate` step, then reveals preview/download actions only after preparation succeeds. This makes the process clearer and avoids appearing like action buttons do nothing before the document is prepared. Changes in `web/src/acb_large_print_web/templates/speech.html` and `web/src/acb_large_print_web/static/speech.js`.

@@ -48,20 +48,29 @@
     <p class="help-text" id="file-help"><strong>Document:</strong> {{ prefill_filename }}</p>
   </div>
   {% else %}
-  <fieldset>
-    <legend>Upload Mode</legend>
-    <p class="help-text">Audit a single document or submit up to 3 at once for a combined or per-file report.</p>
-    <div class="radio-group">
+  <div class="batch-audit-callout">
+    <div class="batch-audit-single">
+      <h3>Audit One Document</h3>
+      <p>Perfect for reviewing a single file or when you want detailed feedback on one document.</p>
       <label>
         <input type="radio" name="upload_mode" value="single" id="mode-single" checked>
-        <strong>Single File</strong> -- audit one document at a time.
-      </label>
-      <label>
-        <input type="radio" name="upload_mode" value="batch" id="mode-batch">
-        <strong>Batch (up to 3 files)</strong> -- audit multiple documents in one run.
+        <strong>Single File Upload</strong>
       </label>
     </div>
-  </fieldset>
+    <div class="batch-audit-batch">
+      <h3>✨ Batch Audit (3 Files)</h3>
+      <p><strong>Compare document variants, audit multiple formats, or review a set together.</strong> Upload up to 3 files and get a combined scorecard showing which document meets the most requirements. Great for:</p>
+      <ul style="margin-top: 0.5rem;">
+        <li>Testing multiple formats (Word + PDF + ePub of the same content)</li>
+        <li>Comparing before/after versions side-by-side</li>
+        <li>Bulk-checking a series of related documents</li>
+      </ul>
+      <label style="margin-top: 0.75rem;">
+        <input type="radio" name="upload_mode" value="batch" id="mode-batch">
+        <strong>Batch Mode: Audit up to 3 Documents</strong>
+      </label>
+    </div>
+  </div>
 
   <!-- Single file upload -->
   <div id="single-upload-section" class="form-group">

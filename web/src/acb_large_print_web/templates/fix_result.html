@@ -104,7 +104,21 @@
   </form>
 </section>
 
-<script>
+<section>
+  <h2 id="next-heading">What's Next?</h2>
+  <div class="next-step-callout">
+    <h3>Re-Audit to Confirm</h3>
+    <p>Run the audit again to verify all fixes were applied correctly and check for any new issues.</p>
+    <div class="next-step-actions">
+      <a href="{{ url_for('audit.audit_from_fix', token=token) }}" class="btn-primary">Re-Audit Fixed Document</a>
+      <a href="{{ url_for('fix.fix_form') }}" class="btn-secondary">Fix Another Document</a>
+    </div>
+  </div>
+  <ul>
+    <li><a href="{{ url_for('audit.audit_form') }}">Audit a new document</a></li>
+    <li><a href="{{ url_for('guidelines.guidelines_page') }}">Review ACB guidelines</a></li>
+  </ul>
+</section>
 (function () {
   'use strict';
   var form = document.querySelector('form[action*="fix_download"]');
