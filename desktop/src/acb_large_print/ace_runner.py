@@ -334,11 +334,40 @@ def _node_location(nodes: list[dict]) -> str:
     return ""
 
 
+def _extract_ace_conformance(report: dict) -> str | None:
+    """Extract the EPUB accessibility conformance level from an Ace report.
+
+    Ace embeds the conformance declaration (e.g. EPUB Accessibility 1.0 AA) in
+    ``earl:result.earl:outcome`` or ``metadata.conformance``.  Returns a short
+    human-readable string, or None when not found.
+    """
+    # Prefer metadata.conformance (Ace >= 1.3)
+    meta = report.get("metadata") or {}
+    conformance = meta.get("conformance") or meta.get("conformsTo") or ""
+    if conformance:
+        return str(conformance)[:200]
+
+    # Fall back to top-level earl:result
+    earl_result = report.get("earl:result")
+    if isinstance(earl_result, dict):
+        outcome = earl_result.get("earl:outcome", "")
+        if outcome:
+            return str(outcome)[:200]
+    if isinstance(earl_result, list) and earl_result:
+        outcome = earl_result[0].get("earl:outcome", "") if isinstance(earl_result[0], dict) else ""
+        if outcome:
+            return str(outcome)[:200]
+
+    return None
+
+
 def audit_epub_with_ace(file_path: str | Path) -> AuditResult | None:
     """Run a full Ace audit on an EPUB file.
 
     Returns an AuditResult populated with Ace findings, or None if
-    Ace is not available.
+    Ace is not available.  The result object also gains an
+    ``ace_conformance`` attribute (str or None) holding the declared
+    conformance level from the Ace report.
     """
     file_path = Path(file_path)
     report = run_ace(file_path)
@@ -348,4 +377,6 @@ def audit_epub_with_ace(file_path: str | Path) -> AuditResult | None:
     result = AuditResult(file_path=str(file_path))
     ace_findings = ace_report_to_findings(report)
     result.findings.extend(ace_findings)
+    # Attach conformance level as a dynamic attribute
+    result.ace_conformance = _extract_ace_conformance(report)  # type: ignore[attr-defined]
     return result

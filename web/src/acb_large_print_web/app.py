@@ -144,6 +144,13 @@ def create_app(config: dict | None = None) -> Flask:
         except Exception:
             ctx["visitor_count"] = 0
 
+        # Share TTL (hours) for template display
+        try:
+            from .report_cache import get_share_ttl_hours as _get_share_ttl_hours
+            ctx["share_ttl_hours"] = _get_share_ttl_hours()
+        except Exception:
+            ctx["share_ttl_hours"] = 4
+
         # Inject server-side feature flags (broad feature visibility)
         try:
             from . import feature_flags as _ff

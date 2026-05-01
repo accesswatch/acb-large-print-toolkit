@@ -70,4 +70,29 @@
 
     window.GLOW = window.GLOW || {};
     window.GLOW.rewriteLocalTimes = rewriteTimes;
+
+    // --- 3. Ctrl+U / Cmd+U -- focus first visible file input -----------------
+    document.addEventListener('keydown', function (e) {
+        if (e.key !== 'u' && e.key !== 'U') return;
+        if (!(e.ctrlKey || e.metaKey)) return;
+        var input = document.querySelector('input[type="file"]:not([disabled]):not([hidden])');
+        if (!input) return;
+        e.preventDefault();
+        input.focus();
+        if (window.GLOW && window.GLOW.toast) {
+            window.GLOW.toast('File picker focused. Press Space or Enter to open.', 'info');
+        }
+    });
+
+    // --- 4. Session keep-alive -- ping /health every 15 minutes when a form is present ------
+    (function () {
+        if (!document.querySelector('form')) return;
+        var _keepAliveInterval = setInterval(function () {
+            try {
+                fetch('/health', { method: 'GET', credentials: 'same-origin' }).catch(function () {});
+            } catch (_) {}
+        }, 15 * 60 * 1000);
+        // Cancel if the user navigates away cleanly
+        window.addEventListener('beforeunload', function () { clearInterval(_keepAliveInterval); });
+    }());
 }());

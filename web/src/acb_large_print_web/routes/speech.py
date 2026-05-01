@@ -139,6 +139,45 @@ def speech_preview():
 
 
 # ---------------------------------------------------------------------------
+# Voice Preview -- quick demo of a voice with default demo text (#10)
+# ---------------------------------------------------------------------------
+
+
+@speech_bp.route("/voice-preview", methods=["POST"])
+@limiter.limit("20 per minute")
+def voice_preview():
+    """Play a quick demo of the selected voice using the default demo text.
+
+    Called when user clicks a voice in the selector to preview that voice.
+    Faster rate limit (20/min vs 15/min) because each click is a small request.
+    """
+    voice_id = (request.form.get("voice") or "").strip()
+    if not voice_id:
+        return jsonify({"error": "No voice selected."}), 400
+
+    try:
+        wav_bytes, _ = synthesize(voice_id, _DEFAULT_DEMO_TEXT, speed=1.0, pitch=0)
+    except SpeechError as exc:
+        return jsonify({"error": str(exc)}), 503
+
+    from ..tool_usage import record_details as _record_usage_details
+
+    _record_usage_details(
+        "speech",
+        {
+            "mode": "voice_preview",
+            "voice": voice_id,
+        },
+    )
+
+    resp = make_response(wav_bytes)
+    resp.headers["Content-Type"] = "audio/wav"
+    resp.headers["Content-Length"] = len(wav_bytes)
+    resp.headers["Cache-Control"] = "no-store"
+    return resp
+
+
+# ---------------------------------------------------------------------------
 # Download -- returns MP3 (or WAV fallback) as a file attachment
 # ---------------------------------------------------------------------------
 

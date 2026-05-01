@@ -28,7 +28,13 @@ from pathlib import Path
 
 from .upload import UPLOAD_TEMP_BASE
 
-SHARE_TTL_SECONDS: int = 3600  # 1 hour
+# Default 4 hours -- overridden by SHARE_TTL_HOURS env var.
+SHARE_TTL_SECONDS: int = int(os.environ.get("SHARE_TTL_HOURS", "4")) * 3600
+
+
+def get_share_ttl_hours() -> int:
+    """Return the configured share TTL in whole hours."""
+    return max(1, SHARE_TTL_SECONDS // 3600)
 
 _UUID_RE = re.compile(
     r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"

@@ -1,8 +1,9 @@
 """Fix route -- upload a document and download a remediated copy."""
 
+import json as _json
 from pathlib import Path
 
-from flask import Blueprint, current_app, render_template, request, send_file
+from flask import Blueprint, Response, current_app, render_template, request, send_file
 from werkzeug.utils import secure_filename
 
 from ..rules import (
@@ -26,6 +27,7 @@ from ..upload import (
 )
 from ..gating import ai_gate, GatingError, RETRY_AFTER_SECONDS
 from ..customization_warning import detect_fix_customizations, generate_customization_warning
+from ..csv_export import findings_to_csv_bytes, safe_filename_stem
 
 fix_bp = Blueprint("fix", __name__)
 
@@ -652,6 +654,34 @@ def _run_fix_and_render(
     if has_customizations:
         customization_warning = generate_customization_warning(customization_reasons)
 
+    # --- #12: Persist post-fix findings as JSON for CSV download ------
+    _post_findings_key = "post_findings.json"
+    try:
+        import json as _json
+        from pathlib import Path as _Path
+        _pf_path = _Path(str(saved_path.parent)) / _post_findings_key
+        _findings_dicts = []
+        for _pf in post_audit.findings:
+            _sev = _pf.severity.value if hasattr(_pf.severity, "value") else str(_pf.severity)
+            _findings_dicts.append({
+                "rule_id": getattr(_pf, "rule_id", ""),
+                "severity": _sev,
+                "message": getattr(_pf, "message", ""),
+                "location": getattr(_pf, "location", "") or "",
+                "auto_fixable": getattr(_pf, "auto_fixable", False),
+            })
+        _pf_path.write_text(_json.dumps({
+            "findings": _findings_dicts,
+            "filename": output_name,
+            "doc_format": doc_format,
+            "score": post_audit.score,
+            "grade": post_audit.grade,
+            "profile_label": profile_label,
+            "mode_label": mode_label,
+        }), encoding="utf-8")
+    except Exception:
+        pass
+
     return render_template(
         "fix_result.html",
         pre_score=pre_audit.score,
@@ -950,12 +980,17 @@ def fix_from_audit_form(token: str):
     prefill_file = _find_fixable_file(temp_dir)
     if prefill_file is None:
         return redirect(url_for("fix.fix_form"))
+    # #2: Pre-populate the standards profile that was used in the originating audit.
+    prefill_profile = request.args.get("profile", "acb_2025")
+    if prefill_profile not in ("acb_2025", "aph_submission", "combined_strict"):
+        prefill_profile = "acb_2025"
     return render_template(
         "fix_form.html",
         ai_available=ai_heading_fix_enabled(),
         rules_by_format=get_rules_by_format(),
         prefill_token=token,
         prefill_filename=prefill_file.name,
+        prefill_profile=prefill_profile,
     )
 
 
@@ -1046,3 +1081,41 @@ def fix_from_audit_submit(token: str):
             500,
         )
     # Note: do NOT clean up here -- token stays alive for download
+
+
+@fix_bp.route("/csv/<token>", methods=["GET"])
+def fix_download_csv(token: str):
+    """Download post-fix findings as a CSV file. (#12)
+
+    The CSV is generated on-demand from the post_findings.json file
+    saved by _run_fix_and_render.
+    """
+    temp_dir = get_temp_dir(token)
+    if temp_dir is None:
+        return {"error": "Session expired."}, 410
+
+    # Look for the post_findings.json file saved by _run_fix_and_render
+    pf_path = Path(temp_dir) / "post_findings.json"
+    if not pf_path.exists():
+        return {"error": "Post-fix findings data not found."}, 404
+
+    try:
+        data = _json.loads(pf_path.read_text(encoding="utf-8"))
+        csv_bytes = findings_to_csv_bytes(
+            data.get("findings", []),
+            filename=data.get("filename", ""),
+            doc_format=data.get("doc_format", ""),
+            score=data.get("score"),
+            grade=data.get("grade", ""),
+            profile_label=data.get("profile_label", ""),
+            mode_label=data.get("mode_label", ""),
+        )
+        stem = safe_filename_stem(Path(data.get("filename", "fix") or "fix").stem)
+        download_name = f"{stem}-findings.csv"
+        return Response(
+            csv_bytes,
+            mimetype="text/csv; charset=utf-8",
+            headers={"Content-Disposition": f'attachment; filename="{download_name}"'},
+        )
+    except Exception:
+        return {"error": "Could not generate CSV."}, 500

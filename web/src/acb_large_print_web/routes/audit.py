@@ -9,6 +9,7 @@ from flask import Blueprint, Response, abort, render_template, request, url_for
 from werkzeug.utils import secure_filename as _sf
 
 import re
+import threading
 
 from ..email import send_audit_report_email, send_batch_audit_report_email
 from ..app import limiter
@@ -30,7 +31,63 @@ from ..customization_warning import detect_audit_customizations, generate_custom
 
 audit_bp = Blueprint("audit", __name__)
 
-# Rule IDs that the fixer can auto-remediate (all document formats combined).
+# Rule IDs where AI-powered alt-text suggestions apply.
+_ALT_TEXT_RULE_IDS: frozenset[str] = frozenset({
+    "MSAC-ALT-TEXT",
+    "EPUB-MISSING-ALT-TEXT",
+    "ACB-MISSING-ALT",
+})
+
+
+def _is_small_upload() -> bool:
+    """Return True when the upload Content-Length is below the large-file threshold.
+
+    Used as ``exempt_when`` on the secondary 1/min rate limiter so only uploads
+    over 10 MB are subject to the tighter cap.
+    """
+    return (request.content_length or 0) < 10 * 1024 * 1024
+
+
+def _fire_webhook(callback_url: str, payload: dict) -> None:
+    """POST audit results JSON to a user-supplied HTTPS callback URL.
+
+    Runs in a daemon thread so it never blocks the response.  The request is
+    signed with an HMAC-SHA256 ``X-GLOW-Signature`` header derived from
+    ``WEBHOOK_SECRET`` (falls back to a random per-process secret).
+    """
+    import hashlib as _hashlib
+    import hmac as _hmac
+    import json as _json
+    import os as _os
+    import time as _time
+
+    import requests as _requests
+
+    try:
+        secret = (_os.environ.get("WEBHOOK_SECRET") or "").encode() or _WEBHOOK_FALLBACK_SECRET
+        body = _json.dumps(payload, default=str).encode()
+        sig = _hmac.new(secret, body, _hashlib.sha256).hexdigest()
+        _requests.post(
+            callback_url,
+            data=body,
+            headers={
+                "Content-Type": "application/json",
+                "X-GLOW-Signature": f"sha256={sig}",
+                "X-GLOW-Timestamp": str(int(_time.time())),
+            },
+            timeout=10,
+            allow_redirects=False,
+        )
+    except Exception:
+        pass  # webhook delivery is best-effort
+
+
+# Stable per-process fallback signing secret (not cryptographically strong,
+# but prevents trivially forged signatures when WEBHOOK_SECRET is not set).
+import os as _os_mod, secrets as _secrets_mod
+_WEBHOOK_FALLBACK_SECRET: bytes = _os_mod.urandom(32)
+
+
 # Used by the audit report Quick Wins filter.
 FIXABLE_RULE_IDS: frozenset[str] = frozenset({
     "ACB-FONT-FAMILY",
@@ -236,11 +293,120 @@ def _format_from_path(saved_path: Path) -> str:
     return saved_path.suffix.lower().lstrip(".")
 
 
+def _get_epub_ace_conformance(result) -> str | None:
+    """Return the Ace conformance level string for an EPUB audit result.
 
-@audit_bp.route("/", methods=["POST"])
+    Reads the ``ace_conformance`` attribute set by ``audit_epub_with_ace``.
+    Returns a human-readable string like "EPUB Accessibility 1.0 - WCAG 2.0 Level AA",
+    or None when conformance data is unavailable.
+    """
+    return getattr(result, "ace_conformance", None)
+
+
+# ---------------------------------------------------------------------------
+# AI alt-text suggestion endpoint (#14)
+# ---------------------------------------------------------------------------
+
+@audit_bp.route("/suggest-alt-text", methods=["POST"])
+@limiter.limit("5 per minute")
+def suggest_alt_text():
+    """Return AI-generated alt-text suggestions for images in a preserved document.
+
+    Requires a live chat_token (the document must still be on the server),
+    an image index (0-based), and the AI alt-text feature to be enabled.
+    Only DOCX files are supported for now.
+
+    Request (JSON or form):
+        token        str   Chat/audit session token
+        image_index  int   0-based index of the image in the document
+
+    Response (JSON):
+        {suggestion: str} on success
+        {error: str}      on failure
+    """
+    from ..ai_features import ai_alt_text_enabled
+    from ..upload import get_temp_dir, ALLOWED_EXTENSIONS
+    from ..ai_gateway import describe_image
+    import zipfile as _zf
+    import hashlib as _hl
+
+    if not ai_alt_text_enabled():
+        return {"error": "AI alt-text suggestions are not enabled on this server."}, 503
+
+    token = (request.form.get("token") or request.json.get("token") if request.is_json else request.form.get("token") or "").strip()
+    try:
+        image_index = int((request.form.get("image_index") or (request.json.get("image_index", 0) if request.is_json else 0)))
+    except (TypeError, ValueError):
+        image_index = 0
+
+    if not token:
+        return {"error": "Session token required."}, 400
+
+    temp_dir = get_temp_dir(token)
+    if temp_dir is None:
+        return {"error": "Session expired. Please re-audit the document."}, 410
+
+    # Find the document in the temp dir
+    doc_path = None
+    for f in sorted(temp_dir.iterdir()):
+        if f.is_file() and f.suffix.lower() in ALLOWED_EXTENSIONS:
+            doc_path = f
+            break
+
+    if doc_path is None or doc_path.suffix.lower() != ".docx":
+        return {"error": "Alt-text suggestions are only available for Word (.docx) documents."}, 400
+
+    # Extract images from the DOCX zip
+    try:
+        images: list[tuple[str, bytes]] = []  # (media filename, bytes)
+        with _zf.ZipFile(str(doc_path), "r") as z:
+            for name in sorted(z.namelist()):
+                if name.startswith("word/media/") and not name.endswith("/"):
+                    ext = Path(name).suffix.lower()
+                    if ext in {".png", ".jpg", ".jpeg", ".gif", ".bmp", ".tiff", ".webp"}:
+                        images.append((name, z.read(name)))
+    except Exception:
+        return {"error": "Could not read images from the document."}, 500
+
+    if not images:
+        return {"error": "No images found in this document."}, 404
+
+    if image_index >= len(images):
+        image_index = 0
+
+    img_name, img_bytes = images[image_index]
+    ext = Path(img_name).suffix.lower()
+    mime_map = {
+        ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg",
+        ".gif": "image/gif", ".bmp": "image/bmp", ".webp": "image/webp",
+        ".tiff": "image/tiff",
+    }
+    mime_type = mime_map.get(ext, "image/png")
+    session_hash = _hl.sha256(token.encode()).hexdigest()
+
+    try:
+        suggestion = describe_image(
+            img_bytes,
+            mime_type,
+            "Provide a concise, meaningful alt-text description (under 125 characters) "
+            "for this image suitable for use in an accessible document. "
+            "Focus on what the image conveys, not its visual style.",
+            session_hash,
+        )
+    except Exception as exc:
+        return {"error": str(exc)}, 503
+
+    return {"suggestion": suggestion, "image_index": image_index, "total_images": len(images)}
+
+
 @limiter.limit(
     "6 per minute",
     error_message="Too many audit requests. Please wait a moment and try again.",
+)
+@limiter.limit(
+    "1 per minute",
+    exempt_when=_is_small_upload,
+    error_message="Large-file audit requests are limited to 1 per minute. Please wait before retrying.",
 )
 def audit_submit_rate_limited():
     """Rate-limited POST handler -- delegates to audit_submit."""
@@ -249,6 +415,7 @@ def audit_submit_rate_limited():
 
 @audit_bp.route("/", methods=["GET"])
 def audit_form():
+    from flask import session
     from ..email import email_configured
     from ..upload import get_temp_dir, ALLOWED_EXTENSIONS
 
@@ -273,6 +440,7 @@ def audit_form():
         rules_by_format=get_rules_by_format(),
         prefill_token=prefill_token or None,
         prefill_filename=prefill_filename,
+        audit_history=session.get("glow_audit_history") or [],
     )
 
 
@@ -383,6 +551,7 @@ def audit_from_fix():
             share_url=share_url,
             share_passphrase_set=bool(_share_passphrase_from_form()),
             rules_by_id=_rules_by_id(),
+            standards_profile=standards_profile,
             audit_diff=audit_diff,
             audit_source="from-fix",
         )
@@ -508,6 +677,7 @@ def audit_from_convert():
             share_url=share_url,
             share_passphrase_set=bool(_share_passphrase_from_form()),
             rules_by_id=_rules_by_id(),
+            standards_profile=standards_profile,
             audit_diff=None,
             audit_source="from-convert",
         )
@@ -684,6 +854,7 @@ def _audit_single():
     """Handle single-file audit -- original behaviour."""
     token = None
     try:
+        from flask import session
         from ..tool_usage import record as _record_usage
         from ..upload import get_temp_dir, ALLOWED_EXTENSIONS
         _record_usage("audit")
@@ -716,6 +887,11 @@ def _audit_single():
         policy = build_rule_policy(request.form)
         mode_label = policy.mode_label
         suppressed_rules = sorted(policy.suppressed)
+
+        # --- #7: Pull last-audit baseline from session for auto-diff -------
+        _last = session.get("glow_last_audit") or {}
+        _session_prev_score: int | None = _last.get("score")
+        _session_prev_rule_ids: list[str] = _last.get("rule_ids") or []
 
         result = _audit_by_extension(saved_path)
         result.findings = policy.filter_findings(result.findings, doc_format)
@@ -755,6 +931,36 @@ def _audit_single():
         chat_token = token
         token = None
 
+        # --- #7: Auto-diff vs previous audit (session baseline) -----------
+        audit_diff = _compute_audit_diff(
+            result.findings,
+            prev_score=_session_prev_score,
+            prev_rule_ids=_session_prev_rule_ids,
+            current_score=result.score,
+        )
+
+        # --- #7/#13: Persist current audit in session ---------------------
+        try:
+            session.permanent = True
+            session["glow_last_audit"] = {
+                "score": result.score,
+                "rule_ids": [f.rule_id for f in result.findings],
+                "filename": saved_path.name,
+            }
+            # --- #13: Audit history (compact, max 5 entries) --------------
+            _history = list(session.get("glow_audit_history") or [])
+            _share_token_for_history = None  # will be filled below
+            _history_entry = {
+                "score": result.score,
+                "grade": result.grade,
+                "filename": saved_path.name[:60],
+                "ts": int(datetime.now(timezone.utc).timestamp()),
+            }
+            _history.insert(0, _history_entry)
+            session["glow_audit_history"] = _history[:5]
+        except Exception:
+            audit_diff = None  # session not available; degrade gracefully
+
         # Generate share token before rendering so it can be embedded in the HTML.
         share_token = str(uuid.uuid4())
         try:
@@ -765,11 +971,21 @@ def _audit_single():
             share_url = None
             share_token = None
 
+        # Patch the history entry with the share_token now that we have it
+        try:
+            _history = list(session.get("glow_audit_history") or [])
+            if _history:
+                _history[0]["share_token"] = share_token
+                session["glow_audit_history"] = _history
+        except Exception:
+            pass
+
         html = render_template(
             "audit_report.html",
             result=result,
             mode_label=mode_label,
             profile_label=profile_label,
+            standards_profile=standards_profile,
             doc_format=doc_format,
             ace_installed=_is_ace_installed(),
             suppressed_rules=suppressed_rules,
@@ -782,7 +998,7 @@ def _audit_single():
             share_url=share_url,
             share_passphrase_set=bool(_share_passphrase_from_form()),
             rules_by_id=_rules_by_id(),
-            audit_diff=None,
+            audit_diff=audit_diff,
             audit_source="upload",
         )
 
@@ -798,6 +1014,25 @@ def _audit_single():
             mode_label=mode_label,
             passphrase=_share_passphrase_from_form(),
         )
+
+        # --- #11: Optional webhook callback (HTTPS URLs only) ------------
+        raw_callback = (request.form.get("callback_url") or "").strip()
+        if raw_callback and raw_callback.startswith("https://"):
+            _payload = {
+                "event": "audit.complete",
+                "score": result.score,
+                "grade": result.grade,
+                "filename": saved_path.name,
+                "doc_format": doc_format,
+                "findings_count": len(result.findings),
+                "share_url": share_url,
+                "generated_at": datetime.now(timezone.utc).isoformat(),
+            }
+            threading.Thread(
+                target=_fire_webhook,
+                args=(raw_callback, _payload),
+                daemon=True,
+            ).start()
 
         return html
     except UploadError as e:

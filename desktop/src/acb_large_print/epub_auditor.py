@@ -177,6 +177,10 @@ def audit_epub(file_path: str | Path) -> AuditResult:
             if ace_result is not None and ace_result.findings:
                 result.findings.extend(ace_result.findings)
                 ace_used = True
+                # Propagate conformance level (#15)
+                ace_conformance = getattr(ace_result, "ace_conformance", None)
+                if ace_conformance:
+                    result.ace_conformance = ace_conformance  # type: ignore[attr-defined]
                 log.info(
                     "Ace found %d findings for %s",
                     len(ace_result.findings),
