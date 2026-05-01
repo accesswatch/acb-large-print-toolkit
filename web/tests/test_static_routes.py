@@ -150,6 +150,7 @@ def test_changelog_page_no_jinja_syntax_error(client):
     "/fix/",
     "/privacy/",
     "/changelog/",
+    "/status",
     "/health",
 ])
 def test_security_headers_present(client, url):

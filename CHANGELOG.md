@@ -10,6 +10,11 @@ Releases are tagged in the [GitHub repository](https://github.com/accesswatch/ac
 
 ### Added
 
+- **Server Status page (`/status`).** Added a human-readable diagnostics page
+  that renders the same payload as `/health`, including service probes,
+  readiness states, feature flag summary, full feature flag list, and raw
+  JSON output for operators.
+
 - **Braille navigation regression test.** Added
   `test_main_nav_shows_braille_tab_when_enabled` in `web/tests/test_braille.py`
   to ensure the Braille tab remains visible in top navigation when
@@ -43,10 +48,20 @@ Releases are tagged in the [GitHub repository](https://github.com/accesswatch/ac
 
 ### Fixed
 
+- **Health now reports Speech and Braille readiness explicitly.** `/health`
+  now includes `services.speech`, `services.braille`, and corresponding
+  `readiness.speech` / `readiness.braille` entries alongside feature flag
+  data so operational issues are visible without guessing.
+
 - **Braille tab visibility now has explicit local flag defaults.** Added
   `GLOW_ENABLE_BRAILLE: true` to `instance/feature_flags.json` and
   `web/instance/feature_flags.json` so local runs do not rely on implicit
   default resolution for the Braille top-nav tab.
+
+- **Server deploy image now includes liblouis system packages.**
+  `web/Dockerfile` now installs `liblouis-bin`, `liblouis-dev`, and
+  `liblouis-data`, and `web/requirements.txt` now includes `louis>=3.26.0`
+  for parity with `web/pyproject.toml`.
 
 - **Speech Studio staged actions are now robustly hidden until preparation completes.**
   The post-prepare action group (`Preview first sentences`, `Download full document audio`)

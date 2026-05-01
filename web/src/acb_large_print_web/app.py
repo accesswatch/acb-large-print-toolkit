@@ -419,13 +419,14 @@ def create_app(config: dict | None = None) -> Flask:
     except Exception:
         app.logger.debug("Failed to seed default feature flags (continuing)")
 
-    # Maintenance mode: gate all requests except /health when MAINTENANCE_MODE=1
-    # This allows safe deployment-time downtime while keeping health checks working
+    # Maintenance mode: gate all requests except /health and /status when
+    # MAINTENANCE_MODE=1. This allows safe deployment-time downtime while
+    # keeping service diagnostics available.
     @app.before_request
     def check_maintenance_mode():
         from flask import request as req
         maintenance_mode = os.environ.get("MAINTENANCE_MODE", "0") == "1"
-        if maintenance_mode and req.path != "/health":
+        if maintenance_mode and req.path not in {"/health", "/status"}:
             return render_template("maintenance.html"), 503
 
     # Consent gate: redirect first-time visitors to the agreement page.
@@ -440,22 +441,32 @@ def create_app(config: dict | None = None) -> Flask:
                 _url_for("consent.consent_form", next=req.full_path.rstrip("?"))
             )
 
-    # Health check
-    @app.route("/health")
-    def health():
+    def _build_health_payload() -> tuple[dict, bool]:
         from .gating import get_capacity_metrics
         from .ai_gateway import (
             get_admin_stats,
             is_ai_configured,
             is_budget_exhausted,
         )
+        from . import feature_flags as _ff
+        from acb_large_print.braille_converter import (
+            braille_available,
+            get_unavailability_reason,
+            louis_version,
+        )
+        from .speech import get_engine_status
         import time as _htime
+
         _hstart = _htime.monotonic()
 
         capacity = get_capacity_metrics()
         admin_stats = get_admin_stats()
         ai_configured = is_ai_configured()
         budget_ok = not is_budget_exhausted()
+        all_flags = _ff.get_all_flags()
+
+        speech_enabled = bool(all_flags.get("GLOW_ENABLE_SPEECH", True))
+        braille_enabled = bool(all_flags.get("GLOW_ENABLE_BRAILLE", True))
 
         # Live reachability probes (non-blocking, short timeout)
         openrouter_probe = _probe_openrouter() if ai_configured else {
@@ -467,10 +478,62 @@ def create_app(config: dict | None = None) -> Flask:
             "detail": "OPENROUTER_API_KEY not set -- BITS Whisperer disabled",
         }
 
+        if speech_enabled:
+            try:
+                speech_engine_status = get_engine_status()
+                kokoro_ready = bool(speech_engine_status.get("kokoro", {}).get("ready"))
+                piper_ready = bool(speech_engine_status.get("piper", {}).get("ready"))
+                speech_ready = kokoro_ready or piper_ready
+                speech_probe = {
+                    "status": "ok" if speech_ready else "not-ready",
+                    "detail": (
+                        "Speech Studio ready"
+                        if speech_ready
+                        else "Speech enabled but no speech engine is ready"
+                    ),
+                    "kokoro_ready": kokoro_ready,
+                    "piper_ready": piper_ready,
+                }
+            except Exception as exc:
+                speech_probe = {
+                    "status": "error",
+                    "detail": f"Speech status probe failed: {exc}",
+                }
+        else:
+            speech_probe = {
+                "status": "not-configured",
+                "detail": "GLOW_ENABLE_SPEECH is disabled",
+            }
+
+        if braille_enabled:
+            try:
+                braille_ready = braille_available()
+                braille_probe = {
+                    "status": "ok" if braille_ready else "not-ready",
+                    "detail": (
+                        f"Braille Studio ready (liblouis {louis_version()})"
+                        if braille_ready
+                        else get_unavailability_reason()
+                    ),
+                    "louis_version": louis_version(),
+                }
+            except Exception as exc:
+                braille_probe = {
+                    "status": "error",
+                    "detail": f"Braille status probe failed: {exc}",
+                }
+        else:
+            braille_probe = {
+                "status": "not-configured",
+                "detail": "GLOW_ENABLE_BRAILLE is disabled",
+            }
+
         services = {
             "web": {"status": "ok", "detail": "service responding"},
             "openrouter": openrouter_probe,
             "whisper": whisper_probe,
+            "speech": speech_probe,
+            "braille": braille_probe,
         }
 
         readiness = {
@@ -494,6 +557,25 @@ def create_app(config: dict | None = None) -> Flask:
                 "key_set": ai_configured,
                 "reachable": whisper_probe["status"] == "ok",
             },
+            "speech": {
+                "status": (
+                    "ready"
+                    if speech_enabled and speech_probe["status"] == "ok"
+                    else ("not-configured" if not speech_enabled else "not-ready")
+                ),
+                "enabled": speech_enabled,
+                "reachable": speech_probe["status"] == "ok",
+            },
+            "braille": {
+                "status": (
+                    "ready"
+                    if braille_enabled and braille_probe["status"] == "ok"
+                    else ("not-configured" if not braille_enabled else "not-ready")
+                ),
+                "enabled": braille_enabled,
+                "reachable": braille_probe["status"] == "ok",
+                "louis_version": braille_probe.get("louis_version", "unavailable"),
+            },
             "budget": {
                 "status": "ok" if budget_ok else "exhausted",
                 "monthly_budget_usd": admin_stats.get("budget_usd", 20.0),
@@ -506,46 +588,67 @@ def create_app(config: dict | None = None) -> Flask:
             },
         }
 
-        # Overall status: web always ok; degrade only if a configured provider
-        # is unreachable or budget is gone
-        provider_ok = (
-            (not ai_configured or openrouter_probe["status"] == "ok")
-        )
-        all_ok = provider_ok and budget_ok
+        # Overall status: web always ok; degrade when configured dependencies
+        # are unavailable.
+        provider_ok = (not ai_configured or openrouter_probe["status"] == "ok")
+        speech_ok = (not speech_enabled) or (speech_probe["status"] == "ok")
+        braille_ok = (not braille_enabled) or (braille_probe["status"] == "ok")
+        all_ok = provider_ok and budget_ok and speech_ok and braille_ok
 
         _hduration_ms = round((_htime.monotonic() - _hstart) * 1000)
         app.logger.info(
-            "HEALTH status=%s openrouter=%s whisper=%s budget_pct=%.1f%% duration_ms=%d",
+            "HEALTH status=%s openrouter=%s whisper=%s speech=%s braille=%s budget_pct=%.1f%% duration_ms=%d",
             "ok" if all_ok else "degraded",
             openrouter_probe["status"],
             whisper_probe["status"],
+            speech_probe["status"],
+            braille_probe["status"],
             readiness["budget"]["pct_used"],
             _hduration_ms,
         )
 
-        return (
-            jsonify(
-                {
-                    "status": "ok" if all_ok else "degraded",
-                    "services": services,
-                    "readiness": readiness,
-                    "models": {
-                        "chat_default": admin_stats.get("default_model", "n/a"),
-                        "chat_fallback": admin_stats.get("fallback_model", "n/a"),
-                        "vision": admin_stats.get("vision_model", "n/a"),
-                        # audio_path_active reflects which path GLOW tries first:
-                        # input_audio (gpt-audio-mini) is the primary; direct
-                        # (whisper-large-v3) is only used if primary fails.
-                        "whisper_fallback": admin_stats.get("whisper_model", "openai/whisper-large-v3"),
-                        "audio_primary": "openai/gpt-audio-mini",
-                        "audio_path_active": "input_audio",
-                    },
-                    "capacity": capacity,
-                    "timestamp_utc": datetime.now(UTC).isoformat(),
-                    "duration_ms": _hduration_ms,
-                }
-            ),
-            200,
+        payload = {
+            "status": "ok" if all_ok else "degraded",
+            "services": services,
+            "readiness": readiness,
+            "models": {
+                "chat_default": admin_stats.get("default_model", "n/a"),
+                "chat_fallback": admin_stats.get("fallback_model", "n/a"),
+                "vision": admin_stats.get("vision_model", "n/a"),
+                # audio_path_active reflects which path GLOW tries first:
+                # input_audio (gpt-audio-mini) is the primary; direct
+                # (whisper-large-v3) is only used if primary fails.
+                "whisper_fallback": admin_stats.get("whisper_model", "openai/whisper-large-v3"),
+                "audio_primary": "openai/gpt-audio-mini",
+                "audio_path_active": "input_audio",
+            },
+            "feature_flags": all_flags,
+            "feature_flag_summary": {
+                "enabled": sum(1 for _k, _v in all_flags.items() if _v),
+                "disabled": sum(1 for _k, _v in all_flags.items() if not _v),
+                "total": len(all_flags),
+            },
+            "capacity": capacity,
+            "timestamp_utc": datetime.now(UTC).isoformat(),
+            "duration_ms": _hduration_ms,
+        }
+        return payload, all_ok
+
+    # Health check
+    @app.route("/health")
+    def health():
+        payload, _all_ok = _build_health_payload()
+        return jsonify(payload), 200
+
+    @app.route("/status")
+    def status_page():
+        import json as _json
+
+        payload, _all_ok = _build_health_payload()
+        return render_template(
+            "status.html",
+            health=payload,
+            pretty_json=_json.dumps(payload, indent=2, sort_keys=True),
         )
 
     @app.errorhandler(CSRFError)

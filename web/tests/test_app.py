@@ -120,6 +120,12 @@ class TestPageLoads:
         assert resp.status_code == 200
         assert b"GLOW Accessibility Toolkit" in resp.data
 
+    def test_home_footer_shows_status_link(self, client):
+        resp = client.get("/")
+        assert resp.status_code == 200
+        assert b"/status" in resp.data
+        assert b"Server Status" in resp.data
+
     def test_anthem_download_route(self, client):
         resp = client.get("/anthem/download")
         assert resp.status_code == 200
@@ -187,7 +193,18 @@ class TestPageLoads:
         assert payload is not None
         assert payload["status"] in {"ok", "degraded"}
         assert "services" in payload
-        assert {"web", "openrouter", "whisper"}.issubset(set(payload["services"].keys()))
+        assert {"web", "openrouter", "whisper", "speech", "braille"}.issubset(set(payload["services"].keys()))
+        assert "feature_flags" in payload
+        assert "readiness" in payload
+        assert {"speech", "braille"}.issubset(set(payload["readiness"].keys()))
+
+    def test_status_page(self, client):
+        resp = client.get("/status")
+        assert resp.status_code == 200
+        body = resp.get_data(as_text=True)
+        assert "Server Status" in body
+        assert "Raw Health JSON" in body
+        assert "Service Reachability" in body
 
 
 @pytest.mark.skipif(

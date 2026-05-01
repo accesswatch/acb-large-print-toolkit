@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+
+{% block title %}Server Status{% endblock %}
+{% block heading %}Server Status{% endblock %}
+
+{% block content %}
+<section>
+  <h2 id="status-overview">Overview</h2>
+  <p>
+    <strong>Overall:</strong>
+    {% if health.status == "ok" %}
+    <span class="badge badge-success">Healthy</span>
+    {% else %}
+    <span class="badge badge-warning">Degraded</span>
+    {% endif %}
+  </p>
+  <p><strong>Generated:</strong> {{ health.timestamp_utc }}</p>
+  <p><strong>Duration:</strong> {{ health.duration_ms }} ms</p>
+</section>
+
+<section>
+  <h2 id="status-services">Service Reachability</h2>
+  <table>
+    <caption>Live service probes from the server</caption>
+    <thead>
+      <tr>
+        <th scope="col">Service</th>
+        <th scope="col">Status</th>
+        <th scope="col">Detail</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for name, svc in health.services | dictsort %}
+      <tr>
+        <th scope="row">{{ name }}</th>
+        <td>{{ svc.status }}</td>
+        <td>{{ svc.detail }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+
+<section>
+  <h2 id="status-readiness">Feature Readiness</h2>
+  <table>
+    <caption>Readiness state for major capabilities</caption>
+    <thead>
+      <tr>
+        <th scope="col">Capability</th>
+        <th scope="col">Status</th>
+        <th scope="col">Key Details</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for name, item in health.readiness | dictsort %}
+      <tr>
+        <th scope="row">{{ name }}</th>
+        <td>{{ item.status }}</td>
+        <td>
+          {% if item.enabled is defined %}enabled={{ item.enabled }} {% endif %}
+          {% if item.reachable is defined %}reachable={{ item.reachable }} {% endif %}
+          {% if item.key_set is defined %}key_set={{ item.key_set }} {% endif %}
+          {% if item.budget_ok is defined %}budget_ok={{ item.budget_ok }} {% endif %}
+          {% if item.louis_version is defined %}louis={{ item.louis_version }}{% endif %}
+          {% if name == "budget" %}
+          spend={{ "$%.2f"|format(item.monthly_spend_usd) }} / {{ "$%.2f"|format(item.monthly_budget_usd) }} ({{ item.pct_used }}%)
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+
+<section>
+  <h2 id="status-flags">Feature Flags</h2>
+  <p>
+    Enabled: {{ health.feature_flag_summary.enabled }}
+    &middot; Disabled: {{ health.feature_flag_summary.disabled }}
+    &middot; Total: {{ health.feature_flag_summary.total }}
+  </p>
+  <table>
+    <caption>Server-side feature flag configuration</caption>
+    <thead>
+      <tr>
+        <th scope="col">Flag</th>
+        <th scope="col">Enabled</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for name, enabled in health.feature_flags | dictsort %}
+      <tr>
+        <th scope="row">{{ name }}</th>
+        <td>{{ enabled }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+
+<section>
+  <h2 id="status-raw">Raw Health JSON</h2>
+  <p class="help-text">This is the exact payload returned by <a href="{{ url_for('health') }}">/health</a>.</p>
+  <pre><code>{{ pretty_json }}</code></pre>
+</section>
+{% endblock %}
