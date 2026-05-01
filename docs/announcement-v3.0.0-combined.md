@@ -1,60 +1,56 @@
 # GLOW 3.0.0: Built by the Community, for the Community
 
-**FOR IMMEDIATE RELEASE -- April 30, 2026**
+**FOR IMMEDIATE RELEASE - April 30, 2026**
 
----
 
 ## THANK YOU. FIRST. BEFORE ANYTHING ELSE.
 
-> "GLOW is not a product. It is a promise. A promise that the blind and low-vision community will have tools that actually work, tools that actually know what we need, tools that were built -- not for us -- but with us. Every feature in this platform exists because someone in this community was specific enough to say exactly what was wrong and brave enough to believe it could be fixed. We listened. We built. We are grateful from the bottom of our hearts."
+> "GLOW is not a product. It is a promise. A promise that the blind and low-vision community will have tools that actually work, tools that actually know what we need, tools that were built - not for us - but with us. Every feature in this platform exists because someone in this community was specific enough to say exactly what was wrong and brave enough to believe it could be fixed. We listened. We built. We are grateful from the bottom of our hearts."
 >
-> **-- Jeff Bishop, President, Blind Information Technology Solutions (BITS), American Council of the Blind**
+> **- Jeff Bishop, President, Blind Information Technology Solutions (BITS), American Council of the Blind**
 
 To every BITS member. Every AT user. Every board secretary who ever emailed us saying "the report has names in it, I cannot share that link with just anyone." Every chapter officer who said "my organization uses 20-point body text, not 18-point." Every accessibility coordinator who said "I love the cycle but I'm still uploading twice." Every blind professional who said "can GLOW just read the document to me?"
 
 This release is yours. You asked for it. We built it. We mean that literally.
 
----
 
 ## EXECUTIVE SUMMARY
 
 GLOW (Guided Layout & Output Workflow) Accessibility Toolkit 3.0.0 is now available.
 
-This is the platform in its fullest form. A complete, self-hosted accessibility infrastructure for the blind and low-vision community -- covering document auditing, auto-remediation, format conversion, and now narrated audio output. Built entirely on community feedback. Free to use. Open source. No cloud subscription. No API key required.
+This is the platform in its fullest form. A complete, self-hosted accessibility infrastructure for the blind and low-vision community - covering document auditing, auto-remediation, format conversion, and now narrated audio output. Built entirely on community feedback. Free to use. Open source. No cloud subscription. No API key required.
 
 Here is what GLOW does today, in one breath:
 
-**Upload a document once.** Audit it for accessibility compliance against ACB Large Print, WCAG 2.2 AA, and Microsoft Accessibility Checker standards. Auto-fix everything fixable without leaving the page. Re-audit the fixed version and see exactly what changed. Share the report -- optionally password-protected -- as a live link, a downloaded PDF, or a CSV. Convert it to a different format. Or convert it to speech and download narration audio in the voice of your choice.
+**Upload a document once.** Audit it for accessibility compliance against ACB Large Print, WCAG 2.2 AA, and Microsoft Accessibility Checker standards. Auto-fix everything fixable without leaving the page. Re-audit the fixed version and see exactly what changed. Share the report - optionally password-protected - as a live link, a downloaded PDF, or a CSV. Convert it to a different format. Or convert it to speech and download narration audio in the voice of your choice.
 
 That is the complete loop. One upload. Start to finish.
 
 **Everything that follows is the full story.** The executive summary ends here. Keep reading to go deep.
 
----
 
 ## THE PROMISE: ONE UPLOAD, THE WHOLE CYCLE
 
 Once upon a time, using GLOW meant uploading your document three times. Once to audit. Once to fix. Once more to check your work. That was friction that belonged to a different era.
 
-GLOW's session model changed everything. You upload your document once. An encrypted session token carries it through every step for up to one hour. Every tool in the platform -- Audit, Fix, Re-Audit, Convert, Convert-to-Speech -- can read from that same session. The file picker disappears and is replaced with a quiet, reassuring message: "Ready. Your document is already here."
+GLOW's session model changed everything. You upload your document once. An encrypted session token carries it through every step for up to one hour. Every tool in the platform - Audit, Fix, Re-Audit, Convert, Convert-to-Speech - can read from that same session. The file picker disappears and is replaced with a quiet, reassuring message: "Ready. Your document is already here."
 
 The journey looks like this now:
 
-1. **Quick Start** -- upload your file and let GLOW help you decide what to do with it
-2. **Audit** -- full compliance report, no second upload
-3. **Fix** -- auto-remediation applied in one click, no second upload
-4. **Re-Audit** -- instant re-check of the fixed document, no third upload
-5. **Convert** -- produce HTML, Word, EPUB, PDF, Markdown, or audio from the same session file
+1. **Quick Start** - upload your file and let GLOW help you decide what to do with it
+2. **Audit** - full compliance report, no second upload
+3. **Fix** - auto-remediation applied in one click, no second upload
+4. **Re-Audit** - instant re-check of the fixed document, no third upload
+5. **Convert** - produce HTML, Word, EPUB, PDF, Markdown, or audio from the same session file
 
 The diff banner at the top of every re-audit report tells the story of what changed: score delta, grade movement, which rules were resolved, and whether anything new appeared. Three seconds to understand the entire improvement.
 
----
 
 ## SPEECH STUDIO: WHEN DOCUMENTS LEARN TO SPEAK
 
 > "We have been asked, more times than I can count, whether GLOW can produce audio versions of documents. Board minutes someone can listen to on their commute. A newsletter read aloud. A training handout in MP3 format. We heard you. Here it is."
 >
-> **-- BITS President**
+> **- BITS President**
 
 GLOW 3.0 introduces Speech Studio: a complete, self-hosted, CPU-only text-to-speech platform built into the GLOW web application.
 
@@ -64,27 +60,26 @@ No GPU required. No cloud API. No cost per request. No document leaves the serve
 
 **Typed synthesis.** Type any text and hear it immediately. Adjust voice, speed, and pitch. Preview before you commit. Download as MP3 when you are satisfied.
 
-**Uploaded document narration.** Upload a Word file, a PDF, a PowerPoint, a newsletter in Markdown -- any format GLOW can read. Speech Studio extracts the readable content, shows you the first few sentences so you can preview the voice before waiting for the full job, and then generates complete narration audio for the entire document.
+**Uploaded document narration.** Upload a Word file, a PDF, a PowerPoint, a newsletter in Markdown - any format GLOW can read. Speech Studio extracts the readable content, shows you the first few sentences so you can preview the voice before waiting for the full job, and then generates complete narration audio for the entire document.
 
 **The preview moment is important.** You hear the real voice on your real content before committing to a full generation. Not a generic demo clip. Your document, your words, in the voice you chose, within seconds. Then you decide whether to proceed.
 
-**Voices.** GLOW ships with Kokoro ONNX voices -- ten high-quality English voices, American and British accents, across a range of speaking styles. Piper TTS voices can be added by your administrator for additional variety.
+**Voices.** GLOW ships with Kokoro ONNX voices - ten high-quality English voices, American and British accents, across a range of speaking styles. Piper TTS voices can be added by your administrator for additional variety.
 
-**Adaptive timing estimates.** The first time you generate audio for a long document, GLOW estimates based on known baselines. Over time, as real conversions happen on your server, GLOW blends those measurements into its estimates. The more GLOW is used, the more accurate it becomes. Estimates are not guesses -- they are calibrated to your infrastructure.
+**Adaptive timing estimates.** The first time you generate audio for a long document, GLOW estimates based on known baselines. Over time, as real conversions happen on your server, GLOW blends those measurements into its estimates. The more GLOW is used, the more accurate it becomes. Estimates are not guesses - they are calibrated to your infrastructure.
 
 **Settings that remember you.** Voice, speed, pitch, and any text you typed are saved in your browser preferences when you have "Remember my settings" enabled. Return to Speech Studio the next day and your preferences are exactly where you left them.
 
-**Seamless handoff from Convert.** Working in the Convert tab? Choose "Speech audio" as your output format and GLOW carries your session directly into Speech Studio -- no second upload, no starting over. The same document you uploaded for conversion becomes your speech source with one click.
+**Seamless handoff from Convert.** Working in the Convert tab? Choose "Speech audio" as your output format and GLOW carries your session directly into Speech Studio - no second upload, no starting over. The same document you uploaded for conversion becomes your speech source with one click.
 
 **Admin voice management.** Administrators can install or remove curated Piper voice packs directly from the admin dashboard. No terminal required. One click to add a new voice, one click to remove it, live status displayed instantly.
 
 ### The technical honesty
 
-Speech Studio is CPU-only. A 300-word document generates narration in about 45-90 seconds on a typical server. A 3,000-word board report may take 5-8 minutes. Progress status updates keep you informed throughout. The system adapts its announcement cadence to the job size -- no over-notification on short jobs, no silence on long ones.
+Speech Studio is CPU-only. A 300-word document generates narration in about 45-90 seconds on a typical server. A 3,000-word board report may take 5-8 minutes. Progress status updates keep you informed throughout. The system adapts its announcement cadence to the job size - no over-notification on short jobs, no silence on long ones.
 
 This is not streaming, real-time cloud synthesis. It is deliberate, private, server-local narration for organizations that cannot and should not be sending document content to third-party APIs.
 
----
 
 ## THE AUDIT ENGINE: EVERY STANDARD, EVERY FORMAT
 
@@ -92,9 +87,9 @@ GLOW's accessibility audit engine covers six document formats with rules drawn f
 
 ### Word documents
 
-The Word audit is the deepest in the platform. Thirty-plus rules covering font family and size for body, headings, and lists; paragraph spacing and line height; emphasis (underline only -- GLOW enforces the ACB prohibition on italic and catches bold-used-as-emphasis); alignment (left-justified only, never centered or justified); margins; heading hierarchy and numbering; alt text on images; table headers; document language; title; and link text.
+The Word audit is the deepest in the platform. Thirty-plus rules covering font family and size for body, headings, and lists; paragraph spacing and line height; emphasis (underline only - GLOW enforces the ACB prohibition on italic and catches bold-used-as-emphasis); alignment (left-justified only, never centered or justified); margins; heading hierarchy and numbering; alt text on images; table headers; document language; title; and link text.
 
-When GLOW audits a Word document, the result is not a list of complaints. It is a prioritized, actionable map of the work required to make that document compliant -- with every finding linked to the rule that fired, the reason it matters, and whether it can be auto-fixed.
+When GLOW audits a Word document, the result is not a list of complaints. It is a prioritized, actionable map of the work required to make that document compliant - with every finding linked to the rule that fired, the reason it matters, and whether it can be auto-fixed.
 
 ### Excel workbooks
 
@@ -102,7 +97,7 @@ GLOW audits Excel for sheet names, table headers, merged cells, alt text on embe
 
 ### PowerPoint presentations
 
-GLOW audits PowerPoint for slide titles, reading order, alt text on all visual elements, font sizes, speaker notes, chart descriptions, and -- uniquely -- timing and animation safety. Slides that auto-advance faster than a reader can process them, repeating animations, and rapid-fire transitions are flagged, because accessibility for motion-sensitive users is not optional.
+GLOW audits PowerPoint for slide titles, reading order, alt text on all visual elements, font sizes, speaker notes, chart descriptions, and - uniquely - timing and animation safety. Slides that auto-advance faster than a reader can process them, repeating animations, and rapid-fire transitions are flagged, because accessibility for motion-sensitive users is not optional.
 
 ### Markdown documents
 
@@ -112,29 +107,27 @@ YAML front matter is treated as an accessibility artifact, not just metadata. A 
 
 ### PDF documents
 
-GLOW audits PDF for title, language, tag structure, font sizes, scanned page detection (with DPI quality checks -- below 150 DPI draws a recommendation to re-scan at 300 DPI), bookmarks, and form fields. Scanned PDFs are classified as entirely scanned, majority-scanned, or partially scanned, with specific OCR remediation guidance for each case.
+GLOW audits PDF for title, language, tag structure, font sizes, scanned page detection (with DPI quality checks - below 150 DPI draws a recommendation to re-scan at 300 DPI), bookmarks, and form fields. Scanned PDFs are classified as entirely scanned, majority-scanned, or partially scanned, with specific OCR remediation guidance for each case.
 
 ### EPUB publications
 
 GLOW audits EPUB using two layers: a BITS-developed engine covering title, language, navigation documents, heading hierarchy, alt text, table headers, and W3C accessibility metadata; and DAISY Ace, which runs 100-plus axe-core accessibility rules against the rendered publication. EPUBCheck integration validates the package structure. When all three layers pass, you have independent confirmation of structural integrity, accessibility conformance, and specification compliance.
 
----
 
 ## THE RULES REFERENCE: KNOWLEDGE ON DEMAND
 
-Every rule GLOW uses is documented at `/rules/` -- a searchable, deep-linkable browser for the full rule catalog. Severity badges. Standards profile membership. Extended rationale. Suppression guidance. Help links to ACB, WCAG, WebAIM, and CommonMark specifications.
+Every rule GLOW uses is documented at `/rules/` - a searchable, deep-linkable browser for the full rule catalog. Severity badges. Standards profile membership. Extended rationale. Suppression guidance. Help links to ACB, WCAG, WebAIM, and CommonMark specifications.
 
-The Rules Reference is not just documentation. It is a working tool. You can build custom rule sets from it -- check the rules you want, save to your browser, and your Audit and Fix sessions will use exactly those rules. For organizations with existing compliance processes, this means GLOW can fit your workflow rather than asking you to fit GLOW's.
+The Rules Reference is not just documentation. It is a working tool. You can build custom rule sets from it - check the rules you want, save to your browser, and your Audit and Fix sessions will use exactly those rules. For organizations with existing compliance processes, this means GLOW can fit your workflow rather than asking you to fit GLOW's.
 
 Every rule ID in every audit report is a click-to-expand disclosure. The rationale, the standard reference, and the auto-fix badge are all there, inline, without navigating away from the report.
 
----
 
 ## THE FIXER: COMPLIANCE THAT APPLIES ITSELF
 
 The best accessibility audit in the world does not help anyone if fixing the findings requires hours of manual edits in Word.
 
-GLOW's auto-fixer applies every correctable finding in one operation. Font family, font size, paragraph spacing, line height, emphasis normalization, heading styles, list formatting, margin settings -- all of it, applied consistently across the entire document.
+GLOW's auto-fixer applies every correctable finding in one operation. Font family, font size, paragraph spacing, line height, emphasis normalization, heading styles, list formatting, margin settings - all of it, applied consistently across the entire document.
 
 The result appears instantly. A before-and-after score comparison shows the impact. The Re-Audit button is right there when you want it.
 
@@ -146,9 +139,8 @@ Heading detection uses a ten-signal heuristic that weighs font size, bold weight
 
 ### Font sizes that match your organization
 
-The ACB defaults are 18pt body, 22pt Heading 1, and 20pt Heading 2 through 6. Those defaults are right for most organizations. But not all organizations. GLOW lets you override any size before running Fix, Audit, or Template generation. Your overrides are applied everywhere -- in the auditor's expected-size comparisons, in the fixer's target sizes, in the template generator's pre-configured styles. List Bullet and List Number styles update automatically to match your body size.
+The ACB defaults are 18pt body, 22pt Heading 1, and 20pt Heading 2 through 6. Those defaults are right for most organizations. But not all organizations. GLOW lets you override any size before running Fix, Audit, or Template generation. Your overrides are applied everywhere - in the auditor's expected-size comparisons, in the fixer's target sizes, in the template generator's pre-configured styles. List Bullet and List Number styles update automatically to match your body size.
 
----
 
 ## THE CONVERTER: ONE DOCUMENT, EVERY FORMAT
 
@@ -170,25 +162,24 @@ The same pipeline works for Excel, PDF, HTML, CSV, JSON, and XML files as inputs
 
 ### The result page
 
-Convert results do not just download. They show. An inline preview of the converted HTML appears in the result page iframe. A Copy to Clipboard button captures the CMS Fragment. An "Audit This Document" card takes you to a compliance report on the converted output -- no re-upload, same session.
+Convert results do not just download. They show. An inline preview of the converted HTML appears in the result page iframe. A Copy to Clipboard button captures the CMS Fragment. An "Audit This Document" card takes you to a compliance report on the converted output - no re-upload, same session.
 
 ### Intelligent input filtering
 
 After you select a file, JavaScript reads the extension and enables only the output formats that support it. Unavailable options are disabled in place with a visual indicator. A live hint names the available formats and notes when two-stage chaining applies. No server round-trip. No surprises.
 
----
 
 ## THE TRUST LAYER: SCORES, GRADES, AND SHARING
 
 ### The grade that speaks first
 
-Every audit report leads with a letter grade -- A through F -- displayed large at the top, before the score, before the findings table. Three seconds to understand whether a document is compliant. Color-coded. Unmistakable. The Fix result shows before-and-after grades side by side.
+Every audit report leads with a letter grade - A through F - displayed large at the top, before the score, before the findings table. Three seconds to understand whether a document is compliant. Color-coded. Unmistakable. The Fix result shows before-and-after grades side by side.
 
 The grade is not decorative. It is computed from a weighted-penalty model that charges per rule at full severity, adds a capped surcharge for repeated occurrences, and stays stable through grouped-display rendering. When GLOW says B, it means B.
 
 ### Findings grouped by rule
 
-Documents with systematic formatting problems used to produce audit reports with forty rows of "Arial not used" before the structural issues appeared. The findings table now groups all occurrences of the same rule into one row with a count badge and an expandable location list. Important issues are visible immediately. The table is as short as it can be while being as complete as it needs to be. CSV exports still emit one row per occurrence -- nothing is lost in your spreadsheet.
+Documents with systematic formatting problems used to produce audit reports with forty rows of "Arial not used" before the structural issues appeared. The findings table now groups all occurrences of the same rule into one row with a count badge and an expandable location list. Important issues are visible immediately. The table is as short as it can be while being as complete as it needs to be. CSV exports still emit one row per occurrence - nothing is lost in your spreadsheet.
 
 ### Quick Wins
 
@@ -196,27 +187,26 @@ When some of your findings are auto-fixable, the Quick Wins bar appears above th
 
 ### Shareable reports
 
-Every completed audit generates a shareable link to the rendered report. The link contains only the HTML report -- never the original document. It expires in one hour.
+Every completed audit generates a shareable link to the rendered report. The link contains only the HTML report - never the original document. It expires in one hour.
 
 From the share panel: **Download PDF** for board packets and compliance files. **Download CSV** for spreadsheets and project trackers.
 
-And if your report contains member names, legal correspondence, or financial data: **set a passphrase**. Whoever follows your link sees a clean unlock form. Enter the correct passphrase and the full report opens. Enter it wrong and it stays locked. The passphrase is hashed with PBKDF2-SHA256 at 200,000 iterations and a unique salt the moment you set it. The cleartext is never stored anywhere. Send the passphrase through a separate channel from the link -- that is the whole point.
+And if your report contains member names, legal correspondence, or financial data: **set a passphrase**. Whoever follows your link sees a clean unlock form. Enter the correct passphrase and the full report opens. Enter it wrong and it stays locked. The passphrase is hashed with PBKDF2-SHA256 at 200,000 iterations and a unique salt the moment you set it. The cleartext is never stored anywhere. Send the passphrase through a separate channel from the link - that is the whole point.
 
----
 
 ## THE HUMAN TOUCHES
 
 ### Dark mode
 
-Choose Light, Dark, or Auto from the footer or Settings on any page. Your choice is stored in the browser and applied before first paint -- no flash of the wrong theme. Full WCAG 2.2 AA contrast throughout all three modes. Print output always uses the light ACB palette regardless of screen setting.
+Choose Light, Dark, or Auto from the footer or Settings on any page. Your choice is stored in the browser and applied before first paint - no flash of the wrong theme. Full WCAG 2.2 AA contrast throughout all three modes. Print output always uses the light ACB palette regardless of screen setting.
 
 ### Focus indicators that never disappear
 
-Every interactive element in GLOW has a 3-pixel solid outline with a layered halo on `:focus-visible`. Every one. Checkboxes that lost their outlines in certain browsers are fixed. Windows High Contrast is handled. Dark mode is handled. A CI test fails the build if a future code change suppresses the focus ring. The focus indicator is not an afterthought -- it is protected by automated enforcement.
+Every interactive element in GLOW has a 3-pixel solid outline with a layered halo on `:focus-visible`. Every one. Checkboxes that lost their outlines in certain browsers are fixed. Windows High Contrast is handled. Dark mode is handled. A CI test fails the build if a future code change suppresses the focus ring. The focus indicator is not an afterthought - it is protected by automated enforcement.
 
 ### Reduced motion
 
-Every animation in GLOW -- toast notifications, dropzone hover effects, consent modal fade -- checks `prefers-reduced-motion` and disables transitions for users who have requested it.
+Every animation in GLOW - toast notifications, dropzone hover effects, consent modal fade - checks `prefers-reduced-motion` and disables transitions for users who have requested it.
 
 ### Drag and drop
 
@@ -224,19 +214,18 @@ Every file input in GLOW has a visual drag-and-drop zone. Drag a file onto it. T
 
 ### The GLOW Anthem
 
-"Let it GLOW" -- a cinematic ballad embedded on the home page with an accessible audio player, integrated lyrics, and a download link. It is the sound of this community.
+"Let it GLOW" - a cinematic ballad embedded on the home page with an accessible audio player, integrated lyrics, and a download link. It is the sound of this community.
 
 ### Layout that works at any size
 
 The page body is horizontally centered with responsive padding. Long-prose paragraphs use a 70-character reading measure. Cards, tables, and forms use the full available width. On narrow viewports, forms stack gracefully. On wide monitors, nothing stretches beyond readable.
 
----
 
 ## THE PLATFORM: OPERATIONS, ANALYTICS, AND DEPLOYMENT
 
 ### What is being used, and by whom
 
-GLOW tracks aggregate usage in two SQLite stores -- a visitor counter and a per-tool usage counter. No document content, no extracted text, no personal information. Just: how many sessions have visited, how many times was Audit used, when was Convert last invoked.
+GLOW tracks aggregate usage in two SQLite stores - a visitor counter and a per-tool usage counter. No document content, no extracted text, no personal information. Just: how many sessions have visited, how many times was Audit used, when was Convert last invoked.
 
 The About page surfaces these counts publicly. The Admin analytics dashboard breaks them down by tool with share percentages and last-used timestamps. Speech Studio adds voice/speed/pitch usage patterns and conversion timing telemetry. Anthem downloads are counted too.
 
@@ -252,28 +241,26 @@ GLOW supports deployment-level branding profiles. The `bits` profile (default) c
 
 ### Feature flags for every capability
 
-Every major capability in GLOW is gated by a feature flag. Conversion directions. Export HTML. Heading detection. AI. Speech. Each flag can be set to false to hide the feature from navigation, forms, and result pages -- consistently, completely, without workarounds. Deployments can enable only what they need.
+Every major capability in GLOW is gated by a feature flag. Conversion directions. Export HTML. Heading detection. AI. Speech. Each flag can be set to false to hide the feature from navigation, forms, and result pages - consistently, completely, without workarounds. Deployments can enable only what they need.
 
----
 
 ## ATTRIBUTION AND COMMUNITY SHOULDERS
 
-> "Open source works because people share. Jamal Mazrui shared. His extCheck and xlHeaders tools directly shaped GLOW's Excel and extension-based accessibility checks. That is how this community is supposed to work -- building on each other's shoulders, giving credit, and making the next tool better than the last."
+> "Open source works because people share. Jamal Mazrui shared. His extCheck and xlHeaders tools directly shaped GLOW's Excel and extension-based accessibility checks. That is how this community is supposed to work - building on each other's shoulders, giving credit, and making the next tool better than the last."
 >
-> **-- BITS President**
+> **- BITS President**
 
 GLOW acknowledges the foundational work of **Jamal Mazrui** and his projects [extCheck](https://github.com/jamalmazrui/extCheck) and [xlHeaders](https://github.com/jamalmazrui/xlHeaders). GLOW's Excel header remediation helper and extension-type checking patterns draw direct inspiration from this work.
 
 GLOW also acknowledges the DAISY Consortium for the Ace accessibility checker and DAISY Pipeline, the Pandoc project for document conversion, the MarkItDown project for content extraction, the Kokoro and Piper projects for open-source speech synthesis, the CommonMark specification for Markdown, and the hundreds of individuals who have contributed accessibility standards work that makes GLOW possible to build at all.
 
----
 
 ## THE FULL PLATFORM, FEATURE BY FEATURE
 
 For readers who want to drill all the way down:
 
 | Capability | What it does |
-|---|---|
+|--|--|
 | One-upload session model | Single upload persists across Audit, Fix, Re-Audit, Convert, and Speech |
 | Quick Start | Upload once; choose Audit, Fix, Convert, or Speech; session carries forward |
 | Word audit | 30+ rules: font, size, spacing, emphasis, alignment, headings, alt text, tables, properties |
@@ -293,7 +280,7 @@ For readers who want to drill all the way down:
 | Speech Studio: adaptive estimates | Timing estimates improve as real conversions happen on the same server |
 | Speech Studio: settings persistence | Voice, speed, pitch, text saved in browser preferences |
 | Convert-to-Speech handoff | "Speech audio" direction in Convert passes session to Speech Studio |
-| Compliance grade | A--F letter grade, large at top of every audit report; before/after on fix result |
+| Compliance grade | A-F letter grade, large at top of every audit report; before/after on fix result |
 | Weighted score model | Stable, drift-resistant; grouped display does not affect computation |
 | Findings grouped by rule | One row per rule, occurrence count badge, expandable location list |
 | Quick Wins filter | Shows only auto-fixable findings; one click to Fix with file pre-loaded |
@@ -322,7 +309,6 @@ For readers who want to drill all the way down:
 | BITS Whisperer | Audio transcription to Markdown/Word via server-side Whisper |
 | Document Chat | Ask questions about your document in plain language |
 
----
 
 ## GET GLOW
 
@@ -338,14 +324,15 @@ Release notes: `docs/RELEASE-v3.0.0.md`
 
 Full changelog: `CHANGELOG.md`
 
----
 
 ## ONE LAST THING
 
 Every inaccessible document is a door slammed in someone's face.
 
-GLOW is about opening those doors -- permanently, systematically, and freely.
+GLOW is about opening those doors - permanently, systematically, and freely.
 
 Thank you for building it with us.
 
-**-- BITS**
+**- BITS**
+
+
