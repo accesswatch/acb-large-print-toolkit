@@ -33,6 +33,7 @@ CONSENT_EXEMPT_PREFIXES = (
     "/consent",
     "/static",
     "/health",
+    "/status",
     "/privacy",
     "/favicon",
 )

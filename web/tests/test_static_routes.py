@@ -15,6 +15,9 @@ from pathlib import Path
 
 import pytest
 from flask import Flask
+from types import SimpleNamespace
+
+from acb_large_print_web.routes.consent import consent_required
 
 from acb_large_print_web.app import create_app
 
@@ -81,6 +84,11 @@ def test_consent_post_relative_next_honoured(client):
     resp = client.post("/consent/", data={"agreed": "yes", "next_url": "/fix/"})
     assert resp.status_code in (302, 303)
     assert "/fix/" in resp.headers.get("Location", "")
+
+
+def test_status_path_is_exempt_from_consent_gate():
+    req = SimpleNamespace(path="/status", cookies={})
+    assert consent_required(req) is False
 
 
 # ---------------------------------------------------------------------------

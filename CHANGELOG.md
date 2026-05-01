@@ -48,6 +48,10 @@ Releases are tagged in the [GitHub repository](https://github.com/accesswatch/ac
 
 ### Fixed
 
+- **`/status` is now reachable without consent redirect.** Added `/status`
+  to consent-gate exemptions so operational diagnostics are publicly
+  accessible like `/health`.
+
 - **`/status` now safely serializes mocked diagnostic values.** Health payload
   construction now coerces non-string Braille `louis_version` values to text
   before rendering JSON, preventing test/runtime failures when mocks return
