@@ -70,7 +70,10 @@
   <form method="post" action="{{ url_for('admin.admin_login_password') }}" novalidate>
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <label for="local-admin-email">Admin email</label>
-    <input type="email" id="local-admin-email" name="email" required autocomplete="username">
+    <input type="email" id="local-admin-email" name="email" value="{{ local_password_email or '' }}" {% if email_enabled or not local_password_email %}required{% endif %} autocomplete="username" {% if not email_enabled and local_password_email %}readonly{% endif %}>
+    {% if not email_enabled and local_password_email %}
+    <p class="field-hint">Email delivery is not configured. Password sign-in will use the bootstrap admin email shown above.</p>
+    {% endif %}
     <label for="local-admin-password">Password</label>
     <input type="password" id="local-admin-password" name="password" required autocomplete="current-password">
     <button type="submit" class="btn-secondary">Sign In with Password</button>

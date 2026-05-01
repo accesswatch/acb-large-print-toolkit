@@ -4,7 +4,7 @@
 {% block heading %}Speech Studio{% endblock %}
 
 {% block content %}
-<p>Create expressive narration with any available English voice. You can type your own text, or convert uploaded documents into speech.</p>
+<p>Convert documents into expressive narration with any available English voice.</p>
 <p class="help-text">Speech Studio runs on this server and does not send your text to external services.</p>
 <p class="help-text">Speech Studio is a server-side feature. It requires the Kokoro ONNX package and model files to be installed on the server. Your browser settings have no effect on voice availability.</p>
 
@@ -18,9 +18,9 @@
 </section>
 {% endif %}
 
-{# ── Demo form ── #}
+{# ── Speech form ── #}
 <section>
-  <h2 id="demo-heading">Voice Studio</h2>
+  <h2 id="demo-heading">Document Speech Conversion</h2>
 
   <form
     id="speech-form"
@@ -34,23 +34,6 @@
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <input type="hidden" id="speech-document-token" name="token" value="{{ prefill_token or '' }}">
     <input type="hidden" id="speech-document-prefill" name="prefill" value="{{ '1' if prefill_token else '0' }}">
-
-    {# Text input #}
-    <div class="form-group">
-      <label for="speech-text">Text to speak</label>
-      <p class="help-text" id="speech-text-hint">Up to {{ text_max_len }} characters. Your text stays on this server only.</p>
-      <textarea
-        id="speech-text"
-        name="text"
-        rows="4"
-        maxlength="{{ text_max_len }}"
-        aria-describedby="speech-text-hint speech-char-count"
-        {% if not any_engine_ready %}disabled aria-disabled="true"{% endif %}
-      >{{ default_text }}</textarea>
-      <p id="speech-char-count" class="help-text" aria-live="polite">
-        <span id="char-count-value">{{ default_text | length }}</span> / {{ text_max_len }} characters
-      </p>
-    </div>
 
     {# Voice selector #}
     <fieldset>
@@ -127,15 +110,38 @@
         {% if not any_engine_ready %}disabled aria-disabled="true"{% endif %}>
     </div>
 
-    {# Typed text actions #}
+    <fieldset>
+      <legend>Document</legend>
+      <p class="help-text">Upload a file to convert its text into audio. Speech Studio can preview the first couple sentences so you can hear the selected voice before full conversion.</p>
+
+      {% if prefill_filename %}
+      <p id="speech-prefill-note" class="help-text"><strong>Ready from Quick Start:</strong> {{ prefill_filename }}</p>
+      {% endif %}
+
+      <label for="speech-document">Document to convert</label>
+      <input
+        type="file"
+        id="speech-document"
+        name="document"
+        accept="{{ all_accept }}"
+        aria-describedby="speech-document-hint"
+        {% if not any_engine_ready %}disabled aria-disabled="true"{% endif %}>
+      <p id="speech-document-hint" class="help-text">Supported: Word, Excel, PowerPoint, PDF, Markdown, ePub, HTML, CSV, JSON, XML, and image files.</p>
+    </fieldset>
+
+    {# Conversion actions #}
     <div class="next-step-actions">
-      <button type="button" id="preview-btn" class="btn-primary"
+      <button type="button" id="prepare-document-btn" class="btn-primary"
         {% if not any_engine_ready %}disabled aria-disabled="true"{% endif %}>
-        Preview audio
+        Prepare document
       </button>
-      <button type="submit" id="download-btn" class="btn-secondary"
+      <button type="button" id="document-preview-btn" class="btn-secondary"
         {% if not any_engine_ready %}disabled aria-disabled="true"{% endif %}>
-        Download typed text audio
+        Preview first sentences
+      </button>
+      <button type="button" id="document-download-btn" class="btn-secondary"
+        {% if not any_engine_ready %}disabled aria-disabled="true"{% endif %}>
+        Download full document audio
       </button>
     </div>
 
@@ -152,47 +158,13 @@
     {# Preview error region #}
     <div id="preview-error" class="flash-error" role="alert" style="display:none;" aria-live="assertive"></div>
 
-    <fieldset>
-      <legend>Document to Speech</legend>
-      <p class="help-text">Upload a file to convert its text into audio. Speech Studio can preview the first couple sentences so you can hear the voice before full conversion.</p>
+    <div id="document-estimate" class="notice-box" role="status" style="display:none; margin-top:1rem;">
+      <p><strong>Conversion estimate</strong></p>
+      <p id="document-estimate-text" class="help-text"></p>
+    </div>
 
-      {% if prefill_filename %}
-      <p id="speech-prefill-note" class="help-text"><strong>Ready from Quick Start:</strong> {{ prefill_filename }}</p>
-      {% endif %}
-
-      <label for="speech-document">Document to convert</label>
-      <input
-        type="file"
-        id="speech-document"
-        name="document"
-        accept="{{ all_accept }}"
-        aria-describedby="speech-document-hint"
-        {% if not any_engine_ready %}disabled aria-disabled="true"{% endif %}>
-      <p id="speech-document-hint" class="help-text">Supported: Word, Excel, PowerPoint, PDF, Markdown, ePub, HTML, CSV, JSON, XML, and image files.</p>
-
-      <div class="next-step-actions">
-        <button type="button" id="prepare-document-btn" class="btn-primary"
-          {% if not any_engine_ready %}disabled aria-disabled="true"{% endif %}>
-          Prepare document
-        </button>
-        <button type="button" id="document-preview-btn" class="btn-secondary"
-          {% if not any_engine_ready %}disabled aria-disabled="true"{% endif %}>
-          Preview first sentences
-        </button>
-        <button type="button" id="document-download-btn" class="btn-secondary"
-          {% if not any_engine_ready %}disabled aria-disabled="true"{% endif %}>
-          Download full document audio
-        </button>
-      </div>
-
-      <div id="document-estimate" class="notice-box" role="status" style="display:none; margin-top:1rem;">
-        <p><strong>Conversion estimate</strong></p>
-        <p id="document-estimate-text" class="help-text"></p>
-      </div>
-
-      <p id="document-status" class="help-text" role="status" aria-live="polite" aria-atomic="true" style="display:none;"></p>
-      <div id="document-error" class="flash-error" role="alert" style="display:none;" aria-live="assertive"></div>
-    </fieldset>
+    <p id="document-status" class="help-text" role="status" aria-live="polite" aria-atomic="true" style="display:none;"></p>
+    <div id="document-error" class="flash-error" role="alert" style="display:none;" aria-live="assertive"></div>
   </form>
 </section>
 

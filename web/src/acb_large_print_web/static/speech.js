@@ -152,10 +152,68 @@
   }
 
   var voiceInputs = document.querySelectorAll('input[name="voice"]');
+  function normalizeVoiceSelection() {
+    if (!voiceInputs || !voiceInputs.length) {
+      return;
+    }
+
+    var checked = [];
+    for (var i = 0; i < voiceInputs.length; i += 1) {
+      if (voiceInputs[i].checked) {
+        checked.push(voiceInputs[i]);
+      }
+    }
+
+    if (checked.length > 1) {
+      for (var j = 1; j < checked.length; j += 1) {
+        checked[j].checked = false;
+      }
+      return;
+    }
+
+    if (checked.length === 0) {
+      for (var k = 0; k < voiceInputs.length; k += 1) {
+        if (!voiceInputs[k].disabled) {
+          voiceInputs[k].checked = true;
+          return;
+        }
+      }
+    }
+  }
+
+  function restoreVoiceSelectionFromSettings() {
+    if (!window.glowPreferences || typeof window.glowPreferences.loadSettings !== "function") {
+      normalizeVoiceSelection();
+      return;
+    }
+    var settings = window.glowPreferences.loadSettings();
+    var wanted = settings && settings.speech && settings.speech.voice ? settings.speech.voice : "";
+    var found = false;
+
+    if (wanted && voiceInputs && voiceInputs.length) {
+      for (var i = 0; i < voiceInputs.length; i += 1) {
+        if (!voiceInputs[i].disabled && voiceInputs[i].value === wanted) {
+          voiceInputs[i].checked = true;
+          found = true;
+          break;
+        }
+      }
+    }
+
+    if (!found) {
+      normalizeVoiceSelection();
+    }
+  }
+
   if (voiceInputs && voiceInputs.length) {
     for (var i = 0; i < voiceInputs.length; i += 1) {
-      voiceInputs[i].addEventListener("change", persistState);
+      voiceInputs[i].addEventListener("change", function () {
+        normalizeVoiceSelection();
+        persistState();
+      });
     }
+    restoreVoiceSelectionFromSettings();
+    normalizeVoiceSelection();
   }
 
   var previewBtn = byId("preview-btn");
@@ -177,6 +235,9 @@
   var form = byId("speech-form");
 
   var preparedDocument = null;
+  var basePrepareDisabled = !!(prepareDocumentBtn && prepareDocumentBtn.hasAttribute("disabled"));
+  var basePreviewDisabled = !!(documentPreviewBtn && documentPreviewBtn.hasAttribute("disabled"));
+  var baseDownloadDisabled = !!(documentDownloadBtn && documentDownloadBtn.hasAttribute("disabled"));
 
   function showStatus(msg) {
     if (!statusRegion) {
@@ -194,6 +255,26 @@
     statusRegion.style.display = "none";
   }
 
+  function updateDocumentActionState(isBusy) {
+    var canPrepare = false;
+    if (documentTokenInput && documentTokenInput.value) {
+      canPrepare = true;
+    }
+    if (documentInput && documentInput.files && documentInput.files[0]) {
+      canPrepare = true;
+    }
+
+    if (prepareDocumentBtn) {
+      prepareDocumentBtn.disabled = !!isBusy || basePrepareDisabled || !canPrepare;
+    }
+    if (documentPreviewBtn) {
+      documentPreviewBtn.disabled = !!isBusy || basePreviewDisabled || !preparedDocument;
+    }
+    if (documentDownloadBtn) {
+      documentDownloadBtn.disabled = !!isBusy || baseDownloadDisabled || !preparedDocument;
+    }
+  }
+
   function setBusy(isBusy) {
     if (previewBtn) {
       previewBtn.disabled = !!isBusy;
@@ -201,15 +282,7 @@
     if (downloadBtn) {
       downloadBtn.disabled = !!isBusy;
     }
-    if (prepareDocumentBtn) {
-      prepareDocumentBtn.disabled = !!isBusy;
-    }
-    if (documentPreviewBtn) {
-      documentPreviewBtn.disabled = !!isBusy;
-    }
-    if (documentDownloadBtn) {
-      documentDownloadBtn.disabled = !!isBusy;
-    }
+    updateDocumentActionState(isBusy);
     if (form) {
       form.setAttribute("aria-busy", isBusy ? "true" : "false");
     }
@@ -358,6 +431,7 @@
           persistState();
         }
         showDocumentStatus("Document prepared. You can preview first sentences or download full audio.");
+        updateDocumentActionState(false);
         return json;
       })
       .finally(function () {
@@ -563,6 +637,9 @@
       if (documentEstimateWrap) {
         documentEstimateWrap.style.display = "none";
       }
+      updateDocumentActionState(false);
     });
   }
+
+  updateDocumentActionState(false);
 })();

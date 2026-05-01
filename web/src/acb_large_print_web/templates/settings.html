@@ -248,6 +248,13 @@
     <legend>Speech Studio</legend>
     <h2 id="settings-speech-heading">Speech Studio</h2>
     <p>Use Speech Studio for typed text preview and uploaded document-to-speech conversion with your saved voice settings.</p>
+
+    <div class="form-group">
+      <label for="settings-speech-demo-text">Sample text for this page</label>
+      <textarea id="settings-speech-demo-text" rows="3" maxlength="500" aria-describedby="settings-speech-demo-hint">Welcome to Speech Studio. This sample reflects your current speech settings.</textarea>
+      <p id="settings-speech-demo-hint" class="help-text">Type custom text here, then click "Download sample audio" to generate a quick demo using your current speech defaults.</p>
+    </div>
+
     <div class="settings-rule-actions">
       <a class="btn-secondary" href="{{ url_for('speech.speech_form') }}">Open Speech Studio</a>
       <button type="button" id="settings-speech-download" class="btn-secondary">Download sample audio</button>
@@ -293,12 +300,18 @@
           settings = window.glowPreferences.loadSettings();
         }
         var speech = settings && settings.speech ? settings.speech : null;
+        var typedDemo = document.getElementById("settings-speech-demo-text");
+        var typedDemoText = typedDemo && typedDemo.value ? typedDemo.value : "";
         setField("settings-speech-download-voice", speech && speech.voice ? speech.voice : "kokoro:af_bella");
         setField(
           "settings-speech-download-text",
-          speech && speech.text
-            ? speech.text
-            : "Welcome to Speech Studio. This sample reflects your current speech settings."
+          typedDemoText
+            ? typedDemoText
+            : (
+              speech && speech.text
+                ? speech.text
+                : "Welcome to Speech Studio. This sample reflects your current speech settings."
+            )
         );
         setField("settings-speech-download-speed", speech && speech.speed !== undefined ? speech.speed : "1.0");
         setField("settings-speech-download-pitch", speech && speech.pitch !== undefined ? speech.pitch : "0");

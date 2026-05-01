@@ -382,11 +382,13 @@ def _decode_jwt_email(id_token: str) -> str:
 def admin_login() -> Any:
     _bootstrap_admins()
     providers = _provider_configs() if email_configured() else []
+    local_password_email = _normalize_email(get_bootstrap_admin_email())
     return render_template(
         "admin_login.html",
         providers=providers,
         email_enabled=email_configured(),
         local_password_enabled=bool(get_bootstrap_admin_password().strip()),
+        local_password_email=local_password_email,
         ttl_minutes=_MAGIC_LINK_TTL_MINUTES,
     )
 
@@ -397,24 +399,42 @@ def admin_login_password() -> Any:
     _bootstrap_admins()
     email = _normalize_email(request.form.get("email", ""))
     password = request.form.get("password", "")
+    email_enabled = email_configured()
+    local_password_email = _normalize_email(get_bootstrap_admin_email())
 
-    if not email or not password:
+    if not email and not email_enabled and local_password_email:
+        email = local_password_email
+
+    if not password:
         return render_template(
             "admin_login.html",
-            providers=_provider_configs() if email_configured() else [],
-            email_enabled=email_configured(),
+            providers=_provider_configs() if email_enabled else [],
+            email_enabled=email_enabled,
             local_password_enabled=bool(get_bootstrap_admin_password().strip()),
+            local_password_email=local_password_email,
             ttl_minutes=_MAGIC_LINK_TTL_MINUTES,
-            error="Email and password are required.",
+            error="Password is required.",
+        ), 400
+
+    if not email:
+        return render_template(
+            "admin_login.html",
+            providers=_provider_configs() if email_enabled else [],
+            email_enabled=email_enabled,
+            local_password_enabled=bool(get_bootstrap_admin_password().strip()),
+            local_password_email=local_password_email,
+            ttl_minutes=_MAGIC_LINK_TTL_MINUTES,
+            error="Email is required for password sign-in.",
         ), 400
 
     row = _account(email)
     if row is None or not row["password_hash"] or not check_password_hash(row["password_hash"], password):
         return render_template(
             "admin_login.html",
-            providers=_provider_configs() if email_configured() else [],
-            email_enabled=email_configured(),
+            providers=_provider_configs() if email_enabled else [],
+            email_enabled=email_enabled,
             local_password_enabled=bool(get_bootstrap_admin_password().strip()),
+            local_password_email=local_password_email,
             ttl_minutes=_MAGIC_LINK_TTL_MINUTES,
             error="Invalid admin credentials.",
         ), 403
@@ -422,9 +442,10 @@ def admin_login_password() -> Any:
     if int(row["approved"]) != 1:
         return render_template(
             "admin_login.html",
-            providers=_provider_configs() if email_configured() else [],
-            email_enabled=email_configured(),
+            providers=_provider_configs() if email_enabled else [],
+            email_enabled=email_enabled,
             local_password_enabled=bool(get_bootstrap_admin_password().strip()),
+            local_password_email=local_password_email,
             ttl_minutes=_MAGIC_LINK_TTL_MINUTES,
             error="This account is not approved for admin access.",
         ), 403
