@@ -14,6 +14,34 @@ Releases are tagged in the [GitHub repository](https://github.com/accesswatch/ac
 
 ### Added
 
+- **Roadmap feature pack implemented (11 items, all feature-gated).**
+  Implemented the roadmap additions requested for 1.5, 2.5, 2.6, 3.3, 3.4,
+  3.5, 3.6, 4.3, 7.3, 7.4, and 9.1 with explicit server-side flags:
+  - 1.5 **Braille back-translation quality scoring** in Braille Studio result
+    view (`GLOW_ENABLE_BRAILLE_BACK_TRANSLATION_SCORE`).
+  - 2.5 **Speech pronunciation dictionary management** with CSV import/export,
+    preview, and synthesis pre-processing (`GLOW_ENABLE_SPEECH_PRONUNCIATION_DICTIONARY`).
+  - 2.6 **Real-time streaming speech preview endpoint** at
+    `POST /speech/stream` (`GLOW_ENABLE_SPEECH_STREAM`).
+  - 3.3 **Table accessibility advisor API** at `POST /magic/table-advisor`
+    (`GLOW_ENABLE_TABLE_ADVISOR`).
+  - 3.4 **Reading order detection API** for PDFs at
+    `POST /magic/reading-order` (`GLOW_ENABLE_READING_ORDER_DETECTION`).
+  - 3.5 **OCR API for scanned PDFs** at `POST /magic/ocr` (best-effort when
+    `pytesseract`/Pillow are available) (`GLOW_ENABLE_PDF_OCR`).
+  - 3.6 **Document compare and change-tracking API** at `POST /magic/compare`
+    (`GLOW_ENABLE_DOCUMENT_COMPARE`).
+  - 4.3 **ODT export direction** in Convert (`to-odt`) backed by Pandoc
+    (`GLOW_ENABLE_CONVERT_TO_ODT`).
+  - 7.3 **Cognitive profile mode** (Plain & Simple) in Settings with local
+    preference persistence and automatic help accordion expansion
+    (`GLOW_ENABLE_COGNITIVE_PROFILE`).
+  - 7.4 **Forced-colors/high-contrast mode support** in core CSS using system
+    colors and forced-colors media-query rules (`GLOW_ENABLE_FORCED_COLORS_MODE`).
+  - 9.1 **Public rule contribution portal** in Magic Lab (`/magic`) with
+    proposal submission/list endpoints and Rules Reference cross-link
+    (`GLOW_ENABLE_RULE_CONTRIBUTIONS`).
+
 - **Comprehensive axe-core WCAG 2.2 AA audit of GLOW itself.**
   Added `web/e2e/tests/axe-audit.spec.mjs` — a Playwright-integrated
   `@axe-core/playwright` test suite that audits all 17 public routes at

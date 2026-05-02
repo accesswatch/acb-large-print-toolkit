@@ -6,6 +6,42 @@ GLOW Accessibility Toolkit v3.1.0 ships 11 new features and hardening improvemen
 
 All features are enabled by default and fully backward-compatible. No database migrations or configuration changes are required to upgrade from v3.0.0.
 
+## Roadmap.md Additions Implemented in v3.1.0
+
+The following roadmap items were explicitly implemented in this release and are
+feature-gated for controlled rollout.
+
+| Roadmap Item | Implementation | Feature Flag |
+|-------------|----------------|--------------|
+| 1.5 Back-translation quality scoring | Braille result quality card with fidelity metrics/advisories | `GLOW_ENABLE_BRAILLE_BACK_TRANSLATION_SCORE` |
+| 2.5 Pronunciation dictionary management | Dictionary CRUD + CSV import/export + speech pre-processing | `GLOW_ENABLE_SPEECH_PRONUNCIATION_DICTIONARY` |
+| 2.6 Real-time streaming audio preview | `POST /speech/stream` chunked WAV response | `GLOW_ENABLE_SPEECH_STREAM` |
+| 3.3 Table accessibility advisor | `POST /magic/table-advisor` analysis API + form | `GLOW_ENABLE_TABLE_ADVISOR` |
+| 3.4 Reading order detection and correction | `POST /magic/reading-order` (PyMuPDF block-order heuristic findings) | `GLOW_ENABLE_READING_ORDER_DETECTION` |
+| 3.5 OCR for scanned PDFs | `POST /magic/ocr` best-effort extraction (`pytesseract`/Pillow runtime-gated) | `GLOW_ENABLE_PDF_OCR` |
+| 3.6 Document comparison and change tracking | `POST /magic/compare` similarity + unified diff preview | `GLOW_ENABLE_DOCUMENT_COMPARE` |
+| 4.3 OpenDocument Text (ODT) export | Convert direction `to-odt` via Pandoc | `GLOW_ENABLE_CONVERT_TO_ODT` |
+| 7.3 Cognitive accessibility profile | Settings toggle + simplified UI mode + auto-expanded help sections | `GLOW_ENABLE_COGNITIVE_PROFILE` |
+| 7.4 High-contrast / forced-colors mode | Forced-colors CSS support with system color tokens | `GLOW_ENABLE_FORCED_COLORS_MODE` |
+| 9.1 Public rule contribution portal | `/magic` rule proposal forms + JSON proposal endpoints + Rules Reference link | `GLOW_ENABLE_RULE_CONTRIBUTIONS` |
+
+### Magic Lab endpoint summary
+
+The roadmap 2.x/3.x/9.x advanced features are surfaced in a new Magic Lab route:
+
+- `GET /magic/`
+- `POST /magic/table-advisor`
+- `POST /magic/reading-order`
+- `POST /magic/ocr`
+- `POST /magic/compare`
+- `POST /magic/pronunciation`
+- `POST /magic/pronunciation/delete`
+- `POST /magic/pronunciation/import`
+- `GET /magic/pronunciation/export.csv`
+- `POST /magic/pronunciation/preview`
+- `POST /magic/rules/propose`
+- `GET /magic/rules/proposals`
+
 ---
 
 ## New Features
