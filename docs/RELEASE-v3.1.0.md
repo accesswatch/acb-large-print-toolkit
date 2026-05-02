@@ -8,8 +8,9 @@ All features are enabled by default and fully backward-compatible. No database m
 
 ## Roadmap.md Additions Implemented in v3.1.0
 
-The following roadmap items were explicitly implemented in this release and are
-feature-gated for controlled rollout.
+The following roadmap items were explicitly implemented in this release as
+core capabilities. Feature flags remain available for staged rollout,
+troubleshooting, and capacity control.
 
 | Roadmap Item | Implementation | Feature Flag |
 |-------------|----------------|--------------|
@@ -25,9 +26,9 @@ feature-gated for controlled rollout.
 | 7.4 High-contrast / forced-colors mode | Forced-colors CSS support with system color tokens | `GLOW_ENABLE_FORCED_COLORS_MODE` |
 | 9.1 Public rule contribution portal | `/magic` rule proposal forms + JSON proposal endpoints + Rules Reference link | `GLOW_ENABLE_RULE_CONTRIBUTIONS` |
 
-### Magic Lab endpoint summary
+### Core accessibility intelligence endpoint summary
 
-The roadmap 2.x/3.x/9.x advanced features are surfaced in a new Magic Lab route:
+The roadmap 2.x/3.x/9.x features are surfaced through core JSON/API endpoints:
 
 - `GET /magic/`
 - `POST /magic/table-advisor`
@@ -41,6 +42,25 @@ The roadmap 2.x/3.x/9.x advanced features are surfaced in a new Magic Lab route:
 - `POST /magic/pronunciation/preview`
 - `POST /magic/rules/propose`
 - `GET /magic/rules/proposals`
+
+### Deployment requirements for the roadmap core pack
+
+| Capability | Required dependencies | Behavior when missing |
+|------------|-----------------------|-----------------------|
+| Braille translation + quality scoring | `python3-louis`, `liblouis-bin`, `liblouis-dev`, `liblouis-data` | Braille routes show graceful unavailability diagnostics |
+| Speech document render + ODT export | `pandoc` | Convert/Speech document flows return explicit dependency errors |
+| OCR for scanned PDFs | Tesseract binary + `pytesseract` + Pillow | OCR endpoint returns structured `unavailable` response |
+| Accessibility CI self-audit | Node deps `@axe-core/playwright`, `@axe-core/cli`, Playwright Chromium | CI fails in setup if missing; no silent pass |
+
+### GitHub integration points (current state)
+
+- Implemented: SARIF findings from accessibility CI are uploaded into GitHub
+  Code Scanning (`github/codeql-action/upload-sarif`).
+- Implemented: release and documentation updates are tracked in repository
+  history (`CHANGELOG.md`, PRD, user guide, and release notes).
+- Clarified: rule contribution portal submissions are persisted locally in
+  SQLite for moderation/review in v3.1.0 and are not yet auto-synced to
+  GitHub Issues or PR drafts.
 
 ---
 

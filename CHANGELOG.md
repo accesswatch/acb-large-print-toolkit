@@ -14,9 +14,10 @@ Releases are tagged in the [GitHub repository](https://github.com/accesswatch/ac
 
 ### Added
 
-- **Roadmap feature pack implemented (11 items, all feature-gated).**
+- **Roadmap core feature pack implemented (11 items, all feature-gated).**
   Implemented the roadmap additions requested for 1.5, 2.5, 2.6, 3.3, 3.4,
-  3.5, 3.6, 4.3, 7.3, 7.4, and 9.1 with explicit server-side flags:
+  3.5, 3.6, 4.3, 7.3, 7.4, and 9.1 as core platform capabilities with
+  explicit server-side flags and production deployment requirements:
   - 1.5 **Braille back-translation quality scoring** in Braille Studio result
     view (`GLOW_ENABLE_BRAILLE_BACK_TRANSLATION_SCORE`).
   - 2.5 **Speech pronunciation dictionary management** with CSV import/export,
@@ -41,6 +42,22 @@ Releases are tagged in the [GitHub repository](https://github.com/accesswatch/ac
   - 9.1 **Public rule contribution portal** in Magic Lab (`/magic`) with
     proposal submission/list endpoints and Rules Reference cross-link
     (`GLOW_ENABLE_RULE_CONTRIBUTIONS`).
+
+  **Deployment dependency tracking for this pack:**
+  - Required: `pandoc` (ODT conversion and Speech document rendering paths)
+  - Required: `python3-louis` + `liblouis-*` (Braille translation)
+  - Optional/runtime-detected: `pytesseract`, Pillow, and Tesseract binary
+    for OCR (`GLOW_ENABLE_PDF_OCR` returns clear unavailability diagnostics
+    when dependencies are missing)
+  - Required in CI: Node deps include `@axe-core/playwright` and
+    `@axe-core/cli` for self-audit and SARIF generation
+
+  **GitHub integration points:**
+  - Implemented: SARIF output is uploaded to GitHub Code Scanning via
+    `github/codeql-action/upload-sarif` in CI.
+  - Clarified: rule proposals are currently stored in local SQLite and are
+    not yet auto-synced to GitHub Issues/PRs; API-backed sync remains a
+    future enhancement.
 
 - **Comprehensive axe-core WCAG 2.2 AA audit of GLOW itself.**
   Added `web/e2e/tests/axe-audit.spec.mjs` — a Playwright-integrated

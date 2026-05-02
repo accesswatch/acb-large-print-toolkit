@@ -124,7 +124,7 @@ Audit reports now group all occurrences of the same finding under a single row w
 
 GLOW 3.1.0 ships 11 new features: a full Braille Studio, Speech Studio document preparation via Pandoc, a Server Status diagnostic page, a comprehensive axe-core WCAG 2.2 AA CI audit of GLOW itself, and a set of operational hardening improvements for speech, braille, Docker, and CI.
 
-### Roadmap feature pack implemented in this release
+### Roadmap core feature pack implemented in this release
 
 This release also implements the 11 roadmap additions requested in one
 feature-gated pack. If a feature is disabled by your administrator, its route
@@ -133,26 +133,41 @@ or UI surface may be hidden.
 | Roadmap Item | Where You Use It | Flag |
 |-------------|------------------|------|
 | 1.5 Back-translation quality scoring | Braille Studio result panel | `GLOW_ENABLE_BRAILLE_BACK_TRANSLATION_SCORE` |
-| 2.5 Pronunciation dictionary management | Magic Lab pronunciation tools + Speech synthesis pre-processing | `GLOW_ENABLE_SPEECH_PRONUNCIATION_DICTIONARY` |
+| 2.5 Pronunciation dictionary management | Speech pronunciation tools + Speech synthesis pre-processing | `GLOW_ENABLE_SPEECH_PRONUNCIATION_DICTIONARY` |
 | 2.6 Real-time streaming preview | `POST /speech/stream` (API) | `GLOW_ENABLE_SPEECH_STREAM` |
-| 3.3 Table accessibility advisor | `POST /magic/table-advisor` or Magic Lab form | `GLOW_ENABLE_TABLE_ADVISOR` |
-| 3.4 Reading order detection (PDF) | `POST /magic/reading-order` or Magic Lab form | `GLOW_ENABLE_READING_ORDER_DETECTION` |
-| 3.5 OCR for scanned PDFs | `POST /magic/ocr` or Magic Lab form | `GLOW_ENABLE_PDF_OCR` |
-| 3.6 Document compare and change tracking | `POST /magic/compare` or Magic Lab form | `GLOW_ENABLE_DOCUMENT_COMPARE` |
+| 3.3 Table accessibility advisor | `POST /magic/table-advisor` or core accessibility tools form | `GLOW_ENABLE_TABLE_ADVISOR` |
+| 3.4 Reading order detection (PDF) | `POST /magic/reading-order` or core accessibility tools form | `GLOW_ENABLE_READING_ORDER_DETECTION` |
+| 3.5 OCR for scanned PDFs | `POST /magic/ocr` or core accessibility tools form | `GLOW_ENABLE_PDF_OCR` |
+| 3.6 Document compare and change tracking | `POST /magic/compare` or core accessibility tools form | `GLOW_ENABLE_DOCUMENT_COMPARE` |
 | 4.3 OpenDocument Text export | Convert direction `to-odt` | `GLOW_ENABLE_CONVERT_TO_ODT` |
 | 7.3 Cognitive profile mode | Settings toggle (Plain & Simple mode) | `GLOW_ENABLE_COGNITIVE_PROFILE` |
 | 7.4 Forced-colors support | Automatic high-contrast CSS behavior | `GLOW_ENABLE_FORCED_COLORS_MODE` |
-| 9.1 Public rule contribution portal | Magic Lab rule proposal workflow | `GLOW_ENABLE_RULE_CONTRIBUTIONS` |
+| 9.1 Public rule contribution portal | Rule proposal workflow | `GLOW_ENABLE_RULE_CONTRIBUTIONS` |
 
-### New: Magic Lab for advanced accessibility workflows
+### Core accessibility intelligence tools
 
-GLOW now includes a **Magic Lab** tab for advanced and experimental workflows.
-Magic Lab provides interactive forms for table analysis, PDF reading-order
+GLOW includes a dedicated accessibility intelligence surface in the core product.
+It provides interactive forms for table analysis, PDF reading-order
 inspection, scanned-PDF OCR extraction, document comparison, pronunciation
 dictionary management, and rule proposal submission.
 
 The same capabilities are also available as JSON endpoints for integration
 workflows.
+
+### Deployment and admin requirements for this pack
+
+- `pandoc` is required for ODT conversion and Speech document rendering.
+- Braille capabilities require `python3-louis` plus `liblouis-*` packages.
+- OCR requires Tesseract + `pytesseract` + Pillow; when missing, OCR features
+   return a clear unavailable message instead of failing silently.
+- Feature flags can be toggled in the Admin flags page for controlled rollout.
+
+### GitHub integration behavior
+
+- Accessibility findings from CI are uploaded to GitHub Code Scanning as SARIF.
+- Rule contribution submissions are currently stored locally in GLOW (SQLite)
+   for review; automatic sync to GitHub Issues/PRs is planned but not active
+   in v3.1.0.
 
 ### Braille Studio: translate to and from braille
 

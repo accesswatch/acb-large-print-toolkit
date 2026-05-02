@@ -29,33 +29,51 @@ Eleven new features and improvements shipped in v3.1.0. All are enabled by defau
 | Speech route regression test suite | Done | `web/tests/test_speech_routes.py` covers staged prepare action rendering, Pandoc-required behavior, text extraction paths, and persistence of `speech_rendered.txt` and `speech_source.txt` artifacts. |
 | `/status` consent exemption and braille nav regression test | Done | `/status` added to consent-gate exemptions. `test_main_nav_shows_braille_tab_when_enabled` added to `web/tests/test_braille.py` to guard tab visibility when `GLOW_ENABLE_BRAILLE` is set. |
 
-### v3.1.0 Roadmap Additions Implemented (11-item pack)
+### v3.1.0 Roadmap Additions Implemented (11-item core pack)
 
-The roadmap items requested in this cycle were implemented as a single feature
-pack and exposed through explicit server-side feature flags.
+The roadmap items requested in this cycle were implemented as a single core
+feature pack and exposed through explicit server-side feature flags.
 
 | Roadmap Item | Status | Entry Point | Feature Flag |
 |-------------|--------|-------------|--------------|
 | 1.5 Back-translation quality scoring | Done | Braille result panel (`/braille/`) | `GLOW_ENABLE_BRAILLE_BACK_TRANSLATION_SCORE` |
-| 2.5 Pronunciation dictionary management | Done | Magic Lab + Speech pre-processing | `GLOW_ENABLE_SPEECH_PRONUNCIATION_DICTIONARY` |
+| 2.5 Pronunciation dictionary management | Done | Speech pre-processing + core admin/operator surface | `GLOW_ENABLE_SPEECH_PRONUNCIATION_DICTIONARY` |
 | 2.6 Real-time streaming audio preview | Done | `POST /speech/stream` | `GLOW_ENABLE_SPEECH_STREAM` |
-| 3.3 Table accessibility advisor | Done | `POST /magic/table-advisor` | `GLOW_ENABLE_TABLE_ADVISOR` |
-| 3.4 Reading order detection (PDF) | Done | `POST /magic/reading-order` | `GLOW_ENABLE_READING_ORDER_DETECTION` |
-| 3.5 OCR for scanned PDFs | Done | `POST /magic/ocr` | `GLOW_ENABLE_PDF_OCR` |
-| 3.6 Document compare and change tracking | Done | `POST /magic/compare` | `GLOW_ENABLE_DOCUMENT_COMPARE` |
+| 3.3 Table accessibility advisor | Done | Core accessibility intelligence endpoint (`POST /magic/table-advisor`) | `GLOW_ENABLE_TABLE_ADVISOR` |
+| 3.4 Reading order detection (PDF) | Done | Core accessibility intelligence endpoint (`POST /magic/reading-order`) | `GLOW_ENABLE_READING_ORDER_DETECTION` |
+| 3.5 OCR for scanned PDFs | Done | Core accessibility intelligence endpoint (`POST /magic/ocr`) | `GLOW_ENABLE_PDF_OCR` |
+| 3.6 Document compare and change tracking | Done | Core accessibility intelligence endpoint (`POST /magic/compare`) | `GLOW_ENABLE_DOCUMENT_COMPARE` |
 | 4.3 ODT export in Convert | Done | Convert direction `to-odt` | `GLOW_ENABLE_CONVERT_TO_ODT` |
 | 7.3 Cognitive accessibility profile | Done | Settings + global UI behavior | `GLOW_ENABLE_COGNITIVE_PROFILE` |
 | 7.4 Forced-colors/high-contrast support | Done | Global CSS + base template mode classes | `GLOW_ENABLE_FORCED_COLORS_MODE` |
-| 9.1 Public rule contribution portal | Done | `/magic` + `/magic/rules/propose` + `/magic/rules/proposals` | `GLOW_ENABLE_RULE_CONTRIBUTIONS` |
+| 9.1 Public rule contribution portal | Done | Rules contribution surface + `/magic/rules/propose` + `/magic/rules/proposals` | `GLOW_ENABLE_RULE_CONTRIBUTIONS` |
 
 Implementation notes:
 
-- The 3.x document intelligence features (3.3–3.6) are exposed both as JSON
-  APIs and as interactive launch forms in the new **Magic Lab** page.
+- The 3.x document intelligence features (3.3–3.6) are core platform
+  capabilities exposed as JSON APIs and interactive forms.
 - OCR is intentionally best-effort and reports clear unavailability when
   runtime dependencies are missing (`pytesseract`, Pillow, or Tesseract binary).
 - The pronunciation dictionary is active in typed preview, voice preview,
   typed download, document preview, document download, and stream routes.
+
+Deployment requirements and dependencies for this core pack:
+
+- `pandoc` required for `to-odt` conversion and Speech document rendering
+- `python3-louis` + `liblouis-bin` + `liblouis-dev` + `liblouis-data` required
+  for Braille translation and back-translation quality scoring
+- Optional OCR stack: Tesseract binary + `pytesseract` + Pillow; if missing,
+  OCR endpoints return explicit unavailability status rather than failing hard
+- Frontend/CI dependencies: `@axe-core/playwright`, `@axe-core/cli`, Playwright
+  Chromium, and SARIF converter script remain required in accessibility CI
+
+GitHub integration points (current vs planned):
+
+- Current: accessibility SARIF artifacts are uploaded to GitHub Code Scanning
+  from CI and visible in the Security tab.
+- Current: rule proposals persist locally in SQLite for moderation/review.
+- Planned: optional proposal-to-GitHub-Issue and approved-proposal-to-PR-draft
+  automation remains roadmap scope and is not yet active in v3.1.0.
 
 ### v3.0.0 Addendum (Community-driven platform milestone -- April 30, 2026)
 
