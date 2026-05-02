@@ -21,16 +21,22 @@
         }
         document.documentElement.setAttribute("data-theme", resolved);
         document.documentElement.setAttribute("data-theme-pref", p);
+
+        // Cognitive profile toggle (7.3), stored locally per browser.
+        var cog = localStorage.getItem("glow_cognitive_mode");
+        if (cog !== "on" && cog !== "off") cog = "off";
+        document.documentElement.setAttribute("data-cognitive", cog);
       } catch (e) {
         document.documentElement.setAttribute("data-theme", "light");
         document.documentElement.setAttribute("data-theme-pref", "auto");
+        document.documentElement.setAttribute("data-cognitive", "off");
       }
     })();
   </script>
   <link rel="stylesheet" href="{{ url_for('static', filename='acb-large-print.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='forms.css') }}">
 </head>
-<body class="{{ brand_theme_class }}">
+<body class="{{ brand_theme_class }}{% if feature_forced_colors_mode_enabled %} feature-forced-colors{% endif %}{% if feature_cognitive_profile_enabled %} feature-cognitive-profile{% endif %}">
   <a href="#main" class="skip-link">Skip to main content</a>
 
   <header>
@@ -58,6 +64,9 @@
         {% endif %}
         {% if feature_braille_enabled %}
         <li role="none"><a href="{{ url_for('braille.braille_form') }}" role="tab" id="tab-braille" aria-controls="main"{% if request.blueprint == 'braille' %} aria-selected="true"{% else %} aria-selected="false"{% endif %}>Braille</a></li>
+        {% endif %}
+        {% if feature_table_advisor_enabled or feature_document_compare_enabled or feature_rule_contributions_enabled %}
+        <li role="none"><a href="{{ url_for('magic.magic_home') }}" role="tab" id="tab-magic" aria-controls="main"{% if request.blueprint == 'magic' %} aria-selected="true"{% else %} aria-selected="false"{% endif %}>Magic Lab</a></li>
         {% endif %}
         {% if ai_whisperer_enabled %}
         <li role="none"><a href="{{ url_for('whisperer.whisperer_form') }}" role="tab" id="tab-whisperer" aria-controls="main"{% if request.blueprint == 'whisperer' %} aria-selected="true"{% else %} aria-selected="false"{% endif %}>{{ brand_whisperer_label }}</a></li>
@@ -104,6 +113,9 @@
         <li><a href="{{ url_for('changelog.changelog_page') }}"{% if request.blueprint == 'changelog' %} aria-current="page"{% endif %}>Changelog</a></li>
         <li><a href="{{ url_for('feedback.feedback_form') }}"{% if request.blueprint == 'feedback' %} aria-current="page"{% endif %}>Feedback</a></li>
         <li><a href="{{ url_for('status_page') }}"{% if request.endpoint == 'status_page' %} aria-current="page"{% endif %}>Server Status</a></li>
+        {% if feature_table_advisor_enabled or feature_document_compare_enabled or feature_rule_contributions_enabled %}
+        <li><a href="{{ url_for('magic.magic_home') }}"{% if request.blueprint == 'magic' %} aria-current="page"{% endif %}>Magic Lab</a></li>
+        {% endif %}
         <li><a href="{{ url_for('admin.admin_login') }}"{% if request.blueprint == 'admin' %} aria-current="page"{% endif %}>Admin Sign-In</a></li>
         <li><a href="{{ url_for('privacy.privacy_page') }}"{% if request.blueprint == 'privacy' %} aria-current="page"{% endif %}>Privacy Policy</a></li>
         <li><a href="{{ url_for('consent.consent_form') }}"{% if request.blueprint == 'consent' %} aria-current="page"{% endif %}>Terms of Use</a></li>

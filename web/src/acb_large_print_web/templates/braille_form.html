@@ -147,6 +147,20 @@
     {% endif %}
   </p>
 
+  {% if direction == 'braille-to-text' and quality_score %}
+  <section class="flash-info" aria-live="polite" aria-label="Back-translation quality score">
+    <p><strong>Back-translation quality score:</strong> {{ quality_score.score }} / 100</p>
+    <p class="help-text">Cell fidelity: {{ quality_score.cell_ratio }}% &middot; Word fidelity: {{ quality_score.word_ratio }}%</p>
+    {% if quality_score.advisories %}
+    <ul>
+      {% for item in quality_score.advisories %}
+      <li>{{ item }}</li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+  </section>
+  {% endif %}
+
   <div class="braille-result-box">
     <pre aria-label="Translation output" lang="{% if direction == 'text-to-braille' %}und-Brai{% else %}en{% endif %}">{{ result }}</pre>
   </div>

@@ -6,6 +6,9 @@
 {% block content %}
 <p><a href="{{ url_for('guidelines.guidelines_page') }}" class="back-link">&larr; Back to Guidelines</a></p>
 <p>Browse all {{ total_rules }} audit rules. Use the filters below to narrow by severity, format, profile, or category. Select any rule to expand its full description and suppression guidance.</p>
+{% if feature_rule_contributions_enabled %}
+<p><a href="{{ url_for('magic.magic_home') }}">Submit a new rule proposal</a> to the public contribution portal.</p>
+{% endif %}
 
 <div id="rules-selection-status" class="flash-info" role="status" aria-live="polite" style="display:none;"></div>
 

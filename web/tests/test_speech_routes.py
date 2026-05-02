@@ -172,3 +172,49 @@ def test_speech_prepare_propagates_extract_upload_error(
     payload = resp.get_json()
     assert payload is not None
     assert "Pandoc is required" in payload.get("error", "")
+
+
+def test_speech_stream_respects_feature_flag(client, monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setattr(
+        speech_route,
+        "_speech_flag",
+        lambda name, default=True: False if name == "GLOW_ENABLE_SPEECH_STREAM" else True,
+    )
+
+    res = client.post(
+        "/speech/stream",
+        data={"voice": "kokoro:af_bella", "text": "hello"},
+    )
+    assert res.status_code == 403
+    payload = res.get_json()
+    assert payload is not None
+    assert "disabled" in payload.get("error", "").lower()
+
+
+def test_speech_stream_uses_pronunciation_dictionary(client, monkeypatch: pytest.MonkeyPatch):
+    captured: dict[str, str] = {}
+
+    monkeypatch.setattr(
+        speech_route,
+        "_speech_flag",
+        lambda name, default=True: True,
+    )
+    monkeypatch.setattr(
+        speech_route,
+        "_apply_pronunciation_dictionary_if_enabled",
+        lambda text: text.replace("GLOW", "glow"),
+    )
+
+    def _fake_synthesize(voice_id: str, text: str, *, speed: float, pitch: int):
+        captured["text"] = text
+        return b"RIFF....WAVE", "sample.wav"
+
+    monkeypatch.setattr(speech_route, "synthesize", _fake_synthesize)
+
+    res = client.post(
+        "/speech/stream",
+        data={"voice": "kokoro:af_bella", "text": "GLOW toolkit", "speed": "1.0", "pitch": "0"},
+    )
+    assert res.status_code == 200
+    assert res.headers.get("Content-Type", "").startswith("audio/wav")
+    assert captured.get("text") == "glow toolkit"

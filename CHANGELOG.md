@@ -8,6 +8,37 @@ Releases are tagged in the [GitHub repository](https://github.com/accesswatch/ac
 
 ## [Unreleased]
 
+### Added
+
+- **Roadmap core feature regression tests.** Added
+  `web/tests/test_magic_routes.py` to cover table advisor, pronunciation
+  dictionary CRUD/preview/export, rule proposal submission/listing,
+  compare-route behavior, and feature-flag 404 gating for OCR/reading-order.
+- **ODT conversion tests.** Added `web/tests/test_convert_odt.py` to verify
+  `to-odt` conversion happy-path rendering and feature-flag enforcement.
+- **Speech streaming tests.** Extended `web/tests/test_speech_routes.py` with
+  checks for `/speech/stream` flag gating and pronunciation dictionary
+  pre-processing behavior.
+- **Admin flags coverage for roadmap core pack.** Extended
+  `web/tests/test_admin_flags.py` to assert that all 11 roadmap-core feature
+  flags render as toggleable controls in `/admin/flags`.
+
+### Changed
+
+- **Roadmap cleanup.** `roadmap.md` now removes completed v3.1.0 backlog items
+  (1.5, 2.5, 2.6, 3.3, 3.4, 3.5, 3.6, 4.3, 7.3, 7.4, 9.1) from active themes
+  and tracks them under a dedicated completed section.
+
+### Fixed
+
+- **Compare endpoint extension mismatch.** `POST /magic/compare` now uses an
+  explicit allow-list aligned with its UI and parser support (`.txt`, `.csv`,
+  `.json`, `.xml`, `.html`, `.rst`, `.odt`, `.rtf`, plus existing types)
+  instead of defaulting to the narrower upload allow-list.
+- **PyMuPDF lifecycle robustness.** `magic_features.detect_reading_order_pdf()`
+  and `magic_features.ocr_pdf()` now compute `pages_scanned` before closing
+  the document handle, avoiding access to `len(doc)` after `doc.close()`.
+
 ---
 
 ## [3.1.0] - 2026-05-01

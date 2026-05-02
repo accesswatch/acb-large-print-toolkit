@@ -68,8 +68,32 @@
         rewriteTimes();
     }
 
+    // --- 5. Cognitive profile helpers -------------------------------------
+    function cognitiveModeEnabled() {
+        try {
+            return document.documentElement.getAttribute('data-cognitive') === 'on';
+        } catch (_err) {
+            return false;
+        }
+    }
+
+    function applyCognitiveMode() {
+        if (!cognitiveModeEnabled()) return;
+        var details = document.querySelectorAll('details:not([data-keep-collapsed])');
+        Array.prototype.forEach.call(details, function (d) {
+            d.open = true;
+        });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', applyCognitiveMode);
+    } else {
+        applyCognitiveMode();
+    }
+
     window.GLOW = window.GLOW || {};
     window.GLOW.rewriteLocalTimes = rewriteTimes;
+    window.GLOW.applyCognitiveMode = applyCognitiveMode;
 
     // --- 3. Ctrl+U / Cmd+U -- focus first visible file input -----------------
     document.addEventListener('keydown', function (e) {
@@ -89,8 +113,8 @@
         if (!document.querySelector('form')) return;
         var _keepAliveInterval = setInterval(function () {
             try {
-                fetch('/health', { method: 'GET', credentials: 'same-origin' }).catch(function () {});
-            } catch (_) {}
+                fetch('/health', { method: 'GET', credentials: 'same-origin' }).catch(function () { });
+            } catch (_) { }
         }, 15 * 60 * 1000);
         // Cancel if the user navigates away cleanly
         window.addEventListener('beforeunload', function () { clearInterval(_keepAliveInterval); });

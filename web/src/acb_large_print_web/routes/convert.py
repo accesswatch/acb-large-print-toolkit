@@ -32,6 +32,7 @@ from acb_large_print.pandoc_converter import (
     PANDOC_INPUT_EXTENSIONS,
     convert_to_html,
     convert_to_docx,
+    convert_to_odt,
     convert_to_epub,
     convert_to_pdf,
     pandoc_available,
@@ -66,6 +67,7 @@ _DOWNLOAD_MIMETYPES: dict[str, str] = {
     ".html": "text/html; charset=utf-8",
     ".md": "text/markdown; charset=utf-8",
     ".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    ".odt": "application/vnd.oasis.opendocument.text",
     ".epub": "application/epub+zip",
     ".pdf": "application/pdf",
     ".zip": "application/zip",
@@ -185,6 +187,7 @@ def _template_context(**extra):
     convert_to_markdown_enabled = bool(all_flags.get("GLOW_ENABLE_CONVERT_TO_MARKDOWN", True))
     convert_to_html_enabled = bool(all_flags.get("GLOW_ENABLE_CONVERT_TO_HTML", True))
     convert_to_docx_enabled = bool(all_flags.get("GLOW_ENABLE_CONVERT_TO_DOCX", True))
+    convert_to_odt_enabled = bool(all_flags.get("GLOW_ENABLE_CONVERT_TO_ODT", True))
     convert_to_epub_enabled = bool(all_flags.get("GLOW_ENABLE_CONVERT_TO_EPUB", True))
     convert_to_pdf_enabled = bool(all_flags.get("GLOW_ENABLE_CONVERT_TO_PDF", True))
     convert_to_pipeline_enabled = bool(all_flags.get("GLOW_ENABLE_CONVERT_TO_PIPELINE", True))
@@ -204,6 +207,7 @@ def _template_context(**extra):
         convert_to_markdown_enabled=convert_to_markdown_enabled,
         convert_to_html_enabled=convert_to_html_enabled,
         convert_to_docx_enabled=convert_to_docx_enabled,
+        convert_to_odt_enabled=convert_to_odt_enabled,
         convert_to_epub_enabled=convert_to_epub_enabled,
         convert_to_pdf_enabled=convert_to_pdf_enabled,
         convert_to_pipeline_enabled=convert_to_pipeline_enabled,
@@ -283,6 +287,7 @@ def convert_submit():
             "to-html": ctx["convert_to_html_enabled"],
             "to-html-cms": ctx["export_html_enabled"],
             "to-docx": ctx["convert_to_docx_enabled"],
+            "to-odt": ctx["convert_to_odt_enabled"],
             "to-epub": ctx["convert_to_epub_enabled"],
             "to-pdf": ctx["convert_to_pdf_enabled"],
             "to-pipeline": ctx["convert_to_pipeline_enabled"],
@@ -409,6 +414,47 @@ def convert_submit():
             output_path, _ = convert_to_docx(
                 pandoc_input,
                 output_path=docx_output,
+                title=title,
+            )
+            result_token = token
+            token = None
+            return _convert_result_response(
+                result_token,
+                download_name=output_path.name,
+                preview_type="binary",
+                original_stem=saved_path.stem,
+            )
+        elif direction == "to-odt":
+            if not pandoc_available():
+                raise UploadError(
+                    "Pandoc is not installed on the server. "
+                    "ODT conversion is unavailable."
+                )
+            if ext not in _PANDOC_EFFECTIVE_EXTENSIONS:
+                raise UploadError(
+                    f"File type '{ext}' cannot be converted to ODT. "
+                    f"Supported: {', '.join(sorted(_PANDOC_EFFECTIVE_EXTENSIONS))}."
+                )
+            if ext == ".odt":
+                raise UploadError(
+                    "The input file is already an OpenDocument Text (.odt). "
+                    "Choose a different input format."
+                )
+            pandoc_input = saved_path
+            if ext in _CHAIN_VIA_MARKDOWN:
+                md_intermediate = temp_dir / f"{saved_path.stem}-extracted.md"
+                current_app.logger.info(
+                    "CONVERT two_stage ext=%s stage1=markitdown->md", ext
+                )
+                pandoc_input, _ = convert_to_markdown(
+                    saved_path, output_path=md_intermediate
+                )
+            odt_output = temp_dir / f"{saved_path.stem}.odt"
+            user_title = request.form.get("title", "").strip()
+            title = user_title or saved_path.stem.replace("-", " ").replace("_", " ")
+            output_path, _ = convert_to_odt(
+                pandoc_input,
+                output_path=odt_output,
                 title=title,
             )
             result_token = token

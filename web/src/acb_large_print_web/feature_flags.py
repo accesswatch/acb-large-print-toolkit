@@ -109,6 +109,39 @@ _DEFAULTS: dict[str, bool] = {
     "GLOW_ENABLE_BRAILLE": True,
     "GLOW_ENABLE_EXPORT_BRAILLE": True,
     "GLOW_ENABLE_CONVERT_TO_BRAILLE": True,
+
+    # 1.5 Back-translation quality scoring
+    "GLOW_ENABLE_BRAILLE_BACK_TRANSLATION_SCORE": True,
+
+    # 2.5 Pronunciation dictionary management
+    "GLOW_ENABLE_SPEECH_PRONUNCIATION_DICTIONARY": True,
+
+    # 2.6 Real-time streaming speech preview
+    "GLOW_ENABLE_SPEECH_STREAM": True,
+
+    # 3.3 Table accessibility advisor
+    "GLOW_ENABLE_TABLE_ADVISOR": True,
+
+    # 3.4 Reading order detection and correction
+    "GLOW_ENABLE_READING_ORDER_DETECTION": True,
+
+    # 3.5 OCR for scanned PDFs
+    "GLOW_ENABLE_PDF_OCR": True,
+
+    # 3.6 Document comparison and change tracking
+    "GLOW_ENABLE_DOCUMENT_COMPARE": True,
+
+    # 4.3 OpenDocument Text export
+    "GLOW_ENABLE_CONVERT_TO_ODT": True,
+
+    # 7.3 Cognitive accessibility profile
+    "GLOW_ENABLE_COGNITIVE_PROFILE": True,
+
+    # 7.4 High-contrast and forced-colors mode
+    "GLOW_ENABLE_FORCED_COLORS_MODE": True,
+
+    # 9.1 Public rule contribution portal
+    "GLOW_ENABLE_RULE_CONTRIBUTIONS": True,
 }
 
 

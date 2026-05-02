@@ -14,6 +14,8 @@ Routes:
 
 from __future__ import annotations
 
+import difflib
+
 from flask import (
     Blueprint,
     Response,
@@ -62,6 +64,7 @@ def _render(
     error: str | None = None,
     form_values: dict | None = None,
     filename: str | None = None,
+    quality_score: dict | None = None,
 ) -> str:
     return render_template(
         "braille_form.html",
@@ -75,7 +78,39 @@ def _render(
         error=error,
         form_values=form_values or _EMPTY_FORM,
         filename=filename,
+        quality_score=quality_score,
     )
+
+
+def _back_translation_quality_score(input_braille: str, output_text: str, grade: str) -> dict:
+    """1.5 Compute a round-trip quality score for Braille back-translation."""
+    try:
+        # Re-translate output text to braille and compare against the source.
+        roundtrip_braille = text_to_braille(output_text, grade=grade, output_format="unicode")
+    except Exception:
+        roundtrip_braille = ""
+
+    src = "".join(input_braille.split())
+    rt = "".join(str(roundtrip_braille).split())
+    cell_ratio = difflib.SequenceMatcher(None, src, rt).ratio() if src and rt else 0.0
+
+    words_src = output_text.split()
+    words_rt = braille_to_text(roundtrip_braille, grade=grade).split() if roundtrip_braille else []
+    word_ratio = difflib.SequenceMatcher(None, words_src, words_rt).ratio() if words_src and words_rt else 0.0
+
+    score = int(round(((cell_ratio * 0.7) + (word_ratio * 0.3)) * 100))
+    advisories: list[str] = []
+    if score < 85:
+        advisories.append("Back-translation fidelity is reduced; review contractions and punctuation carefully.")
+    if grade in {"ueb_g2", "ebae_g2"}:
+        advisories.append("Grade 2 contractions are inherently lossy; exact reverse mapping is not always possible.")
+
+    return {
+        "score": max(0, min(score, 100)),
+        "cell_ratio": round(cell_ratio * 100, 2),
+        "word_ratio": round(word_ratio * 100, 2),
+        "advisories": advisories,
+    }
 
 
 @braille_bp.route("/", methods=["GET", "POST"])
@@ -126,6 +161,7 @@ def braille_form():
     error: str | None = None
     result: str | None = None
     filename: str | None = None
+    quality_score: dict | None = None
 
     # Prefer file upload over textarea
     uploaded_file = request.files.get("input_file")
@@ -183,6 +219,12 @@ def braille_form():
             else:
                 result = braille_to_text(input_text, grade=grade)
                 filename = "back_translation.txt"
+                try:
+                    from ..feature_flags import get_all_flags as _flags
+                    if _flags().get("GLOW_ENABLE_BRAILLE_BACK_TRANSLATION_SCORE", True):
+                        quality_score = _back_translation_quality_score(input_text, result, grade)
+                except Exception:
+                    quality_score = None
         except BrailleError as exc:
             error = str(exc)
         except Exception:
@@ -206,6 +248,7 @@ def braille_form():
         error=error,
         form_values=form_values,
         filename=filename,
+        quality_score=quality_score,
     )
 
 

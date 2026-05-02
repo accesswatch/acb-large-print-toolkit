@@ -199,6 +199,17 @@ def create_app(config: dict | None = None) -> Flask:
             ctx["feature_braille_enabled"] = bool(all_flags.get("GLOW_ENABLE_BRAILLE", True))
             ctx["feature_export_braille_enabled"] = bool(all_flags.get("GLOW_ENABLE_EXPORT_BRAILLE", True))
             ctx["feature_convert_to_braille_enabled"] = bool(all_flags.get("GLOW_ENABLE_CONVERT_TO_BRAILLE", True))
+            ctx["feature_braille_back_translation_score_enabled"] = bool(all_flags.get("GLOW_ENABLE_BRAILLE_BACK_TRANSLATION_SCORE", True))
+            ctx["feature_speech_pronunciation_dictionary_enabled"] = bool(all_flags.get("GLOW_ENABLE_SPEECH_PRONUNCIATION_DICTIONARY", True))
+            ctx["feature_speech_stream_enabled"] = bool(all_flags.get("GLOW_ENABLE_SPEECH_STREAM", True))
+            ctx["feature_table_advisor_enabled"] = bool(all_flags.get("GLOW_ENABLE_TABLE_ADVISOR", True))
+            ctx["feature_reading_order_detection_enabled"] = bool(all_flags.get("GLOW_ENABLE_READING_ORDER_DETECTION", True))
+            ctx["feature_pdf_ocr_enabled"] = bool(all_flags.get("GLOW_ENABLE_PDF_OCR", True))
+            ctx["feature_document_compare_enabled"] = bool(all_flags.get("GLOW_ENABLE_DOCUMENT_COMPARE", True))
+            ctx["feature_convert_to_odt_enabled"] = bool(all_flags.get("GLOW_ENABLE_CONVERT_TO_ODT", True))
+            ctx["feature_cognitive_profile_enabled"] = bool(all_flags.get("GLOW_ENABLE_COGNITIVE_PROFILE", True))
+            ctx["feature_forced_colors_mode_enabled"] = bool(all_flags.get("GLOW_ENABLE_FORCED_COLORS_MODE", True))
+            ctx["feature_rule_contributions_enabled"] = bool(all_flags.get("GLOW_ENABLE_RULE_CONTRIBUTIONS", True))
         except Exception:
             # Best-effort injection; templates should handle missing keys gracefully
             pass
@@ -362,6 +373,7 @@ def create_app(config: dict | None = None) -> Flask:
     from .routes.rules_ref import rules_ref_bp
     from .routes.speech import speech_bp
     from .routes.braille import braille_bp
+    from .routes.magic import magic_bp
 
     app.register_blueprint(main_bp)
     app.register_blueprint(consent_bp, url_prefix="/consent")
@@ -387,6 +399,7 @@ def create_app(config: dict | None = None) -> Flask:
     app.register_blueprint(rules_ref_bp, url_prefix="/rules")
     app.register_blueprint(speech_bp, url_prefix="/speech")
     app.register_blueprint(braille_bp, url_prefix="/braille")
+    app.register_blueprint(magic_bp, url_prefix="/magic")
 
     # Configure speech engine model directory from instance path
     try:

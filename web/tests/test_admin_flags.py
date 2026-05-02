@@ -49,6 +49,22 @@ def test_admin_flags_page_shows_backend_and_flags(client, monkeypatch):
     assert "GLOW_ENABLE_AI" in html
     # The admin page should render a readable label and accessible input id
     assert_flag_rendered(html, "GLOW_ENABLE_AI")
+    # New roadmap core feature flags should be listed as first-class toggles.
+    for flag in (
+        "GLOW_ENABLE_BRAILLE_BACK_TRANSLATION_SCORE",
+        "GLOW_ENABLE_SPEECH_PRONUNCIATION_DICTIONARY",
+        "GLOW_ENABLE_SPEECH_STREAM",
+        "GLOW_ENABLE_TABLE_ADVISOR",
+        "GLOW_ENABLE_READING_ORDER_DETECTION",
+        "GLOW_ENABLE_PDF_OCR",
+        "GLOW_ENABLE_DOCUMENT_COMPARE",
+        "GLOW_ENABLE_CONVERT_TO_ODT",
+        "GLOW_ENABLE_COGNITIVE_PROFILE",
+        "GLOW_ENABLE_FORCED_COLORS_MODE",
+        "GLOW_ENABLE_RULE_CONTRIBUTIONS",
+    ):
+        assert flag in html
+        assert_flag_rendered(html, flag)
 
 
 def test_admin_update_flags_persists(app, client, monkeypatch):

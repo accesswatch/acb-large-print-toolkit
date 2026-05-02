@@ -17,6 +17,16 @@
       <label><input type="radio" name="glow_theme" value="light" data-theme-control> Light mode</label>
       <label><input type="radio" name="glow_theme" value="dark" data-theme-control> Dark mode</label>
     </div>
+
+    {% if feature_cognitive_profile_enabled %}
+    <div class="checkbox-group" style="margin-top: 1rem;">
+      <label>
+        <input type="checkbox" id="settings-cognitive-mode" name="settings_cognitive_mode">
+        Plain &amp; Simple mode (Cognitive accessibility profile)
+      </label>
+    </div>
+    <p class="help-text">When enabled, GLOW reduces visual complexity and expands help sections automatically.</p>
+    {% endif %}
   </fieldset>
 
   <fieldset>
@@ -232,6 +242,7 @@
       {% if feature_convert_to_markdown_enabled %}<label><input type="radio" name="settings_convert_direction" value="to-markdown"{% if not ns.default_set %} checked{% set ns.default_set = true %}{% endif %}> Plain text (Markdown)</label>{% endif %}
       {% if feature_convert_to_html_enabled %}<label><input type="radio" name="settings_convert_direction" value="to-html"{% if not ns.default_set %} checked{% set ns.default_set = true %}{% endif %}> Accessible web page (HTML)</label>{% endif %}
       {% if feature_convert_to_docx_enabled %}<label><input type="radio" name="settings_convert_direction" value="to-docx"{% if not ns.default_set %} checked{% set ns.default_set = true %}{% endif %}> Word document (.docx)</label>{% endif %}
+      {% if feature_convert_to_odt_enabled %}<label><input type="radio" name="settings_convert_direction" value="to-odt"{% if not ns.default_set %} checked{% set ns.default_set = true %}{% endif %}> OpenDocument Text (.odt)</label>{% endif %}
       {% if feature_convert_to_epub_enabled %}<label><input type="radio" name="settings_convert_direction" value="to-epub"{% if not ns.default_set %} checked{% set ns.default_set = true %}{% endif %}> EPUB 3 e-book</label>{% endif %}
       {% if feature_convert_to_pdf_enabled %}<label><input type="radio" name="settings_convert_direction" value="to-pdf"{% if not ns.default_set %} checked{% set ns.default_set = true %}{% endif %}> Accessible PDF</label>{% endif %}
       {% if feature_convert_to_pipeline_enabled %}<label><input type="radio" name="settings_convert_direction" value="to-pipeline"{% if not ns.default_set %} checked{% set ns.default_set = true %}{% endif %}> EPUB or DAISY format</label>{% endif %}
@@ -346,6 +357,29 @@
     <p>Privacy first: nothing is saved unless you opt in. If you turn off Remember my settings, GLOW removes the saved local storage entry and returns to standard defaults.</p>
   </details>
 </form>
+
+{% if feature_cognitive_profile_enabled %}
+<script>
+(function () {
+  var checkbox = document.getElementById('settings-cognitive-mode');
+  if (!checkbox) return;
+  try {
+    checkbox.checked = localStorage.getItem('glow_cognitive_mode') === 'on';
+  } catch (_e) {
+    checkbox.checked = false;
+  }
+  checkbox.addEventListener('change', function () {
+    try {
+      localStorage.setItem('glow_cognitive_mode', checkbox.checked ? 'on' : 'off');
+      document.documentElement.setAttribute('data-cognitive', checkbox.checked ? 'on' : 'off');
+      if (window.GLOW && typeof window.GLOW.applyCognitiveMode === 'function') {
+        window.GLOW.applyCognitiveMode();
+      }
+    } catch (_e) {}
+  });
+}());
+</script>
+{% endif %}
 
 <style>
 .settings-rule-grid {

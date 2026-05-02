@@ -19,6 +19,7 @@ from pathlib import Path
 
 from flask import (
     Blueprint,
+    Response,
     current_app,
     jsonify,
     make_response,
@@ -44,6 +45,7 @@ from ..speech import (
     wav_duration_seconds,
     wav_bytes_to_mp3,
 )
+from ..magic_features import apply_pronunciation_dictionary
 from .. import speech_metrics
 from ..upload import CONVERT_EXTENSIONS, UploadError, get_temp_dir, validate_upload
 
@@ -76,6 +78,15 @@ def _convert_disabled_response():
 
 def _export_disabled_response():
     return jsonify({"error": "Speech export is currently disabled by the site administrator."}), 403
+
+
+def _apply_pronunciation_dictionary_if_enabled(text: str) -> str:
+    if not _speech_flag("GLOW_ENABLE_SPEECH_PRONUNCIATION_DICTIONARY"):
+        return text
+    try:
+        return apply_pronunciation_dictionary(text)
+    except Exception:
+        return text
 
 
 # ---------------------------------------------------------------------------
@@ -133,6 +144,8 @@ def speech_preview():
     if not text:
         return jsonify({"error": "Text must not be empty."}), 400
 
+    text = _apply_pronunciation_dictionary_if_enabled(text)
+
     try:
         wav_bytes, _ = synthesize(voice_id, text, speed=speed, pitch=pitch)
     except SpeechError as exc:
@@ -176,8 +189,9 @@ def voice_preview():
     if not voice_id:
         return jsonify({"error": "No voice selected."}), 400
 
+    demo_text = _apply_pronunciation_dictionary_if_enabled(_DEFAULT_DEMO_TEXT)
     try:
-        wav_bytes, _ = synthesize(voice_id, _DEFAULT_DEMO_TEXT, speed=1.0, pitch=0)
+        wav_bytes, _ = synthesize(voice_id, demo_text, speed=1.0, pitch=0)
     except SpeechError as exc:
         return jsonify({"error": str(exc)}), 503
 
@@ -218,6 +232,7 @@ def speech_download():
     if not text:
         return jsonify({"error": "Text must not be empty."}), 400
 
+    text = _apply_pronunciation_dictionary_if_enabled(text)
     try:
         wav_bytes, wav_filename = synthesize(voice_id, text, speed=speed, pitch=pitch)
     except SpeechError as exc:
@@ -373,6 +388,7 @@ def speech_document_preview():
     try:
         text = _load_extracted_text(token)
         preview_text = first_sentences(text, count=2, max_chars=500)
+        preview_text = _apply_pronunciation_dictionary_if_enabled(preview_text)
         if not preview_text:
             return jsonify({"error": "No preview text available."}), 400
         wav_bytes, _ = synthesize(voice_id, preview_text, speed=speed, pitch=pitch)
@@ -417,7 +433,7 @@ def speech_document_download():
         return jsonify({"error": "No voice selected."}), 400
 
     try:
-        text = _load_extracted_text(token)
+        text = _apply_pronunciation_dictionary_if_enabled(_load_extracted_text(token))
         started = time.monotonic()
         wav_bytes, wav_filename = synthesize_document_text(
             voice_id,
@@ -475,6 +491,49 @@ def speech_document_download():
     resp.headers["Content-Length"] = len(content)
     resp.headers["Cache-Control"] = "no-store"
     return resp
+
+
+@speech_bp.route("/stream", methods=["POST"])
+@limiter.limit("12 per minute")
+def speech_stream():
+    """2.6 Real-time streaming preview endpoint.
+
+    Returns chunked WAV bytes so playback can start before the full payload
+    is buffered by the client.
+    """
+    if not _speech_flag("GLOW_ENABLE_SPEECH_STREAM"):
+        return jsonify({"error": "Streaming preview is disabled by the site administrator."}), 403
+    if not _speech_flag("GLOW_ENABLE_CONVERT_TO_SPEECH"):
+        return _convert_disabled_response()
+
+    voice_id = (request.form.get("voice") or "").strip()
+    text = (request.form.get("text") or "").strip()[:_TEXT_MAX_LEN]
+    speed = _parse_float(request.form.get("speed"), default=1.0, lo=0.5, hi=2.0)
+    pitch = _parse_int(request.form.get("pitch"), default=0, lo=-20, hi=20)
+
+    if not voice_id:
+        return jsonify({"error": "No voice selected."}), 400
+    if not text:
+        return jsonify({"error": "Text must not be empty."}), 400
+
+    text = _apply_pronunciation_dictionary_if_enabled(text)
+    try:
+        wav_bytes, _ = synthesize(voice_id, text, speed=speed, pitch=pitch)
+    except SpeechError as exc:
+        return jsonify({"error": str(exc)}), 503
+
+    def _iter_chunks(data: bytes, chunk_size: int = 32 * 1024):
+        for i in range(0, len(data), chunk_size):
+            yield data[i : i + chunk_size]
+
+    return Response(
+        _iter_chunks(wav_bytes),
+        mimetype="audio/wav",
+        headers={
+            "Cache-Control": "no-store",
+            "Transfer-Encoding": "chunked",
+        },
+    )
 
 
 # ---------------------------------------------------------------------------

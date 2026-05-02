@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+
+{% block title %}Magic Lab{% endblock %}
+{% block heading %}Magic Lab{% endblock %}
+
+{% block content %}
+<p>Experimental accessibility intelligence workspace. Every module below is feature-flagged and can be enabled per deployment.</p>
+
+<section>
+  <h2>Speech Pronunciation Dictionary</h2>
+  {% if flags.get('GLOW_ENABLE_SPEECH_PRONUNCIATION_DICTIONARY', True) %}
+  <form id="pron-form" method="post" action="{{ url_for('magic.pronunciation_upsert') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <label for="term">Term</label>
+    <input id="term" name="term" type="text" required>
+    <label for="replacement">Replacement</label>
+    <input id="replacement" name="replacement" type="text" required>
+    <label for="notes">Notes</label>
+    <input id="notes" name="notes" type="text">
+    <button class="btn-secondary" type="submit">Save Pronunciation</button>
+    <a class="btn-secondary" href="{{ url_for('magic.pronunciation_export') }}">Export CSV</a>
+  </form>
+  <ul>
+    {% for row in pronunciations %}
+    <li><strong>{{ row.term }}</strong> → {{ row.replacement }}{% if row.notes %} ({{ row.notes }}){% endif %}</li>
+    {% else %}
+    <li>No pronunciation overrides yet.</li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p>Feature disabled by administrator.</p>
+  {% endif %}
+</section>
+
+<section>
+  <h2>Rule Contribution Portal</h2>
+  {% if flags.get('GLOW_ENABLE_RULE_CONTRIBUTIONS', True) %}
+  <form id="rule-form" method="post" action="{{ url_for('magic.rules_propose') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <label for="title">Proposal title</label>
+    <input id="title" name="title" type="text" required>
+    <label for="severity">Suggested severity</label>
+    <select id="severity" name="severity">
+      <option value="low">Low</option>
+      <option value="medium" selected>Medium</option>
+      <option value="high">High</option>
+      <option value="critical">Critical</option>
+    </select>
+    <label for="rule-id">Suggested rule id</label>
+    <input id="rule-id" name="suggested_rule_id" type="text" placeholder="ACB-EXAMPLE-RULE">
+    <label for="rationale">Rationale</label>
+    <textarea id="rationale" name="rationale" rows="4" required></textarea>
+    <button class="btn-secondary" type="submit">Submit Proposal</button>
+  </form>
+  <h3>Recent proposals</h3>
+  <ul>
+    {% for p in proposals %}
+    <li><strong>#{{ p.id }}</strong> {{ p.title }} — {{ p.severity|upper }} ({{ p.status }})</li>
+    {% else %}
+    <li>No proposals submitted yet.</li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p>Feature disabled by administrator.</p>
+  {% endif %}
+</section>
+
+<section>
+  <h2>Programmatic Endpoints</h2>
+  <p>These roadmap endpoints are available as JSON APIs and interactive launch forms below.</p>
+
+  {% if flags.get('GLOW_ENABLE_TABLE_ADVISOR', True) %}
+  <h3>3.3 Table Accessibility Advisor</h3>
+  <form method="post" action="{{ url_for('magic.table_advisor') }}" target="_blank">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <label for="table-text">Paste HTML or Markdown table markup</label>
+    <textarea id="table-text" name="text" rows="5" placeholder="| Name | Role |\n|---|---|\n| Alex | Chair |"></textarea>
+    <button class="btn-secondary" type="submit">Analyze Table Accessibility</button>
+  </form>
+  {% endif %}
+
+  {% if flags.get('GLOW_ENABLE_READING_ORDER_DETECTION', True) %}
+  <h3>3.4 Reading Order Detection</h3>
+  <form method="post" action="{{ url_for('magic.reading_order') }}" enctype="multipart/form-data" target="_blank">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <label for="reading-order-doc">Upload PDF</label>
+    <input id="reading-order-doc" name="document" type="file" accept=".pdf">
+    <button class="btn-secondary" type="submit">Inspect Reading Order</button>
+  </form>
+  {% endif %}
+
+  {% if flags.get('GLOW_ENABLE_PDF_OCR', True) %}
+  <h3>3.5 OCR for Scanned PDFs</h3>
+  <form method="post" action="{{ url_for('magic.ocr_route') }}" enctype="multipart/form-data" target="_blank">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <label for="ocr-doc">Upload PDF</label>
+    <input id="ocr-doc" name="document" type="file" accept=".pdf">
+    <button class="btn-secondary" type="submit">Run OCR Extract</button>
+  </form>
+  {% endif %}
+
+  {% if flags.get('GLOW_ENABLE_DOCUMENT_COMPARE', True) %}
+  <h3>3.6 Document Compare and Change Tracking</h3>
+  <form method="post" action="{{ url_for('magic.compare_route') }}" enctype="multipart/form-data" target="_blank">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <label for="compare-a">Document A</label>
+    <input id="compare-a" name="document_a" type="file" accept=".docx,.pdf,.md,.txt,.html,.epub,.pptx,.xlsx,.csv,.json,.xml">
+    <label for="compare-b">Document B</label>
+    <input id="compare-b" name="document_b" type="file" accept=".docx,.pdf,.md,.txt,.html,.epub,.pptx,.xlsx,.csv,.json,.xml">
+    <button class="btn-secondary" type="submit">Compare Documents</button>
+  </form>
+  {% endif %}
+
+  <ul>
+    <li><code>POST /magic/table-advisor</code> (3.3)</li>
+    <li><code>POST /magic/reading-order</code> (3.4)</li>
+    <li><code>POST /magic/ocr</code> (3.5)</li>
+    <li><code>POST /magic/compare</code> (3.6)</li>
+    <li><code>POST /speech/stream</code> (2.6)</li>
+  </ul>
+</section>
+{% endblock %}

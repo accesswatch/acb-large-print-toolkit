@@ -12,6 +12,57 @@ html {
 body {
   /* ACB: Arial, 18pt, not bold */
   font-family: Arial, sans-serif;
+
+/* --- 7.3 Cognitive accessibility profile (plain & simple mode) --- */
+html[data-cognitive="on"] body {
+  letter-spacing: 0.08em;
+  word-spacing: 0.10em;
+  line-height: 1.7;
+}
+
+html[data-cognitive="on"] .help-text,
+html[data-cognitive="on"] .flash-info,
+html[data-cognitive="on"] .flash-warning,
+html[data-cognitive="on"] .flash-error {
+  font-size: 1.35rem;
+}
+
+html[data-cognitive="on"] details {
+  border-left: 0.35rem solid #0b7285;
+  padding-left: 0.7rem;
+}
+
+/* Open all details in cognitive mode unless explicitly opted out. */
+html[data-cognitive="on"] details:not([data-keep-collapsed]) {
+  display: block;
+}
+
+/* --- 7.4 High contrast and forced colors support --- */
+@media (forced-colors: active) {
+  .feature-forced-colors * {
+    forced-color-adjust: auto;
+  }
+
+  .feature-forced-colors a {
+    color: LinkText;
+  }
+
+  .feature-forced-colors .btn-primary,
+  .feature-forced-colors .btn-secondary,
+  .feature-forced-colors button,
+  .feature-forced-colors input,
+  .feature-forced-colors select,
+  .feature-forced-colors textarea {
+    border: 2px solid ButtonText;
+    background: ButtonFace;
+    color: ButtonText;
+  }
+
+  .feature-forced-colors .skip-link:focus {
+    outline: 3px solid Highlight;
+    outline-offset: 2px;
+  }
+}
   font-size: 1.5rem;            /* 24px -- ACB 18pt (18 × 1.333) */
   font-weight: 400;
   color: #1a1a1a;               /* near-black -- WCAG 7:1 on white */

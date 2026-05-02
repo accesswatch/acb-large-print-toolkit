@@ -475,6 +475,81 @@ def convert_to_docx(
     return output_path, size
 
 
+def convert_to_odt(
+    src_path: Path,
+    output_path: Path | None = None,
+    *,
+    title: str | None = None,
+    lang: str = "en",
+) -> tuple[Path, int]:
+    """Convert a document to OpenDocument Text (.odt) via Pandoc."""
+    src_path = Path(src_path)
+    if not src_path.exists():
+        raise FileNotFoundError(f"File not found: {src_path}")
+
+    ext = src_path.suffix.lower()
+    if ext not in PANDOC_INPUT_EXTENSIONS:
+        raise ValueError(
+            f"Cannot convert '{ext}' files to ODT. "
+            f"Supported: {', '.join(sorted(PANDOC_INPUT_EXTENSIONS))}"
+        )
+    if ext == ".odt":
+        raise ValueError(
+            "The input file is already an OpenDocument Text (.odt). "
+            "Choose a different input format."
+        )
+
+    exe = shutil.which("pandoc")
+    if not exe:
+        raise RuntimeError(
+            "Pandoc is not installed. "
+            "Install it from https://pandoc.org/installing.html"
+        )
+
+    if output_path is None:
+        output_path = src_path.with_suffix(".odt")
+    else:
+        output_path = Path(output_path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    if title is None:
+        title = src_path.stem.replace("-", " ").replace("_", " ")
+
+    input_fmt = _INPUT_FORMAT.get(ext, "markdown")
+    cmd = [
+        exe,
+        "--standalone",
+        "--from",
+        input_fmt,
+        "--to",
+        "odt",
+        "--metadata",
+        f"title={title}",
+        "--metadata",
+        f"lang={lang}",
+        "--output",
+        str(output_path),
+        str(src_path),
+    ]
+
+    log.info("Running: %s", " ".join(cmd))
+    result = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
+    if result.returncode != 0:
+        stderr = result.stderr.strip()
+        raise RuntimeError(
+            f"Pandoc conversion failed (exit code {result.returncode}): {stderr}"
+        )
+
+    size = output_path.stat().st_size
+    log.info(
+        "Pandoc conversion complete: %s -> %s (%d bytes)",
+        src_path.name,
+        output_path.name,
+        size,
+    )
+    return output_path, size
+
+
 def convert_to_epub(
     src_path: Path,
     output_path: Path | None = None,

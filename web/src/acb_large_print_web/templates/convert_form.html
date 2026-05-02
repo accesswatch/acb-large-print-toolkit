@@ -22,6 +22,7 @@
   convert_to_markdown_enabled
   or convert_to_html_enabled
   or convert_to_docx_enabled
+  or convert_to_odt_enabled
   or convert_to_epub_enabled
   or convert_to_pdf_enabled
   or speech_enabled
@@ -101,6 +102,17 @@
         <span>
           <strong>Word document (.docx)</strong><br>
           Create a Word document from Markdown, reStructuredText, OpenDocument, Rich Text, ePub, PowerPoint, Excel, PDF, and more. Good for delivering editable documents or collaborating with people who use Microsoft Word.
+          {% if not pandoc_installed %}<br><em>This option is temporarily unavailable on this server.</em>{% endif %}
+        </span>
+      </label>
+      {% endif %}
+
+      {% if convert_to_odt_enabled %}
+      <label>
+        <input type="radio" name="direction" value="to-odt"{% if not ns.default_set and pandoc_installed %} checked{% set ns.default_set = true %}{% endif %}{% if not pandoc_installed %} disabled{% endif %}>
+        <span>
+          <strong>OpenDocument Text (.odt)</strong><br>
+          Create an OpenDocument Text file for LibreOffice/OpenOffice workflows. Preserves headings, lists, and links from source documents.
           {% if not pandoc_installed %}<br><em>This option is temporarily unavailable on this server.</em>{% endif %}
         </span>
       </label>
@@ -456,6 +468,7 @@
     'to-html':     new Set({{ pandoc_effective_exts | tojson }}),
     'to-html-cms': new Set(['.docx']),
     'to-docx':     new Set({{ pandoc_effective_exts | tojson | replace('".docx"', '"__excluded__"') }}),
+    'to-odt':      new Set({{ pandoc_effective_exts | tojson | replace('".odt"', '"__excluded__"') }}),
     'to-epub':     new Set({{ pandoc_effective_exts | tojson | replace('".epub"', '"__excluded__"') }}),
     'to-pdf':      new Set({{ pandoc_effective_exts | tojson }}),
     'to-pipeline': new Set({{ pipeline_exts | tojson }}),
