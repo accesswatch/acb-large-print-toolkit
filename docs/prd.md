@@ -1,15 +1,33 @@
 # PRD: GLOW (Guided Layout & Output Workflow) Accessibility Web Application
 
-**Status:** Implemented (v3.0.0 released)
+**Status:** Implemented (v3.1.0 released)
 **Author:** Jeff Bishop, BITS
-**Date:** April 30, 2026
-**Target:** v3.0.0 (community-driven release with full Speech Studio platform, analytics, and workflow unification)
+**Date:** May 1, 2026
+**Target:** v3.1.0 (Braille Studio, Speech Studio Pandoc pipeline, Status page, axe-core CI audit)
 
 ---
 
 ## Implementation Status
 
 The Flask web application has been built and is ready for deployment. All core features described in this PRD are implemented. The following table summarizes what shipped in each release:
+
+### v3.1.0 Addendum (Braille Studio, Speech Pandoc pipeline, Status page, axe-core CI audit -- May 1, 2026)
+
+Eleven new features and improvements shipped in v3.1.0. All are enabled by default and fully backward-compatible with v3.0.0 deployments.
+
+| Feature | Status | Notes |
+|---------|--------|-------|
+| Braille Studio | Done | New `/braille/` tool for BANA-compliant text-to-braille and braille-to-text translation via liblouis. Supports UEB G1/G2 (current BANA standard), EBAE G1/G2 (legacy interop), and Computer Braille Code (8-dot). Unicode Braille (U+2800-U+28FF) and BRF ASCII output. BRF wrapped at BANA-standard 40 cells/line with optional embosser pagination. Tab in main navigation; download endpoints for `.brl`/`.brf`/`.txt`. Graceful degradation when liblouis absent. Feature-gated via `GLOW_ENABLE_BRAILLE` (default: enabled). 30 req/min rate limit. |
+| Speech Studio Pandoc document preparation | Done | Uploaded documents (`.md`, `.rst`, `.docx`, `.pptx`, `.xlsx`, `.pdf`, `.epub`, etc.) are converted to normalized plain text via Pandoc before synthesis, guaranteeing consistent narration quality across all source formats. `.txt` files bypass Pandoc. Missing Pandoc returns a clear diagnostic error naming the dependency. |
+| Speech Studio staged workflow UI | Done | The document narration flow now starts with an explicit **Next: Prepare text and estimate** step. Preview and download controls are hidden (semantic `hidden`/`aria-hidden` + JS) until preparation completes. Preparation errors auto-scroll into view. |
+| Server Status page (`/status`) | Done | New human-readable diagnostics page at `/status` rendering health probes, service readiness (speech, braille), feature flag summary, full flag list, and raw JSON output. Exempt from the consent gate so operators can reach it without a browser session. |
+| axe-core/Playwright WCAG 2.2 AA audit suite | Done | `web/e2e/tests/axe-audit.spec.mjs` audits all 17 public routes at WCAG 2.2 AA level on every CI run. Covers Speech Studio, Braille Studio, Settings, Guidelines, User Guide, About, Changelog, FAQ, Rules Reference, Feedback, Privacy Policy, Status, and the original 5 core routes. Also audits 4 interactive states: help accordions open, unavailability banners, dark mode, and mobile viewport (375x812 px). Critical/serious violations fail the build; moderate/minor surface as advisory warnings. SARIF upload to GitHub Code Scanning unchanged. |
+| Speech and Braille feature flags (export/convert) | Done | Added `GLOW_ENABLE_EXPORT_SPEECH`, `GLOW_ENABLE_CONVERT_TO_SPEECH`, `GLOW_ENABLE_EXPORT_BRAILLE`, and `GLOW_ENABLE_CONVERT_TO_BRAILLE` (all default: enabled). Route guards apply at synthesis, document-prepare, and download endpoints. All four flags visible in Admin feature flags UI. |
+| Speech and Braille health readiness in `/health` | Done | `/health` now reports `services.speech`, `services.braille`, `readiness.speech`, and `readiness.braille` alongside the existing feature flag data so operational issues are visible without guessing. |
+| liblouis Docker deployment hardening | Done | `web/Dockerfile` installs `liblouis-bin`, `liblouis-dev`, `liblouis-data`, and `python3-louis` via apt, then copies the `louis` module into the pip Python 3.13 site-packages. A build-time smoke test (`python3 -c "import louis"`) fails the Docker build immediately if the binding is absent. The stale `pylouis` stub PyPI package has been removed. |
+| CI Pandoc integration | Done | `deploy.yml`, `feature-flags-ci.yml`, and `accessibility-regression.yml` all install Pandoc via `apt-get` before the web test suite so the full Speech Studio document-prepare path is exercised in CI. |
+| Speech route regression test suite | Done | `web/tests/test_speech_routes.py` covers staged prepare action rendering, Pandoc-required behavior, text extraction paths, and persistence of `speech_rendered.txt` and `speech_source.txt` artifacts. |
+| `/status` consent exemption and braille nav regression test | Done | `/status` added to consent-gate exemptions. `test_main_nav_shows_braille_tab_when_enabled` added to `web/tests/test_braille.py` to guard tab visibility when `GLOW_ENABLE_BRAILLE` is set. |
 
 ### v3.0.0 Addendum (Community-driven platform milestone -- April 30, 2026)
 

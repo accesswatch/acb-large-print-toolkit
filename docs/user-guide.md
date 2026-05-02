@@ -120,7 +120,84 @@ Audit reports now group all occurrences of the same finding under a single row w
 
 ---
 
+## What's New in GLOW 3.1.0
+
+GLOW 3.1.0 ships 11 new features: a full Braille Studio, Speech Studio document preparation via Pandoc, a Server Status diagnostic page, a comprehensive axe-core WCAG 2.2 AA CI audit of GLOW itself, and a set of operational hardening improvements for speech, braille, Docker, and CI.
+
+### Braille Studio: translate to and from braille
+
+A new dedicated tool at **/braille/** translates English text to braille and braille back to English, using the same liblouis engine trusted by screen readers worldwide.
+
+**Supported table codes:**
+
+| Code | Standard |
+|------|---------|
+| UEB Grade 1 | Unified English Braille, uncontracted (current BANA standard) |
+| UEB Grade 2 | Unified English Braille, contracted (current BANA standard) |
+| EBAE Grade 1 | English Braille American Edition, uncontracted (legacy) |
+| EBAE Grade 2 | English Braille American Edition, contracted (legacy) |
+| Computer Braille | BANA Computer Braille Code, 8-dot (code and terminal content) |
+
+**Output formats:**
+
+- **Unicode Braille** (U+2800--U+28FF) -- paste directly into documents, emails, or websites
+- **BRF (ASCII)** -- Braille Ready Format, BANA-standard 40 cells per line, optional embosser pagination with form feeds; download as `.brf`
+
+**Back-translation:** Paste or upload a `.brl` or `.brf` file and get back readable English text. Useful for verifying embosser output or proofreading contracted braille.
+
+**How to reach it:** Click the **Braille** tab in the main navigation. Braille Studio can be enabled or disabled via the `GLOW_ENABLE_BRAILLE` feature flag (default: enabled). When liblouis is not installed, the page explains the dependency clearly rather than showing a broken tool.
+
+### Speech Studio: document narration via Pandoc
+
+When you upload a document to Speech Studio, GLOW now extracts the text using Pandoc before synthesis. This applies to every non-plain-text format: `.md`, `.rst`, `.docx`, `.pptx`, `.xlsx`, `.pdf`, `.epub`, and others. The result is consistent, clean narration regardless of the original format. Plain `.txt` files bypass Pandoc and work on servers where Pandoc is unavailable.
+
+**What you see in the UI:** The narration flow now uses an explicit two-stage design:
+
+1. Upload your document or type your text.
+2. Click **Next: Prepare text and estimate** -- GLOW extracts the text, measures it, and shows an estimated narration time.
+3. **Preview first sentences** or **Download full document audio** -- these controls appear only after preparation succeeds.
+
+If preparation fails (for example, Pandoc is not installed on this server), an error message scrolls into view explaining the issue.
+
+### Server Status page
+
+A new **/status** page gives operators and administrators a human-readable view of everything the `/health` endpoint reports:
+
+- Service probes (speech engine, braille library)
+- Service readiness (speech, braille)
+- Feature flag summary
+- Full feature flag list with current values
+- Raw JSON output for automated monitoring
+
+The Status page is accessible without completing the consent flow, so it works in automated health checks, uptime monitors, and Docker orchestration probes.
+
+### GLOW now audits itself with axe-core on every CI run
+
+Every CI build now runs an `@axe-core/playwright` audit of GLOW's own interface at WCAG 2.2 AA level. All 17 public routes are audited:
+
+The original 5 (home, audit, fix, convert, template) plus Speech Studio, Braille Studio, Settings, Guidelines, User Guide, About, Changelog, FAQ, Rules Reference, Feedback, Privacy Policy, and Status.
+
+Four interactive states are also tested: help accordions open, service-unavailable banners, dark mode (`prefers-color-scheme: dark`), and mobile viewport (375 x 812 px).
+
+Critical and serious violations fail the CI build immediately with selector-level diagnostic output. Moderate and minor violations appear as advisory warnings. Results feed the existing SARIF upload to GitHub Code Scanning, so findings are visible in the repository Security tab.
+
+### New feature flags for speech and braille export/conversion
+
+Four granular feature flags let operators control which speech and braille endpoints are active:
+
+| Flag | Controls | Default |
+|------|---------|---------|
+| `GLOW_ENABLE_CONVERT_TO_SPEECH` | Text extraction and narration preparation endpoints | Enabled |
+| `GLOW_ENABLE_EXPORT_SPEECH` | Audio file download endpoints | Enabled |
+| `GLOW_ENABLE_CONVERT_TO_BRAILLE` | Braille translation endpoint | Enabled |
+| `GLOW_ENABLE_EXPORT_BRAILLE` | Braille result download endpoints | Enabled |
+
+All four are visible and toggleable in the Admin feature flags panel.
+
+---
+
 ## 1. Quick Start
+
 
 If you have never used GLOW before -- or you are not sure which tool to reach for -- this section will get you from upload to result in under five minutes, and give you the vocabulary to use the rest of the guide.
 

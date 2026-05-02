@@ -8,6 +8,10 @@ Releases are tagged in the [GitHub repository](https://github.com/accesswatch/ac
 
 ## [Unreleased]
 
+---
+
+## [3.1.0] - 2026-05-01
+
 ### Added
 
 - **Comprehensive axe-core WCAG 2.2 AA audit of GLOW itself.**
