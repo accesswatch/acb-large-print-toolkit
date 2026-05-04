@@ -155,6 +155,61 @@ def _is_auditable_output(filename: str) -> bool:
     return suffix in ALLOWED_EXTENSIONS
 
 
+def _try_pandoc_or_docx_chain(pandoc_fn, src_path: Path, temp_dir: Path, *args, **kwargs):
+    """Call *pandoc_fn* with *src_path*; on DOCX format error retry via MarkItDown chain.
+
+    When Pandoc rejects a ``.docx`` file (e.g. Strict Open XML schema produced
+    by Google Workspace add-ins), automatically falls back to the two-stage
+    MarkItDown → Markdown → Pandoc chain and retries the conversion.
+
+    Args:
+        pandoc_fn: The Pandoc conversion function to call (e.g. convert_to_html).
+        src_path: The original source path passed as the first positional arg.
+        temp_dir: Temp directory for writing the intermediate Markdown file.
+        *args: Remaining positional arguments for *pandoc_fn* (skipping src_path).
+        **kwargs: Keyword arguments for *pandoc_fn*.
+
+    Returns:
+        The return value of *pandoc_fn*.
+
+    Raises:
+        UploadError: If the conversion fails even after the fallback.
+    """
+    try:
+        return pandoc_fn(src_path, *args, **kwargs)
+    except RuntimeError as exc:
+        # Only attempt fallback for .docx input files
+        if src_path.suffix.lower() != ".docx":
+            raise UploadError(str(exc)) from exc
+
+        # Determine whether the error looks like a DOCX format/read failure
+        # so we don't mask genuine Pandoc bugs or misconfiguration.
+        err_lower = str(exc).lower()
+        docx_read_keywords = (
+            "not valid", "not a valid", "docx", "openxml", "parsexml",
+            "zip file", "bad zip", "corrupt", "strict", "transitional",
+        )
+        if not any(kw in err_lower for kw in docx_read_keywords):
+            raise UploadError(str(exc)) from exc
+
+        current_app.logger.warning(
+            "CONVERT docx_fallback: Pandoc failed reading %s (%s); retrying via MarkItDown",
+            src_path.name,
+            exc,
+        )
+        try:
+            md_fallback = temp_dir / f"{src_path.stem}-docx-fallback.md"
+            pandoc_input, _ = convert_to_markdown(src_path, output_path=md_fallback)
+            return pandoc_fn(pandoc_input, *args, **kwargs)
+        except Exception as exc2:
+            raise UploadError(
+                f"Could not convert '{src_path.name}': Pandoc could not read it as a "
+                f"Word document, and the MarkItDown fallback also failed. "
+                f"Try re-saving the file as a standard .docx in Microsoft Word. "
+                f"(Details: {exc2})"
+            ) from exc2
+
+
 def _convert_result_response(
     token_value: str,
     *,
@@ -346,8 +401,8 @@ def convert_submit():
             if not acb_format:
                 css_path = _NO_ACB_CSS_SENTINEL
 
-            output_path, text = convert_to_html(
-                pandoc_input,
+            output_path, text = _try_pandoc_or_docx_chain(
+                convert_to_html, pandoc_input, temp_dir,
                 output_path=html_output,
                 title=title,
                 css_path=css_path,
@@ -452,8 +507,8 @@ def convert_submit():
             odt_output = temp_dir / f"{saved_path.stem}.odt"
             user_title = request.form.get("title", "").strip()
             title = user_title or saved_path.stem.replace("-", " ").replace("_", " ")
-            output_path, _ = convert_to_odt(
-                pandoc_input,
+            output_path, _ = _try_pandoc_or_docx_chain(
+                convert_to_odt, pandoc_input, temp_dir,
                 output_path=odt_output,
                 title=title,
             )
@@ -499,8 +554,8 @@ def convert_submit():
             css_path = None
             if not acb_format:
                 css_path = _NO_ACB_CSS_SENTINEL
-            output_path, _ = convert_to_epub(
-                pandoc_input,
+            output_path, _ = _try_pandoc_or_docx_chain(
+                convert_to_epub, pandoc_input, temp_dir,
                 output_path=epub_output,
                 title=title,
                 css_path=css_path,
@@ -548,8 +603,8 @@ def convert_submit():
             css_path = None
             if not acb_format:
                 css_path = _NO_ACB_CSS_SENTINEL
-            output_path, _ = convert_to_pdf(
-                pandoc_input,
+            output_path, _ = _try_pandoc_or_docx_chain(
+                convert_to_pdf, pandoc_input, temp_dir,
                 output_path=pdf_output,
                 title=title,
                 css_path=css_path,

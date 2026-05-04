@@ -122,6 +122,17 @@ def validate_upload(
         # Office Open XML and ePub files are ZIP archives starting with PK
         if header[:2] != b"PK":
             fmt_label = _FORMAT_LABELS.get(ext, "Office document")
+            # Detect legacy Compound File Binary Format (.doc, .xls, .ppt)
+            _CFBF_MAGIC = b"\xD0\xCF\x11\xE0"
+            if header[:4] == _CFBF_MAGIC:
+                cleanup_token(token)
+                raise UploadError(
+                    f"The uploaded file appears to be a legacy binary Office document "
+                    f"(.doc/.xls/.ppt) saved with a '{ext}' extension. "
+                    "Please open the file in Microsoft Word and use "
+                    "File → Save As → Word Document (.docx) to save it in the "
+                    "current format, then upload again."
+                )
             cleanup_token(token)
             raise UploadError(
                 f"The uploaded file does not appear to be a valid {fmt_label}. "

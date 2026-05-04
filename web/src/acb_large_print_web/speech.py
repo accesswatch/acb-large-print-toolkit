@@ -9,13 +9,16 @@ Document-to-audio conversion is deferred to v3.0.0.
 
 from __future__ import annotations
 
+import base64
 import io
+import json
 import os
 import re
 import threading
 import urllib.request
 import wave as _wave
 from pathlib import Path
+from typing import Generator
 
 # ---------------------------------------------------------------------------
 # Voice catalogues
@@ -576,6 +579,185 @@ def synthesize_document_text(
         wav_segments.append(wav_bytes)
 
     return _concat_wav_segments(wav_segments), filename
+
+
+def _make_streaming_wav_header(nchannels: int, sampwidth: int, framerate: int) -> bytes:
+    """Build a WAV file header with 0xFFFFFFFF placeholder sizes for streaming.
+
+    Most browsers and audio players accept this "unknown/streaming" size marker
+    and handle the stream by reading until the connection closes.
+
+    Args:
+        nchannels: Number of audio channels (1 = mono, 2 = stereo).
+        sampwidth: Sample width in bytes (1 = 8-bit, 2 = 16-bit).
+        framerate: Sample rate in Hz (e.g. 22050, 44100).
+
+    Returns:
+        44-byte WAV header bytes suitable for streaming output.
+    """
+    import struct
+
+    byte_rate = framerate * nchannels * sampwidth
+    block_align = nchannels * sampwidth
+    bits_per_sample = sampwidth * 8
+
+    # fmt sub-chunk (PCM, 16 bytes)
+    fmt_chunk = struct.pack(
+        "<HHIIHH",
+        1,             # PCM audio format
+        nchannels,
+        framerate,
+        byte_rate,
+        block_align,
+        bits_per_sample,
+    )
+    # RIFF and data chunk sizes set to 0xFFFFFFFF (streaming / unknown size)
+    header = (
+        b"RIFF"
+        + struct.pack("<I", 0xFFFFFFFF)   # overall RIFF size (unknown)
+        + b"WAVE"
+        + b"fmt "
+        + struct.pack("<I", 16)            # fmt chunk size (always 16 for PCM)
+        + fmt_chunk
+        + b"data"
+        + struct.pack("<I", 0xFFFFFFFF)   # data chunk size (unknown)
+    )
+    return header
+
+
+def stream_synthesize_wav(
+    voice_id: str,
+    text: str,
+    *,
+    speed: float = 1.0,
+    pitch: int = 0,
+) -> Generator[bytes, None, None]:
+    """Yield WAV bytes incrementally as each synthesis chunk completes.
+
+    Sends the WAV file header (with streaming placeholder sizes) immediately,
+    then yields raw PCM bytes for every synthesised text chunk.  This keeps
+    the HTTP connection alive through the entire synthesis, preventing reverse
+    proxy timeouts on long documents.
+
+    Consumers should serve the generator with ``Transfer-Encoding: chunked``
+    and ``Content-Type: audio/wav``.  The resulting WAV is playable by all
+    modern browsers and audio players even though the size fields contain the
+    0xFFFFFFFF streaming sentinel.
+
+    Args:
+        voice_id: Voice identifier in ``"engine:voice"`` format.
+        text: Pre-extracted document text (will be normalised and chunked).
+        speed: Playback speed multiplier (0.5–2.0).
+        pitch: Pitch shift in semitones (−20 to +20).
+
+    Yields:
+        WAV header bytes (on first yield), then PCM audio bytes per chunk.
+
+    Raises:
+        SpeechError: On synthesis failure or empty input.
+    """
+    normalized = normalize_document_text(text)
+    if not normalized:
+        raise SpeechError("Document text is empty after extraction.")
+    if len(normalized) > _MAX_DOCUMENT_TEXT_CHARS:
+        raise SpeechError(
+            "Document is too long for one speech render. "
+            "Please shorten the source text or convert in sections."
+        )
+
+    chunks = split_text_for_synthesis(normalized)
+    if not chunks:
+        raise SpeechError("Document text is empty after chunking.")
+
+    header_sent = False
+    nchannels: int = 0
+    sampwidth: int = 0
+    framerate: int = 0
+
+    for chunk in chunks:
+        wav_bytes, _ = synthesize(voice_id, chunk, speed=speed, pitch=pitch)
+        with _wave.open(io.BytesIO(wav_bytes), "rb") as wf:
+            if not header_sent:
+                nchannels = wf.getnchannels()
+                sampwidth = wf.getsampwidth()
+                framerate = wf.getframerate()
+                yield _make_streaming_wav_header(nchannels, sampwidth, framerate)
+                header_sent = True
+            pcm = wf.readframes(wf.getnframes())
+        yield pcm
+
+
+def stream_synthesize_sse(
+    voice_id: str,
+    text: str,
+    *,
+    speed: float = 1.0,
+    pitch: int = 0,
+) -> Generator[str, None, None]:
+    """Yield Server-Sent Events for progressive in-browser audio playback.
+
+    Each synthesised chunk is emitted as an SSE ``audio_chunk`` event
+    containing a JSON payload with the base64-encoded WAV bytes.  The client
+    can decode each chunk with ``AudioContext.decodeAudioData()`` and schedule
+    it for immediate playback, providing a "listen live" experience.
+
+    Event sequence::
+
+        event: audio_config
+        data: {"totalChunks": N}
+
+        event: audio_chunk
+        data: {"index": 0, "total": N, "wav": "<base64>"}
+
+        event: audio_chunk
+        data: {"index": 1, "total": N, "wav": "<base64>"}
+
+        ...
+
+        event: done
+        data: {"totalChunks": N}
+
+    On synthesis error, an ``error`` event is emitted instead of ``done``::
+
+        event: error
+        data: {"message": "..."}
+
+    Args:
+        voice_id: Voice identifier in ``"engine:voice"`` format.
+        text: Pre-extracted document text.
+        speed: Playback speed multiplier (0.5–2.0).
+        pitch: Pitch shift in semitones (−20 to +20).
+
+    Yields:
+        SSE-formatted strings (each ending with ``\\n\\n``).
+    """
+    normalized = normalize_document_text(text)
+    if not normalized:
+        yield f"event: error\ndata: {json.dumps({'message': 'Document text is empty after extraction.'})}\n\n"
+        return
+    if len(normalized) > _MAX_DOCUMENT_TEXT_CHARS:
+        yield f"event: error\ndata: {json.dumps({'message': 'Document is too long for live streaming. Use the Download option instead.'})}\n\n"
+        return
+
+    chunks = split_text_for_synthesis(normalized)
+    if not chunks:
+        yield f"event: error\ndata: {json.dumps({'message': 'Document text is empty after chunking.'})}\n\n"
+        return
+
+    total = len(chunks)
+    yield f"event: audio_config\ndata: {json.dumps({'totalChunks': total})}\n\n"
+
+    for i, chunk in enumerate(chunks):
+        try:
+            wav_bytes, _ = synthesize(voice_id, chunk, speed=speed, pitch=pitch)
+        except SpeechError as exc:
+            yield f"event: error\ndata: {json.dumps({'message': str(exc)})}\n\n"
+            return
+        b64 = base64.b64encode(wav_bytes).decode("ascii")
+        payload = json.dumps({"index": i, "total": total, "wav": b64})
+        yield f"event: audio_chunk\ndata: {payload}\n\n"
+
+    yield f"event: done\ndata: {json.dumps({'totalChunks': total})}\n\n"
 
 
 def _synthesize_kokoro(voice: str, text: str, speed: float) -> bytes:

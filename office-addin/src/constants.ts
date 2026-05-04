@@ -1387,6 +1387,42 @@ export const AUDIT_RULES: Record<string, RuleDef> = {
         autoFixable: true,
         formats: DOCX_ONLY,
     },
+    "ACB-PAGE-SIZE": {
+        ruleId: "ACB-PAGE-SIZE",
+        description: "Page size must be US Letter (8.5 × 11 in) for ACB large print",
+        severity: Severity.MEDIUM,
+        acbReference: "ACB Guidelines Section 2: Page Setup",
+        category: RuleCategory.ACB,
+        autoFixable: true,
+        formats: DOCX_ONLY,
+    },
+    "ACB-MULTIPLE-COLUMNS": {
+        ruleId: "ACB-MULTIPLE-COLUMNS",
+        description: "Multi-column layout is not permitted in ACB large print documents",
+        severity: Severity.HIGH,
+        acbReference: "ACB Guidelines Section 3: Layout",
+        category: RuleCategory.ACB,
+        autoFixable: false,
+        formats: DOCX_ONLY,
+    },
+    "ACB-FONT-COLOR": {
+        ruleId: "ACB-FONT-COLOR",
+        description: "Text must use black (automatic) font color — colored text reduces contrast",
+        severity: Severity.MEDIUM,
+        acbReference: "ACB Guidelines Section 4: Typography; WCAG 1.4.3 Contrast",
+        category: RuleCategory.ACB,
+        autoFixable: true,
+        formats: DOCX_ONLY,
+    },
+    "ACB-STRIKETHROUGH": {
+        ruleId: "ACB-STRIKETHROUGH",
+        description: "Strikethrough text should be removed — it is confusing for low-vision readers",
+        severity: Severity.LOW,
+        acbReference: "ACB Guidelines Section 4: Typography",
+        category: RuleCategory.ACB,
+        autoFixable: false,
+        formats: DOCX_ONLY,
+    },
 };
 
 /** Convenience sets for category-based filtering. */

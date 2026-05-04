@@ -21,6 +21,11 @@ log = logging.getLogger("acb_large_print")
 # separate prose output to avoid duplication).
 _TABLE_OVERLAP_THRESHOLD = 0.4
 
+# Bullet characters commonly used as list markers in PDF text
+_PDF_BULLET_CHARS = frozenset(
+    "\u2022\u2023\u25cf\u25cb\u25e6\u2043\u2219\u00b7\u25aa\u25a0\u25ba"
+)
+
 
 def _resolve_whisper_cache_dir() -> Path:
     """Return a writable cache directory for Whisper/Hugging Face assets."""
@@ -284,12 +289,119 @@ def _format_table_as_markdown(table) -> str:
     return "\n".join(lines)
 
 
-def _pdf_to_markdown_with_tables(src_path: Path) -> str | None:
-    """Extract a PDF to Markdown, preserving table structure via PyMuPDF.
+def _yaml_safe(text: str) -> str:
+    """Wrap a string in YAML double-quotes, escaping backslashes and quotes."""
+    return '"' + text.replace("\\", "\\\\").replace('"', '\\"') + '"'
 
-    Uses PyMuPDF's ``Page.find_tables()`` to detect tables and render them as
-    Markdown pipe tables.  Non-table text is extracted in reading order
-    (top-to-bottom, left-to-right) and interleaved with the table Markdown.
+
+def _pdf_block_to_markdown(block: dict, body_size: float) -> str:
+    """Convert a PyMuPDF text-block dict to a Markdown paragraph or heading.
+
+    Heading level is inferred from the block's maximum font size relative to
+    *body_size* (the document's modal body font size).  Bold spans produce
+    ``**text**``; italic spans use ``<u>text</u>`` (ACB underline convention).
+    Leading bullet-character lines become ``- item`` list entries.
+
+    Args:
+        block: PyMuPDF block dict with ``"lines"`` containing ``"spans"``.
+        body_size: Modal body font size used to compute the heading-level ratio.
+
+    Returns:
+        Markdown string, or empty string when the block has no visible text.
+    """
+    import re as _re
+
+    lines = block.get("lines", [])
+    if not lines:
+        return ""
+
+    all_spans = [
+        span
+        for line in lines
+        for span in line.get("spans", [])
+        if span.get("text", "").strip()
+    ]
+    if not all_spans:
+        return ""
+
+    max_size = max((s.get("size", 0.0) for s in all_spans), default=0.0)
+    ratio = max_size / body_size if body_size > 0 else 1.0
+
+    # Map size ratio to heading level
+    if ratio >= 1.4:
+        heading_level = 1
+    elif ratio >= 1.2:
+        heading_level = 2
+    elif ratio >= 1.05:
+        heading_level = 3
+    else:
+        heading_level = 0
+
+    if heading_level > 0:
+        # Headings: plain text only (no inline markup)
+        words = " ".join(
+            " ".join(span.get("text", "") for span in line.get("spans", []))
+            for line in lines
+        ).split()
+        return "#" * heading_level + " " + " ".join(words)
+
+    # Body text: preserve bold / italic inline formatting
+    result_lines: list[str] = []
+    for line in lines:
+        parts: list[str] = []
+        for span in line.get("spans", []):
+            text = span.get("text", "")
+            if not text:
+                continue
+            flags = span.get("flags", 0)
+            is_bold = bool(flags & 16)   # PyMuPDF bit 4 = bold
+            is_italic = bool(flags & 2)  # PyMuPDF bit 1 = italic
+            stripped = text.strip()
+            if not stripped:
+                parts.append(text)
+                continue
+            leading = text[: len(text) - len(text.lstrip())]
+            trailing = text[len(text.rstrip()):]
+            if is_bold:
+                parts.append(f"{leading}**{stripped}**{trailing}")
+            elif is_italic:
+                # ACB toolkit convention: italic → underline
+                parts.append(f"{leading}<u>{stripped}</u>{trailing}")
+            else:
+                parts.append(text)
+        result_lines.append("".join(parts))
+
+    full_text = " ".join(result_lines).strip()
+    if not full_text:
+        return ""
+
+    # Bullet list detection (common PDF bullet characters)
+    if full_text[0] in _PDF_BULLET_CHARS:
+        return "- " + full_text[1:].lstrip()
+
+    # Numbered list detection (e.g. "1. " or "2) ")
+    if _re.match(r"^\d{1,3}[.)]\s", full_text):
+        return full_text  # GFM/Pandoc will render this as an ordered list
+
+    return full_text
+
+
+def _pdf_to_markdown_structured(src_path: Path) -> str | None:
+    """Extract a PDF to structured Markdown using PyMuPDF.
+
+    Two-pass extraction:
+
+    **Pass 1 – statistics**: all text spans are scanned to determine the modal
+    (most common by character count) body font size.
+
+    **Pass 2 – content**: text blocks are classified as headings (font-size
+    ratio ≥ 1.05×), bold/italic inline spans, bullet/numbered list items, or
+    plain body paragraphs.  Tables are detected using the ``"lines"`` strategy
+    first; if a page has no line-bordered tables the ``"text"`` strategy is
+    retried so borderless and lightly-bordered tables are also captured.
+
+    PDF metadata (title, author, subject) is emitted as a YAML front-matter
+    block so that downstream Pandoc conversions can set the document title.
 
     Returns ``None`` when PyMuPDF (``fitz``) is not importable, signalling the
     caller to fall back to MarkItDown's text-only extraction.
@@ -298,9 +410,11 @@ def _pdf_to_markdown_with_tables(src_path: Path) -> str | None:
         src_path: Path to the PDF file.
 
     Returns:
-        Markdown string with table structure preserved, or ``None`` if PyMuPDF
-        is unavailable or the document cannot be opened.
+        Structured Markdown string, or ``None`` if PyMuPDF is unavailable or
+        the document cannot be opened.
     """
+    from collections import Counter
+
     try:
         import fitz  # type: ignore[import-untyped]  # PyMuPDF
     except ImportError:
@@ -317,64 +431,149 @@ def _pdf_to_markdown_with_tables(src_path: Path) -> str | None:
         )
         return None
 
-    pages_md: list[str] = []
-
     try:
+        # ------------------------------------------------------------
+        # YAML front matter from PDF metadata
+        # ------------------------------------------------------------
+        meta = doc.metadata or {}
+        yaml_fields: list[str] = []
+        raw_title = (meta.get("title") or "").strip()
+        raw_author = (meta.get("author") or "").strip()
+        raw_subject = (meta.get("subject") or "").strip()
+        if raw_title:
+            yaml_fields.append(f"title: {_yaml_safe(raw_title)}")
+        if raw_author:
+            yaml_fields.append(f"author: {_yaml_safe(raw_author)}")
+        if raw_subject:
+            yaml_fields.append(f"description: {_yaml_safe(raw_subject)}")
+        yaml_fields.append('lang: "en"')
+        front_matter = "---\n" + "\n".join(yaml_fields) + "\n---\n\n"
+
+        # ------------------------------------------------------------
+        # Pass 1: determine modal body font size
+        # ------------------------------------------------------------
+        size_counter: Counter = Counter()
         for page in doc:
+            for block in page.get_text("dict").get("blocks", []):
+                if block.get("type") != 0:
+                    continue
+                for line in block.get("lines", []):
+                    for span in line.get("spans", []):
+                        size = span.get("size", 0.0)
+                        text = span.get("text", "")
+                        if size > 4 and text.strip():
+                            size_counter[round(size, 1)] += len(text.strip())
+
+        body_size: float = size_counter.most_common(1)[0][0] if size_counter else 10.0
+        log.debug("PDF body font size detected: %.1f pt", body_size)
+
+        # ------------------------------------------------------------
+        # Pass 2: extract content with structure
+        # ------------------------------------------------------------
+        pages_md: list[str] = []
+
+        for page in doc:
+            # Table detection: try "lines" (border-based) first; fall back
+            # to "text" (position-based) for borderless / lightly bordered tables.
+            tables: list = []
             try:
-                tbl_finder = page.find_tables()
-                tables = list(tbl_finder.tables) if tbl_finder else []
+                tf = page.find_tables()
+                tables = list(tf.tables) if tf else []
             except Exception:
                 tables = []
 
             if not tables:
-                text = page.get_text("text").strip()
-                if text:
-                    pages_md.append(text)
-                continue
+                try:
+                    tf2 = page.find_tables(strategy="text")
+                    tables = list(tf2.tables) if tf2 else []
+                    if tables:
+                        log.debug(
+                            "Page %d: no line-bordered tables; found %d via text strategy",
+                            page.number + 1,
+                            len(tables),
+                        )
+                except Exception:
+                    tables = []
 
-            # Collect text blocks (block_type 0 = text, 1 = image)
-            raw_blocks = page.get_text("blocks")
-            text_blocks = [b for b in raw_blocks if b[6] == 0]
+            # Structured text extraction
+            page_dict = page.get_text("dict")
+            raw_text_blocks = [
+                b for b in page_dict.get("blocks", []) if b.get("type") == 0
+            ]
 
-            # Build a list of (top_y, kind, content) for sorting into reading order
             items: list[tuple[float, str, object]] = []
-
-            for block in text_blocks:
-                bx0, by0, bx1, by1, block_text, _, _ = block
-                block_text = block_text.strip()
-                if not block_text:
-                    continue
-                # Skip text that lives inside a table's bounding box to avoid
-                # duplicate content – find_tables() already captures it.
+            for block in raw_text_blocks:
+                bbox = block.get("bbox", (0.0, 0.0, 0.0, 0.0))
+                bx0, by0, bx1, by1 = bbox
+                # Skip text inside table bounding boxes to avoid duplicate content
                 if any(
                     _bbox_overlaps_table((bx0, by0, bx1, by1), tbl.bbox)
                     for tbl in tables
                 ):
                     continue
-                items.append((by0, "text", block_text))
+                items.append((by0, "block", block))
 
             for tbl in tables:
                 items.append((tbl.bbox[1], "table", tbl))
 
-            # Sort in reading order: top-to-bottom (primary), left-to-right (secondary)
+            # Sort in reading order (top-to-bottom)
             items.sort(key=lambda x: x[0])
 
             page_parts: list[str] = []
             for _, kind, content in items:
-                if kind == "text":
-                    page_parts.append(str(content))
-                else:
-                    md_table = _format_table_as_markdown(content)
+                if kind == "table":
+                    md_table = _format_table_as_markdown(content)  # type: ignore[arg-type]
                     if md_table:
                         page_parts.append(md_table)
+                else:
+                    md_block = _pdf_block_to_markdown(content, body_size)  # type: ignore[arg-type]
+                    if md_block:
+                        page_parts.append(md_block)
 
             if page_parts:
                 pages_md.append("\n\n".join(page_parts))
+
+        return front_matter + "\n\n".join(pages_md)
+
     finally:
         doc.close()
 
-    return "\n\n".join(pages_md)
+
+def _docx_mammoth_fallback(src_path: Path) -> str:
+    """Extract Markdown from a DOCX via mammoth when MarkItDown returns empty text.
+
+    Handles non-standard OOXML structures produced by some third-party tools
+    (e.g. Google Workspace add-ins, Strict Open XML schema) that python-docx /
+    MarkItDown may not traverse correctly.
+
+    Args:
+        src_path: Path to the .docx file.
+
+    Returns:
+        Markdown string (may be empty if mammoth also finds no content).
+    """
+    try:
+        import mammoth  # type: ignore[import-untyped]
+    except ImportError:
+        log.debug("mammoth not available; skipping DOCX fallback extraction")
+        return ""
+
+    try:
+        with open(src_path, "rb") as fh:
+            result = mammoth.convert_to_markdown(fh)
+        text = result.value or ""
+        if text.strip():
+            log.info(
+                "mammoth fallback succeeded for %s (%d chars)", src_path.name, len(text)
+            )
+        else:
+            log.warning(
+                "mammoth fallback also returned empty text for %s", src_path.name
+            )
+        return text
+    except Exception as exc:
+        log.warning("mammoth fallback failed for %s: %s", src_path.name, exc)
+        return ""
 
 
 def convert_to_markdown(
@@ -422,15 +621,15 @@ def convert_to_markdown(
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
-    # For PDFs, attempt table-aware extraction via PyMuPDF first.
-    # This preserves table structure as Markdown pipe tables so that downstream
-    # conversions (e.g. to Word or HTML via Pandoc) include the tables.
+    # For PDFs, attempt structured extraction via PyMuPDF first.
+    # This preserves table structure, headings, bold text, and metadata so
+    # downstream conversions (e.g. to Word or HTML via Pandoc) retain structure.
     if ext == ".pdf":
-        text = _pdf_to_markdown_with_tables(src_path)
+        text = _pdf_to_markdown_structured(src_path)
         if text is not None:
             output_path.write_text(text, encoding="utf-8")
             log.info(
-                "PDF table-aware extraction complete: %s -> %s (%d characters)",
+                "PDF structured extraction complete: %s -> %s (%d characters)",
                 src_path.name,
                 output_path.name,
                 len(text),
@@ -451,6 +650,18 @@ def convert_to_markdown(
     md = MarkItDown(enable_plugins=False)
     result = md.convert(str(src_path))
     text = result.text_content or ""
+
+    # For DOCX files: when MarkItDown returns empty text, fall back to mammoth.
+    # Mammoth handles non-standard OOXML structures (Strict Open XML schema,
+    # SDT-heavy documents, Google Workspace add-in output) that python-docx /
+    # MarkItDown may not traverse correctly.
+    if ext == ".docx" and not text.strip():
+        log.info(
+            "MarkItDown returned empty for %s; trying mammoth fallback", src_path.name
+        )
+        fallback = _docx_mammoth_fallback(src_path)
+        if fallback.strip():
+            text = fallback
 
     output_path.write_text(text, encoding="utf-8")
     log.info("Conversion complete: %d characters written", len(text))

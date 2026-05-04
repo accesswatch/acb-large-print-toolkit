@@ -593,6 +593,247 @@ def _check_hyphenation(doc: Document, result: AuditResult) -> None:
             )
 
 
+def _check_line_spacing(doc: Document, result: AuditResult) -> None:
+    """Check paragraph line spacing at the style and paragraph levels.
+
+    ACB guidelines require line spacing to be set to the prescribed multiple
+    (``C.LINE_SPACING_MULTIPLE``, typically 1.5× or "Multiple 1.5").  The
+    check inspects:
+      1. Named styles (Normal, Heading 1-6, Body Text, etc.)
+      2. Direct paragraph formatting overrides
+    """
+    from docx.oxml.ns import qn as _qn
+    from docx.shared import Pt
+
+    # Helper: read a spacing element's w:line and w:lineRule
+    def _spacing_vals(elem):
+        sp = elem.find(_qn("w:spacing"))
+        if sp is None:
+            return None, None
+        line = sp.get(_qn("w:line"))
+        rule = sp.get(_qn("w:lineRule"), "auto")
+        return line, rule
+
+    _TOLERANCE = 0.05  # allow 5% deviation from expected multiple
+    _EXPECTED = C.LINE_SPACING_MULTIPLE  # e.g. 1.5
+    # Word stores "Multiple N" as N * 240 twips (w:lineRule="auto")
+    _EXPECTED_TWIPS = int(_EXPECTED * 240)
+
+    def _is_bad_spacing(line_str: str | None, rule: str | None) -> bool:
+        if line_str is None:
+            return False
+        rule = (rule or "auto").lower()
+        try:
+            line_val = int(line_str)
+        except (ValueError, TypeError):
+            return False
+        if rule in ("auto", "atLeast", ""):
+            # "auto" means multiple; stored as N * 240
+            actual_multiple = line_val / 240.0
+            return abs(actual_multiple - _EXPECTED) > _TOLERANCE
+        # "exact" means exact pt spacing -- always flag as wrong
+        return True
+
+    # --- 1. Check named styles ---
+    for style in doc.styles:
+        try:
+            pPr = style.element.find(_qn("w:pPr"))
+        except Exception:
+            continue
+        if pPr is None:
+            continue
+        line_str, rule = _spacing_vals(pPr)
+        if _is_bad_spacing(line_str, rule):
+            try:
+                actual = int(line_str) / 240.0
+            except Exception:
+                actual = 0.0
+            result.add(
+                "ACB-LINE-SPACING",
+                f"Style '{style.name}' line spacing is {actual:.2f}× (expected {_EXPECTED}×)",
+                f"Style: {style.name}",
+            )
+
+    # --- 2. Check paragraph-level overrides ---
+    for i, para in enumerate(doc.paragraphs):
+        pPr = para._p.find(_qn("w:pPr"))
+        if pPr is None:
+            continue
+        line_str, rule = _spacing_vals(pPr)
+        if _is_bad_spacing(line_str, rule):
+            try:
+                actual = int(line_str) / 240.0
+            except Exception:
+                actual = 0.0
+            preview = para.text[:60].strip()
+            loc = (
+                f"Paragraph {i + 1}: '{preview}'"
+                if preview
+                else f"Paragraph {i + 1}"
+            )
+            result.add(
+                "ACB-LINE-SPACING",
+                f"Direct paragraph line spacing is {actual:.2f}× (expected {_EXPECTED}×)",
+                loc,
+            )
+
+
+def _check_widow_orphan(doc: Document, result: AuditResult) -> None:
+    """Check that widow and orphan protection is enabled.
+
+    Inspects both named styles (Normal, Heading 1-6, Body Text) and direct
+    paragraph formatting overrides.  Widow/orphan control keeps at least two
+    lines of a paragraph together at page boundaries.
+    """
+    from docx.oxml.ns import qn as _qn
+
+    def _widow_orphan_off(elem) -> bool:
+        """Return True if widow/orphan control is explicitly disabled."""
+        pPr = elem.find(_qn("w:pPr"))
+        if pPr is None:
+            return False
+        wo = pPr.find(_qn("w:widowControl"))
+        if wo is None:
+            return False  # absent = Word default (on)
+        val = wo.get(_qn("w:val"), "true").lower()
+        return val in ("false", "0", "off")
+
+    # --- 1. Named styles ---
+    for style in doc.styles:
+        try:
+            if _widow_orphan_off(style.element):
+                result.add(
+                    "ACB-WIDOW-ORPHAN",
+                    f"Style '{style.name}' has widow/orphan control disabled",
+                    f"Style: {style.name}",
+                )
+        except Exception:
+            continue
+
+    # --- 2. Paragraph-level overrides ---
+    for i, para in enumerate(doc.paragraphs):
+        if _widow_orphan_off(para._p):
+            preview = para.text[:60].strip()
+            loc = (
+                f"Paragraph {i + 1}: '{preview}'"
+                if preview
+                else f"Paragraph {i + 1}"
+            )
+            result.add(
+                "ACB-WIDOW-ORPHAN",
+                "Widow/orphan control disabled on paragraph",
+                loc,
+            )
+
+
+def _check_page_layout(doc: Document, result: AuditResult) -> None:
+    """Check page size (US Letter) and multi-column layout.
+
+    ACB large print documents must use US Letter (8.5 × 11 in) in portrait
+    orientation and must not use multi-column layouts.
+    """
+    _US_LETTER_WIDTH = 8.5   # inches
+    _US_LETTER_HEIGHT = 11.0  # inches
+    _TOLERANCE = 0.1          # 0.1-inch tolerance
+
+    for i, section in enumerate(doc.sections):
+        loc = f"Section {i + 1}"
+
+        # --- Page size ---
+        try:
+            page_width_in = section.page_width.inches
+            page_height_in = section.page_height.inches
+            # Accept both portrait and landscape orientations
+            dims = sorted([page_width_in, page_height_in])
+            expected = sorted([_US_LETTER_WIDTH, _US_LETTER_HEIGHT])
+            if (
+                abs(dims[0] - expected[0]) > _TOLERANCE
+                or abs(dims[1] - expected[1]) > _TOLERANCE
+            ):
+                result.add(
+                    "ACB-PAGE-SIZE",
+                    f"Page size is {page_width_in:.2f}\" × {page_height_in:.2f}\" "
+                    f"(expected {_US_LETTER_WIDTH}\" × {_US_LETTER_HEIGHT}\")",
+                    loc,
+                )
+        except Exception:
+            pass
+
+        # --- Multi-column layout ---
+        try:
+            sectPr = section._sectPr
+            from docx.oxml.ns import qn as _qn
+            cols_elem = sectPr.find(_qn("w:cols"))
+            if cols_elem is not None:
+                num_cols_str = cols_elem.get(_qn("w:num"), "1")
+                try:
+                    num_cols = int(num_cols_str)
+                except (ValueError, TypeError):
+                    num_cols = 1
+                if num_cols > 1:
+                    result.add(
+                        "ACB-MULTIPLE-COLUMNS",
+                        f"Section uses {num_cols}-column layout — ACB requires single column",
+                        loc,
+                    )
+        except Exception:
+            pass
+
+
+def _check_run_formatting(doc: Document, result: AuditResult) -> None:
+    """Check run-level formatting: font color and strikethrough.
+
+    ACB large print documents must use black (automatic) text color to ensure
+    WCAG 4.5:1 contrast.  Strikethrough text should be removed as it is
+    difficult to read for low-vision users.
+
+    Findings are capped per-document to avoid flooding the report with
+    hundreds of identical issues.
+    """
+    from docx.oxml.ns import qn as _qn
+
+    _AUTO_COLOR = "auto"
+    _BLACK_HEX = "000000"
+    _MAX_COLOR_FINDINGS = 15
+    _MAX_STRIKE_FINDINGS = 15
+    color_count = 0
+    strike_count = 0
+
+    for i, para in enumerate(doc.paragraphs):
+        loc_prefix = f"Paragraph {i + 1}"
+        preview = para.text[:40].strip()
+        loc = f"{loc_prefix}: '{preview}'" if preview else loc_prefix
+
+        for run in para.runs:
+            if not run.text.strip():
+                continue
+
+            # --- Font color ---
+            if color_count < _MAX_COLOR_FINDINGS:
+                rPr = run._r.find(_qn("w:rPr"))
+                if rPr is not None:
+                    color_elem = rPr.find(_qn("w:color"))
+                    if color_elem is not None:
+                        color_val = color_elem.get(_qn("w:val"), _AUTO_COLOR)
+                        if color_val.lower() not in (_AUTO_COLOR, _BLACK_HEX, "000000"):
+                            result.add(
+                                "ACB-FONT-COLOR",
+                                f"Colored text (#{color_val}): '{run.text[:30]}'",
+                                loc,
+                            )
+                            color_count += 1
+
+            # --- Strikethrough ---
+            if strike_count < _MAX_STRIKE_FINDINGS:
+                if run.font.strike or run.font.double_strike:
+                    result.add(
+                        "ACB-STRIKETHROUGH",
+                        f"Strikethrough text: '{run.text[:30]}'",
+                        loc,
+                    )
+                    strike_count += 1
+
+
 def _check_page_numbers(doc: Document, result: AuditResult) -> None:
     """Check for page number fields in footer."""
     has_page_numbers = False
@@ -915,6 +1156,7 @@ def audit_document(
 
     _check_document_properties(doc, result)
     _check_page_setup(doc, result)
+    _check_page_layout(doc, result)
     _check_styles(doc, result, style_size_overrides=style_size_overrides)
     _check_paragraph_content(
         doc,
@@ -926,6 +1168,9 @@ def audit_document(
         style_size_overrides=style_size_overrides,
     )
     _check_hyphenation(doc, result)
+    _check_line_spacing(doc, result)
+    _check_widow_orphan(doc, result)
+    _check_run_formatting(doc, result)
     _check_page_numbers(doc, result)
     _check_alt_text(doc, result)
     _check_tables(doc, result)

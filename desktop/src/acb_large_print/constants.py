@@ -643,6 +643,38 @@ AUDIT_RULES: dict[str, RuleDef] = {
         auto_fixable=True,
         formats=_DOCX_ONLY,
     ),
+    "ACB-PAGE-SIZE": RuleDef(
+        rule_id="ACB-PAGE-SIZE",
+        description="Page size must be US Letter (8.5 × 11 in) for ACB large print",
+        severity=Severity.MEDIUM,
+        acb_reference="ACB Guidelines Section 2: Page Setup",
+        auto_fixable=True,
+        formats=_DOCX_ONLY,
+    ),
+    "ACB-MULTIPLE-COLUMNS": RuleDef(
+        rule_id="ACB-MULTIPLE-COLUMNS",
+        description="Multi-column layout is not permitted in ACB large print documents",
+        severity=Severity.HIGH,
+        acb_reference="ACB Guidelines Section 3: Layout",
+        auto_fixable=False,
+        formats=_DOCX_ONLY,
+    ),
+    "ACB-FONT-COLOR": RuleDef(
+        rule_id="ACB-FONT-COLOR",
+        description="Text must use black (automatic) font color — colored text reduces contrast",
+        severity=Severity.MEDIUM,
+        acb_reference="ACB Guidelines Section 4: Typography; WCAG 1.4.3 Contrast",
+        auto_fixable=True,
+        formats=_DOCX_ONLY,
+    ),
+    "ACB-STRIKETHROUGH": RuleDef(
+        rule_id="ACB-STRIKETHROUGH",
+        description="Strikethrough text should be removed — it is confusing for low-vision readers",
+        severity=Severity.LOW,
+        acb_reference="ACB Guidelines Section 4: Typography",
+        auto_fixable=False,
+        formats=_DOCX_ONLY,
+    ),
     # -----------------------------------------------------------------
     # Excel-specific rules  (cf. extCheck by Jamal Mazrui)
     # -----------------------------------------------------------------
