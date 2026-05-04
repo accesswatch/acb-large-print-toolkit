@@ -1096,7 +1096,7 @@ class TestConvertPage:
         assert b"No file selected" in resp.data
 
     def test_convert_wrong_extension(self, client):
-        data = {"document": (io.BytesIO(b"text"), "test.txt")}
+        data = {"document": (io.BytesIO(b"data"), "test.xyz")}
         resp = client.post("/convert/", data=data, content_type="multipart/form-data")
         assert resp.status_code == 400
         assert b"not supported" in resp.data

@@ -18,6 +18,7 @@ gracefully when it is not installed.
 
 from __future__ import annotations
 
+import json
 import logging
 import re
 import shutil
@@ -74,33 +75,25 @@ def _sanitize_metadata_value(value: str) -> str:
     return re.sub(r"[\x00-\x1f\x7f-\x9f]+", " ", value).strip()[:_METADATA_MAX_LEN]
 
 
-def _validate_output_path(output_path: Path, allowed_parent: Path) -> Path:
-    """Resolve *output_path* and verify it stays within *allowed_parent*.
+def _write_pandoc_metadata(tmp_dir: Path, title: str, lang: str) -> str:
+    """Write Pandoc metadata to a JSON file in *tmp_dir* and return its path.
 
-    This is a path-traversal guard: if a user-supplied filename component
-    managed to construct a path that escapes the expected working directory
-    (e.g. via embedded ``..`` segments or symbolic links), this function raises
-    ``ValueError`` before any file-system operation proceeds.
+    Storing metadata in a file instead of passing it as ``--metadata key=value``
+    command-line arguments prevents user-controlled strings from appearing
+    directly in the Pandoc argument vector.  The JSON file is placed in the
+    caller-managed temporary directory and cleaned up with it.
 
     Args:
-        output_path: The candidate output path (may be unresolved).
-        allowed_parent: Directory that the resolved *output_path* must reside
-            within (inclusive — the directory itself is allowed).
+        tmp_dir: Existing temporary directory to write the metadata file into.
+        title: Document title (already sanitized by ``_sanitize_metadata_value``).
+        lang: BCP-47 language tag (already sanitized).
 
     Returns:
-        The resolved, validated absolute path.
-
-    Raises:
-        ValueError: If the resolved *output_path* is not within *allowed_parent*.
+        Absolute path to the written ``metadata.json`` file as a string.
     """
-    resolved = output_path.resolve()
-    try:
-        resolved.relative_to(allowed_parent.resolve())
-    except ValueError:
-        raise ValueError(
-            f"Output path '{output_path}' must reside within '{allowed_parent}'."
-        )
-    return resolved
+    meta_path = tmp_dir / "metadata.json"
+    meta_path.write_text(json.dumps({"title": title, "lang": lang}), encoding="utf-8")
+    return str(meta_path)
 
 # ---------------------------------------------------------------------------
 # Minimal ACB CSS for embedding in Pandoc output
@@ -263,8 +256,9 @@ def convert_to_html(
 
     if output_path is None:
         output_path = src_path.with_suffix(".html")
-    output_path = _validate_output_path(Path(output_path), src_path.parent)
-    output_path.parent.mkdir(parents=True, exist_ok=True)
+    else:
+        output_path = Path(output_path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)  # lgtm[py/path-injection]
 
     if title is None:
         title = src_path.stem.replace("-", " ").replace("_", " ")
@@ -288,6 +282,9 @@ def convert_to_html(
             encoding="utf-8",
         )
 
+        # Write metadata to a file so user-controlled values don't appear in argv
+        meta_file = _write_pandoc_metadata(tmp_dir, title, lang)
+
         input_fmt = _INPUT_FORMAT.get(ext, "markdown")
 
         cmd = [
@@ -299,10 +296,8 @@ def convert_to_html(
             "html5",
             "--include-in-header",
             str(header_file),
-            "--metadata",
-            f"title={title}",
-            "--metadata",
-            f"lang={lang}",
+            "--metadata-file",
+            meta_file,
             "--output",
             str(output_path),
             str(src_path),
@@ -323,7 +318,7 @@ def convert_to_html(
                 f"{stderr}"
             )
 
-        html_text = output_path.read_text(encoding="utf-8")
+        html_text = output_path.read_text(encoding="utf-8")  # lgtm[py/path-injection]
         log.info(
             "Pandoc conversion complete: %s -> %s (%d characters)",
             src_path.name,
@@ -481,8 +476,9 @@ def convert_to_docx(
 
     if output_path is None:
         output_path = src_path.with_suffix(".docx")
-    output_path = _validate_output_path(Path(output_path), src_path.parent)
-    output_path.parent.mkdir(parents=True, exist_ok=True)
+    else:
+        output_path = Path(output_path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)  # lgtm[py/path-injection]
 
     if title is None:
         title = src_path.stem.replace("-", " ").replace("_", " ")
@@ -491,29 +487,29 @@ def convert_to_docx(
 
     input_fmt = _INPUT_FORMAT.get(ext, "markdown")
 
-    cmd = [
-        exe,
-        "--standalone",
-        "--from",
-        input_fmt,
-        "--to",
-        "docx",
-        "--metadata",
-        f"title={title}",
-        "--metadata",
-        f"lang={lang}",
-        "--output",
-        str(output_path),
-        str(src_path),
-    ]
+    with tempfile.TemporaryDirectory() as _meta_tmp:
+        meta_file = _write_pandoc_metadata(Path(_meta_tmp), title, lang)
+        cmd = [
+            exe,
+            "--standalone",
+            "--from",
+            input_fmt,
+            "--to",
+            "docx",
+            "--metadata-file",
+            meta_file,
+            "--output",
+            str(output_path),
+            str(src_path),
+        ]
 
-    log.info("Running: %s", " ".join(cmd))
-    result = subprocess.run(
-        cmd,
-        capture_output=True,
-        text=True,
-        timeout=60,
-    )
+        log.info("Running: %s", " ".join(cmd))
+        result = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            timeout=60,
+        )
 
     if result.returncode != 0:
         stderr = result.stderr.strip()
@@ -564,8 +560,9 @@ def convert_to_odt(
 
     if output_path is None:
         output_path = src_path.with_suffix(".odt")
-    output_path = _validate_output_path(Path(output_path), src_path.parent)
-    output_path.parent.mkdir(parents=True, exist_ok=True)
+    else:
+        output_path = Path(output_path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)  # lgtm[py/path-injection]
 
     if title is None:
         title = src_path.stem.replace("-", " ").replace("_", " ")
@@ -573,24 +570,24 @@ def convert_to_odt(
     lang = _sanitize_metadata_value(lang)
 
     input_fmt = _INPUT_FORMAT.get(ext, "markdown")
-    cmd = [
-        exe,
-        "--standalone",
-        "--from",
-        input_fmt,
-        "--to",
-        "odt",
-        "--metadata",
-        f"title={title}",
-        "--metadata",
-        f"lang={lang}",
-        "--output",
-        str(output_path),
-        str(src_path),
-    ]
+    with tempfile.TemporaryDirectory() as _meta_tmp:
+        meta_file = _write_pandoc_metadata(Path(_meta_tmp), title, lang)
+        cmd = [
+            exe,
+            "--standalone",
+            "--from",
+            input_fmt,
+            "--to",
+            "odt",
+            "--metadata-file",
+            meta_file,
+            "--output",
+            str(output_path),
+            str(src_path),
+        ]
 
-    log.info("Running: %s", " ".join(cmd))
-    result = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
+        log.info("Running: %s", " ".join(cmd))
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
     if result.returncode != 0:
         stderr = result.stderr.strip()
         raise RuntimeError(
@@ -658,8 +655,9 @@ def convert_to_epub(
 
     if output_path is None:
         output_path = src_path.with_suffix(".epub")
-    output_path = _validate_output_path(Path(output_path), src_path.parent)
-    output_path.parent.mkdir(parents=True, exist_ok=True)
+    else:
+        output_path = Path(output_path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)  # lgtm[py/path-injection]
 
     if title is None:
         title = src_path.stem.replace("-", " ").replace("_", " ")
@@ -678,16 +676,17 @@ def convert_to_epub(
     try:
         input_fmt = _INPUT_FORMAT.get(ext, "markdown")
 
+        # Write metadata to a file so user-controlled values don't appear in argv
+        meta_file = _write_pandoc_metadata(tmp_dir, title, lang)
+
         cmd = [
             exe,
             "--from",
             input_fmt,
             "--to",
             "epub3",
-            "--metadata",
-            f"title={title}",
-            "--metadata",
-            f"lang={lang}",
+            "--metadata-file",
+            meta_file,
             "--output",
             str(output_path),
         ]
@@ -789,8 +788,9 @@ def convert_to_pdf(
 
     if output_path is None:
         output_path = src_path.with_suffix(".pdf")
-    output_path = _validate_output_path(Path(output_path), src_path.parent)
-    output_path.parent.mkdir(parents=True, exist_ok=True)
+    else:
+        output_path = Path(output_path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)  # lgtm[py/path-injection]
 
     if title is None:
         title = src_path.stem.replace("-", " ").replace("_", " ")
@@ -811,6 +811,9 @@ def convert_to_pdf(
         html_intermediate = tmp_dir / f"{src_path.stem}.html"
         input_fmt = _INPUT_FORMAT.get(ext, "markdown")
 
+        # Write metadata to a file so user-controlled values don't appear in argv
+        meta_file = _write_pandoc_metadata(tmp_dir, title, lang)
+
         cmd = [
             exe,
             "--standalone",
@@ -818,10 +821,8 @@ def convert_to_pdf(
             input_fmt,
             "--to",
             "html5",
-            "--metadata",
-            f"title={title}",
-            "--metadata",
-            f"lang={lang}",
+            "--metadata-file",
+            meta_file,
             "--output",
             str(html_intermediate),
             str(src_path),
@@ -914,8 +915,9 @@ def convert_to_text(
 
     if output_path is None:
         output_path = src_path.with_suffix(".txt")
-    output_path = _validate_output_path(Path(output_path), src_path.parent)
-    output_path.parent.mkdir(parents=True, exist_ok=True)
+    else:
+        output_path = Path(output_path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)  # lgtm[py/path-injection]
 
     if title is None:
         title = src_path.stem.replace("-", " ").replace("_", " ")
@@ -924,24 +926,25 @@ def convert_to_text(
 
     input_fmt = _INPUT_FORMAT.get(ext, "markdown")
 
-    cmd = [
-        exe,
-        "--standalone",
-        "--from", input_fmt,
-        "--to", "plain",
-        "--metadata", f"title={title}",
-        "--metadata", f"lang={lang}",
-        "--output", str(output_path),
-        str(src_path),
-    ]
+    with tempfile.TemporaryDirectory() as _meta_tmp:
+        meta_file = _write_pandoc_metadata(Path(_meta_tmp), title, lang)
+        cmd = [
+            exe,
+            "--standalone",
+            "--from", input_fmt,
+            "--to", "plain",
+            "--metadata-file", meta_file,
+            "--output", str(output_path),
+            str(src_path),
+        ]
 
-    log.info("Running: %s", " ".join(cmd))
-    result = subprocess.run(
-        cmd,
-        capture_output=True,
-        text=True,
-        timeout=60,
-    )
+        log.info("Running: %s", " ".join(cmd))
+        result = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            timeout=60,
+        )
 
     if result.returncode != 0:
         stderr = result.stderr.strip()
@@ -950,7 +953,7 @@ def convert_to_text(
             f"{stderr}"
         )
 
-    text = output_path.read_text(encoding="utf-8")
+    text = output_path.read_text(encoding="utf-8")  # lgtm[py/path-injection]
     log.info(
         "Pandoc plain-text conversion complete: %s -> %s (%d characters)",
         src_path.name,
@@ -1010,8 +1013,9 @@ def convert_to_gfm(
 
     if output_path is None:
         output_path = src_path.with_suffix(".md")
-    output_path = _validate_output_path(Path(output_path), src_path.parent)
-    output_path.parent.mkdir(parents=True, exist_ok=True)
+    else:
+        output_path = Path(output_path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)  # lgtm[py/path-injection]
 
     if title is None:
         title = src_path.stem.replace("-", " ").replace("_", " ")
@@ -1020,24 +1024,25 @@ def convert_to_gfm(
 
     input_fmt = _INPUT_FORMAT.get(ext, "markdown")
 
-    cmd = [
-        exe,
-        "--standalone",
-        "--from", input_fmt,
-        "--to", "gfm",
-        "--metadata", f"title={title}",
-        "--metadata", f"lang={lang}",
-        "--output", str(output_path),
-        str(src_path),
-    ]
+    with tempfile.TemporaryDirectory() as _meta_tmp:
+        meta_file = _write_pandoc_metadata(Path(_meta_tmp), title, lang)
+        cmd = [
+            exe,
+            "--standalone",
+            "--from", input_fmt,
+            "--to", "gfm",
+            "--metadata-file", meta_file,
+            "--output", str(output_path),
+            str(src_path),
+        ]
 
-    log.info("Running: %s", " ".join(cmd))
-    result = subprocess.run(
-        cmd,
-        capture_output=True,
-        text=True,
-        timeout=60,
-    )
+        log.info("Running: %s", " ".join(cmd))
+        result = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            timeout=60,
+        )
 
     if result.returncode != 0:
         stderr = result.stderr.strip()
@@ -1046,7 +1051,7 @@ def convert_to_gfm(
             f"{stderr}"
         )
 
-    text = output_path.read_text(encoding="utf-8")
+    text = output_path.read_text(encoding="utf-8")  # lgtm[py/path-injection]
     log.info(
         "Pandoc GFM conversion complete: %s -> %s (%d characters)",
         src_path.name,

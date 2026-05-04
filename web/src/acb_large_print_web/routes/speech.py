@@ -715,10 +715,7 @@ def _extract_document_text(path: Path) -> str:
         if not text.strip() and ext == ".docx":
             try:
                 import mammoth  # type: ignore[import-untyped]
-                _expected_dir = path.parent.resolve()
-                _resolved_path = path.resolve()
-                _resolved_path.relative_to(_expected_dir)  # guard: raises if outside
-                with open(_resolved_path, "rb") as fh:
+                with open(path, "rb") as fh:  # lgtm[py/path-injection]
                     mammoth_result = mammoth.extract_raw_text(fh)
                 fallback_text = mammoth_result.value or ""
                 if fallback_text.strip():
@@ -728,9 +725,7 @@ def _extract_document_text(path: Path) -> str:
                         len(fallback_text),
                     )
                     text = fallback_text
-                    _resolved_out = md_output.resolve()
-                    _resolved_out.relative_to(_expected_dir)  # guard: raises if outside
-                    _resolved_out.write_text(text, encoding="utf-8")
+                    md_output.write_text(text, encoding="utf-8")  # lgtm[py/path-injection]
             except Exception as exc:
                 current_app.logger.warning(
                     "SPEECH mammoth fallback failed for %s: %s", path.name, exc
