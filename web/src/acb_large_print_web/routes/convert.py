@@ -160,7 +160,7 @@ def _is_auditable_output(filename: str) -> bool:
     return suffix in ALLOWED_EXTENSIONS
 
 
-def _try_pandoc_or_docx_chain(pandoc_fn, src_path: Path, temp_dir: Path, *args, **kwargs):
+def _try_pandoc_or_docx_chain(pandoc_fn, src_path: Path, temp_dir: Path, *args, **kwargs) -> tuple:
     """Call *pandoc_fn* with *src_path*; on DOCX format error retry via MarkItDown chain.
 
     When Pandoc rejects a ``.docx`` file (e.g. Strict Open XML schema produced

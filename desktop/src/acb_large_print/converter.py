@@ -12,6 +12,8 @@ from __future__ import annotations
 
 import logging
 import os
+import re
+from collections import Counter
 from pathlib import Path
 
 log = logging.getLogger("acb_large_print")
@@ -310,8 +312,6 @@ def _pdf_block_to_markdown(block: dict, body_size: float) -> str:
     Returns:
         Markdown string, or empty string when the block has no visible text.
     """
-    import re as _re
-
     lines = block.get("lines", [])
     if not lines:
         return ""
@@ -381,7 +381,7 @@ def _pdf_block_to_markdown(block: dict, body_size: float) -> str:
         return "- " + full_text[1:].lstrip()
 
     # Numbered list detection (e.g. "1. " or "2) ")
-    if _re.match(r"^\d{1,3}[.)]\s", full_text):
+    if re.match(r"^\d{1,3}[.)]\s", full_text):
         return full_text  # GFM/Pandoc will render this as an ordered list
 
     return full_text
@@ -414,8 +414,6 @@ def _pdf_to_markdown_structured(src_path: Path) -> str | None:
         Structured Markdown string, or ``None`` if PyMuPDF is unavailable or
         the document cannot be opened.
     """
-    from collections import Counter
-
     try:
         import fitz  # type: ignore[import-untyped]  # PyMuPDF
     except ImportError:

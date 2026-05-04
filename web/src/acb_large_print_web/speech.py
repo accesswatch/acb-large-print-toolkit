@@ -14,6 +14,7 @@ import io
 import json
 import os
 import re
+import struct
 import threading
 import urllib.request
 import wave as _wave
@@ -595,8 +596,6 @@ def _make_streaming_wav_header(nchannels: int, sampwidth: int, framerate: int) -
     Returns:
         44-byte WAV header bytes suitable for streaming output.
     """
-    import struct
-
     byte_rate = framerate * nchannels * sampwidth
     block_align = nchannels * sampwidth
     bits_per_sample = sampwidth * 8
