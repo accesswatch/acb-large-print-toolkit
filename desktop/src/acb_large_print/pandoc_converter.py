@@ -19,6 +19,7 @@ gracefully when it is not installed.
 from __future__ import annotations
 
 import logging
+import re
 import shutil
 import subprocess
 import tempfile
@@ -51,6 +52,26 @@ _INPUT_FORMAT: dict[str, str] = {
     ".tex": "latex",
     ".txt": "gfm",   # plain text treated as Markdown for round-trip
 }
+
+# Maximum length (characters) allowed for a Pandoc metadata value.
+_METADATA_MAX_LEN = 512
+
+
+def _sanitize_metadata_value(value: str) -> str:
+    """Strip control characters from a Pandoc ``--metadata`` value.
+
+    Removes ASCII control characters (U+0000–U+001F, U+007F) and C1 control
+    characters (U+0080–U+009F) that could inject arbitrary YAML front-matter
+    into Pandoc's metadata parsing.  Also trims the result to a reasonable
+    maximum length.
+
+    Args:
+        value: Raw metadata string (e.g. document title from user input).
+
+    Returns:
+        Sanitized string safe to pass as a Pandoc ``--metadata`` argument.
+    """
+    return re.sub(r"[\x00-\x1f\x7f-\x9f]", " ", value).strip()[:_METADATA_MAX_LEN]
 
 # ---------------------------------------------------------------------------
 # Minimal ACB CSS for embedding in Pandoc output
@@ -193,7 +214,7 @@ def convert_to_html(
         ValueError: If the extension is not in PANDOC_INPUT_EXTENSIONS.
         RuntimeError: If Pandoc is not installed or conversion fails.
     """
-    src_path = Path(src_path)
+    src_path = Path(src_path).resolve()
     if not src_path.exists():
         raise FileNotFoundError(f"File not found: {src_path}")
 
@@ -214,12 +235,14 @@ def convert_to_html(
     if output_path is None:
         output_path = src_path.with_suffix(".html")
     else:
-        output_path = Path(output_path)
+        output_path = Path(output_path).resolve()
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
     if title is None:
         title = src_path.stem.replace("-", " ").replace("_", " ")
+    title = _sanitize_metadata_value(title)
+    lang = _sanitize_metadata_value(lang)
 
     # Resolve CSS: use provided file, skip CSS, or use built-in ACB CSS
     if css_path is not None and css_path.name == "__no_acb_css__":
@@ -405,7 +428,7 @@ def convert_to_docx(
         ValueError: If the extension is not in PANDOC_INPUT_EXTENSIONS.
         RuntimeError: If Pandoc is not installed or conversion fails.
     """
-    src_path = Path(src_path)
+    src_path = Path(src_path).resolve()
     if not src_path.exists():
         raise FileNotFoundError(f"File not found: {src_path}")
 
@@ -432,12 +455,14 @@ def convert_to_docx(
     if output_path is None:
         output_path = src_path.with_suffix(".docx")
     else:
-        output_path = Path(output_path)
+        output_path = Path(output_path).resolve()
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
     if title is None:
         title = src_path.stem.replace("-", " ").replace("_", " ")
+    title = _sanitize_metadata_value(title)
+    lang = _sanitize_metadata_value(lang)
 
     input_fmt = _INPUT_FORMAT.get(ext, "markdown")
 
@@ -489,7 +514,7 @@ def convert_to_odt(
     lang: str = "en",
 ) -> tuple[Path, int]:
     """Convert a document to OpenDocument Text (.odt) via Pandoc."""
-    src_path = Path(src_path)
+    src_path = Path(src_path).resolve()
     if not src_path.exists():
         raise FileNotFoundError(f"File not found: {src_path}")
 
@@ -515,11 +540,13 @@ def convert_to_odt(
     if output_path is None:
         output_path = src_path.with_suffix(".odt")
     else:
-        output_path = Path(output_path)
+        output_path = Path(output_path).resolve()
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
     if title is None:
         title = src_path.stem.replace("-", " ").replace("_", " ")
+    title = _sanitize_metadata_value(title)
+    lang = _sanitize_metadata_value(lang)
 
     input_fmt = _INPUT_FORMAT.get(ext, "markdown")
     cmd = [
@@ -582,7 +609,7 @@ def convert_to_epub(
         ValueError: If the extension is not in PANDOC_INPUT_EXTENSIONS.
         RuntimeError: If Pandoc is not installed or conversion fails.
     """
-    src_path = Path(src_path)
+    src_path = Path(src_path).resolve()
     if not src_path.exists():
         raise FileNotFoundError(f"File not found: {src_path}")
 
@@ -608,12 +635,14 @@ def convert_to_epub(
     if output_path is None:
         output_path = src_path.with_suffix(".epub")
     else:
-        output_path = Path(output_path)
+        output_path = Path(output_path).resolve()
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
     if title is None:
         title = src_path.stem.replace("-", " ").replace("_", " ")
+    title = _sanitize_metadata_value(title)
+    lang = _sanitize_metadata_value(lang)
 
     # Resolve CSS for EPUB embedding
     if css_path is not None and css_path.name == "__no_acb_css__":
@@ -710,7 +739,7 @@ def convert_to_pdf(
         ValueError: If the extension is not supported.
         RuntimeError: If Pandoc or WeasyPrint is not installed.
     """
-    src_path = Path(src_path)
+    src_path = Path(src_path).resolve()
     if not src_path.exists():
         raise FileNotFoundError(f"File not found: {src_path}")
 
@@ -739,12 +768,14 @@ def convert_to_pdf(
     if output_path is None:
         output_path = src_path.with_suffix(".pdf")
     else:
-        output_path = Path(output_path)
+        output_path = Path(output_path).resolve()
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
     if title is None:
         title = src_path.stem.replace("-", " ").replace("_", " ")
+    title = _sanitize_metadata_value(title)
+    lang = _sanitize_metadata_value(lang)
 
     # Resolve CSS: use ACB print-optimized variant by default
     if css_path is not None and css_path.name == "__no_acb_css__":
@@ -843,7 +874,7 @@ def convert_to_text(
         ValueError: If the extension is not in PANDOC_INPUT_EXTENSIONS.
         RuntimeError: If Pandoc is not installed or conversion fails.
     """
-    src_path = Path(src_path)
+    src_path = Path(src_path).resolve()
     if not src_path.exists():
         raise FileNotFoundError(f"File not found: {src_path}")
 
@@ -864,11 +895,13 @@ def convert_to_text(
     if output_path is None:
         output_path = src_path.with_suffix(".txt")
     else:
-        output_path = Path(output_path)
+        output_path = Path(output_path).resolve()
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
     if title is None:
         title = src_path.stem.replace("-", " ").replace("_", " ")
+    title = _sanitize_metadata_value(title)
+    lang = _sanitize_metadata_value(lang)
 
     input_fmt = _INPUT_FORMAT.get(ext, "markdown")
 
@@ -938,7 +971,7 @@ def convert_to_gfm(
         ValueError: If the extension is not in PANDOC_INPUT_EXTENSIONS.
         RuntimeError: If Pandoc is not installed or conversion fails.
     """
-    src_path = Path(src_path)
+    src_path = Path(src_path).resolve()
     if not src_path.exists():
         raise FileNotFoundError(f"File not found: {src_path}")
 
@@ -959,11 +992,13 @@ def convert_to_gfm(
     if output_path is None:
         output_path = src_path.with_suffix(".md")
     else:
-        output_path = Path(output_path)
+        output_path = Path(output_path).resolve()
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
     if title is None:
         title = src_path.stem.replace("-", " ").replace("_", " ")
+    title = _sanitize_metadata_value(title)
+    lang = _sanitize_metadata_value(lang)
 
     input_fmt = _INPUT_FORMAT.get(ext, "markdown")
 

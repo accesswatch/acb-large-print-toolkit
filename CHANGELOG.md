@@ -31,6 +31,33 @@ Releases are tagged in the [GitHub repository](https://github.com/accesswatch/ac
   `CONVERTIBLE_EXTENSIONS` but absent from `CONVERT_EXTENSIONS`, causing a
   400 validation error before any conversion logic ran. Added `.xls` to
   `CONVERT_EXTENSIONS`. (`upload.py`)
+- **Pandoc metadata injection prevention.** Added `_sanitize_metadata_value()`
+  helper to `pandoc_converter.py`. All seven `convert_to_*` functions now
+  strip ASCII and C1 control characters from `title` and `lang` before they
+  are passed to Pandoc as `--metadata` arguments, preventing potential YAML
+  front-matter injection through user-supplied document titles.
+  (`pandoc_converter.py`)
+- **Path canonicalisation in all Pandoc converter functions.** `src_path` and
+  `output_path` are now resolved to absolute, symlink-free paths via
+  `Path.resolve()` at the start of every `convert_to_*` function.  Also
+  applied to `src_path` in `_docx_mammoth_fallback` (`converter.py`) and to
+  `path` / `md_output` in the Speech Studio mammoth fallback
+  (`routes/speech.py`). (`pandoc_converter.py`, `converter.py`,
+  `routes/speech.py`)
+- **`_err_gen` renamed to `_error_event_generator`** in `routes/speech.py`
+  for clarity. (`routes/speech.py`)
+- **"Synthesising" typo fixed to "Synthesizing"** in the Live Speech UI.
+  (`static/speech.js`)
+- **`_PDF_FALLBACK_BODY_SIZE_PT` named constant** replaces the magic number
+  `10.0` in `converter.py`'s PDF body-size detection.  (`converter.py`)
+- **Line-spacing and page-size tolerances promoted to module-level constants.**
+  `_LINE_SPACING_TOLERANCE = 0.05` and `_PAGE_SIZE_TOLERANCE = 0.1` are now
+  defined at the top of `auditor.py`; the two check functions reference them
+  instead of defining local `_TOLERANCE` variables with the same name.
+  (`auditor.py`)
+- **`instance/.cleanup_lock` and `post_findings.json` added to `.gitignore`.**
+  Both are runtime-generated files that should never be committed.
+  (`.gitignore`)
 
 - **Listen Live speech mode.** Speech Studio now offers a "Listen Live" radio
   button option that streams audio to the browser in real time as each sentence

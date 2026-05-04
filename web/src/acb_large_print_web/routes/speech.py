@@ -546,10 +546,10 @@ def speech_stream_document():
     try:
         text = _apply_pronunciation_dictionary_if_enabled(_load_extracted_text(token))
     except UploadError as exc:
-        def _err_gen():
+        def _error_event_generator():
             yield f"event: error\ndata: {json.dumps({'message': str(exc)})}\n\n"
         return Response(
-            _err_gen(),
+            _error_event_generator(),
             mimetype="text/event-stream",
             headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
         )
@@ -715,7 +715,8 @@ def _extract_document_text(path: Path) -> str:
         if not text.strip() and ext == ".docx":
             try:
                 import mammoth  # type: ignore[import-untyped]
-                with open(path, "rb") as fh:
+                _resolved_path = path.resolve()
+                with open(_resolved_path, "rb") as fh:
                     mammoth_result = mammoth.extract_raw_text(fh)
                 fallback_text = mammoth_result.value or ""
                 if fallback_text.strip():
@@ -725,7 +726,7 @@ def _extract_document_text(path: Path) -> str:
                         len(fallback_text),
                     )
                     text = fallback_text
-                    md_output.write_text(text, encoding="utf-8")
+                    md_output.resolve().write_text(text, encoding="utf-8")
             except Exception as exc:
                 current_app.logger.warning(
                     "SPEECH mammoth fallback failed for %s: %s", path.name, exc

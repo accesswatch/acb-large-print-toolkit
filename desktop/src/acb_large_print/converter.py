@@ -28,6 +28,10 @@ _PDF_BULLET_CHARS = frozenset(
     "\u2022\u2023\u25cf\u25cb\u25e6\u2043\u2219\u00b7\u25aa\u25a0\u25ba"
 )
 
+# Fallback body font size (pt) when no text spans are found in a PDF page.
+# 10 pt is the conventional default body size for standard print documents.
+_PDF_FALLBACK_BODY_SIZE_PT: float = 10.0
+
 
 def _resolve_whisper_cache_dir() -> Path:
     """Return a writable cache directory for Whisper/Hugging Face assets."""
@@ -463,7 +467,7 @@ def _pdf_to_markdown_structured(src_path: Path) -> str | None:
                         if size > 4 and text.strip():
                             size_counter[round(size, 1)] += len(text.strip())
 
-        body_size: float = size_counter.most_common(1)[0][0] if size_counter else 10.0
+        body_size: float = size_counter.most_common(1)[0][0] if size_counter else _PDF_FALLBACK_BODY_SIZE_PT
         log.debug("PDF body font size detected: %.1f pt", body_size)
 
         # ------------------------------------------------------------
@@ -558,7 +562,7 @@ def _docx_mammoth_fallback(src_path: Path) -> str:
         return ""
 
     try:
-        with open(src_path, "rb") as fh:
+        with open(Path(src_path).resolve(), "rb") as fh:
             result = mammoth.convert_to_markdown(fh)
         text = result.value or ""
         if text.strip():

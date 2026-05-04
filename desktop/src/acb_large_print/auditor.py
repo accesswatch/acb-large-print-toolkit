@@ -23,6 +23,14 @@ def _vml_qn(tag: str) -> str:
 
 from . import constants as C
 
+# ---------------------------------------------------------------------------
+# Module-level measurement tolerances
+# ---------------------------------------------------------------------------
+# 5% deviation allowed from the expected line-spacing multiple (e.g. 1.5×)
+_LINE_SPACING_TOLERANCE: float = 0.05
+# 0.1-inch tolerance for page-size checks (US Letter: 8.5 × 11 in)
+_PAGE_SIZE_TOLERANCE: float = 0.1
+
 
 @dataclass
 class Finding:
@@ -614,7 +622,7 @@ def _check_line_spacing(doc: Document, result: AuditResult) -> None:
         rule = sp.get(_qn("w:lineRule"), "auto")
         return line, rule
 
-    _TOLERANCE = 0.05  # allow 5% deviation from expected multiple
+    _TOLERANCE = _LINE_SPACING_TOLERANCE  # allow 5% deviation from expected multiple
     _EXPECTED = C.LINE_SPACING_MULTIPLE  # e.g. 1.5
     # Word stores "Multiple N" as N * 240 twips (w:lineRule="auto")
     _EXPECTED_TWIPS = int(_EXPECTED * 240)
@@ -734,7 +742,7 @@ def _check_page_layout(doc: Document, result: AuditResult) -> None:
     """
     _US_LETTER_WIDTH = 8.5   # inches
     _US_LETTER_HEIGHT = 11.0  # inches
-    _TOLERANCE = 0.1          # 0.1-inch tolerance
+    _TOLERANCE = _PAGE_SIZE_TOLERANCE    # 0.1-inch tolerance
 
     for i, section in enumerate(doc.sections):
         loc = f"Section {i + 1}"

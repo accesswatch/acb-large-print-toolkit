@@ -730,7 +730,7 @@
 
               if (eventType === "audio_config") {
                 totalChunks = payload.totalChunks || 0;
-                setLiveStatus("Synthesising audio\u2026 (0 of " + totalChunks + " segments ready)");
+                setLiveStatus("Synthesizing audio\u2026 (0 of " + totalChunks + " segments ready)");
                 setLiveProgress(0, totalChunks);
 
               } else if (eventType === "audio_chunk") {
