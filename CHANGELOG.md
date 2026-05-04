@@ -31,6 +31,20 @@ Releases are tagged in the [GitHub repository](https://github.com/accesswatch/ac
 
 ### Fixed
 
+- **PDF tables now preserved in Word / HTML / EPUB exports.** When a PDF
+  containing embedded tables is uploaded and converted to Word (`.docx`),
+  HTML, EPUB, or any other Pandoc-backed output format, the tables are now
+  extracted as Markdown pipe tables and included in the output document.
+  Previously, MarkItDown's pdfminer.six text extraction silently dropped all
+  table structure, producing flat text.  The fix adds
+  `_pdf_to_markdown_with_tables()` to `desktop/src/acb_large_print/converter.py`,
+  which uses PyMuPDF's `find_tables()` API (already a project dependency) to
+  detect and format table cells, interleave them with surrounding text in
+  reading order, and skip duplicate raw text blocks that fall inside table
+  bounding boxes.  Falls back transparently to MarkItDown if PyMuPDF is
+  unavailable.  18 new unit tests added in
+  `desktop/tests/test_pdf_table_extraction.py`.
+
 - **Compare endpoint extension mismatch.** `POST /magic/compare` now uses an
   explicit allow-list aligned with its UI and parser support (`.txt`, `.csv`,
   `.json`, `.xml`, `.html`, `.rst`, `.odt`, `.rtf`, plus existing types)
