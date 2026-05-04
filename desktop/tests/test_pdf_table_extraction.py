@@ -5,12 +5,9 @@ These tests use mocks so they run without PyMuPDF or a real PDF file.
 
 from __future__ import annotations
 
-import io
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
-
-import pytest
 
 from acb_large_print.converter import (
     _bbox_overlaps_table,
@@ -250,43 +247,24 @@ class TestConvertToMarkdownPdfPath:
         self, tmp_path: Path, monkeypatch
     ):
         """If _pdf_to_markdown_with_tables returns None, MarkItDown must be used."""
+        import acb_large_print.converter as conv_mod
+
         pdf = tmp_path / "report.pdf"
         pdf.write_bytes(b"%PDF-1.4 fake")
 
         fallback_text = "Fallback text from MarkItDown"
 
+        # Patch _pdf_to_markdown_with_tables to simulate PyMuPDF being absent
+        monkeypatch.setattr(conv_mod, "_pdf_to_markdown_with_tables", lambda p: None)
+
+        # Patch MarkItDown to return a predictable result
         fake_result = SimpleNamespace(text_content=fallback_text)
-        fake_markitdown = MagicMock()
-        fake_markitdown.convert.return_value = fake_result
+        fake_md_instance = MagicMock()
+        fake_md_instance.convert.return_value = fake_result
+        FakeMarkItDown = MagicMock(return_value=fake_md_instance)
 
-        FakeMarkItDown = MagicMock(return_value=fake_markitdown)
-
-        with patch(
-            "acb_large_print.converter._pdf_to_markdown_with_tables",
-            return_value=None,
-        ):
-            with patch.dict(
-                "sys.modules",
-                {"markitdown": MagicMock(MarkItDown=FakeMarkItDown)},
-            ):
-                # Re-import inside patch context to pick up the mocked markitdown
-                import importlib
-                import acb_large_print.converter as conv_mod
-
-                monkeypatch.setattr(
-                    conv_mod,
-                    "_pdf_to_markdown_with_tables",
-                    lambda p: None,
-                )
-
-                # Directly call using the real function but with MarkItDown mocked
-                with patch(
-                    "acb_large_print.converter.convert_to_markdown"
-                ) as mock_convert:
-                    mock_convert.return_value = (
-                        tmp_path / "report.md",
-                        fallback_text,
-                    )
-                    out_path, text = mock_convert(pdf, tmp_path / "report.md")
+        with patch.dict("sys.modules", {"markitdown": MagicMock(MarkItDown=FakeMarkItDown)}):
+            out_path, text = conv_mod.convert_to_markdown(pdf, tmp_path / "report.md")
 
         assert text == fallback_text
+        assert out_path.read_text(encoding="utf-8") == fallback_text

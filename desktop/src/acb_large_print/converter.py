@@ -16,6 +16,11 @@ from pathlib import Path
 
 log = logging.getLogger("acb_large_print")
 
+# Fraction of a text block's area that must overlap with a table's bounding box
+# before the text block is considered part of the table (and excluded from the
+# separate prose output to avoid duplication).
+_TABLE_OVERLAP_THRESHOLD = 0.4
+
 
 def _resolve_whisper_cache_dir() -> Path:
     """Return a writable cache directory for Whisper/Hugging Face assets."""
@@ -238,7 +243,7 @@ def _bbox_overlaps_table(text_bbox: tuple, table_bbox: tuple) -> bool:
     if text_area <= 0:
         return False
 
-    return (intersection_area / text_area) > 0.4
+    return (intersection_area / text_area) > _TABLE_OVERLAP_THRESHOLD
 
 
 def _format_table_as_markdown(table) -> str:
@@ -279,7 +284,7 @@ def _format_table_as_markdown(table) -> str:
     return "\n".join(lines)
 
 
-def _pdf_to_markdown_with_tables(src_path: Path) -> "str | None":
+def _pdf_to_markdown_with_tables(src_path: Path) -> str | None:
     """Extract a PDF to Markdown, preserving table structure via PyMuPDF.
 
     Uses PyMuPDF's ``Page.find_tables()`` to detect tables and render them as
