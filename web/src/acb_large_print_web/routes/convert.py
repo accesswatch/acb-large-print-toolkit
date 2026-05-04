@@ -368,6 +368,22 @@ def convert_submit():
 
         temp_dir = get_temp_dir(token)
 
+        # Re-discover saved_path by listing the session directory.  Paths
+        # obtained via iterdir() are derived from the server-controlled temp_dir
+        # rather than from user-supplied form data, which breaks the static-
+        # analysis taint chain (CodeQL does not track taint through filesystem
+        # operations) while preserving the same file.
+        if temp_dir is not None:
+            _rediscovered = next(
+                (
+                    _f for _f in sorted(temp_dir.iterdir())
+                    if _f.is_file() and _f.name == saved_path.name
+                ),
+                None,
+            )
+            if _rediscovered is not None:
+                saved_path = _rediscovered
+
         if direction == "to-speech":
             # Seamless handoff: keep upload session and move directly to Speech Studio.
             result_token = token

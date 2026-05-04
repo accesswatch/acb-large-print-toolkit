@@ -236,7 +236,7 @@ def convert_to_html(
         ValueError: If the extension is not in PANDOC_INPUT_EXTENSIONS.
         RuntimeError: If Pandoc is not installed or conversion fails.
     """
-    src_path = Path(src_path).resolve()
+    src_path = Path(src_path)
     if not src_path.exists():
         raise FileNotFoundError(f"File not found: {src_path}")
 
@@ -258,12 +258,11 @@ def convert_to_html(
         output_path = src_path.with_suffix(".html")
     else:
         output_path = Path(output_path)
-    output_path.parent.mkdir(parents=True, exist_ok=True)  # lgtm[py/path-injection]
+
+    output_path.parent.mkdir(parents=True, exist_ok=True)
 
     if title is None:
         title = src_path.stem.replace("-", " ").replace("_", " ")
-    title = _sanitize_metadata_value(title)
-    lang = _sanitize_metadata_value(lang)
 
     # Resolve CSS: use provided file, skip CSS, or use built-in ACB CSS
     if css_path is not None and css_path.name == "__no_acb_css__":
@@ -282,9 +281,6 @@ def convert_to_html(
             encoding="utf-8",
         )
 
-        # Write metadata to a file so user-controlled values don't appear in argv
-        meta_file = _write_pandoc_metadata(tmp_dir, title, lang)
-
         input_fmt = _INPUT_FORMAT.get(ext, "markdown")
 
         cmd = [
@@ -296,8 +292,10 @@ def convert_to_html(
             "html5",
             "--include-in-header",
             str(header_file),
-            "--metadata-file",
-            meta_file,
+            "--metadata",
+            f"title={title}",
+            "--metadata",
+            f"lang={lang}",
             "--output",
             str(output_path),
             str(src_path),
@@ -318,7 +316,7 @@ def convert_to_html(
                 f"{stderr}"
             )
 
-        html_text = output_path.read_text(encoding="utf-8")  # lgtm[py/path-injection]
+        html_text = output_path.read_text(encoding="utf-8")
         log.info(
             "Pandoc conversion complete: %s -> %s (%d characters)",
             src_path.name,
@@ -450,7 +448,7 @@ def convert_to_docx(
         ValueError: If the extension is not in PANDOC_INPUT_EXTENSIONS.
         RuntimeError: If Pandoc is not installed or conversion fails.
     """
-    src_path = Path(src_path).resolve()
+    src_path = Path(src_path)
     if not src_path.exists():
         raise FileNotFoundError(f"File not found: {src_path}")
 
@@ -478,38 +476,37 @@ def convert_to_docx(
         output_path = src_path.with_suffix(".docx")
     else:
         output_path = Path(output_path)
-    output_path.parent.mkdir(parents=True, exist_ok=True)  # lgtm[py/path-injection]
+
+    output_path.parent.mkdir(parents=True, exist_ok=True)
 
     if title is None:
         title = src_path.stem.replace("-", " ").replace("_", " ")
-    title = _sanitize_metadata_value(title)
-    lang = _sanitize_metadata_value(lang)
 
     input_fmt = _INPUT_FORMAT.get(ext, "markdown")
 
-    with tempfile.TemporaryDirectory() as _meta_tmp:
-        meta_file = _write_pandoc_metadata(Path(_meta_tmp), title, lang)
-        cmd = [
-            exe,
-            "--standalone",
-            "--from",
-            input_fmt,
-            "--to",
-            "docx",
-            "--metadata-file",
-            meta_file,
-            "--output",
-            str(output_path),
-            str(src_path),
-        ]
+    cmd = [
+        exe,
+        "--standalone",
+        "--from",
+        input_fmt,
+        "--to",
+        "docx",
+        "--metadata",
+        f"title={title}",
+        "--metadata",
+        f"lang={lang}",
+        "--output",
+        str(output_path),
+        str(src_path),
+    ]
 
-        log.info("Running: %s", " ".join(cmd))
-        result = subprocess.run(
-            cmd,
-            capture_output=True,
-            text=True,
-            timeout=60,
-        )
+    log.info("Running: %s", " ".join(cmd))
+    result = subprocess.run(
+        cmd,
+        capture_output=True,
+        text=True,
+        timeout=60,
+    )
 
     if result.returncode != 0:
         stderr = result.stderr.strip()
@@ -535,7 +532,7 @@ def convert_to_odt(
     lang: str = "en",
 ) -> tuple[Path, int]:
     """Convert a document to OpenDocument Text (.odt) via Pandoc."""
-    src_path = Path(src_path).resolve()
+    src_path = Path(src_path)
     if not src_path.exists():
         raise FileNotFoundError(f"File not found: {src_path}")
 
@@ -562,32 +559,30 @@ def convert_to_odt(
         output_path = src_path.with_suffix(".odt")
     else:
         output_path = Path(output_path)
-    output_path.parent.mkdir(parents=True, exist_ok=True)  # lgtm[py/path-injection]
+    output_path.parent.mkdir(parents=True, exist_ok=True)
 
     if title is None:
         title = src_path.stem.replace("-", " ").replace("_", " ")
-    title = _sanitize_metadata_value(title)
-    lang = _sanitize_metadata_value(lang)
 
     input_fmt = _INPUT_FORMAT.get(ext, "markdown")
-    with tempfile.TemporaryDirectory() as _meta_tmp:
-        meta_file = _write_pandoc_metadata(Path(_meta_tmp), title, lang)
-        cmd = [
-            exe,
-            "--standalone",
-            "--from",
-            input_fmt,
-            "--to",
-            "odt",
-            "--metadata-file",
-            meta_file,
-            "--output",
-            str(output_path),
-            str(src_path),
-        ]
+    cmd = [
+        exe,
+        "--standalone",
+        "--from",
+        input_fmt,
+        "--to",
+        "odt",
+        "--metadata",
+        f"title={title}",
+        "--metadata",
+        f"lang={lang}",
+        "--output",
+        str(output_path),
+        str(src_path),
+    ]
 
-        log.info("Running: %s", " ".join(cmd))
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
+    log.info("Running: %s", " ".join(cmd))
+    result = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
     if result.returncode != 0:
         stderr = result.stderr.strip()
         raise RuntimeError(
@@ -630,7 +625,7 @@ def convert_to_epub(
         ValueError: If the extension is not in PANDOC_INPUT_EXTENSIONS.
         RuntimeError: If Pandoc is not installed or conversion fails.
     """
-    src_path = Path(src_path).resolve()
+    src_path = Path(src_path)
     if not src_path.exists():
         raise FileNotFoundError(f"File not found: {src_path}")
 
@@ -657,12 +652,11 @@ def convert_to_epub(
         output_path = src_path.with_suffix(".epub")
     else:
         output_path = Path(output_path)
-    output_path.parent.mkdir(parents=True, exist_ok=True)  # lgtm[py/path-injection]
+
+    output_path.parent.mkdir(parents=True, exist_ok=True)
 
     if title is None:
         title = src_path.stem.replace("-", " ").replace("_", " ")
-    title = _sanitize_metadata_value(title)
-    lang = _sanitize_metadata_value(lang)
 
     # Resolve CSS for EPUB embedding
     if css_path is not None and css_path.name == "__no_acb_css__":
@@ -676,17 +670,16 @@ def convert_to_epub(
     try:
         input_fmt = _INPUT_FORMAT.get(ext, "markdown")
 
-        # Write metadata to a file so user-controlled values don't appear in argv
-        meta_file = _write_pandoc_metadata(tmp_dir, title, lang)
-
         cmd = [
             exe,
             "--from",
             input_fmt,
             "--to",
             "epub3",
-            "--metadata-file",
-            meta_file,
+            "--metadata",
+            f"title={title}",
+            "--metadata",
+            f"lang={lang}",
             "--output",
             str(output_path),
         ]
@@ -760,7 +753,7 @@ def convert_to_pdf(
         ValueError: If the extension is not supported.
         RuntimeError: If Pandoc or WeasyPrint is not installed.
     """
-    src_path = Path(src_path).resolve()
+    src_path = Path(src_path)
     if not src_path.exists():
         raise FileNotFoundError(f"File not found: {src_path}")
 
@@ -790,12 +783,11 @@ def convert_to_pdf(
         output_path = src_path.with_suffix(".pdf")
     else:
         output_path = Path(output_path)
-    output_path.parent.mkdir(parents=True, exist_ok=True)  # lgtm[py/path-injection]
+
+    output_path.parent.mkdir(parents=True, exist_ok=True)
 
     if title is None:
         title = src_path.stem.replace("-", " ").replace("_", " ")
-    title = _sanitize_metadata_value(title)
-    lang = _sanitize_metadata_value(lang)
 
     # Resolve CSS: use ACB print-optimized variant by default
     if css_path is not None and css_path.name == "__no_acb_css__":
@@ -811,9 +803,6 @@ def convert_to_pdf(
         html_intermediate = tmp_dir / f"{src_path.stem}.html"
         input_fmt = _INPUT_FORMAT.get(ext, "markdown")
 
-        # Write metadata to a file so user-controlled values don't appear in argv
-        meta_file = _write_pandoc_metadata(tmp_dir, title, lang)
-
         cmd = [
             exe,
             "--standalone",
@@ -821,8 +810,10 @@ def convert_to_pdf(
             input_fmt,
             "--to",
             "html5",
-            "--metadata-file",
-            meta_file,
+            "--metadata",
+            f"title={title}",
+            "--metadata",
+            f"lang={lang}",
             "--output",
             str(html_intermediate),
             str(src_path),
@@ -895,7 +886,7 @@ def convert_to_text(
         ValueError: If the extension is not in PANDOC_INPUT_EXTENSIONS.
         RuntimeError: If Pandoc is not installed or conversion fails.
     """
-    src_path = Path(src_path).resolve()
+    src_path = Path(src_path)
     if not src_path.exists():
         raise FileNotFoundError(f"File not found: {src_path}")
 
@@ -917,7 +908,7 @@ def convert_to_text(
         output_path = src_path.with_suffix(".txt")
     else:
         output_path = Path(output_path)
-    output_path.parent.mkdir(parents=True, exist_ok=True)  # lgtm[py/path-injection]
+    output_path.parent.mkdir(parents=True, exist_ok=True)
 
     if title is None:
         title = src_path.stem.replace("-", " ").replace("_", " ")
@@ -953,7 +944,7 @@ def convert_to_text(
             f"{stderr}"
         )
 
-    text = output_path.read_text(encoding="utf-8")  # lgtm[py/path-injection]
+    text = output_path.read_text(encoding="utf-8")
     log.info(
         "Pandoc plain-text conversion complete: %s -> %s (%d characters)",
         src_path.name,
@@ -993,7 +984,7 @@ def convert_to_gfm(
         ValueError: If the extension is not in PANDOC_INPUT_EXTENSIONS.
         RuntimeError: If Pandoc is not installed or conversion fails.
     """
-    src_path = Path(src_path).resolve()
+    src_path = Path(src_path)
     if not src_path.exists():
         raise FileNotFoundError(f"File not found: {src_path}")
 
@@ -1015,7 +1006,7 @@ def convert_to_gfm(
         output_path = src_path.with_suffix(".md")
     else:
         output_path = Path(output_path)
-    output_path.parent.mkdir(parents=True, exist_ok=True)  # lgtm[py/path-injection]
+    output_path.parent.mkdir(parents=True, exist_ok=True)
 
     if title is None:
         title = src_path.stem.replace("-", " ").replace("_", " ")
@@ -1051,7 +1042,7 @@ def convert_to_gfm(
             f"{stderr}"
         )
 
-    text = output_path.read_text(encoding="utf-8")  # lgtm[py/path-injection]
+    text = output_path.read_text(encoding="utf-8")
     log.info(
         "Pandoc GFM conversion complete: %s -> %s (%d characters)",
         src_path.name,

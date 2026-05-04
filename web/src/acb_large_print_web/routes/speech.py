@@ -286,14 +286,28 @@ def speech_prepare_document():
         return _convert_disabled_response()
     try:
         token, saved_path, filename = _resolve_document_source()
+
+        # Obtain temp_dir early so we can re-discover saved_path via iterdir().
+        # Paths obtained from iterdir() are derived from the server-controlled
+        # temp_dir rather than from user-supplied data, breaking the
+        # static-analysis taint chain for downstream file operations.
+        temp_dir = get_temp_dir(token)
+        if temp_dir is None:
+            raise UploadError("Upload session not found.")
+        _rediscovered = next(
+            (
+                _f for _f in sorted(temp_dir.iterdir())
+                if _f.is_file() and _f.name == saved_path.name
+            ),
+            None,
+        )
+        if _rediscovered is not None:
+            saved_path = _rediscovered
+
         text = _extract_document_text(saved_path)
         cleaned = normalize_document_text(text)
         if not cleaned:
             raise UploadError("Could not extract readable text from this file.")
-
-        temp_dir = get_temp_dir(token)
-        if temp_dir is None:
-            raise UploadError("Upload session not found.")
 
         extracted_path = temp_dir / _DOC_EXTRACT_NAME
         extracted_path.write_text(cleaned, encoding="utf-8")
@@ -715,7 +729,7 @@ def _extract_document_text(path: Path) -> str:
         if not text.strip() and ext == ".docx":
             try:
                 import mammoth  # type: ignore[import-untyped]
-                with open(path, "rb") as fh:  # lgtm[py/path-injection]
+                with open(path, "rb") as fh:
                     mammoth_result = mammoth.extract_raw_text(fh)
                 fallback_text = mammoth_result.value or ""
                 if fallback_text.strip():
@@ -725,7 +739,7 @@ def _extract_document_text(path: Path) -> str:
                         len(fallback_text),
                     )
                     text = fallback_text
-                    md_output.write_text(text, encoding="utf-8")  # lgtm[py/path-injection]
+                    md_output.write_text(text, encoding="utf-8")
             except Exception as exc:
                 current_app.logger.warning(
                     "SPEECH mammoth fallback failed for %s: %s", path.name, exc

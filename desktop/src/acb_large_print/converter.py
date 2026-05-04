@@ -562,7 +562,7 @@ def _docx_mammoth_fallback(src_path: Path) -> str:
         return ""
 
     try:
-        with open(src_path, "rb") as fh:  # lgtm[py/path-injection]
+        with open(src_path, "rb") as fh:
             result = mammoth.convert_to_markdown(fh)
         text = result.value or ""
         if text.strip():
