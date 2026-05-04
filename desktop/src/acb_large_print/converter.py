@@ -562,7 +562,16 @@ def _docx_mammoth_fallback(src_path: Path) -> str:
         return ""
 
     try:
-        with open(Path(src_path).resolve(), "rb") as fh:
+        src_path_resolved = Path(src_path).resolve()
+        try:
+            src_path_resolved.relative_to(Path(src_path).parent.resolve())
+        except ValueError:
+            log.warning(
+                "mammoth fallback skipped: '%s' resolved outside expected directory",
+                src_path,
+            )
+            return ""
+        with open(src_path_resolved, "rb") as fh:
             result = mammoth.convert_to_markdown(fh)
         text = result.value or ""
         if text.strip():

@@ -71,7 +71,36 @@ def _sanitize_metadata_value(value: str) -> str:
     Returns:
         Sanitized string safe to pass as a Pandoc ``--metadata`` argument.
     """
-    return re.sub(r"[\x00-\x1f\x7f-\x9f]", " ", value).strip()[:_METADATA_MAX_LEN]
+    return re.sub(r"[\x00-\x1f\x7f-\x9f]+", " ", value).strip()[:_METADATA_MAX_LEN]
+
+
+def _validate_output_path(output_path: Path, allowed_parent: Path) -> Path:
+    """Resolve *output_path* and verify it stays within *allowed_parent*.
+
+    This is a path-traversal guard: if a user-supplied filename component
+    managed to construct a path that escapes the expected working directory
+    (e.g. via embedded ``..`` segments or symbolic links), this function raises
+    ``ValueError`` before any file-system operation proceeds.
+
+    Args:
+        output_path: The candidate output path (may be unresolved).
+        allowed_parent: Directory that the resolved *output_path* must reside
+            within (inclusive — the directory itself is allowed).
+
+    Returns:
+        The resolved, validated absolute path.
+
+    Raises:
+        ValueError: If the resolved *output_path* is not within *allowed_parent*.
+    """
+    resolved = output_path.resolve()
+    try:
+        resolved.relative_to(allowed_parent.resolve())
+    except ValueError:
+        raise ValueError(
+            f"Output path '{output_path}' must reside within '{allowed_parent}'."
+        )
+    return resolved
 
 # ---------------------------------------------------------------------------
 # Minimal ACB CSS for embedding in Pandoc output
@@ -234,9 +263,7 @@ def convert_to_html(
 
     if output_path is None:
         output_path = src_path.with_suffix(".html")
-    else:
-        output_path = Path(output_path).resolve()
-
+    output_path = _validate_output_path(Path(output_path), src_path.parent)
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
     if title is None:
@@ -454,9 +481,7 @@ def convert_to_docx(
 
     if output_path is None:
         output_path = src_path.with_suffix(".docx")
-    else:
-        output_path = Path(output_path).resolve()
-
+    output_path = _validate_output_path(Path(output_path), src_path.parent)
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
     if title is None:
@@ -539,8 +564,7 @@ def convert_to_odt(
 
     if output_path is None:
         output_path = src_path.with_suffix(".odt")
-    else:
-        output_path = Path(output_path).resolve()
+    output_path = _validate_output_path(Path(output_path), src_path.parent)
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
     if title is None:
@@ -634,9 +658,7 @@ def convert_to_epub(
 
     if output_path is None:
         output_path = src_path.with_suffix(".epub")
-    else:
-        output_path = Path(output_path).resolve()
-
+    output_path = _validate_output_path(Path(output_path), src_path.parent)
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
     if title is None:
@@ -767,9 +789,7 @@ def convert_to_pdf(
 
     if output_path is None:
         output_path = src_path.with_suffix(".pdf")
-    else:
-        output_path = Path(output_path).resolve()
-
+    output_path = _validate_output_path(Path(output_path), src_path.parent)
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
     if title is None:
@@ -894,8 +914,7 @@ def convert_to_text(
 
     if output_path is None:
         output_path = src_path.with_suffix(".txt")
-    else:
-        output_path = Path(output_path).resolve()
+    output_path = _validate_output_path(Path(output_path), src_path.parent)
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
     if title is None:
@@ -991,8 +1010,7 @@ def convert_to_gfm(
 
     if output_path is None:
         output_path = src_path.with_suffix(".md")
-    else:
-        output_path = Path(output_path).resolve()
+    output_path = _validate_output_path(Path(output_path), src_path.parent)
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
     if title is None:

@@ -823,7 +823,7 @@ def _check_run_formatting(doc: Document, result: AuditResult) -> None:
                     color_elem = rPr.find(_qn("w:color"))
                     if color_elem is not None:
                         color_val = color_elem.get(_qn("w:val"), _AUTO_COLOR)
-                        if color_val.lower() not in (_AUTO_COLOR, _BLACK_HEX, "000000"):
+                        if color_val.lower() not in {_AUTO_COLOR, _BLACK_HEX.lower()}:
                             result.add(
                                 "ACB-FONT-COLOR",
                                 f"Colored text (#{color_val}): '{run.text[:30]}'",
