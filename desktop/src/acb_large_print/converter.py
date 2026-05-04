@@ -16,6 +16,11 @@ from pathlib import Path
 
 log = logging.getLogger("acb_large_print")
 
+# Fraction of a text block's area that must overlap with a table's bounding box
+# before the text block is considered part of the table (and excluded from the
+# separate prose output to avoid duplication).
+_TABLE_OVERLAP_THRESHOLD = 0.4
+
 
 def _resolve_whisper_cache_dir() -> Path:
     """Return a writable cache directory for Whisper/Hugging Face assets."""
@@ -215,11 +220,176 @@ def youtube_to_markdown(
         return None, text
 
 
+def _bbox_overlaps_table(text_bbox: tuple, table_bbox: tuple) -> bool:
+    """Return True if a text block's bounding box substantially overlaps a table's.
+
+    Used to avoid double-emitting text that PyMuPDF also returns via
+    find_tables().  A text block is considered "inside" the table when more
+    than 40 % of its area intersects the table bounding box.
+    """
+    tx0, ty0, tx1, ty1 = text_bbox
+    tbx0, tby0, tbx1, tby1 = table_bbox
+
+    ix0 = max(tx0, tbx0)
+    iy0 = max(ty0, tby0)
+    ix1 = min(tx1, tbx1)
+    iy1 = min(ty1, tby1)
+
+    if ix1 <= ix0 or iy1 <= iy0:
+        return False  # no intersection
+
+    intersection_area = (ix1 - ix0) * (iy1 - iy0)
+    text_area = (tx1 - tx0) * (ty1 - ty0)
+    if text_area <= 0:
+        return False
+
+    return (intersection_area / text_area) > _TABLE_OVERLAP_THRESHOLD
+
+
+def _format_table_as_markdown(table) -> str:
+    """Format a PyMuPDF Table object as a Markdown pipe table.
+
+    Returns an empty string when the table contains no usable content.
+    Pipe characters inside cell content are escaped so they do not break
+    the Markdown table syntax.
+    """
+    rows = table.extract()
+    if not rows:
+        return ""
+
+    cleaned_rows: list[list[str]] = []
+    for row in rows:
+        cleaned_row = [
+            (cell or "").strip().replace("\n", " ").replace("|", "\\|")
+            for cell in row
+        ]
+        cleaned_rows.append(cleaned_row)
+
+    if not cleaned_rows:
+        return ""
+
+    num_cols = max(len(row) for row in cleaned_rows)
+    if num_cols == 0:
+        return ""
+
+    # Pad every row to the full column count
+    padded = [row + [""] * (num_cols - len(row)) for row in cleaned_rows]
+
+    lines: list[str] = []
+    lines.append("| " + " | ".join(padded[0]) + " |")
+    lines.append("| " + " | ".join(["---"] * num_cols) + " |")
+    for row in padded[1:]:
+        lines.append("| " + " | ".join(row) + " |")
+
+    return "\n".join(lines)
+
+
+def _pdf_to_markdown_with_tables(src_path: Path) -> str | None:
+    """Extract a PDF to Markdown, preserving table structure via PyMuPDF.
+
+    Uses PyMuPDF's ``Page.find_tables()`` to detect tables and render them as
+    Markdown pipe tables.  Non-table text is extracted in reading order
+    (top-to-bottom, left-to-right) and interleaved with the table Markdown.
+
+    Returns ``None`` when PyMuPDF (``fitz``) is not importable, signalling the
+    caller to fall back to MarkItDown's text-only extraction.
+
+    Args:
+        src_path: Path to the PDF file.
+
+    Returns:
+        Markdown string with table structure preserved, or ``None`` if PyMuPDF
+        is unavailable or the document cannot be opened.
+    """
+    try:
+        import fitz  # type: ignore[import-untyped]  # PyMuPDF
+    except ImportError:
+        log.info("PyMuPDF (fitz) not available; will use MarkItDown for PDF extraction")
+        return None
+
+    try:
+        doc = fitz.open(str(src_path))
+    except Exception as exc:
+        log.warning(
+            "PyMuPDF could not open %s (%s); falling back to MarkItDown",
+            src_path.name,
+            exc,
+        )
+        return None
+
+    pages_md: list[str] = []
+
+    try:
+        for page in doc:
+            try:
+                tbl_finder = page.find_tables()
+                tables = list(tbl_finder.tables) if tbl_finder else []
+            except Exception:
+                tables = []
+
+            if not tables:
+                text = page.get_text("text").strip()
+                if text:
+                    pages_md.append(text)
+                continue
+
+            # Collect text blocks (block_type 0 = text, 1 = image)
+            raw_blocks = page.get_text("blocks")
+            text_blocks = [b for b in raw_blocks if b[6] == 0]
+
+            # Build a list of (top_y, kind, content) for sorting into reading order
+            items: list[tuple[float, str, object]] = []
+
+            for block in text_blocks:
+                bx0, by0, bx1, by1, block_text, _, _ = block
+                block_text = block_text.strip()
+                if not block_text:
+                    continue
+                # Skip text that lives inside a table's bounding box to avoid
+                # duplicate content – find_tables() already captures it.
+                if any(
+                    _bbox_overlaps_table((bx0, by0, bx1, by1), tbl.bbox)
+                    for tbl in tables
+                ):
+                    continue
+                items.append((by0, "text", block_text))
+
+            for tbl in tables:
+                items.append((tbl.bbox[1], "table", tbl))
+
+            # Sort in reading order: top-to-bottom (primary), left-to-right (secondary)
+            items.sort(key=lambda x: x[0])
+
+            page_parts: list[str] = []
+            for _, kind, content in items:
+                if kind == "text":
+                    page_parts.append(str(content))
+                else:
+                    md_table = _format_table_as_markdown(content)
+                    if md_table:
+                        page_parts.append(md_table)
+
+            if page_parts:
+                pages_md.append("\n\n".join(page_parts))
+    finally:
+        doc.close()
+
+    return "\n\n".join(pages_md)
+
+
 def convert_to_markdown(
     src_path: Path,
     output_path: Path | None = None,
 ) -> tuple[Path, str]:
     """Convert a document to Markdown.
+
+    For PDF files, PyMuPDF's table-detection is attempted first so that tables
+    embedded in the PDF are preserved as Markdown pipe tables.  This ensures
+    that a subsequent PDF → Word (or PDF → HTML) conversion via Pandoc retains
+    the table structure.  If PyMuPDF is not installed the conversion falls back
+    to MarkItDown's text-only extraction.
+
+    For all other supported formats MarkItDown is used directly.
 
     Args:
         src_path: Path to input file.
@@ -245,6 +415,29 @@ def convert_to_markdown(
             f"Supported: {', '.join(sorted(CONVERTIBLE_EXTENSIONS))}"
         )
 
+    if output_path is None:
+        output_path = src_path.with_suffix(".md")
+    else:
+        output_path = Path(output_path)
+
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    # For PDFs, attempt table-aware extraction via PyMuPDF first.
+    # This preserves table structure as Markdown pipe tables so that downstream
+    # conversions (e.g. to Word or HTML via Pandoc) include the tables.
+    if ext == ".pdf":
+        text = _pdf_to_markdown_with_tables(src_path)
+        if text is not None:
+            output_path.write_text(text, encoding="utf-8")
+            log.info(
+                "PDF table-aware extraction complete: %s -> %s (%d characters)",
+                src_path.name,
+                output_path.name,
+                len(text),
+            )
+            return output_path, text
+        log.info("PyMuPDF unavailable; using MarkItDown for PDF extraction")
+
     try:
         from markitdown import MarkItDown  # type: ignore[import-untyped]
     except ImportError as exc:
@@ -252,13 +445,6 @@ def convert_to_markdown(
             "MarkItDown is not installed. "
             "Install it with: pip install 'markitdown[pdf,docx,xlsx,pptx]'"
         ) from exc
-
-    if output_path is None:
-        output_path = src_path.with_suffix(".md")
-    else:
-        output_path = Path(output_path)
-
-    output_path.parent.mkdir(parents=True, exist_ok=True)
 
     log.info("Converting %s -> %s", src_path.name, output_path.name)
 
