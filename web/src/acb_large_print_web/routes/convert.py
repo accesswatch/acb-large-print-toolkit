@@ -1,20 +1,22 @@
 """Convert route -- convert documents via MarkItDown, Pandoc, WeasyPrint, or DAISY Pipeline.
 
-Seven conversion directions:
-1. To Markdown (MarkItDown): .docx, .xlsx, .pptx, .pdf, .html, .csv, etc.
-2. To ACB HTML (Pandoc, or MarkItDown→Pandoc): .md, .rst, .odt, .rtf, .docx, .epub,
-   plus chained: .pptx, .xlsx, .xls, .pdf, .csv, .html, .htm, .json, .xml
-3. To Word .docx (Pandoc, or MarkItDown→Pandoc): .md, .rst, .odt, .rtf, .epub,
-   plus chained: .pptx, .xlsx, .xls, .pdf, .csv, .html, .htm, .json, .xml
-4. To EPUB 3 (Pandoc, or MarkItDown→Pandoc): .md, .rst, .odt, .rtf, .docx,
-   plus chained: .pptx, .xlsx, .xls, .pdf, .csv, .html, .htm, .json, .xml
+Eight conversion directions:
+1. To Markdown (MarkItDown): .docx, .xlsx, .pptx, .pdf, .html, .csv, .ipynb, etc.
+2. To ACB HTML (Pandoc, or MarkItDown→Pandoc): .md, .rst, .odt, .rtf, .docx, .epub, .tex,
+   plus chained: .pptx, .xlsx, .xls, .pdf, .csv, .html, .htm, .json, .xml, .ipynb
+3. To Word .docx (Pandoc, or MarkItDown→Pandoc): .md, .rst, .odt, .rtf, .epub, .tex,
+   plus chained: .pptx, .xlsx, .xls, .pdf, .csv, .html, .htm, .json, .xml, .ipynb
+4. To EPUB 3 (Pandoc, or MarkItDown→Pandoc): .md, .rst, .odt, .rtf, .docx, .tex,
+   plus chained: .pptx, .xlsx, .xls, .pdf, .csv, .html, .htm, .json, .xml, .ipynb
 5. To PDF (Pandoc + WeasyPrint, or MarkItDown→Pandoc+WeasyPrint): .md, .rst, .odt,
-   .rtf, .docx, .epub, plus chained: .pptx, .xlsx, .xls, .pdf, .csv, .html, .htm
-6. To EPUB / DAISY (Pipeline): .docx, .html, .epub (when Pipeline is installed)
+   .rtf, .docx, .epub, .tex, plus chained: .pptx, .xlsx, .xls, .pdf, .csv, .html, .htm
+6. To Plain Text (Pandoc --to plain): same as To HTML.  Screen-reader-friendly .txt.
+7. To EPUB / DAISY (Pipeline): .docx, .html, .epub (when Pipeline is installed)
 
 Two-stage chaining: formats not natively supported by Pandoc are first extracted to
 Markdown via MarkItDown, then that Markdown is fed to Pandoc. This transparently
-extends Pandoc output to PowerPoint, Excel, PDF, and other MarkItDown-readable formats.
+extends Pandoc output to PowerPoint, Excel, PDF, Jupyter notebooks, and other
+MarkItDown-readable formats.
 
 Audio transcription has its own dedicated route at /whisperer (BITS Whisperer).
 """
@@ -35,6 +37,7 @@ from acb_large_print.pandoc_converter import (
     convert_to_odt,
     convert_to_epub,
     convert_to_pdf,
+    convert_to_text,
     pandoc_available,
     weasyprint_available,
 )
@@ -66,6 +69,7 @@ _NO_ACB_CSS_SENTINEL = Path("__no_acb_css__")
 _DOWNLOAD_MIMETYPES: dict[str, str] = {
     ".html": "text/html; charset=utf-8",
     ".md": "text/markdown; charset=utf-8",
+    ".txt": "text/plain; charset=utf-8",
     ".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
     ".odt": "application/vnd.oasis.opendocument.text",
     ".epub": "application/epub+zip",
@@ -122,15 +126,16 @@ def convert_preview(token: str, filename: str):
 # but are worth chaining via Markdown (excludes .zip and image formats).
 # These get a two-stage conversion: MarkItDown → .md → Pandoc.
 _CHAIN_VIA_MARKDOWN: frozenset[str] = frozenset({
-    ".pptx",  # PowerPoint
-    ".xlsx",  # Excel
-    ".xls",   # Excel (legacy)
-    ".pdf",   # PDF (text-based)
-    ".csv",   # CSV data
-    ".html",  # HTML (re-encode with ACB styling via Pandoc)
-    ".htm",   # HTML (alternate extension)
-    ".json",  # JSON data
-    ".xml",   # XML data
+    ".pptx",   # PowerPoint
+    ".xlsx",   # Excel
+    ".xls",    # Excel (legacy)
+    ".pdf",    # PDF (text-based)
+    ".csv",    # CSV data
+    ".html",   # HTML (re-encode with ACB styling via Pandoc)
+    ".htm",    # HTML (alternate extension)
+    ".json",   # JSON data
+    ".xml",    # XML data
+    ".ipynb",  # Jupyter notebooks (MarkItDown → Markdown → Pandoc)
 })
 
 # All formats accepted by Pandoc outputs after chaining is accounted for
@@ -246,6 +251,7 @@ def _template_context(**extra):
     convert_to_epub_enabled = bool(all_flags.get("GLOW_ENABLE_CONVERT_TO_EPUB", True))
     convert_to_pdf_enabled = bool(all_flags.get("GLOW_ENABLE_CONVERT_TO_PDF", True))
     convert_to_pipeline_enabled = bool(all_flags.get("GLOW_ENABLE_CONVERT_TO_PIPELINE", True))
+    convert_to_text_enabled = bool(all_flags.get("GLOW_ENABLE_CONVERT_TO_TEXT", True))
 
     pipeline_conversions = (
         get_available_conversions() if convert_to_pipeline_enabled else {}
@@ -266,6 +272,7 @@ def _template_context(**extra):
         convert_to_epub_enabled=convert_to_epub_enabled,
         convert_to_pdf_enabled=convert_to_pdf_enabled,
         convert_to_pipeline_enabled=convert_to_pipeline_enabled,
+        convert_to_text_enabled=convert_to_text_enabled,
         speech_enabled=bool(all_flags.get("GLOW_ENABLE_SPEECH", True)),
         export_html_enabled=bool(all_flags.get("GLOW_ENABLE_EXPORT_HTML", True)),
         # Extension sets for JS-driven UI filtering
@@ -345,6 +352,7 @@ def convert_submit():
             "to-odt": ctx["convert_to_odt_enabled"],
             "to-epub": ctx["convert_to_epub_enabled"],
             "to-pdf": ctx["convert_to_pdf_enabled"],
+            "to-text": ctx["convert_to_text_enabled"],
             "to-pipeline": ctx["convert_to_pipeline_enabled"],
             "to-speech": ctx["speech_enabled"],
         }
@@ -609,6 +617,44 @@ def convert_submit():
                 title=title,
                 css_path=css_path,
                 binding_margin=binding_margin,
+            )
+            result_token = token
+            token = None
+            return _convert_result_response(
+                result_token,
+                download_name=output_path.name,
+                preview_type="binary",
+                original_stem=saved_path.stem,
+            )
+        elif direction == "to-text":
+            # Pandoc (or MarkItDown→Pandoc): document -> plain text
+            if not pandoc_available():
+                raise UploadError(
+                    "Pandoc is not installed on the server. "
+                    "Plain text conversion is unavailable."
+                )
+            if ext not in _PANDOC_EFFECTIVE_EXTENSIONS:
+                raise UploadError(
+                    f"File type '{ext}' cannot be converted to plain text. "
+                    f"Supported: {', '.join(sorted(_PANDOC_EFFECTIVE_EXTENSIONS))}."
+                )
+            # Two-stage chain: MarkItDown -> Markdown -> Pandoc plain text
+            pandoc_input = saved_path
+            if ext in _CHAIN_VIA_MARKDOWN:
+                md_intermediate = temp_dir / f"{saved_path.stem}-extracted.md"
+                current_app.logger.info(
+                    "CONVERT two_stage ext=%s stage1=markitdown->md", ext
+                )
+                pandoc_input, _ = convert_to_markdown(
+                    saved_path, output_path=md_intermediate
+                )
+            txt_output = temp_dir / f"{saved_path.stem}.txt"
+            user_title = request.form.get("title", "").strip()
+            title = user_title or saved_path.stem.replace("-", " ").replace("_", " ")
+            output_path, _ = _try_pandoc_or_docx_chain(
+                convert_to_text, pandoc_input, temp_dir,
+                output_path=txt_output,
+                title=title,
             )
             result_token = token
             token = None

@@ -63,6 +63,26 @@ Releases are tagged in the [GitHub repository](https://github.com/accesswatch/ac
   multi-column, `ACB-PAGE-SIZE` / `ACB-MULTIPLE-COLUMNS`), and
   `_check_run_formatting` (font color and strikethrough, `ACB-FONT-COLOR` /
   `ACB-STRIKETHROUGH`).  All wired into `audit_document`.
+- **LaTeX (.tex) input support.** All Pandoc conversion directions (HTML, Word,
+  ODT, EPUB, PDF, plain text) now accept `.tex` (LaTeX) source files natively.
+  `PANDOC_INPUT_EXTENSIONS` and `_INPUT_FORMAT` updated in
+  `pandoc_converter.py`; `.tex` added to `CONVERT_EXTENSIONS` in `upload.py`.
+  Enables direct conversion of academic textbooks, papers, and technical
+  manuals to ACB-accessible formats without any intermediate step.
+- **Jupyter Notebook (.ipynb) input support.** `.ipynb` files are now accepted
+  by all Pandoc output directions via the existing MarkItDown → Markdown → Pandoc
+  two-stage chain.  Added to `CONVERTIBLE_EXTENSIONS` (`converter.py`),
+  `CONVERT_EXTENSIONS` (`upload.py`), and `_CHAIN_VIA_MARKDOWN`
+  (`routes/convert.py`).  Useful for accessible data science education content.
+- **"Screen reader text (.txt)" conversion direction.** New `to-text` direction
+  exposes `pandoc --to plain` as a first-class Convert option.  Strips all
+  formatting symbols from Markdown, Word, LaTeX, PowerPoint, Excel, PDF,
+  Jupyter notebooks, and more, producing a clean `.txt` file ready to paste
+  into any screen reader or Word template.  Backed by the new
+  `convert_to_text()` function in `pandoc_converter.py`, the
+  `GLOW_ENABLE_CONVERT_TO_TEXT` feature flag, and a dedicated radio button in
+  `convert_form.html`.  The two-stage MarkItDown chain applies for non-native
+  Pandoc formats just like every other direction.
 
 - **Roadmap core feature regression tests.** Added
   `web/tests/test_magic_routes.py` to cover table advisor, pronunciation

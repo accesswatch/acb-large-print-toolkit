@@ -56,6 +56,7 @@ CONVERTIBLE_EXTENSIONS = {
     ".xml",
     ".epub",
     ".zip",
+    ".ipynb",  # Jupyter notebooks (MarkItDown 0.2+)
     # Image files (new in MarkItDown 0.2+, with optional LLM for descriptions)
     ".jpg",
     ".jpeg",

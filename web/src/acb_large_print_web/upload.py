@@ -35,13 +35,15 @@ AUDIO_EXTENSIONS = {
 CONVERT_EXTENSIONS = ALLOWED_EXTENSIONS | {
     ".rst",
     ".odt",
-    ".rtf",  # Pandoc inputs
+    ".rtf",    # Pandoc direct inputs
+    ".tex",    # LaTeX (Pandoc direct input)
     ".html",
-    ".htm",  # MarkItDown
+    ".htm",    # MarkItDown
     ".csv",
     ".json",
-    ".xml",  # MarkItDown
-    ".zip",  # MarkItDown
+    ".xml",    # MarkItDown
+    ".ipynb",  # Jupyter notebooks (MarkItDown)
+    ".zip",    # MarkItDown
     # Image files (new in MarkItDown 0.2+, with optional LLM for alt text)
     ".jpg",
     ".jpeg",
@@ -60,6 +62,8 @@ _FORMAT_LABELS = {
     ".md": "Markdown file",
     ".pdf": "PDF document",
     ".epub": "ePub e-book",
+    ".tex": "LaTeX document",
+    ".ipynb": "Jupyter notebook",
 }
 _UUID_RE = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
 

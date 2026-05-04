@@ -25,6 +25,7 @@
   or convert_to_odt_enabled
   or convert_to_epub_enabled
   or convert_to_pdf_enabled
+  or convert_to_text_enabled
   or speech_enabled
   or (convert_to_pipeline_enabled and pipeline_installed and pipeline_conversions)
   or (export_html_enabled and pandoc_installed)
@@ -85,12 +86,23 @@
       </label>
       {% endif %}
 
+      {% if convert_to_text_enabled %}
+      <label>
+        <input type="radio" name="direction" value="to-text"{% if not ns.default_set and pandoc_installed %} checked{% set ns.default_set = true %}{% endif %}{% if not pandoc_installed %} disabled{% endif %}>
+        <span>
+          <strong>Screen reader text (.txt)</strong><br>
+          Export a clean plain-text file with all formatting symbols removed &mdash; ideal for pasting into your screen reader, a Word template, or any assistive technology. Accepts Markdown, Word, LaTeX, PowerPoint, Excel, PDF, Jupyter notebooks, and more.
+          {% if not pandoc_installed %}<br><em>This option is temporarily unavailable on this server.</em>{% endif %}
+        </span>
+      </label>
+      {% endif %}
+
       {% if convert_to_html_enabled %}
       <label>
         <input type="radio" name="direction" value="to-html"{% if not ns.default_set and pandoc_installed %} checked{% set ns.default_set = true %}{% endif %}{% if not pandoc_installed %} disabled{% endif %}>
         <span>
           <strong>Accessible web page (HTML)</strong><br>
-          Create a complete web page with ACB Large Print formatting and WCAG 2.2 AA accessibility built in. Ready to upload to a website or email as an attachment. Accepts Markdown, Word, PowerPoint, Excel, PDF, and more.
+          Create a complete web page with ACB Large Print formatting and WCAG 2.2 AA accessibility built in. Ready to upload to a website or email as an attachment. Accepts Markdown, Word, LaTeX, PowerPoint, Excel, PDF, Jupyter notebooks, and more.
           {% if not pandoc_installed %}<br><em>This option is temporarily unavailable on this server.</em>{% endif %}
         </span>
       </label>
@@ -101,7 +113,7 @@
         <input type="radio" name="direction" value="to-docx"{% if not ns.default_set and pandoc_installed %} checked{% set ns.default_set = true %}{% endif %}{% if not pandoc_installed %} disabled{% endif %}>
         <span>
           <strong>Word document (.docx)</strong><br>
-          Create a Word document from Markdown, reStructuredText, OpenDocument, Rich Text, ePub, PowerPoint, Excel, PDF, and more. Good for delivering editable documents or collaborating with people who use Microsoft Word.
+          Create a Word document from Markdown, reStructuredText, LaTeX, OpenDocument, Rich Text, ePub, PowerPoint, Excel, Jupyter notebooks, PDF, and more. Good for delivering editable documents or collaborating with people who use Microsoft Word.
           {% if not pandoc_installed %}<br><em>This option is temporarily unavailable on this server.</em>{% endif %}
         </span>
       </label>

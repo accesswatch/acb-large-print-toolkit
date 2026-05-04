@@ -134,6 +134,9 @@ _DEFAULTS: dict[str, bool] = {
     # 4.3 OpenDocument Text export
     "GLOW_ENABLE_CONVERT_TO_ODT": True,
 
+    # Plain text export (Pandoc --to plain)
+    "GLOW_ENABLE_CONVERT_TO_TEXT": True,
+
     # 7.3 Cognitive accessibility profile
     "GLOW_ENABLE_COGNITIVE_PROFILE": True,
 

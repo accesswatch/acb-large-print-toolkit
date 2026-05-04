@@ -5,8 +5,9 @@ Wraps the Pandoc CLI to convert text-oriented document formats into:
 - Word (.docx) documents with optional ACB reference styling
 - EPUB 3 e-books with embedded ACB accessibility CSS
 - PDF documents rendered from ACB HTML via WeasyPrint
+- Plain text (.txt) for screen-reader-friendly export
 
-Supported input: .md, .rst, .odt, .rtf, .docx, .epub.
+Supported input: .md, .rst, .odt, .rtf, .docx, .epub, .tex.
 
 Pandoc is an external dependency -- not a Python package.  The module
 falls back gracefully when it is not installed.  WeasyPrint is an
@@ -28,12 +29,13 @@ log = logging.getLogger("acb_large_print")
 # Deliberately scoped to document types relevant to accessibility conversion
 # (not the full 40+ formats Pandoc supports).
 PANDOC_INPUT_EXTENSIONS: set[str] = {
-    ".md",  # Markdown (GFM)
-    ".rst",  # reStructuredText
-    ".odt",  # OpenDocument Text
-    ".rtf",  # Rich Text Format
-    ".docx",  # Word (Pandoc's own reader)
-    ".epub",  # ePub e-books
+    ".md",     # Markdown (GFM)
+    ".rst",    # reStructuredText
+    ".odt",    # OpenDocument Text
+    ".rtf",    # Rich Text Format
+    ".docx",   # Word (Pandoc's own reader)
+    ".epub",   # ePub e-books
+    ".tex",    # LaTeX (academic / textbook publishing)
 }
 
 # Pandoc input format flag for each extension
@@ -44,6 +46,7 @@ _INPUT_FORMAT: dict[str, str] = {
     ".rtf": "rtf",
     ".docx": "docx",
     ".epub": "epub",
+    ".tex": "latex",
 }
 
 # ---------------------------------------------------------------------------
@@ -806,3 +809,97 @@ def convert_to_pdf(
 
     finally:
         shutil.rmtree(tmp_dir, ignore_errors=True)
+
+
+def convert_to_text(
+    src_path: Path,
+    output_path: Path | None = None,
+    *,
+    title: str | None = None,
+    lang: str = "en",
+) -> tuple[Path, str]:
+    """Convert a document to plain text (.txt) via Pandoc.
+
+    Produces a clean, screen-reader-friendly plain text file with all
+    markdown syntax removed.  Useful for users who want to paste content
+    into their own Word template, or pass to a screen reader directly.
+
+    Args:
+        src_path: Path to input file (.md, .rst, .odt, .rtf, .docx, .epub, .tex).
+        output_path: Optional path for the .txt file.  Defaults to same
+            directory / stem as *src_path* with ``.txt`` extension.
+        title: Document title (written as a heading at the top of the file).
+            Defaults to the input filename stem.
+        lang: BCP-47 language tag (used for Pandoc metadata).
+
+    Returns:
+        (output_path, text_content)
+
+    Raises:
+        FileNotFoundError: If *src_path* does not exist.
+        ValueError: If the extension is not in PANDOC_INPUT_EXTENSIONS.
+        RuntimeError: If Pandoc is not installed or conversion fails.
+    """
+    src_path = Path(src_path)
+    if not src_path.exists():
+        raise FileNotFoundError(f"File not found: {src_path}")
+
+    ext = src_path.suffix.lower()
+    if ext not in PANDOC_INPUT_EXTENSIONS:
+        raise ValueError(
+            f"Cannot convert '{ext}' files to plain text. "
+            f"Supported: {', '.join(sorted(PANDOC_INPUT_EXTENSIONS))}"
+        )
+
+    exe = shutil.which("pandoc")
+    if not exe:
+        raise RuntimeError(
+            "Pandoc is not installed. "
+            "Install it from https://pandoc.org/installing.html"
+        )
+
+    if output_path is None:
+        output_path = src_path.with_suffix(".txt")
+    else:
+        output_path = Path(output_path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    if title is None:
+        title = src_path.stem.replace("-", " ").replace("_", " ")
+
+    input_fmt = _INPUT_FORMAT.get(ext, "markdown")
+
+    cmd = [
+        exe,
+        "--standalone",
+        "--from", input_fmt,
+        "--to", "plain",
+        "--metadata", f"title={title}",
+        "--metadata", f"lang={lang}",
+        "--output", str(output_path),
+        str(src_path),
+    ]
+
+    log.info("Running: %s", " ".join(cmd))
+    result = subprocess.run(
+        cmd,
+        capture_output=True,
+        text=True,
+        timeout=60,
+    )
+
+    if result.returncode != 0:
+        stderr = result.stderr.strip()
+        raise RuntimeError(
+            f"Pandoc plain-text conversion failed (exit code {result.returncode}): "
+            f"{stderr}"
+        )
+
+    text = output_path.read_text(encoding="utf-8")
+    log.info(
+        "Pandoc plain-text conversion complete: %s -> %s (%d characters)",
+        src_path.name,
+        output_path.name,
+        len(text),
+    )
+    return output_path, text
