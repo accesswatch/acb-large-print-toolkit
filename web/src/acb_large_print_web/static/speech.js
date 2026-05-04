@@ -220,7 +220,7 @@
   var downloadBtn = byId("download-btn");
   var nextDocumentBtn = byId("next-document-btn");
   var documentPreviewBtn = byId("document-preview-btn");
-  var documentDownloadBtn = byId("document-download-btn");
+  var documentGoBtn = byId("document-go-btn");
   var documentAfterPrepareActions = byId("document-after-prepare-actions");
   var documentInput = byId("speech-document");
   var documentTokenInput = byId("speech-document-token");
@@ -231,6 +231,11 @@
   var documentError = byId("document-error");
   var audioPlayer = byId("audio-player");
   var playerWrap = byId("preview-player");
+  var listenLivePlayer = byId("listen-live-player");
+  var listenLiveStatus = byId("listen-live-status");
+  var listenLiveProgressWrap = byId("listen-live-progress-wrap");
+  var listenLiveProgressBar = byId("listen-live-progress-bar");
+  var listenLiveStopBtn = byId("listen-live-stop-btn");
   var errorRegion = byId("preview-error");
   var statusRegion = byId("preview-status");
   var form = byId("speech-form");
@@ -238,7 +243,11 @@
   var preparedDocument = null;
   var baseNextDisabled = !!(nextDocumentBtn && nextDocumentBtn.hasAttribute("disabled"));
   var basePreviewDisabled = !!(documentPreviewBtn && documentPreviewBtn.hasAttribute("disabled"));
-  var baseDownloadDisabled = !!(documentDownloadBtn && documentDownloadBtn.hasAttribute("disabled"));
+  var baseGoDisabled = !!(documentGoBtn && documentGoBtn.hasAttribute("disabled"));
+
+  // Listen Live state
+  var listenLiveActive = false;
+  var listenLiveAbortController = null;
 
   function wireSpaceActivation(button) {
     if (!button) {
@@ -298,8 +307,8 @@
     if (documentPreviewBtn) {
       documentPreviewBtn.disabled = !!isBusy || basePreviewDisabled || !preparedDocument;
     }
-    if (documentDownloadBtn) {
-      documentDownloadBtn.disabled = !!isBusy || baseDownloadDisabled || !preparedDocument;
+    if (documentGoBtn) {
+      documentGoBtn.disabled = !!isBusy || baseGoDisabled || !preparedDocument;
     }
     if (documentAfterPrepareActions) {
       documentAfterPrepareActions.hidden = !showPreparedActions;
@@ -466,7 +475,7 @@
           renderCharCount();
           persistState();
         }
-        showDocumentStatus("Document prepared. Review the estimate, then preview first sentences or download full audio.");
+        showDocumentStatus("Document prepared. Review the estimate, then preview first sentences or choose Download / Listen Live.");
         updateDocumentActionState(false);
         return json;
       })
@@ -542,7 +551,7 @@
     ensureDocumentPrepared()
       .then(function (doc) {
         setBusy(true);
-        showDocumentStatus("Rendering full document audio. Keep this tab open.");
+        showDocumentStatus("Rendering full document audio. Audio will download automatically when ready. Keep this tab open.");
         var stopAnnouncements = startTimedAnnouncements(
           showDocumentStatus,
           doc.estimate_processing_seconds || 30,
@@ -580,6 +589,249 @@
         showDocumentError(err && err.message ? err.message : String(err));
       });
   }
+
+  function runDocumentListenLive() {
+    if (!form || !form.dataset.documentStreamUrl) {
+      showDocumentError("Listen Live streaming endpoint is unavailable.");
+      return;
+    }
+    clearDocumentError();
+
+    // Stop any existing live session
+    if (listenLiveAbortController) {
+      listenLiveAbortController.abort();
+      listenLiveAbortController = null;
+    }
+    listenLiveActive = false;
+
+    ensureDocumentPrepared()
+      .then(function (doc) {
+        var AudioContextCtor = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContextCtor) {
+          showDocumentError("Your browser does not support the Web Audio API required for Listen Live. Use the Download option instead.");
+          return;
+        }
+
+        setBusy(true);
+        listenLiveActive = true;
+
+        // Show the Live player panel
+        if (listenLivePlayer) {
+          listenLivePlayer.style.display = "";
+        }
+        if (listenLiveProgressWrap) {
+          listenLiveProgressWrap.style.display = "";
+        }
+        if (listenLiveStopBtn) {
+          listenLiveStopBtn.style.display = "";
+        }
+        if (playerWrap) {
+          playerWrap.style.display = "none";
+        }
+
+        function setLiveStatus(msg) {
+          if (listenLiveStatus) {
+            listenLiveStatus.textContent = msg;
+          }
+        }
+        function setLiveProgress(done, total) {
+          if (!listenLiveProgressBar) {
+            return;
+          }
+          var pct = total > 0 ? Math.round((done / total) * 100) : 0;
+          listenLiveProgressBar.style.width = pct + "%";
+          listenLiveProgressBar.setAttribute("aria-valuenow", pct);
+        }
+
+        setLiveStatus("Connecting to speech server\u2026");
+        setLiveProgress(0, 1);
+
+        var audioCtx = new AudioContextCtor();
+        var scheduledUntil = audioCtx.currentTime + 0.2;
+        var totalChunks = 0;
+        var chunksReceived = 0;
+        var abortCtrl = new AbortController();
+        listenLiveAbortController = abortCtrl;
+
+        function stopLive(msg) {
+          listenLiveActive = false;
+          listenLiveAbortController = null;
+          abortCtrl.abort();
+          try { audioCtx.close(); } catch (e) {}
+          setBusy(false);
+          if (listenLiveStopBtn) {
+            listenLiveStopBtn.style.display = "none";
+          }
+          if (listenLiveProgressWrap) {
+            listenLiveProgressWrap.style.display = "none";
+          }
+          if (msg) {
+            setLiveStatus(msg);
+          }
+        }
+
+        if (listenLiveStopBtn) {
+          listenLiveStopBtn.onclick = function () {
+            stopLive("Playback stopped.");
+          };
+        }
+
+        var stopAnnouncements = startTimedAnnouncements(
+          setLiveStatus,
+          doc.estimate_processing_seconds || 30,
+          doc.announcement_interval_seconds || 20
+        );
+
+        // Fetch the SSE stream
+        fetch(form.dataset.documentStreamUrl, {
+          method: "POST",
+          headers: { "X-CSRFToken": getCsrfToken() },
+          body: buildFormData(false),
+          signal: abortCtrl.signal
+        })
+          .then(function (resp) {
+            if (!resp.ok) {
+              return errorFromResponse(resp);
+            }
+            var reader = resp.body.getReader();
+            var decoder = new TextDecoder();
+            var sseBuffer = "";
+
+            function parseAndHandleEvents(raw) {
+              sseBuffer += raw;
+              var parts = sseBuffer.split("\n\n");
+              sseBuffer = parts.pop(); // keep incomplete last segment
+
+              for (var pi = 0; pi < parts.length; pi++) {
+                var block = parts[pi];
+                var eventType = "";
+                var dataLines = [];
+                var lines = block.split("\n");
+                for (var li = 0; li < lines.length; li++) {
+                  var line = lines[li];
+                  if (line.startsWith("event: ")) {
+                    eventType = line.slice(7).trim();
+                  } else if (line.startsWith("data: ")) {
+                    dataLines.push(line.slice(6));
+                  }
+                }
+                var dataStr = dataLines.join("\n");
+                handleSseEvent(eventType, dataStr);
+              }
+            }
+
+            function handleSseEvent(eventType, dataStr) {
+              var payload;
+              try {
+                payload = JSON.parse(dataStr);
+              } catch (e) {
+                return;
+              }
+
+              if (eventType === "audio_config") {
+                totalChunks = payload.totalChunks || 0;
+                setLiveStatus("Synthesising audio\u2026 (0 of " + totalChunks + " segments ready)");
+                setLiveProgress(0, totalChunks);
+
+              } else if (eventType === "audio_chunk") {
+                chunksReceived++;
+                setLiveStatus("Playing segment " + chunksReceived + " of " + (totalChunks || "?"));
+                setLiveProgress(chunksReceived, totalChunks || chunksReceived);
+
+                // Decode base64 WAV and schedule via Web Audio API
+                var wavB64 = payload.wav;
+                if (wavB64) {
+                  try {
+                    var binaryStr = atob(wavB64);
+                    var bytes = new Uint8Array(binaryStr.length);
+                    for (var bi = 0; bi < binaryStr.length; bi++) {
+                      bytes[bi] = binaryStr.charCodeAt(bi);
+                    }
+                    audioCtx.decodeAudioData(
+                      bytes.buffer,
+                      function (audioBuffer) {
+                        var source = audioCtx.createBufferSource();
+                        source.buffer = audioBuffer;
+                        source.connect(audioCtx.destination);
+                        var startAt = Math.max(scheduledUntil, audioCtx.currentTime + 0.05);
+                        source.start(startAt);
+                        scheduledUntil = startAt + audioBuffer.duration;
+                      },
+                      function () {
+                        // Decoding failed for this chunk -- skip silently
+                      }
+                    );
+                  } catch (e) {
+                    // Skip malformed chunk
+                  }
+                }
+
+              } else if (eventType === "done") {
+                stopAnnouncements();
+                stopLive("All " + (payload.totalChunks || chunksReceived) + " segments queued. Playback finishing\u2026");
+                setLiveProgress(payload.totalChunks || chunksReceived, payload.totalChunks || chunksReceived);
+
+              } else if (eventType === "error") {
+                stopAnnouncements();
+                stopLive(null);
+                showDocumentError("Listen Live error: " + (payload.message || "Unknown error"));
+              }
+            }
+
+            function pump() {
+              return reader.read().then(function (result) {
+                if (result.done) {
+                  return;
+                }
+                var raw = decoder.decode(result.value, { stream: true });
+                parseAndHandleEvents(raw);
+                if (!abortCtrl.signal.aborted) {
+                  return pump();
+                }
+              });
+            }
+
+            return pump();
+          })
+          .catch(function (err) {
+            if (err && err.name === "AbortError") {
+              return;
+            }
+            stopAnnouncements();
+            stopLive(null);
+            showDocumentError("Listen Live failed: " + (err && err.message ? err.message : err));
+          });
+      })
+      .catch(function (err) {
+        setBusy(false);
+        showDocumentError(err && err.message ? err.message : String(err));
+      });
+  }
+
+  function getDocMode() {
+    var modeInput = document.querySelector('input[name="doc_mode"]:checked');
+    return modeInput ? modeInput.value : "download";
+  }
+
+  function updateGoButtonLabel() {
+    if (!documentGoBtn) {
+      return;
+    }
+    var mode = getDocMode();
+    documentGoBtn.setAttribute(
+      "aria-label",
+      mode === "listen" ? "Listen Live as it generates" : "Download full document audio"
+    );
+    documentGoBtn.textContent =
+      mode === "listen" ? "Listen Live" : "Download full document audio";
+  }
+
+  // Wire mode radio buttons to update the Go button label
+  var docModeInputs = document.querySelectorAll('input[name="doc_mode"]');
+  for (var mi = 0; mi < docModeInputs.length; mi++) {
+    docModeInputs[mi].addEventListener("change", updateGoButtonLabel);
+  }
+  updateGoButtonLabel();
 
   if (previewBtn && form && audioPlayer && playerWrap) {
     previewBtn.addEventListener("click", function () {
@@ -655,13 +907,19 @@
     documentPreviewBtn.addEventListener("click", runDocumentPreview);
   }
 
-  if (documentDownloadBtn) {
-    documentDownloadBtn.addEventListener("click", runDocumentDownload);
+  if (documentGoBtn) {
+    documentGoBtn.addEventListener("click", function () {
+      if (getDocMode() === "listen") {
+        runDocumentListenLive();
+      } else {
+        runDocumentDownload();
+      }
+    });
   }
 
   wireSpaceActivation(nextDocumentBtn);
   wireSpaceActivation(documentPreviewBtn);
-  wireSpaceActivation(documentDownloadBtn);
+  wireSpaceActivation(documentGoBtn);
 
   if (documentInput) {
     documentInput.addEventListener("change", function () {
@@ -677,6 +935,14 @@
       if (documentEstimateWrap) {
         documentEstimateWrap.style.display = "none";
       }
+      if (listenLivePlayer) {
+        listenLivePlayer.style.display = "none";
+      }
+      if (listenLiveAbortController) {
+        listenLiveAbortController.abort();
+        listenLiveAbortController = null;
+      }
+      listenLiveActive = false;
       updateDocumentActionState(false);
       showDocumentStatus("Press Next to prepare document text and show timing details.");
     });

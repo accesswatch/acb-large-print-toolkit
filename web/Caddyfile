@@ -19,7 +19,14 @@ csedesigns.com, www.csedesigns.com {
 
 # ACB Large Print web application -- reverse proxy to Flask/Gunicorn
 lp.csedesigns.com, glow.bits-acb.org {
-    reverse_proxy web:8000
+    reverse_proxy web:8000 {
+        transport http {
+            dial_timeout         10s
+            response_header_timeout 60s
+            read_timeout         3600s
+        }
+        flush_interval -1
+    }
     encode gzip
 
     header {

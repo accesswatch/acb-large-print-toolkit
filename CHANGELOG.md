@@ -10,6 +10,60 @@ Releases are tagged in the [GitHub repository](https://github.com/accesswatch/ac
 
 ### Added
 
+- **Listen Live speech mode.** Speech Studio now offers a "Listen Live" radio
+  button option that streams audio to the browser in real time as each sentence
+  is synthesised, using the Web Audio API.  No file is produced; playback begins
+  immediately and a progress bar tracks synthesis.  A "Stop playback" button
+  lets users cancel at any time.  (`speech.html`, `speech.js`,
+  `routes/speech.py`, `speech.py` — `stream_synthesize_sse`)
+- **Streaming WAV download for long documents.** The "Download full document
+  audio" path now streams WAV bytes in chunks as synthesis proceeds, keeping
+  the Caddy/nginx connection alive and eliminating 502 proxy timeout errors on
+  long documents.  (`routes/speech.py` — `speech_document_download`,
+  `speech.py` — `stream_synthesize_wav`, `_make_streaming_wav_header`)
+- **SSE `/speech/stream-document` endpoint.** New `POST` route returns
+  `text/event-stream` events (`audio_config`, `audio_chunk`, `done`, `error`)
+  for Listen Live playback.  (`routes/speech.py`)
+- **Caddy `flush_interval -1` and timeout settings.** `Caddyfile` and
+  `Caddyfile.example` updated with `response_header_timeout 60s`,
+  `read_timeout 3600s`, and `flush_interval -1` so that SSE and streaming
+  WAV responses are never buffered or dropped by the reverse proxy.
+- **mammoth DOCX fallback for speech text extraction.** When `convert_to_markdown`
+  returns empty text for a `.docx` file (e.g. Google Workspace / Gemini add-in
+  documents using Strict Open XML), `_extract_document_text` in
+  `routes/speech.py` now falls back to `mammoth.extract_raw_text`.
+- **mammoth DOCX fallback in `convert_to_markdown`.** `converter.py` now calls
+  `mammoth.convert_to_markdown` when MarkItDown returns empty text for a
+  `.docx` file, recovering text from Strict Open XML / SDT-heavy documents.
+- **Automatic Pandoc DOCX fallback in all convert directions.** When Pandoc
+  cannot read a `.docx` file (e.g. Strict Open XML / Gemini-generated files),
+  the conversion automatically retries via the MarkItDown → Markdown → Pandoc
+  chain.  Applies to HTML, ODT, EPUB, and PDF output directions.  A user-
+  friendly error is shown if both paths fail.  (`routes/convert.py` —
+  `_try_pandoc_or_docx_chain`)
+- **CFBF (legacy `.doc`) magic-bytes detection in upload.** Files uploaded with
+  a `.docx` / `.xlsx` / `.pptx` extension but containing a Compound File Binary
+  Format header (`D0 CF 11 E0`) are now detected and rejected with an
+  actionable message directing users to re-save as `.docx` in Word.
+  (`upload.py`)
+- **PDF structured extraction with headings, bold, lists, and metadata.**
+  `_pdf_to_markdown_structured` in `converter.py` replaces the previous
+  table-only extractor.  It now infers heading levels from font-size ratios,
+  emits `**bold**` and `<u>italic</u>` inline markup, detects bullet and
+  numbered list items, retries borderless table detection with the `"text"`
+  strategy when `"lines"` finds nothing, and emits a YAML front-matter block
+  from PDF metadata (title, author, subject).
+- **Four new audit rules** in `constants.py` and `constants.ts`:
+  `ACB-PAGE-SIZE` (US Letter enforcement), `ACB-MULTIPLE-COLUMNS` (single-
+  column layout), `ACB-FONT-COLOR` (black/auto text color), and
+  `ACB-STRIKETHROUGH` (no strikethrough text).
+- **Three new auditor checks** in `auditor.py`: `_check_line_spacing` (style
+  and paragraph level, `ACB-LINE-SPACING`), `_check_widow_orphan` (style and
+  paragraph level, `ACB-WIDOW-ORPHAN`), `_check_page_layout` (page size and
+  multi-column, `ACB-PAGE-SIZE` / `ACB-MULTIPLE-COLUMNS`), and
+  `_check_run_formatting` (font color and strikethrough, `ACB-FONT-COLOR` /
+  `ACB-STRIKETHROUGH`).  All wired into `audit_document`.
+
 - **Roadmap core feature regression tests.** Added
   `web/tests/test_magic_routes.py` to cover table advisor, pronunciation
   dictionary CRUD/preview/export, rule proposal submission/listing,

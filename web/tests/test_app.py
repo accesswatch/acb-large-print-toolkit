@@ -1441,6 +1441,7 @@ class TestSettingsIntegration:
 
     def test_speech_prepare_preview_and_download_document(self, client, monkeypatch):
         from acb_large_print_web.routes import speech as speech_routes
+        import struct
 
         def _fake_wav(_voice_id, _text, speed=1.0, pitch=0):
             buf = io.BytesIO()
@@ -1451,8 +1452,23 @@ class TestSettingsIntegration:
                 wf.writeframes(b"\0\0" * 2205)
             return buf.getvalue(), "glow-speech-test.wav"
 
+        def _fake_wav_stream(_voice_id, _text, speed=1.0, pitch=0):
+            # Minimal streaming WAV: header + PCM bytes
+            header = (
+                b"RIFF"
+                + struct.pack("<I", 0xFFFFFFFF)
+                + b"WAVE"
+                + b"fmt "
+                + struct.pack("<I", 16)
+                + struct.pack("<HHIIHH", 1, 1, 22050, 44100, 2, 16)
+                + b"data"
+                + struct.pack("<I", 0xFFFFFFFF)
+            )
+            yield header
+            yield b"\0\0" * 100
+
         monkeypatch.setattr(speech_routes, "synthesize", _fake_wav)
-        monkeypatch.setattr(speech_routes, "synthesize_document_text", _fake_wav)
+        monkeypatch.setattr(speech_routes, "stream_synthesize_wav", _fake_wav_stream)
 
         prep = client.post(
             "/speech/prepare",

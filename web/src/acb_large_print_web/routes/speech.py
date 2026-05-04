@@ -1,12 +1,13 @@
 """Speech Studio route and synthesis endpoints -- v3.0.0.
 
 Provides:
-    GET  /speech/                 -- Speech Studio page
-    POST /speech/preview          -- synthesize typed text preview, return WAV
-    POST /speech/download         -- synthesize typed text, return MP3/WAV attachment
-    POST /speech/prepare          -- extract uploaded document text and return estimates
-    POST /speech/document-preview -- preview first sentences from extracted document
-    POST /speech/document-download -- synthesize full extracted document to MP3/WAV
+    GET  /speech/                    -- Speech Studio page
+    POST /speech/preview             -- synthesize typed text preview, return WAV
+    POST /speech/download            -- synthesize typed text, return MP3/WAV attachment
+    POST /speech/prepare             -- extract uploaded document text and return estimates
+    POST /speech/document-preview    -- preview first sentences from extracted document
+    POST /speech/document-download   -- synthesize full document, stream WAV (chunked)
+    POST /speech/stream-document     -- stream SSE audio chunks for Listen Live playback
 """
 
 from __future__ import annotations
@@ -40,6 +41,8 @@ from ..speech import (
     first_sentences,
     get_engine_status,
     normalize_document_text,
+    stream_synthesize_wav,
+    stream_synthesize_sse,
     synthesize_document_text,
     synthesize,
     wav_duration_seconds,
@@ -419,7 +422,16 @@ def speech_document_preview():
 @speech_bp.route("/document-download", methods=["POST"])
 @limiter.limit("6 per minute")
 def speech_document_download():
-    """Render full extracted document text to speech and return download."""
+    """Render full extracted document text to speech and stream as WAV download.
+
+    Uses chunked transfer encoding so audio data begins flowing to the client
+    as each chunk is synthesised.  This keeps the Caddy/nginx connection alive
+    throughout the entire synthesis and prevents 502 read-timeout errors on
+    long documents.
+
+    The download is always WAV (never MP3) when streaming so the response can
+    begin before synthesis is complete.
+    """
     if not _speech_flag("GLOW_ENABLE_EXPORT_SPEECH"):
         return _export_disabled_response()
     token = (request.form.get("token") or "").strip()
@@ -434,63 +446,158 @@ def speech_document_download():
 
     try:
         text = _apply_pronunciation_dictionary_if_enabled(_load_extracted_text(token))
-        started = time.monotonic()
-        wav_bytes, wav_filename = synthesize_document_text(
-            voice_id,
-            text,
-            speed=speed,
-            pitch=pitch,
-        )
-        processing_seconds = max(0.01, time.monotonic() - started)
     except UploadError as exc:
         return jsonify({"error": str(exc)}), 400
-    except SpeechError as exc:
-        return jsonify({"error": str(exc)}), 503
 
-    word_count = len(normalize_document_text(text).split())
-    char_count = len(normalize_document_text(text))
+    normalized = normalize_document_text(text)
+    word_count = len(normalized.split())
+    char_count = len(normalized)
     source_size_bytes = _source_size_for_token(token)
-    engine = (voice_id.split(":", 1)[0] if ":" in voice_id else "unknown")
-    speech_metrics.record_document_conversion(
-        engine=engine,
-        voice=voice_id,
-        speed=speed,
-        pitch=pitch,
-        word_count=word_count,
-        char_count=char_count,
-        source_size_bytes=source_size_bytes,
-        processing_seconds=processing_seconds,
-        audio_seconds=wav_duration_seconds(wav_bytes),
+    engine = voice_id.split(":", 1)[0] if ":" in voice_id else "unknown"
+    voice_safe = (
+        (voice_id.split(":", 1)[1] if ":" in voice_id else voice_id)
+        .replace("/", "_")
+        .replace("\\", "_")
     )
+    filename = f"glow-speech-document-{voice_safe}.wav"
 
+    started = time.monotonic()
+
+    def generate():
+        try:
+            yield from stream_synthesize_wav(voice_id, text, speed=speed, pitch=pitch)
+        except SpeechError:
+            pass  # truncated WAV is acceptable; stream ends cleanly
+        processing_seconds = max(0.01, time.monotonic() - started)
+        speech_metrics.record_document_conversion(
+            engine=engine,
+            voice=voice_id,
+            speed=speed,
+            pitch=pitch,
+            word_count=word_count,
+            char_count=char_count,
+            source_size_bytes=source_size_bytes,
+            processing_seconds=processing_seconds,
+            audio_seconds=0.0,  # duration unknown when streaming
+        )
+
+    from flask import stream_with_context
     from ..tool_usage import record_details as _record_usage_details
 
     _record_usage_details(
         "speech",
         {
-            "mode": "document_download",
+            "mode": "document_download_stream",
             "voice": voice_id,
             "speed": f"{speed:.1f}",
             "pitch": str(pitch),
         },
     )
 
-    mp3_bytes = wav_bytes_to_mp3(wav_bytes)
-    if mp3_bytes is not None:
-        content = mp3_bytes
-        content_type = "audio/mpeg"
-        filename = wav_filename.replace(".wav", ".mp3")
-    else:
-        content = wav_bytes
-        content_type = "audio/wav"
-        filename = wav_filename
+    return Response(
+        stream_with_context(generate()),
+        mimetype="audio/wav",
+        headers={
+            "Content-Disposition": f'attachment; filename="{filename}"',
+            "Cache-Control": "no-store",
+            "X-Accel-Buffering": "no",  # disable Caddy/nginx response buffering
+        },
+    )
 
-    resp = make_response(content)
-    resp.headers["Content-Type"] = content_type
-    resp.headers["Content-Disposition"] = f'attachment; filename="{filename}"'
-    resp.headers["Content-Length"] = len(content)
-    resp.headers["Cache-Control"] = "no-store"
-    return resp
+
+@speech_bp.route("/stream-document", methods=["POST"])
+@limiter.limit("6 per minute")
+def speech_stream_document():
+    """Stream SSE audio chunks for Listen Live in-browser playback.
+
+    Returns ``text/event-stream`` with base64-encoded WAV chunks (one per
+    synthesised text segment).  The client decodes each chunk via the Web
+    Audio API for near-real-time playback without buffering the full file.
+
+    Event sequence:
+
+    .. code-block:: text
+
+        event: audio_config
+        data: {"totalChunks": N}
+
+        event: audio_chunk
+        data: {"index": 0, "total": N, "wav": "<base64-WAV>"}
+
+        ...
+
+        event: done
+        data: {"totalChunks": N}
+
+    On error an ``error`` event is emitted with ``{"message": "..."}``.
+    """
+    if not _speech_flag("GLOW_ENABLE_EXPORT_SPEECH"):
+        return _export_disabled_response()
+    token = (request.form.get("token") or "").strip()
+    voice_id = (request.form.get("voice") or "").strip()
+    speed = _parse_float(request.form.get("speed"), default=1.0, lo=0.5, hi=2.0)
+    pitch = _parse_int(request.form.get("pitch"), default=0, lo=-20, hi=20)
+
+    if not token:
+        return jsonify({"error": "Missing upload token."}), 400
+    if not voice_id:
+        return jsonify({"error": "No voice selected."}), 400
+
+    try:
+        text = _apply_pronunciation_dictionary_if_enabled(_load_extracted_text(token))
+    except UploadError as exc:
+        def _err_gen():
+            yield f"event: error\ndata: {json.dumps({'message': str(exc)})}\n\n"
+        return Response(
+            _err_gen(),
+            mimetype="text/event-stream",
+            headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+        )
+
+    normalized = normalize_document_text(text)
+    word_count = len(normalized.split())
+    char_count = len(normalized)
+    source_size_bytes = _source_size_for_token(token)
+    engine = voice_id.split(":", 1)[0] if ":" in voice_id else "unknown"
+    started = time.monotonic()
+
+    def generate():
+        yield from stream_synthesize_sse(voice_id, text, speed=speed, pitch=pitch)
+        processing_seconds = max(0.01, time.monotonic() - started)
+        speech_metrics.record_document_conversion(
+            engine=engine,
+            voice=voice_id,
+            speed=speed,
+            pitch=pitch,
+            word_count=word_count,
+            char_count=char_count,
+            source_size_bytes=source_size_bytes,
+            processing_seconds=processing_seconds,
+            audio_seconds=0.0,
+        )
+
+    from flask import stream_with_context
+    from ..tool_usage import record_details as _record_usage_details
+
+    _record_usage_details(
+        "speech",
+        {
+            "mode": "document_listen_live",
+            "voice": voice_id,
+            "speed": f"{speed:.1f}",
+            "pitch": str(pitch),
+        },
+    )
+
+    return Response(
+        stream_with_context(generate()),
+        mimetype="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no",  # disable Caddy/nginx SSE buffering
+            "Connection": "keep-alive",
+        },
+    )
 
 
 @speech_bp.route("/stream", methods=["POST"])
@@ -602,6 +709,28 @@ def _extract_document_text(path: Path) -> str:
                 text = md_output.read_text(encoding="utf-8", errors="ignore")
             except Exception:
                 text = ""
+
+        # For DOCX files: if still empty, try mammoth as a last resort.
+        # Handles Strict Open XML / SDT-heavy documents from Google Workspace add-ins.
+        if not text.strip() and ext == ".docx":
+            try:
+                import mammoth  # type: ignore[import-untyped]
+                with open(path, "rb") as fh:
+                    mammoth_result = mammoth.extract_raw_text(fh)
+                fallback_text = mammoth_result.value or ""
+                if fallback_text.strip():
+                    current_app.logger.info(
+                        "SPEECH mammoth fallback succeeded for %s (%d chars)",
+                        path.name,
+                        len(fallback_text),
+                    )
+                    text = fallback_text
+                    md_output.write_text(text, encoding="utf-8")
+            except Exception as exc:
+                current_app.logger.warning(
+                    "SPEECH mammoth fallback failed for %s: %s", path.name, exc
+                )
+
         md_input = md_output
 
     txt_output = path.with_name(f"{path.stem}-speech-rendered.txt")

@@ -23,7 +23,26 @@ csedesigns.com, www.csedesigns.com {
 
 # ACB Large Print web application -- reverse proxy to Flask/Gunicorn
 lp.csedesigns.com, glow.bits-acb.org {
-    reverse_proxy web:8000
+    # Speech Studio document synthesis and Listen Live streaming can take several
+    # minutes for long documents.  The transport block sets generous timeouts so
+    # that Caddy does not close the connection mid-synthesis.
+    #
+    # response_header_timeout: time to wait for the FIRST response byte from
+    #   Gunicorn.  Speech Studio streams WAV/SSE immediately, so even a 30-second
+    #   timeout is plenty.  Set higher if you have very slow hardware.
+    # read_timeout: total time allowed to read the full upstream response body
+    #   (the WAV stream).  3600 s = 1 hour, which covers any practical document.
+    # dial_timeout: connection establishment to Gunicorn (should be near-instant).
+    reverse_proxy web:8000 {
+        transport http {
+            dial_timeout         10s
+            response_header_timeout 60s
+            read_timeout         3600s
+        }
+        # Disable buffering for Server-Sent Events (Listen Live) and
+        # streaming WAV downloads so chunks reach the client immediately.
+        flush_interval -1
+    }
     encode gzip
 
     header {

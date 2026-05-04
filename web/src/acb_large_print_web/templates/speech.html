@@ -30,6 +30,7 @@
     data-prepare-url="{{ url_for('speech.speech_prepare_document') }}"
     data-document-preview-url="{{ url_for('speech.speech_document_preview') }}"
     data-document-download-url="{{ url_for('speech.speech_document_download') }}"
+    data-document-stream-url="{{ url_for('speech.speech_stream_document') }}"
     novalidate>
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <input type="hidden" id="speech-document-token" name="token" value="{{ prefill_token or '' }}">
@@ -137,25 +138,60 @@
       </button>
     </div>
 
-    <div id="document-after-prepare-actions" class="next-step-actions" hidden aria-hidden="true" style="display:none;">
-      <button type="button" id="document-preview-btn" class="btn-secondary"
-        {% if not any_engine_ready %}disabled aria-disabled="true"{% endif %}>
-        Preview first sentences
-      </button>
-      <button type="button" id="document-download-btn" class="btn-secondary"
-        {% if not any_engine_ready %}disabled aria-disabled="true"{% endif %}>
-        Download full document audio
-      </button>
+    <div id="document-after-prepare-actions" hidden aria-hidden="true" style="display:none;">
+      {# Mode selector: Download or Listen Live #}
+      <fieldset id="document-mode-fieldset" style="margin-bottom:1rem;">
+        <legend>What to do with the full document</legend>
+        <div class="radio-group">
+          <label>
+            <input type="radio" name="doc_mode" id="doc-mode-download" value="download" checked>
+            Download audio file (WAV)
+            <span class="help-text">Saves the full document as a WAV file &mdash; useful for offline listening or screen readers.</span>
+          </label>
+          <label>
+            <input type="radio" name="doc_mode" id="doc-mode-listen" value="listen">
+            Listen Live as it generates
+            <span class="help-text">Plays each sentence in your browser as it is synthesised &mdash; no file is saved.</span>
+          </label>
+        </div>
+      </fieldset>
+
+      <div class="next-step-actions">
+        <button type="button" id="document-preview-btn" class="btn-secondary"
+          {% if not any_engine_ready %}disabled aria-disabled="true"{% endif %}>
+          Preview first sentences
+        </button>
+        <button type="button" id="document-go-btn" class="btn-secondary"
+          {% if not any_engine_ready %}disabled aria-disabled="true"{% endif %}
+          aria-label="Download full document audio">
+          Download full document audio
+        </button>
+      </div>
     </div>
 
     <p id="preview-status" class="help-text" role="status" aria-live="polite" aria-atomic="true" style="display:none;"></p>
 
-    {# Inline audio player (populated by JS after preview) #}
+    {# Inline audio player (populated by JS after preview or Listen Live) #}
     <div id="preview-player" style="display:none; margin-top:1rem;">
       <p><strong>Preview:</strong></p>
       <audio id="audio-player" controls>
-        <p>Your browser does not support the audio element. Use the Download MP3 button instead.</p>
+        <p>Your browser does not support the audio element. Use the Download audio file option instead.</p>
       </audio>
+    </div>
+
+    {# Listen Live player (Web Audio API, populated when streaming) #}
+    <div id="listen-live-player" style="display:none; margin-top:1rem;" aria-live="polite">
+      <p><strong>Listen Live</strong></p>
+      <p id="listen-live-status" class="help-text">Starting&hellip;</p>
+      <div id="listen-live-progress-wrap" style="display:none; margin-top:0.5rem;" aria-hidden="true">
+        <div id="listen-live-progress-bar"
+          style="height:0.5rem; background:var(--color-accent, #005a9c); border-radius:0.25rem; width:0%; transition:width 0.3s ease;"
+          role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="Listen Live progress"></div>
+      </div>
+      <button type="button" id="listen-live-stop-btn" class="btn-secondary" style="margin-top:0.75rem; display:none;"
+        aria-label="Stop Listen Live playback">
+        Stop playback
+      </button>
     </div>
 
     {# Preview error region #}
