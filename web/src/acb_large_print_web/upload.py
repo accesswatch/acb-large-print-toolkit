@@ -37,11 +37,13 @@ CONVERT_EXTENSIONS = ALLOWED_EXTENSIONS | {
     ".odt",
     ".rtf",    # Pandoc direct inputs
     ".tex",    # LaTeX (Pandoc direct input)
+    ".txt",    # Plain text (Pandoc GFM round-trip from to-text output)
     ".html",
     ".htm",    # MarkItDown
     ".csv",
     ".json",
     ".xml",    # MarkItDown
+    ".xls",    # Excel legacy (MarkItDown chain)
     ".ipynb",  # Jupyter notebooks (MarkItDown)
     ".zip",    # MarkItDown
     # Image files (new in MarkItDown 0.2+, with optional LLM for alt text)

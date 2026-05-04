@@ -6,8 +6,9 @@ Wraps the Pandoc CLI to convert text-oriented document formats into:
 - EPUB 3 e-books with embedded ACB accessibility CSS
 - PDF documents rendered from ACB HTML via WeasyPrint
 - Plain text (.txt) for screen-reader-friendly export
+- GitHub-Flavored Markdown (.md) for round-tripping through the toolkit
 
-Supported input: .md, .rst, .odt, .rtf, .docx, .epub, .tex.
+Supported input: .md, .rst, .odt, .rtf, .docx, .epub, .tex, .txt.
 
 Pandoc is an external dependency -- not a Python package.  The module
 falls back gracefully when it is not installed.  WeasyPrint is an
@@ -36,6 +37,7 @@ PANDOC_INPUT_EXTENSIONS: set[str] = {
     ".docx",   # Word (Pandoc's own reader)
     ".epub",   # ePub e-books
     ".tex",    # LaTeX (academic / textbook publishing)
+    ".txt",    # Plain text (read as GFM for round-trip from to-text output)
 }
 
 # Pandoc input format flag for each extension
@@ -47,6 +49,7 @@ _INPUT_FORMAT: dict[str, str] = {
     ".docx": "docx",
     ".epub": "epub",
     ".tex": "latex",
+    ".txt": "gfm",   # plain text treated as Markdown for round-trip
 }
 
 # ---------------------------------------------------------------------------
@@ -903,3 +906,99 @@ def convert_to_text(
         len(text),
     )
     return output_path, text
+
+
+def convert_to_gfm(
+    src_path: Path,
+    output_path: Path | None = None,
+    *,
+    title: str | None = None,
+    lang: str = "en",
+) -> tuple[Path, str]:
+    """Convert a document to GitHub-Flavored Markdown (.md) via Pandoc.
+
+    Used as a fallback for formats that Pandoc can read natively but
+    MarkItDown cannot handle (e.g. .rtf, .odt, .rst, .tex).  The result
+    is compatible with the rest of the MarkItDown-based pipeline.
+
+    Args:
+        src_path: Path to input file (.md, .rst, .odt, .rtf, .docx, .epub,
+            .tex, .txt).
+        output_path: Optional path for the .md file.  Defaults to the same
+            directory / stem as *src_path* with ``.md`` extension.
+        title: Document title written as a top-level heading.  Defaults to
+            the input filename stem.
+        lang: BCP-47 language tag (used for Pandoc metadata).
+
+    Returns:
+        (output_path, markdown_text)
+
+    Raises:
+        FileNotFoundError: If *src_path* does not exist.
+        ValueError: If the extension is not in PANDOC_INPUT_EXTENSIONS.
+        RuntimeError: If Pandoc is not installed or conversion fails.
+    """
+    src_path = Path(src_path)
+    if not src_path.exists():
+        raise FileNotFoundError(f"File not found: {src_path}")
+
+    ext = src_path.suffix.lower()
+    if ext not in PANDOC_INPUT_EXTENSIONS:
+        raise ValueError(
+            f"Cannot convert '{ext}' files to Markdown. "
+            f"Supported: {', '.join(sorted(PANDOC_INPUT_EXTENSIONS))}"
+        )
+
+    exe = shutil.which("pandoc")
+    if not exe:
+        raise RuntimeError(
+            "Pandoc is not installed. "
+            "Install it from https://pandoc.org/installing.html"
+        )
+
+    if output_path is None:
+        output_path = src_path.with_suffix(".md")
+    else:
+        output_path = Path(output_path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    if title is None:
+        title = src_path.stem.replace("-", " ").replace("_", " ")
+
+    input_fmt = _INPUT_FORMAT.get(ext, "markdown")
+
+    cmd = [
+        exe,
+        "--standalone",
+        "--from", input_fmt,
+        "--to", "gfm",
+        "--metadata", f"title={title}",
+        "--metadata", f"lang={lang}",
+        "--output", str(output_path),
+        str(src_path),
+    ]
+
+    log.info("Running: %s", " ".join(cmd))
+    result = subprocess.run(
+        cmd,
+        capture_output=True,
+        text=True,
+        timeout=60,
+    )
+
+    if result.returncode != 0:
+        stderr = result.stderr.strip()
+        raise RuntimeError(
+            f"Pandoc GFM conversion failed (exit code {result.returncode}): "
+            f"{stderr}"
+        )
+
+    text = output_path.read_text(encoding="utf-8")
+    log.info(
+        "Pandoc GFM conversion complete: %s -> %s (%d characters)",
+        src_path.name,
+        output_path.name,
+        len(text),
+    )
+    return output_path, text
+

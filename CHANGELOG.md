@@ -10,6 +10,28 @@ Releases are tagged in the [GitHub repository](https://github.com/accesswatch/ac
 
 ### Added
 
+- **Pandoc→GFM Markdown path for `to-markdown`.** Formats that Pandoc reads
+  natively but MarkItDown cannot handle (`.rtf`, `.odt`, `.rst`, `.tex`, `.txt`)
+  now work with the "To Markdown" conversion direction. The route tries
+  MarkItDown first (broader format support); if the extension is not in
+  `CONVERTIBLE_EXTENSIONS` it falls back to `convert_to_gfm()` — a new
+  `pandoc --to gfm` helper in `pandoc_converter.py`.
+  (`routes/convert.py`, `pandoc_converter.py`)
+- **`.txt` as a Pandoc input format.** Plain-text files (`.txt`) are now
+  accepted by the convert route and treated as GFM Markdown by Pandoc
+  (`_INPUT_FORMAT[".txt"] = "gfm"`). This closes the round-trip gap where
+  a `.txt` produced by "To Plain Text" could not be re-uploaded for further
+  conversion. (`pandoc_converter.py` — `PANDOC_INPUT_EXTENSIONS`,
+  `_INPUT_FORMAT`; `upload.py` — `CONVERT_EXTENSIONS`)
+
+### Fixed
+
+- **`.xls` upload rejected despite being in the conversion chain.** Legacy
+  Excel files (`.xls`) were listed in `_CHAIN_VIA_MARKDOWN` and
+  `CONVERTIBLE_EXTENSIONS` but absent from `CONVERT_EXTENSIONS`, causing a
+  400 validation error before any conversion logic ran. Added `.xls` to
+  `CONVERT_EXTENSIONS`. (`upload.py`)
+
 - **Listen Live speech mode.** Speech Studio now offers a "Listen Live" radio
   button option that streams audio to the browser in real time as each sentence
   is synthesised, using the Web Audio API.  No file is produced; playback begins

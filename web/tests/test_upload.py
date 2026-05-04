@@ -174,6 +174,16 @@ class TestUploadConstants:
         assert ".rst" in CONVERT_EXTENSIONS
         assert ".html" in CONVERT_EXTENSIONS
 
+    def test_convert_extensions_xls(self):
+        # .xls (legacy Excel) must be accepted at upload; it is handled by the
+        # MarkItDown chain in the convert route.
+        assert ".xls" in CONVERT_EXTENSIONS
+
+    def test_convert_extensions_txt(self):
+        # .txt must be accepted so users can re-upload to-text output for further
+        # conversion (round-trip via Pandoc GFM reader).
+        assert ".txt" in CONVERT_EXTENSIONS
+
     def test_audio_extensions_include_cloud_supported_formats(self):
         assert ".mp3" in AUDIO_EXTENSIONS
         assert ".wav" in AUDIO_EXTENSIONS

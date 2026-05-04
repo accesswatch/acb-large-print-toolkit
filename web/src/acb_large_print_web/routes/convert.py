@@ -1,15 +1,16 @@
 """Convert route -- convert documents via MarkItDown, Pandoc, WeasyPrint, or DAISY Pipeline.
 
 Eight conversion directions:
-1. To Markdown (MarkItDown): .docx, .xlsx, .pptx, .pdf, .html, .csv, .ipynb, etc.
-2. To ACB HTML (Pandoc, or MarkItDown→Pandoc): .md, .rst, .odt, .rtf, .docx, .epub, .tex,
+1. To Markdown (MarkItDown, or Pandoc→GFM for native-only formats):
+   .docx, .xlsx, .pptx, .pdf, .html, .csv, .ipynb, .rtf, .odt, .rst, .tex, etc.
+2. To ACB HTML (Pandoc, or MarkItDown→Pandoc): .md, .rst, .odt, .rtf, .docx, .epub, .tex, .txt,
    plus chained: .pptx, .xlsx, .xls, .pdf, .csv, .html, .htm, .json, .xml, .ipynb
-3. To Word .docx (Pandoc, or MarkItDown→Pandoc): .md, .rst, .odt, .rtf, .epub, .tex,
+3. To Word .docx (Pandoc, or MarkItDown→Pandoc): .md, .rst, .odt, .rtf, .epub, .tex, .txt,
    plus chained: .pptx, .xlsx, .xls, .pdf, .csv, .html, .htm, .json, .xml, .ipynb
-4. To EPUB 3 (Pandoc, or MarkItDown→Pandoc): .md, .rst, .odt, .rtf, .docx, .tex,
+4. To EPUB 3 (Pandoc, or MarkItDown→Pandoc): .md, .rst, .odt, .rtf, .docx, .tex, .txt,
    plus chained: .pptx, .xlsx, .xls, .pdf, .csv, .html, .htm, .json, .xml, .ipynb
 5. To PDF (Pandoc + WeasyPrint, or MarkItDown→Pandoc+WeasyPrint): .md, .rst, .odt,
-   .rtf, .docx, .epub, .tex, plus chained: .pptx, .xlsx, .xls, .pdf, .csv, .html, .htm
+   .rtf, .docx, .epub, .tex, .txt, plus chained: .pptx, .xlsx, .xls, .pdf, .csv, .html, .htm
 6. To Plain Text (Pandoc --to plain): same as To HTML.  Screen-reader-friendly .txt.
 7. To EPUB / DAISY (Pipeline): .docx, .html, .epub (when Pipeline is installed)
 
@@ -38,6 +39,7 @@ from acb_large_print.pandoc_converter import (
     convert_to_epub,
     convert_to_pdf,
     convert_to_text,
+    convert_to_gfm,
     pandoc_available,
     weasyprint_available,
 )
@@ -736,18 +738,34 @@ def convert_submit():
                     download_name=zip_path.name,
                 )
         else:
-            # MarkItDown: document -> Markdown (default / to-markdown direction)
-            if ext not in CONVERTIBLE_EXTENSIONS:
+            # MarkItDown or Pandoc→GFM: document -> Markdown
+            # MarkItDown handles the broader format set; Pandoc is the fallback
+            # for native-only formats it reads but MarkItDown cannot (.rtf,
+            # .odt, .rst, .tex, .txt).
+            if ext in CONVERTIBLE_EXTENSIONS:
+                md_output = temp_dir / f"{saved_path.stem}.md"
+                output_path, _ = convert_to_markdown(
+                    saved_path,
+                    output_path=md_output,
+                )
+            elif ext in PANDOC_INPUT_EXTENSIONS and pandoc_available():
+                md_output = temp_dir / f"{saved_path.stem}.md"
+                try:
+                    output_path, _ = convert_to_gfm(
+                        saved_path,
+                        output_path=md_output,
+                    )
+                except (RuntimeError, ValueError) as exc:
+                    raise UploadError(str(exc)) from exc
+            else:
+                all_md_exts = CONVERTIBLE_EXTENSIONS | (
+                    PANDOC_INPUT_EXTENSIONS if pandoc_available() else set()
+                )
                 raise UploadError(
                     f"File type '{ext}' cannot be converted to Markdown. "
-                    f"Supported: {', '.join(sorted(CONVERTIBLE_EXTENSIONS))}. "
+                    f"Supported: {', '.join(sorted(all_md_exts))}. "
                     "To transcribe audio, use BITS Whisperer."
                 )
-            md_output = temp_dir / f"{saved_path.stem}.md"
-            output_path, _ = convert_to_markdown(
-                saved_path,
-                output_path=md_output,
-            )
             result_token = token
             token = None
             return _convert_result_response(
