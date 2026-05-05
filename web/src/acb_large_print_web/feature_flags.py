@@ -81,10 +81,8 @@ _DEFAULTS: dict[str, bool] = {
 
     # Convert route subfeatures (direction-level controls)
     "GLOW_ENABLE_CONVERT_TO_MARKDOWN": True,
-    "GLOW_ENABLE_CONVERT_TO_TXT": True,
     "GLOW_ENABLE_CONVERT_TO_HTML": True,
     "GLOW_ENABLE_CONVERT_TO_DOCX": True,
-    "GLOW_ENABLE_CONVERT_TO_RTF": True,
     "GLOW_ENABLE_CONVERT_TO_EPUB": True,
     "GLOW_ENABLE_CONVERT_TO_PDF": True,
     "GLOW_ENABLE_CONVERT_TO_PIPELINE": True,

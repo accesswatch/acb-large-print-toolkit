@@ -911,10 +911,8 @@ def admin_flags() -> Any:
         "GLOW_ENABLE_EXPORT_MARKDOWN",
         # Convert direction subfeatures
         "GLOW_ENABLE_CONVERT_TO_MARKDOWN",
-        "GLOW_ENABLE_CONVERT_TO_TXT",
         "GLOW_ENABLE_CONVERT_TO_HTML",
         "GLOW_ENABLE_CONVERT_TO_DOCX",
-        "GLOW_ENABLE_CONVERT_TO_RTF",
         "GLOW_ENABLE_CONVERT_TO_EPUB",
         "GLOW_ENABLE_CONVERT_TO_PDF",
         "GLOW_ENABLE_CONVERT_TO_PIPELINE",
@@ -997,10 +995,8 @@ def admin_flags() -> Any:
         ],
         "convert_subfeatures": [
             "GLOW_ENABLE_CONVERT_TO_MARKDOWN",
-            "GLOW_ENABLE_CONVERT_TO_TXT",
             "GLOW_ENABLE_CONVERT_TO_HTML",
             "GLOW_ENABLE_CONVERT_TO_DOCX",
-            "GLOW_ENABLE_CONVERT_TO_RTF",
             "GLOW_ENABLE_CONVERT_TO_ODT",
             "GLOW_ENABLE_CONVERT_TO_EPUB",
             "GLOW_ENABLE_CONVERT_TO_PDF",
