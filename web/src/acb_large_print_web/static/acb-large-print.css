@@ -6,70 +6,66 @@
 
 /* --- Base reset & document --- */
 html {
-  font-size: 100%;
-  /* 16px default; 1pt ≈ 1.333px, so 18pt = 24px = 1.5rem */
+  font-size: 100%; /* 16px default; 1pt ≈ 1.333px, so 18pt = 24px = 1.5rem */
 }
 
 body {
   /* ACB: Arial, 18pt, not bold */
   font-family: Arial, sans-serif;
 
-  /* --- 7.3 Cognitive accessibility profile (plain & simple mode) --- */
-  html[data-cognitive="on"] body {
-    letter-spacing: 0.08em;
-    word-spacing: 0.10em;
-    line-height: 1.7;
+/* --- 7.3 Cognitive accessibility profile (plain & simple mode) --- */
+html[data-cognitive="on"] body {
+  letter-spacing: 0.08em;
+  word-spacing: 0.10em;
+  line-height: 1.7;
+}
+
+html[data-cognitive="on"] .help-text,
+html[data-cognitive="on"] .flash-info,
+html[data-cognitive="on"] .flash-warning,
+html[data-cognitive="on"] .flash-error {
+  font-size: 1.35rem;
+}
+
+html[data-cognitive="on"] details {
+  border-left: 0.35rem solid #0b7285;
+  padding-left: 0.7rem;
+}
+
+/* Open all details in cognitive mode unless explicitly opted out. */
+html[data-cognitive="on"] details:not([data-keep-collapsed]) {
+  display: block;
+}
+
+/* --- 7.4 High contrast and forced colors support --- */
+@media (forced-colors: active) {
+  .feature-forced-colors * {
+    forced-color-adjust: auto;
   }
 
-  html[data-cognitive="on"] .help-text,
-  html[data-cognitive="on"] .flash-info,
-  html[data-cognitive="on"] .flash-warning,
-  html[data-cognitive="on"] .flash-error {
-    font-size: 1.35rem;
+  .feature-forced-colors a {
+    color: LinkText;
   }
 
-  html[data-cognitive="on"] details {
-    border-left: 0.35rem solid #0b7285;
-    padding-left: 0.7rem;
+  .feature-forced-colors .btn-primary,
+  .feature-forced-colors .btn-secondary,
+  .feature-forced-colors button,
+  .feature-forced-colors input,
+  .feature-forced-colors select,
+  .feature-forced-colors textarea {
+    border: 2px solid ButtonText;
+    background: ButtonFace;
+    color: ButtonText;
   }
 
-  /* Open all details in cognitive mode unless explicitly opted out. */
-  html[data-cognitive="on"] details:not([data-keep-collapsed]) {
-    display: block;
+  .feature-forced-colors .skip-link:focus {
+    outline: 3px solid Highlight;
+    outline-offset: 2px;
   }
-
-  /* --- 7.4 High contrast and forced colors support --- */
-  @media (forced-colors: active) {
-    .feature-forced-colors * {
-      forced-color-adjust: auto;
-    }
-
-    .feature-forced-colors a {
-      color: LinkText;
-    }
-
-    .feature-forced-colors .btn-primary,
-    .feature-forced-colors .btn-secondary,
-    .feature-forced-colors button,
-    .feature-forced-colors input,
-    .feature-forced-colors select,
-    .feature-forced-colors textarea {
-      border: 2px solid ButtonText;
-      background: ButtonFace;
-      color: ButtonText;
-    }
-
-    .feature-forced-colors .skip-link:focus {
-      outline: 3px solid Highlight;
-      outline-offset: 2px;
-    }
-  }
-
-  font-size: 1.5rem;
-  /* 24px -- ACB 18pt (18 × 1.333) */
+}
+  font-size: 1.5rem;            /* 24px -- ACB 18pt (18 × 1.333) */
   font-weight: 400;
-  color: #1a1a1a;
-  /* near-black -- WCAG 7:1 on white */
+  color: #1a1a1a;               /* near-black -- WCAG 7:1 on white */
   background-color: #ffffff;
 
   /* ACB: flush left, ragged right */
@@ -104,32 +100,23 @@ body {
 
 /* --- Headings --- */
 /* ACB: headings 22pt bold, flush left */
-h1,
-h2 {
+h1, h2 {
   font-family: Arial, sans-serif;
-  font-size: 1.833rem;
-  /* 29.3px -- ACB 22pt (22 × 1.333) */
+  font-size: 1.833rem;          /* 29.3px -- ACB 22pt (22 × 1.333) */
   font-weight: 700;
-  line-height: 1.5;
-  /* WCAG 1.4.12 minimum */
+  line-height: 1.5;             /* WCAG 1.4.12 minimum */
   text-align: left;
-  text-transform: none;
-  /* No ALL CAPS */
+  text-transform: none;         /* No ALL CAPS */
   margin-top: 1.5em;
   margin-bottom: 1em;
 }
 
 /* ACB: subheadings 20pt bold, flush left */
-h3,
-h4,
-h5,
-h6 {
+h3, h4, h5, h6 {
   font-family: Arial, sans-serif;
-  font-size: 1.667rem;
-  /* 26.7px -- ACB 20pt (20 × 1.333) */
+  font-size: 1.667rem;          /* 26.7px -- ACB 20pt (20 × 1.333) */
   font-weight: 700;
-  line-height: 1.5;
-  /* WCAG 1.4.12 minimum */
+  line-height: 1.5;             /* WCAG 1.4.12 minimum */
   text-align: left;
   text-transform: none;
   margin-top: 1.5em;
@@ -140,18 +127,17 @@ h6 {
 /* ACB: block style, 1 blank line between paragraphs */
 p {
   margin-top: 0;
-  margin-bottom: 2em;
-  /* WCAG 1.4.12: paragraph spacing >= 2x font size */
+  margin-bottom: 2em;           /* WCAG 1.4.12: paragraph spacing >= 2x font size */
 }
 
 /* Keep long-prose blocks at a comfortable reading measure even though the
    page chrome (nav, cards, tables, forms) extends to a wider max-width.
    Applies only to direct prose children of <main>; lists/paragraphs
    inside cards, tables, fieldsets, etc. inherit their container width. */
-main>p,
-main>ul,
-main>ol,
-main>blockquote {
+main > p,
+main > ul,
+main > ol,
+main > blockquote {
   max-width: 70ch;
 }
 
@@ -159,10 +145,8 @@ main>blockquote {
 /* ACB says underline only; on web underline = links, so we use a distinct style.
    We apply a thicker underline offset to avoid descender collision and
    differentiate from hyperlinks. */
-em,
-.acb-emphasis {
-  font-style: normal;
-  /* No italics */
+em, .acb-emphasis {
+  font-style: normal;           /* No italics */
   text-decoration: underline;
   text-decoration-thickness: 2px;
   text-underline-offset: 3px;
@@ -180,8 +164,7 @@ u {
 
 /* Ensure emphasis underline looks different from links */
 a {
-  color: #0055cc;
-  /* Distinct link color -- 4.8:1 on white */
+  color: #0055cc;               /* Distinct link color -- 4.8:1 on white */
   text-decoration: underline;
   text-decoration-thickness: 1px;
 }
@@ -203,16 +186,14 @@ ul {
 }
 
 ul li {
-  margin-bottom: 0;
-  /* ACB: no blank line between bullet items */
+  margin-bottom: 0;             /* ACB: no blank line between bullet items */
   padding-left: 0.5em;
   font-size: inherit;
 }
 
 ul li::marker {
   color: #1a1a1a;
-  font-size: 1.2em;
-  /* Large solid bullet */
+  font-size: 1.2em;             /* Large solid bullet */
 }
 
 /* ACB: numbers must match body text size */
@@ -257,8 +238,7 @@ ol li {
 /* ACB: 18pt Arial bold, lower outer corner */
 .acb-page-number {
   font-family: Arial, sans-serif;
-  font-size: 1.5rem;
-  /* ACB 18pt minimum */
+  font-size: 1.5rem;            /* ACB 18pt minimum */
   font-weight: 700;
   text-align: right;
 }
@@ -271,8 +251,7 @@ figure {
 
 figcaption {
   font-family: Arial, sans-serif;
-  font-size: 1.5rem;
-  /* Never below 18pt (24px) */
+  font-size: 1.5rem;            /* Never below 18pt (24px) */
   margin-top: 0.5em;
 }
 
@@ -288,8 +267,7 @@ table {
   font-size: inherit;
 }
 
-th,
-td {
+th, td {
   text-align: left;
   padding: 0.5em 0.75em;
   border: 1px solid #666;
@@ -301,8 +279,7 @@ th {
 
 caption {
   font-family: Arial, sans-serif;
-  font-size: 1.5rem;
-  /* ACB 18pt minimum */
+  font-size: 1.5rem;            /* ACB 18pt minimum */
   font-weight: 700;
   text-align: left;
   margin-bottom: 0.5em;
@@ -317,8 +294,7 @@ caption {
 }
 
 /* --- Widows & Orphans (paged media) --- */
-p,
-li {
+p, li {
   orphans: 3;
   widows: 3;
 }
@@ -329,8 +305,7 @@ li {
     /* ACB print: revert to 1.15 line spacing for print */
     line-height: 1.15;
     color: #000000;
-    background-color: #faf8f0;
-    /* Off-white / cream */
+    background-color: #faf8f0;  /* Off-white / cream */
     max-width: none;
     padding: 0;
   }
@@ -338,7 +313,6 @@ li {
   /* Binding margin for bound documents + page numbers */
   @page {
     margin: 1in;
-
     @bottom-right {
       content: counter(page);
       font-family: Arial, sans-serif;
@@ -348,8 +322,7 @@ li {
   }
 
   @page :left {
-    margin-left: 1.5in;
-    /* Extra binding margin */
+    margin-left: 1.5in;         /* Extra binding margin */
   }
 
   @page :right {
