@@ -10,6 +10,26 @@ Releases are tagged in the [GitHub repository](https://github.com/accesswatch/ac
 
 ### Added
 
+- **LibreOffice format support across all conversion routes.** The following
+  LibreOffice-native formats are now accepted by the convert route and handled
+  across all conversion directions (`to-markdown`, `to-html`, `to-docx`,
+  `to-odt`, `to-epub`, `to-pdf`, `to-text`, `to-speech`, `to-pipeline`):
+  - `.ods` (LibreOffice Calc spreadsheet) — pre-converted to `.xlsx` via
+    LibreOffice CLI, then processed by the standard MarkItDown → Pandoc chain.
+  - `.odp` (LibreOffice Impress presentation) — pre-converted to `.pptx` via
+    LibreOffice CLI, then processed by the MarkItDown → Pandoc chain.
+  - `.fods` / `.fodp` (flat/uncompressed ODF variants) — same pre-conversion
+    strategy as `.ods` / `.odp`.
+  - `.fodt` (Flat OpenDocument Text) — accepted directly by Pandoc using the
+    existing `odt` reader; added to `PANDOC_INPUT_EXTENSIONS`.
+  New helpers added to `pandoc_converter.py`: `libreoffice_available()`,
+  `preconvert_via_libreoffice()`, and `LIBREOFFICE_CONVERSIONS` dict.
+  When LibreOffice is not installed the chain falls through to MarkItDown
+  directly (which may produce partial output or a clear error for unsupported
+  files). The LibreOffice install status is exposed to templates as
+  `libreoffice_installed` and the accepted extension list as `libreoffice_exts`.
+  (`pandoc_converter.py`, `converter.py`, `upload.py`, `routes/convert.py`)
+
 - **Pandoc→GFM Markdown path for `to-markdown`.** Formats that Pandoc reads
   natively but MarkItDown cannot handle (`.rtf`, `.odt`, `.rst`, `.tex`, `.txt`)
   now work with the "To Markdown" conversion direction. The route tries
@@ -26,6 +46,19 @@ Releases are tagged in the [GitHub repository](https://github.com/accesswatch/ac
 
 ### Fixed
 
+- **Markdown headings, lists, and links not rendering correctly in PDF output.**
+  `convert_to_pdf` now embeds the ACB PDF CSS directly into the Pandoc
+  intermediate HTML via `--include-in-header`, placing it *after* Pandoc's
+  own browser stylesheet in the `<head>`. This is the same approach used by
+  `convert_to_html` and ensures our print-optimized rules (font sizes, list
+  markers, heading hierarchy, link styles) reliably override Pandoc's defaults
+  by cascade order, with no dependency on WeasyPrint's external-stylesheet
+  ordering. WeasyPrint now renders the already-styled HTML without any
+  separately-passed stylesheet. (`pandoc_converter.py`)
+- **Word output line-wrapping.** Added `--wrap=none` to `convert_to_docx`'s
+  Pandoc invocation so long paragraphs are not soft-wrapped inside the DOCX
+  XML, which could produce unwanted line breaks in some downstream processors.
+  (`pandoc_converter.py`)
 - **`.xls` upload rejected despite being in the conversion chain.** Legacy
   Excel files (`.xls`) were listed in `_CHAIN_VIA_MARKDOWN` and
   `CONVERTIBLE_EXTENSIONS` but absent from `CONVERT_EXTENSIONS`, causing a

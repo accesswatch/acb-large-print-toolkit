@@ -63,6 +63,11 @@ CONVERTIBLE_EXTENSIONS = {
     ".epub",
     ".zip",
     ".ipynb",  # Jupyter notebooks (MarkItDown 0.2+)
+    # LibreOffice-native formats (pre-converted via LibreOffice CLI before MarkItDown)
+    ".ods",    # LibreOffice Calc spreadsheet
+    ".fods",   # Flat ODF Spreadsheet
+    ".odp",    # LibreOffice Impress presentation
+    ".fodp",   # Flat ODF Presentation
     # Image files (new in MarkItDown 0.2+, with optional LLM for descriptions)
     ".jpg",
     ".jpeg",

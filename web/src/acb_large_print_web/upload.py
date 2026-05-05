@@ -35,6 +35,7 @@ AUDIO_EXTENSIONS = {
 CONVERT_EXTENSIONS = ALLOWED_EXTENSIONS | {
     ".rst",
     ".odt",
+    ".fodt",   # Flat OpenDocument Text (LibreOffice Writer, uncompressed)
     ".rtf",    # Pandoc direct inputs
     ".tex",    # LaTeX (Pandoc direct input)
     ".txt",    # Plain text (Pandoc GFM round-trip from to-text output)
@@ -46,6 +47,11 @@ CONVERT_EXTENSIONS = ALLOWED_EXTENSIONS | {
     ".xls",    # Excel legacy (MarkItDown chain)
     ".ipynb",  # Jupyter notebooks (MarkItDown)
     ".zip",    # MarkItDown
+    # LibreOffice-native formats (LibreOffice CLI pre-converts before MarkItDown chain)
+    ".ods",    # LibreOffice Calc spreadsheet
+    ".fods",   # Flat ODF Spreadsheet
+    ".odp",    # LibreOffice Impress presentation
+    ".fodp",   # Flat ODF Presentation
     # Image files (new in MarkItDown 0.2+, with optional LLM for alt text)
     ".jpg",
     ".jpeg",

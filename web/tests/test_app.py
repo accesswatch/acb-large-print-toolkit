@@ -1191,6 +1191,34 @@ class TestConvertPage:
         # fail at upload validation (400 "not supported")
         assert resp.status_code != 400 or b"not supported" not in resp.data
 
+    def test_convert_ods_accepted_at_upload(self, client):
+        """The .ods extension must be accepted by the convert upload validator."""
+        data = {
+            "document": (io.BytesIO(b"PK\x03\x04fake-ods-data"), "test.ods"),
+            "direction": "to-markdown",
+        }
+        resp = client.post("/convert/", data=data, content_type="multipart/form-data")
+        assert resp.status_code != 400 or b"not supported" not in resp.data
+
+    def test_convert_odp_accepted_at_upload(self, client):
+        """The .odp extension must be accepted by the convert upload validator."""
+        data = {
+            "document": (io.BytesIO(b"PK\x03\x04fake-odp-data"), "test.odp"),
+            "direction": "to-markdown",
+        }
+        resp = client.post("/convert/", data=data, content_type="multipart/form-data")
+        assert resp.status_code != 400 or b"not supported" not in resp.data
+
+    def test_convert_fodt_accepted_at_upload(self, client):
+        """The .fodt extension must be accepted by the convert upload validator."""
+        fodt_content = b'<?xml version="1.0"?><office:document/>'
+        data = {
+            "document": (io.BytesIO(fodt_content), "test.fodt"),
+            "direction": "to-markdown",
+        }
+        resp = client.post("/convert/", data=data, content_type="multipart/form-data")
+        assert resp.status_code != 400 or b"not supported" not in resp.data
+
 
 # ============================================================
 # Markdown and PDF audit
@@ -1981,3 +2009,43 @@ class TestPipelineConverterUnit:
         f.write_text("<html></html>")
         with pytest.raises(RuntimeError, match="not reachable"):
             pipeline_converter.convert_with_pipeline(f, "html-to-epub")
+
+
+class TestLibreOfficeConverterUnit:
+    """Unit tests for LibreOffice helper functions in pandoc_converter."""
+
+    def test_libreoffice_available_returns_bool(self):
+        from acb_large_print.pandoc_converter import libreoffice_available
+
+        result = libreoffice_available()
+        assert isinstance(result, bool)
+
+    def test_libreoffice_conversions_dict_complete(self):
+        from acb_large_print.pandoc_converter import LIBREOFFICE_CONVERSIONS
+
+        assert ".ods" in LIBREOFFICE_CONVERSIONS
+        assert ".odp" in LIBREOFFICE_CONVERSIONS
+        assert ".fods" in LIBREOFFICE_CONVERSIONS
+        assert ".fodp" in LIBREOFFICE_CONVERSIONS
+        assert LIBREOFFICE_CONVERSIONS[".ods"] == "xlsx"
+        assert LIBREOFFICE_CONVERSIONS[".odp"] == "pptx"
+
+    def test_preconvert_via_libreoffice_returns_none_when_not_installed(
+        self, tmp_path, monkeypatch
+    ):
+        """When LibreOffice is not installed, preconvert returns None gracefully."""
+        import shutil as _shutil
+        from acb_large_print import pandoc_converter as _pc
+
+        monkeypatch.setattr(_shutil, "which", lambda _: None)
+
+        src = tmp_path / "test.ods"
+        src.write_bytes(b"PK\x03\x04fake")
+        result = _pc.preconvert_via_libreoffice(src, "xlsx", tmp_path)
+        assert result is None
+
+    def test_fodt_in_pandoc_input_extensions(self):
+        from acb_large_print.pandoc_converter import PANDOC_INPUT_EXTENSIONS, _INPUT_FORMAT
+
+        assert ".fodt" in PANDOC_INPUT_EXTENSIONS
+        assert _INPUT_FORMAT[".fodt"] == "odt"

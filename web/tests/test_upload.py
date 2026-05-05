@@ -184,6 +184,14 @@ class TestUploadConstants:
         # conversion (round-trip via Pandoc GFM reader).
         assert ".txt" in CONVERT_EXTENSIONS
 
+    def test_convert_extensions_libreoffice_formats(self):
+        # LibreOffice-native formats must be accepted for conversion.
+        assert ".ods" in CONVERT_EXTENSIONS   # LibreOffice Calc
+        assert ".odp" in CONVERT_EXTENSIONS   # LibreOffice Impress
+        assert ".fodt" in CONVERT_EXTENSIONS  # Flat ODF Text (Pandoc natively reads)
+        assert ".fods" in CONVERT_EXTENSIONS  # Flat ODF Spreadsheet
+        assert ".fodp" in CONVERT_EXTENSIONS  # Flat ODF Presentation
+
     def test_audio_extensions_include_cloud_supported_formats(self):
         assert ".mp3" in AUDIO_EXTENSIONS
         assert ".wav" in AUDIO_EXTENSIONS

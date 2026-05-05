@@ -33,6 +33,7 @@ from acb_large_print.converter import (
 from acb_large_print.exporter import export_cms_fragment
 from acb_large_print.pandoc_converter import (
     PANDOC_INPUT_EXTENSIONS,
+    LIBREOFFICE_CONVERSIONS,
     convert_to_html,
     convert_to_docx,
     convert_to_odt,
@@ -42,6 +43,8 @@ from acb_large_print.pandoc_converter import (
     convert_to_gfm,
     pandoc_available,
     weasyprint_available,
+    libreoffice_available,
+    preconvert_via_libreoffice,
 )
 from acb_large_print.pipeline_converter import (
     PIPELINE_INPUT_EXTENSIONS,
@@ -127,6 +130,8 @@ def convert_preview(token: str, filename: str):
 # Document-type formats in CONVERTIBLE_EXTENSIONS that Pandoc cannot read directly
 # but are worth chaining via Markdown (excludes .zip and image formats).
 # These get a two-stage conversion: MarkItDown → .md → Pandoc.
+# LibreOffice-native formats (.ods, .odp, .fods, .fodp) are pre-converted to
+# their Office equivalents via LibreOffice CLI before entering this chain.
 _CHAIN_VIA_MARKDOWN: frozenset[str] = frozenset({
     ".pptx",   # PowerPoint
     ".xlsx",   # Excel
@@ -138,6 +143,12 @@ _CHAIN_VIA_MARKDOWN: frozenset[str] = frozenset({
     ".json",   # JSON data
     ".xml",    # XML data
     ".ipynb",  # Jupyter notebooks (MarkItDown → Markdown → Pandoc)
+    # LibreOffice-native formats (pre-converted by LibreOffice CLI when available,
+    # then fed into MarkItDown as .xlsx / .pptx)
+    ".ods",    # LibreOffice Calc
+    ".fods",   # Flat ODF Spreadsheet
+    ".odp",    # LibreOffice Impress
+    ".fodp",   # Flat ODF Presentation
 })
 
 # All formats accepted by Pandoc outputs after chaining is accounted for
@@ -265,6 +276,7 @@ def _template_context(**extra):
         pandoc_installed=pandoc_available(),
         weasyprint_installed=weasyprint_available(),
         pipeline_installed=pipeline_available(),
+        libreoffice_installed=libreoffice_available(),
         pipeline_conversions=pipeline_conversions,
         convert_enabled=convert_enabled,
         convert_to_markdown_enabled=convert_to_markdown_enabled,
@@ -283,6 +295,7 @@ def _template_context(**extra):
         pandoc_effective_exts=sorted(_PANDOC_EFFECTIVE_EXTENSIONS),
         markitdown_exts=sorted(CONVERTIBLE_EXTENSIONS),
         pipeline_exts=sorted(PIPELINE_INPUT_EXTENSIONS),
+        libreoffice_exts=sorted(LIBREOFFICE_CONVERSIONS),
         **extra,
     )
 
@@ -383,6 +396,20 @@ def convert_submit():
             )
             if _rediscovered is not None:
                 saved_path = _rediscovered
+
+        # LibreOffice pre-conversion: .ods/.odp/.fods/.fodp → .xlsx/.pptx so the
+        # standard MarkItDown → Pandoc chain can handle them.  When LibreOffice is
+        # not installed the chain falls through to MarkItDown directly (which may
+        # produce partial output or a clear error message).
+        if ext in LIBREOFFICE_CONVERSIONS:
+            _lo_target = LIBREOFFICE_CONVERSIONS[ext]
+            _lo_result = preconvert_via_libreoffice(saved_path, _lo_target, temp_dir)
+            if _lo_result is not None:
+                current_app.logger.info(
+                    "CONVERT libreoffice_preconvert ext=%s -> %s", ext, _lo_result.suffix
+                )
+                saved_path = _lo_result
+                ext = _lo_result.suffix.lower()
 
         if direction == "to-speech":
             # Seamless handoff: keep upload session and move directly to Speech Studio.
