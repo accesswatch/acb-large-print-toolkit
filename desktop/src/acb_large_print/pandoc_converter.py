@@ -31,6 +31,7 @@ PANDOC_INPUT_EXTENSIONS: set[str] = {
     ".md",  # Markdown (GFM)
     ".rst",  # reStructuredText
     ".odt",  # OpenDocument Text
+    ".fodt",  # Flat OpenDocument Text
     ".rtf",  # Rich Text Format
     ".docx",  # Word (Pandoc's own reader)
     ".epub",  # ePub e-books
@@ -41,6 +42,7 @@ _INPUT_FORMAT: dict[str, str] = {
     ".md": "gfm",
     ".rst": "rst",
     ".odt": "odt",
+    ".fodt": "odt",
     ".rtf": "rtf",
     ".docx": "docx",
     ".epub": "epub",
@@ -438,6 +440,7 @@ def convert_to_docx(
     cmd = [
         exe,
         "--standalone",
+        "--wrap=none",
         "--from",
         input_fmt,
         "--to",
@@ -750,7 +753,8 @@ def convert_to_pdf(
 
     tmp_dir = Path(tempfile.mkdtemp())
     try:
-        # Step 1: Pandoc -> HTML (intermediate, no CSS -- we apply CSS in WeasyPrint)
+        # Step 1: Pandoc -> standalone HTML with ACB CSS embedded in <head>.
+        # This ensures our stylesheet wins by cascade order in the rendered HTML.
         html_intermediate = tmp_dir / f"{src_path.stem}.html"
         input_fmt = _INPUT_FORMAT.get(ext, "markdown")
 
@@ -761,6 +765,17 @@ def convert_to_pdf(
             input_fmt,
             "--to",
             "html5",
+        ]
+
+        if pdf_css:
+            header_file = tmp_dir / "acb-pdf-header.html"
+            header_file.write_text(
+                f"<style>\n{pdf_css}\n</style>\n",
+                encoding="utf-8",
+            )
+            cmd += ["--include-in-header", str(header_file)]
+
+        cmd += [
             "--metadata",
             f"title={title}",
             "--metadata",
@@ -785,15 +800,12 @@ def convert_to_pdf(
                 f"{stderr}"
             )
 
-        # Step 2: WeasyPrint renders HTML + ACB CSS -> PDF
+        # Step 2: WeasyPrint renders HTML -> PDF. CSS is already embedded.
         log.info(
             "WeasyPrint: rendering %s -> %s", html_intermediate.name, output_path.name
         )
         html_doc = weasyprint.HTML(filename=str(html_intermediate))
-        stylesheets = []
-        if pdf_css:
-            stylesheets.append(weasyprint.CSS(string=pdf_css))
-        html_doc.write_pdf(str(output_path), stylesheets=stylesheets)
+        html_doc.write_pdf(str(output_path))
 
         size = output_path.stat().st_size
         log.info(
@@ -806,3 +818,95 @@ def convert_to_pdf(
 
     finally:
         shutil.rmtree(tmp_dir, ignore_errors=True)
+
+
+# LibreOffice-native formats that should be pre-converted before MarkItDown.
+LIBREOFFICE_CONVERSIONS: dict[str, str] = {
+    ".ods": ".xlsx",
+    ".fods": ".xlsx",
+    ".odp": ".pptx",
+    ".fodp": ".pptx",
+}
+
+
+def libreoffice_available() -> bool:
+    """Return True if the LibreOffice CLI is installed and reachable."""
+    return shutil.which("soffice") is not None
+
+
+def preconvert_via_libreoffice(
+    src_path: Path,
+    target_ext: str,
+    out_dir: Path,
+) -> Path | None:
+    """Pre-convert a LibreOffice format to Office XML via ``soffice``.
+
+    Returns the converted path on success, else ``None`` so callers can
+    continue with their normal conversion path.
+    """
+    exe = shutil.which("soffice")
+    if not exe:
+        return None
+
+    src_path = Path(src_path)
+    out_dir = Path(out_dir)
+    target_ext = target_ext.lower()
+
+    if not src_path.exists() or not out_dir.exists() or not target_ext.startswith("."):
+        return None
+
+    try:
+        # Re-discover source by directory listing to keep path provenance local.
+        src_path = next(
+            (
+                f
+                for f in src_path.parent.iterdir()
+                if f.is_file() and f.name == src_path.name
+            ),
+            src_path,
+        )
+    except OSError:
+        return None
+
+    fmt = target_ext.lstrip(".")
+    cmd = [
+        exe,
+        "--headless",
+        "--convert-to",
+        fmt,
+        "--outdir",
+        str(out_dir),
+        str(src_path),
+    ]
+
+    try:
+        result = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            timeout=120,
+        )
+    except (subprocess.SubprocessError, OSError):
+        return None
+
+    if result.returncode != 0:
+        log.warning(
+            "LibreOffice pre-conversion failed (%s -> %s): %s",
+            src_path.name,
+            target_ext,
+            (result.stderr or "").strip(),
+        )
+        return None
+
+    out_name = f"{src_path.stem}{target_ext}"
+    converted = next(
+        (
+            f
+            for f in out_dir.iterdir()
+            if f.is_file() and f.name.lower() == out_name.lower()
+        ),
+        None,
+    )
+    if converted and converted.exists():
+        return converted
+    return None

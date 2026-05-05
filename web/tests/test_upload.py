@@ -173,6 +173,11 @@ class TestUploadConstants:
         assert ALLOWED_EXTENSIONS.issubset(CONVERT_EXTENSIONS)
         assert ".rst" in CONVERT_EXTENSIONS
         assert ".html" in CONVERT_EXTENSIONS
+        assert ".fodt" in CONVERT_EXTENSIONS
+        assert ".ods" in CONVERT_EXTENSIONS
+        assert ".fods" in CONVERT_EXTENSIONS
+        assert ".odp" in CONVERT_EXTENSIONS
+        assert ".fodp" in CONVERT_EXTENSIONS
 
     def test_audio_extensions_include_cloud_supported_formats(self):
         assert ".mp3" in AUDIO_EXTENSIONS
