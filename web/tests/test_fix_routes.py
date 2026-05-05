@@ -453,6 +453,42 @@ def test_fix_result_suppresses_heading_alignment_when_preserve_enabled(app):
     assert "ACB-ALIGNMENT (headings)" in html
 
 
+def test_fix_result_reaudit_uses_post_form_not_get_link(app):
+    from acb_large_print_web.routes.fix import _run_fix_and_render
+
+    pre = _FakeAuditResult(score=80, grade="B", findings=[])
+    post = _FakeAuditResult(score=90, grade="A", findings=[])
+
+    opts = {
+        "bound": False,
+        "mode": "full",
+        "list_indent_in": 0.0,
+        "list_hanging_in": 0.0,
+        "list_level_indents": None,
+        "para_indent_in": 0.0,
+        "first_line_indent_in": 0.0,
+        "preserve_heading_alignment": False,
+        "detect_headings": True,
+        "use_ai": False,
+        "suppress_link_text": False,
+        "suppress_missing_alt_text": False,
+        "suppress_faux_heading": False,
+        "heading_threshold": 50,
+        "heading_accuracy": "balanced",
+    }
+
+    with app.test_request_context("/fix/", method="POST", data={}):
+        with patch("acb_large_print_web.routes.fix._audit_by_extension", return_value=pre), patch(
+            "acb_large_print_web.routes.fix._fix_by_extension",
+            return_value=(MagicMock(), 0, [], post, []),
+        ):
+            html = _run_fix_and_render(Path("test.docx"), "tok", opts)
+
+    assert 'action="/audit/from-fix"' in html
+    assert 'method="post"' in html.lower()
+    assert 'href="/audit/from-fix' not in html
+
+
 def test_parse_form_options_supports_per_level_list_indents(app):
     from acb_large_print_web.routes.fix import _parse_form_options
     from werkzeug.datastructures import MultiDict

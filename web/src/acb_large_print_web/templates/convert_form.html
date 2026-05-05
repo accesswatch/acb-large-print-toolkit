@@ -20,8 +20,10 @@
 
 {% set convert_has_any_direction = (
   convert_to_markdown_enabled
+  or convert_to_txt_enabled
   or convert_to_html_enabled
   or convert_to_docx_enabled
+  or convert_to_rtf_enabled
   or convert_to_odt_enabled
   or convert_to_epub_enabled
   or convert_to_pdf_enabled
@@ -85,6 +87,17 @@
       </label>
       {% endif %}
 
+      {% if convert_to_txt_enabled %}
+      <label>
+        <input type="radio" name="direction" value="to-txt"{% if not ns.default_set and pandoc_installed %} checked{% set ns.default_set = true %}{% endif %}{% if not pandoc_installed %} disabled{% endif %}>
+        <span>
+          <strong>Plain text (.txt)</strong><br>
+          Create a plain text file without Markdown markers. Good for braille displays and readers that work best with plain text.
+          {% if not pandoc_installed %}<br><em>This option is temporarily unavailable on this server.</em>{% endif %}
+        </span>
+      </label>
+      {% endif %}
+
       {% if convert_to_html_enabled %}
       <label>
         <input type="radio" name="direction" value="to-html"{% if not ns.default_set and pandoc_installed %} checked{% set ns.default_set = true %}{% endif %}{% if not pandoc_installed %} disabled{% endif %}>
@@ -102,6 +115,17 @@
         <span>
           <strong>Word document (.docx)</strong><br>
           Create a Word document from Markdown, reStructuredText, OpenDocument, Rich Text, ePub, PowerPoint, Excel, PDF, and more. Good for delivering editable documents or collaborating with people who use Microsoft Word.
+          {% if not pandoc_installed %}<br><em>This option is temporarily unavailable on this server.</em>{% endif %}
+        </span>
+      </label>
+      {% endif %}
+
+      {% if convert_to_rtf_enabled %}
+      <label>
+        <input type="radio" name="direction" value="to-rtf"{% if not ns.default_set and pandoc_installed %} checked{% set ns.default_set = true %}{% endif %}{% if not pandoc_installed %} disabled{% endif %}>
+        <span>
+          <strong>Rich Text Format (.rtf)</strong><br>
+          Create an RTF file for broad compatibility with older readers, editors, and conversion workflows.
           {% if not pandoc_installed %}<br><em>This option is temporarily unavailable on this server.</em>{% endif %}
         </span>
       </label>
@@ -465,9 +489,11 @@
   // Extension sets injected from Flask template context
   var EXT_SETS = {
     'to-markdown': new Set({{ markitdown_exts | tojson }}),
+    'to-txt':      new Set({{ pandoc_effective_exts | tojson }}),
     'to-html':     new Set({{ pandoc_effective_exts | tojson }}),
     'to-html-cms': new Set(['.docx']),
     'to-docx':     new Set({{ pandoc_effective_exts | tojson | replace('".docx"', '"__excluded__"') }}),
+    'to-rtf':      new Set({{ pandoc_effective_exts | tojson | replace('".rtf"', '"__excluded__"') }}),
     'to-odt':      new Set({{ pandoc_effective_exts | tojson | replace('".odt"', '"__excluded__"') }}),
     'to-epub':     new Set({{ pandoc_effective_exts | tojson | replace('".epub"', '"__excluded__"') }}),
     'to-pdf':      new Set({{ pandoc_effective_exts | tojson }}),

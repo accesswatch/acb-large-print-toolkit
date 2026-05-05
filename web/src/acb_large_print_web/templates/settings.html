@@ -240,8 +240,10 @@
     <div class="radio-group">
       {% set ns = namespace(default_set=false) %}
       {% if feature_convert_to_markdown_enabled %}<label><input type="radio" name="settings_convert_direction" value="to-markdown"{% if not ns.default_set %} checked{% set ns.default_set = true %}{% endif %}> Plain text (Markdown)</label>{% endif %}
+      {% if feature_convert_to_txt_enabled %}<label><input type="radio" name="settings_convert_direction" value="to-txt"{% if not ns.default_set %} checked{% set ns.default_set = true %}{% endif %}> Plain text (.txt)</label>{% endif %}
       {% if feature_convert_to_html_enabled %}<label><input type="radio" name="settings_convert_direction" value="to-html"{% if not ns.default_set %} checked{% set ns.default_set = true %}{% endif %}> Accessible web page (HTML)</label>{% endif %}
       {% if feature_convert_to_docx_enabled %}<label><input type="radio" name="settings_convert_direction" value="to-docx"{% if not ns.default_set %} checked{% set ns.default_set = true %}{% endif %}> Word document (.docx)</label>{% endif %}
+      {% if feature_convert_to_rtf_enabled %}<label><input type="radio" name="settings_convert_direction" value="to-rtf"{% if not ns.default_set %} checked{% set ns.default_set = true %}{% endif %}> Rich Text Format (.rtf)</label>{% endif %}
       {% if feature_convert_to_odt_enabled %}<label><input type="radio" name="settings_convert_direction" value="to-odt"{% if not ns.default_set %} checked{% set ns.default_set = true %}{% endif %}> OpenDocument Text (.odt)</label>{% endif %}
       {% if feature_convert_to_epub_enabled %}<label><input type="radio" name="settings_convert_direction" value="to-epub"{% if not ns.default_set %} checked{% set ns.default_set = true %}{% endif %}> EPUB 3 e-book</label>{% endif %}
       {% if feature_convert_to_pdf_enabled %}<label><input type="radio" name="settings_convert_direction" value="to-pdf"{% if not ns.default_set %} checked{% set ns.default_set = true %}{% endif %}> Accessible PDF</label>{% endif %}
