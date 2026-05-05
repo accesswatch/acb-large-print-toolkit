@@ -8,6 +8,9 @@
 <ul>
 <li><a href="#prd-glow-guided-layout-output-workflow-accessibility-web-application">PRD: GLOW (Guided Layout &amp; Output Workflow) Accessibility Web Application</a><ul>
 <li><a href="#implementation-status">Implementation Status</a><ul>
+<li><a href="#v400-addendum-conversion-hardening-and-public-doc-consistency----may-4-2026">v4.0.0 Addendum (Conversion hardening and public-doc consistency -- May 4, 2026)</a></li>
+<li><a href="#v310-addendum-braille-studio-speech-pandoc-pipeline-status-page-axe-core-ci-audit----may-1-2026">v3.1.0 Addendum (Braille Studio, Speech Pandoc pipeline, Status page, axe-core CI audit -- May 1, 2026)</a></li>
+<li><a href="#v310-roadmap-additions-implemented-11-item-core-pack">v3.1.0 Roadmap Additions Implemented (11-item core pack)</a></li>
 <li><a href="#v300-addendum-community-driven-platform-milestone----april-30-2026">v3.0.0 Addendum (Community-driven platform milestone -- April 30, 2026)</a></li>
 <li><a href="#v300-extended-features-april-30-2026-release">v3.0.0 Extended Features (April 30, 2026 release)</a></li>
 <li><a href="#v280-addendum-community-requested-ux-and-security-features">v2.8.0 Addendum (Community-requested UX and security features)</a></li>
@@ -81,13 +84,223 @@
 </nav>
 <div class="prd-content">
 <h1 id="prd-glow-guided-layout-output-workflow-accessibility-web-application">PRD: GLOW (Guided Layout &amp; Output Workflow) Accessibility Web Application</h1>
-<p><strong>Status:</strong> Implemented (v3.0.0 released)<br />
+<p><strong>Status:</strong> Implemented (v4.0.0 released)<br />
 <strong>Author:</strong> Jeff Bishop, BITS<br />
-<strong>Date:</strong> April 30, 2026<br />
-<strong>Target:</strong> v3.0.0 (community-driven release with full Speech Studio platform, analytics, and workflow unification)</p>
+<strong>Date:</strong> May 4, 2026<br />
+<strong>Target:</strong> v4.0.0 (conversion hardening, re-audit flow integrity, documentation synchronization)</p>
 <hr />
 <h2 id="implementation-status">Implementation Status</h2>
 <p>The Flask web application has been built and is ready for deployment. All core features described in this PRD are implemented. The following table summarizes what shipped in each release:</p>
+<h3 id="v400-addendum-conversion-hardening-and-public-doc-consistency----may-4-2026">v4.0.0 Addendum (Conversion hardening and public-doc consistency -- May 4, 2026)</h3>
+<p>v4.0.0 is a stabilization and release-integrity update focused on conversion<br />
+fidelity, safer workflow transitions, and accurate public release artifacts.</p>
+<table>
+<thead>
+<tr>
+<th>Feature</th>
+<th>Status</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>CSRF-protected re-audit from Fix result</td>
+<td>Done</td>
+<td><code>fix_result.html</code> now submits to <code>/audit/from-fix</code> via POST form with token, standards profile, and prior finding context.</td>
+</tr>
+<tr>
+<td>OpenDocument conversion hardening</td>
+<td>Done</td>
+<td>Added <code>.fodt</code> native input handling and optional LibreOffice pre-conversion for <code>.ods/.fods/.odp/.fodp</code> before the existing MarkItDown plus Pandoc chain.</td>
+</tr>
+<tr>
+<td>PDF table preservation in downstream conversions</td>
+<td>Done</td>
+<td>Added PyMuPDF table extraction path for PDF inputs so tables are preserved more reliably in Word/HTML/EPUB and related Pandoc-backed outputs.</td>
+</tr>
+<tr>
+<td>Public documentation synchronization</td>
+<td>Done</td>
+<td>Changelog, release pointers, combined announcement artifacts, PRD status text, and user-guide release framing aligned to v4.0.0.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="v310-addendum-braille-studio-speech-pandoc-pipeline-status-page-axe-core-ci-audit----may-1-2026">v3.1.0 Addendum (Braille Studio, Speech Pandoc pipeline, Status page, axe-core CI audit -- May 1, 2026)</h3>
+<p>Eleven new features and improvements shipped in v3.1.0. All are enabled by default and fully backward-compatible with v3.0.0 deployments.</p>
+<table>
+<thead>
+<tr>
+<th>Feature</th>
+<th>Status</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Braille Studio</td>
+<td>Done</td>
+<td>New <code>/braille/</code> tool for BANA-compliant text-to-braille and braille-to-text translation via liblouis. Supports UEB G1/G2 (current BANA standard), EBAE G1/G2 (legacy interop), and Computer Braille Code (8-dot). Unicode Braille (U+2800-U+28FF) and BRF ASCII output. BRF wrapped at BANA-standard 40 cells/line with optional embosser pagination. Tab in main navigation; download endpoints for <code>.brl</code>/<code>.brf</code>/<code>.txt</code>. Graceful degradation when liblouis absent. Feature-gated via <code>GLOW_ENABLE_BRAILLE</code> (default: enabled). 30 req/min rate limit.</td>
+</tr>
+<tr>
+<td>Speech Studio Pandoc document preparation</td>
+<td>Done</td>
+<td>Uploaded documents (<code>.md</code>, <code>.rst</code>, <code>.docx</code>, <code>.pptx</code>, <code>.xlsx</code>, <code>.pdf</code>, <code>.epub</code>, etc.) are converted to normalized plain text via Pandoc before synthesis, guaranteeing consistent narration quality across all source formats. <code>.txt</code> files bypass Pandoc. Missing Pandoc returns a clear diagnostic error naming the dependency.</td>
+</tr>
+<tr>
+<td>Speech Studio staged workflow UI</td>
+<td>Done</td>
+<td>The document narration flow now starts with an explicit <strong>Next: Prepare text and estimate</strong> step. Preview and download controls are hidden (semantic <code>hidden</code>/<code>aria-hidden</code> + JS) until preparation completes. Preparation errors auto-scroll into view.</td>
+</tr>
+<tr>
+<td>Server Status page (<code>/status</code>)</td>
+<td>Done</td>
+<td>New human-readable diagnostics page at <code>/status</code> rendering health probes, service readiness (speech, braille), feature flag summary, full flag list, and raw JSON output. Exempt from the consent gate so operators can reach it without a browser session.</td>
+</tr>
+<tr>
+<td>axe-core/Playwright WCAG 2.2 AA audit suite</td>
+<td>Done</td>
+<td><code>web/e2e/tests/axe-audit.spec.mjs</code> audits all 17 public routes at WCAG 2.2 AA level on every CI run. Covers Speech Studio, Braille Studio, Settings, Guidelines, User Guide, About, Changelog, FAQ, Rules Reference, Feedback, Privacy Policy, Status, and the original 5 core routes. Also audits 4 interactive states: help accordions open, unavailability banners, dark mode, and mobile viewport (375x812 px). Critical/serious violations fail the build; moderate/minor surface as advisory warnings. SARIF upload to GitHub Code Scanning unchanged.</td>
+</tr>
+<tr>
+<td>Speech and Braille feature flags (export/convert)</td>
+<td>Done</td>
+<td>Added <code>GLOW_ENABLE_EXPORT_SPEECH</code>, <code>GLOW_ENABLE_CONVERT_TO_SPEECH</code>, <code>GLOW_ENABLE_EXPORT_BRAILLE</code>, and <code>GLOW_ENABLE_CONVERT_TO_BRAILLE</code> (all default: enabled). Route guards apply at synthesis, document-prepare, and download endpoints. All four flags visible in Admin feature flags UI.</td>
+</tr>
+<tr>
+<td>Speech and Braille health readiness in <code>/health</code></td>
+<td>Done</td>
+<td><code>/health</code> now reports <code>services.speech</code>, <code>services.braille</code>, <code>readiness.speech</code>, and <code>readiness.braille</code> alongside the existing feature flag data so operational issues are visible without guessing.</td>
+</tr>
+<tr>
+<td>liblouis Docker deployment hardening</td>
+<td>Done</td>
+<td><code>web/Dockerfile</code> installs <code>liblouis-bin</code>, <code>liblouis-dev</code>, <code>liblouis-data</code>, and <code>python3-louis</code> via apt, then copies the <code>louis</code> module into the pip Python 3.13 site-packages. A build-time smoke test (<code>python3 -c "import louis"</code>) fails the Docker build immediately if the binding is absent. The stale <code>pylouis</code> stub PyPI package has been removed.</td>
+</tr>
+<tr>
+<td>CI Pandoc integration</td>
+<td>Done</td>
+<td><code>deploy.yml</code>, <code>feature-flags-ci.yml</code>, and <code>accessibility-regression.yml</code> all install Pandoc via <code>apt-get</code> before the web test suite so the full Speech Studio document-prepare path is exercised in CI.</td>
+</tr>
+<tr>
+<td>Speech route regression test suite</td>
+<td>Done</td>
+<td><code>web/tests/test_speech_routes.py</code> covers staged prepare action rendering, Pandoc-required behavior, text extraction paths, and persistence of <code>speech_rendered.txt</code> and <code>speech_source.txt</code> artifacts.</td>
+</tr>
+<tr>
+<td><code>/status</code> consent exemption and braille nav regression test</td>
+<td>Done</td>
+<td><code>/status</code> added to consent-gate exemptions. <code>test_main_nav_shows_braille_tab_when_enabled</code> added to <code>web/tests/test_braille.py</code> to guard tab visibility when <code>GLOW_ENABLE_BRAILLE</code> is set.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="v310-roadmap-additions-implemented-11-item-core-pack">v3.1.0 Roadmap Additions Implemented (11-item core pack)</h3>
+<p>The roadmap items requested in this cycle were implemented as a single core<br />
+feature pack and exposed through explicit server-side feature flags.</p>
+<table>
+<thead>
+<tr>
+<th>Roadmap Item</th>
+<th>Status</th>
+<th>Entry Point</th>
+<th>Feature Flag</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1.5 Back-translation quality scoring</td>
+<td>Done</td>
+<td>Braille result panel (<code>/braille/</code>)</td>
+<td><code>GLOW_ENABLE_BRAILLE_BACK_TRANSLATION_SCORE</code></td>
+</tr>
+<tr>
+<td>2.5 Pronunciation dictionary management</td>
+<td>Done</td>
+<td>Speech pre-processing + core admin/operator surface</td>
+<td><code>GLOW_ENABLE_SPEECH_PRONUNCIATION_DICTIONARY</code></td>
+</tr>
+<tr>
+<td>2.6 Real-time streaming audio preview</td>
+<td>Done</td>
+<td><code>POST /speech/stream</code></td>
+<td><code>GLOW_ENABLE_SPEECH_STREAM</code></td>
+</tr>
+<tr>
+<td>3.3 Table accessibility advisor</td>
+<td>Done</td>
+<td>Core accessibility intelligence endpoint (<code>POST /magic/table-advisor</code>)</td>
+<td><code>GLOW_ENABLE_TABLE_ADVISOR</code></td>
+</tr>
+<tr>
+<td>3.4 Reading order detection (PDF)</td>
+<td>Done</td>
+<td>Core accessibility intelligence endpoint (<code>POST /magic/reading-order</code>)</td>
+<td><code>GLOW_ENABLE_READING_ORDER_DETECTION</code></td>
+</tr>
+<tr>
+<td>3.5 OCR for scanned PDFs</td>
+<td>Done</td>
+<td>Core accessibility intelligence endpoint (<code>POST /magic/ocr</code>)</td>
+<td><code>GLOW_ENABLE_PDF_OCR</code></td>
+</tr>
+<tr>
+<td>3.6 Document compare and change tracking</td>
+<td>Done</td>
+<td>Core accessibility intelligence endpoint (<code>POST /magic/compare</code>)</td>
+<td><code>GLOW_ENABLE_DOCUMENT_COMPARE</code></td>
+</tr>
+<tr>
+<td>4.3 ODT export in Convert</td>
+<td>Done</td>
+<td>Convert direction <code>to-odt</code></td>
+<td><code>GLOW_ENABLE_CONVERT_TO_ODT</code></td>
+</tr>
+<tr>
+<td>7.3 Cognitive accessibility profile</td>
+<td>Done</td>
+<td>Settings + global UI behavior</td>
+<td><code>GLOW_ENABLE_COGNITIVE_PROFILE</code></td>
+</tr>
+<tr>
+<td>7.4 Forced-colors/high-contrast support</td>
+<td>Done</td>
+<td>Global CSS + base template mode classes</td>
+<td><code>GLOW_ENABLE_FORCED_COLORS_MODE</code></td>
+</tr>
+<tr>
+<td>9.1 Public rule contribution portal</td>
+<td>Done</td>
+<td>Rules contribution surface + <code>/magic/rules/propose</code> + <code>/magic/rules/proposals</code></td>
+<td><code>GLOW_ENABLE_RULE_CONTRIBUTIONS</code></td>
+</tr>
+</tbody>
+</table>
+<p>Implementation notes:</p>
+<ul>
+<li>The 3.x document intelligence features (3.3–3.6) are core platform<br />
+  capabilities exposed as JSON APIs and interactive forms.</li>
+<li>OCR is intentionally best-effort and reports clear unavailability when<br />
+  runtime dependencies are missing (<code>pytesseract</code>, Pillow, or Tesseract binary).</li>
+<li>The pronunciation dictionary is active in typed preview, voice preview,<br />
+  typed download, document preview, document download, and stream routes.</li>
+</ul>
+<p>Deployment requirements and dependencies for this core pack:</p>
+<ul>
+<li><code>pandoc</code> required for <code>to-odt</code> conversion and Speech document rendering</li>
+<li><code>python3-louis</code> + <code>liblouis-bin</code> + <code>liblouis-dev</code> + <code>liblouis-data</code> required<br />
+  for Braille translation and back-translation quality scoring</li>
+<li>Optional OCR stack: Tesseract binary + <code>pytesseract</code> + Pillow; if missing,<br />
+  OCR endpoints return explicit unavailability status rather than failing hard</li>
+<li>Frontend/CI dependencies: <code>@axe-core/playwright</code>, <code>@axe-core/cli</code>, Playwright<br />
+  Chromium, and SARIF converter script remain required in accessibility CI</li>
+</ul>
+<p>GitHub integration points (current vs planned):</p>
+<ul>
+<li>Current: accessibility SARIF artifacts are uploaded to GitHub Code Scanning<br />
+  from CI and visible in the Security tab.</li>
+<li>Current: rule proposals persist locally in SQLite for moderation/review.</li>
+<li>Planned: optional proposal-to-GitHub-Issue and approved-proposal-to-PR-draft<br />
+  automation remains roadmap scope and is not yet active in v3.1.0.</li>
+</ul>
 <h3 id="v300-addendum-community-driven-platform-milestone----april-30-2026">v3.0.0 Addendum (Community-driven platform milestone -- April 30, 2026)</h3>
 <p>All requested feature areas from the 2.5 through 2.9 cycle were completed and unified in this release.</p>
 <table>

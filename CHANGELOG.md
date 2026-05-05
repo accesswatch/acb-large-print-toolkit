@@ -8,6 +8,12 @@ Releases are tagged in the [GitHub repository](https://github.com/accesswatch/ac
 
 ## [Unreleased]
 
+- No unreleased entries currently.
+
+---
+
+## [4.0.0] - 2026-05-04
+
 ### Added
 
 - **Roadmap core feature regression tests.** Added
@@ -65,6 +71,17 @@ Releases are tagged in the [GitHub repository](https://github.com/accesswatch/ac
 - **PyMuPDF lifecycle robustness.** `magic_features.detect_reading_order_pdf()`
   and `magic_features.ocr_pdf()` now compute `pages_scanned` before closing
   the document handle, avoiding access to `len(doc)` after `doc.close()`.
+
+- **Fix result re-audit flow hardening.**
+  `web/src/acb_large_print_web/templates/fix_result.html` now submits the
+  re-audit action through a CSRF-protected POST form to `/audit/from-fix`,
+  including token, filename, standards profile, and prior finding context.
+  Added regression coverage in `web/tests/test_fix_routes.py`.
+
+- **Public release documentation sync for v4.0.0.** Updated canonical release
+  and public-facing docs to align version messaging across changelog,
+  announcements, combined announcement artifacts, PRD status, roadmap header,
+  and user guide release framing.
 
 ---
 

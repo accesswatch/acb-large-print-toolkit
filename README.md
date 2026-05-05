@@ -8,12 +8,12 @@ External APH source reference: [APH Guidelines for the Development of Documents 
 
 Status note: APH alignment in this toolkit is fully integrated in Release 1.2.0 for the submission workflow, alongside existing ACB + WCAG + Microsoft Accessibility Checker + format-specific rule sets.
 
-## Release 3.0.0 at a Glance
+## Release 4.0.0 at a Glance
 
-- Stronger user experience guardrails across web workflows: feature-gated navigation, result-page cross-link consistency, and clearer next-step actions.
-- Deployment-aware branding profiles: `bits` and `uarizona` now drive logo, theme, favicon, and profile-specific wording from one environment variable.
-- Granular conversion controls: dedicated `GLOW_ENABLE_EXPORT_HTML` plus per-direction convert flags for safe phased rollouts.
-- AI remains disabled by default in production/staging today. This does not limit core functionality: Audit, Fix, Convert, Export, Template, and standards guidance remain fully available.
+- Curated conversion hardening is now in the mainline release path, including LibreOffice-assisted pre-conversion for OpenDocument spreadsheets and presentations before the MarkItDown plus Pandoc chain.
+- PDF table preservation is improved for downstream exports (Word, HTML, EPUB, and other Pandoc-backed outputs) using PyMuPDF table extraction and Markdown table reconstruction.
+- Fix-to-re-audit flow now uses an explicit CSRF-protected POST re-audit form from the Fix result page for stronger request integrity and clearer standards-profile propagation.
+- Public release documents are now synchronized around v4.0.0 artifacts, with updated changelog, release notes, announcement pointers, PRD status, and user guidance.
 
 ### How GLOW knows which branding profile is active
 

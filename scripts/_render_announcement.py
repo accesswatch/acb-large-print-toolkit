@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Render docs/announcement-v3.0.0-combined.md to styled HTML."""
+"""Render docs/announcement-v4.0.0-combined.md to styled HTML."""
 import pathlib, re, html as _html
 
 ROOT = pathlib.Path(__file__).parent.parent
-SRC = ROOT / "docs" / "announcement-v3.0.0-combined.md"
-DST = ROOT / "docs" / "announcement-v3.0.0-combined.html"
+SRC = ROOT / "docs" / "announcement-v4.0.0-combined.md"
+DST = ROOT / "docs" / "announcement-v4.0.0-combined.html"
 
 
 def escape(s):

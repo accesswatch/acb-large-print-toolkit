@@ -1,15 +1,27 @@
 # PRD: GLOW (Guided Layout & Output Workflow) Accessibility Web Application
 
-**Status:** Implemented (v3.1.0 released)
+**Status:** Implemented (v4.0.0 released)
 **Author:** Jeff Bishop, BITS
-**Date:** May 1, 2026
-**Target:** v3.1.0 (Braille Studio, Speech Studio Pandoc pipeline, Status page, axe-core CI audit)
+**Date:** May 4, 2026
+**Target:** v4.0.0 (conversion hardening, re-audit flow integrity, documentation synchronization)
 
 ---
 
 ## Implementation Status
 
 The Flask web application has been built and is ready for deployment. All core features described in this PRD are implemented. The following table summarizes what shipped in each release:
+
+### v4.0.0 Addendum (Conversion hardening and public-doc consistency -- May 4, 2026)
+
+v4.0.0 is a stabilization and release-integrity update focused on conversion
+fidelity, safer workflow transitions, and accurate public release artifacts.
+
+| Feature | Status | Notes |
+|---------|--------|-------|
+| CSRF-protected re-audit from Fix result | Done | `fix_result.html` now submits to `/audit/from-fix` via POST form with token, standards profile, and prior finding context. |
+| OpenDocument conversion hardening | Done | Added `.fodt` native input handling and optional LibreOffice pre-conversion for `.ods/.fods/.odp/.fodp` before the existing MarkItDown plus Pandoc chain. |
+| PDF table preservation in downstream conversions | Done | Added PyMuPDF table extraction path for PDF inputs so tables are preserved more reliably in Word/HTML/EPUB and related Pandoc-backed outputs. |
+| Public documentation synchronization | Done | Changelog, release pointers, combined announcement artifacts, PRD status text, and user-guide release framing aligned to v4.0.0. |
 
 ### v3.1.0 Addendum (Braille Studio, Speech Pandoc pipeline, Status page, axe-core CI audit -- May 1, 2026)
 

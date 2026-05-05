@@ -1,7 +1,7 @@
 # GLOW Accessibility Toolkit — Product Roadmap
 
 **Last updated:** May 2026  
-**Current version:** 3.0.0  
+**Current version:** 4.0.0  
 **Audience:** Developers, contributors, BITS leadership, partner organizations
 
 This document is a living vision — not a commitment schedule. Items are grouped by theme and ordered within each theme by rough impact. Server requirements are called out explicitly for each significant feature so infrastructure decisions can be made in advance.

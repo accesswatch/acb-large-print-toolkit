@@ -30,93 +30,34 @@ New to GLOW? Start at [Quick Start](#1-quick-start). Already familiar? Jump stra
 
 ---
 
-## What's New in GLOW 3.0.0
+## What's New in GLOW 4.0.0
 
-GLOW 3.0.0 is the community-driven milestone release. It combines the major workflow upgrades delivered through 2.5-2.9 and adds Braille Studio (BANA-compliant text-to-braille translation) and the full Speech Studio platform with real-world adaptive timing telemetry.
+GLOW 4.0.0 is a confidence release focused on stability, conversion fidelity,
+and public-documentation accuracy. It keeps the full 3.1.0 feature surface and
+adds targeted hardening in places that matter in real operations.
 
-### Eight workflow optimizations that save time
+### Highlights in 4.0.0
 
-1. **One-click re-audit after fixing** — The Fix result now shows a prominent "Re-Audit Fixed Document" button. No more downloading, navigating tabs, and re-uploading. Just click and see your updated compliance report.
+1. **Safer Re-Audit from Fix Results** - The "Re-Audit Fixed Document" action
+   now submits through a CSRF-protected POST flow, preserving token context,
+   standards profile, and prior finding metadata safely.
+2. **OpenDocument conversion resilience** - Convert now supports more
+   OpenDocument inputs safely, including `.fodt` directly and optional
+   LibreOffice pre-conversion for spreadsheet and presentation variants before
+   the existing conversion pipeline.
+3. **Better PDF table preservation in downstream exports** - Table structures
+   detected in PDFs are now preserved more reliably when exporting to
+   Pandoc-backed formats such as Word, HTML, and EPUB.
+4. **Release-documentation synchronization** - Changelog, PRD, user guide,
+   announcement pointers, and combined announcement artifacts are now aligned to
+   the same release baseline so public messaging matches shipped behavior.
 
-2. **Direct convert-to-audit** — After converting a document (e.g., Markdown→HTML), the Convert result now offers an "Audit This File" button. Audit your converted output without re-uploading.
+### What remains true from 3.1.0
 
-3. **Batch audit is more discoverable** — The Audit form now highlights batch mode with clear benefits: compare format variants, test before-and-after versions, or bulk-check a series of related documents in one run.
-
-4. **Detailed before-and-after findings comparison** — When you re-audit after fixing, you see detailed sections showing which findings were newly detected, which are still present (focus here next), and which were resolved (celebrate these wins).
-
-5. **Quick restart with session audit history** — Your session remembers your last 5 audits with scores, grades, filenames, and share links. Need to re-audit a file you worked on earlier? It is right there.
-
-6. **Contextual workflow guidance** — Convert now suggests relevant next steps based on your output format. Converting to multiple formats? A card suggests batch-auditing them together.
-
-7. **Reviewer feedback collection** — Shared audit reports are built to support reviewer comments and feedback (foundation for future collaborative review features).
-
-8. **Session restore after expiry** — When your upload session expires, instead of a dead end, you see your history and can restart recent audits with one click.
-
-### Speech Studio is now a complete workflow
-
-- Convert typed text or uploaded documents into speech
-- Preview first sentences before full render
-- Download full narration in MP3 (or WAV fallback)
-- Reuse saved voice, speed, and pitch defaults from Settings
-- New `/voice-preview` endpoint lets you click any voice to hear a quick demo
-
-**Pandoc is required for document upload in Speech Studio.** When you upload a
-document (`.md`, `.rst`, `.docx`, `.pptx`, `.xlsx`, `.pdf`, `.epub`, and others),
-GLOW extracts plain text via Pandoc before synthesis. This ensures consistent,
-clean narration regardless of source format. Plain `.txt` files do not require
-Pandoc and can be used on servers where Pandoc is unavailable. If Pandoc is not
-installed and you upload a non-text file, GLOW will show a clear error message
-explaining that Pandoc is needed.
-
-### Estimates improve from real usage on your server
-
-Document-to-speech conversion now records measured processing time, word count, source size, and selected settings. Future estimates are blended from real historical telemetry so timing guidance becomes more accurate over time for your exact infrastructure.
-
-### Power user and integrator features
-
-For organizations running GLOW on premise and building custom workflows:
-
-- **Webhook callbacks with cryptographic signing** — Audit completion can POST results to your custom URL with HMAC-SHA256 signatures
-- **Standards profile persistence** — Your selected profile (ACB 2025, APH Submission, Combined Strict) flows through audit→fix→reaudit
-- **Configurable share link TTL** — Set `SHARE_TTL_HOURS` env var to control how long shared reports remain available
-- **Session-based auto-diff** — Same file audited twice in one session automatically shows before/after comparisons
-- **Large-file rate limiting** — Files >10 MB are protected by a separate 1/min limit
-- **AI-powered alt-text suggestions** — New `/audit/suggest-alt-text` API for image descriptions
-- **CSV export of post-fix findings** — New `/fix/csv/<token>` for findings analysis in spreadsheets
-- **EPUB conformance level detection** — Ace audits now extract and display W3C conformance (e.g., "EPUB Accessibility 1.0 AA")
-- **Session keep-alive** — `/health` pings every 15 min keep sessions alive through longer workflows
-- **Keyboard shortcut** — Ctrl+U (Cmd+U on Mac) focuses the file picker anywhere in GLOW
-
-### New analytics visibility
-
-- About and Admin analytics now show Speech Studio usage patterns (mode, voice, speed, pitch)
-- Home-page Let it GLOW anthem downloads are tracked and reported
-
-### Still included from 2.8 and 2.7 improvements
-
-Quick Start handoff (no re-upload), passphrase-protected share links, custom font sizes, grouped findings, streamlined Audit/Fix/Re-Audit, and dark mode all remain part of the 3.0 baseline.
-
-### Quick Start now routes to Audit, Fix, and Convert without re-uploading
-
-In previous releases, Quick Start helped you choose an action but still required you to re-upload your file on the next page. Starting in 2.8.0, Quick Start hands your uploaded file directly to whichever tool you choose. The file is already loaded and waiting for you -- no second upload.
-
-This completes the single-upload vision: upload once in Quick Start, then Audit, Fix, and Convert the same document without ever uploading again. Your session stays active for up to one hour.
-
-### Passphrase protection for shared audit reports
-
-Shared report links are now optionally passphrase-protected. Set a passphrase in the Audit form's new "Share Link Protection" section before running your audit. Anyone who opens the share link will need to enter that passphrase before they can view the report or download the CSV or PDF copy. Passphrases are stored only as cryptographic hashes -- GLOW never stores or logs the cleartext value.
-
-This feature was requested by organizations who need to share compliance reports with external reviewers without making them publicly readable by anyone who guesses or finds the link.
-
-### User-defined font sizes
-
-GLOW now lets you specify the point sizes you want for body text and each heading level. The defaults are unchanged (18pt body, 22pt H1, 20pt H2-H6), but organizations with different house styles -- 20pt body for high-contrast printing, or 24pt headings for large-format signs -- can now set those values directly in the Fix and Template forms.
-
-The audit engine also respects these overrides: if you set a 20pt body, findings about body text size will be evaluated against 20pt rather than the standard 18pt minimum.
-
-### Findings tables grouped by rule
-
-Audit reports now group all occurrences of the same finding under a single row with an occurrence count badge. If a document has 40 paragraphs with the wrong font, you see one row labeled "40 occurrences" with an expandable list, rather than 40 separate rows. The report is shorter, easier to scan, and faster to act on. CSV exports are unchanged -- they still emit one row per occurrence for spreadsheet analysis.
+- Braille Studio, Speech Studio, Status page, roadmap-core feature flags, and
+  WCAG self-audit CI coverage remain part of the active platform.
+- The single-upload workflow (Quick Start to Audit/Fix/Convert and onward) is
+  unchanged and remains central to day-to-day use.
 
 ---
 

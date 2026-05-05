@@ -10,6 +10,7 @@ Generated files:
 - web/src/acb_large_print_web/templates/partials/changelog_body.html
 - web/src/acb_large_print_web/templates/partials/prd_body.html
 - web/src/acb_large_print_web/templates/partials/faq_body.html
+- web/src/acb_large_print_web/templates/partials/announcement_body.html
 
 Usage:
     python scripts/build-doc-pages.py
@@ -76,6 +77,16 @@ SOURCES: dict[str, tuple[Path, Path, dict[str, str | None]]] = {
             "toc_heading": None,
             "toc_id": None,
             "body_class": "faq-content",
+            "back_label": None,
+        },
+    ),
+    "announcement": (
+        REPO_ROOT / "docs" / "announcement-v4.0.0-combined.md",
+        PARTIALS_DIR / "announcement_body.html",
+        {
+            "toc_heading": None,
+            "toc_id": None,
+            "body_class": "announcement-content",
             "back_label": None,
         },
     ),
