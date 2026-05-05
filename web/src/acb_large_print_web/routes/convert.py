@@ -30,6 +30,7 @@ from acb_large_print.converter import (
 from acb_large_print.exporter import export_cms_fragment
 from acb_large_print.pandoc_converter import (
     PANDOC_INPUT_EXTENSIONS,
+    LIBREOFFICE_CONVERSIONS,
     convert_to_html,
     convert_to_docx,
     convert_to_odt,
@@ -37,6 +38,8 @@ from acb_large_print.pandoc_converter import (
     convert_to_pdf,
     pandoc_available,
     weasyprint_available,
+    libreoffice_available,
+    preconvert_via_libreoffice,
 )
 from acb_large_print.pipeline_converter import (
     PIPELINE_INPUT_EXTENSIONS,
@@ -131,6 +134,10 @@ _CHAIN_VIA_MARKDOWN: frozenset[str] = frozenset({
     ".htm",   # HTML (alternate extension)
     ".json",  # JSON data
     ".xml",   # XML data
+    ".ods",   # LibreOffice Calc
+    ".fods",  # Flat ODF Spreadsheet
+    ".odp",   # LibreOffice Impress
+    ".fodp",  # Flat ODF Presentation
 })
 
 # All formats accepted by Pandoc outputs after chaining is accounted for
@@ -201,6 +208,7 @@ def _template_context(**extra):
         all_accept=_ALL_ACCEPT,
         pandoc_installed=pandoc_available(),
         weasyprint_installed=weasyprint_available(),
+        libreoffice_installed=libreoffice_available(),
         pipeline_installed=pipeline_available(),
         pipeline_conversions=pipeline_conversions,
         convert_enabled=convert_enabled,
@@ -219,6 +227,7 @@ def _template_context(**extra):
         pandoc_effective_exts=sorted(_PANDOC_EFFECTIVE_EXTENSIONS),
         markitdown_exts=sorted(CONVERTIBLE_EXTENSIONS),
         pipeline_exts=sorted(PIPELINE_INPUT_EXTENSIONS),
+        libreoffice_exts=sorted(LIBREOFFICE_CONVERSIONS),
         **extra,
     )
 
@@ -302,6 +311,24 @@ def convert_submit():
         _record_usage("convert", detail=direction)
 
         temp_dir = get_temp_dir(token)
+
+        # Pre-convert LibreOffice-native formats before entering the normal
+        # MarkItDown->Pandoc chain. If LibreOffice is missing or conversion
+        # fails, continue with the original file path.
+        if temp_dir is not None and ext in LIBREOFFICE_CONVERSIONS:
+            lo_path = preconvert_via_libreoffice(
+                saved_path,
+                LIBREOFFICE_CONVERSIONS[ext],
+                temp_dir,
+            )
+            if lo_path is not None:
+                current_app.logger.info(
+                    "CONVERT libreoffice_preconvert ext=%s -> %s",
+                    ext,
+                    lo_path.suffix.lower(),
+                )
+                saved_path = lo_path
+                ext = saved_path.suffix.lower()
 
         if direction == "to-speech":
             # Seamless handoff: keep upload session and move directly to Speech Studio.

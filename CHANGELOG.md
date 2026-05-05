@@ -31,6 +31,19 @@ Releases are tagged in the [GitHub repository](https://github.com/accesswatch/ac
 
 ### Fixed
 
+- **Markdown to PDF styling cascade now preserves ACB formatting.**
+  `desktop/src/acb_large_print/pandoc_converter.py` now embeds PDF CSS using
+  Pandoc `--include-in-header` in the intermediate HTML, then renders that
+  HTML directly with WeasyPrint. This prevents Pandoc default styling from
+  overriding ACB heading/list/link styles in PDF output.
+
+- **DOCX conversion line wrapping and LibreOffice input support improved.**
+  Added `--wrap=none` for Pandoc DOCX generation to avoid soft-wrap line
+  breaks in generated XML. Added `.fodt` as a native Pandoc input and added
+  `.ods/.fods/.odp/.fodp` upload support with optional LibreOffice
+  pre-conversion (`soffice`) into `.xlsx/.pptx` before the existing
+  MarkItDown-to-Pandoc chain.
+
 - **PDF tables now preserved in Word / HTML / EPUB exports.** When a PDF
   containing embedded tables is uploaded and converted to Word (`.docx`),
   HTML, EPUB, or any other Pandoc-backed output format, the tables are now

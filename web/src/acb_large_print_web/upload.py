@@ -35,7 +35,12 @@ AUDIO_EXTENSIONS = {
 CONVERT_EXTENSIONS = ALLOWED_EXTENSIONS | {
     ".rst",
     ".odt",
+    ".fodt",  # Flat OpenDocument Text
     ".rtf",  # Pandoc inputs
+    ".ods",  # LibreOffice Calc
+    ".fods",  # Flat ODF Spreadsheet
+    ".odp",  # LibreOffice Impress
+    ".fodp",  # Flat ODF Presentation
     ".html",
     ".htm",  # MarkItDown
     ".csv",
