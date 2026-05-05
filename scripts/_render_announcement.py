@@ -123,7 +123,7 @@ TEMPLATE = """\
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>GLOW 3.0.0: Built by the Community, for the Community</title>
+    <title>GLOW 4.0.0: Calm, Confident Accessibility at Scale</title>
   <style>{css}</style>
 </head>
 <body>
