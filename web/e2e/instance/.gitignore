@@ -1,0 +1,10 @@
+# Playwright e2e runtime state
+.cleanup_lock
+site_audit_runs/
+
+# SQLite transient sidecar files
+*.db-shm
+*.db-wal
+
+# Runtime-generated local counters
+visitor_counter.db

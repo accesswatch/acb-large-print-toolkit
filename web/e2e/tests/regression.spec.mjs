@@ -131,6 +131,30 @@ test.describe('GLOW web regression suite', () => {
     expect(suggested.toLowerCase()).toContain('.dotx');
   });
 
+  test('site-audit flow scans local page and renders artifact links', async ({ page, baseURL }) => {
+    test.setTimeout(120000);
+
+    await page.goto('/site-audit/');
+    await ensureConsent(page);
+
+    const targetUrl = `${baseURL}/about/`;
+    await page.locator('#sources').fill(targetUrl);
+
+    const crawlLinks = page.locator('input[name="crawl_links"]');
+    if (await crawlLinks.count()) {
+      await crawlLinks.uncheck();
+    }
+
+    await page.locator('#max_pages').fill('1');
+    await page.getByRole('button', { name: /Run Site Audit/i }).click();
+
+    await expect(page.getByRole('heading', { level: 1, name: /Site Audit Results/i })).toBeVisible();
+    await expect(page.getByRole('heading', { level: 2, name: /Run Summary/i })).toBeVisible();
+    await expect(page.getByRole('link', { name: /Download JSON summary/i })).toBeVisible();
+    await expect(page.getByRole('link', { name: /Download findings CSV/i })).toBeVisible();
+    await expect(page.getByRole('link', { name: /Download complete bundle \(ZIP\)/i })).toBeVisible();
+  });
+
   test('static reference pages load', async ({ page }) => {
     const pages = [
       ['/guidelines/', /Guidelines/i],

@@ -210,6 +210,7 @@ def create_app(config: dict | None = None) -> Flask:
             ctx["feature_cognitive_profile_enabled"] = bool(all_flags.get("GLOW_ENABLE_COGNITIVE_PROFILE", True))
             ctx["feature_forced_colors_mode_enabled"] = bool(all_flags.get("GLOW_ENABLE_FORCED_COLORS_MODE", True))
             ctx["feature_rule_contributions_enabled"] = bool(all_flags.get("GLOW_ENABLE_RULE_CONTRIBUTIONS", True))
+            ctx["feature_site_audit_enabled"] = bool(all_flags.get("GLOW_ENABLE_SITE_AUDIT", True))
         except Exception:
             # Best-effort injection; templates should handle missing keys gracefully
             pass
@@ -374,6 +375,7 @@ def create_app(config: dict | None = None) -> Flask:
     from .routes.speech import speech_bp
     from .routes.braille import braille_bp
     from .routes.magic import magic_bp
+    from .routes.site_audit import site_audit_bp
 
     app.register_blueprint(main_bp)
     app.register_blueprint(consent_bp, url_prefix="/consent")
@@ -400,6 +402,7 @@ def create_app(config: dict | None = None) -> Flask:
     app.register_blueprint(speech_bp, url_prefix="/speech")
     app.register_blueprint(braille_bp, url_prefix="/braille")
     app.register_blueprint(magic_bp, url_prefix="/magic")
+    app.register_blueprint(site_audit_bp, url_prefix="/site-audit")
 
     # Configure speech engine model directory from instance path
     try:

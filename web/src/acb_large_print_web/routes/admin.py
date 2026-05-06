@@ -934,6 +934,7 @@ def admin_flags() -> Any:
         "GLOW_ENABLE_COGNITIVE_PROFILE",
         "GLOW_ENABLE_FORCED_COLORS_MODE",
         "GLOW_ENABLE_RULE_CONTRIBUTIONS",
+        "GLOW_ENABLE_SITE_AUDIT",
         # Optional tool integrations
         "GLOW_ENABLE_PANDOC",
         "GLOW_ENABLE_WEASYPRINT",
@@ -962,6 +963,7 @@ def admin_flags() -> Any:
             "GLOW_ENABLE_AUDIT",
             "GLOW_ENABLE_CHECKER",
             "GLOW_ENABLE_HEADING_DETECTION",
+            "GLOW_ENABLE_SITE_AUDIT",
             "GLOW_ENABLE_COGNITIVE_PROFILE",
             "GLOW_ENABLE_FORCED_COLORS_MODE",
             "GLOW_ENABLE_RULE_CONTRIBUTIONS",

@@ -1,0 +1,487 @@
+"""Site accessibility scanning helpers for the web-facing site-audit workflow."""
+
+from __future__ import annotations
+
+import csv
+import hashlib
+import json
+import re
+import shutil
+import subprocess
+import time
+import zipfile
+from dataclasses import dataclass
+from html.parser import HTMLParser
+from pathlib import Path
+from typing import Iterable
+from urllib.parse import urljoin, urlparse
+from xml.etree import ElementTree
+
+import requests
+
+
+WCAG_TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"]
+_RUN_ID_RE = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
+
+
+@dataclass(slots=True)
+class SiteAuditOptions:
+    max_pages: int = 10
+    crawl_links: bool = True
+    include_subdomains: bool = False
+    force: bool = False
+
+
+class _PageParser(HTMLParser):
+    def __init__(self) -> None:
+        super().__init__(convert_charrefs=True)
+        self.doc_lang = ""
+        self.title = ""
+        self._in_title = False
+        self._title_parts: list[str] = []
+        self.img_missing_alt = 0
+        self.links: list[tuple[str, str]] = []
+        self._current_anchor_href = ""
+        self._current_anchor_text: list[str] = []
+
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        attrs_map = dict(attrs)
+        if tag == "html":
+            self.doc_lang = (attrs_map.get("lang") or "").strip()
+        elif tag == "title":
+            self._in_title = True
+            self._title_parts = []
+        elif tag == "img":
+            if "alt" not in attrs_map:
+                self.img_missing_alt += 1
+        elif tag == "a":
+            self._current_anchor_href = (attrs_map.get("href") or "").strip()
+            self._current_anchor_text = []
+
+    def handle_data(self, data: str) -> None:
+        if self._in_title:
+            self._title_parts.append(data)
+        elif self._current_anchor_href:
+            self._current_anchor_text.append(data)
+
+    def handle_endtag(self, tag: str) -> None:
+        if tag == "title":
+            self._in_title = False
+            self.title = "".join(self._title_parts).strip()
+        elif tag == "a" and self._current_anchor_href:
+            anchor_text = " ".join(p.strip() for p in self._current_anchor_text if p.strip()).strip()
+            self.links.append((self._current_anchor_href, anchor_text))
+            self._current_anchor_href = ""
+            self._current_anchor_text = []
+
+
+def is_valid_run_id(run_id: str) -> bool:
+    return bool(_RUN_ID_RE.match((run_id or "").strip()))
+
+
+def get_run_dir(base_dir: Path, run_id: str) -> Path | None:
+    if not is_valid_run_id(run_id):
+        return None
+    run_dir = (base_dir / run_id).resolve()
+    try:
+        run_dir.relative_to(base_dir.resolve())
+    except ValueError:
+        return None
+    if not run_dir.exists() or not run_dir.is_dir():
+        return None
+    return run_dir
+
+
+def parse_input_urls(sources: str, sitemap_url: str) -> list[str]:
+    values: list[str] = []
+    for line in (sources or "").splitlines():
+        candidate = _normalize_url(line.strip())
+        if candidate:
+            values.append(candidate)
+    if sitemap_url.strip():
+        values.extend(_read_sitemap_urls(_normalize_url(sitemap_url.strip())))
+    deduped: list[str] = []
+    seen: set[str] = set()
+    for url in values:
+        if url not in seen:
+            seen.add(url)
+            deduped.append(url)
+    return deduped
+
+
+def run_site_audit(
+    *,
+    run_id: str,
+    base_dir: Path,
+    sources: list[str],
+    options: SiteAuditOptions,
+) -> dict:
+    run_dir = base_dir / run_id
+    run_dir.mkdir(parents=True, exist_ok=True)
+    started = time.time()
+
+    log_lines: list[str] = []
+    log_lines.append(f"run_id={run_id}")
+    log_lines.append(f"started_utc={time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime(started))}")
+    log_lines.append(f"sources={len(sources)}")
+    log_lines.append(f"max_pages={options.max_pages}")
+    log_lines.append(f"crawl_links={str(options.crawl_links).lower()}")
+    log_lines.append(f"include_subdomains={str(options.include_subdomains).lower()}")
+    log_lines.append(f"force={str(options.force).lower()}")
+
+    if options.crawl_links:
+        scan_urls = _expand_with_crawl(
+            sources,
+            max_pages=options.max_pages,
+            include_subdomains=options.include_subdomains,
+        )
+    else:
+        scan_urls = sources[: options.max_pages]
+
+    all_findings: list[dict] = []
+    pages: list[dict] = []
+    wcag_rollup: dict[str, int] = {}
+    totals = {"scanned": 0, "failed": 0, "skipped": 0}
+
+    for index, url in enumerate(scan_urls, start=1):
+        slug = _slug_for_url(url)
+        page_dir = run_dir / "pages" / slug
+        page_dir.mkdir(parents=True, exist_ok=True)
+        page_json = page_dir / "page.json"
+
+        if page_json.exists() and not options.force:
+            previous = _load_json(page_json, {})
+            previous["result"] = "skipped"
+            previous["reason"] = "existing output"
+            previous["index"] = index
+            pages.append(previous)
+            totals["skipped"] += 1
+            log_lines.append(f"[{index}/{len(scan_urls)}] skipped {url} (existing output)")
+            continue
+
+        log_lines.append(f"[{index}/{len(scan_urls)}] scanning {url}")
+        page_result = _scan_single_page(url, page_dir)
+        page_result["index"] = index
+        pages.append(page_result)
+
+        if page_result["result"] == "ok":
+            totals["scanned"] += 1
+        else:
+            totals["failed"] += 1
+
+        for finding in page_result.get("findings", []):
+            all_findings.append(finding)
+        for tag, count in page_result.get("wcag_tags", {}).items():
+            wcag_rollup[tag] = wcag_rollup.get(tag, 0) + int(count)
+
+        _write_json(page_json, page_result)
+
+    elapsed_ms = int((time.time() - started) * 1000)
+    summary = {
+        "run_id": run_id,
+        "started_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(started)),
+        "elapsed_ms": elapsed_ms,
+        "options": {
+            "max_pages": options.max_pages,
+            "crawl_links": options.crawl_links,
+            "include_subdomains": options.include_subdomains,
+            "force": options.force,
+        },
+        "totals": {
+            **totals,
+            "findings": len(all_findings),
+            "pages_total": len(scan_urls),
+        },
+        "wcag_rollup": dict(sorted(wcag_rollup.items())),
+        "pages": pages,
+    }
+
+    _write_json(run_dir / "summary.json", summary)
+    _write_findings_csv(run_dir / "findings.csv", all_findings)
+    _write_log(run_dir / "session.log", log_lines)
+    _write_zip(run_dir)
+    return summary
+
+
+def _scan_single_page(url: str, page_dir: Path) -> dict:
+    try:
+        resp = requests.get(url, timeout=20, headers={"User-Agent": "GLOW-SiteAudit/1.0"})
+    except Exception as exc:
+        return {
+            "url": url,
+            "result": "error",
+            "status_code": None,
+            "reason": str(exc),
+            "title": "",
+            "findings": [],
+            "wcag_tags": {},
+        }
+
+    html = resp.text or ""
+    (page_dir / "page.html").write_text(html, encoding="utf-8", errors="ignore")
+
+    parser = _PageParser()
+    parser.feed(html)
+
+    findings: list[dict] = []
+    if not parser.doc_lang:
+        findings.append(_finding(url, "HEURISTIC-HTML-LANG", "high", "Document root is missing a lang attribute.", "html"))
+    if not parser.title:
+        findings.append(_finding(url, "HEURISTIC-HTML-TITLE", "high", "Document is missing a non-empty title element.", "head > title"))
+    if parser.img_missing_alt:
+        findings.append(
+            _finding(
+                url,
+                "HEURISTIC-IMG-ALT",
+                "serious",
+                f"Detected {parser.img_missing_alt} image element(s) missing alt text.",
+                "img",
+            )
+        )
+
+    generic_count = 0
+    for _, text in parser.links:
+        normalized = text.strip().lower()
+        if normalized in {"click here", "here", "read more", "learn more", "more"}:
+            generic_count += 1
+    if generic_count:
+        findings.append(
+            _finding(
+                url,
+                "HEURISTIC-LINK-TEXT",
+                "moderate",
+                f"Detected {generic_count} link(s) with non-descriptive text.",
+                "a",
+            )
+        )
+
+    wcag_tags: dict[str, int] = {}
+    axe_json_path = page_dir / "axe.json"
+    axe_data: dict | list | None = None
+    axe_error = None
+    if _axe_available():
+        try:
+            _run_axe(url, axe_json_path)
+            axe_data = _load_json(axe_json_path, None)
+        except Exception as exc:
+            axe_error = str(exc)
+
+    if axe_data:
+        violations = axe_data if isinstance(axe_data, list) else [axe_data]
+        for page in violations:
+            for violation in page.get("violations", []):
+                rule_id = (violation.get("id") or "axe-unknown").upper()
+                impact = str(violation.get("impact") or "moderate").lower()
+                severity = _severity_for_impact(impact)
+                help_text = violation.get("help") or "Accessibility violation detected."
+                help_url = violation.get("helpUrl") or ""
+                nodes = violation.get("nodes") or []
+                count = max(1, len(nodes))
+                selector = ""
+                if nodes:
+                    target = nodes[0].get("target") or []
+                    selector = " > ".join(str(x) for x in target if x)
+                findings.append(
+                    _finding(
+                        url,
+                        f"AXE-{rule_id}",
+                        severity,
+                        f"{help_text} ({count} node(s)).",
+                        selector,
+                        help_url,
+                    )
+                )
+                for tag in violation.get("tags") or []:
+                    if str(tag).lower().startswith("wcag"):
+                        wcag_tags[tag] = wcag_tags.get(tag, 0) + count
+    elif axe_error:
+        findings.append(
+            _finding(
+                url,
+                "AXE-UNAVAILABLE",
+                "minor",
+                f"axe-cli scan unavailable: {axe_error}",
+                "",
+            )
+        )
+
+    return {
+        "url": url,
+        "final_url": resp.url,
+        "result": "ok",
+        "status_code": resp.status_code,
+        "title": parser.title,
+        "doc_lang": parser.doc_lang,
+        "findings": findings,
+        "finding_count": len(findings),
+        "wcag_tags": dict(sorted(wcag_tags.items())),
+    }
+
+
+def _expand_with_crawl(sources: list[str], *, max_pages: int, include_subdomains: bool) -> list[str]:
+    queue: list[str] = list(sources)
+    visited: list[str] = []
+    seen: set[str] = set()
+
+    while queue and len(visited) < max_pages:
+        url = queue.pop(0)
+        if url in seen:
+            continue
+        seen.add(url)
+        visited.append(url)
+
+        try:
+            resp = requests.get(url, timeout=15, headers={"User-Agent": "GLOW-SiteAudit/1.0"})
+        except Exception:
+            continue
+        parser = _PageParser()
+        parser.feed(resp.text or "")
+        for href, _ in parser.links:
+            candidate = _normalize_url(urljoin(resp.url, href))
+            if not candidate:
+                continue
+            if not _same_site(resp.url, candidate, include_subdomains):
+                continue
+            if candidate not in seen and candidate not in queue:
+                queue.append(candidate)
+
+    return visited
+
+
+def _same_site(base: str, candidate: str, include_subdomains: bool) -> bool:
+    base_host = (urlparse(base).hostname or "").lower()
+    cand_host = (urlparse(candidate).hostname or "").lower()
+    if not base_host or not cand_host:
+        return False
+    if cand_host == base_host:
+        return True
+    if include_subdomains and cand_host.endswith("." + base_host):
+        return True
+    return False
+
+
+def _normalize_url(value: str) -> str:
+    value = (value or "").strip()
+    if not value:
+        return ""
+    if not value.startswith(("http://", "https://")):
+        value = "https://" + value
+    parsed = urlparse(value)
+    if parsed.scheme not in {"http", "https"} or not parsed.netloc:
+        return ""
+    return parsed.geturl()
+
+
+def _read_sitemap_urls(sitemap_url: str) -> list[str]:
+    if not sitemap_url:
+        return []
+    try:
+        resp = requests.get(sitemap_url, timeout=20, headers={"User-Agent": "GLOW-SiteAudit/1.0"})
+        resp.raise_for_status()
+        root = ElementTree.fromstring(resp.text)
+    except Exception:
+        return []
+
+    urls: list[str] = []
+    for node in root.findall(".//{*}loc"):
+        if node.text:
+            normalized = _normalize_url(node.text.strip())
+            if normalized:
+                urls.append(normalized)
+    return urls
+
+
+def _slug_for_url(url: str) -> str:
+    parsed = urlparse(url)
+    stem = (parsed.netloc + parsed.path).strip("/").replace("/", "-")
+    stem = re.sub(r"[^a-zA-Z0-9._-]+", "-", stem) or "page"
+    digest = hashlib.sha1(url.encode("utf-8")).hexdigest()[:10]
+    return f"{stem[:80]}-{digest}"
+
+
+def _finding(
+    page_url: str,
+    rule_id: str,
+    severity: str,
+    message: str,
+    location: str,
+    help_url: str = "",
+) -> dict:
+    return {
+        "page_url": page_url,
+        "rule_id": rule_id,
+        "severity": severity,
+        "message": message,
+        "location": location,
+        "help_url": help_url,
+    }
+
+
+def _axe_available() -> bool:
+    return shutil.which("npx") is not None
+
+
+def _run_axe(url: str, output_path: Path) -> None:
+    command = [
+        "npx",
+        "axe",
+        url,
+        "--tags",
+        ",".join(WCAG_TAGS),
+        "--save",
+        str(output_path),
+    ]
+    proc = subprocess.run(command, capture_output=True, text=True, timeout=90)
+    if proc.returncode != 0:
+        err = proc.stderr.strip() or proc.stdout.strip() or f"exit code {proc.returncode}"
+        raise RuntimeError(err)
+
+
+def _severity_for_impact(impact: str) -> str:
+    impact = (impact or "").strip().lower()
+    if impact in {"critical", "serious"}:
+        return "serious"
+    if impact in {"moderate", "minor"}:
+        return "moderate"
+    return "minor"
+
+
+def _write_findings_csv(path: Path, findings: Iterable[dict]) -> None:
+    with path.open("w", encoding="utf-8", newline="") as fh:
+        writer = csv.writer(fh)
+        writer.writerow(["page_url", "severity", "rule_id", "message", "location", "help_url"])
+        for item in findings:
+            writer.writerow(
+                [
+                    item.get("page_url", ""),
+                    item.get("severity", ""),
+                    item.get("rule_id", ""),
+                    item.get("message", ""),
+                    item.get("location", ""),
+                    item.get("help_url", ""),
+                ]
+            )
+
+
+def _write_log(path: Path, lines: list[str]) -> None:
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
+def _write_zip(run_dir: Path) -> None:
+    zip_path = run_dir / "artifacts.zip"
+    with zipfile.ZipFile(zip_path, "w", compression=zipfile.ZIP_DEFLATED) as zf:
+        for child in run_dir.rglob("*"):
+            if child == zip_path or not child.is_file():
+                continue
+            zf.write(child, child.relative_to(run_dir))
+
+
+def _write_json(path: Path, data: dict) -> None:
+    path.write_text(json.dumps(data, indent=2), encoding="utf-8")
+
+
+def _load_json(path: Path, fallback):
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        return fallback

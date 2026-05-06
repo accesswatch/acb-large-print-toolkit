@@ -65,6 +65,9 @@
         {% if feature_braille_enabled %}
         <li role="none"><a href="{{ url_for('braille.braille_form') }}" role="tab" id="tab-braille" aria-controls="main"{% if request.blueprint == 'braille' %} aria-selected="true"{% else %} aria-selected="false"{% endif %}>Braille</a></li>
         {% endif %}
+        {% if feature_site_audit_enabled %}
+        <li role="none"><a href="{{ url_for('site_audit.site_audit_form') }}" role="tab" id="tab-site-audit" aria-controls="main"{% if request.blueprint == 'site_audit' %} aria-selected="true"{% else %} aria-selected="false"{% endif %}>Site Audit</a></li>
+        {% endif %}
         {% if feature_table_advisor_enabled or feature_document_compare_enabled or feature_rule_contributions_enabled %}
         <li role="none"><a href="{{ url_for('magic.magic_home') }}" role="tab" id="tab-magic" aria-controls="main"{% if request.blueprint == 'magic' %} aria-selected="true"{% else %} aria-selected="false"{% endif %}>Magic Lab</a></li>
         {% endif %}
@@ -113,6 +116,9 @@
         <li><a href="{{ url_for('changelog.changelog_page') }}"{% if request.blueprint == 'changelog' %} aria-current="page"{% endif %}>Changelog</a></li>
         <li><a href="{{ url_for('feedback.feedback_form') }}"{% if request.blueprint == 'feedback' %} aria-current="page"{% endif %}>Feedback</a></li>
         <li><a href="{{ url_for('status_page') }}"{% if request.endpoint == 'status_page' %} aria-current="page"{% endif %}>Server Status</a></li>
+        {% if feature_site_audit_enabled %}
+        <li><a href="{{ url_for('site_audit.site_audit_form') }}"{% if request.blueprint == 'site_audit' %} aria-current="page"{% endif %}>Site Audit</a></li>
+        {% endif %}
         {% if feature_table_advisor_enabled or feature_document_compare_enabled or feature_rule_contributions_enabled %}
         <li><a href="{{ url_for('magic.magic_home') }}"{% if request.blueprint == 'magic' %} aria-current="page"{% endif %}>Magic Lab</a></li>
         {% endif %}

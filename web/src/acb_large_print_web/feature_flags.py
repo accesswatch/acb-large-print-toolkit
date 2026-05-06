@@ -142,6 +142,9 @@ _DEFAULTS: dict[str, bool] = {
 
     # 9.1 Public rule contribution portal
     "GLOW_ENABLE_RULE_CONTRIBUTIONS": True,
+
+    # User-facing website accessibility scanner
+    "GLOW_ENABLE_SITE_AUDIT": True,
 }
 
 

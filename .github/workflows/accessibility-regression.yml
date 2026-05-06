@@ -56,6 +56,10 @@ jobs:
         working-directory: web
         run: npx playwright install --with-deps chromium
 
+      - name: Run Site Audit fast-lane regression
+        working-directory: web
+        run: npm run test:e2e:site-audit
+
       - name: Run Playwright regression suite
         working-directory: web
         run: npm run test:e2e

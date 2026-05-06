@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+
+{% block title %}Site Audit Results{% endblock %}
+{% block heading %}Site Audit Results{% endblock %}
+
+{% block content %}
+<p>Run <code>{{ run_id }}</code> completed in {{ (summary.elapsed_ms / 1000) | round(1) }} seconds.</p>
+
+<div class="card">
+  <h2>Run Summary</h2>
+  <ul>
+    <li><strong>Pages planned:</strong> {{ summary.totals.pages_total }}</li>
+    <li><strong>Scanned:</strong> {{ summary.totals.scanned }}</li>
+    <li><strong>Failed:</strong> {{ summary.totals.failed }}</li>
+    <li><strong>Skipped:</strong> {{ summary.totals.skipped }}</li>
+    <li><strong>Total findings:</strong> {{ summary.totals.findings }}</li>
+  </ul>
+</div>
+
+<div class="card">
+  <h2>Download Artifacts</h2>
+  <ul>
+    <li><a href="{{ url_for('site_audit.site_audit_download', run_id=run_id, artifact='summary') }}">Download JSON summary</a></li>
+    <li><a href="{{ url_for('site_audit.site_audit_download', run_id=run_id, artifact='csv') }}">Download findings CSV</a></li>
+    <li><a href="{{ url_for('site_audit.site_audit_download', run_id=run_id, artifact='log') }}">Download session log</a></li>
+    <li><a href="{{ url_for('site_audit.site_audit_download', run_id=run_id, artifact='zip') }}">Download complete bundle (ZIP)</a></li>
+  </ul>
+</div>
+
+<div class="card">
+  <h2>Per-Page Status</h2>
+  <table>
+    <caption>Pages included in this scan run</caption>
+    <thead>
+      <tr>
+        <th scope="col">#</th>
+        <th scope="col">Page</th>
+        <th scope="col">Result</th>
+        <th scope="col">Findings</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for page in summary.pages %}
+      <tr>
+        <td>{{ page.index }}</td>
+        <td>
+          <a href="{{ page.url }}" target="_blank" rel="noopener noreferrer" aria-label="Open scanned page in a new tab: {{ page.title or page.url }}">
+            {{ page.title or page.url }}
+          </a>
+        </td>
+        <td>{{ page.result }}</td>
+        <td>{{ page.finding_count or 0 }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<div class="card">
+  <h2>WCAG Tag Rollup</h2>
+  {% if summary.wcag_rollup %}
+  <ul>
+    {% for tag, count in summary.wcag_rollup.items() %}
+    <li><strong>{{ tag }}:</strong> {{ count }}</li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p>No WCAG tag rollup was produced in this run.</p>
+  {% endif %}
+</div>
+
+<p><a class="btn-secondary" href="{{ url_for('site_audit.site_audit_form') }}">Run another site audit</a></p>
+{% endblock %}

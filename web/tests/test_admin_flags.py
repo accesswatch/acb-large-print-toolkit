@@ -65,6 +65,8 @@ def test_admin_flags_page_shows_backend_and_flags(client, monkeypatch):
     ):
         assert flag in html
         assert_flag_rendered(html, flag)
+    assert "GLOW_ENABLE_SITE_AUDIT" in html
+    assert_flag_rendered(html, "GLOW_ENABLE_SITE_AUDIT")
 
 
 def test_admin_update_flags_persists(app, client, monkeypatch):

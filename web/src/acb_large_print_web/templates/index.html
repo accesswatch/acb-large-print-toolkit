@@ -241,6 +241,17 @@
     </div>
     {% endif %}
 
+    {% if feature_site_audit_enabled %}
+    <div class="card card-audit">
+      <h3><a href="{{ url_for('site_audit.site_audit_form') }}">Audit a Website</a></h3>
+      <p>Scan one or more web pages for WCAG-focused accessibility issues, then download a summary JSON, findings CSV, and a full artifact ZIP for sharing with your team.</p>
+      <ul class="card-formats">
+        <li class="format-tag format-misc">HTTP(S) URLs</li>
+        <li class="format-tag format-misc">Sitemap XML</li>
+      </ul>
+    </div>
+    {% endif %}
+
     {% if ai_whisperer_enabled %}
     <div class="card card-whisperer">
       <h3><a href="{{ url_for('whisperer.whisperer_form') }}">{{ brand_whisperer_label }}</a></h3>

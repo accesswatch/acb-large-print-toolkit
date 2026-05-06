@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block title %}Site Audit{% endblock %}
+{% block heading %}Site Audit: Web Accessibility Scanner{% endblock %}
+
+{% block content %}
+<p>Scan one or more web pages with a WCAG-focused checker and download a full evidence bundle for review.</p>
+
+{% if error %}
+<div class="error-box" role="alert">
+  <p><strong>Error:</strong> {{ error }}</p>
+</div>
+{% endif %}
+
+<details class="help-accordion">
+  <summary>How this scan works</summary>
+  <ul>
+    <li>Provide one URL per line or a sitemap URL.</li>
+    <li>Enable crawl to follow in-site links from the seed pages.</li>
+    <li>Set a maximum page count to control scan time.</li>
+    <li>Download summary, CSV, and logs when complete.</li>
+  </ul>
+</details>
+
+<form method="post" novalidate>
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+  <fieldset>
+    <legend>Scan Sources</legend>
+
+    <label for="sources">URLs to scan (one per line)</label>
+    <textarea id="sources" name="sources" rows="8" aria-describedby="sources-help">{{ sources or "" }}</textarea>
+    <p id="sources-help" class="help-text">Example: <code>https://example.org/</code></p>
+
+    <label for="sitemap_url">Sitemap URL (optional)</label>
+    <input id="sitemap_url" name="sitemap_url" type="url" value="{{ sitemap_url or "" }}" aria-describedby="sitemap-help">
+    <p id="sitemap-help" class="help-text">Example: <code>https://example.org/sitemap.xml</code></p>
+  </fieldset>
+
+  <fieldset>
+    <legend>Scan Options</legend>
+
+    <div class="form-group form-group-inline">
+      <label for="max_pages">Maximum pages</label>
+      <input id="max_pages" name="max_pages" type="number" min="1" max="50" value="{{ max_pages or 10 }}" class="input-narrow">
+    </div>
+
+    <div class="checkbox-group">
+      <label><input type="checkbox" name="crawl_links" {% if crawl_links is not defined or crawl_links %}checked{% endif %}> Follow in-site links</label>
+      <label><input type="checkbox" name="include_subdomains" {% if include_subdomains %}checked{% endif %}> Include subdomains while crawling</label>
+      <label><input type="checkbox" name="force" {% if force %}checked{% endif %}> Force re-scan existing pages in this run</label>
+    </div>
+  </fieldset>
+
+  <button type="submit" class="btn-primary" id="site-audit-submit">Run Site Audit</button>
+  <p id="site-audit-status" class="help-text" aria-live="polite" aria-atomic="true"></p>
+</form>
+
+<script>
+(function () {
+  var form = document.querySelector('form[method="post"]');
+  if (!form) return;
+  form.addEventListener('submit', function () {
+    var btn = document.getElementById('site-audit-submit');
+    var status = document.getElementById('site-audit-status');
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = 'Scanning...';
+    }
+    if (status) {
+      status.textContent = 'Scan in progress. This can take a few moments for multi-page runs.';
+    }
+  });
+}());
+</script>
+{% endblock %}

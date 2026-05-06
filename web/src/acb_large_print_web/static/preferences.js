@@ -58,6 +58,12 @@
       bindingMargin: false,
       printReady: false,
     },
+    siteAudit: {
+      maxPages: 10,
+      crawlLinks: true,
+      includeSubdomains: false,
+      force: false,
+    },
     speech: {
       voice: "",
       speed: 1.0,
@@ -159,6 +165,7 @@
       }),
       export: Object.assign({}, defaults.export, parsed.export || {}),
       convert: Object.assign({}, defaults.convert, parsed.convert || {}),
+      siteAudit: Object.assign({}, defaults.siteAudit, parsed.siteAudit || {}),
       speech: Object.assign({}, defaults.speech, parsed.speech || {}),
       ui: {
         rulesReference: normalizeRulesReferenceUi(
@@ -372,6 +379,14 @@
         setInput("speed", settings.speech.speed);
         setInput("pitch", settings.speech.pitch);
       }
+
+      // Site-audit form
+      if (document.querySelector('input[name="max_pages"]') && document.querySelector('textarea[name="sources"]')) {
+        setInput("max_pages", settings.siteAudit.maxPages);
+        setCheckbox("crawl_links", settings.siteAudit.crawlLinks);
+        setCheckbox("include_subdomains", settings.siteAudit.includeSubdomains);
+        setCheckbox("force", settings.siteAudit.force);
+      }
     }
   }
 
@@ -480,6 +495,14 @@
     settings.convert.bindingMargin = !!document.querySelector('input[name="settings_convert_binding_margin"]:checked');
     settings.convert.printReady = !!document.querySelector('input[name="settings_convert_print_ready"]:checked');
 
+    var siteAuditMaxPages = document.querySelector('input[name="settings_site_audit_max_pages"]');
+    settings.siteAudit.maxPages = siteAuditMaxPages
+      ? Math.max(1, Math.min(50, parseInt(siteAuditMaxPages.value || "10", 10) || 10))
+      : 10;
+    settings.siteAudit.crawlLinks = !!document.querySelector('input[name="settings_site_audit_crawl_links"]:checked');
+    settings.siteAudit.includeSubdomains = !!document.querySelector('input[name="settings_site_audit_include_subdomains"]:checked');
+    settings.siteAudit.force = !!document.querySelector('input[name="settings_site_audit_force"]:checked');
+
     return settings;
   }
 
@@ -558,6 +581,11 @@
     setCheckbox("settings_convert_acb_format", settings.convert.acbFormat);
     setCheckbox("settings_convert_binding_margin", settings.convert.bindingMargin);
     setCheckbox("settings_convert_print_ready", settings.convert.printReady);
+
+    setInput("settings_site_audit_max_pages", settings.siteAudit.maxPages);
+    setCheckbox("settings_site_audit_crawl_links", settings.siteAudit.crawlLinks);
+    setCheckbox("settings_site_audit_include_subdomains", settings.siteAudit.includeSubdomains);
+    setCheckbox("settings_site_audit_force", settings.siteAudit.force);
 
     updateSettingsRuleSummary("audit", settings.audit.customRules);
     updateSettingsRuleSummary("fix", settings.fix.customRules);

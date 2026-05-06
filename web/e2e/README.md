@@ -12,6 +12,7 @@ The suite in [e2e/tests/regression.spec.mjs](e2e/tests/regression.spec.mjs) cove
 - Export upload flow with file download (`/export`)
 - Convert upload flow with file download (`/convert`)
 - Template generation download (`/template`)
+- Site Audit page scan + artifact links (`/site-audit`)
 - BITS Whisperer sample-audio transcription flow (`/whisperer`)
 - Static pages smoke checks (`/guidelines`, `/guide`, `/about`, `/changelog`, `/feedback`)
 
