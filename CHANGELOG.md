@@ -40,6 +40,12 @@ Releases are tagged in the [GitHub repository](https://github.com/accesswatch/ac
 
 ### Fixed
 
+- **Web: fix-result page no longer renders download helper JavaScript as
+  visible text.** `web/src/acb_large_print_web/templates/fix_result.html`
+  now wraps the download-status behavior in a proper `<script>` element so
+  the button/status enhancement executes instead of appearing in the page
+  content.
+
 - **Web: file picker Enter-key upload fallback across document forms.**
   `web/src/acb_large_print_web/static/a11y-enhancements.js` now adds a
   keyboard fallback for focused single-file inputs: when a file is selected,
