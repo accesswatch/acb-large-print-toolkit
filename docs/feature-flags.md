@@ -139,6 +139,10 @@ Additional non-AI GLOW flags (defaults: `true`)
 -- **`GLOW_ENABLE_MARKDOWN_AUDIT`** (default: `true`)
 	- Purpose: Enable markdown-specific audit features and integrations.
 
+- **`GLOW_ENABLE_SITE_AUDIT`** (default: `true`)
+	- Purpose: Enable the user-facing web scanner at `/site-audit`.
+	- Notes: When disabled, Site Audit navigation links are hidden and all
+	  `/site-audit` routes return 404.
 Additional document-type and integration flags (defaults: `true`)
 
 - **`GLOW_ENABLE_WORD`** (default: `true`)

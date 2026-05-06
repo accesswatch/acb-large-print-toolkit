@@ -119,4 +119,78 @@
         // Cancel if the user navigates away cleanly
         window.addEventListener('beforeunload', function () { clearInterval(_keepAliveInterval); });
     }());
+
+    // --- 6. Single-file helper upload buttons ------------------------------
+    // Provide an explicit, keyboard-friendly action next to file inputs so
+    // users do not depend on browser-native file dialog button behavior.
+    function initUploadHelperButtons() {
+        var inputs = document.querySelectorAll('input[type="file"]:not([multiple])');
+        Array.prototype.forEach.call(inputs, function (input) {
+            if (input.dataset.uploadHelperBound === '1') return;
+            var form = input.form;
+            if (!form) return;
+
+            var container = document.createElement('div');
+            container.className = 'upload-helper';
+
+            var helperBtn = document.createElement('button');
+            helperBtn.type = 'button';
+            helperBtn.className = 'btn-secondary';
+            helperBtn.textContent = 'Upload selected file';
+            helperBtn.disabled = !(input.files && input.files.length > 0);
+
+            helperBtn.addEventListener('click', function () {
+                if (!input.files || input.files.length < 1) {
+                    input.focus();
+                    if (window.GLOW && window.GLOW.toast) {
+                        window.GLOW.toast('Choose a file first, then select Upload selected file.', 'warning');
+                    }
+                    return;
+                }
+                if (typeof form.requestSubmit === 'function') {
+                    form.requestSubmit();
+                } else {
+                    form.submit();
+                }
+            });
+
+            container.appendChild(helperBtn);
+            input.insertAdjacentElement('afterend', container);
+
+            input.addEventListener('change', function () {
+                helperBtn.disabled = !(input.files && input.files.length > 0);
+            });
+
+            input.dataset.uploadHelperBound = '1';
+        });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initUploadHelperButtons);
+    } else {
+        initUploadHelperButtons();
+    }
+
+    // --- 7. File picker keyboard fallback (Enter to upload/submit) ---------
+    // Some browser/file-dialog combinations return focus to the file input
+    // after selecting a file, but do not reliably trigger the expected submit
+    // path when users confirm with Enter/Space in the dialog.
+    document.addEventListener('keydown', function (e) {
+        if (e.key !== 'Enter' && e.keyCode !== 13) return;
+        var active = document.activeElement;
+        if (!active || active.tagName !== 'INPUT' || active.type !== 'file') return;
+        if (!active.files || active.files.length < 1) return;
+        var form = active.form;
+        if (!form) return;
+
+        // Allow explicit multi-select workflows to continue without auto-submit.
+        if (active.multiple) return;
+
+        e.preventDefault();
+        if (typeof form.requestSubmit === 'function') {
+            form.requestSubmit();
+        } else {
+            form.submit();
+        }
+    });
 }());

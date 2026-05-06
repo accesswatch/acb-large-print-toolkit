@@ -69,4 +69,21 @@ Updated surfaces include:
 - `docs/announcement-v4.0.0-combined.md`
 - `docs/announcement-v4.0.0-combined.html`
 - `docs/user-guide.md`
+
+### 5. Site Audit web scanner for WCAG-focused page checks
+
+GLOW web now includes a dedicated **Site Audit** workflow at `/site-audit`.
+
+What it provides:
+
+- URL-list and sitemap input modes
+- Optional in-site crawling with page-limit controls
+- Run-level summary with scanned/failed/skipped counts
+- Downloadable artifacts: summary JSON, findings CSV, session log, and full ZIP bundle
+- Feature-flag control via `GLOW_ENABLE_SITE_AUDIT`
+
+Why this matters:
+
+- extends GLOW beyond file-centric accessibility into website QA workflows
+- creates reproducible evidence bundles for reviewer handoff and remediation tracking
 - `docs/prd.md`

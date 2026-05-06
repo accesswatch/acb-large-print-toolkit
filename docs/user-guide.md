@@ -26,7 +26,8 @@ New to GLOW? Start at [Quick Start](#1-quick-start). Already familiar? Jump stra
 16. [DAISY Accessibility Tools](#16-daisy-accessibility-tools)
 17. [Keyboard and Screen Reader Tips](#17-keyboard-and-screen-reader-tips)
 18. [Frequently Asked Questions](#18-frequently-asked-questions)
-19. [Getting Help](#19-getting-help)
+19. [Website Accessibility Scans (Site Audit)](#19-website-accessibility-scans-site-audit)
+20. [Getting Help](#20-getting-help)
 
 ---
 
@@ -51,6 +52,8 @@ adds targeted hardening in places that matter in real operations.
 4. **Release-documentation synchronization** - Changelog, PRD, user guide,
    announcement pointers, and combined announcement artifacts are now aligned to
    the same release baseline so public messaging matches shipped behavior.
+5. **Site Audit web scanner** - New `/site-audit` workflow to scan websites
+   with URL/sitemap input, optional crawling, and downloadable scan artifacts.
 
 ### What remains true from 3.1.0
 
@@ -1368,7 +1371,45 @@ Yes. GLOW includes an admin-only sign-in and approval workflow for operational d
 
 ---
 
-## 19. Getting Help
+## 19. Website Accessibility Scans (Site Audit)
+
+Site Audit is designed for page-level accessibility checks when your source is a URL instead of an uploaded document.
+
+Use Site Audit when you need to:
+
+- review one or more live pages for common WCAG-aligned issues
+- crawl a section of a site from a seed URL
+- generate a portable evidence bundle for engineering handoff
+
+### Step-by-step
+
+1. Open the **Site Audit** tab.
+2. Enter one URL per line, or provide a sitemap URL.
+3. Set your run options:
+   - **Maximum pages** (1 to 50)
+   - **Follow in-site links**
+   - **Include subdomains** (optional)
+   - **Force re-scan existing pages**
+4. Click **Run Site Audit**.
+5. Review the run summary and per-page status table.
+6. Download artifacts as needed:
+   - summary JSON
+   - findings CSV
+   - session log
+   - full ZIP bundle
+
+### Site Audit defaults
+
+You can set default Site Audit options in **Settings**:
+
+- maximum pages per run
+- crawl links on/off
+- include subdomains on/off
+- force re-scan on/off
+
+If **Remember my settings** is enabled, these defaults persist in local browser storage.
+
+## 20. Getting Help
 
 - **ACB Large Print Guidelines** -- [acb.org/large-print-guidelines](https://acb.org/large-print-guidelines)
 - **APH Large Print Guidelines** -- [aph.org/resources/large-print-guidelines](https://www.aph.org/resources/large-print-guidelines/)

@@ -8,7 +8,52 @@ Releases are tagged in the [GitHub repository](https://github.com/accesswatch/ac
 
 ## [Unreleased]
 
-- No unreleased entries currently.
+### Added
+
+- **Web: Site Audit scanner and artifact export workflow.** Added a new
+  feature-flagged `/site-audit` surface with URL/sitemap input, optional
+  in-site crawling, per-run page scanning, and downloadable artifacts
+  (summary JSON, findings CSV, session log, and bundled ZIP). Added backend
+  scanner service in `web/src/acb_large_print_web/site_audit.py`, new route
+  blueprint in `web/src/acb_large_print_web/routes/site_audit.py`, new
+  templates `web/src/acb_large_print_web/templates/site_audit_form.html` and
+  `web/src/acb_large_print_web/templates/site_audit_result.html`, and nav/home
+  integration in `web/src/acb_large_print_web/templates/base.html` and
+  `web/src/acb_large_print_web/templates/index.html`.
+
+- **Web: Site Audit defaults in browser settings.** Added client-side
+  preference persistence for Site Audit options (`max pages`, `crawl links`,
+  `include subdomains`, `force`) in
+  `web/src/acb_large_print_web/static/preferences.js` and Settings UI controls
+  in `web/src/acb_large_print_web/templates/settings.html`.
+
+- **Web: new feature flag `GLOW_ENABLE_SITE_AUDIT`.** Added the server-side
+  flag default in `web/src/acb_large_print_web/feature_flags.py`, context
+  injection in `web/src/acb_large_print_web/app.py`, admin flag rendering in
+  `web/src/acb_large_print_web/routes/admin.py`, and seeded instance defaults
+  in `web/instance/feature_flags.json` and `instance/feature_flags.json`.
+
+- **Web tests: Site Audit route and flag coverage.** Added
+  `web/tests/test_site_audit.py` and extended
+  `web/tests/test_admin_flags.py` to assert `GLOW_ENABLE_SITE_AUDIT` renders in
+  the admin Feature Flags page.
+
+### Fixed
+
+- **Web: file picker Enter-key upload fallback across document forms.**
+  `web/src/acb_large_print_web/static/a11y-enhancements.js` now adds a
+  keyboard fallback for focused single-file inputs: when a file is selected,
+  pressing Enter on the file input submits the owning form via
+  `requestSubmit()`. This hardens upload behavior for browser/file-dialog
+  combinations where keyboard confirmation can leave users at the file input
+  without completing the upload path.
+
+- **Web: explicit Upload selected file helper action on forms.**
+  `web/src/acb_large_print_web/static/a11y-enhancements.js` now injects an
+  additional button for single-file inputs labeled "Upload selected file".
+  The helper button is enabled only after file selection and submits the
+  owning form directly, providing a clear keyboard path independent of native
+  file-dialog controls.
 
 ---
 

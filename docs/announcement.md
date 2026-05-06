@@ -2,7 +2,8 @@
 
 FOR IMMEDIATE RELEASE -- May 4, 2026
 
-GLOW 4.0.0 is the documentation-synchronized and workflow-hardening release.
+GLOW 4.0.0 is the documentation-synchronized and workflow-hardening release,
+now including the Site Audit web scanner rollout for WCAG-focused page checks.
 
 For the full narrative announcement, use:
 - docs/announcement-v4.0.0-combined.md

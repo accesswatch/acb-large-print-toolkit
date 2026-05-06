@@ -71,6 +71,23 @@ Updated resources include:
 - `docs/prd.md`
 - `docs/user-guide.md`
 
+### 5. Site Audit web scanner for page-level accessibility checks
+
+GLOW web now includes a dedicated Site Audit workflow at `/site-audit` for
+website scanning and evidence export.
+
+What it does:
+
+- accepts URL lists and sitemap input
+- supports optional in-site crawling with configurable page limits
+- reports scanned, failed, and skipped totals per run
+- produces downloadable artifacts: summary JSON, findings CSV, session log, and full ZIP bundle
+
+Why this matters:
+
+- extends GLOW from document remediation into practical website QA
+- gives teams reproducible scan outputs for handoff and remediation tracking
+
 ## What Stays Strong from 3.1.0
 
 GLOW 4.0.0 keeps the full strength of 3.1.0:

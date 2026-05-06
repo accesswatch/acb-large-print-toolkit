@@ -206,7 +206,12 @@
 <li><a href="#is-there-an-admin-area">Is there an admin area?</a></li>
 </ul>
 </li>
-<li><a href="#19-getting-help">19. Getting Help</a></li>
+<li><a href="#19-website-accessibility-scans-site-audit">19. Website Accessibility Scans (Site Audit)</a><ul>
+<li><a href="#step-by-step_4">Step-by-step</a></li>
+<li><a href="#site-audit-defaults">Site Audit defaults</a></li>
+</ul>
+</li>
+<li><a href="#20-getting-help">20. Getting Help</a></li>
 </ul>
 </li>
 <li><a href="#glow-guided-layout-output-workflow-accessibility-toolkit----user-guide">GLOW (Guided Layout &amp; Output Workflow) Accessibility Toolkit -- User Guide</a><ul>
@@ -252,13 +257,13 @@
 <li><a href="#3-how-to-audit-a-document">3. How to Audit a Document</a><ul>
 <li><a href="#supported-formats_2">Supported formats</a></li>
 <li><a href="#choosing-an-audit-mode_1">Choosing an audit mode</a></li>
-<li><a href="#step-by-step_4">Step-by-step</a></li>
+<li><a href="#step-by-step_5">Step-by-step</a></li>
 <li><a href="#email-delivery_1">Email delivery</a></li>
 </ul>
 </li>
 <li><a href="#4-how-to-fix-a-document">4. How to Fix a Document</a><ul>
 <li><a href="#what-gets-auto-fixed_1">What gets auto-fixed</a></li>
-<li><a href="#step-by-step_5">Step-by-step</a></li>
+<li><a href="#step-by-step_6">Step-by-step</a></li>
 <li><a href="#recent-fix-workflow-updates">Recent Fix workflow updates</a></li>
 <li><a href="#quick-rule-exceptions_1">Quick Rule Exceptions</a></li>
 <li><a href="#preserve-centered-headings_1">Preserve centered headings</a></li>
@@ -271,7 +276,7 @@
 </ul>
 </li>
 <li><a href="#5-how-to-create-a-template">5. How to Create a Template</a><ul>
-<li><a href="#step-by-step_6">Step-by-step</a></li>
+<li><a href="#step-by-step_7">Step-by-step</a></li>
 <li><a href="#template-profile-defaults">Template profile defaults</a></li>
 <li><a href="#template-heading-level-defaults">Template heading-level defaults</a></li>
 <li><a href="#how-to-install-the-template-in-word">How to install the template in Word</a></li>
@@ -284,7 +289,7 @@
 </ul>
 </li>
 <li><a href="#7-how-to-export-to-html">7. How to Export to HTML</a><ul>
-<li><a href="#step-by-step_7">Step-by-step</a></li>
+<li><a href="#step-by-step_8">Step-by-step</a></li>
 </ul>
 </li>
 <li><a href="#8-how-to-convert-between-formats">8. How to Convert Between Formats</a><ul>
@@ -388,7 +393,8 @@
 <li><a href="#16-daisy-accessibility-tools">DAISY Accessibility Tools</a></li>
 <li><a href="#17-keyboard-and-screen-reader-tips">Keyboard and Screen Reader Tips</a></li>
 <li><a href="#18-frequently-asked-questions">Frequently Asked Questions</a></li>
-<li><a href="#19-getting-help">Getting Help</a></li>
+<li><a href="#19-website-accessibility-scans-site-audit">Website Accessibility Scans (Site Audit)</a></li>
+<li><a href="#20-getting-help">Getting Help</a></li>
 </ol>
 <hr />
 <h2 id="whats-new-in-glow-400">What's New in GLOW 4.0.0</h2>
@@ -410,6 +416,8 @@ adds targeted hardening in places that matter in real operations.</p>
 <li><strong>Release-documentation synchronization</strong> - Changelog, PRD, user guide,<br />
    announcement pointers, and combined announcement artifacts are now aligned to<br />
    the same release baseline so public messaging matches shipped behavior.</li>
+<li><strong>Site Audit web scanner</strong> - New <code>/site-audit</code> workflow to scan websites<br />
+   with URL/sitemap input, optional crawling, and downloadable scan artifacts.</li>
 </ol>
 <h3 id="what-remains-true-from-310">What remains true from 3.1.0</h3>
 <ul>
@@ -1638,7 +1646,41 @@ acb-lp detect-headings document.docx --ai --ai-prompt prompt.txt --threshold 75
 <h3 id="is-there-an-admin-area">Is there an admin area?</h3>
 <p>Yes. GLOW includes an admin-only sign-in and approval workflow for operational dashboards. Admin features include viewing and managing the audio conversion queue, canceling queued jobs, and re-queuing failed jobs. No general user accounts are supported in the current release. Email configuration is required for admin sign-in features.</p>
 <hr />
-<h2 id="19-getting-help">19. Getting Help</h2>
+<h2 id="19-website-accessibility-scans-site-audit">19. Website Accessibility Scans (Site Audit)</h2>
+<p>Site Audit is designed for page-level accessibility checks when your source is a URL instead of an uploaded document.</p>
+<p>Use Site Audit when you need to:</p>
+<ul>
+<li>review one or more live pages for common WCAG-aligned issues</li>
+<li>crawl a section of a site from a seed URL</li>
+<li>generate a portable evidence bundle for engineering handoff</li>
+</ul>
+<h3 id="step-by-step_4">Step-by-step</h3>
+<ol>
+<li>Open the <strong>Site Audit</strong> tab.</li>
+<li>Enter one URL per line, or provide a sitemap URL.</li>
+<li>Set your run options:</li>
+<li><strong>Maximum pages</strong> (1 to 50)</li>
+<li><strong>Follow in-site links</strong></li>
+<li><strong>Include subdomains</strong> (optional)</li>
+<li><strong>Force re-scan existing pages</strong></li>
+<li>Click <strong>Run Site Audit</strong>.</li>
+<li>Review the run summary and per-page status table.</li>
+<li>Download artifacts as needed:</li>
+<li>summary JSON</li>
+<li>findings CSV</li>
+<li>session log</li>
+<li>full ZIP bundle</li>
+</ol>
+<h3 id="site-audit-defaults">Site Audit defaults</h3>
+<p>You can set default Site Audit options in <strong>Settings</strong>:</p>
+<ul>
+<li>maximum pages per run</li>
+<li>crawl links on/off</li>
+<li>include subdomains on/off</li>
+<li>force re-scan on/off</li>
+</ul>
+<p>If <strong>Remember my settings</strong> is enabled, these defaults persist in local browser storage.</p>
+<h2 id="20-getting-help">20. Getting Help</h2>
 <ul>
 <li><strong>ACB Large Print Guidelines</strong> -- <a href="https://acb.org/large-print-guidelines">acb.org/large-print-guidelines</a></li>
 <li><strong>APH Large Print Guidelines</strong> -- <a href="https://www.aph.org/resources/large-print-guidelines/">aph.org/resources/large-print-guidelines</a></li>
@@ -1956,7 +1998,7 @@ acb-lp detect-headings document.docx --ai --ai-prompt prompt.txt --threshold 75
 <li><strong>Quick Audit</strong> -- Checks only Critical and High severity rules. Use this for a fast pass when you are already familiar with your document's formatting.</li>
 <li><strong>Custom Audit</strong> -- Pick individual rules to check. Useful when you are working on specific issues (e.g., only font rules) or running a targeted re-check.</li>
 </ul>
-<h3 id="step-by-step_4">Step-by-step</h3>
+<h3 id="step-by-step_5">Step-by-step</h3>
 <ol>
 <li>Go to Audit.</li>
 <li>Choose your rule categories (ACB Large Print, MS Accessibility Checker, or both).</li>
@@ -1998,7 +2040,7 @@ acb-lp detect-headings document.docx --ai --ai-prompt prompt.txt --threshold 75
 </tr>
 </tbody>
 </table>
-<h3 id="step-by-step_5">Step-by-step</h3>
+<h3 id="step-by-step_6">Step-by-step</h3>
 <ol>
 <li>Go to Fix.</li>
 <li>Upload your document.</li>
@@ -2200,7 +2242,7 @@ acb-lp detect-headings document.docx --ai --ai-prompt my-prompt.txt --threshold 
 <hr />
 <h2 id="5-how-to-create-a-template">5. How to Create a Template</h2>
 <p>A template (.dotx) is the easiest way to start compliant. Every new document you create from this template inherits all ACB formatting automatically.</p>
-<h3 id="step-by-step_6">Step-by-step</h3>
+<h3 id="step-by-step_7">Step-by-step</h3>
 <ol>
 <li>Go to Template.</li>
 <li>Enter a document title (or leave blank for the default).</li>
@@ -2265,7 +2307,7 @@ acb-lp detect-headings document.docx --ai --ai-prompt my-prompt.txt --threshold 
 <li><strong>Standalone HTML</strong> -- A complete web page with its own CSS file. Upload both files to your web server. Good for dedicated pages, intranet publishing, or email attachments.</li>
 <li><strong>CMS Fragment</strong> -- An HTML snippet with embedded CSS scoped to a wrapper class. Paste it into WordPress, Drupal, or any CMS editor block. The scoped CSS will not conflict with your site theme.</li>
 </ul>
-<h3 id="step-by-step_7">Step-by-step</h3>
+<h3 id="step-by-step_8">Step-by-step</h3>
 <ol>
 <li>Go to Export.</li>
 <li>Upload a Word (.docx) file.</li>
