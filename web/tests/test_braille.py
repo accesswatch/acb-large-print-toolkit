@@ -264,8 +264,8 @@ class TestBrailleRoute:
         resp = client.get("/")
         assert resp.status_code == 200
         data = resp.data.decode()
-        assert 'id="tab-braille"' in data
         assert 'href="/braille/"' in data
+        assert "Braille Studio" in data
 
     def test_get_form_renders(self, client):
         resp = client.get("/braille/")

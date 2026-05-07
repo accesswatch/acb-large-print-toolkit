@@ -958,7 +958,7 @@ class TestAccessibilityExtended:
     def test_home_has_settings_tile_and_navigation_descriptions(self, client):
         resp = client.get("/")
         assert b"Settings" in resp.data
-        assert b"Main Navigation Tab Order and Purpose" in resp.data
+        assert b"goal-oriented sidebar" in resp.data
         assert b"Guidelines" in resp.data
 
     def test_audit_form_accepts_all_formats(self, client):
