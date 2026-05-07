@@ -61,7 +61,13 @@
     siteAudit: {
       maxPages: 10,
       crawlLinks: true,
+      crawlDepth: 1,
       includeSubdomains: false,
+      samePathOnly: false,
+      excludePatterns: "",
+      strictOpenSourceOnly: false,
+      runInBackground: true,
+      protectResults: false,
       force: false,
     },
     speech: {
@@ -384,7 +390,13 @@
       if (document.querySelector('input[name="max_pages"]') && document.querySelector('textarea[name="sources"]')) {
         setInput("max_pages", settings.siteAudit.maxPages);
         setCheckbox("crawl_links", settings.siteAudit.crawlLinks);
+        setInput("crawl_depth", settings.siteAudit.crawlDepth);
         setCheckbox("include_subdomains", settings.siteAudit.includeSubdomains);
+        setCheckbox("same_path_only", settings.siteAudit.samePathOnly);
+        setInput("exclude_patterns", settings.siteAudit.excludePatterns || "");
+        setCheckbox("strict_open_source_only", settings.siteAudit.strictOpenSourceOnly);
+        setCheckbox("run_in_background", settings.siteAudit.runInBackground);
+        setCheckbox("protect_results", settings.siteAudit.protectResults);
         setCheckbox("force", settings.siteAudit.force);
       }
     }
@@ -499,8 +511,20 @@
     settings.siteAudit.maxPages = siteAuditMaxPages
       ? Math.max(1, Math.min(50, parseInt(siteAuditMaxPages.value || "10", 10) || 10))
       : 10;
+    var siteAuditCrawlDepth = document.querySelector('input[name="settings_site_audit_crawl_depth"]');
+    settings.siteAudit.crawlDepth = siteAuditCrawlDepth
+      ? Math.max(0, Math.min(5, parseInt(siteAuditCrawlDepth.value || "1", 10) || 1))
+      : 1;
     settings.siteAudit.crawlLinks = !!document.querySelector('input[name="settings_site_audit_crawl_links"]:checked');
     settings.siteAudit.includeSubdomains = !!document.querySelector('input[name="settings_site_audit_include_subdomains"]:checked');
+    settings.siteAudit.samePathOnly = !!document.querySelector('input[name="settings_site_audit_same_path_only"]:checked');
+    var siteAuditExcludePatterns = document.querySelector('textarea[name="settings_site_audit_exclude_patterns"]');
+    settings.siteAudit.excludePatterns = siteAuditExcludePatterns
+      ? (siteAuditExcludePatterns.value || "").trim()
+      : "";
+    settings.siteAudit.strictOpenSourceOnly = !!document.querySelector('input[name="strict_open_source_only"]:checked');
+    settings.siteAudit.runInBackground = !!document.querySelector('input[name="run_in_background"]:checked');
+    settings.siteAudit.protectResults = !!document.querySelector('input[name="protect_results"]:checked');
     settings.siteAudit.force = !!document.querySelector('input[name="settings_site_audit_force"]:checked');
 
     return settings;
@@ -583,8 +607,11 @@
     setCheckbox("settings_convert_print_ready", settings.convert.printReady);
 
     setInput("settings_site_audit_max_pages", settings.siteAudit.maxPages);
+    setInput("settings_site_audit_crawl_depth", settings.siteAudit.crawlDepth);
     setCheckbox("settings_site_audit_crawl_links", settings.siteAudit.crawlLinks);
     setCheckbox("settings_site_audit_include_subdomains", settings.siteAudit.includeSubdomains);
+    setCheckbox("settings_site_audit_same_path_only", settings.siteAudit.samePathOnly);
+    setInput("settings_site_audit_exclude_patterns", settings.siteAudit.excludePatterns || "");
     setCheckbox("settings_site_audit_force", settings.siteAudit.force);
 
     updateSettingsRuleSummary("audit", settings.audit.customRules);

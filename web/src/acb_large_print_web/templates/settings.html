@@ -261,9 +261,19 @@
       <label for="settings-site-audit-max-pages">Maximum pages per run:</label>
       <input type="number" id="settings-site-audit-max-pages" name="settings_site_audit_max_pages" value="10" min="1" max="50" class="input-narrow">
     </div>
+    <div class="form-group form-group-inline">
+      <label for="settings-site-audit-crawl-depth">Default crawl depth:</label>
+      <input type="number" id="settings-site-audit-crawl-depth" name="settings_site_audit_crawl_depth" value="1" min="0" max="5" class="input-narrow">
+    </div>
+    <div class="form-group">
+      <label for="settings-site-audit-exclude-patterns">Default URL exclusion patterns (one per line)</label>
+      <textarea id="settings-site-audit-exclude-patterns" name="settings_site_audit_exclude_patterns" rows="3"></textarea>
+      <p class="help-text">Use this to skip known low-value paths such as blog archives, tag pages, or URL parameters.</p>
+    </div>
     <div class="checkbox-group">
       <label><input type="checkbox" name="settings_site_audit_crawl_links" checked> Follow in-site links by default</label>
       <label><input type="checkbox" name="settings_site_audit_include_subdomains"> Include subdomains by default</label>
+      <label><input type="checkbox" name="settings_site_audit_same_path_only"> Limit crawl to the same path branch by default</label>
       <label><input type="checkbox" name="settings_site_audit_force"> Force re-scan existing pages by default</label>
     </div>
   </fieldset>

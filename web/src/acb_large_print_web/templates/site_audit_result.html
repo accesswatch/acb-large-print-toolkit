@@ -5,6 +5,13 @@
 
 {% block content %}
 <p>Run <code>{{ run_id }}</code> completed in {{ (summary.elapsed_ms / 1000) | round(1) }} seconds.</p>
+{% if access %}
+<div class="card">
+  <h2>Private Access Link</h2>
+  <p>This run is protected by a tokenized URL. Share this link only with authorized collaborators.</p>
+  <p><a href="{{ url_for('site_audit.site_audit_run', run_id=run_id, access=access) }}">Open this protected run</a></p>
+</div>
+{% endif %}
 
 <div class="card">
   <h2>Run Summary</h2>
@@ -18,12 +25,33 @@
 </div>
 
 <div class="card">
+  <h2>Scan Configuration</h2>
+  <ul>
+    <li><strong>Maximum pages:</strong> {{ summary.options.max_pages }}</li>
+    <li><strong>Follow in-site links:</strong> {% if summary.options.crawl_links %}Yes{% else %}No{% endif %}</li>
+    <li><strong>Crawl depth:</strong> {{ summary.options.crawl_depth if summary.options.crawl_depth is defined else 1 }}</li>
+    <li><strong>Include subdomains:</strong> {% if summary.options.include_subdomains %}Yes{% else %}No{% endif %}</li>
+    <li><strong>Same path only:</strong> {% if summary.options.same_path_only %}Yes{% else %}No{% endif %}</li>
+    <li><strong>Strict open-source learning links:</strong> {% if summary.options.strict_open_source_only %}Yes{% else %}No{% endif %}</li>
+    <li><strong>Force re-scan:</strong> {% if summary.options.force %}Yes{% else %}No{% endif %}</li>
+    <li>
+      <strong>Exclude patterns:</strong>
+      {% if summary.options.exclude_url_patterns %}
+      {{ summary.options.exclude_url_patterns | join(", ") }}
+      {% else %}
+      None
+      {% endif %}
+    </li>
+  </ul>
+</div>
+
+<div class="card">
   <h2>Download Artifacts</h2>
   <ul>
-    <li><a href="{{ url_for('site_audit.site_audit_download', run_id=run_id, artifact='summary') }}">Download JSON summary</a></li>
-    <li><a href="{{ url_for('site_audit.site_audit_download', run_id=run_id, artifact='csv') }}">Download findings CSV</a></li>
-    <li><a href="{{ url_for('site_audit.site_audit_download', run_id=run_id, artifact='log') }}">Download session log</a></li>
-    <li><a href="{{ url_for('site_audit.site_audit_download', run_id=run_id, artifact='zip') }}">Download complete bundle (ZIP)</a></li>
+    <li><a href="{{ url_for('site_audit.site_audit_download', run_id=run_id, artifact='summary', access=access) }}">Download JSON summary</a></li>
+    <li><a href="{{ url_for('site_audit.site_audit_download', run_id=run_id, artifact='csv', access=access) }}">Download findings CSV</a></li>
+    <li><a href="{{ url_for('site_audit.site_audit_download', run_id=run_id, artifact='log', access=access) }}">Download session log</a></li>
+    <li><a href="{{ url_for('site_audit.site_audit_download', run_id=run_id, artifact='zip', access=access) }}">Download complete bundle (ZIP)</a></li>
   </ul>
 </div>
 
@@ -59,14 +87,71 @@
 <div class="card">
   <h2>WCAG Tag Rollup</h2>
   {% if summary.wcag_rollup %}
-  <ul>
-    {% for tag, count in summary.wcag_rollup.items() %}
-    <li><strong>{{ tag }}:</strong> {{ count }}</li>
-    {% endfor %}
-  </ul>
+  <table>
+    <caption>WCAG tags detected across this run</caption>
+    <thead>
+      <tr>
+        <th scope="col">Tag</th>
+        <th scope="col">Count</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for tag, count in summary.wcag_rollup.items() %}
+      <tr>
+        <td>{{ tag }}</td>
+        <td>{{ count }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
   {% else %}
   <p>No WCAG tag rollup was produced in this run.</p>
   {% endif %}
+</div>
+
+<div class="card">
+  <h2>Finding Help and Open Learning Resources</h2>
+  <p>These links point to free, public accessibility references to help remediation teams understand and fix issues.</p>
+  <table>
+    <caption>Top findings with learning resources (up to 40)</caption>
+    <thead>
+      <tr>
+        <th scope="col">Page</th>
+        <th scope="col">Finding</th>
+        <th scope="col">Learn more</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% set ns = namespace(count=0) %}
+      {% for page in summary.pages %}
+      {% for finding in page.findings or [] %}
+      {% if ns.count < 40 %}
+      {% set ns.count = ns.count + 1 %}
+      <tr>
+        <td><a href="{{ page.url }}" target="_blank" rel="noopener noreferrer">{{ page.title or page.url }}</a></td>
+        <td>
+          <strong>{{ finding.rule_id }}</strong><br>
+          {{ finding.message }}
+          {% if finding.wcag_criteria %}
+          <br><span>WCAG: {{ finding.wcag_criteria | join(", ") }}</span>
+          {% endif %}
+        </td>
+        <td>
+          {% for resource in finding.resources or [] %}
+          <a href="{{ resource.url }}" target="_blank" rel="noopener noreferrer">{{ resource.title }}</a>{% if not loop.last %}<br>{% endif %}
+          {% endfor %}
+        </td>
+      </tr>
+      {% endif %}
+      {% endfor %}
+      {% endfor %}
+      {% if ns.count == 0 %}
+      <tr>
+        <td colspan="3">No findings were produced for this run.</td>
+      </tr>
+      {% endif %}
+    </tbody>
+  </table>
 </div>
 
 <p><a class="btn-secondary" href="{{ url_for('site_audit.site_audit_form') }}">Run another site audit</a></p>

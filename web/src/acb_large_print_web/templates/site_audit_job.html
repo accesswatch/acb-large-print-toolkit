@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+
+{% block title %}Site Audit Job Status{% endblock %}
+{% block heading %}Site Audit Job Status{% endblock %}
+
+{% block content %}
+<p>Job <code>{{ job_id }}</code> for run <code>{{ run_id }}</code>.</p>
+<input type="hidden" id="job-status-url" value="{{ url_for('site_audit.site_audit_job_status', job_id=job_id, access=access) }}">
+
+<div class="card">
+  <h2>Status</h2>
+  <table>
+    <caption>Current background crawl status</caption>
+    <tbody>
+      <tr><th scope="row">State</th><td><span id="job-state">{{ job.status }}</span></td></tr>
+      <tr><th scope="row">Progress</th><td><span id="job-progress">{{ job.progress }}</span>%</td></tr>
+      <tr><th scope="row">Message</th><td><span id="job-message">{{ job.message }}</span></td></tr>
+      {% if job.error %}
+      <tr><th scope="row">Error</th><td>{{ job.error }}</td></tr>
+      {% endif %}
+    </tbody>
+  </table>
+</div>
+
+<div class="card">
+  <h2>Private Access</h2>
+  <p>Keep this tokenized link private. Access expires {{ job.access_expires_at.isoformat() if job.access_expires_at else "soon" }}.</p>
+  <p><a href="{{ url_for('site_audit.site_audit_job', job_id=job_id, access=access) }}">Tokenized status URL</a></p>
+</div>
+
+<div class="card">
+  <h2>Actions</h2>
+  <form method="post" action="{{ url_for('site_audit.site_audit_job_cancel', job_id=job_id) }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input type="hidden" name="access" value="{{ access }}">
+    <button type="submit" class="btn-secondary">Cancel crawl</button>
+  </form>
+  <p><a id="result-link" class="btn-primary" href="{{ url_for('site_audit.site_audit_run', run_id=run_id, access=access) }}">Open run results</a></p>
+</div>
+
+<script>
+(function () {
+  var stateEl = document.getElementById('job-state');
+  var progressEl = document.getElementById('job-progress');
+  var messageEl = document.getElementById('job-message');
+  var statusUrlEl = document.getElementById('job-status-url');
+  var pollUrl = statusUrlEl ? statusUrlEl.value : '';
+
+  function poll() {
+    fetch(pollUrl, { credentials: 'same-origin' })
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        if (stateEl) stateEl.textContent = data.status || '';
+        if (progressEl) progressEl.textContent = String(data.progress || 0);
+        if (messageEl) messageEl.textContent = data.message || '';
+        if (data.status === 'complete' || data.status === 'cancelled' || data.status === 'failed') {
+          return;
+        }
+        window.setTimeout(poll, 2000);
+      })
+      .catch(function () {
+        window.setTimeout(poll, 3000);
+      });
+  }
+
+  window.setTimeout(poll, 1000);
+}());
+</script>
+{% endblock %}

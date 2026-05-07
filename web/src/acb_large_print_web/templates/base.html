@@ -39,119 +39,291 @@
 <body class="{{ brand_theme_class }}{% if feature_forced_colors_mode_enabled %} feature-forced-colors{% endif %}{% if feature_cognitive_profile_enabled %} feature-cognitive-profile{% endif %}">
   <a href="#main" class="skip-link">Skip to main content</a>
 
-  <header>
-    <nav aria-label="Main navigation">
-      <a href="{{ url_for('main.index') }}" class="nav-brand"{% if request.blueprint == 'main' %} aria-current="page"{% endif %}>
+  <!-- Mobile header bar: brand + hamburger, visible only on small screens -->
+  <div class="mobile-header" role="banner">
+    <button
+      class="sidebar-toggle"
+      id="sidebar-toggle"
+      aria-controls="primary-nav"
+      aria-expanded="false"
+      aria-label="Open navigation menu"
+      title="Open navigation menu"
+      type="button">
+      <span class="hamburger-bars" aria-hidden="true">
+        <span></span><span></span><span></span>
+      </span>
+    </button>
+    <a href="{{ url_for('main.index') }}" class="mobile-brand"{% if request.blueprint == 'main' %} aria-current="page"{% endif %}>
+      <img src="{{ url_for('static', filename=brand_logo_file) }}" alt="{{ brand_logo_alt }}" height="32" class="brand-logo">
+      <span>{{ brand_nav_label }}</span>
+    </a>
+  </div>
+
+  <!-- Overlay dims main content when sidebar is open on mobile -->
+  <div class="sidebar-overlay" id="sidebar-overlay" hidden aria-hidden="true"></div>
+
+  <div class="app-layout">
+
+    <!-- ================================================================ -->
+    <!-- PRIMARY NAVIGATION SIDEBAR                                        -->
+    <!-- ================================================================ -->
+    <nav class="sidebar" id="primary-nav" aria-label="Primary navigation">
+
+      <!-- Brand lockup (desktop only; mobile uses .mobile-header) -->
+      <a href="{{ url_for('main.index') }}" class="sidebar-brand"{% if request.blueprint == 'main' %} aria-current="page"{% endif %}>
         <img src="{{ url_for('static', filename=brand_logo_file) }}" alt="{{ brand_logo_alt }}" height="{{ brand_logo_height }}" class="brand-logo">
-        <span class="brand-nav-text">{{ brand_nav_label }}</span>
+        <span class="sidebar-brand-text">{{ brand_nav_label }}</span>
       </a>
-      <ul class="nav-tabs" role="tablist" aria-label="Document tools">
-        <li role="none"><a href="{{ url_for('process.process_form') }}" role="tab" id="tab-quickstart" aria-controls="main"{% if request.blueprint == 'process' %} aria-selected="true"{% else %} aria-selected="false"{% endif %}>Quick Start</a></li>
-        {% if feature_template_builder_enabled %}
-        <li role="none"><a href="{{ url_for('template.template_form') }}" role="tab" id="tab-template" aria-controls="main"{% if request.blueprint == 'template' %} aria-selected="true"{% else %} aria-selected="false"{% endif %}>Template</a></li>
+
+      <ul class="sidebar-nav" role="list">
+
+        <!-- Quick Start (ungrouped, always visible) -->
+        <li role="none">
+          <a href="{{ url_for('process.process_form') }}"
+             class="sidebar-link{% if request.blueprint == 'process' %} sidebar-link--active{% endif %}"
+             {% if request.blueprint == 'process' %}aria-current="page"{% endif %}>
+            Quick Start
+          </a>
+        </li>
+
+        <!-- ── Group 1: Assess ─────────────────────────────────────── -->
+        {% if feature_audit_enabled or feature_site_audit_enabled %}
+        <li class="sidebar-group" role="none">
+          <span class="sidebar-group-label" id="nav-group-assess">Assess</span>
+          <ul aria-labelledby="nav-group-assess" role="list">
+            {% if feature_audit_enabled %}
+            <li role="none">
+              <a href="{{ url_for('audit.audit_form') }}"
+                 class="sidebar-link{% if request.blueprint == 'audit' %} sidebar-link--active{% endif %}"
+                 {% if request.blueprint == 'audit' %}aria-current="page"{% endif %}>
+                Document Audit
+              </a>
+            </li>
+            {% endif %}
+            {% if feature_site_audit_enabled %}
+            <li role="none">
+              <a href="{{ url_for('site_audit.site_audit_form') }}"
+                 class="sidebar-link{% if request.blueprint == 'site_audit' %} sidebar-link--active{% endif %}"
+                 {% if request.blueprint == 'site_audit' %}aria-current="page"{% endif %}>
+                Site Audit
+              </a>
+            </li>
+            {% endif %}
+          </ul>
+        </li>
         {% endif %}
-        {% if feature_audit_enabled %}
-        <li role="none"><a href="{{ url_for('audit.audit_form') }}" role="tab" id="tab-audit" aria-controls="main"{% if request.blueprint == 'audit' %} aria-selected="true"{% else %} aria-selected="false"{% endif %}>Audit</a></li>
+
+        <!-- ── Group 2: Fix and Build ──────────────────────────────── -->
+        {% if feature_checker_enabled or feature_template_builder_enabled %}
+        <li class="sidebar-group" role="none">
+          <span class="sidebar-group-label" id="nav-group-fix">Fix and Build</span>
+          <ul aria-labelledby="nav-group-fix" role="list">
+            {% if feature_checker_enabled %}
+            <li role="none">
+              <a href="{{ url_for('fix.fix_form') }}"
+                 class="sidebar-link{% if request.blueprint == 'fix' %} sidebar-link--active{% endif %}"
+                 {% if request.blueprint == 'fix' %}aria-current="page"{% endif %}>
+                Fix Document
+              </a>
+            </li>
+            {% endif %}
+            {% if feature_template_builder_enabled %}
+            <li role="none">
+              <a href="{{ url_for('template.template_form') }}"
+                 class="sidebar-link{% if request.blueprint == 'template' %} sidebar-link--active{% endif %}"
+                 {% if request.blueprint == 'template' %}aria-current="page"{% endif %}>
+                Build Template
+              </a>
+            </li>
+            {% endif %}
+          </ul>
+        </li>
         {% endif %}
-        {% if feature_checker_enabled %}
-        <li role="none"><a href="{{ url_for('fix.fix_form') }}" role="tab" id="tab-fix" aria-controls="main"{% if request.blueprint == 'fix' %} aria-selected="true"{% else %} aria-selected="false"{% endif %}>Fix</a></li>
+
+        <!-- ── Group 3: Transform ─────────────────────────────────── -->
+        {% if feature_converter_enabled or feature_braille_enabled %}
+        <li class="sidebar-group" role="none">
+          <span class="sidebar-group-label" id="nav-group-transform">Transform</span>
+          <ul aria-labelledby="nav-group-transform" role="list">
+            {% if feature_converter_enabled %}
+            <li role="none">
+              <a href="{{ url_for('convert.convert_form') }}"
+                 class="sidebar-link{% if request.blueprint in ['convert', 'export'] %} sidebar-link--active{% endif %}"
+                 {% if request.blueprint in ['convert', 'export'] %}aria-current="page"{% endif %}>
+                Convert Format
+              </a>
+            </li>
+            {% endif %}
+            {% if feature_braille_enabled %}
+            <li role="none">
+              <a href="{{ url_for('braille.braille_form') }}"
+                 class="sidebar-link{% if request.blueprint == 'braille' %} sidebar-link--active{% endif %}"
+                 {% if request.blueprint == 'braille' %}aria-current="page"{% endif %}>
+                Braille Studio
+              </a>
+            </li>
+            {% endif %}
+          </ul>
+        </li>
         {% endif %}
-        {% if feature_converter_enabled %}
-        <li role="none"><a href="{{ url_for('convert.convert_form') }}" role="tab" id="tab-convert" aria-controls="main"{% if request.blueprint in ['convert', 'export'] %} aria-selected="true"{% else %} aria-selected="false"{% endif %}>Convert</a></li>
+
+        <!-- ── Group 4: Listen and Speak ──────────────────────────── -->
+        {% if feature_speech_enabled or ai_whisperer_enabled %}
+        <li class="sidebar-group" role="none">
+          <span class="sidebar-group-label" id="nav-group-listen">Listen and Speak</span>
+          <ul aria-labelledby="nav-group-listen" role="list">
+            {% if feature_speech_enabled %}
+            <li role="none">
+              <a href="{{ url_for('speech.speech_form') }}"
+                 class="sidebar-link{% if request.blueprint == 'speech' %} sidebar-link--active{% endif %}"
+                 {% if request.blueprint == 'speech' %}aria-current="page"{% endif %}>
+                Speech Studio
+              </a>
+            </li>
+            {% endif %}
+            {% if ai_whisperer_enabled %}
+            <li role="none">
+              <a href="{{ url_for('whisperer.whisperer_form') }}"
+                 class="sidebar-link{% if request.blueprint == 'whisperer' %} sidebar-link--active{% endif %}"
+                 {% if request.blueprint == 'whisperer' %}aria-current="page"{% endif %}>
+                {{ brand_whisperer_label }}
+              </a>
+            </li>
+            {% endif %}
+          </ul>
+        </li>
         {% endif %}
-        {% if feature_speech_enabled %}
-        <li role="none"><a href="{{ url_for('speech.speech_form') }}" role="tab" id="tab-speech" aria-controls="main"{% if request.blueprint == 'speech' %} aria-selected="true"{% else %} aria-selected="false"{% endif %}>Speech</a></li>
-        {% endif %}
-        {% if feature_braille_enabled %}
-        <li role="none"><a href="{{ url_for('braille.braille_form') }}" role="tab" id="tab-braille" aria-controls="main"{% if request.blueprint == 'braille' %} aria-selected="true"{% else %} aria-selected="false"{% endif %}>Braille</a></li>
-        {% endif %}
-        {% if feature_site_audit_enabled %}
-        <li role="none"><a href="{{ url_for('site_audit.site_audit_form') }}" role="tab" id="tab-site-audit" aria-controls="main"{% if request.blueprint == 'site_audit' %} aria-selected="true"{% else %} aria-selected="false"{% endif %}>Site Audit</a></li>
-        {% endif %}
-        {% if feature_table_advisor_enabled or feature_document_compare_enabled or feature_rule_contributions_enabled %}
-        <li role="none"><a href="{{ url_for('magic.magic_home') }}" role="tab" id="tab-magic" aria-controls="main"{% if request.blueprint == 'magic' %} aria-selected="true"{% else %} aria-selected="false"{% endif %}>Magic Lab</a></li>
-        {% endif %}
-        {% if ai_whisperer_enabled %}
-        <li role="none"><a href="{{ url_for('whisperer.whisperer_form') }}" role="tab" id="tab-whisperer" aria-controls="main"{% if request.blueprint == 'whisperer' %} aria-selected="true"{% else %} aria-selected="false"{% endif %}>{{ brand_whisperer_label }}</a></li>
-        {% endif %}
+
+        <!-- ── Group 5: Explore and Learn ─────────────────────────── -->
+        <li class="sidebar-group" role="none">
+          <span class="sidebar-group-label" id="nav-group-explore">Explore and Learn</span>
+          <ul aria-labelledby="nav-group-explore" role="list">
+            {% if ai_chat_enabled is defined and ai_chat_enabled %}
+            <li role="none">
+              <a href="{{ url_for('chat.chat_form') }}"
+                 class="sidebar-link{% if request.blueprint == 'chat' %} sidebar-link--active{% endif %}"
+                 {% if request.blueprint == 'chat' %}aria-current="page"{% endif %}>
+                Document Chat
+              </a>
+            </li>
+            {% endif %}
+            {% if feature_table_advisor_enabled or feature_document_compare_enabled or feature_rule_contributions_enabled %}
+            <li role="none">
+              <a href="{{ url_for('magic.magic_home') }}"
+                 class="sidebar-link{% if request.blueprint == 'magic' %} sidebar-link--active{% endif %}"
+                 {% if request.blueprint == 'magic' %}aria-current="page"{% endif %}>
+                Magic Lab
+              </a>
+            </li>
+            {% endif %}
+            <li role="none">
+              <a href="{{ url_for('guidelines.guidelines_page') }}"
+                 class="sidebar-link{% if request.blueprint in ['guidelines', 'rules_ref'] %} sidebar-link--active{% endif %}"
+                 {% if request.blueprint in ['guidelines', 'rules_ref'] %}aria-current="page"{% endif %}>
+                Guidelines
+              </a>
+            </li>
+            <li role="none">
+              <a href="{{ url_for('guide.guide_page') }}"
+                 class="sidebar-link{% if request.blueprint == 'guide' %} sidebar-link--active{% endif %}"
+                 {% if request.blueprint == 'guide' %}aria-current="page"{% endif %}>
+                User Guide
+              </a>
+            </li>
+            <li role="none">
+              <a href="{{ url_for('faq.faq_page') }}"
+                 class="sidebar-link{% if request.blueprint == 'faq' %} sidebar-link--active{% endif %}"
+                 {% if request.blueprint == 'faq' %}aria-current="page"{% endif %}>
+                FAQ
+              </a>
+            </li>
+            <li role="none">
+              <a href="{{ url_for('settings.settings_page') }}"
+                 class="sidebar-link{% if request.blueprint == 'settings' %} sidebar-link--active{% endif %}"
+                 {% if request.blueprint == 'settings' %}aria-current="page"{% endif %}>
+                Settings
+              </a>
+            </li>
+          </ul>
+        </li>
+
       </ul>
     </nav>
-  </header>
+    <!-- ── End sidebar ─────────────────────────────────────────────── -->
 
-  <main id="main">
-    <h1>{% block heading %}{{ brand_heading_label }}{% endblock %}</h1>
+    <!-- ================================================================ -->
+    <!-- CONTENT AREA: main + footer                                       -->
+    <!-- ================================================================ -->
+    <div class="content-area">
 
-    <div id="toast-container" aria-live="polite" aria-atomic="false"></div>
+      <main id="main">
+        <h1>{% block heading %}{{ brand_heading_label }}{% endblock %}</h1>
 
-    {% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
-    <section class="flash-messages" aria-label="Notifications">
-    {% for category, message in messages %}
-    <div class="flash-{{ category }}" role="alert">
-      <div class="flash-icon" aria-hidden="true">
-        {% if category == "error" %}⚠
-        {% elif category == "success" %}✔
-        {% elif category == "warning" %}‼
-        {% else %}ℹ{% endif %}
-      </div>
-      <p>{% if category == "error" %}<strong>Error:</strong> {% elif category == "success" %}<strong>Success:</strong> {% elif category == "warning" %}<strong>Warning:</strong> {% elif category == "info" %}<strong>Note:</strong> {% endif %}{{ message }}</p>
-    </div>
-    {% endfor %}
-    </section>
-    {% endif %}
-    {% endwith %}
+        <div id="toast-container" aria-live="polite" aria-atomic="false"></div>
 
-    {% block content %}{% endblock %}
-  </main>
-
-  <footer>
-    <nav aria-label="Additional links">
-      <ul class="footer-links">
-        <li><a href="{{ url_for('guidelines.guidelines_page') }}"{% if request.blueprint in ['guidelines', 'rules_ref'] %} aria-current="page"{% endif %}>Guidelines</a></li>
-        <li><a href="{{ url_for('settings.settings_page') }}"{% if request.blueprint == 'settings' %} aria-current="page"{% endif %}>Settings</a></li>
-        <li><a href="{{ url_for('guide.guide_page') }}"{% if request.blueprint == 'guide' %} aria-current="page"{% endif %}>User Guide</a></li>
-        <li><a href="{{ url_for('faq.faq_page') }}"{% if request.blueprint == 'faq' %} aria-current="page"{% endif %}>FAQ</a></li>
-        <li><a href="{{ url_for('about.about_page') }}"{% if request.blueprint == 'about' %} aria-current="page"{% endif %}>About</a></li>
-        <li><a href="{{ url_for('prd.prd_page') }}"{% if request.blueprint == 'prd' %} aria-current="page"{% endif %}>PRD</a></li>
-        <li><a href="{{ url_for('changelog.changelog_page') }}"{% if request.blueprint == 'changelog' %} aria-current="page"{% endif %}>Changelog</a></li>
-        <li><a href="{{ url_for('feedback.feedback_form') }}"{% if request.blueprint == 'feedback' %} aria-current="page"{% endif %}>Feedback</a></li>
-        <li><a href="{{ url_for('status_page') }}"{% if request.endpoint == 'status_page' %} aria-current="page"{% endif %}>Server Status</a></li>
-        {% if feature_site_audit_enabled %}
-        <li><a href="{{ url_for('site_audit.site_audit_form') }}"{% if request.blueprint == 'site_audit' %} aria-current="page"{% endif %}>Site Audit</a></li>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <section class="flash-messages" aria-label="Notifications">
+        {% for category, message in messages %}
+        <div class="flash-{{ category }}" role="alert">
+          <div class="flash-icon" aria-hidden="true">
+            {% if category == "error" %}⚠
+            {% elif category == "success" %}✔
+            {% elif category == "warning" %}‼
+            {% else %}ℹ{% endif %}
+          </div>
+          <p>{% if category == "error" %}<strong>Error:</strong> {% elif category == "success" %}<strong>Success:</strong> {% elif category == "warning" %}<strong>Warning:</strong> {% elif category == "info" %}<strong>Note:</strong> {% endif %}{{ message }}</p>
+        </div>
+        {% endfor %}
+        </section>
         {% endif %}
-        {% if feature_table_advisor_enabled or feature_document_compare_enabled or feature_rule_contributions_enabled %}
-        <li><a href="{{ url_for('magic.magic_home') }}"{% if request.blueprint == 'magic' %} aria-current="page"{% endif %}>Magic Lab</a></li>
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+      </main>
+
+      <footer>
+        <nav aria-label="Additional links">
+          <ul class="footer-links">
+            <li><a href="{{ url_for('about.about_page') }}"{% if request.blueprint == 'about' %} aria-current="page"{% endif %}>About</a></li>
+            <li><a href="{{ url_for('changelog.changelog_page') }}"{% if request.blueprint == 'changelog' %} aria-current="page"{% endif %}>Changelog</a></li>
+            <li><a href="{{ url_for('feedback.feedback_form') }}"{% if request.blueprint == 'feedback' %} aria-current="page"{% endif %}>Feedback</a></li>
+            <li><a href="{{ url_for('status_page') }}"{% if request.endpoint == 'status_page' %} aria-current="page"{% endif %}>Server Status</a></li>
+            <li><a href="{{ url_for('prd.prd_page') }}"{% if request.blueprint == 'prd' %} aria-current="page"{% endif %}>PRD</a></li>
+            <li><a href="{{ url_for('admin.admin_login') }}"{% if request.blueprint == 'admin' %} aria-current="page"{% endif %}>Admin Sign-In</a></li>
+            <li><a href="{{ url_for('privacy.privacy_page') }}"{% if request.blueprint == 'privacy' %} aria-current="page"{% endif %}>Privacy Policy</a></li>
+            <li><a href="{{ url_for('consent.consent_form') }}"{% if request.blueprint == 'consent' %} aria-current="page"{% endif %}>Terms of Use</a></li>
+          </ul>
+        </nav>
+        {% if brand_is_uarizona %}
+        <p>{{ brand_footer_org_line }}</p>
+        {% else %}
+        <p><a href="https://www.bits-acb.org">BITS</a> community project. Blind Information Technology Solutions, a special interest affiliate of the American Council of the Blind.</p>
         {% endif %}
-        <li><a href="{{ url_for('admin.admin_login') }}"{% if request.blueprint == 'admin' %} aria-current="page"{% endif %}>Admin Sign-In</a></li>
-        <li><a href="{{ url_for('privacy.privacy_page') }}"{% if request.blueprint == 'privacy' %} aria-current="page"{% endif %}>Privacy Policy</a></li>
-        <li><a href="{{ url_for('consent.consent_form') }}"{% if request.blueprint == 'consent' %} aria-current="page"{% endif %}>Terms of Use</a></li>
-      </ul>
-    </nav>
-    {% if brand_is_uarizona %}
-    <p>{{ brand_footer_org_line }}</p>
-    {% else %}
-    <p><a href="https://www.bits-acb.org">BITS</a> community project. Blind Information Technology Solutions, a special interest affiliate of the American Council of the Blind.</p>
-    {% endif %}
-    <p>{{ brand_footer_story_line }}</p>
-    {% set _ns = namespace(parts=[]) %}
-    {% if feature_word_enabled %}{% set _ns.parts = _ns.parts + ["Word (.docx)"] %}{% endif %}
-    {% if feature_excel_enabled %}{% set _ns.parts = _ns.parts + ["Excel (.xlsx)"] %}{% endif %}
-    {% if feature_powerpoint_enabled %}{% set _ns.parts = _ns.parts + ["PowerPoint (.pptx)"] %}{% endif %}
-    {% if feature_markdown_enabled %}{% set _ns.parts = _ns.parts + ["Markdown (.md)"] %}{% endif %}
-    {% if feature_pdf_enabled %}{% set _ns.parts = _ns.parts + ["PDF (.pdf)"] %}{% endif %}
-    {% if feature_epub_enabled %}{% set _ns.parts = _ns.parts + ["ePub (.epub)"] %}{% endif %}
-    {% if _ns.parts %}
-    <p>Supports
-      {%- if _ns.parts | length == 1 %} {{ _ns.parts[0] }}
-      {%- elif _ns.parts | length == 2 %} {{ _ns.parts[0] }} and {{ _ns.parts[1] }}
-      {%- else %} {{ _ns.parts[:-1] | join(", ") }}, and {{ _ns.parts[-1] }}
-      {%- endif %} documents.</p>
-    {% endif %}
-    <p>Admin features are restricted to approved administrative accounts.</p>
-    <p>Current release: {{ release_version }}</p>
-    <p>Visitors: {{ "{:,}".format(visitor_count) }}</p>
-    <span id="theme-status" class="visually-hidden" aria-live="polite"></span>
-  </footer>
+        <p>{{ brand_footer_story_line }}</p>
+        {% set _ns = namespace(parts=[]) %}
+        {% if feature_word_enabled %}{% set _ns.parts = _ns.parts + ["Word (.docx)"] %}{% endif %}
+        {% if feature_excel_enabled %}{% set _ns.parts = _ns.parts + ["Excel (.xlsx)"] %}{% endif %}
+        {% if feature_powerpoint_enabled %}{% set _ns.parts = _ns.parts + ["PowerPoint (.pptx)"] %}{% endif %}
+        {% if feature_markdown_enabled %}{% set _ns.parts = _ns.parts + ["Markdown (.md)"] %}{% endif %}
+        {% if feature_pdf_enabled %}{% set _ns.parts = _ns.parts + ["PDF (.pdf)"] %}{% endif %}
+        {% if feature_epub_enabled %}{% set _ns.parts = _ns.parts + ["ePub (.epub)"] %}{% endif %}
+        {% if _ns.parts %}
+        <p>Supports
+          {%- if _ns.parts | length == 1 %} {{ _ns.parts[0] }}
+          {%- elif _ns.parts | length == 2 %} {{ _ns.parts[0] }} and {{ _ns.parts[1] }}
+          {%- else %} {{ _ns.parts[:-1] | join(", ") }}, and {{ _ns.parts[-1] }}
+          {%- endif %} documents.</p>
+        {% endif %}
+        <p>Admin features are restricted to approved administrative accounts.</p>
+        <p>Current release: {{ release_version }}</p>
+        <p>Visitors: {{ "{:,}".format(visitor_count) }}</p>
+        <span id="theme-status" class="visually-hidden" aria-live="polite"></span>
+      </footer>
+
+    </div><!-- /.content-area -->
+  </div><!-- /.app-layout -->
+
   <script src="{{ url_for('static', filename='theme.js') }}"></script>
   <script src="{{ url_for('static', filename='preferences.js') }}"></script>
   <script src="{{ url_for('static', filename='tabs.js') }}"></script>
@@ -159,6 +331,7 @@
   <script src="{{ url_for('static', filename='dropzone.js') }}"></script>
   <script src="{{ url_for('static', filename='toast.js') }}"></script>
   <script src="{{ url_for('static', filename='a11y-enhancements.js') }}"></script>
+  <script src="{{ url_for('static', filename='sidebar.js') }}"></script>
   {% block extra_js %}{% endblock %}
 </body>
 </html>

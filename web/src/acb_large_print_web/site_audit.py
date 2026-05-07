@@ -13,7 +13,7 @@ import zipfile
 from dataclasses import dataclass
 from html.parser import HTMLParser
 from pathlib import Path
-from typing import Iterable
+from typing import Any, Callable, Iterable
 from urllib.parse import urljoin, urlparse
 from xml.etree import ElementTree
 
@@ -23,12 +23,66 @@ import requests
 WCAG_TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"]
 _RUN_ID_RE = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
 
+_WCAG_UNDERSTANDING_URLS: dict[str, str] = {
+    "1.1.1": "https://www.w3.org/WAI/WCAG22/Understanding/non-text-content.html",
+    "1.3.1": "https://www.w3.org/WAI/WCAG22/Understanding/info-and-relationships.html",
+    "1.3.2": "https://www.w3.org/WAI/WCAG22/Understanding/meaningful-sequence.html",
+    "1.4.3": "https://www.w3.org/WAI/WCAG22/Understanding/contrast-minimum.html",
+    "2.1.1": "https://www.w3.org/WAI/WCAG22/Understanding/keyboard.html",
+    "2.4.1": "https://www.w3.org/WAI/WCAG22/Understanding/bypass-blocks.html",
+    "2.4.2": "https://www.w3.org/WAI/WCAG22/Understanding/page-titled.html",
+    "2.4.3": "https://www.w3.org/WAI/WCAG22/Understanding/focus-order.html",
+    "2.4.4": "https://www.w3.org/WAI/WCAG22/Understanding/link-purpose-in-context.html",
+    "2.4.6": "https://www.w3.org/WAI/WCAG22/Understanding/headings-and-labels.html",
+    "2.4.7": "https://www.w3.org/WAI/WCAG22/Understanding/focus-visible.html",
+    "3.1.1": "https://www.w3.org/WAI/WCAG22/Understanding/language-of-page.html",
+    "3.3.1": "https://www.w3.org/WAI/WCAG22/Understanding/error-identification.html",
+    "3.3.2": "https://www.w3.org/WAI/WCAG22/Understanding/labels-or-instructions.html",
+    "4.1.2": "https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html",
+    "4.1.3": "https://www.w3.org/WAI/WCAG22/Understanding/status-messages.html",
+}
+
+_RULE_LEARNING_URLS: dict[str, list[tuple[str, str]]] = {
+    "HEURISTIC-HTML-LANG": [
+        ("W3C: Language of Page (SC 3.1.1)", _WCAG_UNDERSTANDING_URLS["3.1.1"]),
+        ("MDN: The html lang attribute", "https://developer.mozilla.org/docs/Web/HTML/Global_attributes/lang"),
+    ],
+    "HEURISTIC-HTML-TITLE": [
+        ("W3C: Page Titled (SC 2.4.2)", _WCAG_UNDERSTANDING_URLS["2.4.2"]),
+        ("W3C Tutorial: Page structure", "https://www.w3.org/WAI/tutorials/page-structure/"),
+    ],
+    "HEURISTIC-IMG-ALT": [
+        ("W3C: Non-text Content (SC 1.1.1)", _WCAG_UNDERSTANDING_URLS["1.1.1"]),
+        ("W3C Tutorial: Images concepts", "https://www.w3.org/WAI/tutorials/images/"),
+    ],
+    "HEURISTIC-LINK-TEXT": [
+        ("W3C: Link Purpose (SC 2.4.4)", _WCAG_UNDERSTANDING_URLS["2.4.4"]),
+        ("W3C Tutorial: Link text", "https://www.w3.org/WAI/tutorials/links/link-text/"),
+    ],
+    "AXE-COLOR-CONTRAST": [
+        ("W3C: Contrast Minimum (SC 1.4.3)", _WCAG_UNDERSTANDING_URLS["1.4.3"]),
+        ("A11Y Project: Color contrast", "https://www.a11yproject.com/posts/what-is-color-contrast/"),
+    ],
+    "AXE-IMAGE-ALT": [
+        ("W3C: Non-text Content (SC 1.1.1)", _WCAG_UNDERSTANDING_URLS["1.1.1"]),
+        ("W3C Tutorial: Images concepts", "https://www.w3.org/WAI/tutorials/images/"),
+    ],
+    "AXE-LINK-NAME": [
+        ("W3C: Link Purpose (SC 2.4.4)", _WCAG_UNDERSTANDING_URLS["2.4.4"]),
+        ("W3C Tutorial: Link text", "https://www.w3.org/WAI/tutorials/links/link-text/"),
+    ],
+}
+
 
 @dataclass(slots=True)
 class SiteAuditOptions:
     max_pages: int = 10
     crawl_links: bool = True
+    crawl_depth: int = 1
     include_subdomains: bool = False
+    same_path_only: bool = False
+    exclude_url_patterns: tuple[str, ...] = ()
+    strict_open_source_only: bool = False
     force: bool = False
 
 
@@ -115,7 +169,9 @@ def run_site_audit(
     base_dir: Path,
     sources: list[str],
     options: SiteAuditOptions,
-) -> dict:
+    is_cancelled: Callable[[], bool] | None = None,
+    progress_callback: Callable[[int, int, str], None] | None = None,
+) -> dict[str, Any]:
     run_dir = base_dir / run_id
     run_dir.mkdir(parents=True, exist_ok=True)
     started = time.time()
@@ -126,24 +182,45 @@ def run_site_audit(
     log_lines.append(f"sources={len(sources)}")
     log_lines.append(f"max_pages={options.max_pages}")
     log_lines.append(f"crawl_links={str(options.crawl_links).lower()}")
+    log_lines.append(f"crawl_depth={options.crawl_depth}")
     log_lines.append(f"include_subdomains={str(options.include_subdomains).lower()}")
+    log_lines.append(f"same_path_only={str(options.same_path_only).lower()}")
+    log_lines.append(f"exclude_url_patterns={len(options.exclude_url_patterns)}")
+    log_lines.append(f"strict_open_source_only={str(options.strict_open_source_only).lower()}")
     log_lines.append(f"force={str(options.force).lower()}")
 
     if options.crawl_links:
         scan_urls = _expand_with_crawl(
             sources,
             max_pages=options.max_pages,
+            crawl_depth=options.crawl_depth,
             include_subdomains=options.include_subdomains,
+            same_path_only=options.same_path_only,
+            exclude_url_patterns=options.exclude_url_patterns,
+            is_cancelled=is_cancelled,
         )
     else:
-        scan_urls = sources[: options.max_pages]
+        scan_urls = [
+            url
+            for url in sources
+            if not _is_excluded_url(url, options.exclude_url_patterns)
+        ][: options.max_pages]
 
-    all_findings: list[dict] = []
-    pages: list[dict] = []
+    all_findings: list[dict[str, Any]] = []
+    pages: list[dict[str, Any]] = []
     wcag_rollup: dict[str, int] = {}
     totals = {"scanned": 0, "failed": 0, "skipped": 0}
+    cancelled = False
 
     for index, url in enumerate(scan_urls, start=1):
+        if is_cancelled and is_cancelled():
+            cancelled = True
+            log_lines.append(f"[{index}/{len(scan_urls)}] cancelled before {url}")
+            break
+
+        if progress_callback:
+            progress_callback(index, len(scan_urls), url)
+
         slug = _slug_for_url(url)
         page_dir = run_dir / "pages" / slug
         page_dir.mkdir(parents=True, exist_ok=True)
@@ -160,7 +237,11 @@ def run_site_audit(
             continue
 
         log_lines.append(f"[{index}/{len(scan_urls)}] scanning {url}")
-        page_result = _scan_single_page(url, page_dir)
+        page_result = _scan_single_page(
+            url,
+            page_dir,
+            strict_open_source_only=options.strict_open_source_only,
+        )
         page_result["index"] = index
         pages.append(page_result)
 
@@ -184,7 +265,11 @@ def run_site_audit(
         "options": {
             "max_pages": options.max_pages,
             "crawl_links": options.crawl_links,
+            "crawl_depth": options.crawl_depth,
             "include_subdomains": options.include_subdomains,
+            "same_path_only": options.same_path_only,
+            "exclude_url_patterns": list(options.exclude_url_patterns),
+            "strict_open_source_only": options.strict_open_source_only,
             "force": options.force,
         },
         "totals": {
@@ -192,6 +277,7 @@ def run_site_audit(
             "findings": len(all_findings),
             "pages_total": len(scan_urls),
         },
+        "cancelled": cancelled,
         "wcag_rollup": dict(sorted(wcag_rollup.items())),
         "pages": pages,
     }
@@ -203,7 +289,7 @@ def run_site_audit(
     return summary
 
 
-def _scan_single_page(url: str, page_dir: Path) -> dict:
+def _scan_single_page(url: str, page_dir: Path, *, strict_open_source_only: bool = False) -> dict[str, Any]:
     try:
         resp = requests.get(url, timeout=20, headers={"User-Agent": "GLOW-SiteAudit/1.0"})
     except Exception as exc:
@@ -223,11 +309,31 @@ def _scan_single_page(url: str, page_dir: Path) -> dict:
     parser = _PageParser()
     parser.feed(html)
 
-    findings: list[dict] = []
+    findings: list[dict[str, Any]] = []
     if not parser.doc_lang:
-        findings.append(_finding(url, "HEURISTIC-HTML-LANG", "high", "Document root is missing a lang attribute.", "html"))
+        findings.append(
+            _finding(
+                url,
+                "HEURISTIC-HTML-LANG",
+                "high",
+                "Document root is missing a lang attribute.",
+                "html",
+                wcag_tags=["wcag311"],
+                strict_open_source_only=strict_open_source_only,
+            )
+        )
     if not parser.title:
-        findings.append(_finding(url, "HEURISTIC-HTML-TITLE", "high", "Document is missing a non-empty title element.", "head > title"))
+        findings.append(
+            _finding(
+                url,
+                "HEURISTIC-HTML-TITLE",
+                "high",
+                "Document is missing a non-empty title element.",
+                "head > title",
+                wcag_tags=["wcag242"],
+                strict_open_source_only=strict_open_source_only,
+            )
+        )
     if parser.img_missing_alt:
         findings.append(
             _finding(
@@ -236,6 +342,8 @@ def _scan_single_page(url: str, page_dir: Path) -> dict:
                 "serious",
                 f"Detected {parser.img_missing_alt} image element(s) missing alt text.",
                 "img",
+                wcag_tags=["wcag111"],
+                strict_open_source_only=strict_open_source_only,
             )
         )
 
@@ -252,12 +360,14 @@ def _scan_single_page(url: str, page_dir: Path) -> dict:
                 "moderate",
                 f"Detected {generic_count} link(s) with non-descriptive text.",
                 "a",
+                wcag_tags=["wcag244"],
+                strict_open_source_only=strict_open_source_only,
             )
         )
 
     wcag_tags: dict[str, int] = {}
     axe_json_path = page_dir / "axe.json"
-    axe_data: dict | list | None = None
+    axe_data: dict[str, Any] | list[dict[str, Any]] | None = None
     axe_error = None
     if _axe_available():
         try:
@@ -268,13 +378,18 @@ def _scan_single_page(url: str, page_dir: Path) -> dict:
 
     if axe_data:
         violations = axe_data if isinstance(axe_data, list) else [axe_data]
-        for page in violations:
-            for violation in page.get("violations", []):
+        for raw_page in violations:
+            page = raw_page if isinstance(raw_page, dict) else {}
+            for raw_violation in page.get("violations", []):
+                if not isinstance(raw_violation, dict):
+                    continue
+                violation = raw_violation
                 rule_id = (violation.get("id") or "axe-unknown").upper()
                 impact = str(violation.get("impact") or "moderate").lower()
                 severity = _severity_for_impact(impact)
                 help_text = violation.get("help") or "Accessibility violation detected."
                 help_url = violation.get("helpUrl") or ""
+                violation_tags = [str(tag) for tag in (violation.get("tags") or [])]
                 nodes = violation.get("nodes") or []
                 count = max(1, len(nodes))
                 selector = ""
@@ -289,9 +404,11 @@ def _scan_single_page(url: str, page_dir: Path) -> dict:
                         f"{help_text} ({count} node(s)).",
                         selector,
                         help_url,
+                        wcag_tags=violation_tags,
+                        strict_open_source_only=strict_open_source_only,
                     )
                 )
-                for tag in violation.get("tags") or []:
+                for tag in violation_tags:
                     if str(tag).lower().startswith("wcag"):
                         wcag_tags[tag] = wcag_tags.get(tag, 0) + count
     elif axe_error:
@@ -302,6 +419,7 @@ def _scan_single_page(url: str, page_dir: Path) -> dict:
                 "minor",
                 f"axe-cli scan unavailable: {axe_error}",
                 "",
+                strict_open_source_only=strict_open_source_only,
             )
         )
 
@@ -318,17 +436,33 @@ def _scan_single_page(url: str, page_dir: Path) -> dict:
     }
 
 
-def _expand_with_crawl(sources: list[str], *, max_pages: int, include_subdomains: bool) -> list[str]:
-    queue: list[str] = list(sources)
+def _expand_with_crawl(
+    sources: list[str],
+    *,
+    max_pages: int,
+    crawl_depth: int,
+    include_subdomains: bool,
+    same_path_only: bool,
+    exclude_url_patterns: tuple[str, ...],
+    is_cancelled: Callable[[], bool] | None = None,
+) -> list[str]:
+    queue: list[tuple[str, int, str]] = [(url, 0, url) for url in sources]
     visited: list[str] = []
     seen: set[str] = set()
 
     while queue and len(visited) < max_pages:
-        url = queue.pop(0)
+        if is_cancelled and is_cancelled():
+            break
+        url, depth, seed_url = queue.pop(0)
         if url in seen:
+            continue
+        if _is_excluded_url(url, exclude_url_patterns):
             continue
         seen.add(url)
         visited.append(url)
+
+        if depth >= crawl_depth:
+            continue
 
         try:
             resp = requests.get(url, timeout=15, headers={"User-Agent": "GLOW-SiteAudit/1.0"})
@@ -340,12 +474,35 @@ def _expand_with_crawl(sources: list[str], *, max_pages: int, include_subdomains
             candidate = _normalize_url(urljoin(resp.url, href))
             if not candidate:
                 continue
-            if not _same_site(resp.url, candidate, include_subdomains):
+            if not _same_site(seed_url, candidate, include_subdomains):
                 continue
-            if candidate not in seen and candidate not in queue:
-                queue.append(candidate)
+            if same_path_only and not _same_or_descendant_path(seed_url, candidate):
+                continue
+            if _is_excluded_url(candidate, exclude_url_patterns):
+                continue
+            if candidate not in seen and candidate not in {queued_url for queued_url, _, _ in queue}:
+                queue.append((candidate, depth + 1, seed_url))
 
     return visited
+
+
+def _same_or_descendant_path(base: str, candidate: str) -> bool:
+    base_path = (urlparse(base).path or "/").rstrip("/")
+    candidate_path = (urlparse(candidate).path or "/").rstrip("/")
+    if not base_path:
+        base_path = "/"
+    if not candidate_path:
+        candidate_path = "/"
+    if base_path == "/":
+        return True
+    return candidate_path == base_path or candidate_path.startswith(base_path + "/")
+
+
+def _is_excluded_url(url: str, patterns: tuple[str, ...]) -> bool:
+    if not patterns:
+        return False
+    lowered = url.lower()
+    return any(pattern.lower() in lowered for pattern in patterns if pattern)
 
 
 def _same_site(base: str, candidate: str, include_subdomains: bool) -> bool:
@@ -406,7 +563,11 @@ def _finding(
     message: str,
     location: str,
     help_url: str = "",
-) -> dict:
+    wcag_tags: Iterable[str] | None = None,
+    strict_open_source_only: bool = False,
+) -> dict[str, Any]:
+    wcag_criteria = _extract_wcag_criteria(wcag_tags or [])
+    resources = _build_learning_resources(rule_id, help_url, wcag_criteria, strict_open_source_only=strict_open_source_only)
     return {
         "page_url": page_url,
         "rule_id": rule_id,
@@ -414,7 +575,64 @@ def _finding(
         "message": message,
         "location": location,
         "help_url": help_url,
+        "wcag_criteria": wcag_criteria,
+        "resources": resources,
     }
+
+
+def _extract_wcag_criteria(tags: Iterable[str]) -> list[str]:
+    criteria: list[str] = []
+    seen: set[str] = set()
+    for raw in tags:
+        tag = str(raw).strip().lower()
+        if not tag.startswith("wcag"):
+            continue
+        payload = tag[4:]
+        if not payload.isdigit() or len(payload) < 3:
+            continue
+        criterion = f"{payload[0]}.{payload[1]}.{payload[2:]}"
+        criterion = criterion.replace(".0", ".") if criterion.endswith(".0") else criterion
+        if criterion not in seen:
+            seen.add(criterion)
+            criteria.append(criterion)
+    return criteria
+
+
+def _build_learning_resources(
+    rule_id: str,
+    help_url: str,
+    wcag_criteria: list[str],
+    *,
+    strict_open_source_only: bool = False,
+) -> list[dict[str, str]]:
+    links: list[tuple[str, str, str]] = []
+
+    if help_url and not strict_open_source_only:
+        links.append(("axe-core rule help", help_url, "axe-core"))
+
+    for criterion in wcag_criteria:
+        wcag_url = _WCAG_UNDERSTANDING_URLS.get(criterion)
+        if wcag_url:
+            links.append((f"W3C Understanding SC {criterion}", wcag_url, "W3C"))
+
+    for title, url in _RULE_LEARNING_URLS.get(rule_id, []):
+        if strict_open_source_only and "developer.mozilla.org" in url:
+            continue
+        links.append((title, url, "Open guidance"))
+
+    # Add baseline open references even when a rule has no explicit mapping.
+    links.append(("W3C WCAG 2.2 Quick Reference", "https://www.w3.org/WAI/WCAG22/quickref/", "W3C"))
+    links.append(("WAI Authoring Practices Guide", "https://www.w3.org/WAI/ARIA/apg/", "W3C"))
+    links.append(("A11Y Project Checklist", "https://www.a11yproject.com/checklist/", "A11Y Project"))
+
+    deduped: list[dict[str, str]] = []
+    seen_urls: set[str] = set()
+    for title, url, source in links:
+        if not url or url in seen_urls:
+            continue
+        seen_urls.add(url)
+        deduped.append({"title": title, "url": url, "source": source})
+    return deduped
 
 
 def _axe_available() -> bool:
@@ -446,11 +664,13 @@ def _severity_for_impact(impact: str) -> str:
     return "minor"
 
 
-def _write_findings_csv(path: Path, findings: Iterable[dict]) -> None:
+def _write_findings_csv(path: Path, findings: Iterable[dict[str, Any]]) -> None:
     with path.open("w", encoding="utf-8", newline="") as fh:
         writer = csv.writer(fh)
-        writer.writerow(["page_url", "severity", "rule_id", "message", "location", "help_url"])
+        writer.writerow(["page_url", "severity", "rule_id", "message", "location", "help_url", "wcag_criteria", "resource_urls"])
         for item in findings:
+            resources = item.get("resources") or []
+            resource_urls = "; ".join(str(r.get("url", "")) for r in resources if isinstance(r, dict) and r.get("url"))
             writer.writerow(
                 [
                     item.get("page_url", ""),
@@ -459,6 +679,8 @@ def _write_findings_csv(path: Path, findings: Iterable[dict]) -> None:
                     item.get("message", ""),
                     item.get("location", ""),
                     item.get("help_url", ""),
+                    ", ".join(item.get("wcag_criteria") or []),
+                    resource_urls,
                 ]
             )
 
@@ -476,7 +698,7 @@ def _write_zip(run_dir: Path) -> None:
             zf.write(child, child.relative_to(run_dir))
 
 
-def _write_json(path: Path, data: dict) -> None:
+def _write_json(path: Path, data: dict[str, Any]) -> None:
     path.write_text(json.dumps(data, indent=2), encoding="utf-8")
 
 

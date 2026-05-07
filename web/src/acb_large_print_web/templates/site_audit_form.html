@@ -17,6 +17,8 @@
   <ul>
     <li>Provide one URL per line or a sitemap URL.</li>
     <li>Enable crawl to follow in-site links from the seed pages.</li>
+    <li>Set crawl depth to control how far links are followed from each seed page.</li>
+    <li>Use path scope and URL exclusion patterns to keep runs focused.</li>
     <li>Set a maximum page count to control scan time.</li>
     <li>Download summary, CSV, and logs when complete.</li>
   </ul>
@@ -45,11 +47,35 @@
       <input id="max_pages" name="max_pages" type="number" min="1" max="50" value="{{ max_pages or 10 }}" class="input-narrow">
     </div>
 
+    <div class="form-group form-group-inline">
+      <label for="crawl_depth">Crawl depth</label>
+      <input id="crawl_depth" name="crawl_depth" type="number" min="0" max="5" value="{{ crawl_depth if crawl_depth is defined else 1 }}" class="input-narrow" aria-describedby="crawl-depth-help">
+    </div>
+    <p id="crawl-depth-help" class="help-text">Depth 0 scans only the seed URLs. Depth 1 includes direct links from each seed. Depth 2 and above go deeper.</p>
+
+    <label for="exclude_patterns">Exclude URLs containing these patterns (optional)</label>
+    <textarea id="exclude_patterns" name="exclude_patterns" rows="3" aria-describedby="exclude-help">{{ exclude_patterns or "" }}</textarea>
+    <p id="exclude-help" class="help-text">Use one pattern per line. Example patterns: <code>/blog/</code>, <code>?replytocom=</code>, <code>/tag/</code>.</p>
+
     <div class="checkbox-group">
       <label><input type="checkbox" name="crawl_links" {% if crawl_links is not defined or crawl_links %}checked{% endif %}> Follow in-site links</label>
       <label><input type="checkbox" name="include_subdomains" {% if include_subdomains %}checked{% endif %}> Include subdomains while crawling</label>
+      <label><input type="checkbox" name="same_path_only" {% if same_path_only %}checked{% endif %}> Limit crawl to the same path branch as each seed URL</label>
+      <label><input type="checkbox" name="strict_open_source_only" {% if strict_open_source_only %}checked{% endif %}> Strict open-source learning links only (W3C/WAI + A11Y Project)</label>
       <label><input type="checkbox" name="force" {% if force %}checked{% endif %}> Force re-scan existing pages in this run</label>
     </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Run Experience and Privacy</legend>
+    <div class="checkbox-group">
+      <label><input type="checkbox" name="run_in_background" {% if run_in_background is not defined or run_in_background %}checked{% endif %}> Run in background and show live status</label>
+      <label><input type="checkbox" name="protect_results" {% if protect_results %}checked{% endif %}> Protect run with tokenized link</label>
+    </div>
+
+    <label for="access_password">Optional password for protected run</label>
+    <input id="access_password" name="access_password" type="password" value="" aria-describedby="access-password-help" autocomplete="new-password">
+    <p id="access-password-help" class="help-text">If provided, users will need both the tokenized link and this password to open results and downloads.</p>
   </fieldset>
 
   <button type="submit" class="btn-primary" id="site-audit-submit">Run Site Audit</button>

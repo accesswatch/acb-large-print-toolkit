@@ -8,6 +8,32 @@ Releases are tagged in the [GitHub repository](https://github.com/accesswatch/ac
 
 ## [Unreleased]
 
+---
+
+## [5.0.0] -- 2025-07-14
+
+### Added
+
+- **Web: Goal-oriented left sidebar navigation (GLOW 5.0.0 UX redesign).** Replaced the horizontal overflow-scrolling tab bar on every page with a responsive, grouped left sidebar. The sidebar organises all tools into five mission groups: Assess (Document Audit, Site Audit), Fix and Build (Fix Document, Build Template), Transform (Convert Format, Braille Studio), Listen and Speak (Speech Studio, Whisperer), and Explore and Learn (Document Chat, Magic Lab, Guidelines, User Guide, FAQ, Settings). Implemented in `web/src/acb_large_print_web/templates/base.html` and `web/src/acb_large_print_web/static/forms.css`.
+
+- **Web: `sidebar.js` -- accessible sidebar toggle controller.** New script `web/src/acb_large_print_web/static/sidebar.js` manages mobile slide-over open/close with `aria-expanded` state, focus trap, Escape-key dismissal, overlay click dismissal, and desktop/mobile breakpoint cleanup. Moves focus to the first sidebar link on open; restores focus to the hamburger button on close.
+
+- **Web: Mobile header bar with hamburger toggle.** Added a sticky `.mobile-header` bar (visible below 64em) containing the hamburger `<button id="sidebar-toggle">` and a mobile brand link. The sidebar slides in over a semi-transparent overlay when toggled on small screens.
+
+- **Web: GLOW 5.0.0 Mission Hub home page.** Replaced the GLOW 4.0.0 home page with a goal-oriented mission hub. The page opens with a GLOW 5.0.0 announcement banner, five mission cards (Assess, Fix and Build, Transform, Listen and Speak, Explore and Learn) each with feature-flag-aware tool links, a Quick Start call-to-action, supported format pills, and the GLOW Anthem section. Old duplicated card grid and tabs-explanation section removed. Updated `web/src/acb_large_print_web/templates/index.html`.
+
+- **Web: Mission card CSS (`.mission-grid`, `.mission-card`).** Added mission grid layout and per-group accent border colours to `web/src/acb_large_print_web/static/forms.css`. Dark theme support included.
+
+- **Web: Corrected ARIA navigation pattern.** All sidebar navigation links use `aria-current="page"` (correct ARIA 1.1 pattern for navigation). The prior implementation used `role="tablist"` and `role="tab"` for navigation links -- a misuse of the ARIA tab pattern -- which has been removed.
+
+### Changed
+
+- **Web: CSS layout redesign.** `body` max-width and padding overrides removed; layout now uses a flex `.app-layout` container (sidebar + `.content-area`). The `main` element applies `padding: 1.5rem clamp(1rem, 3vw, 2.5rem)` and `max-width: min(66rem, 100%)` internally. Print stylesheet updated to hide sidebar/mobile-header and reset layout to block. UA Arizona and dark-mode theme colour rules updated to target sidebar classes.
+
+- **Web: Versions bumped to 5.0.0.** `web/pyproject.toml` version `4.0.0` → `5.0.0`; `desktop/pyproject.toml` version `4.0.0` → `5.0.0`; `desktop/src/acb_large_print/__init__.py` `__version__` `3.0.0` → `5.0.0`.
+
+### Previously in Unreleased (now part of 5.0.0)
+
 ### Added
 
 - **Web: Site Audit scanner and artifact export workflow.** Added a new
@@ -37,6 +63,34 @@ Releases are tagged in the [GitHub repository](https://github.com/accesswatch/ac
   `web/tests/test_site_audit.py` and extended
   `web/tests/test_admin_flags.py` to assert `GLOW_ENABLE_SITE_AUDIT` renders in
   the admin Feature Flags page.
+
+- **Web: Advanced Site Audit crawl controls.** Added crawl-depth controls,
+  same-path crawl scoping, and URL exclusion patterns to Site Audit form
+  processing and crawler behavior. Updated route parsing in
+  `web/src/acb_large_print_web/routes/site_audit.py`, crawler options and
+  expansion logic in `web/src/acb_large_print_web/site_audit.py`, Site Audit
+  form/result templates in
+  `web/src/acb_large_print_web/templates/site_audit_form.html` and
+  `web/src/acb_large_print_web/templates/site_audit_result.html`, and
+  persisted defaults in `web/src/acb_large_print_web/static/preferences.js`
+  plus `web/src/acb_large_print_web/templates/settings.html`.
+
+- **Web docs: Site Audit walkthrough expansion.** Expanded
+  `docs/user-guide.md` Site Audit documentation with full option reference,
+  crawl depth guidance, practical run presets, and operational tuning tips.
+
+- **Web: Site Audit strict open-source learning mode.** Added a
+  `strict_open_source_only` option that limits per-finding remediation links to
+  open accessibility sources (W3C/WAI + A11Y Project) and suppresses non-core
+  references when strict mode is enabled.
+
+- **Web: Site Audit background jobs with status and cancel.** Added user-facing
+  asynchronous crawl execution with a dedicated job status page and JSON status
+  endpoint, plus cancellation support.
+
+- **Web: Site Audit private tokenized run access with optional password.** Added
+  protected run links backed by token hashing and optional password hashing,
+  plus unlock flow and access checks for run views and artifact downloads.
 
 ### Fixed
 

@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+
+{% block title %}Unlock Site Audit Run{% endblock %}
+{% block heading %}Unlock Protected Site Audit Run{% endblock %}
+
+{% block content %}
+<p>This run is protected. Use the tokenized link and password to continue.</p>
+
+{% if error %}
+<div class="error-box" role="alert">
+  <p><strong>Error:</strong> {{ error }}</p>
+</div>
+{% endif %}
+
+<form method="post" action="{{ url_for('site_audit.site_audit_unlock', run_id=run_id) }}" novalidate>
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <input type="hidden" name="access" value="{{ access }}">
+
+  <label for="access_password">Password</label>
+  <input id="access_password" name="access_password" type="password" required autocomplete="current-password">
+
+  <button type="submit" class="btn-primary">Unlock run</button>
+</form>
+{% endblock %}

@@ -31,6 +31,26 @@ New to GLOW? Start at [Quick Start](#1-quick-start). Already familiar? Jump stra
 
 ---
 
+## What's New in GLOW 5.0.0
+
+GLOW 5.0.0 is a full UX redesign release. The horizontal tab bar that previously ran across every page has been replaced with a goal-oriented left sidebar navigation. All tools remain the same -- only the way you navigate to them has changed.
+
+### Highlights in 5.0.0
+
+1. **Goal-oriented sidebar navigation** -- The left sidebar organises every tool into five mission groups so you can navigate by what you want to accomplish, not by tool name.
+2. **Five navigation groups:**
+   - **Assess** -- Document Audit and Site Audit for finding accessibility barriers
+   - **Fix and Build** -- Fix Document and Build Template for correcting and starting fresh
+   - **Transform** -- Convert Format and Braille Studio for format and medium changes
+   - **Listen and Speak** -- Speech Studio and Whisperer for audio workflows
+   - **Explore and Learn** -- Document Chat, Magic Lab, Guidelines, User Guide, FAQ, and Settings
+3. **Responsive sidebar** -- On small screens the sidebar collapses to a hamburger menu. Clicking the hamburger slides the sidebar over the page with a focus trap and Escape-key dismissal.
+4. **Correct ARIA pattern** -- All navigation links now use `aria-current="page"` (the correct ARIA 1.1 attribute for navigation). The prior `role="tab"` misuse has been removed.
+5. **Mission Hub home page** -- The home page now shows five goal-oriented mission cards with feature-flag-aware tool links, replacing the previous Quick Start workflow steps and card grid.
+6. **Version bumped to 5.0.0** -- Web app, desktop CLI, and Office add-in all reflect version 5.0.0.
+
+---
+
 ## What's New in GLOW 4.0.0
 
 GLOW 4.0.0 is a confidence release focused on stability, conversion fidelity,
@@ -134,7 +154,7 @@ A new dedicated tool at **/braille/** translates English text to braille and bra
 
 **Back-translation:** Paste or upload a `.brl` or `.brf` file and get back readable English text. Useful for verifying embosser output or proofreading contracted braille.
 
-**How to reach it:** Click the **Braille** tab in the main navigation. Braille Studio can be enabled or disabled via the `GLOW_ENABLE_BRAILLE` feature flag (default: enabled). When liblouis is not installed, the page explains the dependency clearly rather than showing a broken tool.
+**How to reach it:** Select **Braille Studio** under the **Transform** group in the left sidebar. Braille Studio can be enabled or disabled via the `GLOW_ENABLE_BRAILLE` feature flag (default: enabled). When liblouis is not installed, the page explains the dependency clearly rather than showing a broken tool.
 
 ### Speech Studio: document narration via Pandoc
 
@@ -198,7 +218,7 @@ That is exactly what Quick Start is for.
 
 ### Step 1: Go to Quick Start
 
-Click the **Quick Start** tab at the top of any GLOW page. You will land on a single upload form.
+Click **Quick Start** in the top section of the left sidebar navigation on any GLOW page. You will land on a single upload form.
 
 ### Step 2: Upload anything
 
@@ -628,7 +648,7 @@ In v2.7.0, the dedicated Export page was merged into Convert. All Export functio
 
 ### What changed
 
-- The **Export** tab has been removed from the navigation.
+- The **Export** tab functionality has been folded into Convert (CMS Fragment option) and is no longer a separate navigation entry.
 - Bookmarks and links to `/export` are automatically redirected to `/convert`.
 - CMS Fragment output is available in Convert: upload a Word file and select **CMS Fragment** as the direction.
 - Standalone HTML output is also available in Convert: select **Accessible web page (HTML)** as the direction.
@@ -802,7 +822,7 @@ Braille Studio translates English text to braille and back-translates braille to
 
 ### How to use Braille Studio
 
-1. **Open Braille Studio** — Click the **Braille** tab on the main navigation.
+1. **Open Braille Studio** -- Select **Braille Studio** under the **Transform** group in the left sidebar.
 2. **Choose your direction:**
    - **Text → Braille** — Paste English text or upload a `.txt`, `.md` file
    - **Braille → Text** — Paste braille (Unicode or ASCII) or upload a `.brf`, `.brl` file
@@ -843,7 +863,7 @@ Speech Studio synthesizes English documents to MP3 or WAV audio. Users can narra
 
 ### How to use Speech Studio
 
-1. **Open Speech Studio** — Click the **Speech** tab on the main navigation.
+1. **Open Speech Studio** -- Select **Speech Studio** under the **Listen and Speak** group in the left sidebar.
 2. **Paste text or upload a document** — Paste English text directly or upload a file (Markdown, Word, PDF, Excel, PowerPoint, ePub, etc.)
 3. **Choose your voice** — Select from curated Piper TTS voices (fast, local) or remote OpenRouter providers.
 4. **Adjust speed and pitch** — Customize playback speed (0.5x to 2.0x) and pitch offset (−12 to +12 semitones).
@@ -1297,8 +1317,9 @@ When ePub files contain MathML, the audit detects it and provides guidance on ma
 
 GLOW is designed to work fully without a mouse.
 
-- **Skip link:** Press Tab on any page to reveal a "Skip to main content" link that jumps past the navigation.
-- **Navigation:** The main navigation is a list of links. Use Tab and Enter to move between pages.
+- **Skip link:** Press Tab on any page to reveal a "Skip to main content" link that jumps past the sidebar navigation.
+- **Sidebar navigation:** The left sidebar is a `<nav>` landmark with `aria-label="Primary navigation"`. Links are organised in five labelled groups. Use Tab and Enter to move between pages. The active page link carries `aria-current="page"`.
+- **Mobile sidebar:** On small screens, the sidebar is hidden until the hamburger button is pressed. Press Escape or click the overlay to close. Focus is trapped inside the sidebar while it is open, and returns to the toggle button when closed.
 - **Forms:** All form fields have visible labels and description text. Errors are announced with the alert role.
 - **Help sections:** Help text uses `<details>/<summary>` elements. Press Enter or Space on a summary to expand or collapse. Screen readers announce the expanded and collapsed state.
 - **File upload:** After selecting a file, Tab to the submit button and press Enter.
@@ -1381,22 +1402,103 @@ Use Site Audit when you need to:
 - crawl a section of a site from a seed URL
 - generate a portable evidence bundle for engineering handoff
 
-### Step-by-step
+### What each Site Audit option does
+
+- **URLs to scan (one per line)**: seed pages to scan directly
+- **Sitemap URL (optional)**: imports URLs from an XML sitemap and adds them to seeds
+- **Maximum pages (1 to 50)**: hard cap on total pages scanned in a run
+- **Follow in-site links**: discovers additional pages from links found on scanned pages
+- **Crawl depth (0 to 5)**:
+  - Depth 0: scan seed URLs only
+  - Depth 1: include links found on each seed page
+  - Depth 2+: continue link discovery across additional levels
+- **Include subdomains**: allow discovery across `www`, `docs`, `blog`, and other subdomains
+- **Limit crawl to same path branch**: keep discovery within the seed path hierarchy
+  - Example: seed `https://example.org/docs` includes `/docs/getting-started` and `/docs/api`, but not `/blog`
+- **Exclude URL patterns**: skip URLs containing listed text fragments (one per line)
+  - Example patterns: `/tag/`, `?replytocom=`, `/print/`, `/calendar/`
+- **Strict open-source learning links only**: for each finding, include only W3C/WAI and A11Y Project guidance links
+- **Force re-scan existing pages in this run**: do not reuse existing page outputs for matching URLs
+- **Run in background and show live status**: start crawl asynchronously, monitor progress, and cancel if needed
+- **Protect run with tokenized link**: require a private token URL; optionally add a password
+
+### Step-by-step walkthrough
 
 1. Open the **Site Audit** tab.
-2. Enter one URL per line, or provide a sitemap URL.
-3. Set your run options:
-   - **Maximum pages** (1 to 50)
-   - **Follow in-site links**
-   - **Include subdomains** (optional)
-   - **Force re-scan existing pages**
-4. Click **Run Site Audit**.
-5. Review the run summary and per-page status table.
-6. Download artifacts as needed:
+2. Add scan sources.
+   - Use one URL per line for focused checks.
+   - Add a sitemap URL when you need broad coverage quickly.
+3. Choose crawl behavior.
+   - Start with **Follow in-site links** enabled.
+   - Set **Crawl depth** based on intent:
+     - 0 for spot checks
+     - 1 for section scans
+     - 2 for broad audits with controlled spread
+4. Constrain scope to reduce noise.
+   - Enable **Limit crawl to same path branch** for section-specific audits.
+   - Add **Exclude URL patterns** for low-value or repetitive paths.
+5. Set **Maximum pages** to match expected run size and time budget.
+6. Click **Run Site Audit**.
+7. Review results.
+   - Run summary totals (scanned, failed, skipped, findings)
+   - Per-page status table
+   - WCAG tag rollup
+   - Scan configuration block (for reproducibility)
+8. Download artifacts for engineering handoff:
    - summary JSON
    - findings CSV
    - session log
    - full ZIP bundle
+
+### Background runs, status, and cancel
+
+When **Run in background** is enabled:
+
+1. GLOW creates a job status page immediately.
+2. The status page updates live with crawl progress and page currently being scanned.
+3. You can click **Cancel crawl** at any time.
+4. When complete, open the result page directly from the job status view.
+
+### Protected private runs
+
+When **Protect run with tokenized link** is enabled:
+
+1. The run is stored with a token-hash (not plaintext token) and optional password hash.
+2. Opening the run requires the tokenized URL.
+3. If a password was set, users must also unlock with the password.
+4. Downloads and summary endpoints honor the same access protection.
+
+This allows teams to share targeted private scan links while keeping results out of reach without the token (and password if configured).
+
+### Recommended run presets
+
+1. **Quick smoke scan**
+   - Maximum pages: 5 to 10
+   - Follow links: on
+   - Crawl depth: 0 or 1
+   - Same path only: on
+   - Exclusions: optional
+2. **Section quality gate (release)**
+   - Maximum pages: 25 to 50
+   - Follow links: on
+   - Crawl depth: 1 or 2
+   - Same path only: on
+   - Exclusions: recommended
+3. **Cross-site discovery scan**
+   - Maximum pages: 50
+   - Follow links: on
+   - Crawl depth: 2
+   - Include subdomains: on
+   - Same path only: off
+   - Exclusions: strongly recommended
+
+### Tips to get the most out of Site Audit
+
+- Start narrow, then widen. Use depth 0 or 1 first, then increase depth if needed.
+- Use path scoping plus exclusion patterns together. This removes common crawl traps and duplicate-value pages.
+- Keep a reusable exclusion list in your team notes for known low-signal URL patterns.
+- Use the findings CSV for triage and assignment, then use summary JSON and session log for traceability.
+- Keep Force re-scan off for iterative runs unless content changed and you need fresh evidence.
 
 ### Site Audit defaults
 
@@ -1404,7 +1506,10 @@ You can set default Site Audit options in **Settings**:
 
 - maximum pages per run
 - crawl links on/off
+- crawl depth default
 - include subdomains on/off
+- same path branch on/off
+- default URL exclusion patterns
 - force re-scan on/off
 
 If **Remember my settings** is enabled, these defaults persist in local browser storage.

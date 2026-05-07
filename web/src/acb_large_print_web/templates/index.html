@@ -5,167 +5,118 @@
 
 {% block content %}
 <p>Check and fix your Office documents for compliance with the <a href="{{ url_for('guidelines.guidelines_page') }}">{{ brand_guidelines_name }}</a> and WCAG 2.2 AA accessibility standards. No installation required -- upload a file and get results instantly.</p>
-<p><strong>GLOW</strong> means <strong>Guided Layout &amp; Output Workflow</strong>: a guided, magical-feeling experience backed by strict accessibility standards.</p>
+<p><strong>GLOW</strong> means <strong>Guided Layout &amp; Output Workflow</strong>: a guided, goal-oriented experience backed by strict accessibility standards.</p>
 
 <section style="background: linear-gradient(135deg, #0c234b 0%, #1a3a5c 100%); color: #fff; padding: 2rem 1.5rem; border-radius: 8px; margin: 2rem 0;">
-  <h2 id="v4-announcement-heading" style="margin-top: 0; color: #fff;">GLOW 4.0.0 is Here</h2>
-  <p style="font-size: 1.1rem; margin-bottom: 1rem;">Read the latest combined announcement for our confidence release: stronger conversion fidelity, safer workflow transitions, and synchronized public documentation.</p>
-  <p style="margin-bottom: 0;"><a href="{{ url_for('announcement.announcement_page') }}" class="btn-primary" style="background: #fff; color: #0c234b; padding: 0.75rem 1.5rem; border-radius: 4px; text-decoration: none; font-weight: bold; display: inline-block;">Read the 4.0.0 Announcement</a></p>
+  <h2 id="v5-announcement-heading" style="margin-top: 0; color: #fff;">GLOW 5.0.0 -- Redesigned for Every Workflow</h2>
+  <p style="font-size: 1.1rem; margin-bottom: 1rem;">The navigation is now a goal-oriented sidebar with five mission groups: Assess, Fix and Build, Transform, Listen and Speak, and Explore and Learn. Fully keyboard navigable, screen reader friendly, and responsive on every device.</p>
+  <p style="margin-bottom: 0;"><a href="{{ url_for('changelog.changelog_page') }}" class="btn-primary" style="background: #fff; color: #0c234b; padding: 0.75rem 1.5rem; border-radius: 4px; text-decoration: none; font-weight: bold; display: inline-block;">Read the 5.0.0 Changelog</a></p>
 </section>
 
+<!-- ============================================================ -->
+<!-- MISSION HUB: five goal-oriented groups                        -->
+<!-- ============================================================ -->
 <section>
-  <h2 id="quickstart-heading">Quick Start</h2>
-  <p>Not sure which tool to use? Use the <a href="{{ url_for('process.process_form') }}"><strong>Quick Start</strong></a> tab at the top of every page. Upload any file once and GLOW shows you every action available for that file type &mdash; no guessing required.</p>
-  <p>Already know what you need? The typical workflow is:</p>
-  <div class="quickstart-steps">
-    {% if feature_audit_enabled %}
-    <div class="quickstart-step">
-      <div class="qs-number" aria-hidden="true">1</div>
-      <h3><a href="{{ url_for('audit.audit_form') }}">Audit</a></h3>
-      <p>Upload your document and see every accessibility issue, organized by severity.</p>
-    </div>
-    {% endif %}
-    {% if feature_checker_enabled %}
-    <div class="quickstart-step">
-      <div class="qs-number" aria-hidden="true">2</div>
-      <h3><a href="{{ url_for('fix.fix_form') }}">Fix</a></h3>
-      <p>Auto-correct fonts, sizes, spacing, and emphasis. Download a compliant copy.</p>
-    </div>
-    {% endif %}
-    {% if feature_audit_enabled %}
-    <div class="quickstart-step">
-      <div class="qs-number" aria-hidden="true">3</div>
-      <h3><a href="{{ url_for('audit.audit_form') }}">Re-Audit</a></h3>
-      <p>Upload the fixed document to confirm. Address any remaining manual items.</p>
-    </div>
-    {% endif %}
-  </div>
+  <h2 id="mission-hub-heading">What do you want to accomplish today?</h2>
+  <p>Choose a goal below to jump straight to the right tool. Every feature is also reachable from the navigation sidebar on the left.</p>
 
-  {% if feature_braille_enabled or feature_speech_enabled %}
-  <h3 style="margin-top: 2rem;">Specialized Tools</h3>
-  <p>Beyond document accessibility, GLOW also includes:</p>
-  <div class="quickstart-steps">
-    {% if feature_braille_enabled %}
-    <div class="quickstart-step">
-      <h4><a href="{{ url_for('braille.braille_form') }}">Braille Studio</a></h4>
-      <p>Translate English text to BANA-compliant braille (UEB, EBAE, Computer Code) or back-translate braille to text. Download Unicode Braille or BRF for embossers.</p>
-    </div>
-    {% endif %}
-    {% if feature_speech_enabled %}
-    <div class="quickstart-step">
-      <h4><a href="{{ url_for('speech.speech_form') }}">Speech Studio</a></h4>
-      <p>Synthesize documents to MP3 or WAV audio narration. Choose from multiple voices, adjust speed and pitch, and download ready-to-share files.</p>
-    </div>
-    {% endif %}
-  </div>
-  {% endif %}
+  <div class="mission-grid">
 
-  <p>New to GLOW? <a href="{{ url_for('guide.guide_page') }}">Read the full user guide</a> for step-by-step help with every feature.</p>
+    <!-- Assess -->
+    {% if feature_audit_enabled or feature_site_audit_enabled %}
+    <div class="mission-card mission-card--assess">
+      <h3 id="mission-assess">Assess Accessibility</h3>
+      <p>Find every accessibility issue in a document or website and get a detailed, standards-referenced report.</p>
+      <ul class="mission-links">
+        {% if feature_audit_enabled %}
+        <li><a href="{{ url_for('audit.audit_form') }}">Document Audit</a> -- Word, Excel, PowerPoint, Markdown, PDF, ePub</li>
+        {% endif %}
+        {% if feature_site_audit_enabled %}
+        <li><a href="{{ url_for('site_audit.site_audit_form') }}">Site Audit</a> -- Crawl and scan web pages for WCAG issues</li>
+        {% endif %}
+      </ul>
+    </div>
+    {% endif %}
+
+    <!-- Fix and Build -->
+    {% if feature_checker_enabled or feature_template_builder_enabled %}
+    <div class="mission-card mission-card--fix">
+      <h3 id="mission-fix">Fix and Build</h3>
+      <p>Automatically correct compliance issues in existing documents, or start fresh with a fully compliant Word template.</p>
+      <ul class="mission-links">
+        {% if feature_checker_enabled %}
+        <li><a href="{{ url_for('fix.fix_form') }}">Fix Document</a> -- Auto-correct fonts, spacing, emphasis, and alignment</li>
+        {% endif %}
+        {% if feature_template_builder_enabled %}
+        <li><a href="{{ url_for('template.template_form') }}">Build Template</a> -- Generate a pre-configured <code>.dotx</code> Word template</li>
+        {% endif %}
+      </ul>
+    </div>
+    {% endif %}
+
+    <!-- Transform -->
+    {% if feature_converter_enabled or feature_braille_enabled %}
+    <div class="mission-card mission-card--transform">
+      <h3 id="mission-transform">Transform Format</h3>
+      <p>Convert documents between formats or translate text to and from braille.</p>
+      <ul class="mission-links">
+        {% if feature_converter_enabled %}
+        <li><a href="{{ url_for('convert.convert_form') }}">Convert Format</a> -- Markdown, HTML, Word, EPUB, PDF, DAISY, CMS Fragment</li>
+        {% endif %}
+        {% if feature_braille_enabled %}
+        <li><a href="{{ url_for('braille.braille_form') }}">Braille Studio</a> -- UEB, EBAE, Computer Braille; BRF output for embossers</li>
+        {% endif %}
+      </ul>
+    </div>
+    {% endif %}
+
+    <!-- Listen and Speak -->
+    {% if feature_speech_enabled or ai_whisperer_enabled %}
+    <div class="mission-card mission-card--listen">
+      <h3 id="mission-listen">Listen and Speak</h3>
+      <p>Synthesize documents into natural-sounding audio narration, or transcribe audio recordings into accessible text.</p>
+      <ul class="mission-links">
+        {% if feature_speech_enabled %}
+        <li><a href="{{ url_for('speech.speech_form') }}">Speech Studio</a> -- Narrate documents to MP3 or WAV with expressive voices</li>
+        {% endif %}
+        {% if ai_whisperer_enabled %}
+        <li><a href="{{ url_for('whisperer.whisperer_form') }}">{{ brand_whisperer_label }}</a> -- Transcribe audio to Markdown or Word with Whisper AI</li>
+        {% endif %}
+      </ul>
+    </div>
+    {% endif %}
+
+    <!-- Explore and Learn -->
+    <div class="mission-card mission-card--explore">
+      <h3 id="mission-explore">Explore and Learn</h3>
+      <p>Dig into the standards behind the rules, ask questions about your documents, or customize GLOW for your workflow.</p>
+      <ul class="mission-links">
+        {% if ai_chat_enabled is defined and ai_chat_enabled %}
+        <li><a href="{{ url_for('chat.chat_form') }}">Document Chat</a> -- Ask plain-English questions about any uploaded document</li>
+        {% endif %}
+        {% if feature_table_advisor_enabled or feature_document_compare_enabled or feature_rule_contributions_enabled %}
+        <li><a href="{{ url_for('magic.magic_home') }}">Magic Lab</a> -- Pronunciation dictionary, rule proposals, document compare</li>
+        {% endif %}
+        <li><a href="{{ url_for('guidelines.guidelines_page') }}">Guidelines Reference</a> -- Full ACB and WCAG rule library with rationale</li>
+        <li><a href="{{ url_for('guide.guide_page') }}">User Guide</a> -- Step-by-step help for every GLOW feature</li>
+        <li><a href="{{ url_for('faq.faq_page') }}">FAQ</a> -- Common questions and answers</li>
+        <li><a href="{{ url_for('settings.settings_page') }}">Settings</a> -- Save your workflow defaults for this device</li>
+      </ul>
+    </div>
+
+  </div><!-- /.mission-grid -->
 </section>
 
-<section class="glow-ballad">
-  <h2 id="anthem-heading">The GLOW Anthem</h2>
-  <div class="audio-player-container">
-    <p>Listen to "Let it GLOW" &mdash; a cinematic ballad about document accessibility:</p>
-    <audio controls preload="metadata">
-      <source src="/static/let-it-glow.mp3" type="audio/mpeg">
-      Your browser does not support the audio element.
-    </audio>
-    <p><a class="btn-secondary" href="{{ url_for('main.anthem_download') }}">Download Let it GLOW Theme (MP3)</a></p>
-    <details>
-      <summary>View Lyrics</summary>
-      <div class="lyrics">
-        <h3>Let it GLOW &mdash; Cinematic Disney-Style Ballad</h3>
-        <p><em>Tempo: 72 BPM | Key: A♭ major | Style: Epic Disney Ballad</em></p>
-        
-        <h4>Verse 1</h4>
-        <p>In a world of hidden pages<br>
-        Lines I couldn’t read before<br>
-        Every barrier felt endless<br>
-        Like a locked and silent door</p>
-        
-        <p>Words were there but just beyond me<br>
-        Formats I could never know<br>
-        But a spark of change is rising<br>
-        There’s a better way to go</p>
-        
-        <h4>Pre-Chorus</h4>
-        <p>No more walls I can’t get through<br>
-        No more voices lost from view<br>
-        There’s a light in what we build together</p>
-        
-        <h4>Chorus</h4>
-        <p><strong>Let it glow, let it grow</strong><br>
-        Make the hidden finally show<br>
-        Every word, every line<br>
-        Now belongs to you and I</p>
-        
-        <p>Break the code, free the flow<br>
-        Turn the dark to something known<br>
-        Now the world can know<br>
-        We’re rising up to glow</p>
-        
-        <h4>Verse 2</h4>
-        <p>Every document can open<br>
-        Every voice can now be heard<br>
-        Not a single one forgotten<br>
-        Not a lost or broken word</p>
-        
-        <p>No more waiting for permission<br>
-        No more locked behind a gate<br>
-        We can shape a new beginning<br>
-        We don’t have to hesitate</p>
-        
-        <h4>Pre-Chorus</h4>
-        <p>Private, safe, and in our hands<br>
-        Built for all to understand<br>
-        This is more than just a tool we’re using</p>
-        
-        <h4>Chorus</h4>
-        <p>Let it glow, let it grow<br>
-        Make the hidden finally show<br>
-        Every chart, every page<br>
-        Now is clear at every stage</p>
-        
-        <p>Fix the gaps, bridge the flow<br>
-        Let accessibility show<br>
-        Now the world will know<br>
-        We were meant to glow</p>
-        
-        <h4>Bridge</h4>
-        <p>No tracking eyes, no hidden cost<br>
-        No voices silenced, no data lost<br>
-        What’s yours stays yours — that’s how it goes<br>
-        A brighter path is what we chose</p>
-        
-        <p>From every file to every screen<br>
-        We build a world that can be seen<br>
-        By anyone, by everyone</p>
-        
-        <h4>Final Chorus (Key Change)</h4>
-        <p>Let it glow, let it rise<br>
-        Open up a thousand eyes<br>
-        No more limits we outgrew<br>
-        Now the future’s built for you</p>
-        
-        <p>Every voice, every soul<br>
-        Finally part of something whole<br>
-        Now the truth will show<br>
-        We were made to glow</p>
-        
-        <h4>Outro</h4>
-        <p>And the light we share<br>
-        Means we all belong<br>
-        In a world made right<br>
-        Where every voice is strong</p>
-      </div>
-    </details>
-  </div>
+<!-- Not sure where to start -->
+<section>
+  <h2 id="quickstart-heading">Not Sure Where to Start?</h2>
+  <p>Upload any file once and GLOW shows you every available action for that file type -- no guessing required.</p>
+  <p><a href="{{ url_for('process.process_form') }}" class="btn-primary" style="font-size: 1.125rem; padding: 0.875rem 1.75rem; display: inline-block;">Quick Start: Upload and Discover</a></p>
 </section>
 
+<!-- Supported formats -->
 <section>
   <h2 id="formats-heading">Supported Document Formats</h2>
-
   <ul class="format-pills">
     {% if feature_word_enabled %}<li class="format-pill format-docx">Word (.docx)</li>{% endif %}
     {% if feature_excel_enabled %}<li class="format-pill format-xlsx">Excel (.xlsx)</li>{% endif %}
@@ -176,169 +127,111 @@
   </ul>
 </section>
 
-<section>
-  <h2 id="quick-start-heading">Not Sure Where to Start?</h2>
-  <p>Use the <strong>Quick Start</strong> tab at the top of the page. Upload any file once and GLOW shows you every available action for that file type &mdash; no guessing, no wasted uploads.</p>
-  <p><a href="{{ url_for('process.process_form') }}" class="btn-primary" style="font-size: 1.25rem; padding: 1rem 2rem; display: inline-block;">Quick Start: Upload &amp; Discover</a></p>
-</section>
+<!-- GLOW Anthem -->
+<section class="glow-ballad">
+  <h2 id="anthem-heading">The GLOW Anthem</h2>
+  <div class="audio-player-container">
+    <p>Listen to "Let it GLOW" -- a cinematic ballad about document accessibility:</p>
+    <audio controls preload="metadata">
+      <source src="/static/let-it-glow.mp3" type="audio/mpeg">
+      Your browser does not support the audio element.
+    </audio>
+    <p><a class="btn-secondary" href="{{ url_for('main.anthem_download') }}">Download Let it GLOW Theme (MP3)</a></p>
+    <details>
+      <summary>View Lyrics</summary>
+      <div class="lyrics">
+        <h3>Let it GLOW -- Cinematic Disney-Style Ballad</h3>
+        <p><em>Tempo: 72 BPM | Key: A-flat major | Style: Epic Disney Ballad</em></p>
 
-<section>
-  <h2 id="ops-heading">Choose an Operation</h2>
+        <h4>Verse 1</h4>
+        <p>In a world of hidden pages<br>
+        Lines I couldn't read before<br>
+        Every barrier felt endless<br>
+        Like a locked and silent door</p>
 
-  <div class="card-grid">
-    {% if feature_audit_enabled %}
-    <div class="card card-audit">
-      <h3><a href="{{ url_for('audit.audit_form') }}">Audit a Document</a></h3>
-      <p>Upload a Word, Excel, PowerPoint, Markdown, PDF, or ePub file and get a detailed compliance report. Choose Full, Quick, or Custom audit modes. Rules adapt automatically to each file format.</p>
-      <ul class="card-formats">
-        {% if feature_word_enabled %}<li class="format-tag format-docx">Word</li>{% endif %}
-        {% if feature_excel_enabled %}<li class="format-tag format-xlsx">Excel</li>{% endif %}
-        {% if feature_powerpoint_enabled %}<li class="format-tag format-pptx">PowerPoint</li>{% endif %}
-        {% if feature_markdown_enabled %}<li class="format-tag format-md">Markdown</li>{% endif %}
-        {% if feature_pdf_enabled %}<li class="format-tag format-pdf">PDF</li>{% endif %}
-        {% if feature_epub_enabled %}<li class="format-tag format-epub">ePub</li>{% endif %}
-      </ul>
-    </div>
-    {% endif %}
+        <p>Words were there but just beyond me<br>
+        Formats I could never know<br>
+        But a spark of change is rising<br>
+        There's a better way to go</p>
 
-    {% if feature_checker_enabled %}
-    <div class="card card-fix">
-      <h3><a href="{{ url_for('fix.fix_form') }}">Fix a Document</a></h3>
-      <p>Upload a non-compliant document and download a corrected version. Word documents get full auto-fix (fonts, sizes, spacing, alignment, emphasis). Other formats receive a detailed audit with manual fix guidance.</p>
-      <ul class="card-formats">
-        {% if feature_word_enabled %}<li class="format-tag format-docx">Word -- auto-fix</li>{% endif %}
-        {% if feature_excel_enabled %}<li class="format-tag format-xlsx">Excel -- audit only</li>{% endif %}
-        {% if feature_powerpoint_enabled %}<li class="format-tag format-pptx">PowerPoint -- audit only</li>{% endif %}
-        {% if feature_markdown_enabled %}<li class="format-tag format-md">Markdown -- audit only</li>{% endif %}
-        {% if feature_pdf_enabled %}<li class="format-tag format-pdf">PDF -- audit only</li>{% endif %}
-        {% if feature_epub_enabled %}<li class="format-tag format-epub">ePub -- audit only</li>{% endif %}
-      </ul>
-    </div>
-    {% endif %}
+        <h4>Pre-Chorus</h4>
+        <p>No more walls I can't get through<br>
+        No more voices lost from view<br>
+        There's a light in what we build together</p>
 
-    {% if feature_template_builder_enabled %}
-    <div class="card card-template">
-      <h3><a href="{{ url_for('template.template_form') }}">Create a Template</a></h3>
-      <p>Generate a pre-configured Word template (<code>.dotx</code>) with large-print styles built in. Start compliant by default -- no manual formatting required.</p>
-      <ul class="card-formats">
-        <li class="format-tag format-docx">Word</li>
-      </ul>
-    </div>
-    {% endif %}
+        <h4>Chorus</h4>
+        <p><strong>Let it glow, let it grow</strong><br>
+        Make the hidden finally show<br>
+        Every word, every line<br>
+        Now belongs to you and I</p>
 
-    {% if feature_converter_enabled %}
-    <div class="card card-convert">
-      <h3><a href="{{ url_for('convert.convert_form') }}">Convert a Document</a></h3>
-      <p>Change any supported file into a different format. Upload a PowerPoint, Excel, PDF, Word, or Markdown file and get back accessible HTML, a Word document, an EPUB, a PDF, or plain Markdown. For Word documents, a CMS Fragment option produces a scoped HTML snippet for WordPress or Drupal. PowerPoint, Excel, and PDF files use a smart two-stage extraction &mdash; GLOW handles it automatically.</p>
-      <ul class="card-formats">
-        {% if feature_word_enabled %}<li class="format-tag format-docx">Word</li>{% endif %}
-        {% if feature_excel_enabled %}<li class="format-tag format-xlsx">Excel</li>{% endif %}
-        {% if feature_powerpoint_enabled %}<li class="format-tag format-pptx">PowerPoint</li>{% endif %}
-        {% if feature_pdf_enabled %}<li class="format-tag format-pdf">PDF</li>{% endif %}
-        {% if feature_markdown_enabled %}<li class="format-tag format-md">Markdown</li>{% endif %}
-        <li class="format-tag format-misc">and more</li>
-      </ul>
-    </div>
-    {% endif %}
+        <p>Break the code, free the flow<br>
+        Turn the dark to something known<br>
+        Now the world can know<br>
+        We're rising up to glow</p>
 
-    {% if feature_site_audit_enabled %}
-    <div class="card card-audit">
-      <h3><a href="{{ url_for('site_audit.site_audit_form') }}">Audit a Website</a></h3>
-      <p>Scan one or more web pages for WCAG-focused accessibility issues, then download a summary JSON, findings CSV, and a full artifact ZIP for sharing with your team.</p>
-      <ul class="card-formats">
-        <li class="format-tag format-misc">HTTP(S) URLs</li>
-        <li class="format-tag format-misc">Sitemap XML</li>
-      </ul>
-    </div>
-    {% endif %}
+        <h4>Verse 2</h4>
+        <p>Every document can open<br>
+        Every voice can now be heard<br>
+        Not a single one forgotten<br>
+        Not a lost or broken word</p>
 
-    {% if ai_whisperer_enabled %}
-    <div class="card card-whisperer">
-      <h3><a href="{{ url_for('whisperer.whisperer_form') }}">{{ brand_whisperer_label }}</a></h3>
-      <p>Transcribe audio recordings into accessible Markdown or Word documents using the OpenAI Whisper API with strict short-lived retention and server-side cleanup. Audio is sent only for transcription and is deleted from GLOW after processing.</p>
-      <ul class="card-formats">
-        <li class="format-tag format-misc">MP3</li>
-        <li class="format-tag format-misc">WAV</li>
-        <li class="format-tag format-misc">M4A</li>
-        <li class="format-tag format-misc">OGG</li>
-        <li class="format-tag format-misc">FLAC</li>
-        <li class="format-tag format-misc">and more</li>
-      </ul>
-    </div>
-    {% endif %}
+        <p>No more waiting for permission<br>
+        No more locked behind a gate<br>
+        We can shape a new beginning<br>
+        We don't have to hesitate</p>
 
-    {% if ai_chat_enabled %}
-    <div class="card card-chat">
-      <h3>Document Chat</h3>
-      <p>Ask plain-English questions about any uploaded document through a privacy-aware OpenRouter gateway with grounded accessibility tooling. Reachable through the <a href="{{ url_for('process.process_form') }}">Quick Start: Upload and Discover</a> flow. Core workflows remain available without AI.</p>
-      <ul class="card-formats">
-        <li class="format-tag format-docx">Word</li>
-        <li class="format-tag format-pdf">PDF</li>
-        <li class="format-tag format-md">Markdown</li>
-        <li class="format-tag format-misc">and more</li>
-      </ul>
-    </div>
-    {% endif %}
+        <h4>Pre-Chorus</h4>
+        <p>Private, safe, and in our hands<br>
+        Built for all to understand<br>
+        This is more than just a tool we're using</p>
 
-    {% if feature_speech_enabled %}
-    <div class="card card-speech">
-      <h3><a href="{{ url_for('speech.speech_form') }}">Speech Studio</a></h3>
-      <p>Convert documents into audio narration using expressive, natural-sounding voices. Upload any supported file and download MP3 audio in the voice and speed of your choice. Server-side only -- no third-party AI required.</p>
-      <ul class="card-formats">
-        {% if feature_word_enabled %}<li class="format-tag format-docx">Word</li>{% endif %}
-        {% if feature_excel_enabled %}<li class="format-tag format-xlsx">Excel</li>{% endif %}
-        {% if feature_powerpoint_enabled %}<li class="format-tag format-pptx">PowerPoint</li>{% endif %}
-        {% if feature_markdown_enabled %}<li class="format-tag format-md">Markdown</li>{% endif %}
-        {% if feature_pdf_enabled %}<li class="format-tag format-pdf">PDF</li>{% endif %}
-        {% if feature_epub_enabled %}<li class="format-tag format-epub">ePub</li>{% endif %}
-      </ul>
-    </div>
-    {% endif %}
+        <h4>Chorus</h4>
+        <p>Let it glow, let it grow<br>
+        Make the hidden finally show<br>
+        Every chart, every page<br>
+        Now is clear at every stage</p>
 
-    <div class="card card-guidelines">
-      <h3><a href="{{ url_for('guidelines.guidelines_page') }}">Guidelines Reference</a></h3>
-      <p>Browse the full {{ brand_guidelines_summary }} in one place. Use this page when you need rule rationale or standards references while reviewing findings.</p>
-      <ul class="card-formats">
-        <li class="format-tag format-misc"><a href="{{ url_for('guidelines.guidelines_page') }}">Reference</a></li>
-      </ul>
-    </div>
+        <p>Fix the gaps, bridge the flow<br>
+        Let accessibility show<br>
+        Now the world will know<br>
+        We were meant to glow</p>
 
-    <div class="card card-settings">
-      <h3><a href="{{ url_for('settings.settings_page') }}">Settings</a></h3>
-      <p>Set your workflow defaults once: standards profiles, audit/fix modes, template options, export mode, and convert options. Opt in to save preferences on this device.</p>
-      <ul class="card-formats">
-        <li class="format-tag format-misc"><a href="{{ url_for('settings.settings_page') }}">Personalization</a></li>
-      </ul>
-    </div>
+        <h4>Bridge</h4>
+        <p>No tracking eyes, no hidden cost<br>
+        No voices silenced, no data lost<br>
+        What's yours stays yours -- that's how it goes<br>
+        A brighter path is what we chose</p>
+
+        <p>From every file to every screen<br>
+        We build a world that can be seen<br>
+        By anyone, by everyone</p>
+
+        <h4>Final Chorus (Key Change)</h4>
+        <p>Let it glow, let it rise<br>
+        Open up a thousand eyes<br>
+        No more limits we outgrew<br>
+        Now the future's built for you</p>
+
+        <p>Every voice, every soul<br>
+        Finally part of something whole<br>
+        Now the truth will show<br>
+        We were made to glow</p>
+
+        <h4>Outro</h4>
+        <p>And the light we share<br>
+        Means we all belong<br>
+        In a world made right<br>
+        Where every voice is strong</p>
+      </div>
+    </details>
   </div>
 </section>
 
-<section>
-  <h2 id="tabs-heading">Main Navigation Tab Order and Purpose</h2>
-  <ul>
-    <li><strong>Quick Start:</strong> upload any file once and GLOW shows every available action for that file type. The best first stop if you are unsure which tool to use.</li>
-    {% if feature_template_builder_enabled %}<li><strong>Template:</strong> creates Word templates with profile-aware defaults so new documents start compliant.</li>{% endif %}
-    {% if feature_audit_enabled %}<li><strong>Audit:</strong> checks documents and reports findings by severity.</li>{% endif %}
-    {% if feature_checker_enabled %}<li><strong>Fix:</strong> applies available auto-fixes and shows what still needs manual work.</li>{% endif %}
-    {% if feature_converter_enabled %}<li><strong>Convert:</strong> transforms documents across Markdown, HTML, Word, EPUB, PDF, and DAISY workflows. Includes a CMS Fragment option for Word documents. PowerPoint, Excel, and PDF files convert directly to accessible HTML, Word, EPUB, and PDF using smart two-stage extraction.</li>{% endif %}
-    {% if ai_whisperer_enabled %}<li><strong>{{ brand_whisperer_label }}:</strong> transcribes audio recordings (.mp3, .wav, .m4a, and more) to accessible Markdown or Word documents using the OpenAI Whisper API with explicit retention controls.</li>{% endif %}
-  </ul>
-
-  <h3>Additional Tools and Pages</h3>
-  <ul>
-    {% if ai_chat_enabled %}
-    <li><strong>Document Chat:</strong> lets you ask plain-English questions about any uploaded document through a privacy-aware OpenRouter gateway. Available from the <a href="{{ url_for('process.process_form') }}">Quick Start</a> flow -- upload your file and choose "Chat" from the actions menu.</li>
-    {% endif %}
-    <li><strong>Guidelines page:</strong> explains the standards behind each rule and profile.</li>
-    <li><strong>Settings page:</strong> stores your default choices so every workflow opens the way your team prefers.</li>
-  </ul>
-</section>
-
+<!-- About the standards -->
 <section>
   <h2 id="about-heading">{{ brand_about_heading }}</h2>
-
   <p>{{ brand_about_intro }} Key requirements include:</p>
-
   <ul>
     <li>Arial font, 18-point minimum for body text</li>
     <li>22-point bold headings, 20-point bold subheadings</li>
@@ -347,13 +240,10 @@
     <li>1-inch margins on all sides</li>
     <li>No hyphenation, no ALL CAPS formatting</li>
   </ul>
-
-  <h3>About the APH Large Print Guidelines</h3>
-  <p>The American Printing House (APH) provides complementary research-based large print guidance for educational and instructional content workflows.</p>
   <p>For Excel and PowerPoint, the tool enforces <strong>Microsoft Accessibility Checker</strong> rules aligned with WCAG 2.2 AA: sheet names, table headers, alt text, reading order, slide titles, and more. <a href="{{ url_for('guidelines.guidelines_page') }}">Read the full guidelines reference</a>.</p>
-  <p>External reference: APH publishes <a href="https://www.aph.org/resources/large-print-guidelines/">Guidelines for the Development of Documents in Large Print</a>. APH alignment in this toolkit is fully integrated for the Release 1.2.0 submission workflow.</p>
 </section>
 
+<!-- Privacy -->
 <section>
   <h2 id="privacy-heading">Privacy</h2>
   {% if ai_chat_enabled or ai_whisperer_enabled or ai_alt_text_enabled or ai_markitdown_llm_enabled %}
