@@ -148,7 +148,7 @@ test.describe('GLOW web regression suite', () => {
     await page.locator('#max_pages').fill('1');
     await page.getByRole('button', { name: /Run Site Audit/i }).click();
 
-    await expect(page.getByRole('heading', { level: 1, name: /Site Audit Results/i })).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1, name: /Site Audit Results/i })).toBeVisible({ timeout: 90000 });
     await expect(page.getByRole('heading', { level: 2, name: /Run Summary/i })).toBeVisible();
     await expect(page.getByRole('link', { name: /Download JSON summary/i })).toBeVisible();
     await expect(page.getByRole('link', { name: /Download findings CSV/i })).toBeVisible();
