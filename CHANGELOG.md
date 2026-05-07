@@ -8,6 +8,10 @@ Releases are tagged in the [GitHub repository](https://github.com/accesswatch/ac
 
 ## [Unreleased]
 
+### Changed
+
+- **Web: Home page mission hub de-duplicated (repetition fix).** Mission cards no longer list every sidebar navigation link. Each card now has a short outcome-focused description and a single primary CTA link ("Open Document Audit →" etc.), removing the redundancy with the sidebar. The inline-styled 5.0.0 announcement banner has been replaced by a slim inline "What's new in 5.0.0 →" text link in the intro paragraph. The "Not Sure Where to Start?" section has been merged into a `home-quickstart` strip. The "Explore and Learn" card now describes the group's value and links to the Guidelines reference rather than re-listing four sidebar links. Updated `web/src/acb_large_print_web/templates/index.html` and `web/src/acb_large_print_web/static/forms.css` (`.mission-card__cta`, `.home-quickstart` styles; removed `.mission-links`).
+
 ---
 
 ## [5.0.0] -- 2025-07-14

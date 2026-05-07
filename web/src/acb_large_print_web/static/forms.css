@@ -574,20 +574,41 @@ main[aria-busy="true"] {
   margin-bottom: 0.75rem;
 }
 
-.mission-links {
-  list-style: none;
-  padding: 0;
+.mission-card__cta {
+  display: inline-block;
+  margin-top: 0.5rem;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  text-decoration: underline;
+  color: inherit;
+}
+
+.mission-card__cta:hover {
+  text-decoration: none;
+}
+
+/* Home quick-start strip */
+.home-quickstart {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 1.25rem 1.5rem;
+  background: #f0f4ff;
+  border-left: 4px solid #0055cc;
+  border-radius: 0.375rem;
+  margin-bottom: 2rem;
+}
+
+.home-quickstart__cta {
+  font-size: 1.0625rem;
+  white-space: nowrap;
+}
+
+.home-quickstart__hint {
   margin: 0;
-}
-
-.mission-links li {
-  padding: 0.35rem 0;
-  border-top: 1px solid #e5e5e5;
-  font-size: 0.95rem;
-}
-
-.mission-links li:first-child {
-  border-top: none;
+  font-size: 0.875rem;
+  color: #444444;
 }
 
 /* Accent left borders per mission */
@@ -607,8 +628,13 @@ html[data-theme="dark"] .mission-card p {
   color: #bbbbbb;
 }
 
-html[data-theme="dark"] .mission-links li {
-  border-top-color: #333;
+html[data-theme="dark"] .home-quickstart {
+  background: #0a1a3a;
+  border-left-color: #4d8ff5;
+}
+
+html[data-theme="dark"] .home-quickstart__hint {
+  color: #bbbbbb;
 }
 
 /* --- Format Pills (hero section showing supported formats) --- */
