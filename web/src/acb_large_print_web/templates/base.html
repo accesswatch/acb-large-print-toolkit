@@ -82,13 +82,14 @@
           <a href="{{ url_for('process.process_form') }}"
              class="sidebar-link{% if request.blueprint == 'process' %} sidebar-link--active{% endif %}"
              {% if request.blueprint == 'process' %}aria-current="page"{% endif %}>
+            <svg class="nav-icon" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M8 1l5 6H9.5V15h-3V7H3l5-6z" fill="currentColor"/></svg>
             Quick Start
           </a>
         </li>
 
         <!-- ── Group 1: Assess ─────────────────────────────────────── -->
         {% if feature_audit_enabled or feature_site_audit_enabled %}
-        <li class="sidebar-group" role="none">
+        <li class="sidebar-group sidebar-group--assess{% if request.blueprint in ['audit', 'site_audit'] %} sidebar-group--active{% endif %}" role="none">
           <span class="sidebar-group-label" id="nav-group-assess">Assess</span>
           <ul aria-labelledby="nav-group-assess" role="list">
             {% if feature_audit_enabled %}
@@ -96,6 +97,7 @@
               <a href="{{ url_for('audit.audit_form') }}"
                  class="sidebar-link{% if request.blueprint == 'audit' %} sidebar-link--active{% endif %}"
                  {% if request.blueprint == 'audit' %}aria-current="page"{% endif %}>
+                <svg class="nav-icon" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><circle cx="6.5" cy="6.5" r="3.5" stroke="currentColor" stroke-width="2" fill="none"/><path d="M10 10l4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
                 Document Audit
               </a>
             </li>
@@ -105,6 +107,7 @@
               <a href="{{ url_for('site_audit.site_audit_form') }}"
                  class="sidebar-link{% if request.blueprint == 'site_audit' %} sidebar-link--active{% endif %}"
                  {% if request.blueprint == 'site_audit' %}aria-current="page"{% endif %}>
+                <svg class="nav-icon" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.75" fill="none"/><ellipse cx="8" cy="8" rx="2.5" ry="6" stroke="currentColor" stroke-width="1.25" fill="none"/><path d="M2 8h12" stroke="currentColor" stroke-width="1.25"/></svg>
                 Site Audit
               </a>
             </li>
@@ -115,7 +118,7 @@
 
         <!-- ── Group 2: Fix and Build ──────────────────────────────── -->
         {% if feature_checker_enabled or feature_template_builder_enabled %}
-        <li class="sidebar-group" role="none">
+        <li class="sidebar-group sidebar-group--fix{% if request.blueprint in ['fix', 'template'] %} sidebar-group--active{% endif %}" role="none">
           <span class="sidebar-group-label" id="nav-group-fix">Fix and Build</span>
           <ul aria-labelledby="nav-group-fix" role="list">
             {% if feature_checker_enabled %}
@@ -123,6 +126,7 @@
               <a href="{{ url_for('fix.fix_form') }}"
                  class="sidebar-link{% if request.blueprint == 'fix' %} sidebar-link--active{% endif %}"
                  {% if request.blueprint == 'fix' %}aria-current="page"{% endif %}>
+                <svg class="nav-icon" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M10.5 1.5A4 4 0 007 5.6L2 11l1 2 2 1 5-5.1A4 4 0 1010.5 1.5z" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linejoin="round"/></svg>
                 Fix Document
               </a>
             </li>
@@ -132,6 +136,7 @@
               <a href="{{ url_for('template.template_form') }}"
                  class="sidebar-link{% if request.blueprint == 'template' %} sidebar-link--active{% endif %}"
                  {% if request.blueprint == 'template' %}aria-current="page"{% endif %}>
+                <svg class="nav-icon" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><rect x="3" y="1" width="10" height="14" rx="1" stroke="currentColor" stroke-width="2" fill="none"/><path d="M6 5h4M6 8h4M6 11h2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
                 Build Template
               </a>
             </li>
@@ -142,7 +147,7 @@
 
         <!-- ── Group 3: Transform ─────────────────────────────────── -->
         {% if feature_converter_enabled or feature_braille_enabled %}
-        <li class="sidebar-group" role="none">
+        <li class="sidebar-group sidebar-group--transform{% if request.blueprint in ['convert', 'export', 'braille'] %} sidebar-group--active{% endif %}" role="none">
           <span class="sidebar-group-label" id="nav-group-transform">Transform</span>
           <ul aria-labelledby="nav-group-transform" role="list">
             {% if feature_converter_enabled %}
@@ -150,6 +155,7 @@
               <a href="{{ url_for('convert.convert_form') }}"
                  class="sidebar-link{% if request.blueprint in ['convert', 'export'] %} sidebar-link--active{% endif %}"
                  {% if request.blueprint in ['convert', 'export'] %}aria-current="page"{% endif %}>
+                <svg class="nav-icon" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M2 5h9M8 2l3 3-3 3M14 11H5M8 8l-3 3 3 3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
                 Convert Format
               </a>
             </li>
@@ -159,6 +165,7 @@
               <a href="{{ url_for('braille.braille_form') }}"
                  class="sidebar-link{% if request.blueprint == 'braille' %} sidebar-link--active{% endif %}"
                  {% if request.blueprint == 'braille' %}aria-current="page"{% endif %}>
+                <svg class="nav-icon" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><circle cx="5" cy="4" r="1.75" fill="currentColor"/><circle cx="5" cy="8" r="1.75" fill="currentColor"/><circle cx="5" cy="12" r="1.75" fill="currentColor"/><circle cx="11" cy="4" r="1.75" fill="currentColor"/><circle cx="11" cy="8" r="1.75" fill="currentColor"/><circle cx="11" cy="12" r="1.75" fill="currentColor"/></svg>
                 Braille Studio
               </a>
             </li>
@@ -169,7 +176,7 @@
 
         <!-- ── Group 4: Listen and Speak ──────────────────────────── -->
         {% if feature_speech_enabled or ai_whisperer_enabled %}
-        <li class="sidebar-group" role="none">
+        <li class="sidebar-group sidebar-group--listen{% if request.blueprint in ['speech', 'whisperer'] %} sidebar-group--active{% endif %}" role="none">
           <span class="sidebar-group-label" id="nav-group-listen">Listen and Speak</span>
           <ul aria-labelledby="nav-group-listen" role="list">
             {% if feature_speech_enabled %}
@@ -177,6 +184,7 @@
               <a href="{{ url_for('speech.speech_form') }}"
                  class="sidebar-link{% if request.blueprint == 'speech' %} sidebar-link--active{% endif %}"
                  {% if request.blueprint == 'speech' %}aria-current="page"{% endif %}>
+                <svg class="nav-icon" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M3 5.5v5L7 13V3L3 5.5z" fill="currentColor"/><path d="M9.5 5.5c1 .8 1 4.2 0 5M11.5 3.5C14 5.2 14 10.8 11.5 12.5" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" fill="none"/></svg>
                 Speech Studio
               </a>
             </li>
@@ -186,6 +194,7 @@
               <a href="{{ url_for('whisperer.whisperer_form') }}"
                  class="sidebar-link{% if request.blueprint == 'whisperer' %} sidebar-link--active{% endif %}"
                  {% if request.blueprint == 'whisperer' %}aria-current="page"{% endif %}>
+                <svg class="nav-icon" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><rect x="5.5" y="1" width="5" height="7" rx="2.5" fill="currentColor"/><path d="M3 8a5 5 0 0010 0" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/><line x1="8" y1="13" x2="8" y2="15" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="5" y1="15" x2="11" y2="15" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
                 {{ brand_whisperer_label }}
               </a>
             </li>
@@ -195,7 +204,7 @@
         {% endif %}
 
         <!-- ── Group 5: Explore and Learn ─────────────────────────── -->
-        <li class="sidebar-group" role="none">
+        <li class="sidebar-group sidebar-group--explore{% if request.blueprint in ['chat', 'magic', 'guidelines', 'rules_ref', 'guide', 'faq', 'settings'] %} sidebar-group--active{% endif %}" role="none">
           <span class="sidebar-group-label" id="nav-group-explore">Explore and Learn</span>
           <ul aria-labelledby="nav-group-explore" role="list">
             {% if ai_chat_enabled is defined and ai_chat_enabled %}
@@ -203,6 +212,7 @@
               <a href="{{ url_for('chat.chat_form') }}"
                  class="sidebar-link{% if request.blueprint == 'chat' %} sidebar-link--active{% endif %}"
                  {% if request.blueprint == 'chat' %}aria-current="page"{% endif %}>
+                <svg class="nav-icon" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M2 2h12v9H5L2 14V2z" fill="currentColor"/><path d="M5 6h6M5 9h3" stroke="white" stroke-width="1.5" stroke-linecap="round"/></svg>
                 Document Chat
               </a>
             </li>
@@ -212,6 +222,7 @@
               <a href="{{ url_for('magic.magic_home') }}"
                  class="sidebar-link{% if request.blueprint == 'magic' %} sidebar-link--active{% endif %}"
                  {% if request.blueprint == 'magic' %}aria-current="page"{% endif %}>
+                <svg class="nav-icon" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M8 1l1.8 5H15l-4.5 3.3 1.7 5.2L8 11.5l-4.2 3 1.7-5.2L1 6h5.2L8 1z" fill="currentColor"/></svg>
                 Magic Lab
               </a>
             </li>
@@ -220,6 +231,7 @@
               <a href="{{ url_for('guidelines.guidelines_page') }}"
                  class="sidebar-link{% if request.blueprint in ['guidelines', 'rules_ref'] %} sidebar-link--active{% endif %}"
                  {% if request.blueprint in ['guidelines', 'rules_ref'] %}aria-current="page"{% endif %}>
+                <svg class="nav-icon" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M2 4h12M2 8h12M2 12h8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
                 Guidelines
               </a>
             </li>
@@ -227,6 +239,7 @@
               <a href="{{ url_for('guide.guide_page') }}"
                  class="sidebar-link{% if request.blueprint == 'guide' %} sidebar-link--active{% endif %}"
                  {% if request.blueprint == 'guide' %}aria-current="page"{% endif %}>
+                <svg class="nav-icon" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M8 3C5 2 2 3 2 3v10c3-1 6 0 6 0V3z" stroke="currentColor" stroke-width="1.75" fill="none" stroke-linejoin="round"/><path d="M8 3c3-1 6 0 6 0v10c-3-1-6 0-6 0V3z" stroke="currentColor" stroke-width="1.75" fill="none" stroke-linejoin="round"/></svg>
                 User Guide
               </a>
             </li>
@@ -234,6 +247,7 @@
               <a href="{{ url_for('faq.faq_page') }}"
                  class="sidebar-link{% if request.blueprint == 'faq' %} sidebar-link--active{% endif %}"
                  {% if request.blueprint == 'faq' %}aria-current="page"{% endif %}>
+                <svg class="nav-icon" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="2" fill="none"/><path d="M6 6.5a2 2 0 114 0c0 1.5-2 1.5-2 3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" fill="none"/><circle cx="8" cy="11.5" r="1" fill="currentColor"/></svg>
                 FAQ
               </a>
             </li>
@@ -241,6 +255,7 @@
               <a href="{{ url_for('settings.settings_page') }}"
                  class="sidebar-link{% if request.blueprint == 'settings' %} sidebar-link--active{% endif %}"
                  {% if request.blueprint == 'settings' %}aria-current="page"{% endif %}>
+                <svg class="nav-icon" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><circle cx="8" cy="8" r="2.5" stroke="currentColor" stroke-width="2" fill="none"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.2 3.2l1.4 1.4M11.4 11.4l1.4 1.4M12.8 3.2l-1.4 1.4M4.6 11.4l-1.4 1.4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
                 Settings
               </a>
             </li>
@@ -257,9 +272,8 @@
     <div class="content-area">
 
       <main id="main">
+        {% block breadcrumb %}{% if request.blueprint in ['audit', 'site_audit'] %}<p class="page-breadcrumb"><span class="page-breadcrumb__label" data-group="assess">Assess</span></p>{% elif request.blueprint in ['fix', 'template'] %}<p class="page-breadcrumb"><span class="page-breadcrumb__label" data-group="fix">Fix and Build</span></p>{% elif request.blueprint in ['convert', 'export', 'braille'] %}<p class="page-breadcrumb"><span class="page-breadcrumb__label" data-group="transform">Transform</span></p>{% elif request.blueprint in ['speech', 'whisperer'] %}<p class="page-breadcrumb"><span class="page-breadcrumb__label" data-group="listen">Listen and Speak</span></p>{% elif request.blueprint in ['chat', 'magic', 'guidelines', 'rules_ref', 'guide', 'faq', 'settings'] %}<p class="page-breadcrumb"><span class="page-breadcrumb__label" data-group="explore">Explore and Learn</span></p>{% endif %}{% endblock %}
         <h1>{% block heading %}{{ brand_heading_label }}{% endblock %}</h1>
-
-        <div id="toast-container" aria-live="polite" aria-atomic="false"></div>
 
         {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
@@ -333,5 +347,6 @@
   <script src="{{ url_for('static', filename='a11y-enhancements.js') }}"></script>
   <script src="{{ url_for('static', filename='sidebar.js') }}"></script>
   {% block extra_js %}{% endblock %}
+  <div id="toast-container" aria-live="polite" aria-atomic="false"></div>
 </body>
 </html>

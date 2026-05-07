@@ -8,8 +8,19 @@ Releases are tagged in the [GitHub repository](https://github.com/accesswatch/ac
 
 ## [Unreleased]
 
+### Added
+
+- **Web: CSS design tokens for mission accent colors.** Added `:root` custom properties `--color-assess`, `--color-fix`, `--color-transform`, `--color-listen`, `--color-explore`, and `--sidebar-width` to `forms.css` for consistent theming across all accent-color usages.
+- **Web: SVG icons on all 15 sidebar navigation links.** Each sidebar link now has a 16×16 inline SVG icon (`aria-hidden="true"`, `focusable="false"`, `class="nav-icon"`) in `base.html`. Icons fade to full opacity on hover/active. Covers: Quick Start, Document Audit, Site Audit, Fix Document, Build Template, Convert Format, Braille Studio, Speech Studio, BITS Whisperer, Document Chat, Magic Lab, Guidelines, User Guide, FAQ, Settings.
+- **Web: Active sidebar group label accent color.** When the current page belongs to a mission group, the group's `<span class="sidebar-group-label">` inherits the group's accent color and top-border accent. Implemented via `.sidebar-group--{group}.sidebar-group--active > .sidebar-group-label` rules (with dark-mode variants) in `forms.css`, and sidebar group `<li>` elements now carry both type and active classes in `base.html`.
+- **Web: Page breadcrumb context pill.** A colored `.page-breadcrumb` chip now appears above the `<h1>` on every tool page, showing the current mission group name and accent color. Auto-generated in `base.html` from `request.blueprint` via `{% block breadcrumb %}`. Dark-mode variants included in `forms.css`.
+- **Web: Mission card hover lift animation.** Mission cards on the home page now lift `translateY(-2px)` with an elevated box-shadow on hover. Animation is gated behind `@media (prefers-reduced-motion: no-preference)` in `forms.css`.
+- **Web: Upload hero centered card layout.** The Quick Start file upload page (`process_form.html`) now renders inside a `.upload-hero` centered card with a gradient background, blue accent border, and a dashed drop-zone file input. Dark-mode variant included.
+
 ### Changed
 
+- **Web: Toast container relocated to fixed bottom-right overlay.** `#toast-container` moved from inside `<main>` to just before `</body>` in `base.html`, so toasts no longer shift page layout. Updated CSS in `forms.css` to `position: fixed; bottom: 1.5rem; right: 1.5rem` with mobile responsive sizing.
+- **Web: Sidebar dark-mode background deepened.** Dark mode sidebar background updated from `#1e1e1e` to `#141414` with a `box-shadow: 2px 0 8px rgba(0,0,0,0.35)` depth shadow in `forms.css`.
 - **Web: Home page mission hub de-duplicated (repetition fix).** Mission cards no longer list every sidebar navigation link. Each card now has a short outcome-focused description and a single primary CTA link ("Open Document Audit →" etc.), removing the redundancy with the sidebar. The inline-styled 5.0.0 announcement banner has been replaced by a slim inline "What's new in 5.0.0 →" text link in the intro paragraph. The "Not Sure Where to Start?" section has been merged into a `home-quickstart` strip. The "Explore and Learn" card now describes the group's value and links to the Guidelines reference rather than re-listing four sidebar links. Updated `web/src/acb_large_print_web/templates/index.html` and `web/src/acb_large_print_web/static/forms.css` (`.mission-card__cta`, `.home-quickstart` styles; removed `.mission-links`).
 
 ---

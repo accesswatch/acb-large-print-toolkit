@@ -3,6 +3,16 @@
    Extends acb-large-print.css with UI-specific styles.
    ========================================================================== */
 
+/* --- Design Tokens -------------------------------------------------------- */
+:root {
+  --color-assess:    #0055cc;
+  --color-fix:       #2e6b2e;
+  --color-transform: #8b5cf6;
+  --color-listen:    #0a6f8f;
+  --color-explore:   #b8860b;
+  --sidebar-width:   16rem;
+}
+
 /* --- Global focus indicator (WCAG 2.4.7 / 2.4.13 baseline) ----------------
    Every interactive element gets a high-contrast focus ring by default.
    Per-component rules below may override the colour but should never
@@ -252,7 +262,7 @@ html[data-theme="dark"] .mobile-brand {
 
 /* --- Sidebar ---------------------------------------------------------------- */
 .sidebar {
-  width: 16rem;
+  width: var(--sidebar-width);
   flex-shrink: 0;
   background: #f5f5f5;
   border-right: 2px solid #1a1a1a;
@@ -267,8 +277,9 @@ html[data-theme="dark"] .mobile-brand {
 }
 
 html[data-theme="dark"] .sidebar {
-  background: #1e1e1e;
-  border-right-color: #444444;
+  background: #141414;
+  border-right-color: #3a3a3a;
+  box-shadow: 2px 0 8px rgba(0,0,0,0.35);
 }
 
 /* Mobile: sidebar is off-screen until toggled */
@@ -379,6 +390,33 @@ html[data-theme="dark"] .sidebar-group-label {
   border-top-color: #2e2e2e;
 }
 
+/* Active group: accent the label with the group's color */
+.sidebar-group--assess.sidebar-group--active > .sidebar-group-label {
+  color: var(--color-assess);
+  border-top-color: var(--color-assess);
+}
+.sidebar-group--fix.sidebar-group--active > .sidebar-group-label {
+  color: var(--color-fix);
+  border-top-color: var(--color-fix);
+}
+.sidebar-group--transform.sidebar-group--active > .sidebar-group-label {
+  color: var(--color-transform);
+  border-top-color: var(--color-transform);
+}
+.sidebar-group--listen.sidebar-group--active > .sidebar-group-label {
+  color: var(--color-listen);
+  border-top-color: var(--color-listen);
+}
+.sidebar-group--explore.sidebar-group--active > .sidebar-group-label {
+  color: var(--color-explore);
+  border-top-color: var(--color-explore);
+}
+html[data-theme="dark"] .sidebar-group--assess.sidebar-group--active    > .sidebar-group-label { color: #80aaff; border-top-color: #80aaff; }
+html[data-theme="dark"] .sidebar-group--fix.sidebar-group--active       > .sidebar-group-label { color: #7fbe7f; border-top-color: #7fbe7f; }
+html[data-theme="dark"] .sidebar-group--transform.sidebar-group--active > .sidebar-group-label { color: #c4a0ff; border-top-color: #c4a0ff; }
+html[data-theme="dark"] .sidebar-group--listen.sidebar-group--active    > .sidebar-group-label { color: #5abfde; border-top-color: #5abfde; }
+html[data-theme="dark"] .sidebar-group--explore.sidebar-group--active   > .sidebar-group-label { color: #e0c060; border-top-color: #e0c060; }
+
 .sidebar-group > ul {
   list-style: none;
   padding: 0;
@@ -442,6 +480,23 @@ html[data-theme="dark"] .sidebar-link[aria-current="page"] {
   color: #80aaff;
   background: #1a2a4a;
   border-left-color: #80aaff;
+}
+
+/* Nav link icons */
+.nav-icon {
+  flex-shrink: 0;
+  width: 1em;
+  height: 1em;
+  vertical-align: -0.125em;
+  opacity: 0.7;
+  margin-right: 0.375rem;
+  transition: opacity 0.15s ease;
+}
+
+.sidebar-link:hover .nav-icon,
+.sidebar-link--active .nav-icon,
+.sidebar-link[aria-current="page"] .nav-icon {
+  opacity: 1;
 }
 
 /* --- Content area --------------------------------------------------------- */
@@ -572,6 +627,23 @@ main[aria-busy="true"] {
 .mission-card p {
   color: #444444;
   margin-bottom: 0.75rem;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .mission-card {
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+}
+
+.mission-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+  border-color: #888;
+}
+
+html[data-theme="dark"] .mission-card:hover {
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+  border-color: #999;
 }
 
 .mission-card__cta {
@@ -1796,6 +1868,160 @@ html[data-theme="dark"] .occurrence-count--multi {
 
 .diff-findings-detail summary::-webkit-details-marker {
   margin-right: 0.5rem;
+}
+
+/* --- Toast Container (fixed bottom-right overlay, filled by toast.js) --- */
+#toast-container {
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  z-index: 500;
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 0.75rem;
+  max-width: min(22rem, calc(100vw - 3rem));
+  pointer-events: none;
+}
+
+#toast-container > * {
+  pointer-events: auto;
+}
+
+@media (max-width: 48rem) {
+  #toast-container {
+    bottom: 1rem;
+    right: 1rem;
+    left: 1rem;
+    max-width: none;
+  }
+}
+
+/* --- Page Breadcrumb (group context pill above h1) --- */
+.page-breadcrumb {
+  display: flex;
+  align-items: center;
+  margin: 0 0 0.5rem;
+}
+
+.page-breadcrumb__label {
+  display: inline-block;
+  font-family: Arial, sans-serif;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding: 0.25em 0.75em;
+  border-radius: 2rem;
+  background: #f0f0f0;
+  color: #555;
+}
+
+.page-breadcrumb__label[data-group="assess"]    { background: #dde8ff; color: var(--color-assess); }
+.page-breadcrumb__label[data-group="fix"]       { background: #d8edd8; color: var(--color-fix); }
+.page-breadcrumb__label[data-group="transform"] { background: #ede0ff; color: var(--color-transform); }
+.page-breadcrumb__label[data-group="listen"]    { background: #d0ecf5; color: var(--color-listen); }
+.page-breadcrumb__label[data-group="explore"]   { background: #f5ecd0; color: var(--color-explore); }
+
+html[data-theme="dark"] .page-breadcrumb__label                          { background: #2a2a2a; color: #aaa; }
+html[data-theme="dark"] .page-breadcrumb__label[data-group="assess"]    { background: #0a1a3a; color: #80aaff; }
+html[data-theme="dark"] .page-breadcrumb__label[data-group="fix"]       { background: #0a2010; color: #7fbe7f; }
+html[data-theme="dark"] .page-breadcrumb__label[data-group="transform"] { background: #1a0a2a; color: #c4a0ff; }
+html[data-theme="dark"] .page-breadcrumb__label[data-group="listen"]    { background: #0a1a22; color: #5abfde; }
+html[data-theme="dark"] .page-breadcrumb__label[data-group="explore"]   { background: #1e1600; color: #e0c060; }
+
+/* --- Upload Hero (centered card for Quick Start upload page) --- */
+.upload-hero {
+  max-width: 44rem;
+  margin: 1rem auto 2rem;
+  padding: 2.5rem 2rem;
+  background: linear-gradient(145deg, #f4f7ff 0%, #ffffff 100%);
+  border: 2px solid #c0d0f0;
+  border-radius: 0.75rem;
+  box-shadow: 0 4px 24px rgba(0, 85, 204, 0.07), 0 1px 4px rgba(0, 0, 0, 0.06);
+  text-align: center;
+}
+
+.upload-hero > p {
+  color: #444;
+  margin-bottom: 1.5rem;
+}
+
+.upload-hero fieldset {
+  border: none;
+  padding: 0;
+  text-align: left;
+  margin: 0 0 0.5rem;
+}
+
+.upload-hero legend {
+  font-size: 1.125rem;
+  font-weight: 700;
+  padding: 0;
+  margin-bottom: 1rem;
+  width: 100%;
+  text-align: center;
+}
+
+.upload-hero input[type="file"] {
+  max-width: 100%;
+  width: 100%;
+  padding: 2rem 1.5rem;
+  border: 2px dashed #4d88e0;
+  border-radius: 0.5rem;
+  background: #f0f4ff;
+  cursor: pointer;
+  font-size: 1.0625rem;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.upload-hero input[type="file"]:hover,
+.upload-hero input[type="file"]:focus {
+  border-color: #0055cc;
+  background: #e4ecff;
+}
+
+.upload-hero .btn-primary {
+  margin-top: 1.5rem;
+  font-size: 1.1875rem;
+  padding: 0.875em 2.5em;
+  border-radius: 0.375rem;
+  min-width: 16rem;
+  box-shadow: 0 2px 8px rgba(0, 85, 204, 0.25);
+  transition: box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .upload-hero .btn-primary:hover {
+    box-shadow: 0 4px 16px rgba(0, 85, 204, 0.35);
+    transform: translateY(-1px);
+  }
+}
+
+.upload-hero .field-hint {
+  text-align: left;
+  margin-top: 0.625rem;
+}
+
+html[data-theme="dark"] .upload-hero {
+  background: linear-gradient(145deg, #0d1525 0%, #141920 100%);
+  border-color: #2a3d6a;
+  box-shadow: 0 4px 24px rgba(0, 85, 204, 0.15);
+}
+
+html[data-theme="dark"] .upload-hero > p {
+  color: #bbb;
+}
+
+html[data-theme="dark"] .upload-hero input[type="file"] {
+  border-color: #3a5a9a;
+  background: #0a1020;
+  color: #e0e0e0;
+}
+
+html[data-theme="dark"] .upload-hero input[type="file"]:hover,
+html[data-theme="dark"] .upload-hero input[type="file"]:focus {
+  border-color: #80aaff;
+  background: #0e1830;
 }
 
 .diff-section {
