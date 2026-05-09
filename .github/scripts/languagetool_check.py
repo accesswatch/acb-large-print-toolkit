@@ -57,10 +57,11 @@ def sanitize_markdown(text: str) -> str:
 
 
 def should_ignore(match: language_tool_python.Match) -> bool:
-    if match.ruleId in IGNORE_RULE_IDS:
+    rule_id = getattr(match, "rule_id", getattr(match, "ruleId", ""))
+    if rule_id in IGNORE_RULE_IDS:
         return True
 
-    matched = (match.matchedText or "").strip().lower()
+    matched = (getattr(match, "matched_text", getattr(match, "matchedText", "")) or "").strip().lower()
     if matched in ALLOW_TERMS:
         return True
 
@@ -90,7 +91,8 @@ def main() -> int:
         for m in matches:
             total += 1
             message = m.message.replace("\n", " ")
-            short = f"{message} (rule: {m.ruleId})"
+            rule_id = getattr(m, "rule_id", getattr(m, "ruleId", "unknown"))
+            short = f"{message} (rule: {rule_id})"
             rel = path.relative_to(ROOT).as_posix()
             print(f"::warning file={rel}::{short}")
 
