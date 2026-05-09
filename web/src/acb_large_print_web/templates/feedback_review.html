@@ -16,6 +16,7 @@
       <th scope="col">Rating</th>
       <th scope="col">Task</th>
       <th scope="col">Message</th>
+      <th scope="col">GitHub</th>
     </tr>
   </thead>
   <tbody>
@@ -26,6 +27,15 @@
       <td>{{ entry.rating | capitalize }}</td>
       <td>{{ entry.task or "---" }}</td>
       <td>{{ entry.message }}</td>
+      <td>
+        {% if entry.github_issue_url %}
+          <a href="{{ entry.github_issue_url }}">Issue #{{ entry.github_issue_number }}</a>
+        {% elif entry.github_sync_status == 'failed' %}
+          Failed{% if entry.github_sync_error %}: {{ entry.github_sync_error }}{% endif %}
+        {% else %}
+          Pending
+        {% endif %}
+      </td>
     </tr>
     {% endfor %}
   </tbody>

@@ -1,11 +1,14 @@
 """Feedback route -- collect and review user feedback (SQLite-backed)."""
 
+import json
 import hmac
 import logging
 import os
 import sqlite3
 from datetime import datetime, timezone
 from pathlib import Path
+from urllib import error as urlerror
+from urllib import request as urlrequest
 
 from flask import Blueprint, abort, current_app, render_template, request
 
@@ -34,11 +37,108 @@ def _get_db() -> sqlite3.Connection:
         "  timestamp TEXT NOT NULL,"
         "  rating TEXT NOT NULL,"
         "  task TEXT,"
-        "  message TEXT NOT NULL"
+        "  message TEXT NOT NULL,"
+        "  github_issue_number INTEGER,"
+        "  github_issue_url TEXT,"
+        "  github_sync_status TEXT,"
+        "  github_sync_error TEXT,"
+        "  github_synced_at TEXT"
         ")"
     )
+    _ensure_feedback_schema(conn)
     conn.commit()
     return conn
+
+
+def _ensure_feedback_schema(conn: sqlite3.Connection) -> None:
+    """Add missing columns for GitHub sync when upgrading older databases."""
+    existing = {
+        row[1]
+        for row in conn.execute("PRAGMA table_info(feedback)").fetchall()
+    }
+    required = {
+        "github_issue_number": "INTEGER",
+        "github_issue_url": "TEXT",
+        "github_sync_status": "TEXT",
+        "github_sync_error": "TEXT",
+        "github_synced_at": "TEXT",
+    }
+    for col, col_type in required.items():
+        if col not in existing:
+            conn.execute(f"ALTER TABLE feedback ADD COLUMN {col} {col_type}")
+
+
+def _feedback_github_config() -> dict:
+    """Return GitHub sync settings from environment variables."""
+    token = os.environ.get("FEEDBACK_GITHUB_TOKEN", "").strip()
+    repo = os.environ.get("FEEDBACK_GITHUB_REPO", "Community-Access/glow").strip()
+    assignee = os.environ.get("FEEDBACK_GITHUB_ASSIGNEE", "accesswatch").strip()
+    labels_raw = os.environ.get("FEEDBACK_GITHUB_LABELS", "feedback,user-feedback").strip()
+    labels = [x.strip() for x in labels_raw.split(",") if x.strip()]
+    return {
+        "token": token,
+        "repo": repo,
+        "assignee": assignee,
+        "labels": labels,
+    }
+
+
+def _create_feedback_issue(entry: dict) -> tuple[int | None, str | None, str | None]:
+    """Create a GitHub issue for a feedback entry.
+
+    Returns (issue_number, issue_url, error_message).
+    """
+    cfg = _feedback_github_config()
+    if not cfg["token"]:
+        return None, None, "FEEDBACK_GITHUB_TOKEN not configured"
+
+    repo = cfg["repo"]
+    now_date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    title = f"[Feedback] {entry['rating'].capitalize()} | {entry['task'] or 'general'} | {now_date}"
+    body = (
+        "## User Feedback Submission\n\n"
+        f"- Feedback ID: `{entry['id']}`\n"
+        f"- Submitted at (UTC): `{entry['timestamp']}`\n"
+        f"- Rating: `{entry['rating']}`\n"
+        f"- Task: `{entry['task'] or 'not specified'}`\n\n"
+        "### Message\n"
+        f"{entry['message']}\n\n"
+        "---\n"
+        "Source: GLOW web feedback form."
+    )
+    payload = {
+        "title": title,
+        "body": body,
+        "labels": cfg["labels"],
+    }
+    if cfg["assignee"]:
+        payload["assignees"] = [cfg["assignee"]]
+
+    req = urlrequest.Request(
+        f"https://api.github.com/repos/{repo}/issues",
+        data=json.dumps(payload).encode("utf-8"),
+        method="POST",
+        headers={
+            "Accept": "application/vnd.github+json",
+            "Authorization": f"Bearer {cfg['token']}",
+            "X-GitHub-Api-Version": "2022-11-28",
+            "Content-Type": "application/json",
+            "User-Agent": "glow-feedback-sync",
+        },
+    )
+    try:
+        with urlrequest.urlopen(req, timeout=20) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+            return data.get("number"), data.get("html_url"), None
+    except urlerror.HTTPError as exc:
+        details = ""
+        try:
+            details = exc.read().decode("utf-8")
+        except Exception:
+            details = str(exc)
+        return None, None, f"GitHub API error: {exc.code} {details}"
+    except Exception as exc:
+        return None, None, f"GitHub sync failed: {exc}"
 
 
 @feedback_bp.route("/", methods=["GET"])
@@ -77,18 +177,42 @@ def feedback_submit():
 
     timestamp = datetime.now(timezone.utc).isoformat()
 
+    issue_url = None
     try:
         conn = _get_db()
-        conn.execute(
+        cur = conn.execute(
             "INSERT INTO feedback (timestamp, rating, task, message) VALUES (?, ?, ?, ?)",
             (timestamp, rating, task, message),
         )
+        feedback_id = cur.lastrowid
+
+        entry = {
+            "id": feedback_id,
+            "timestamp": timestamp,
+            "rating": rating,
+            "task": task,
+            "message": message,
+        }
+        issue_number, issue_url, sync_error = _create_feedback_issue(entry)
+        if issue_number and issue_url:
+            conn.execute(
+                "UPDATE feedback SET github_issue_number=?, github_issue_url=?, github_sync_status=?, github_sync_error=?, github_synced_at=? WHERE id=?",
+                (issue_number, issue_url, "synced", None, datetime.now(timezone.utc).isoformat(), feedback_id),
+            )
+        else:
+            conn.execute(
+                "UPDATE feedback SET github_sync_status=?, github_sync_error=? WHERE id=?",
+                ("failed", sync_error, feedback_id),
+            )
+            if sync_error:
+                log.warning("Feedback GitHub sync failed for id=%s: %s", feedback_id, sync_error)
+
         conn.commit()
         conn.close()
     except (sqlite3.Error, OSError):
         log.exception("Failed to save feedback")
 
-    return render_template("feedback_thanks.html")
+    return render_template("feedback_thanks.html", issue_url=issue_url)
 
 
 @feedback_bp.route("/review")
@@ -105,7 +229,7 @@ def feedback_review():
     try:
         conn = _get_db()
         cursor = conn.execute(
-            "SELECT id, timestamp, rating, task, message "
+            "SELECT id, timestamp, rating, task, message, github_issue_number, github_issue_url, github_sync_status, github_sync_error "
             "FROM feedback ORDER BY id DESC"
         )
         rows = [
@@ -115,6 +239,10 @@ def feedback_review():
                 "rating": r[2],
                 "task": r[3],
                 "message": r[4],
+                "github_issue_number": r[5],
+                "github_issue_url": r[6],
+                "github_sync_status": r[7],
+                "github_sync_error": r[8],
             }
             for r in cursor.fetchall()
         ]

@@ -736,6 +736,10 @@ Paste the following, replacing the placeholder values:
 ```
 SECRET_KEY=PASTE_GENERATED_KEY_HERE
 FEEDBACK_PASSWORD=CHOOSE_A_STRONG_PASSWORD
+FEEDBACK_GITHUB_TOKEN=PASTE_GITHUB_TOKEN_FOR_ISSUE_SYNC
+FEEDBACK_GITHUB_REPO=Community-Access/glow
+FEEDBACK_GITHUB_ASSIGNEE=accesswatch
+FEEDBACK_GITHUB_LABELS=feedback,user-feedback
 OPENROUTER_API_KEY=PASTE_OPENROUTER_KEY_HERE
 ADMIN_LOCAL_EMAIL=jeff@jeffbishop.com
 ADMIN_LOCAL_PASSWORD=CHOOSE_A_STRONG_PASSWORD
@@ -772,7 +776,7 @@ Save and restrict permissions:
 chmod 600 ~/app/web/.env
 ```
 
-> **How .env works with Docker Compose:** Docker Compose has two `.env` mechanisms. First, it automatically reads a `.env` file next to the compose file for variable interpolation (`${VAR}` syntax inside the compose file itself). Second, the `env_file:` directive passes all variables from the specified file into the container as actual environment variables. This guide uses the second mechanism. The `env_file: .env` line in `docker-compose.prod.yml` injects `SECRET_KEY`, `FEEDBACK_PASSWORD`, `OPENROUTER_API_KEY`, `ADMIN_LOCAL_EMAIL`, `ADMIN_LOCAL_PASSWORD`, and `LOG_LEVEL` directly into the running container, where the Flask app reads them via `os.environ.get()`.
+> **How .env works with Docker Compose:** Docker Compose has two `.env` mechanisms. First, it automatically reads a `.env` file next to the compose file for variable interpolation (`${VAR}` syntax inside the compose file itself). Second, the `env_file:` directive passes all variables from the specified file into the container as actual environment variables. This guide uses the second mechanism. The `env_file: .env` line in `docker-compose.prod.yml` injects `SECRET_KEY`, `FEEDBACK_PASSWORD`, `FEEDBACK_GITHUB_TOKEN`, `FEEDBACK_GITHUB_REPO`, `FEEDBACK_GITHUB_ASSIGNEE`, `FEEDBACK_GITHUB_LABELS`, `OPENROUTER_API_KEY`, `ADMIN_LOCAL_EMAIL`, `ADMIN_LOCAL_PASSWORD`, and `LOG_LEVEL` directly into the running container, where the Flask app reads them via `os.environ.get()`.
 
 ### 4.2a OpenRouter wiring
 
@@ -1554,6 +1558,23 @@ Set `FEEDBACK_PASSWORD` in your `.env` file (see Phase 4.2), then rebuild and vi
 
 ```
 https://glow.bits-acb.org/feedback/review?key=YOUR_PASSWORD
+```
+
+### Syncing feedback to GitHub issues
+
+When `FEEDBACK_GITHUB_TOKEN` is configured, each new feedback submission is automatically filed as an issue in `FEEDBACK_GITHUB_REPO`, assigned to `FEEDBACK_GITHUB_ASSIGNEE`, and labeled with `FEEDBACK_GITHUB_LABELS`.
+
+To backfill existing feedback rows from `feedback.db`, run:
+
+```bash
+cd ~/app
+python3 scripts/sync-feedback-to-github.py --db ~/app/instance/feedback.db --repo Community-Access/glow --assignee accesswatch
+```
+
+If your token is not already in the environment, export it first:
+
+```bash
+export FEEDBACK_GITHUB_TOKEN=YOUR_TOKEN_HERE
 ```
 
 ### Cleaning up old Docker images

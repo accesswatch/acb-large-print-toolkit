@@ -6,6 +6,10 @@
 {% block content %}
 <p>Your feedback has been recorded. We appreciate you taking the time to help improve the tool.</p>
 
+{% if issue_url %}
+<p>Your feedback is now tracked as a work item: <a href="{{ issue_url }}">{{ issue_url }}</a></p>
+{% endif %}
+
 <p>
   <button type="button" class="btn-secondary" onclick="history.back();">Go Back</button>
   <noscript><span class="help-text"> (JavaScript is required for Go Back. Use your browser's back button instead.)</span></noscript>
