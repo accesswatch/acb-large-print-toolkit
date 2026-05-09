@@ -2,7 +2,7 @@
 
 ## Overview
 
-GLOW Accessibility Toolkit v2.5.0 is focused on user-facing quality in audit/fix outcomes, report-to-action workflow clarity, deployment-safe branding, and feature-gated consistency. This release builds directly on the v2.0.0 foundation and removes several day-to-day friction points that affected real workflows.
+GLOW v2.5.0 is focused on user-facing quality in audit/fix outcomes, report-to-action workflow clarity, deployment-safe branding, and feature-gated consistency. This release builds directly on the v2.0.0 foundation and removes several day-to-day friction points that affected real workflows.
 
 Important release posture: AI features are currently disabled by default in production and staging. This does not reduce core capability in any way for primary workflows.
 

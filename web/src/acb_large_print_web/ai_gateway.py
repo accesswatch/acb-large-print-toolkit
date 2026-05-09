@@ -44,7 +44,13 @@ from typing import Any
 
 import requests
 
-from .credentials import get_openrouter_api_key
+from .credentials import (
+    get_openrouter_api_key,
+    get_user_ollama_key,
+    get_user_ollama_model,
+    is_ollama_configured,
+    get_ollama_cloud_url,
+)
 
 log = logging.getLogger(__name__)
 
@@ -78,6 +84,9 @@ _OPENROUTER_BASE = "https://openrouter.ai/api/v1"
 _OPENROUTER_AUDIO_URL = f"{_OPENROUTER_BASE}/audio/transcriptions"
 _OPENROUTER_CHAT_URL = f"{_OPENROUTER_BASE}/chat/completions"
 _REQUEST_TIMEOUT = 60  # seconds
+
+# Ollama Cloud native API
+_OLLAMA_CHAT_TIMEOUT = 120  # Ollama cloud models can be slower on cold start
 _OPENROUTER_MAX_RETRIES = int(os.environ.get("OPENROUTER_MAX_RETRIES", "2"))
 _OPENROUTER_RETRY_BASE_SECONDS = float(os.environ.get("OPENROUTER_RETRY_BASE_SECONDS", "1.0"))
 
@@ -117,13 +126,20 @@ _UNCERTAINTY_MARKERS = frozenset(
 
 
 def is_ai_configured() -> bool:
-    """Return True if the OpenRouter API key is set (AI features enabled)."""
-    return bool(get_openrouter_api_key())
+    """Return True if any AI provider is available.
+
+    Ollama (user session key) takes priority over the server OpenRouter key.
+    Either alone is sufficient to enable text-based AI features.
+    """
+    return is_ollama_configured() or bool(get_openrouter_api_key())
 
 
 def is_whisper_configured() -> bool:
-    """Return True if OpenRouter is configured (BITS Whisperer uses the same key)."""
-    return is_ai_configured()
+    """Return True if OpenRouter is configured (BITS Whisperer uses the same key).
+
+    Ollama does not support audio transcription, so this checks OpenRouter only.
+    """
+    return bool(get_openrouter_api_key())
 
 
 # ---------------------------------------------------------------------------
@@ -415,6 +431,74 @@ def _provider_preferences(*, require_parameters: bool = False) -> dict[str, Any]
     return prefs
 
 
+def _ollama_completion(
+    model: str,
+    messages: list[dict],
+    session_hash: str,
+    max_tokens: int = 1200,
+) -> tuple[str, int, int, str]:
+    """Call Ollama Cloud chat API using the user's personal API key.
+
+    Uses the Ollama native /api/chat endpoint (not the OpenAI-compat layer)
+    since that is the documented path for cloud key authentication.
+
+    Returns (text, prompt_tokens, completion_tokens, model_name).
+    Raises RuntimeError if the key is missing or the request fails.
+    """
+    api_key = get_user_ollama_key()
+    if not api_key:
+        raise RuntimeError("No Ollama API key in session.")
+
+    base_url = get_ollama_cloud_url()
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json",
+    }
+    payload: dict[str, Any] = {
+        "model": model,
+        "messages": messages,
+        "stream": False,
+        "options": {"num_predict": max_tokens},
+    }
+
+    try:
+        resp = requests.post(
+            f"{base_url}/chat",
+            json=payload,
+            headers=headers,
+            timeout=_OLLAMA_CHAT_TIMEOUT,
+        )
+        if resp.status_code == 401:
+            raise RuntimeError(
+                "Ollama API key is invalid or has been revoked. "
+                "Please update your key in Settings."
+            )
+        if resp.status_code == 429:
+            raise RuntimeError(
+                "Ollama plan limit reached. Check your usage at ollama.com/settings."
+            )
+        resp.raise_for_status()
+    except requests.RequestException as exc:
+        raise RuntimeError(f"Ollama Cloud request failed: {exc}") from exc
+
+    data = resp.json()
+    # Ollama native response shape: {"message": {"role": "assistant", "content": "..."},
+    #   "prompt_eval_count": N, "eval_count": N, "model": "..."}
+    text = (data.get("message") or {}).get("content") or ""
+    prompt_tokens = int(data.get("prompt_eval_count") or 0)
+    completion_tokens = int(data.get("eval_count") or 0)
+    resolved_model = data.get("model") or model
+
+    log.info(
+        "Ollama usage: session=%s model=%s tokens=%d/%d",
+        session_hash[:16],
+        resolved_model,
+        prompt_tokens,
+        completion_tokens,
+    )
+    return text, prompt_tokens, completion_tokens, resolved_model
+
+
 def _openrouter_completion(
     model: str,
     messages: list[dict],
@@ -429,7 +513,7 @@ def _openrouter_completion(
     headers = {
         "Authorization": f"Bearer {api_key}",
         "HTTP-Referer": "https://glow.bits-acb.org",
-        "X-Title": "GLOW Accessibility Toolkit",
+        "X-Title": "GLOW",
         "Content-Type": "application/json",
     }
     model_candidates = _model_list(model)
@@ -531,15 +615,34 @@ def chat(
 ) -> tuple[str, bool]:
     """Run a chat completion through the AI gateway.
 
+    Routes to Ollama Cloud when the user has provided their own key;
+    falls back to OpenRouter when only the server key is configured.
+
     Returns:
         (answer_text, was_escalated)
 
     Raises:
-        RuntimeError: if AI is not configured or budget/quota is exhausted.
+        RuntimeError: if no AI provider is configured or limits are reached.
     """
     if not is_ai_configured():
         raise RuntimeError("AI is not configured on this server.")
 
+    # --- Ollama Cloud path (user-supplied key) ---
+    if is_ollama_configured():
+        messages: list[dict] = [{"role": "system", "content": system_prompt}]
+        if conversation_history:
+            messages.extend(conversation_history)
+        if document_text:
+            messages.append(
+                {"role": "user", "content": f"Document excerpt (first 4000 chars):\n{document_text[:4000]}"}
+            )
+        messages.append({"role": "user", "content": question})
+        model = get_user_ollama_model()
+        answer, in_tok, out_tok, resolved = _ollama_completion(model, messages, session_hash)
+        _record_usage(session_hash, "chat", resolved, in_tok, out_tok, escalated=False)
+        return answer, False
+
+    # --- OpenRouter path (server key) ---
     if is_budget_exhausted():
         raise RuntimeError(
             "The monthly AI budget has been reached. AI features will resume next month."
@@ -549,30 +652,30 @@ def chat(
     default_model = str(cfg["default_model"])
     fallback_model = str(cfg["fallback_model"])
 
-    messages: list[dict] = [{"role": "system", "content": system_prompt}]
+    or_messages: list[dict] = [{"role": "system", "content": system_prompt}]
     if conversation_history:
-        messages.extend(conversation_history)
+        or_messages.extend(conversation_history)
     if document_text:
-        messages.append(
+        or_messages.append(
             {
                 "role": "user",
                 "content": f"Document excerpt (first 4000 chars):\n{document_text[:4000]}",
             }
         )
-    messages.append({"role": "user", "content": question})
+    or_messages.append({"role": "user", "content": question})
 
     # --- Try default (free) model first ---
     try:
         answer, in_tok, out_tok, resolved_model = _openrouter_completion(
             default_model,
-            messages,
+            or_messages,
             session_hash,
         )
     except Exception as exc:
         log.warning("Default model failed (%s), escalating: %s", default_model, exc)
         answer, in_tok, out_tok, resolved_model = _openrouter_completion(
             fallback_model,
-            messages,
+            or_messages,
             session_hash,
         )
         _record_usage(session_hash, "chat", resolved_model, in_tok, out_tok, escalated=True)
@@ -584,7 +687,7 @@ def chat(
         try:
             escalated_answer, in_tok2, out_tok2, resolved_fallback_model = _openrouter_completion(
                 fallback_model,
-                messages,
+                or_messages,
                 session_hash,
             )
             _record_usage(
@@ -622,7 +725,7 @@ def describe_image(
     headers = {
         "Authorization": f"Bearer {api_key}",
         "HTTP-Referer": "https://glow.bits-acb.org",
-        "X-Title": "GLOW Accessibility Toolkit",
+        "X-Title": "GLOW",
         "Content-Type": "application/json",
     }
 
@@ -744,7 +847,7 @@ def transcribe(
         headers = {
             "Authorization": f"Bearer {api_key}",
             "HTTP-Referer": "https://glow.bits-acb.org",
-            "X-Title": "GLOW Accessibility Toolkit",
+            "X-Title": "GLOW",
         }
         try:
             with open(audio_path, "rb") as f:
@@ -911,7 +1014,7 @@ def _transcribe_via_input_audio(
     headers = {
         "Authorization": f"Bearer {api_key}",
         "HTTP-Referer": "https://glow.bits-acb.org",
-        "X-OpenRouter-Title": "GLOW Accessibility Toolkit",
+        "X-OpenRouter-Title": "GLOW",
         "Content-Type": "application/json",
     }
     resp = requests.post(
@@ -1031,7 +1134,7 @@ def get_model_catalog() -> list[dict[str, Any]]:
     headers = {
         "Authorization": f"Bearer {api_key}",
         "HTTP-Referer": "https://glow.bits-acb.org",
-        "X-Title": "GLOW Accessibility Toolkit",
+        "X-Title": "GLOW",
     }
     try:
         resp = requests.get(f"{_OPENROUTER_BASE}/models", headers=headers, timeout=20)

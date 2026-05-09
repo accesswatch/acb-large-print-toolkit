@@ -2,7 +2,7 @@
 
 ## Overview
 
-GLOW Accessibility Toolkit v2.0.0 is now released with a complete overhaul of web accessibility, form state management, safe deployment operations, and a cloud-based AI architecture for chat and transcription with privacy-aware controls.
+GLOW v2.0.0 is now released with a complete overhaul of web accessibility, form state management, safe deployment operations, and a cloud-based AI architecture for chat and transcription with privacy-aware controls.
 
 ---
 

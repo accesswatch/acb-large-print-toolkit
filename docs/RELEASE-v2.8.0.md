@@ -2,7 +2,7 @@
 
 ## Overview
 
-GLOW Accessibility Toolkit v2.8.0 is a community-driven release. Every feature in this release was sourced directly from requests made by members of the BITS community and the broader blind and low-vision community who rely on GLOW to make documents readable. Thank you to everyone who filed suggestions, participated in testing, and shared real-world feedback across the 2.7.0 and earlier releases. This release is yours.
+GLOW v2.8.0 is a community-driven release. Every feature in this release was sourced directly from requests made by members of the BITS community and the broader blind and low-vision community who rely on GLOW to make documents readable. Thank you to everyone who filed suggestions, participated in testing, and shared real-world feedback across the 2.7.0 and earlier releases. This release is yours.
 
 Core highlights:
 

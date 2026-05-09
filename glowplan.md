@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This document is the definitive plan for the entire GLOW Accessibility Toolkit. It covers every current feature, every planned enhancement, and a comprehensive UX redesign strategy that addresses all capabilities together.
+This document is the definitive plan for the entire GLOW. It covers every current feature, every planned enhancement, and a comprehensive UX redesign strategy that addresses all capabilities together.
 
 GLOW is a multi-surface accessibility toolkit that helps authors, designers, developers, and accessibility specialists create, validate, transform, and deliver accessible content across every stage of the content lifecycle. It enforces the American Council of the Blind Large Print Guidelines (revised May 6, 2025), Microsoft Accessibility Checker rules, and WCAG 2.2 AA standards.
 

@@ -79,7 +79,7 @@ Recommended workaround: separate title and author into distinct styled paragraph
 
 No. AFB guidance for JVIB is an academic manuscript submission style (for example, 12pt Calibri and journal-focused formatting), not a large-print production standard.
 
-For large-print production in this toolkit, use ACB (default) or APH profiles.
+For large-print production in GLOW, use ACB (default) or APH profiles.
 
 </details>
 

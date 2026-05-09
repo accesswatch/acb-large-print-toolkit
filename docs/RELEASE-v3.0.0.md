@@ -2,7 +2,7 @@
 
 ## Overview
 
-GLOW Accessibility Toolkit v3.0.0 is the community-driven milestone release that unifies the major capabilities introduced through the 2.5, 2.6, 2.7, 2.8, and 2.9 development cycles into one production baseline.
+GLOW v3.0.0 is the community-driven milestone release that unifies the major capabilities introduced through the 2.5, 2.6, 2.7, 2.8, and 2.9 development cycles into one production baseline.
 
 This release delivers a complete Speech Studio platform, adaptive real-world timing telemetry, deeper analytics visibility, and seamless cross-workflow handoffs from Quick Start and Convert.
 

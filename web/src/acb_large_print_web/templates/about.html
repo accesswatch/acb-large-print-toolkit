@@ -7,8 +7,36 @@
 
 <section>
   <h2 id="mission-heading">Mission</h2>
-  <p>The GLOW Accessibility Toolkit helps authors, publishers, and organizations produce documents that comply with the <a href="https://acb.org/large-print-guidelines">American Council of the Blind Large Print Guidelines</a> and <a href="https://www.w3.org/TR/WCAG22/">WCAG 2.2 Level AA</a>. The toolkit audits, fixes, and templates Word, Excel, PowerPoint, Markdown, PDF, and ePub documents for accessibility.</p>
+  <p>GLOW helps authors, publishers, and organizations produce documents that comply with the <a href="https://acb.org/large-print-guidelines">American Council of the Blind Large Print Guidelines</a> and <a href="https://www.w3.org/TR/WCAG22/">WCAG 2.2 Level AA</a>. GLOW audits, fixes, and templates Word, Excel, PowerPoint, Markdown, PDF, and ePub documents for accessibility.</p>
   <p><strong>GLOW</strong> stands for <strong>Guided Layout &amp; Output Workflow</strong> -- a guided, confidence-building accessibility experience built for real publishing workflows.</p>
+  <a href="#main" class="back-to-top">Back to top</a>
+</section>
+
+<section>
+  <h2 id="release-heading">What’s New in GLOW 6.0.0</h2>
+  <p>GLOW 6.0.0 opens the project to community contribution, adds a clearer open source release story, and lets users bring their own Ollama Cloud account for the AI workflows that make sense in this first release.</p>
+
+  {% if ai_ollama_active %}
+  <ul>
+    <li><strong>Personal Ollama Cloud AI:</strong> You are using your own Ollama account for AI-assisted heading detection and MarkItDown support.</li>
+    <li><strong>Session-limited AI:</strong> The current session keeps your AI settings and usage meter visible so you always know what is active right now.</li>
+    <li><strong>Feature-level control:</strong> Document Chat stays off for the Ollama-first release so the initial rollout stays focused and easy to trust.</li>
+  </ul>
+  {% elif ai_configured %}
+  <ul>
+    <li><strong>Cloud AI gateway:</strong> The shared AI path remains available for deployments that use the server-side key, with budget and quota controls.</li>
+    <li><strong>Feature summary:</strong> GLOW can help with text-focused AI workflows such as heading detection and document cleanup when AI is enabled.</li>
+    <li><strong>Usage tracking:</strong> The sidebar now reports AI use so operators and users can see what is happening during the session.</li>
+  </ul>
+  {% else %}
+  <p>AI is optional. If you do not enable it, the rest of GLOW still works exactly as before. When you are ready to try it, the short version is: GLOW can help with heading detection, document cleanup, and later Document Chat -- but it keeps those tools hidden until they are switched on.</p>
+  <ul>
+    <li><strong>Heading detection:</strong> Helps turn visual headings into semantic structure.</li>
+    <li><strong>MarkItDown support:</strong> Helps text extraction and cleanup for document workflows.</li>
+    <li><strong>Document Chat:</strong> Planned, but not part of the initial Ollama-first setup.</li>
+  </ul>
+  {% endif %}
+  <p><a href="{{ url_for('settings.settings_ai_page') }}">Open AI settings</a> to add a personal Ollama key and choose which AI features you want to use.</p>
   <a href="#main" class="back-to-top">Back to top</a>
 </section>
 
@@ -58,11 +86,11 @@
     <dd>A special interest affiliate of the American Council of the Blind. BITS members are professionals in the technology field who are blind or visually impaired. BITS sponsors this open source project to advance document accessibility tooling.</dd>
 
     <dt><a href="https://www.w3.org/WAI/">W3C Web Accessibility Initiative (WAI)</a></dt>
-    <dd>Develops the Web Content Accessibility Guidelines (WCAG), which this toolkit uses for digital content requirements including contrast, reflow, and line spacing.</dd>
+    <dd>Develops the Web Content Accessibility Guidelines (WCAG), which GLOW uses for digital content requirements including contrast, reflow, and line spacing.</dd>
 
     {% if feature_epub_enabled %}
     <dt><a href="https://daisy.org/">DAISY Consortium</a></dt>
-    <dd>An international association of libraries and organizations serving people with print disabilities. DAISY develops the <a href="https://daisy.github.io/ace/">Ace accessibility checker</a>, the <a href="https://github.com/daisy/a11y-meta-viewer">Accessibility Metadata Viewer</a>, and the <a href="https://kb.daisy.org/publishing/">Accessible Publishing Knowledge Base</a> used by this toolkit for ePub accessibility.</dd>
+    <dd>An international association of libraries and organizations serving people with print disabilities. DAISY develops the <a href="https://daisy.github.io/ace/">Ace accessibility checker</a>, the <a href="https://github.com/daisy/a11y-meta-viewer">Accessibility Metadata Viewer</a>, and the <a href="https://kb.daisy.org/publishing/">Accessible Publishing Knowledge Base</a> used by GLOW for ePub accessibility.</dd>
     {% endif %}
   </dl>
   <a href="#main" class="back-to-top">Back to top</a>
@@ -88,7 +116,7 @@
 
   <h3>Core Libraries</h3>
   <table>
-    <caption>Python libraries used by the GLOW Accessibility Toolkit</caption>
+    <caption>Python libraries used by the GLOW</caption>
     <thead>
       <tr>
         <th scope="col">Library</th>
@@ -497,7 +525,7 @@
 
 <section>
   <h2 id="stress-heading">Stress Testing</h2>
-  <p>The toolkit includes a reproducible synthetic Word-document stress harness for the heading-detection and fixing pipeline. The current corpus covers <strong>{{ stress_summary.total_heading_cases }}</strong> heading scenarios across <strong>{{ stress_summary.document_count }}</strong> generated documents.</p>
+  <p>GLOW includes a reproducible synthetic Word-document stress harness for the heading-detection and fixing pipeline. The current corpus covers <strong>{{ stress_summary.total_heading_cases }}</strong> heading scenarios across <strong>{{ stress_summary.document_count }}</strong> generated documents.</p>
   <p>These generated documents deliberately mix ACB-conformant content with failure patterns such as centered titles, justified paragraphs, hanging indents, faux headings, signature blocks, copied web formatting, and body-text emphasis drift. Each failure that proves useful is folded back into the audit rules, fixer behavior, or online help so the product learns from the corpus instead of letting that knowledge stay trapped in tests.</p>
   <ul>
     <li><strong>Detection coverage:</strong> {{ stress_summary.families|length }} scenario families spanning paste workflows, agendas, newsletters, policy manuals, flyers, and appendices.</li>
@@ -515,10 +543,10 @@
   <h2 id="acknowledgments-heading">Acknowledgments</h2>
   <p>This project would not be possible without the tireless advocacy of the American Council of the Blind and the volunteers who authored and maintain the <a href="https://acb.org/large-print-guidelines">ACB Large Print Guidelines</a>. Special thanks to the <a href="https://acb.org/board-publications">ACB Board of Publications</a> for establishing clear, enforceable standards that make printed and digital materials accessible to people who are blind or have low vision.</p>
   {% if feature_epub_enabled %}
-  <p>We gratefully acknowledge the <a href="https://daisy.org/">DAISY Consortium</a> for their leadership in accessible publishing. This toolkit relies on three DAISY projects: <a href="https://daisy.github.io/ace/">DAISY Ace</a> for EPUB accessibility validation, the <a href="https://github.com/daisy/a11y-meta-viewer">DAISY Accessibility Metadata Viewer</a> for human-readable display of EPUB accessibility metadata per the <a href="https://w3c.github.io/publ-a11y/a11y-meta-display-guide/2.0/draft/techniques/epub-metadata/">W3C Accessibility Metadata Display Guide 2.0</a>, and <a href="https://daisy.github.io/pipeline/">DAISY Pipeline 2</a> for advanced document-to-EPUB and EPUB-to-DAISY conversions that produce accessible publications for e-readers, refreshable braille displays, and DAISY players.</p>
+  <p>We gratefully acknowledge the <a href="https://daisy.org/">DAISY Consortium</a> for their leadership in accessible publishing. GLOW relies on three DAISY projects: <a href="https://daisy.github.io/ace/">DAISY Ace</a> for EPUB accessibility validation, the <a href="https://github.com/daisy/a11y-meta-viewer">DAISY Accessibility Metadata Viewer</a> for human-readable display of EPUB accessibility metadata per the <a href="https://w3c.github.io/publ-a11y/a11y-meta-display-guide/2.0/draft/techniques/epub-metadata/">W3C Accessibility Metadata Display Guide 2.0</a>, and <a href="https://daisy.github.io/pipeline/">DAISY Pipeline 2</a> for advanced document-to-EPUB and EPUB-to-DAISY conversions that produce accessible publications for e-readers, refreshable braille displays, and DAISY players.</p>
   {% endif %}
   <p>The HTML conversion engine is powered by <a href="https://pandoc.org/">Pandoc</a>, the universal document converter created by John MacFarlane. Pandoc transforms Markdown, Word, reStructuredText, OpenDocument, Rich Text, and ePub files into accessible HTML with ACB Large Print styling.</p>
-  <p>Thanks also to the <a href="https://www.bits-acb.org">BITS</a> community for testing, feedback, and ongoing development support, and to the open source maintainers whose libraries make this toolkit possible.</p>
+  <p>Thanks also to the <a href="https://www.bits-acb.org">BITS</a> community for testing, feedback, and ongoing development support, and to the open source maintainers whose libraries make GLOW possible.</p>
   <p>A heartfelt thank you to <a href="https://github.com/jamalmazrui">Jamal Mazrui</a>, whose decades of pioneering work in assistive technology and accessibility tooling continue to inspire developers across the community. Two of his projects directly shaped GLOW 2.6.0: <a href="https://github.com/jamalmazrui/extCheck">extCheck</a>, a beautifully comprehensive 73-rule document accessibility auditor for Word, Excel, PowerPoint, and Markdown, and <a href="https://github.com/jamalmazrui/xlHeaders">xlHeaders</a>, an elegant VBScript utility that annotates Excel workbooks with named ranges so screen readers can announce column and row headers in context. GLOW's new PowerPoint timing and animation checks, Markdown quality checks, Excel blank-row and default table-name rules, and the xlHeaders-inspired named-range fixer all trace their lineage to Jamal's open-source generosity. His tools are free, practical, and built with the lived experience of a screen reader user — exactly the kind of accessibility leadership this community needs.</p>
   <a href="#main" class="back-to-top">Back to top</a>
 </section>

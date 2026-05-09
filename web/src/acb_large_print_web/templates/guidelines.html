@@ -9,7 +9,7 @@
 {% else %}
 <p>This page presents the complete ACB Large Print Guidelines (revised May 6, 2025) supplemented with WCAG 2.2 AA digital accessibility requirements. These are the rules enforced by the <a href="{{ url_for('audit.audit_form') }}">audit</a> and <a href="{{ url_for('fix.fix_form') }}">fix</a> tools.</p>
 {% endif %}
-<p>For APH source guidance, see <a href="https://www.aph.org/resources/large-print-guidelines/">APH: Guidelines for the Development of Documents in Large Print</a> (includes APH-hosted DOCX/PDF guideline downloads). APH alignment in this toolkit is fully integrated for the Release 1.2.0 submission workflow.</p>
+<p>For APH source guidance, see <a href="https://www.aph.org/resources/large-print-guidelines/">APH: Guidelines for the Development of Documents in Large Print</a> (includes APH-hosted DOCX/PDF guideline downloads). APH alignment in GLOW is fully integrated for the Release 1.2.0 submission workflow.</p>
 
 <section id="section-rules-jump">
   <h2>Deep Dive: All Rules Reference</h2>
@@ -22,22 +22,22 @@
   <details class="guideline-accordion" open>
     <summary>Which standard should I use?</summary>
     {% if brand_is_uarizona %}
-    <p><strong>Large-print and APH guidance are supported in this toolkit.</strong></p>
+    <p><strong>Large-print and APH guidance are supported in GLOW.</strong></p>
     {% else %}
-    <p><strong>ACB and APH are the two large-print production standards supported in this toolkit.</strong></p>
+    <p><strong>ACB and APH are the two large-print production standards supported in GLOW.</strong></p>
     {% endif %}
     <ul>
       {% if not brand_is_uarizona %}
       <li><strong>ACB:</strong> best fit for consumer and member publications. This is the default baseline in GLOW.</li>
       {% endif %}
       <li><strong>APH:</strong> best fit for educational and student-facing large-print workflows, with full Release 1.2.0 submission alignment in the APH Submission profile.</li>
-      <li><strong>AFB JVIB style:</strong> not a large-print production standard and not offered as a fix/audit mode in this toolkit. It is a manuscript submission standard for academic publishing in the <em>Journal of Visual Impairment &amp; Blindness</em>.</li>
+      <li><strong>AFB JVIB style:</strong> not a large-print production standard and not offered as a fix/audit mode in GLOW. It is a manuscript submission standard for academic publishing in the <em>Journal of Visual Impairment &amp; Blindness</em>.</li>
     </ul>
     {% if brand_is_uarizona %}
-    <p>Use AFB JVIB guidance directly when preparing an academic manuscript for JVIB submission. For large-print production output, use the profiles available in this toolkit.</p>
+    <p>Use AFB JVIB guidance directly when preparing an academic manuscript for JVIB submission. For large-print production output, use the profiles available in GLOW.</p>
     <p><strong>Reference links:</strong> <a href="https://www.aph.org/resources/large-print-guidelines/">APH large-print guidelines</a> and <a href="https://afb.org/news-publications/publications/jvib/authors/afb-style-guidelines">AFB JVIB style guidelines</a>.</p>
     {% else %}
-    <p>Use AFB JVIB guidance directly when preparing an academic manuscript for JVIB submission. For large-print production output, use ACB or APH profiles in this toolkit.</p>
+    <p>Use AFB JVIB guidance directly when preparing an academic manuscript for JVIB submission. For large-print production output, use ACB or APH profiles in GLOW.</p>
     <p><strong>Reference links:</strong> <a href="https://www.bits-acb.org">BITS / ACB</a>, <a href="https://www.aph.org/resources/large-print-guidelines/">APH large-print guidelines</a>, and <a href="https://afb.org/news-publications/publications/jvib/authors/afb-style-guidelines">AFB JVIB style guidelines</a>.</p>
     {% endif %}
   </details>
@@ -302,10 +302,10 @@
 <section id="section-aph-submission">
   <h2>13. APH Submission Profile (Release 1.2.0)</h2>
   <details class="guideline-accordion" open>
-    <summary>How APH submission is handled in this toolkit</summary>
+    <summary>How APH submission is handled in GLOW</summary>
     <p>Release 1.2.0 introduces an APH submission profile workflow on top of the existing ACB and WCAG rules. The goal is to keep one canonical rule engine while making submission evidence explicit and traceable.</p>
     {% if brand_is_uarizona %}
-    <p><strong>Profile model:</strong> The toolkit's baseline, APH submission, and combined strict profiles share the same core engine and differ by rule applicability and reporting scope.</p>
+    <p><strong>Profile model:</strong> GLOW's baseline, APH submission, and combined strict profiles share the same core engine and differ by rule applicability and reporting scope.</p>
     {% else %}
     <p><strong>Profile model:</strong> ACB-only, APH submission, and combined strict profiles share the same core engine and differ by rule applicability and reporting scope.</p>
     {% endif %}

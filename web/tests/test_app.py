@@ -118,7 +118,7 @@ class TestPageLoads:
     def test_home(self, client):
         resp = client.get("/")
         assert resp.status_code == 200
-        assert b"GLOW Accessibility Toolkit" in resp.data
+        assert b"GLOW" in resp.data
 
     def test_home_footer_shows_status_link(self, client):
         resp = client.get("/")

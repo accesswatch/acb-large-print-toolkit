@@ -35,7 +35,7 @@ def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="acb-large-print",
         description=(
-            "GLOW Accessibility Toolkit -- audit, fix, and create "
+            "GLOW -- audit, fix, and create "
             "Office document templates that comply with the American "
             "Council of the Blind Large Print Guidelines."
         ),

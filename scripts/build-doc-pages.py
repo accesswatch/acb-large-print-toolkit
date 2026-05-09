@@ -81,7 +81,7 @@ SOURCES: dict[str, tuple[Path, Path, dict[str, str | None]]] = {
         },
     ),
     "announcement": (
-        REPO_ROOT / "docs" / "announcement-v4.0.0-combined.md",
+        REPO_ROOT / "docs" / "announcement-v6.0.0-combined.md",
         PARTIALS_DIR / "announcement_body.html",
         {
             "toc_heading": None,

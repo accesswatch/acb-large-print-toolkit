@@ -1,4 +1,4 @@
-# GLOW Accessibility Toolkit — Product Roadmap
+# GLOW — Product Roadmap
 
 **Last updated:** May 2026  
 **Current version:** 4.0.0  

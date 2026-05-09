@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document describes the safe, failsafe deployment process for the GLOW Accessibility Toolkit web application. The strategy prioritizes **zero data loss**, **automatic rollback on failure**, and **transparent user communication** during maintenance.
+This document describes the safe, failsafe deployment process for the GLOW web application. The strategy prioritizes **zero data loss**, **automatic rollback on failure**, and **transparent user communication** during maintenance.
 
 Before production deployment, the preferred workstation gate is a WSL-hosted Docker staging run plus focused regressions. That catches container/runtime differences earlier while keeping the production server deploy script narrow and predictable.
 

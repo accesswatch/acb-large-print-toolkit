@@ -154,13 +154,6 @@
     data-searchable="{{ rule.rule_id | lower }} {{ rule.description | lower }}{% if rule.full_description %} {{ rule.full_description | lower }}{% endif %}">
 
     <summary class="rule-summary">
-      <span class="rule-select-control">
-        <input
-          type="checkbox"
-          class="rule-select-checkbox"
-          data-rule-id="{{ rule.rule_id }}"
-          aria-label="Include {{ rule.rule_id | replace('-', ' ') }} in current selection">
-      </span>
       <span class="rule-id" aria-hidden="true">{{ rule.rule_id | replace('-', ' ') }}</span>
       <h3 class="rule-title-heading">
         <span class="rule-desc" aria-hidden="true">{{ rule.description }}</span>
@@ -184,6 +177,16 @@
     </summary>
 
     <div class="rule-body">
+      <div class="rule-select-control rule-select-control--body">
+        <input
+          type="checkbox"
+          id="select-{{ rule.rule_id }}"
+          class="rule-select-checkbox"
+          data-rule-id="{{ rule.rule_id }}"
+          aria-label="Include {{ rule.rule_id | replace('-', ' ') }} in current selection">
+        <label for="select-{{ rule.rule_id }}" class="rule-select-inline-label">Include in current selection</label>
+      </div>
+
       <dl class="rule-meta">
         <div class="rule-meta-row">
           <dt>Rule ID</dt>
@@ -419,9 +422,19 @@ details[open] > .rule-summary::before { content: "▼"; }
   margin-right: 0.25rem;
 }
 
+.rule-select-control--body {
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
 .rule-select-checkbox {
   width: 1.1rem;
   height: 1.1rem;
+}
+
+.rule-select-inline-label {
+  font-size: 0.9rem;
+  font-weight: 600;
 }
 
 .rule-id {

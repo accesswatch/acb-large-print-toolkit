@@ -346,7 +346,7 @@ When the user asks to convert Markdown to ACB-compliant HTML:
 
 ## Complementary Markdown Accessibility Agents
 
-This toolkit includes the general-purpose Markdown Accessibility agents from the accessibility agents ecosystem. These handle WCAG compliance concerns that go beyond ACB Large Print formatting:
+GLOW includes the general-purpose Markdown Accessibility agents from the accessibility agents ecosystem. These handle WCAG compliance concerns that go beyond ACB Large Print formatting:
 
 - **markdown-a11y-assistant** -- Orchestrator for full 9-domain WCAG audits (links, alt text, headings, tables, emoji, Mermaid/ASCII diagrams, em-dashes, anchors, plain language)
 - **markdown-scanner** -- Internal helper that scans a single file and returns structured findings

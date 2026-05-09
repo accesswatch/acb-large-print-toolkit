@@ -147,7 +147,7 @@ def _build_single_html(
       <!-- Header -->
       <tr>
         <td style="background:#1a1a1a;padding:24px 32px;">
-          <p style="margin:0;font-family:Arial,sans-serif;font-size:22px;font-weight:700;color:#fff;">GLOW Accessibility Toolkit</p>
+          <p style="margin:0;font-family:Arial,sans-serif;font-size:22px;font-weight:700;color:#fff;">GLOW</p>
           <p style="margin:4px 0 0;font-family:Arial,sans-serif;font-size:18px;color:#ccc;">Audit Report</p>
         </td>
       </tr>
@@ -186,7 +186,7 @@ def _build_single_html(
       <!-- Footer -->
       <tr>
         <td style="background:#f4f4f4;padding:20px 32px;border-top:1px solid #ddd;">
-          <p style="margin:0;font-family:Arial,sans-serif;font-size:16px;color:#666;">Sent by <strong>GLOW Accessibility Toolkit</strong> &mdash; ACB Large Print Guidelines &amp; WCAG 2.2 AA compliance auditing.</p>
+          <p style="margin:0;font-family:Arial,sans-serif;font-size:16px;color:#666;">Sent by <strong>GLOW</strong> &mdash; ACB Large Print Guidelines &amp; WCAG 2.2 AA compliance auditing.</p>
           <p style="margin:8px 0 0;font-family:Arial,sans-serif;font-size:16px;color:#666;">This report was sent because you requested it during an audit session. Your email address was not stored.</p>
         </td>
       </tr>
@@ -227,7 +227,7 @@ def _build_batch_html(
       <!-- Header -->
       <tr>
         <td style="background:#1a1a1a;padding:24px 32px;">
-          <p style="margin:0;font-family:Arial,sans-serif;font-size:22px;font-weight:700;color:#fff;">GLOW Accessibility Toolkit</p>
+          <p style="margin:0;font-family:Arial,sans-serif;font-size:22px;font-weight:700;color:#fff;">GLOW</p>
           <p style="margin:4px 0 0;font-family:Arial,sans-serif;font-size:18px;color:#ccc;">Batch Audit Report &mdash; {len(file_summaries)} file{"s" if len(file_summaries) != 1 else ""}</p>
         </td>
       </tr>
@@ -277,7 +277,7 @@ def _build_batch_html(
       <!-- Footer -->
       <tr>
         <td style="background:#f4f4f4;padding:20px 32px;border-top:1px solid #ddd;">
-          <p style="margin:0;font-family:Arial,sans-serif;font-size:16px;color:#666;">Sent by <strong>GLOW Accessibility Toolkit</strong> &mdash; ACB Large Print Guidelines &amp; WCAG 2.2 AA compliance auditing.</p>
+          <p style="margin:0;font-family:Arial,sans-serif;font-size:16px;color:#666;">Sent by <strong>GLOW</strong> &mdash; ACB Large Print Guidelines &amp; WCAG 2.2 AA compliance auditing.</p>
           <p style="margin:8px 0 0;font-family:Arial,sans-serif;font-size:16px;color:#666;">This report was sent because you requested it during an audit session. Your email address was not stored.</p>
         </td>
       </tr>
@@ -326,7 +326,7 @@ def send_audit_report_email(
         "Subject": subject,
         "HtmlBody": html_body,
         "TextBody": (
-            f"GLOW Accessibility Toolkit -- Audit Report\n\n"
+            f"GLOW -- Audit Report\n\n"
             f"File: {filename}\n"
             f"Format: {doc_format.upper()}\n"
             f"Score: {score}/100 (Grade {grade})\n"
@@ -420,7 +420,7 @@ def send_batch_audit_report_email(
         "Subject": subject,
         "HtmlBody": html_body,
         "TextBody": (
-            f"GLOW Accessibility Toolkit -- Batch Audit Report\n\n"
+            f"GLOW -- Batch Audit Report\n\n"
             f"Files audited: {file_count}\n"
             f"Average score: {avg_score}/100\n"
             f"Total findings: {total_findings}\n\n"

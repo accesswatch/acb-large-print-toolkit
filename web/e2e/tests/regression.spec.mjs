@@ -44,7 +44,7 @@ test.describe('GLOW web regression suite', () => {
   test('home page loads and references WCAG 2.2', async ({ page }) => {
     await page.goto('/');
     await ensureConsent(page);
-    await expect(page.getByRole('heading', { level: 1, name: /GLOW Accessibility Toolkit/i })).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1, name: /GLOW/i })).toBeVisible();
     await expect(page.getByText(/WCAG\s*2\.2(?:\s*AA)?/i).first()).toBeVisible();
   });
 
@@ -143,6 +143,13 @@ test.describe('GLOW web regression suite', () => {
     const crawlLinks = page.locator('input[name="crawl_links"]');
     if (await crawlLinks.count()) {
       await crawlLinks.uncheck();
+    }
+
+    // Keep this flow deterministic for CI: background mode renders a job page,
+    // while this regression asserts the final results page and artifact links.
+    const runInBackground = page.locator('input[name="run_in_background"]');
+    if (await runInBackground.count()) {
+      await runInBackground.uncheck();
     }
 
     await page.locator('#max_pages').fill('1');

@@ -41,7 +41,8 @@ from __future__ import annotations
 
 import os
 
-from .ai_gateway import is_ai_configured
+from .ai_gateway import is_ai_configured, is_whisper_configured
+from .credentials import is_ollama_configured, is_ollama_feature_enabled
 from . import feature_flags
 
 
@@ -66,32 +67,57 @@ def _env_flag(name: str, default: bool = False) -> bool:
 
 
 def _master_ai_enabled() -> bool:
-    """Return True when AI is configured and globally enabled.
+    """Return True when any AI provider is configured and globally enabled.
 
-    Defaults are conservative: AI features are OFF unless explicitly enabled
-    via environment variables or persisted flags.
+    A user-supplied Ollama key satisfies the provider check on its own;
+    the server-side OpenRouter key is not required when Ollama is active.
     """
     return is_ai_configured() and _env_flag("GLOW_ENABLE_AI", False)
 
 
+def _ollama_feature_enabled(env_name: str, ollama_feature: str) -> bool:
+    """Return True when Ollama is active, the server env flag is on, AND the
+    user has enabled this specific feature in their session settings.
+
+    ``ollama_feature`` is one of the keys in OLLAMA_FEATURE_DEFAULTS
+    (e.g. 'heading_fix', 'markitdown', 'chat').
+    """
+    return (
+        is_ollama_configured()
+        and _env_flag("GLOW_ENABLE_AI", False)
+        and _env_flag(env_name, True)
+        and is_ollama_feature_enabled(ollama_feature)
+    )
+
+
+def _openrouter_feature_enabled(env_name: str) -> bool:
+    """Return True when OpenRouter is configured and the feature flag is on."""
+    from .ai_gateway import is_whisper_configured as _wc
+    return _wc() and _env_flag("GLOW_ENABLE_AI", False) and _env_flag(env_name, True)
+
+
 def _feature_enabled(env_name: str) -> bool:
-    """Return True when the master and feature gates are both enabled."""
+    """Return True when the master gate and feature flag are both on."""
     return _master_ai_enabled() and _env_flag(env_name, True)
 
 
 def ai_chat_enabled() -> bool:
     """Chat tab and all chat routes are visible and functional."""
-    return _feature_enabled("GLOW_ENABLE_AI_CHAT")
+    return _feature_enabled("GLOW_ENABLE_AI_CHAT") or _ollama_feature_enabled("GLOW_ENABLE_AI_CHAT", "chat")
 
 
 def ai_whisperer_enabled() -> bool:
-    """Return whether the BITS Whisperer UI and routes are available."""
-    return _feature_enabled("GLOW_ENABLE_AI_WHISPERER")
+    """Return whether the BITS Whisperer UI and routes are available.
+
+    Whisperer requires audio transcription -- Ollama does not support this.
+    Only OpenRouter is checked.
+    """
+    return _openrouter_feature_enabled("GLOW_ENABLE_AI_WHISPERER")
 
 
 def ai_heading_fix_enabled() -> bool:
     """AI-powered heading detection in the Fix workflow is available."""
-    return _feature_enabled("GLOW_ENABLE_AI_HEADING_FIX")
+    return _feature_enabled("GLOW_ENABLE_AI_HEADING_FIX") or _ollama_feature_enabled("GLOW_ENABLE_AI_HEADING_FIX", "heading_fix")
 
 
 def ai_alt_text_enabled() -> bool:
@@ -101,14 +127,16 @@ def ai_alt_text_enabled() -> bool:
 
 def ai_markitdown_llm_enabled() -> bool:
     """Return whether MarkItDown LLM enhancements are available."""
-    return _feature_enabled("GLOW_ENABLE_AI_MARKITDOWN_LLM")
+    return _feature_enabled("GLOW_ENABLE_AI_MARKITDOWN_LLM") or _ollama_feature_enabled("GLOW_ENABLE_AI_MARKITDOWN_LLM", "markitdown")
 
 
 def get_all_flags() -> dict[str, bool]:
     """Return all AI feature flags as a dict for template injection."""
     configured = _master_ai_enabled()
+    ollama_active = is_ollama_configured()
     return {
         "ai_configured": configured,
+        "ai_ollama_active": ollama_active,
         "ai_chat_enabled": ai_chat_enabled(),
         "ai_whisperer_enabled": ai_whisperer_enabled(),
         "ai_heading_fix_enabled": ai_heading_fix_enabled(),
