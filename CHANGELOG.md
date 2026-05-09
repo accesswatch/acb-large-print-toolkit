@@ -2,7 +2,7 @@
 
 All notable changes to the GLOW Accessibility Toolkit are documented in this file. The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-Releases are tagged in the [GitHub repository](https://github.com/accesswatch/acb-large-print-toolkit). Dates are in Pacific Time (UTC-7).
+Releases are tagged in the [GitHub repository](https://github.com/Community-Access/glow). Dates are in Pacific Time (UTC-7).
 
 ---
 

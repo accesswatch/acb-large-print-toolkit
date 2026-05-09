@@ -19,7 +19,7 @@
   </Hosts>
 
   <DefaultSettings>
-    <SourceLocation DefaultValue="https://accesswatch.github.io/acb-large-print-toolkit/office-addin/taskpane.html" />
+    <SourceLocation DefaultValue="https://community-access.github.io/glow/office-addin/taskpane.html" />
   </DefaultSettings>
 
   <Permissions>ReadWriteDocument</Permissions>
@@ -96,13 +96,13 @@
 
     <Resources>
       <bt:Images>
-        <bt:Image id="icon16" DefaultValue="https://accesswatch.github.io/acb-large-print-toolkit/office-addin/assets/icon-16.png" />
-        <bt:Image id="icon32" DefaultValue="https://accesswatch.github.io/acb-large-print-toolkit/office-addin/assets/icon-32.png" />
-        <bt:Image id="icon80" DefaultValue="https://accesswatch.github.io/acb-large-print-toolkit/office-addin/assets/icon-80.png" />
+        <bt:Image id="icon16" DefaultValue="https://community-access.github.io/glow/office-addin/assets/icon-16.png" />
+        <bt:Image id="icon32" DefaultValue="https://community-access.github.io/glow/office-addin/assets/icon-32.png" />
+        <bt:Image id="icon80" DefaultValue="https://community-access.github.io/glow/office-addin/assets/icon-80.png" />
       </bt:Images>
       <bt:Urls>
-        <bt:Url id="taskpaneUrl" DefaultValue="https://accesswatch.github.io/acb-large-print-toolkit/office-addin/taskpane.html" />
-        <bt:Url id="commandsUrl" DefaultValue="https://accesswatch.github.io/acb-large-print-toolkit/office-addin/commands.html" />
+        <bt:Url id="taskpaneUrl" DefaultValue="https://community-access.github.io/glow/office-addin/taskpane.html" />
+        <bt:Url id="commandsUrl" DefaultValue="https://community-access.github.io/glow/office-addin/commands.html" />
         <bt:Url id="learnMoreUrl" DefaultValue="https://www.bitsonline.org" />
       </bt:Urls>
       <bt:ShortStrings>
@@ -192,13 +192,13 @@
 
       <Resources>
         <bt:Images>
-          <bt:Image id="icon16" DefaultValue="https://accesswatch.github.io/acb-large-print-toolkit/office-addin/assets/icon-16.png" />
-          <bt:Image id="icon32" DefaultValue="https://accesswatch.github.io/acb-large-print-toolkit/office-addin/assets/icon-32.png" />
-          <bt:Image id="icon80" DefaultValue="https://accesswatch.github.io/acb-large-print-toolkit/office-addin/assets/icon-80.png" />
+          <bt:Image id="icon16" DefaultValue="https://community-access.github.io/glow/office-addin/assets/icon-16.png" />
+          <bt:Image id="icon32" DefaultValue="https://community-access.github.io/glow/office-addin/assets/icon-32.png" />
+          <bt:Image id="icon80" DefaultValue="https://community-access.github.io/glow/office-addin/assets/icon-80.png" />
         </bt:Images>
         <bt:Urls>
-          <bt:Url id="taskpaneUrl" DefaultValue="https://accesswatch.github.io/acb-large-print-toolkit/office-addin/taskpane.html" />
-          <bt:Url id="commandsUrl" DefaultValue="https://accesswatch.github.io/acb-large-print-toolkit/office-addin/commands.html" />
+          <bt:Url id="taskpaneUrl" DefaultValue="https://community-access.github.io/glow/office-addin/taskpane.html" />
+          <bt:Url id="commandsUrl" DefaultValue="https://community-access.github.io/glow/office-addin/commands.html" />
           <bt:Url id="learnMoreUrl" DefaultValue="https://www.bitsonline.org" />
         </bt:Urls>
         <bt:ShortStrings>

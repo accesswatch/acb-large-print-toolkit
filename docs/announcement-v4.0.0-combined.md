@@ -118,7 +118,7 @@ GLOW 4.0.0 release artifacts:
 
 Repository release tag:
 
-**https://github.com/accesswatch/acb-large-print-toolkit/releases/tag/v4.0.0**
+**https://github.com/Community-Access/glow/releases/tag/v4.0.0**
 
 ## Closing
 

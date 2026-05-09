@@ -1378,7 +1378,7 @@ Yes. The ACB formatting rules (font, size, spacing, emphasis) apply regardless o
 
 ### Is there a desktop version?
 
-Yes. The GLOW Accessibility Toolkit includes a desktop application with a graphical wizard interface, command-line tools, and batch processing support. It runs on Windows without requiring an internet connection. Download from the [project releases page](https://github.com/accesswatch/acb-large-print-toolkit/releases).
+Yes. The GLOW Accessibility Toolkit includes a desktop application with a graphical wizard interface, command-line tools, and batch processing support. It runs on Windows without requiring an internet connection. Download from the [project releases page](https://github.com/Community-Access/glow/releases).
 
 ### Where can I read the ACB Large Print Guidelines?
 
@@ -1526,7 +1526,7 @@ If **Remember my settings** is enabled, these defaults persist in local browser 
     *   **Undo Changes**: discard unsaved changes and restore your previous rule set.
 - **Submit feedback** -- use the Feedback page in the web app to report bugs, request features, or share your experience
 - **About page** -- mission, organizations, standards, and open source dependencies
-- **GitHub Issues** -- [report bugs or request features](https://github.com/accesswatch/acb-large-print-toolkit/issues)
+- **GitHub Issues** -- [report bugs or request features](https://github.com/Community-Access/glow/issues)
 - **DAISY Knowledge Base** -- [remediation guidance for ePub issues](https://kb.daisy.org/publishing/)
 - **Microsoft Accessibility Checker Guide** -- [Microsoft's guide to the Office accessibility checker](https://support.microsoft.com/en-us/office/improve-accessibility-with-the-accessibility-checker-a16f6de0-2f39-4a2b-8bd8-5ad801426c7f)
 - **Project README** -- [README.md](../README.md)
@@ -2576,7 +2576,7 @@ By default:
 
 ### Can I audit multiple documents at once?
 
-The web tool processes one document at a time. For batch processing, use the [desktop application](https://github.com/accesswatch/acb-large-print-toolkit) which supports folder-level audits.
+The web tool processes one document at a time. For batch processing, use the [desktop application](https://github.com/Community-Access/glow) which supports folder-level audits.
 
 ### Why does the fix not change my headings?
 
@@ -2616,7 +2616,7 @@ Yes. The ACB formatting rules (font, size, spacing) apply regardless of language
 
 ### Is there a desktop version?
 
-Yes. The [GLOW Accessibility Toolkit](https://github.com/accesswatch/acb-large-print-toolkit) includes a desktop application with a graphical wizard interface, command-line tools, and batch processing support. It runs on Windows without requiring an internet connection.
+Yes. The [GLOW Accessibility Toolkit](https://github.com/Community-Access/glow) includes a desktop application with a graphical wizard interface, command-line tools, and batch processing support. It runs on Windows without requiring an internet connection.
 
 ### Where can I read the ACB Large Print Guidelines?
 
@@ -2651,7 +2651,7 @@ GLOW includes an admin-only sign-in and approval workflow for operational dashbo
 - **Web app product requirements and implementation log** -- [docs/prd.md](prd.md)
 - **Submit Feedback** -- use the Feedback page in the web app to report bugs, request features, or share your experience
 - **About This Project** -- mission, organizations, standards, and open source dependencies on the web app About page
-- **GitHub Issues** -- [report bugs or request features](https://github.com/accesswatch/acb-large-print-toolkit/issues) on the open source repository
+- **GitHub Issues** -- [report bugs or request features](https://github.com/Community-Access/glow/issues) on the open source repository
 - **DAISY Knowledge Base** -- [remediation guidance](https://kb.daisy.org/publishing/) for ePub accessibility issues
 - **Microsoft Accessibility Checker Guide** -- [Microsoft's guide](https://support.microsoft.com/en-us/office/improve-accessibility-with-the-accessibility-checker-a16f6de0-2f39-4a2b-8bd8-5ad801426c7f) to the Office accessibility checker
 

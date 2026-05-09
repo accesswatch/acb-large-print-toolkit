@@ -1639,7 +1639,7 @@ acb-lp detect-headings document.docx --ai --ai-prompt prompt.txt --threshold 75
 <h3 id="can-i-use-glow-for-documents-in-languages-other-than-english">Can I use GLOW for documents in languages other than English?</h3>
 <p>Yes. The ACB formatting rules (font, size, spacing, emphasis) apply regardless of language. Set the document language property (Rule: <code>ACB-DOC-LANGUAGE</code>) to the correct language code for proper screen reader pronunciation. BITS Whisperer supports automatic language detection or explicit language selection from 50+ languages.</p>
 <h3 id="is-there-a-desktop-version">Is there a desktop version?</h3>
-<p>Yes. The GLOW Accessibility Toolkit includes a desktop application with a graphical wizard interface, command-line tools, and batch processing support. It runs on Windows without requiring an internet connection. Download from the <a href="https://github.com/accesswatch/acb-large-print-toolkit/releases">project releases page</a>.</p>
+<p>Yes. The GLOW Accessibility Toolkit includes a desktop application with a graphical wizard interface, command-line tools, and batch processing support. It runs on Windows without requiring an internet connection. Download from the <a href="https://github.com/Community-Access/glow/releases">project releases page</a>.</p>
 <h3 id="where-can-i-read-the-acb-large-print-guidelines">Where can I read the ACB Large Print Guidelines?</h3>
 <p>The full guidelines are at <a href="https://acb.org/large-print-guidelines">acb.org/large-print-guidelines</a> (revised May 6, 2025). A reference copy is in the repository at <code>docs/ACB Large Print Guidelines, revised 5-6-25.docx</code>. The web app includes a <a href="https://glow.bits-acb.org/guidelines">Guidelines page</a> with the complete rule reference and audit rule mappings.</p>
 <p>APH also publishes research-based large print guidance at <a href="https://www.aph.org/resources/large-print-guidelines/">aph.org/resources/large-print-guidelines</a>.</p>
@@ -1694,7 +1694,7 @@ acb-lp detect-headings document.docx --ai --ai-prompt prompt.txt --threshold 75
 </li>
 <li><strong>Submit feedback</strong> -- use the Feedback page in the web app to report bugs, request features, or share your experience</li>
 <li><strong>About page</strong> -- mission, organizations, standards, and open source dependencies</li>
-<li><strong>GitHub Issues</strong> -- <a href="https://github.com/accesswatch/acb-large-print-toolkit/issues">report bugs or request features</a></li>
+<li><strong>GitHub Issues</strong> -- <a href="https://github.com/Community-Access/glow/issues">report bugs or request features</a></li>
 <li><strong>DAISY Knowledge Base</strong> -- <a href="https://kb.daisy.org/publishing/">remediation guidance for ePub issues</a></li>
 <li><strong>Microsoft Accessibility Checker Guide</strong> -- <a href="https://support.microsoft.com/en-us/office/improve-accessibility-with-the-accessibility-checker-a16f6de0-2f39-4a2b-8bd8-5ad801426c7f">Microsoft's guide to the Office accessibility checker</a></li>
 <li><strong>Project README</strong> -- <a href="../README.md">README.md</a></li>
@@ -2617,7 +2617,7 @@ acb-lp detect-headings document.docx --ai --ai-prompt my-prompt.txt --threshold 
 <h3 id="what-is-the-maximum-file-size_1">What is the maximum file size?</h3>
 <p>500 MB. If your document is larger, try compressing images within the document first (Word: File, Compress Pictures).</p>
 <h3 id="can-i-audit-multiple-documents-at-once_1">Can I audit multiple documents at once?</h3>
-<p>The web tool processes one document at a time. For batch processing, use the <a href="https://github.com/accesswatch/acb-large-print-toolkit">desktop application</a> which supports folder-level audits.</p>
+<p>The web tool processes one document at a time. For batch processing, use the <a href="https://github.com/Community-Access/glow">desktop application</a> which supports folder-level audits.</p>
 <h3 id="why-does-the-fix-not-change-my-headings">Why does the fix not change my headings?</h3>
 <p>The fix tool can now detect "faux headings" -- paragraphs that look like headings (bold, large font, short text) but use a Normal style instead of a real Heading style. Enable "Detect and convert faux headings" on the Fix page to use this feature. On the web, you review detected candidates in an interactive table before they are applied. On the CLI, use <code>--detect-headings</code>.</p>
 <p>If false positives are common (for example names, times, "Agenda" labels), use the heading detection accuracy control and switch to <strong>Conservative</strong>. If valid headings are being missed, use <strong>Thorough</strong>.</p>
@@ -2637,7 +2637,7 @@ acb-lp detect-headings document.docx --ai --ai-prompt my-prompt.txt --threshold 
 <h3 id="can-i-use-this-tool-for-documents-in-languages-other-than-english">Can I use this tool for documents in languages other than English?</h3>
 <p>Yes. The ACB formatting rules (font, size, spacing) apply regardless of language. The tool audits document structure and formatting, not content. Set the document language property (Rule: ACB-DOC-LANGUAGE) to the correct language code for proper screen reader pronunciation.</p>
 <h3 id="is-there-a-desktop-version_1">Is there a desktop version?</h3>
-<p>Yes. The <a href="https://github.com/accesswatch/acb-large-print-toolkit">GLOW Accessibility Toolkit</a> includes a desktop application with a graphical wizard interface, command-line tools, and batch processing support. It runs on Windows without requiring an internet connection.</p>
+<p>Yes. The <a href="https://github.com/Community-Access/glow">GLOW Accessibility Toolkit</a> includes a desktop application with a graphical wizard interface, command-line tools, and batch processing support. It runs on Windows without requiring an internet connection.</p>
 <h3 id="where-can-i-read-the-acb-large-print-guidelines_1">Where can I read the ACB Large Print Guidelines?</h3>
 <p>The full guidelines are available at <a href="https://acb.org/large-print-guidelines">acb.org/large-print-guidelines</a> (revised May 6, 2025). A reference copy is included in this repository at <code>docs/ACB Large Print Guidelines, revised 5-6-25.docx</code>. The web application includes a <a href="https://glow.bits-acb.org/guidelines">Guidelines page</a> with the complete rule reference and related audit rule mappings.</p>
 <p>APH also publishes research-based large print guidance at <a href="https://www.aph.org/resources/large-print-guidelines/">APH: Guidelines for the Development of Documents in Large Print</a>, including APH-hosted DOCX and PDF versions.</p>
@@ -2665,7 +2665,7 @@ acb-lp detect-headings document.docx --ai --ai-prompt my-prompt.txt --threshold 
 <li><strong>Web app product requirements and implementation log</strong> -- <a href="prd.md">docs/prd.md</a></li>
 <li><strong>Submit Feedback</strong> -- use the Feedback page in the web app to report bugs, request features, or share your experience</li>
 <li><strong>About This Project</strong> -- mission, organizations, standards, and open source dependencies on the web app About page</li>
-<li><strong>GitHub Issues</strong> -- <a href="https://github.com/accesswatch/acb-large-print-toolkit/issues">report bugs or request features</a> on the open source repository</li>
+<li><strong>GitHub Issues</strong> -- <a href="https://github.com/Community-Access/glow/issues">report bugs or request features</a> on the open source repository</li>
 <li><strong>DAISY Knowledge Base</strong> -- <a href="https://kb.daisy.org/publishing/">remediation guidance</a> for ePub accessibility issues</li>
 <li><strong>Microsoft Accessibility Checker Guide</strong> -- <a href="https://support.microsoft.com/en-us/office/improve-accessibility-with-the-accessibility-checker-a16f6de0-2f39-4a2b-8bd8-5ad801426c7f">Microsoft's guide</a> to the Office accessibility checker</li>
 </ul>

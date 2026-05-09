@@ -652,7 +652,7 @@ The application code must be present on the server before building. Choose one m
 ```bash
 ssh deploy@YOUR_SERVER_IP
 cd ~
-git clone https://github.com/accesswatch/acb-large-print-toolkit.git app
+git clone https://github.com/Community-Access/glow.git app
 cd app
 ```
 

@@ -305,7 +305,7 @@ GLOW is **free and open source**, available now at:
 
 Source code, desktop tool, CLI, and VS Code agent toolkit:
 
-**[https://github.com/accesswatch/acb-large-print-toolkit/releases/tag/v2.8.0](https://github.com/accesswatch/acb-large-print-toolkit/releases/tag/v2.8.0)**
+**[https://github.com/Community-Access/glow/releases/tag/v2.8.0](https://github.com/Community-Access/glow/releases/tag/v2.8.0)**
 
 ---
 
