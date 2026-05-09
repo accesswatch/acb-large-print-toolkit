@@ -75,6 +75,118 @@ def get_openrouter_api_key() -> str:
     return secret("openrouter_api_key", "OPENROUTER_API_KEY")
 
 
+# ---------------------------------------------------------------------------
+# User-supplied Ollama Cloud key (session-scoped, never logged or persisted)
+# ---------------------------------------------------------------------------
+
+_OLLAMA_CLOUD_URL = "https://ollama.com"
+_OLLAMA_CLOUD_API = f"{_OLLAMA_CLOUD_URL}/api"
+
+#: Models recommended per GLOW feature, shown in the setup UI.
+OLLAMA_MODEL_RECOMMENDATIONS: list[dict] = [
+    {
+        "id": "llama3.2",
+        "label": "Llama 3.2 (3B)",
+        "recommended": True,
+        "features": ["heading_fix", "markitdown", "chat"],
+        "note": "Fast, runs on most hardware. Good for all text features.",
+    },
+    {
+        "id": "llama3.3",
+        "label": "Llama 3.3 (70B)",
+        "recommended": False,
+        "features": ["chat"],
+        "note": "Best accuracy for Document Chat. Requires Pro or Max plan.",
+    },
+    {
+        "id": "mistral",
+        "label": "Mistral (7B)",
+        "recommended": False,
+        "features": ["heading_fix", "markitdown", "chat"],
+        "note": "Balanced quality and speed.",
+    },
+    {
+        "id": "qwen3:8b",
+        "label": "Qwen3 (8B)",
+        "recommended": False,
+        "features": ["heading_fix", "markitdown", "chat"],
+        "note": "Strong reasoning. Good alternative to Llama.",
+    },
+]
+
+
+#: Which Ollama features are on by default when a user first activates a key.
+#: Chat is intentionally OFF until we have sufficient testing coverage.
+OLLAMA_FEATURE_DEFAULTS: dict[str, bool] = {
+    "heading_fix": True,
+    "markitdown": True,
+    "chat": False,
+}
+
+#: Human-readable labels for each toggleable Ollama feature.
+OLLAMA_FEATURE_LABELS: dict[str, str] = {
+    "heading_fix": "AI Heading Detection (Fix workflow)",
+    "markitdown": "AI Document Formatting (MarkItDown)",
+    "chat": "Document Chat",
+}
+
+
+def get_user_ollama_features() -> dict[str, bool]:
+    """Return the per-feature Ollama enable flags from the current session.
+
+    Falls back to OLLAMA_FEATURE_DEFAULTS for any key not yet stored.
+    """
+    try:
+        from flask import session
+        stored: dict = session.get("ollama_features", {})
+        return {k: bool(stored.get(k, default)) for k, default in OLLAMA_FEATURE_DEFAULTS.items()}
+    except RuntimeError:
+        return dict(OLLAMA_FEATURE_DEFAULTS)
+
+
+def is_ollama_feature_enabled(feature: str) -> bool:
+    """Return True if the named Ollama feature is active for this session.
+
+    ``feature`` must be one of the keys in OLLAMA_FEATURE_DEFAULTS.
+    Returns the default value when Ollama is not configured.
+    """
+    if not is_ollama_configured():
+        return False
+    return get_user_ollama_features().get(feature, OLLAMA_FEATURE_DEFAULTS.get(feature, False))
+
+
+def get_user_ollama_key() -> str:
+    """Return the user-supplied Ollama Cloud API key from the Flask session.
+
+    The key is stored only in the server-side session -- never logged, never
+    written to disk, never sent to the client. Cleared when the session ends
+    or when the user clicks 'Forget my key'.
+    """
+    try:
+        from flask import session
+        return session.get("ollama_api_key", "")
+    except RuntimeError:
+        return ""
+
+
+def get_user_ollama_model() -> str:
+    """Return the Ollama model the user has chosen, defaulting to llama3.2."""
+    try:
+        from flask import session
+        return session.get("ollama_model", "llama3.2")
+    except RuntimeError:
+        return "llama3.2"
+
+
+def is_ollama_configured() -> bool:
+    """Return True if the user has provided an Ollama Cloud API key this session."""
+    return bool(get_user_ollama_key())
+
+
+def get_ollama_cloud_url() -> str:
+    return _OLLAMA_CLOUD_API
+
+
 def get_bootstrap_admin_email() -> str:
     return os.environ.get("ADMIN_LOCAL_EMAIL", "jeff@jeffbishop.com").strip().lower()
 

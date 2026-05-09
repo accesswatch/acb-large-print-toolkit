@@ -1,0 +1,290 @@
+{% extends "base.html" %}
+
+{% block title %}Enable AI -- Settings{% endblock %}
+{% block heading %}Enable AI Features{% endblock %}
+
+{% block content %}
+<p>Connect your personal <a href="https://ollama.com" rel="noopener noreferrer">Ollama</a> account to unlock AI-powered heading detection, document formatting, and document chat. Your key is held in your session only and is never logged or stored on disk.</p>
+
+<div id="ai-key-status" role="status" aria-live="polite" aria-atomic="true"></div>
+
+{% if ollama_active %}
+<div class="flash-success" role="region" aria-label="AI status">
+  <div class="flash-icon" aria-hidden="true">&#x2714;</div>
+  <p><strong>AI is active.</strong> Using model <code>{{ ollama_model }}</code> via your Ollama account.</p>
+</div>
+
+<section aria-labelledby="ai-active-heading">
+  <h2 id="ai-active-heading">Change or remove your key</h2>
+  <p>Your Ollama API key is active for this session. You can switch to a different key below, change your model, or remove your key to disable AI features.</p>
+  <button type="button" id="forget-key-btn" class="btn btn--secondary">
+    Remove my key and disable AI
+  </button>
+</section>
+
+<hr>
+{% endif %}
+
+<section aria-labelledby="key-setup-heading">
+  <h2 id="key-setup-heading">{% if ollama_active %}Update key{% else %}Set up your Ollama key{% endif %}</h2>
+
+  <ol class="setup-steps">
+    <li>Go to <a href="https://ollama.com/settings/keys" rel="noopener noreferrer">ollama.com/settings/keys</a> and create a new API key (free account required).</li>
+    <li>Copy the key -- it starts with <code>ollama_</code>.</li>
+    <li>Paste it below and choose your model.</li>
+  </ol>
+
+  <form id="ai-key-form" novalidate>
+    <div class="form-group">
+      <label for="ollama-api-key">Ollama API key</label>
+      <input
+        type="password"
+        id="ollama-api-key"
+        name="ollama_api_key"
+        autocomplete="off"
+        spellcheck="false"
+        placeholder="ollama_..."
+        aria-describedby="ollama-key-hint"
+        style="font-family: monospace; width: 100%; max-width: 32rem;"
+      >
+      <p id="ollama-key-hint" class="help-text">Paste your key from <a href="https://ollama.com/settings/keys" rel="noopener noreferrer">ollama.com/settings/keys</a>. It is never sent to the GLOW server in plain text -- only used to reach Ollama's API.</p>
+    </div>
+
+    <div class="form-group">
+      <label for="ollama-model">Model</label>
+      <select id="ollama-model" name="ollama_model" aria-describedby="ollama-model-hint">
+        {% for m in model_recommendations %}
+        <option value="{{ m.id }}"{% if m.id == ollama_model %} selected{% endif %}>
+          {{ m.label }}{% if m.recommended %} (recommended){% endif %}
+        </option>
+        {% endfor %}
+        <option value="other">Other (type below)</option>
+      </select>
+      <p id="ollama-model-hint" class="help-text">All models run on Ollama's cloud GPUs. Larger models are slower and require a Pro or Max plan.</p>
+    </div>
+
+    <div class="form-group" id="custom-model-group" hidden>
+      <label for="ollama-custom-model">Custom model name</label>
+      <input type="text" id="ollama-custom-model" name="ollama_custom_model" placeholder="e.g. phi4-mini" autocomplete="off" style="font-family: monospace; max-width: 20rem;">
+    </div>
+
+    <table class="model-guide" aria-label="Model recommendations by feature">
+      <caption>Which model is best for each feature</caption>
+      <thead>
+        <tr>
+          <th scope="col">Model</th>
+          <th scope="col">Good for</th>
+          <th scope="col">Plan needed</th>
+          <th scope="col">Speed</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <th scope="row"><code>llama3.2</code> (recommended)</th>
+          <td>Heading fix, MarkItDown, Document Chat</td>
+          <td>Free</td>
+          <td>Fast</td>
+        </tr>
+        <tr>
+          <th scope="row"><code>llama3.3</code></th>
+          <td>Document Chat (best accuracy)</td>
+          <td>Pro or Max</td>
+          <td>Slower</td>
+        </tr>
+        <tr>
+          <th scope="row"><code>mistral</code></th>
+          <td>Heading fix, MarkItDown, Document Chat</td>
+          <td>Free</td>
+          <td>Moderate</td>
+        </tr>
+        <tr>
+          <th scope="row"><code>qwen3:8b</code></th>
+          <td>Heading fix, MarkItDown, Document Chat</td>
+          <td>Free</td>
+          <td>Moderate</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p class="help-text">Features not supported by Ollama -- BITS Whisperer (audio transcription) -- remain hidden unless a server key is configured separately.</p>
+
+    <div class="form-actions">
+      <button type="button" id="validate-key-btn" class="btn btn--secondary">Check key</button>
+      <button type="submit" id="save-key-btn" class="btn btn--primary">Save and enable AI</button>
+    </div>
+
+    <div id="validate-result" role="status" aria-live="polite" aria-atomic="true" style="margin-top: 0.75rem;"></div>
+  </form>
+</section>
+
+{% if ollama_active %}
+<section aria-labelledby="ai-features-heading">
+  <h2 id="ai-features-heading">Enabled AI features</h2>
+  <p>Choose which GLOW workflows can use your Ollama key. Changes take effect immediately without re-entering your key. Document Chat is not yet available via Ollama and will be enabled in a future release.</p>
+
+  <div id="ai-features-status" role="status" aria-live="polite" aria-atomic="true"></div>
+
+  <form id="ai-features-form" novalidate>
+    <fieldset>
+      <legend>Ollama-powered features</legend>
+      {% for feature, label in ollama_feature_labels.items() %}
+      {% set is_on = ollama_features.get(feature, ollama_feature_defaults.get(feature, False)) %}
+      {% set is_coming_soon = (feature == 'chat') %}
+      <div class="checkbox-group">
+        <label>
+          <input
+            type="checkbox"
+            name="feature_{{ feature }}"
+            value="1"
+            {% if is_on %}checked{% endif %}
+            {% if is_coming_soon %}disabled aria-describedby="feat-{{ feature }}-note"{% endif %}
+          >
+          {{ label }}
+          {% if is_coming_soon %}<span class="badge badge--muted" id="feat-{{ feature }}-note">coming soon via Ollama</span>{% endif %}
+        </label>
+      </div>
+      {% endfor %}
+    </fieldset>
+    <div class="form-actions" style="margin-top: 1rem;">
+      <button type="submit" id="save-features-btn" class="btn btn--secondary">Save feature choices</button>
+    </div>
+  </form>
+</section>
+{% endif %}
+
+{% block extra_js %}
+<script>
+/* global fetch */
+(function () {
+  "use strict";
+
+  const keyInput   = document.getElementById("ollama-api-key");
+  const modelSel   = document.getElementById("ollama-model");
+  const customGrp  = document.getElementById("custom-model-group");
+  const customIn   = document.getElementById("ollama-custom-model");
+  const validateBtn = document.getElementById("validate-key-btn");
+  const saveBtn    = document.getElementById("save-key-btn");
+  const form       = document.getElementById("ai-key-form");
+  const valResult  = document.getElementById("validate-result");
+  const statusBox  = document.getElementById("ai-key-status");
+  const forgetBtn  = document.getElementById("forget-key-btn");
+
+  function resolvedModel() {
+    return modelSel.value === "other" ? customIn.value.trim() : modelSel.value;
+  }
+
+  if (modelSel) {
+    modelSel.addEventListener("change", function () {
+      customGrp.hidden = modelSel.value !== "other";
+      if (!customGrp.hidden) customIn.focus();
+    });
+  }
+
+  if (validateBtn) {
+    validateBtn.addEventListener("click", function () {
+      const key = keyInput.value.trim();
+      if (!key) { valResult.textContent = "Enter your key first."; return; }
+      validateBtn.disabled = true;
+      validateBtn.textContent = "Checking...";
+      valResult.textContent = "";
+
+      const fd = new FormData();
+      fd.append("ollama_api_key", key);
+
+      fetch("{{ url_for('settings.validate_ollama_key') }}", { method: "POST", body: fd })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          if (data.ok) {
+            valResult.textContent = "Key accepted. Models available: " + (data.models.length ? data.models.join(", ") : "none listed");
+          } else {
+            valResult.textContent = "Problem: " + (data.error || "Unknown error.");
+          }
+        })
+        .catch(function () { valResult.textContent = "Could not reach Ollama. Check your connection."; })
+        .finally(function () {
+          validateBtn.disabled = false;
+          validateBtn.textContent = "Check key";
+        });
+    });
+  }
+
+  if (form) {
+    form.addEventListener("submit", function (e) {
+      e.preventDefault();
+      const key   = keyInput.value.trim();
+      const model = resolvedModel();
+      if (!key)   { statusBox.textContent = "Enter your Ollama API key."; return; }
+      if (!model) { statusBox.textContent = "Choose or enter a model name."; return; }
+
+      saveBtn.disabled = true;
+      saveBtn.textContent = "Saving...";
+
+      const fd = new FormData();
+      fd.append("ollama_api_key", key);
+      fd.append("ollama_model", model);
+
+      fetch("{{ url_for('settings.save_ollama_key') }}", { method: "POST", body: fd })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          if (data.ok) {
+            // Reload so the page reflects the active state and the sidebar meter appears
+            window.location.reload();
+          } else {
+            statusBox.textContent = "Could not save: " + (data.error || "Unknown error.");
+          }
+        })
+        .catch(function () { statusBox.textContent = "Request failed. Try again."; })
+        .finally(function () {
+          saveBtn.disabled = false;
+          saveBtn.textContent = "Save and enable AI";
+        });
+    });
+  }
+
+  if (forgetBtn) {
+    forgetBtn.addEventListener("click", function () {
+      forgetBtn.disabled = true;
+      fetch("{{ url_for('settings.forget_ollama_key') }}", { method: "DELETE" })
+        .then(function () { window.location.reload(); })
+        .catch(function () {
+          statusBox.textContent = "Could not remove key. Try again.";
+          forgetBtn.disabled = false;
+        });
+    });
+  }
+
+  var featuresForm = document.getElementById("ai-features-form");
+  if (featuresForm) {
+    featuresForm.addEventListener("submit", function (e) {
+      e.preventDefault();
+      var featStatus = document.getElementById("ai-features-status");
+      var saveFeatsBtn = document.getElementById("save-features-btn");
+      saveFeatsBtn.disabled = true;
+      saveFeatsBtn.textContent = "Saving...";
+
+      var fd = new FormData(featuresForm);
+      // Checkboxes are only included when checked; explicitly set unchecked ones to "0"
+      ["heading_fix", "markitdown", "chat"].forEach(function (key) {
+        if (!fd.has("feature_" + key)) fd.append("feature_" + key, "0");
+      });
+
+      fetch("{{ url_for('settings.save_ollama_features') }}", { method: "POST", body: fd })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          if (data.ok) {
+            var on = data.enabled && data.enabled.length ? data.enabled.join(", ") : "none";
+            featStatus.textContent = "Saved. Active: " + on + ".";
+          } else {
+            featStatus.textContent = "Could not save: " + (data.error || "Unknown error.");
+          }
+        })
+        .catch(function () { featStatus.textContent = "Request failed. Try again."; })
+        .finally(function () {
+          saveFeatsBtn.disabled = false;
+          saveFeatsBtn.textContent = "Save feature choices";
+        });
+    });
+  }
+}());
+</script>
+{% endblock %}

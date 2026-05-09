@@ -264,7 +264,8 @@
 
       </ul>
     </nav>
-    <!-- ── End sidebar ─────────────────────────────────────────────── -->
+    {% include 'partials/ai_meter.html' %}
+    <!-- -- End sidebar ---------------------------------------------------------------- -->
 
     <!-- ================================================================ -->
     <!-- CONTENT AREA: main + footer                                       -->
@@ -346,6 +347,7 @@
   <script src="{{ url_for('static', filename='toast.js') }}"></script>
   <script src="{{ url_for('static', filename='a11y-enhancements.js') }}"></script>
   <script src="{{ url_for('static', filename='sidebar.js') }}"></script>
+  <script src="{{ url_for('static', filename='ai-meter.js') }}"></script>
   {% block extra_js %}{% endblock %}
   <div id="toast-container" aria-live="polite" aria-atomic="false"></div>
 </body>
