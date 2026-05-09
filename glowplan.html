@@ -1,0 +1,585 @@
+<h1 id="glow-accessibility-platform-plan">GLOW Accessibility Platform
+Plan</h1>
+<h2 id="purpose">Purpose</h2>
+<p>This document defines a definitive, implementation-ready plan to
+evolve GLOW Site Audit into a high-confidence accessibility platform
+that combines:</p>
+<ol type="1">
+<li>Fast in-app scanning for day-to-day use.</li>
+<li>Deep rendered scanning for modern JavaScript-heavy pages.</li>
+<li>Workflow-native issue and remediation loops for teams using GitHub
+and AI-assisted development.</li>
+<li>A scalable user experience that avoids tab overload and supports
+long-term growth.</li>
+</ol>
+<p>This plan does not change the current UI immediately. It defines the
+next architecture and product phases.</p>
+<h2 id="strategic-goals">Strategic Goals</h2>
+<ol type="1">
+<li>Improve detection quality without sacrificing scan speed.</li>
+<li>Reduce cognitive load for first-time users while preserving advanced
+controls.</li>
+<li>Support users at every level: beginner, practitioner, accessibility
+specialist, manager, and enterprise platform owner.</li>
+<li>Create a stable foundation for future AI-driven workflows when those
+features are enabled.</li>
+<li>Keep accessibility as the core mission for all features.</li>
+</ol>
+<h2 id="outcome-targets-12-month">Outcome Targets (12-Month)</h2>
+<p>The following targets describe expected outcomes if this plan is
+executed in full:</p>
+<ol type="1">
+<li>30 to 50 percent increase in high-confidence findings on
+JavaScript-heavy pages.</li>
+<li>25 to 40 percent reduction in time from finding creation to
+actionable remediation ticket.</li>
+<li>20 to 35 percent reduction in repeated regressions for routes under
+automated monitoring.</li>
+<li>40 to 60 percent reduction in “where do I start” friction for
+first-time users (measured by guided flow completion rate).</li>
+<li>2x increase in recurring scan adoption through scheduled monitoring
+and easier run presets.</li>
+</ol>
+<h2 id="external-inputs-incorporated">External Inputs Incorporated</h2>
+<p>This plan takes the strongest ideas from:</p>
+<ol type="1">
+<li>Accessibility Insights for Web: fast checks plus guided assessment
+for manual verification.</li>
+<li>Jamal Mazrui’s urlCheck: rendered browser scans, rich evidence,
+criterion rollups, and report discipline.</li>
+<li>GitHub Accessibility Scanner: plugin-based scan model, issue
+lifecycle workflow, and optional Copilot assignment.</li>
+<li>Pa11y CI: sitemap-based scanning, threshold controls, reporter
+patterns, and URL transform options.</li>
+<li>Lighthouse CI: profile-driven assertions, URL-pattern rules, and
+historical trend reporting.</li>
+<li>Microsoft axe pipeline samples: SARIF-friendly CI outputs and
+practical automation patterns.</li>
+</ol>
+<h2 id="guiding-product-principles">Guiding Product Principles</h2>
+<ol type="1">
+<li>Accessibility-first by design: every new workflow must improve
+accessibility outcomes, not just add controls.</li>
+<li>Progressive disclosure: simple defaults for most users, advanced
+tuning only when needed.</li>
+<li>Evidence over noise: each finding should include enough context to
+fix quickly.</li>
+<li>Human-in-the-loop always: automation suggests and prioritizes;
+humans validate and approve.</li>
+<li>Repeatable and auditable: every run must be reproducible,
+explainable, and comparable over time.</li>
+</ol>
+<h2 id="user-levels-and-benefits">User Levels And Benefits</h2>
+<p>The following list summarizes user groups and immediate value.</p>
+<ol type="1">
+<li>New users: guided goals, presets, and clear next actions.</li>
+<li>Practitioners: faster triage with richer evidence and
+filtering.</li>
+<li>Accessibility specialists: stronger control over rules, criteria
+mapping, and exceptions.</li>
+<li>Team leads and managers: trend dashboards, SLA views, and grouped
+issue visibility.</li>
+<li>Enterprise platform owners: policy controls, governance hooks, CI
+integration, and secure run handling.</li>
+</ol>
+<h2 id="feature-plan">Feature Plan</h2>
+<p>The following table describes each planned feature, including inputs,
+outputs, expected outcomes, UX impact, and projected wins.</p>
+<p>The table below is the canonical feature matrix for delivery
+planning.</p>
+<table style="width:100%;">
+<colgroup>
+<col style="width: 14%" />
+<col style="width: 14%" />
+<col style="width: 14%" />
+<col style="width: 14%" />
+<col style="width: 14%" />
+<col style="width: 14%" />
+<col style="width: 14%" />
+</colgroup>
+<thead>
+<tr>
+<th>Feature</th>
+<th>Inputs</th>
+<th>Outputs</th>
+<th>Expected Outcomes</th>
+<th>UX Impact</th>
+<th>Benefits By User Level</th>
+<th>Projected Wins</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1. Scan Profiles (Quick, Baseline, Strict, Forms, Visual,
+Enterprise)</td>
+<td>Selected profile, target URLs, optional constraints</td>
+<td>Profile-resolved rule config and run summary</td>
+<td>Better default quality with less setup</td>
+<td>Users start faster with confidence</td>
+<td>New users get safe defaults; experts still tune later</td>
+<td>20 to 30 percent faster first-run completion</td>
+</tr>
+<tr>
+<td>2. Advanced Rule Overrides</td>
+<td>Include/exclude rule IDs, tag filters, severity gate</td>
+<td>Fine-grained rule execution manifest</td>
+<td>Better project-specific relevance</td>
+<td>Power users avoid noisy findings</td>
+<td>Practitioners and specialists gain precision</td>
+<td>15 to 25 percent noise reduction</td>
+</tr>
+<tr>
+<td>3. Multi-Engine Scan Mode (Fast, Rendered, Hybrid)</td>
+<td>Mode selection, crawl config, viewport config</td>
+<td>Unified normalized findings across engines</td>
+<td>Higher coverage on modern sites</td>
+<td>Mode labels explain tradeoffs clearly</td>
+<td>All users choose depth by need and cost</td>
+<td>30 to 50 percent detection lift on dynamic pages</td>
+</tr>
+<tr>
+<td>4. Rendered Browser Engine (Playwright + axe)</td>
+<td>URL queue, auth context, browser context options</td>
+<td>Post-render accessibility findings with DOM-true selectors</td>
+<td>Captures issues missed by static fetch</td>
+<td>Slightly slower runs, much stronger confidence</td>
+<td>Practitioners and specialists gain deep scan quality</td>
+<td>25 to 40 percent fewer escaped defects</td>
+</tr>
+<tr>
+<td>5. Plugin Scan Framework</td>
+<td>Enabled scan list, plugin metadata, plugin runtime</td>
+<td>Extensible findings from built-in and custom scans</td>
+<td>Rapid feature growth without monolith changes</td>
+<td>Clear plugin status and provenance in results</td>
+<td>Enterprise teams add domain-specific checks</td>
+<td>2 to 4x faster custom-check delivery</td>
+</tr>
+<tr>
+<td>6. Reflow and Viewport Scan</td>
+<td>reduced_motion, color_scheme, viewport presets</td>
+<td>Findings for reflow and responsive barriers</td>
+<td>Better mobile and zoom accessibility coverage</td>
+<td>Encourages context-aware testing</td>
+<td>New users run realistic checks with one toggle</td>
+<td>10 to 20 percent more responsive defects caught</td>
+</tr>
+<tr>
+<td>7. Authenticated Crawl Support</td>
+<td>login URL/credentials or auth context state</td>
+<td>Secure authenticated scanning session</td>
+<td>Coverage for protected internal pages</td>
+<td>Fewer workarounds and manual hacks</td>
+<td>Enterprise users unlock real app surfaces</td>
+<td>30 to 60 percent increase in in-scope page coverage</td>
+</tr>
+<tr>
+<td>8. URL Ingestion And Scope Manager</td>
+<td>Manual URLs, sitemap, include/exclude patterns, path rules</td>
+<td>Canonical URL queue with reason codes</td>
+<td>Transparent crawl behavior and fewer surprises</td>
+<td>Users understand why pages did or did not scan</td>
+<td>All levels get explainable scope control</td>
+<td>20 to 35 percent fewer reruns due to scope mistakes</td>
+</tr>
+<tr>
+<td>9. URL Classification Report</td>
+<td>URL queue, crawl events, response outcomes</td>
+<td>Scanned/skipped/failed/excluded/duplicate with reason</td>
+<td>Better debugging and operational trust</td>
+<td>Reduces confusion in large audits</td>
+<td>Practitioners and managers gain operational visibility</td>
+<td>30 percent faster scan troubleshooting</td>
+</tr>
+<tr>
+<td>10. Evidence Pack (HTML snapshot, full-page screenshot, node
+screenshot)</td>
+<td>Evidence toggles, storage policy, finding metadata</td>
+<td>Downloadable linked evidence per finding</td>
+<td>Faster reproduction and fix confirmation</td>
+<td>Richer result pages without context switching</td>
+<td>All levels benefit, especially engineers</td>
+<td>25 to 45 percent faster triage-to-fix cycle</td>
+</tr>
+<tr>
+<td>11. Criterion Mapping And Rollups</td>
+<td>Rule outputs with tags and metadata</td>
+<td>WCAG criterion-level rollups and summaries</td>
+<td>Better standards traceability</td>
+<td>Makes reports meaningful for compliance reviews</td>
+<td>Specialists and managers benefit most</td>
+<td>20 to 30 percent faster audit reporting prep</td>
+</tr>
+<tr>
+<td>12. Finding Clustering And Deduplication</td>
+<td>Rule, selector signature, URL canonicalization</td>
+<td>Grouped findings and stable signatures</td>
+<td>Reduces issue spam and duplicate work</td>
+<td>Cleaner findings list and manageable workload</td>
+<td>All users, especially large-site teams</td>
+<td>30 to 50 percent lower duplicate issue volume</td>
+</tr>
+<tr>
+<td>13. Exception Registry With Expiry</td>
+<td>Exception request, owner, rationale, expiry date</td>
+<td>Visible temporary suppressions with audits</td>
+<td>Controls technical debt and policy drift</td>
+<td>Transparent suppression badges in UI</td>
+<td>Managers and enterprise owners enforce governance</td>
+<td>40 percent reduction in permanent blind spots</td>
+</tr>
+<tr>
+<td>14. Background Jobs And Durable Queue</td>
+<td>Run request, queue policy, cancellation, retries</td>
+<td>Persistent job state and recoverable progress</td>
+<td>Reliable long scans and safer operations</td>
+<td>Users can leave and return without losing context</td>
+<td>All users trust long-running audits more</td>
+<td>20 to 35 percent fewer abandoned scans</td>
+</tr>
+<tr>
+<td>15. GitHub Issue Sync (Optional)</td>
+<td>Repo target, token, issue settings, grouping preference</td>
+<td>Open/update/close lifecycle for findings</td>
+<td>Findings become accountable work items</td>
+<td>Minimal effort to operationalize results</td>
+<td>Teams with GitHub workflows benefit immediately</td>
+<td>25 to 40 percent increase in remediation throughput</td>
+</tr>
+<tr>
+<td>16. Grouped Tracking Issues</td>
+<td>Grouping strategy (rule/path/severity)</td>
+<td>Parent issue linking child findings</td>
+<td>Better planning and sprint readability</td>
+<td>Managers view progress at a glance</td>
+<td>Managers and enterprise teams gain coordination</td>
+<td>30 percent better backlog maintainability</td>
+</tr>
+<tr>
+<td>17. SARIF Export And CI Gate</td>
+<td>Run artifacts, policy thresholds, build metadata</td>
+<td>SARIF package and pass/fail gate signals</td>
+<td>Accessibility integrated into release quality gates</td>
+<td>Technical teams get native CI visibility</td>
+<td>Practitioners and platform teams gain automation</td>
+<td>20 to 35 percent regression prevention lift</td>
+</tr>
+<tr>
+<td>18. Trend Analytics Dashboard</td>
+<td>Historical runs, normalized metrics, route groups</td>
+<td>Trend lines, regressions, scorecards</td>
+<td>Continuous improvement visibility</td>
+<td>Makes progress legible and motivating</td>
+<td>Managers and specialists track impact over time</td>
+<td>2x increase in recurring quality reviews</td>
+</tr>
+<tr>
+<td>19. Failure Density Metric</td>
+<td>Weighted instances + normalization denominator</td>
+<td>Single directional risk metric per page/run</td>
+<td>Easier prioritization across large inventories</td>
+<td>Users identify worst pages quickly</td>
+<td>All levels prioritize with less debate</td>
+<td>15 to 30 percent better prioritization quality</td>
+</tr>
+<tr>
+<td>20. Guided Manual Verification Workbench</td>
+<td>Criteria requiring human checks, checklist templates</td>
+<td>Signed review records and completion states</td>
+<td>Bridges automation gaps responsibly</td>
+<td>Clear flow for what automation cannot verify</td>
+<td>Specialists and reviewers get structured workflow</td>
+<td>20 to 30 percent stronger audit completeness</td>
+</tr>
+<tr>
+<td>21. AI Assist Mode (future, feature-flagged)</td>
+<td>Finding context, code context, policy instructions</td>
+<td>Draft fix suggestions, rationale, risk notes</td>
+<td>Faster fix drafting with human approval</td>
+<td>Assistant appears where users are already working</td>
+<td>Beginners get coaching; experts get acceleration</td>
+<td>15 to 35 percent faster low-risk remediation</td>
+</tr>
+<tr>
+<td>22. AI Remediation Campaigns (future)</td>
+<td>Grouped findings, repo target, guardrails</td>
+<td>Batch PR drafts, issue updates, review queue</td>
+<td>Scales remediation across large repos</td>
+<td>Campaign dashboard reduces chaos</td>
+<td>Enterprise teams can clear debt systematically</td>
+<td>2 to 3x campaign throughput with review gates</td>
+</tr>
+</tbody>
+</table>
+<h2 id="delivery-waves">Delivery Waves</h2>
+<p>This sequencing minimizes risk while showing value early.</p>
+<ol type="1">
+<li>Wave 1: Foundations
+<ul>
+<li>Scan profiles</li>
+<li>Advanced rule overrides</li>
+<li>URL scope manager</li>
+<li>URL classification report</li>
+</ul></li>
+<li>Wave 2: Detection Quality
+<ul>
+<li>Rendered browser engine</li>
+<li>Hybrid engine mode</li>
+<li>Reflow and viewport scan</li>
+<li>Authenticated scan support</li>
+</ul></li>
+<li>Wave 3: Evidence and Workflow
+<ul>
+<li>Evidence pack</li>
+<li>Finding clustering and dedupe</li>
+<li>Exception registry with expiry</li>
+<li>Durable background jobs</li>
+</ul></li>
+<li>Wave 4: Governance and Scale
+<ul>
+<li>GitHub issue sync</li>
+<li>Grouped tracking issues</li>
+<li>SARIF export and CI gates</li>
+<li>Trend analytics dashboard</li>
+</ul></li>
+<li>Wave 5: Human + AI Expansion
+<ul>
+<li>Manual verification workbench</li>
+<li>AI assist mode (flagged)</li>
+<li>AI remediation campaigns (flagged)</li>
+</ul></li>
+</ol>
+<h2
+id="ux-modernization-plan-tabs-to-task-oriented-accordion-experience">UX
+Modernization Plan (Tabs To Task-Oriented Accordion Experience)</h2>
+<h3 id="problem">Problem</h3>
+<p>The current tab model is growing and can become too wide, visually
+dense, and cognitively daunting. As more capabilities are added, tabs
+increase discovery friction and overwhelm.</p>
+<h3 id="design-objective">Design Objective</h3>
+<p>Replace horizontal tab sprawl with a task-oriented information
+architecture that:</p>
+<ol type="1">
+<li>Prioritizes user intent over product internals.</li>
+<li>Uses progressive disclosure for complexity.</li>
+<li>Scales to AI-era features without horizontal crowding.</li>
+</ol>
+<h3 id="proposed-structure-no-immediate-code-change">Proposed Structure
+(No Immediate Code Change)</h3>
+<h4 id="mission-hub-landing">1) Mission Hub Landing</h4>
+<p>A single home entry with prominent action cards:</p>
+<ol type="1">
+<li>Audit a Site</li>
+<li>Fix and Validate</li>
+<li>Monitor and Govern</li>
+<li>Export and Share</li>
+<li>AI Assist (when enabled)</li>
+</ol>
+<h4 id="accordion-based-work-areas">2) Accordion-Based Work Areas</h4>
+<p>Each mission opens a vertical accordion with collapsible
+sections.</p>
+<ol type="1">
+<li>Discover Scope</li>
+<li>Choose Scan Depth</li>
+<li>Run and Observe</li>
+<li>Review Findings</li>
+<li>Route to Action</li>
+</ol>
+<p>Each accordion section can be expanded independently and supports
+inline help text, recommended defaults, and advanced controls hidden by
+default.</p>
+<h4 id="sticky-run-context-rail">3) Sticky Run Context Rail</h4>
+<p>A right-side context rail (or lower dock on narrow viewports)
+shows:</p>
+<ol type="1">
+<li>Current run state</li>
+<li>Scope summary</li>
+<li>Selected profile and overrides</li>
+<li>Quick actions (cancel, download, open issue sync)</li>
+</ol>
+<h4 id="progressive-advanced-drawer">4) Progressive Advanced Drawer</h4>
+<p>An “Advanced” drawer per mission contains low-frequency controls
+(auth context, plugin arrays, assertion matrices, CI export policy).</p>
+<h4 id="role-adaptive-presets">5) Role-Adaptive Presets</h4>
+<p>First-run users see starter presets; experienced users can switch to
+“Power Mode” to expose denser controls and saved templates.</p>
+<h3 id="why-accordion-and-task-hub-wins">Why Accordion And Task Hub
+Wins</h3>
+<ol type="1">
+<li>Vertical space scales better than horizontal tab width.</li>
+<li>Users focus on one goal at a time.</li>
+<li>Complex controls stay available without overwhelming default
+views.</li>
+<li>Mobile and narrow screens remain usable with less horizontal
+compression.</li>
+<li>Future AI panes can be added as contextual modules instead of new
+top-level tabs.</li>
+</ol>
+<h2 id="ai-era-ux-expansion-strategy-feature-flagged">AI-Era UX
+Expansion Strategy (Feature-Flagged)</h2>
+<p>The following capabilities are designed for future activation when AI
+features are turned on.</p>
+<ol type="1">
+<li>Inline triage assistant in findings panel:
+<ul>
+<li>Summarize finding severity and likely fix path.</li>
+<li>Explain why rule fired in plain language.</li>
+</ul></li>
+<li>“Draft fix” action with explicit confidence and risk labels:
+<ul>
+<li>High confidence: small HTML/ARIA fixes.</li>
+<li>Medium confidence: style and structural suggestions.</li>
+<li>Low confidence: manual-review-required advisories.</li>
+</ul></li>
+<li>Batch campaign planner:
+<ul>
+<li>Group by rule family, route, or ownership.</li>
+<li>Generate prioritized remediation queue.</li>
+</ul></li>
+<li>Human approval checkpoints:
+<ul>
+<li>No automatic merge behavior.</li>
+<li>Clear reviewer sign-off states.</li>
+</ul></li>
+<li>AI observability:
+<ul>
+<li>Track suggestion acceptance rate.</li>
+<li>Track rollback rate and reasons.</li>
+<li>Use outcomes to tune prompt/instruction quality.</li>
+</ul></li>
+</ol>
+<h2 id="inputs-outputs-and-operational-contracts">Inputs, Outputs, And
+Operational Contracts</h2>
+<h3 id="canonical-run-inputs">Canonical Run Inputs</h3>
+<ol type="1">
+<li>Scope inputs: URLs, sitemap, include/exclude patterns, depth,
+subdomain rules.</li>
+<li>Engine inputs: fast/rendered/hybrid mode, viewport, motion, color
+scheme.</li>
+<li>Rule inputs: profile, include/exclude rules, tags, severity gate,
+plugins.</li>
+<li>Auth inputs: login config or auth context.</li>
+<li>Workflow inputs: issue sync options, grouped issues, CI export
+settings.</li>
+</ol>
+<h3 id="canonical-run-outputs">Canonical Run Outputs</h3>
+<ol type="1">
+<li>Summary JSON with deterministic schema.</li>
+<li>Findings CSV and JSON with criterion mapping.</li>
+<li>Evidence artifacts (optional): screenshots, HTML snapshots, node
+images.</li>
+<li>Session log with URL classification and reason codes.</li>
+<li>SARIF export (optional) for CI and code scanning tools.</li>
+<li>Governance artifacts (optional): issue sync result map and lifecycle
+deltas.</li>
+</ol>
+<h3 id="canonical-outcomes">Canonical Outcomes</h3>
+<ol type="1">
+<li>Immediate: actionable prioritized findings with reproducible
+evidence.</li>
+<li>Mid-term: stable remediation throughput and reduced duplicate
+effort.</li>
+<li>Long-term: fewer regressions, measurable trend improvement, and
+clear compliance posture.</li>
+</ol>
+<h2 id="risks-and-mitigations">Risks And Mitigations</h2>
+<ol type="1">
+<li>Risk: Feature creep increases complexity.
+<ul>
+<li>Mitigation: task hub IA, profile-first defaults, advanced drawer
+containment.</li>
+</ul></li>
+<li>Risk: False positives reduce trust.
+<ul>
+<li>Mitigation: rule tuning profiles, dedupe signatures, exception
+registry with expiry.</li>
+</ul></li>
+<li>Risk: Slow scans reduce adoption.
+<ul>
+<li>Mitigation: default fast mode, hybrid selective deep scan,
+persistent background jobs.</li>
+</ul></li>
+<li>Risk: AI suggestions applied unsafely.
+<ul>
+<li>Mitigation: confidence labels, mandatory human review, no auto-merge
+policy.</li>
+</ul></li>
+<li>Risk: Governance integration adds setup burden.
+<ul>
+<li>Mitigation: optional integration paths and guided setup
+checklists.</li>
+</ul></li>
+</ol>
+<h2 id="measurement-framework">Measurement Framework</h2>
+<p>The following table defines how to track success.</p>
+<p>The table below maps product goals to measurable operational
+indicators.</p>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr>
+<th>Goal</th>
+<th>Primary Metric</th>
+<th>Supporting Metric</th>
+<th>Success Threshold</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Faster first value</td>
+<td>Time to first completed scan</td>
+<td>First-run abandonment rate</td>
+<td>30 percent reduction in time and 25 percent reduction in
+abandonment</td>
+</tr>
+<tr>
+<td>Better detection quality</td>
+<td>Confirmed issue yield on dynamic pages</td>
+<td>Escaped defect count</td>
+<td>30 percent yield lift and 20 percent escaped defect reduction</td>
+</tr>
+<tr>
+<td>Faster remediation</td>
+<td>Median finding-to-ticket time</td>
+<td>Median ticket-to-fix time</td>
+<td>25 percent and 20 percent reductions respectively</td>
+</tr>
+<tr>
+<td>Lower regression risk</td>
+<td>Regression findings per release</td>
+<td>CI gate pass trend</td>
+<td>20 percent fewer regressions over two release cycles</td>
+</tr>
+<tr>
+<td>Better usability at scale</td>
+<td>Workflow completion rate by user level</td>
+<td>Advanced-control error rate</td>
+<td>35 percent higher completion with stable error rates</td>
+</tr>
+</tbody>
+</table>
+<h2 id="implementation-readiness-checklist">Implementation Readiness
+Checklist</h2>
+<ol type="1">
+<li>Confirm normalized findings schema.</li>
+<li>Define profile catalog and default mappings.</li>
+<li>Define plugin sandbox and execution guardrails.</li>
+<li>Define durable job model and cleanup policy.</li>
+<li>Define issue lifecycle synchronization semantics.</li>
+<li>Define SARIF and trend data contracts.</li>
+<li>Define AI feature flags and review controls.</li>
+<li>Validate proposed IA with rapid user walkthrough tests.</li>
+</ol>
+<h2 id="final-recommendation">Final Recommendation</h2>
+<p>Execute this plan in waves, beginning with profile-first
+simplification and engine upgrades, then governance integration, then AI
+acceleration.</p>
+<p>This path balances immediate UX relief, stronger scan quality, and
+long-term extensibility. It addresses feature creep now through
+information architecture, while creating a clear runway for future
+AI-enabled experiences without overwhelming users.</p>
