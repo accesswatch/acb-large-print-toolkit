@@ -35,6 +35,8 @@ def _get_db() -> sqlite3.Connection:
         "CREATE TABLE IF NOT EXISTS feedback ("
         "  id INTEGER PRIMARY KEY AUTOINCREMENT,"
         "  timestamp TEXT NOT NULL,"
+        "  name TEXT,"
+        "  email TEXT,"
         "  rating TEXT NOT NULL,"
         "  task TEXT,"
         "  message TEXT NOT NULL,"
@@ -51,12 +53,14 @@ def _get_db() -> sqlite3.Connection:
 
 
 def _ensure_feedback_schema(conn: sqlite3.Connection) -> None:
-    """Add missing columns for GitHub sync when upgrading older databases."""
+    """Add missing columns for GitHub sync and contributor info when upgrading older databases."""
     existing = {
         row[1]
         for row in conn.execute("PRAGMA table_info(feedback)").fetchall()
     }
     required = {
+        "name": "TEXT",
+        "email": "TEXT",
         "github_issue_number": "INTEGER",
         "github_issue_url": "TEXT",
         "github_sync_status": "TEXT",
@@ -95,17 +99,31 @@ def _create_feedback_issue(entry: dict) -> tuple[int | None, str | None, str | N
     repo = cfg["repo"]
     now_date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     title = f"[Feedback] {entry['rating'].capitalize()} | {entry['task'] or 'general'} | {now_date}"
-    body = (
-        "## User Feedback Submission\n\n"
-        f"- Feedback ID: `{entry['id']}`\n"
-        f"- Submitted at (UTC): `{entry['timestamp']}`\n"
-        f"- Rating: `{entry['rating']}`\n"
-        f"- Task: `{entry['task'] or 'not specified'}`\n\n"
-        "### Message\n"
-        f"{entry['message']}\n\n"
-        "---\n"
-        "Source: GLOW web feedback form."
-    )
+    
+    body_parts = [
+        "## User Feedback Submission\n",
+        f"- Feedback ID: `{entry['id']}`\n",
+        f"- Submitted at (UTC): `{entry['timestamp']}`\n",
+        f"- Rating: `{entry['rating']}`\n",
+        f"- Task: `{entry['task'] or 'not specified'}`\n",
+    ]
+    
+    if entry.get("name") or entry.get("email"):
+        body_parts.append("- **Contributor contact:**\n")
+        if entry.get("name"):
+            body_parts.append(f"  - Name: {entry['name']}\n")
+        if entry.get("email"):
+            body_parts.append(f"  - Email: {entry['email']}\n")
+    
+    body_parts.extend([
+        "\n### Message\n",
+        f"{entry['message']}\n",
+        "\n---\n",
+        "Source: GLOW web feedback form.",
+    ])
+    
+    body = "".join(body_parts)
+    
     payload = {
         "title": title,
         "body": body,
@@ -149,6 +167,8 @@ def feedback_form():
 @feedback_bp.route("/", methods=["POST"])
 @limiter.limit("10 per hour", error_message="Too many feedback submissions. Please try again later.")
 def feedback_submit():
+    name = request.form.get("name", "").strip()
+    email = request.form.get("email", "").strip()
     rating = request.form.get("rating", "").strip()
     task = request.form.get("task", "").strip()
     message = request.form.get("message", "").strip()
@@ -162,12 +182,16 @@ def feedback_submit():
         errors.append("Feedback is limited to 5,000 characters.")
     if rating and rating not in ("excellent", "good", "fair", "poor"):
         errors.append("Invalid rating value.")
+    if email and "@" not in email:
+        errors.append("Please provide a valid email address.")
 
     if errors:
         return (
             render_template(
                 "feedback_form.html",
                 error=" ".join(errors),
+                name=name,
+                email=email,
                 rating=rating,
                 task=task,
                 message=message,
@@ -181,14 +205,16 @@ def feedback_submit():
     try:
         conn = _get_db()
         cur = conn.execute(
-            "INSERT INTO feedback (timestamp, rating, task, message) VALUES (?, ?, ?, ?)",
-            (timestamp, rating, task, message),
+            "INSERT INTO feedback (timestamp, name, email, rating, task, message) VALUES (?, ?, ?, ?, ?, ?)",
+            (timestamp, name, email, rating, task, message),
         )
         feedback_id = cur.lastrowid
 
         entry = {
             "id": feedback_id,
             "timestamp": timestamp,
+            "name": name,
+            "email": email,
             "rating": rating,
             "task": task,
             "message": message,
@@ -229,20 +255,22 @@ def feedback_review():
     try:
         conn = _get_db()
         cursor = conn.execute(
-            "SELECT id, timestamp, rating, task, message, github_issue_number, github_issue_url, github_sync_status, github_sync_error "
+            "SELECT id, timestamp, name, email, rating, task, message, github_issue_number, github_issue_url, github_sync_status, github_sync_error "
             "FROM feedback ORDER BY id DESC"
         )
         rows = [
             {
                 "id": r[0],
                 "timestamp": r[1],
-                "rating": r[2],
-                "task": r[3],
-                "message": r[4],
-                "github_issue_number": r[5],
-                "github_issue_url": r[6],
-                "github_sync_status": r[7],
-                "github_sync_error": r[8],
+                "name": r[2],
+                "email": r[3],
+                "rating": r[4],
+                "task": r[5],
+                "message": r[6],
+                "github_issue_number": r[7],
+                "github_issue_url": r[8],
+                "github_sync_status": r[9],
+                "github_sync_error": r[10],
             }
             for r in cursor.fetchall()
         ]

@@ -13,6 +13,8 @@
     <tr>
       <th scope="col">No.</th>
       <th scope="col">Date</th>
+      <th scope="col">Name</th>
+      <th scope="col">Email</th>
       <th scope="col">Rating</th>
       <th scope="col">Task</th>
       <th scope="col">Message</th>
@@ -20,10 +22,12 @@
     </tr>
   </thead>
   <tbody>
-    {% for entry in entries %}
+    {% for entry in rows %}
     <tr>
       <td>{{ entry.id }}</td>
       <td>{{ entry.timestamp[:10] }}</td>
+      <td>{{ entry.name or "---" }}</td>
+      <td>{{ entry.email or "---" }}</td>
       <td>{{ entry.rating | capitalize }}</td>
       <td>{{ entry.task or "---" }}</td>
       <td>{{ entry.message }}</td>

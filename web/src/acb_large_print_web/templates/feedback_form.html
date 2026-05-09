@@ -14,6 +14,20 @@
 
 <form method="post" action="{{ url_for('feedback.feedback_submit') }}" novalidate>
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+  <fieldset>
+    <legend>Your Information (Optional)</legend>
+    <p class="help-text">If you'd like us to reach out about your feedback, share your name and email. This information is included in the tracked issue and helps us follow up on bugs or feature requests.</p>
+    <div class="form-group">
+      <label for="name">Name</label>
+      <input type="text" id="name" name="name" class="form-input" maxlength="200" value="{{ name if name else '' }}">
+    </div>
+    <div class="form-group">
+      <label for="email">Email</label>
+      <input type="email" id="email" name="email" class="form-input" maxlength="254" value="{{ email if email else '' }}">
+    </div>
+  </fieldset>
+
   <fieldset>
     <legend>Overall Experience</legend>
     <div class="radio-group">
@@ -78,11 +92,14 @@
     </div>
   </fieldset>
 
-  <div class="form-group">
-    <label for="message">Your feedback</label>
-    <textarea id="message" name="message" rows="6" class="form-textarea" maxlength="5000" required aria-describedby="message-help">{{ message if message else '' }}</textarea>
-    <p class="help-text" id="message-help">Describe what worked, what did not, or what you would like to see improved. Maximum 5,000 characters.</p>
-  </div>
+  <fieldset>
+    <legend>Your Feedback</legend>
+    <div class="form-group">
+      <label for="message">Message</label>
+      <textarea id="message" name="message" rows="6" class="form-textarea" maxlength="5000" required aria-describedby="message-help">{{ message if message else '' }}</textarea>
+      <p class="help-text" id="message-help">Describe what worked, what did not, or what you would like to see improved. Maximum 5,000 characters.</p>
+    </div>
+  </fieldset>
 
   <button type="submit" class="btn-primary" id="feedback-submit-btn">Submit Feedback</button>
   <p id="feedback-status" class="field-hint" aria-live="polite" aria-atomic="true"></p>

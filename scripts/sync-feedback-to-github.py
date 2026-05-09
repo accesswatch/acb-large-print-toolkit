@@ -41,6 +41,8 @@ def ensure_schema(conn: sqlite3.Connection) -> None:
         "CREATE TABLE IF NOT EXISTS feedback ("
         "  id INTEGER PRIMARY KEY AUTOINCREMENT,"
         "  timestamp TEXT NOT NULL,"
+        "  name TEXT,"
+        "  email TEXT,"
         "  rating TEXT NOT NULL,"
         "  task TEXT,"
         "  message TEXT NOT NULL,"
@@ -53,6 +55,8 @@ def ensure_schema(conn: sqlite3.Connection) -> None:
     )
     cols = {r[1] for r in conn.execute("PRAGMA table_info(feedback)").fetchall()}
     required = {
+        "name": "TEXT",
+        "email": "TEXT",
         "github_issue_number": "INTEGER",
         "github_issue_url": "TEXT",
         "github_sync_status": "TEXT",
@@ -67,17 +71,31 @@ def ensure_schema(conn: sqlite3.Connection) -> None:
 
 def create_issue(cfg: SyncConfig, row: sqlite3.Row) -> tuple[Optional[int], Optional[str], Optional[str]]:
     title = f"[Feedback] {row['rating'].capitalize()} | {row['task'] or 'general'} | {row['timestamp'][:10]}"
-    body = (
-        "## User Feedback Submission\n\n"
-        f"- Feedback ID: `{row['id']}`\n"
-        f"- Submitted at (UTC): `{row['timestamp']}`\n"
-        f"- Rating: `{row['rating']}`\n"
-        f"- Task: `{row['task'] or 'not specified'}`\n\n"
-        "### Message\n"
-        f"{row['message']}\n\n"
-        "---\n"
-        "Source: GLOW web feedback form backfill sync."
-    )
+    
+    body_parts = [
+        "## User Feedback Submission\n",
+        f"- Feedback ID: `{row['id']}`\n",
+        f"- Submitted at (UTC): `{row['timestamp']}`\n",
+        f"- Rating: `{row['rating']}`\n",
+        f"- Task: `{row['task'] or 'not specified'}`\n",
+    ]
+    
+    if row.get("name") or row.get("email"):
+        body_parts.append("- **Contributor contact:**\n")
+        if row.get("name"):
+            body_parts.append(f"  - Name: {row['name']}\n")
+        if row.get("email"):
+            body_parts.append(f"  - Email: {row['email']}\n")
+    
+    body_parts.extend([
+        "\n### Message\n",
+        f"{row['message']}\n",
+        "\n---\n",
+        "Source: GLOW web feedback form backfill sync.",
+    ])
+    
+    body = "".join(body_parts)
+    
     payload = {
         "title": title,
         "body": body,
@@ -146,7 +164,7 @@ def main() -> int:
         params = (args.limit,)
 
     rows = conn.execute(
-        "SELECT id, timestamp, rating, task, message, github_issue_number "
+        "SELECT id, timestamp, name, email, rating, task, message, github_issue_number "
         "FROM feedback WHERE github_issue_number IS NULL ORDER BY id ASC" + limit_clause,
         params,
     ).fetchall()
