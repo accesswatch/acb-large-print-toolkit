@@ -14,7 +14,7 @@
   <p><strong>AI is active.</strong> Using model <code>{{ ollama_model }}</code> via your Ollama account.</p>
 </div>
 
-<section aria-labelledby="ai-active-heading">
+<section>
   <h2 id="ai-active-heading">Change or remove your key</h2>
   <p>Your Ollama API key is active for this session. You can switch to a different key below, change your model, or remove your key to disable AI features.</p>
   <button type="button" id="forget-key-btn" class="btn btn--secondary">
@@ -25,7 +25,7 @@
 <hr>
 {% endif %}
 
-<section aria-labelledby="key-setup-heading">
+<section>
   <h2 id="key-setup-heading">{% if ollama_active %}Update key{% else %}Set up your Ollama key{% endif %}</h2>
 
   <ol class="setup-steps">
@@ -118,7 +118,7 @@
 </section>
 
 {% if ollama_active %}
-<section aria-labelledby="ai-features-heading">
+<section>
   <h2 id="ai-features-heading">Enabled AI features</h2>
   <p>Choose which GLOW workflows can use your Ollama key. Changes take effect immediately without re-entering your key. Document Chat is not yet available via Ollama and will be enabled in a future release.</p>
 
