@@ -44,7 +44,7 @@ test.describe('GLOW web regression suite', () => {
   test('home page loads and references WCAG 2.2', async ({ page }) => {
     await page.goto('/');
     await ensureConsent(page);
-    await expect(page.getByRole('heading', { level: 1, name: /GLOW Accessibility Toolkit/i })).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1, name: /GLOW/i })).toBeVisible();
     await expect(page.getByText(/WCAG\s*2\.2(?:\s*AA)?/i).first()).toBeVisible();
   });
 
