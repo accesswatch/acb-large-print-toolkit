@@ -1,4 +1,4 @@
-# TODO — GLOW Accessibility Toolkit
+# TODO — GLOW
 
 Only open items are tracked in this file.
 

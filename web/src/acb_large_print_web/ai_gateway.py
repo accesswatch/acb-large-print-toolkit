@@ -513,7 +513,7 @@ def _openrouter_completion(
     headers = {
         "Authorization": f"Bearer {api_key}",
         "HTTP-Referer": "https://glow.bits-acb.org",
-        "X-Title": "GLOW Accessibility Toolkit",
+        "X-Title": "GLOW",
         "Content-Type": "application/json",
     }
     model_candidates = _model_list(model)
@@ -725,7 +725,7 @@ def describe_image(
     headers = {
         "Authorization": f"Bearer {api_key}",
         "HTTP-Referer": "https://glow.bits-acb.org",
-        "X-Title": "GLOW Accessibility Toolkit",
+        "X-Title": "GLOW",
         "Content-Type": "application/json",
     }
 
@@ -847,7 +847,7 @@ def transcribe(
         headers = {
             "Authorization": f"Bearer {api_key}",
             "HTTP-Referer": "https://glow.bits-acb.org",
-            "X-Title": "GLOW Accessibility Toolkit",
+            "X-Title": "GLOW",
         }
         try:
             with open(audio_path, "rb") as f:
@@ -1014,7 +1014,7 @@ def _transcribe_via_input_audio(
     headers = {
         "Authorization": f"Bearer {api_key}",
         "HTTP-Referer": "https://glow.bits-acb.org",
-        "X-OpenRouter-Title": "GLOW Accessibility Toolkit",
+        "X-OpenRouter-Title": "GLOW",
         "Content-Type": "application/json",
     }
     resp = requests.post(
@@ -1134,7 +1134,7 @@ def get_model_catalog() -> list[dict[str, Any]]:
     headers = {
         "Authorization": f"Bearer {api_key}",
         "HTTP-Referer": "https://glow.bits-acb.org",
-        "X-Title": "GLOW Accessibility Toolkit",
+        "X-Title": "GLOW",
     }
     try:
         resp = requests.get(f"{_OPENROUTER_BASE}/models", headers=headers, timeout=20)

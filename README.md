@@ -1,4 +1,4 @@
-# GLOW Accessibility Toolkit
+# GLOW
 
 GLOW stands for **Guided Layout & Output Workflow**.
 
@@ -6,7 +6,7 @@ A VS Code agent toolkit, desktop application, and web application for auditing a
 
 External APH source reference: [APH Guidelines for the Development of Documents in Large Print](https://www.aph.org/resources/large-print-guidelines/).
 
-Status note: APH alignment in this toolkit is fully integrated in Release 1.2.0 for the submission workflow, alongside existing ACB + WCAG + Microsoft Accessibility Checker + format-specific rule sets.
+Status note: APH alignment in GLOW is fully integrated in Release 1.2.0 for the submission workflow, alongside existing ACB + WCAG + Microsoft Accessibility Checker + format-specific rule sets.
 
 ## Release 4.0.0 at a Glance
 
@@ -55,8 +55,8 @@ Profile reporting:
 
 ## Guideline Scope (ACB, APH, AFB)
 
-- This toolkit supports two large-print production standards: ACB (default) and APH (fully integrated submission profile in Release 1.2.0).
-- AFB JVIB style guidance is not a large-print production mode in this toolkit. It is an academic manuscript submission style for the Journal of Visual Impairment & Blindness.
+- GLOW supports two large-print production standards: ACB (default) and APH (fully integrated submission profile in Release 1.2.0).
+- AFB JVIB style guidance is not a large-print production mode in GLOW. It is an academic manuscript submission style for the Journal of Visual Impairment & Blindness.
 - Use ACB for consumer/member publications and APH for educational/student large-print workflows.
 - If you are preparing a JVIB manuscript, follow AFB JVIB rules directly outside the fix/audit profile selector.
 
@@ -66,7 +66,7 @@ References:
 - APH large-print guidance: https://www.aph.org/resources/large-print-guidelines/
 - AFB JVIB style guidelines: https://afb.org/news-publications/publications/jvib/authors/afb-style-guidelines
 
-## Writing Conventions Used in This Toolkit
+## Writing Conventions Used in GLOW
 
 - Use `large print` as a noun and `large-print` as a modifier.
 - Use em-dashes with no surrounding spaces.
@@ -109,7 +109,7 @@ Current rules are intentionally low-noise and focus on:
 | **VS Code agent** | Developers using VS Code with Copilot Chat | Yes -- copy agent files to VS Code config |
 | **Word Add-in** | Users who want ACB tools in the Word ribbon | Yes -- sideload the Office Add-in |
 
-## What this toolkit does
+## What GLOW does
 
 - Audits Word (.docx), Excel (.xlsx), PowerPoint (.pptx), Markdown (.md), PDF (.pdf), ePub (.epub), HTML, and CSS files for accessibility
 - Auto-fixes Word document compliance issues (fonts, spacing, emphasis, headings, margins)
@@ -395,7 +395,7 @@ The large-print-formatter has built-in handoff links. After an ACB audit, it can
 
 ## If you already have the accessibility agents installed
 
-The markdown accessibility agents are bundled here for completeness so this toolkit works standalone. **If you already have the [accessibility agents](https://github.com/accessibility-agents) repo cloned as a workspace or installed to your VS Code User config, use those copies as the source of truth.** Do not copy the bundled versions over newer ones. The accessibility agents repo receives updates to all agents, skills, and shared instructions that this standalone copy will not automatically pick up.
+The markdown accessibility agents are bundled here for completeness so GLOW works standalone. **If you already have the [accessibility agents](https://github.com/accessibility-agents) repo cloned as a workspace or installed to your VS Code User config, use those copies as the source of truth.** Do not copy the bundled versions over newer ones. The accessibility agents repo receives updates to all agents, skills, and shared instructions that this standalone copy will not automatically pick up.
 
 To check if you already have them:
 
@@ -501,7 +501,7 @@ Confidence statement:
 
 ## License
 
-This toolkit implements the ACB Large Print Guidelines, a public specification from the American Council of the Blind. The toolkit code and configuration files are provided for organizational use.
+GLOW implements the ACB Large Print Guidelines, a public specification from the American Council of the Blind. GLOW code and configuration files are provided for organizational use.
 
 ## Web Application
 

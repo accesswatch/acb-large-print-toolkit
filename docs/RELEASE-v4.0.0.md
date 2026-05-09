@@ -2,7 +2,7 @@
 
 ## Overview
 
-GLOW Accessibility Toolkit v4.0.0 is a trust-and-fidelity release.
+GLOW v4.0.0 is a trust-and-fidelity release.
 
 This version focuses on what operators and content teams need most after a major feature cycle:
 

@@ -2,7 +2,7 @@
 
 ## Overview
 
-GLOW Accessibility Toolkit v3.1.0 ships 11 new features and hardening improvements on top of the v3.0.0 community release. The headline additions are Braille Studio (BANA-compliant text-to-braille and braille-to-text translation), a significantly improved Speech Studio document narration pipeline, a new Server Status diagnostic page, and a comprehensive WCAG 2.2 AA self-audit of GLOW's interface running on every CI build.
+GLOW v3.1.0 ships 11 new features and hardening improvements on top of the v3.0.0 community release. The headline additions are Braille Studio (BANA-compliant text-to-braille and braille-to-text translation), a significantly improved Speech Studio document narration pipeline, a new Server Status diagnostic page, and a comprehensive WCAG 2.2 AA self-audit of GLOW's interface running on every CI build.
 
 All features are enabled by default and fully backward-compatible. No database migrations or configuration changes are required to upgrade from v3.0.0.
 

@@ -2,7 +2,7 @@
 
 ## Overview
 
-GLOW Accessibility Toolkit v2.7.0 is a UX-focused release that tightens the audit-fix-re-audit loop, consolidates Export into Convert, and adds several quality-of-life improvements including shareable report links, a Quick Wins filter, dark mode, and HTML preview for converted documents.
+GLOW v2.7.0 is a UX-focused release that tightens the audit-fix-re-audit loop, consolidates Export into Convert, and adds several quality-of-life improvements including shareable report links, a Quick Wins filter, dark mode, and HTML preview for converted documents.
 
 Core highlights:
 

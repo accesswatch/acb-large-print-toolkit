@@ -6,7 +6,7 @@
   <h2 id="guide-toc-heading">In This Guide</h2>
 <div class="toc">
 <ul>
-<li><a href="#glow-accessibility-toolkit----user-guide">GLOW Accessibility Toolkit -- User Guide</a><ul>
+<li><a href="#glow-accessibility-toolkit----user-guide">GLOW -- User Guide</a><ul>
 <li><a href="#in-this-guide">In This Guide</a></li>
 <li><a href="#whats-new-in-glow-400">What's New in GLOW 4.0.0</a><ul>
 <li><a href="#highlights-in-400">Highlights in 4.0.0</a></li>
@@ -369,7 +369,7 @@
 
 </nav>
 <div class="guide-content">
-<h1 id="glow-accessibility-toolkit----user-guide">GLOW Accessibility Toolkit -- User Guide</h1>
+<h1 id="glow-accessibility-toolkit----user-guide">GLOW -- User Guide</h1>
 <p>GLOW (Guided Layout and Output Workflow) helps you produce documents that people with low vision can read. It audits, fixes, converts, and templates Office documents, Markdown, PDFs, and ePubs against the ACB Large Print Guidelines and WCAG 2.2 Level AA.</p>
 <p>New to GLOW? Start at <a href="#1-quick-start">Quick Start</a>. Already familiar? Jump straight to the section you need.</p>
 <hr />
@@ -1639,7 +1639,7 @@ acb-lp detect-headings document.docx --ai --ai-prompt prompt.txt --threshold 75
 <h3 id="can-i-use-glow-for-documents-in-languages-other-than-english">Can I use GLOW for documents in languages other than English?</h3>
 <p>Yes. The ACB formatting rules (font, size, spacing, emphasis) apply regardless of language. Set the document language property (Rule: <code>ACB-DOC-LANGUAGE</code>) to the correct language code for proper screen reader pronunciation. BITS Whisperer supports automatic language detection or explicit language selection from 50+ languages.</p>
 <h3 id="is-there-a-desktop-version">Is there a desktop version?</h3>
-<p>Yes. The GLOW Accessibility Toolkit includes a desktop application with a graphical wizard interface, command-line tools, and batch processing support. It runs on Windows without requiring an internet connection. Download from the <a href="https://github.com/Community-Access/glow/releases">project releases page</a>.</p>
+<p>Yes. The GLOW includes a desktop application with a graphical wizard interface, command-line tools, and batch processing support. It runs on Windows without requiring an internet connection. Download from the <a href="https://github.com/Community-Access/glow/releases">project releases page</a>.</p>
 <h3 id="where-can-i-read-the-acb-large-print-guidelines">Where can I read the ACB Large Print Guidelines?</h3>
 <p>The full guidelines are at <a href="https://acb.org/large-print-guidelines">acb.org/large-print-guidelines</a> (revised May 6, 2025). A reference copy is in the repository at <code>docs/ACB Large Print Guidelines, revised 5-6-25.docx</code>. The web app includes a <a href="https://glow.bits-acb.org/guidelines">Guidelines page</a> with the complete rule reference and audit rule mappings.</p>
 <p>APH also publishes research-based large print guidance at <a href="https://www.aph.org/resources/large-print-guidelines/">aph.org/resources/large-print-guidelines</a>.</p>
@@ -1700,7 +1700,7 @@ acb-lp detect-headings document.docx --ai --ai-prompt prompt.txt --threshold 75
 <li><strong>Project README</strong> -- <a href="../README.md">README.md</a></li>
 <li><strong>Deployment and operations notes</strong> -- <a href="deployment.md">docs/deployment.md</a></li>
 </ul>
-<h1 id="glow-guided-layout-output-workflow-accessibility-toolkit----user-guide">GLOW (Guided Layout &amp; Output Workflow) Accessibility Toolkit -- User Guide</h1>
+<h1 id="glow-guided-layout-output-workflow-accessibility-toolkit----user-guide">GLOW (Guided Layout &amp; Output Workflow) -- User Guide</h1>
 <p>Everything you need to know to audit, fix, convert, and template your documents for ACB Large Print compliance using <strong>GLOW (Guided Layout &amp; Output Workflow)</strong>. New to accessibility? Start with the <strong>Quick Start</strong> path below.</p>
 <h2 id="in-this-guide_1">In This Guide</h2>
 <ol>
@@ -2168,7 +2168,7 @@ acb-lp detect-headings document.docx --ai --ai-prompt prompt.txt --threshold 75
 <p>If no candidates are found above the confidence threshold, the fix proceeds directly without the review step.</p>
 <p><strong>Using heading detection on the desktop GUI:</strong></p>
 <ol>
-<li>Open the GLOW Accessibility Toolkit desktop application.</li>
+<li>Open the GLOW desktop application.</li>
 <li>In the fix wizard (Step 3: Options), look for the Heading Detection section.</li>
 <li>Check "Detect and convert faux headings to real heading styles."</li>
 <li>Check "Refine with AI" if that feature is enabled in your deployment.</li>
@@ -2342,7 +2342,7 @@ acb-lp detect-headings document.docx --ai --ai-prompt my-prompt.txt --threshold 
 <p>Converts a document into a Word file. Pandoc maps headings, lists, tables, and emphasis into Word's native styles, so the output is immediately editable in Microsoft Word.</p>
 <p><strong>Accepts:</strong> Markdown (.md), reStructuredText (.rst), OpenDocument (.odt), Rich Text (.rtf), HTML (.html), and ePub (.epub).</p>
 <p><strong>You get back:</strong> a <code>.docx</code> file that opens directly in Microsoft Word or LibreOffice Writer.</p>
-<p><strong>Best when:</strong> you have a Markdown or HTML document and need a Word version for colleagues who work in Word, or when you want to run the toolkit's audit and auto-fix on content that started in another format. A common workflow: extract to Markdown, clean up, convert to Word, then run Fix for full ACB compliance.</p>
+<p><strong>Best when:</strong> you have a Markdown or HTML document and need a Word version for colleagues who work in Word, or when you want to run GLOW's audit and auto-fix on content that started in another format. A common workflow: extract to Markdown, clean up, convert to Word, then run Fix for full ACB compliance.</p>
 <h3 id="to-epub-3-e-book-via-pandoc">To EPUB 3 e-book (via Pandoc)</h3>
 <p><strong>Powered by:</strong> <a href="https://pandoc.org/">Pandoc</a> (John MacFarlane, UC Berkeley)</p>
 <p>Creates a lightweight EPUB 3 e-book with ACB Large Print CSS embedded in the stylesheet. Pandoc generates proper EPUB structure including a navigation document, content documents with semantic markup, and EPUB metadata from the document title.</p>
@@ -2571,7 +2571,7 @@ acb-lp detect-headings document.docx --ai --ai-prompt my-prompt.txt --threshold 
 </ol>
 <hr />
 <h2 id="13-daisy-accessibility-tools">13. DAISY Accessibility Tools</h2>
-<p>This toolkit integrates with open source tools from the <a href="https://daisy.org/">DAISY Consortium</a>, an international association serving people with print disabilities. Here is how each integration works:</p>
+<p>GLOW integrates with open source tools from the <a href="https://daisy.org/">DAISY Consortium</a>, an international association serving people with print disabilities. Here is how each integration works:</p>
 <h3 id="daisy-ace----epub-accessibility-checker_1">DAISY Ace -- EPUB Accessibility Checker</h3>
 <p><a href="https://daisy.github.io/ace/">Ace by DAISY</a> is bundled with the web application and runs 100+ automated accessibility checks on EPUB publications using the axe-core engine. Every ePub audit automatically includes:</p>
 <ul>
@@ -2637,7 +2637,7 @@ acb-lp detect-headings document.docx --ai --ai-prompt my-prompt.txt --threshold 
 <h3 id="can-i-use-this-tool-for-documents-in-languages-other-than-english">Can I use this tool for documents in languages other than English?</h3>
 <p>Yes. The ACB formatting rules (font, size, spacing) apply regardless of language. The tool audits document structure and formatting, not content. Set the document language property (Rule: ACB-DOC-LANGUAGE) to the correct language code for proper screen reader pronunciation.</p>
 <h3 id="is-there-a-desktop-version_1">Is there a desktop version?</h3>
-<p>Yes. The <a href="https://github.com/Community-Access/glow">GLOW Accessibility Toolkit</a> includes a desktop application with a graphical wizard interface, command-line tools, and batch processing support. It runs on Windows without requiring an internet connection.</p>
+<p>Yes. The <a href="https://github.com/Community-Access/glow">GLOW</a> includes a desktop application with a graphical wizard interface, command-line tools, and batch processing support. It runs on Windows without requiring an internet connection.</p>
 <h3 id="where-can-i-read-the-acb-large-print-guidelines_1">Where can I read the ACB Large Print Guidelines?</h3>
 <p>The full guidelines are available at <a href="https://acb.org/large-print-guidelines">acb.org/large-print-guidelines</a> (revised May 6, 2025). A reference copy is included in this repository at <code>docs/ACB Large Print Guidelines, revised 5-6-25.docx</code>. The web application includes a <a href="https://glow.bits-acb.org/guidelines">Guidelines page</a> with the complete rule reference and related audit rule mappings.</p>
 <p>APH also publishes research-based large print guidance at <a href="https://www.aph.org/resources/large-print-guidelines/">APH: Guidelines for the Development of Documents in Large Print</a>, including APH-hosted DOCX and PDF versions.</p>

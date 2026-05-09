@@ -1,8 +1,42 @@
-# GLOW Accessibility Toolkit -- User Guide
+# GLOW -- User Guide
 
 GLOW (Guided Layout and Output Workflow) helps you produce documents that people with low vision can read. It audits, fixes, converts, and templates Office documents, Markdown, PDFs, and ePubs against the ACB Large Print Guidelines and WCAG 2.2 Level AA.
 
 New to GLOW? Start at [Quick Start](#1-quick-start). Already familiar? Jump straight to the section you need.
+
+If AI is part of your setup, skip ahead to [What’s New in GLOW 6.0.0](#whats-new-in-glow-6.0.0) and [AI Features at a Glance](#ai-features-at-a-glance) for the short version of what GLOW can do when AI is on, and what stays hidden when it is not.
+
+---
+
+## What’s New in GLOW 6.0.0
+
+GLOW 6.0.0 is the open source release that makes the project easier to join, easier to explain, and easier to run with your own AI account when you want AI help.
+
+### Highlights in 6.0.0
+
+1. **Open source contribution process** -- The web site, release notes, and announcement files now explain how to fork the repo, open a branch, submit a pull request, and work through review under branch protection. The project is ready for community contributions, not just downloads.
+2. **Feedback-to-issue automation** -- Feedback submissions can now collect a name and email for follow-up and sync directly into GitHub Issues when a token is configured.
+3. **Personal Ollama Cloud AI support** -- Users can connect their own Ollama Cloud API key and enable the AI features that make sense for this release: heading detection and MarkItDown support. Document Chat stays off for now so the first release stays focused and reliable.
+4. **Visible AI usage meter** -- The sidebar now shows a live AI usage summary that refreshes on page load and after AI actions, so users can see what they have used during the current session.
+5. **Clearer AI guidance** -- The About page and this user guide now explain what AI can do in short form even when AI is not yet enabled, so users can understand the capability before they turn it on.
+
+### What stays simple
+
+- If you do not enable AI, every non-AI workflow in GLOW still works exactly as before.
+- If you do enable AI, the feature toggles keep the initial release limited to the most dependable text workflows.
+- Document Chat remains available as a future step, not the default starting point.
+
+## AI Features at a Glance
+
+If you are deciding whether to turn AI on, here is the short version:
+
+- **Heading detection** helps turn bold, large text into actual semantic headings.
+- **MarkItDown support** helps text extraction and document cleanup in workflows that benefit from a smarter assistant.
+- **Document Chat** is planned, but it is not enabled in the Ollama-first setup yet.
+- **Usage tracking** shows session-level request counts so you can see what you used while you were in GLOW.
+- **Whisperer** is separate and continues to use the server-side audio path when that is configured.
+
+If AI is disabled, GLOW hides the AI-specific entry points and keeps the rest of the app focused on its document workflows.
 
 ---
 
@@ -1378,7 +1412,7 @@ Yes. The ACB formatting rules (font, size, spacing, emphasis) apply regardless o
 
 ### Is there a desktop version?
 
-Yes. The GLOW Accessibility Toolkit includes a desktop application with a graphical wizard interface, command-line tools, and batch processing support. It runs on Windows without requiring an internet connection. Download from the [project releases page](https://github.com/Community-Access/glow/releases).
+Yes. The GLOW includes a desktop application with a graphical wizard interface, command-line tools, and batch processing support. It runs on Windows without requiring an internet connection. Download from the [project releases page](https://github.com/Community-Access/glow/releases).
 
 ### Where can I read the ACB Large Print Guidelines?
 
@@ -1531,7 +1565,7 @@ If **Remember my settings** is enabled, these defaults persist in local browser 
 - **Microsoft Accessibility Checker Guide** -- [Microsoft's guide to the Office accessibility checker](https://support.microsoft.com/en-us/office/improve-accessibility-with-the-accessibility-checker-a16f6de0-2f39-4a2b-8bd8-5ad801426c7f)
 - **Project README** -- [README.md](../README.md)
 - **Deployment and operations notes** -- [docs/deployment.md](deployment.md)
-# GLOW (Guided Layout & Output Workflow) Accessibility Toolkit -- User Guide
+# GLOW (Guided Layout & Output Workflow) -- User Guide
 
 Everything you need to know to audit, fix, convert, and template your documents for ACB Large Print compliance using **GLOW (Guided Layout & Output Workflow)**. New to accessibility? Start with the **Quick Start** path below.
 
@@ -2028,7 +2062,7 @@ If no candidates are found above the confidence threshold, the fix proceeds dire
 
 **Using heading detection on the desktop GUI:**
 
-1. Open the GLOW Accessibility Toolkit desktop application.
+1. Open the GLOW desktop application.
 2. In the fix wizard (Step 3: Options), look for the Heading Detection section.
 3. Check "Detect and convert faux headings to real heading styles."
 4. Check "Refine with AI" if that feature is enabled in your deployment.
@@ -2241,7 +2275,7 @@ Converts a document into a Word file. Pandoc maps headings, lists, tables, and e
 
 **You get back:** a `.docx` file that opens directly in Microsoft Word or LibreOffice Writer.
 
-**Best when:** you have a Markdown or HTML document and need a Word version for colleagues who work in Word, or when you want to run the toolkit's audit and auto-fix on content that started in another format. A common workflow: extract to Markdown, clean up, convert to Word, then run Fix for full ACB compliance.
+**Best when:** you have a Markdown or HTML document and need a Word version for colleagues who work in Word, or when you want to run GLOW's audit and auto-fix on content that started in another format. A common workflow: extract to Markdown, clean up, convert to Word, then run Fix for full ACB compliance.
 
 ### To EPUB 3 e-book (via Pandoc)
 
@@ -2514,7 +2548,7 @@ The **List Indentation** fields are always visible. They are disabled while **Fl
 
 ## 13. DAISY Accessibility Tools
 
-This toolkit integrates with open source tools from the [DAISY Consortium](https://daisy.org/), an international association serving people with print disabilities. Here is how each integration works:
+GLOW integrates with open source tools from the [DAISY Consortium](https://daisy.org/), an international association serving people with print disabilities. Here is how each integration works:
 
 ### DAISY Ace -- EPUB Accessibility Checker
 
@@ -2616,7 +2650,7 @@ Yes. The ACB formatting rules (font, size, spacing) apply regardless of language
 
 ### Is there a desktop version?
 
-Yes. The [GLOW Accessibility Toolkit](https://github.com/Community-Access/glow) includes a desktop application with a graphical wizard interface, command-line tools, and batch processing support. It runs on Windows without requiring an internet connection.
+Yes. The [GLOW](https://github.com/Community-Access/glow) includes a desktop application with a graphical wizard interface, command-line tools, and batch processing support. It runs on Windows without requiring an internet connection.
 
 ### Where can I read the ACB Large Print Guidelines?
 

@@ -1,8 +1,30 @@
 # Changelog
 
-All notable changes to the GLOW Accessibility Toolkit are documented in this file. The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
+All notable changes to the GLOW are documented in this file. The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 Releases are tagged in the [GitHub repository](https://github.com/Community-Access/glow). Dates are in Pacific Time (UTC-7).
+
+---
+
+## [6.0.0] - 2026-05-09
+
+### Added
+
+- **Open source contribution flow.** Added release notes and combined announcement files that explain the community contribution process, including fork/branch/PR review and branch protection.
+- **Feedback-to-issue automation.** Feedback submissions can collect contributor name and email and sync into GitHub Issues when configured.
+- **Ollama Cloud user key support.** Added session-scoped Ollama Cloud key handling and per-feature toggles for heading detection and MarkItDown.
+- **Session AI usage meter.** Added a sidebar meter and `/ai/usage/` endpoint so users can see how much AI they used during the current session.
+- **AI setup page.** Added a focused settings page for turning AI on, validating a key, and choosing a model.
+
+### Changed
+
+- **AI feature defaults.** For the Ollama path, heading detection and MarkItDown are enabled by default; Document Chat stays off until explicitly enabled.
+- **About page and user guide.** Both now explain AI capabilities in short form when AI is disabled and show the active feature set when it is enabled.
+- **Changelog and release communication.** Added this 6.0.0 entry plus release notes and a combined announcement so the release story is consistent across the site.
+
+### Security
+
+- **Session-only keys.** User-provided AI keys stay in the server-side session and are never logged or written to disk.
 
 ---
 
@@ -943,11 +965,11 @@ Releases are tagged in the [GitHub repository](https://github.com/Community-Acce
 
 - Established the 1.0 release baseline across desktop and web toolchains, with synchronized rule metadata and cross-format audit/fix workflows.
 - Introduced structured fix tracking with category-level reporting to make remediation output actionable for reviewers and administrators.
-- Expanded supported workflows across Word, Excel, PowerPoint, Markdown, PDF, and ePub in a single toolkit.
+- Expanded supported workflows across Word, Excel, PowerPoint, Markdown, PDF, and ePub in a single GLOW platform.
 
 ### Product Identity and Guided Experience
 
-- Rebranded the platform to **GLOW Accessibility Toolkit** (Guided Layout & Output Workflow) across web UI, desktop messaging, help content, and release surfaces.
+- Rebranded the platform to **GLOW** (Guided Layout & Output Workflow) across web UI, desktop messaging, help content, and release surfaces.
 - Added a clearer product identity with guided, user-friendly "magical" language while preserving standards-first behavior and compliance rigor.
 - Kept release versioning at **1.0.0** while modernizing product naming and onboarding copy.
 
@@ -1326,7 +1348,7 @@ Releases are tagged in the [GitHub repository](https://github.com/Community-Acce
 
 ### Initial Release
 
-The first public release of the GLOW Accessibility Toolkit.
+The first public release of the GLOW.
 
 #### VS Code Agent Toolkit
 
@@ -1376,6 +1398,6 @@ The first public release of the GLOW Accessibility Toolkit.
 
 #### Documentation
 
-- Comprehensive toolkit documentation (`docs/acb-large-print-toolkit.md`)
+- Comprehensive documentation (`docs/acb-large-print-toolkit.md`)
 - Project announcement (`docs/announcement.md`)
 - ACB Large Print Guidelines source document (`docs/`)

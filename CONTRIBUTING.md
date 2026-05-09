@@ -1,6 +1,6 @@
 # Contributing to GLOW
 
-Thank you for your interest in contributing to the GLOW Accessibility Toolkit. We welcome contributions from the community, whether you're fixing bugs, adding features, improving documentation, or sharing feedback.
+Thank you for your interest in contributing to the GLOW. We welcome contributions from the community, whether you're fixing bugs, adding features, improving documentation, or sharing feedback.
 
 ## Quick Start for Contributors
 

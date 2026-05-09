@@ -2,7 +2,7 @@
 
 ## Overview
 
-GLOW Accessibility Toolkit v2.6.0 expands document accessibility coverage in practical, user-visible ways across Word-adjacent workflows, PowerPoint timing/motion safety checks, Markdown quality auditing, and Excel structure support.
+GLOW v2.6.0 expands document accessibility coverage in practical, user-visible ways across Word-adjacent workflows, PowerPoint timing/motion safety checks, Markdown quality auditing, and Excel structure support.
 
 This release is strongly influenced by the open-source accessibility work of Jamal Mazrui. In particular, extCheck and xlHeaders helped identify high-value rule gaps and inspired both new checks and remediation behavior in this release.
 
