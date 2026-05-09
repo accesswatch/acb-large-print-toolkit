@@ -2,7 +2,11 @@
 # File: web/docker-compose.prod.yml
 #
 # Prerequisites:
-#   - web/.env file with SECRET_KEY, FEEDBACK_PASSWORD, LOG_LEVEL
+#   - web/.env file with required secrets (see web/.env for template)
+#     * SECRET_KEY - Flask session encryption key
+#     * FEEDBACK_PASSWORD - Password for /feedback/review dashboard
+#     * FEEDBACK_GITHUB_TOKEN - GitHub PAT for feedback-to-issue automation
+#     * FEEDBACK_GITHUB_REPO, FEEDBACK_GITHUB_ASSIGNEE, FEEDBACK_GITHUB_LABELS (optional)
 #   - web/Caddyfile with your domain configuration
 #   - web/www/ directory for the main site static files
 #   - desktop/ directory at ../desktop/ (needed for Docker build)
@@ -44,6 +48,7 @@ services:
     expose:
       - "8000"
     env_file: .env
+    # env_file loads: SECRET_KEY, FEEDBACK_PASSWORD, FEEDBACK_GITHUB_TOKEN, FEEDBACK_GITHUB_*
     environment:
       - FLASK_DEBUG=0
       - PIPELINE_URL=http://pipeline:8181/ws
@@ -57,6 +62,7 @@ services:
       - GLOW_ENABLE_AI_MARKITDOWN_LLM=${GLOW_ENABLE_AI_MARKITDOWN_LLM:-0}
       # Branding profile: 'bits' (default) or 'uarizona'
       - GLOW_BRAND_PROFILE=${GLOW_BRAND_PROFILE:-bits}
+      # Feedback-to-GitHub sync is enabled when FEEDBACK_GITHUB_TOKEN is set in .env
       # Postmark email notifications (optional -- email audit reports to users)
       # Set these in the .env file loaded via env_file above:
       #   POSTMARK_SERVER_TOKEN=your-postmark-server-token
