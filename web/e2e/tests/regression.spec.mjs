@@ -145,6 +145,13 @@ test.describe('GLOW web regression suite', () => {
       await crawlLinks.uncheck();
     }
 
+    // Keep this flow deterministic for CI: background mode renders a job page,
+    // while this regression asserts the final results page and artifact links.
+    const runInBackground = page.locator('input[name="run_in_background"]');
+    if (await runInBackground.count()) {
+      await runInBackground.uncheck();
+    }
+
     await page.locator('#max_pages').fill('1');
     await page.getByRole('button', { name: /Run Site Audit/i }).click();
 
