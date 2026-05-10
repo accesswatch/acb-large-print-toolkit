@@ -6,6 +6,28 @@ Releases are tagged in the [GitHub repository](https://github.com/Community-Acce
 
 ---
 
+## [Unreleased]
+
+### Added
+
+- **AI Playground (Beta).** New standalone chat surface at `/beta/chat/` for open-ended Ollama experimentation without document context. Features H3/H4 heading structure for keyboard/screen-reader navigation between questions and answers, typing indicator, temporary conversation storage, and copy-to-clipboard buttons on responses.
+- **Per-feature Ollama model selection.** Users can now choose different Ollama models for each AI feature (heading detection, MarkItDown, playground) in AI Features settings. Smart model recommendations based on feature capability hints (e.g., speed, reasoning).
+- **Smart response states in playground.** Pending assistant messages show "Thinking…" while fetching, then seamlessly transition to the actual response with copy button and model name on completion for fluid perceived performance.
+- **Playground UX enhancements.** Message headings use H3 for user prompts and H4 for assistant responses, enabling direct navigation by screen readers and keyboard users. Status region announces all feedback (success, error, info).
+- **Beta sidebar section.** Dedicated "Beta" navigation group with "Experimental" badge for playground and future beta features, keeping them visually separate from stable surfaces.
+- **Playground Ollama gating.** Requires active Ollama key to access playground, keeping it a pure Ollama testing surface. Explicit feature gate in `ai_features.py`.
+
+### Changed
+
+- **AI Feature enablement logic.** Playground feature is now properly gated in `require_ai_feature()` and is enabled when master AI is on and Ollama key is configured.
+- **Template context flags.** Added `ollama_active` and `ai_playground_enabled` aliases to feature flags for cleaner template logic.
+
+### Fixed
+
+- **Pre-commit checker compliance.** Fixed `check-config-consistency.py` to handle new `GLOW_ENABLE_AI` and per-feature toggles correctly.
+
+---
+
 ## [6.0.0] - 2026-05-09
 
 ### Added
@@ -43,6 +65,7 @@ Releases are tagged in the [GitHub repository](https://github.com/Community-Acce
 
 ### Changed
 
+- **Web: AI defaults now ship enabled for Ollama-first rollout.** Updated `web/src/acb_large_print_web/feature_flags.py` and `web/instance/feature_flags.json` so `GLOW_ENABLE_AI`, `GLOW_ENABLE_AI_HEADING_FIX`, and `GLOW_ENABLE_AI_MARKITDOWN_LLM` default to `true`, while chat/whisperer/alt-text remain opt-in/off by default.
 - **Web: AI setup is no longer treated as a Settings subpage.** Legacy `/settings/ai` links now redirect to the canonical `/ai/` page, the AI usage meter and About page now point to the new route, and the AI page now shows a clear disabled-state message when the deployment-level AI switch is off instead of rendering nonfunctional controls.
 - **Office Add-in: patched `fast-uri` transitive vulnerability (GHSA-v39h-62p7-jpjc).** Added `"fast-uri": ">=3.1.2"` to `office-addin/package.json` `overrides` and regenerated `office-addin/package-lock.json` so `fast-uri` resolves to `3.1.2`.
 - **Office Add-in: patched `fast-xml-builder` transitive vulnerability.** Added `"fast-xml-builder": ">=1.1.7"` to `office-addin/package.json` `overrides` and regenerated `office-addin/package-lock.json` so `fast-xml-builder` resolves to `1.2.0`.

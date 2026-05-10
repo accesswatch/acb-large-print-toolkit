@@ -9,11 +9,13 @@ from acb_large_print_web.rules import get_all_rule_ids
 from acb_large_print_web.credentials import (
     OLLAMA_FEATURE_DEFAULTS,
     OLLAMA_FEATURE_LABELS,
+    OLLAMA_FEATURE_MODEL_DEFAULTS,
     OLLAMA_MODEL_RECOMMENDATIONS,
     get_ollama_cloud_url,
     get_user_ollama_features,
     get_user_ollama_key,
     get_user_ollama_model,
+    get_user_ollama_model_for,
     is_ollama_configured,
 )
 
@@ -33,6 +35,11 @@ def _trim_text(value: object, limit: int = 300) -> str:
 
 def _render_ai_settings_page():
     features = get_user_ollama_features()
+    # Build per-feature model map for template
+    feature_models = {
+        feature: get_user_ollama_model_for(feature)
+        for feature in OLLAMA_FEATURE_DEFAULTS
+    }
     return render_template(
         "settings_ai.html",
         ollama_active=is_ollama_configured(),
@@ -41,6 +48,8 @@ def _render_ai_settings_page():
         ollama_features=features,
         ollama_feature_labels=OLLAMA_FEATURE_LABELS,
         ollama_feature_defaults=OLLAMA_FEATURE_DEFAULTS,
+        ollama_feature_model_defaults=OLLAMA_FEATURE_MODEL_DEFAULTS,
+        ollama_feature_models=feature_models,
     )
 
 
@@ -128,6 +137,18 @@ def save_ollama_features():
         updated[feature] = request.form.get(f"feature_{feature}") == "1"
 
     session["ollama_features"] = updated
+
+    # Persist per-feature model selections
+    feature_models: dict[str, str] = {}
+    valid_model_ids = {m["id"] for m in OLLAMA_MODEL_RECOMMENDATIONS}
+    for feature in OLLAMA_FEATURE_DEFAULTS:
+        chosen = (request.form.get(f"model_{feature}") or "").strip()
+        if chosen and (chosen in valid_model_ids or len(chosen) <= 80):
+            feature_models[feature] = chosen
+        else:
+            feature_models[feature] = OLLAMA_FEATURE_MODEL_DEFAULTS.get(feature, "llama3.2")
+
+    session["ollama_feature_models"] = feature_models
     session.modified = True
 
     enabled = [OLLAMA_FEATURE_LABELS.get(k, k) for k, v in updated.items() if v]

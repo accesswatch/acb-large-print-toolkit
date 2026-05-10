@@ -46,14 +46,14 @@ def _now_iso() -> str:
 
 
 _DEFAULTS: dict[str, bool] = {
-    # Master AI switch: default OFF for conservative deployments
-    "GLOW_ENABLE_AI": False,
-    # Individual AI features (all default OFF; master flag overrides)
+    # Master AI switch: enabled by default for Ollama-first deployments
+    "GLOW_ENABLE_AI": True,
+    # Individual AI features (master flag still overrides)
     "GLOW_ENABLE_AI_CHAT": False,
     "GLOW_ENABLE_AI_WHISPERER": False,
-    "GLOW_ENABLE_AI_HEADING_FIX": False,
+    "GLOW_ENABLE_AI_HEADING_FIX": True,
     "GLOW_ENABLE_AI_ALT_TEXT": False,
-    "GLOW_ENABLE_AI_MARKITDOWN_LLM": False,
+    "GLOW_ENABLE_AI_MARKITDOWN_LLM": True,
     # Broad GLOW feature flags (non-AI features).
     # Defaults: non-AI features are enabled by default so typical
     # document processing (audit, convert, export) is available.

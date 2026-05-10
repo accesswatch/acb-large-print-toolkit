@@ -130,6 +130,11 @@ def ai_markitdown_llm_enabled() -> bool:
     return _feature_enabled("GLOW_ENABLE_AI_MARKITDOWN_LLM") or _ollama_feature_enabled("GLOW_ENABLE_AI_MARKITDOWN_LLM", "markitdown")
 
 
+def ai_playground_enabled() -> bool:
+    """Return whether the standalone Ollama playground is available."""
+    return _master_ai_enabled() and is_ollama_configured()
+
+
 def get_all_flags() -> dict[str, bool]:
     """Return all AI feature flags as a dict for template injection."""
     configured = _master_ai_enabled()
@@ -138,7 +143,9 @@ def get_all_flags() -> dict[str, bool]:
     return {
         "ai_entry_enabled": ai_entry_enabled,
         "ai_configured": configured,
+        "ollama_active": ollama_active,
         "ai_ollama_active": ollama_active,
+        "ai_playground_enabled": ai_playground_enabled(),
         "ai_chat_enabled": ai_chat_enabled(),
         "ai_whisperer_enabled": ai_whisperer_enabled(),
         "ai_heading_fix_enabled": ai_heading_fix_enabled(),
@@ -180,6 +187,7 @@ def require_ai_feature(feature: str) -> None:
         "heading_fix": ai_heading_fix_enabled,
         "alt_text": ai_alt_text_enabled,
         "markitdown_llm": ai_markitdown_llm_enabled,
+        "playground": ai_playground_enabled,
     }
     fn = flag_map.get(feature)
     if fn is None or not fn():

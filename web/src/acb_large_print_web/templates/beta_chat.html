@@ -1,0 +1,660 @@
+{% extends "base.html" %}
+
+{% block title %}AI Playground (Beta) -- GLOW{% endblock %}
+{% block heading %}AI Playground <span class="badge badge--beta" aria-label="Beta feature">Beta</span>{% endblock %}
+
+{% block content %}
+<div class="beta-notice" role="note" aria-label="Beta notice">
+  <p><strong>Experimental feature.</strong> The AI Playground lets you send open-ended messages directly to your Ollama model to explore its capabilities. Conversations are temporary and never leave your session. No document is required.</p>
+</div>
+
+{% if not ai_entry_enabled %}
+  <div class="flash-warning" role="alert">
+    <div class="flash-icon" aria-hidden="true">&#x26A0;</div>
+    <p><strong>AI features are turned off on this server.</strong> An administrator needs to enable AI before the playground is available.</p>
+  </div>
+
+{% elif not ollama_active %}
+  <div class="flash-info" role="alert">
+    <div class="flash-icon" aria-hidden="true">&#x1F511;</div>
+    <p><strong>No Ollama key active.</strong> Set up your personal Ollama key in <a href="{{ url_for('ai.settings_ai_page') }}">AI Features</a> to use the playground.</p>
+  </div>
+
+{% else %}
+
+{# ── Model indicator ─────────────────────────────────────────── #}
+<p class="playground-model-indicator">
+  Using model <strong><code id="active-model">{{ playground_model }}</code></strong> for this session.
+  <a href="{{ url_for('ai.settings_ai_page') }}">Change model in AI Features.</a>
+</p>
+
+{# ── Live status alert region ────────────────────────────────── #}
+<div
+  id="playground-status"
+  role="status"
+  aria-live="polite"
+  aria-atomic="true"
+  class="playground-status"
+  aria-label="AI playground status"
+></div>
+
+{# ── Conversation log ─────────────────────────────────────────── #}
+<section aria-labelledby="conversation-heading">
+  <h2 id="conversation-heading">Conversation</h2>
+
+  <div
+    id="conversation-log"
+    class="conversation-log"
+    role="log"
+    aria-label="Conversation history"
+    aria-live="polite"
+    aria-relevant="additions"
+    tabindex="0"
+  >
+    {% if history %}
+      {% for msg in history %}
+        {% if msg.role == "user" %}
+        <article class="message message--user" aria-label="You said">
+          <h3 class="message__heading">You asked</h3>
+          <div class="message__body">{{ msg.content | e }}</div>
+        </article>
+        {% else %}
+        <article class="message message--assistant" aria-label="AI response">
+          <h4 class="message__heading">
+            AI response <span class="message__model" aria-label="Model: {{ playground_model }}">{{ playground_model }}</span>
+            <button type="button" class="copy-btn" aria-label="Copy this response to clipboard" title="Copy response">
+              <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><rect x="4" y="4" width="9" height="11" rx="1" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M3 3V2a1 1 0 011-1h7a1 1 0 011 1v9a1 1 0 01-1 1h-1" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>
+              Copy
+            </button>
+          </h4>
+          <div class="message__body">{{ msg.content | e }}</div>
+        </article>
+        {% endif %}
+      {% endfor %}
+    {% else %}
+      <p id="empty-log-msg" class="conversation-log__empty">No messages yet. Start the conversation below.</p>
+    {% endif %}
+  </div>
+</section>
+
+{# ── Typing indicator ────────────────────────────────────────── #}
+<div id="typing-indicator" class="typing-indicator" hidden aria-hidden="true" aria-live="polite">
+  <span class="typing-dot"></span>
+  <span class="typing-dot"></span>
+  <span class="typing-dot"></span>
+  <span class="visually-hidden">AI is thinking&hellip;</span>
+</div>
+
+{# ── Input form ──────────────────────────────────────────────── #}
+<section aria-labelledby="send-heading">
+  <h2 id="send-heading" class="visually-hidden">Send a message</h2>
+
+  <form id="playground-form" novalidate aria-describedby="playground-instructions">
+    <p id="playground-instructions" class="help-text">
+      Type a question or prompt and press <kbd>Enter</kbd> or the Send button.
+      Press <kbd>Shift + Enter</kbd> for a new line.
+    </p>
+
+    <div class="playground-input-row">
+      <label for="playground-message" class="visually-hidden">Your message</label>
+      <textarea
+        id="playground-message"
+        name="message"
+        rows="3"
+        maxlength="3000"
+        placeholder="Ask anything&hellip;"
+        autocomplete="off"
+        spellcheck="true"
+        aria-required="true"
+        aria-describedby="playground-char-count"
+        class="playground-textarea"
+      ></textarea>
+      <button type="submit" id="send-btn" class="btn btn--primary playground-send-btn" aria-label="Send message">
+        <svg width="18" height="18" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M2 8L14 2l-4 6 4 6L2 8z" fill="currentColor"/></svg>
+        Send
+      </button>
+    </div>
+    <p id="playground-char-count" class="help-text char-count" aria-live="polite"></p>
+  </form>
+
+  <div class="playground-actions">
+    <button type="button" id="clear-btn" class="btn btn--secondary btn--small">
+      Clear conversation
+    </button>
+  </div>
+</section>
+
+{% endif %}{# ollama_active #}
+{% endblock %}
+
+{% block extra_css %}
+<style>
+/* ── Beta notice ───────────────────────────────────────────────── */
+.beta-notice {
+  background: var(--color-accent-subtle, #f0f4ff);
+  border-left: 4px solid var(--color-accent, #4a6fa5);
+  border-radius: 0 0.375rem 0.375rem 0;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1.5rem;
+  font-size: 1rem;
+}
+.badge--beta {
+  background: var(--color-accent, #4a6fa5);
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 0.15em 0.55em;
+  border-radius: 0.25em;
+  vertical-align: middle;
+}
+
+/* ── Model indicator ───────────────────────────────────────────── */
+.playground-model-indicator {
+  font-size: 0.95rem;
+  color: var(--color-text-muted, #555);
+  margin-bottom: 1rem;
+}
+
+/* ── Status region ─────────────────────────────────────────────── */
+.playground-status {
+  min-height: 1.5rem;
+  margin-bottom: 0.75rem;
+  font-size: 0.95rem;
+}
+.playground-status:not(:empty) {
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.375rem;
+}
+.playground-status--error {
+  background: var(--color-error-bg, #fff0f0);
+  border: 1px solid var(--color-error, #c0392b);
+  color: var(--color-error, #c0392b);
+}
+.playground-status--success {
+  background: var(--color-success-bg, #f0fff4);
+  border: 1px solid var(--color-success, #27ae60);
+  color: var(--color-success, #1a7a42);
+}
+.playground-status--info {
+  background: var(--color-info-bg, #f0f8ff);
+  border: 1px solid var(--color-info, #2980b9);
+  color: var(--color-info-dark, #1a5276);
+}
+
+/* ── Conversation log ──────────────────────────────────────────── */
+.conversation-log {
+  border: 1px solid var(--color-border, #d0d7de);
+  border-radius: 0.5rem;
+  padding: 1rem;
+  min-height: 12rem;
+  max-height: 36rem;
+  overflow-y: auto;
+  scroll-behavior: smooth;
+  background: var(--color-surface, #fff);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+.conversation-log:focus {
+  outline: 2px solid var(--color-focus, #0050d8);
+  outline-offset: 2px;
+}
+.conversation-log__empty {
+  color: var(--color-text-muted, #6e7781);
+  font-style: italic;
+  text-align: center;
+  margin: auto;
+}
+
+/* ── Individual messages ───────────────────────────────────────── */
+.message {
+  max-width: 85%;
+  border-radius: 0.5rem;
+  padding: 0.625rem 0.875rem;
+  line-height: 1.5;
+  word-break: break-word;
+}
+.message__label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.25rem;
+  opacity: 0.7;
+}
+.message__heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0 0 0.25rem 0;
+  opacity: 0.86;
+}
+.message__model {
+  font-weight: 400;
+  font-family: monospace;
+  font-size: 0.85em;
+}
+.message__body {
+  white-space: pre-wrap;
+  font-size: 1rem;
+}
+.message--user {
+  align-self: flex-end;
+  background: var(--color-accent, #4a6fa5);
+  color: #fff;
+  border-bottom-right-radius: 0.125rem;
+}
+.message--assistant {
+  align-self: flex-start;
+  background: var(--color-surface-raised, #f6f8fa);
+  border: 1px solid var(--color-border, #d0d7de);
+  border-bottom-left-radius: 0.125rem;
+}
+
+.message--thinking {
+  opacity: 0.78;
+  border-style: dashed;
+}
+
+.message--thinking .message__body {
+  font-style: italic;
+}
+
+/* ── Copy button ──────────────────────────────────────────────── */
+.copy-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-left: 0.5rem;
+  padding: 0.15rem 0.45rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  font-family: inherit;
+  line-height: 1.4;
+  background: transparent;
+  border: 1px solid var(--color-border, #d0d7de);
+  border-radius: 0.25rem;
+  color: var(--color-text-muted, #555);
+  cursor: pointer;
+  vertical-align: middle;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.copy-btn:hover, .copy-btn:focus-visible {
+  background: var(--color-accent, #4a6fa5);
+  border-color: var(--color-accent, #4a6fa5);
+  color: #fff;
+  outline: 2px solid var(--color-focus, #0050d8);
+  outline-offset: 2px;
+}
+.copy-btn--copied {
+  background: var(--color-success, #27ae60) !important;
+  border-color: var(--color-success, #27ae60) !important;
+  color: #fff !important;
+}
+
+/* ── Typing indicator ──────────────────────────────────────────── */
+.typing-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.5rem 0;
+}
+.typing-dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: var(--color-accent, #4a6fa5);
+  animation: typing-bounce 1.2s ease-in-out infinite;
+}
+.typing-dot:nth-child(2) { animation-delay: 0.2s; }
+.typing-dot:nth-child(3) { animation-delay: 0.4s; }
+@keyframes typing-bounce {
+  0%, 60%, 100% { transform: translateY(0); opacity: 0.5; }
+  30%           { transform: translateY(-0.35rem); opacity: 1; }
+}
+
+/* ── Input area ────────────────────────────────────────────────── */
+.playground-input-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-end;
+  margin-bottom: 0.25rem;
+}
+.playground-textarea {
+  flex: 1;
+  resize: vertical;
+  font-size: 1rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--color-border, #d0d7de);
+  border-radius: 0.375rem;
+  font-family: inherit;
+  line-height: 1.5;
+}
+.playground-textarea:focus {
+  outline: 2px solid var(--color-focus, #0050d8);
+  outline-offset: 1px;
+  border-color: var(--color-focus, #0050d8);
+}
+.playground-send-btn {
+  align-self: flex-end;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.playground-actions {
+  margin-top: 0.75rem;
+}
+.char-count { color: var(--color-text-muted, #6e7781); font-size: 0.85rem; }
+.char-count--warn { color: var(--color-error, #c0392b); font-weight: 600; }
+
+/* ── Visually hidden utility ───────────────────────────────────── */
+.visually-hidden {
+  position: absolute;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden;
+  clip: rect(0,0,0,0);
+  white-space: nowrap;
+  border: 0;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+{% if ai_entry_enabled and ollama_active %}
+<script>
+/* global fetch */
+(function () {
+  "use strict";
+
+  var form        = document.getElementById("playground-form");
+  var textarea    = document.getElementById("playground-message");
+  var sendBtn     = document.getElementById("send-btn");
+  var clearBtn    = document.getElementById("clear-btn");
+  var log         = document.getElementById("conversation-log");
+  var status      = document.getElementById("playground-status");
+  var typing      = document.getElementById("typing-indicator");
+  var charCount   = document.getElementById("playground-char-count");
+  var emptyMsg    = document.getElementById("empty-log-msg");
+  var activeModel = document.getElementById("active-model");
+  var MAX_LEN     = 3000;
+
+  // ── Helpers ───────────────────────────────────────────────────
+  function setStatus(message, kind) {
+    status.textContent = message;
+    status.className = "playground-status" + (kind ? " playground-status--" + kind : "");
+  }
+
+  function clearStatus() {
+    status.textContent = "";
+    status.className = "playground-status";
+  }
+
+  function escapeHtml(text) {
+    return text
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+
+  function appendMessage(role, text, model) {
+    if (emptyMsg) { emptyMsg.remove(); emptyMsg = null; }
+
+    var article = document.createElement("article");
+    article.className = "message message--" + role;
+    article.setAttribute("aria-label", role === "user" ? "You said" : "AI response");
+
+    var heading = document.createElement(role === "user" ? "h3" : "h4");
+    heading.className = "message__heading";
+    if (role === "user") {
+      heading.textContent = "You asked";
+    } else {
+      heading.innerHTML =
+        "AI response <span class=\"message__model\" aria-label=\"Model: " + escapeHtml(model || "") + "\">" + escapeHtml(model || "") + "</span>" +
+        " <button type=\"button\" class=\"copy-btn\" aria-label=\"Copy this response to clipboard\" title=\"Copy response\">" +
+        "<svg width=\"14\" height=\"14\" viewBox=\"0 0 16 16\" aria-hidden=\"true\" focusable=\"false\"><rect x=\"4\" y=\"4\" width=\"9\" height=\"11\" rx=\"1\" stroke=\"currentColor\" stroke-width=\"1.5\" fill=\"none\"/><path d=\"M3 3V2a1 1 0 011-1h7a1 1 0 011 1v9a1 1 0 01-1 1h-1\" stroke=\"currentColor\" stroke-width=\"1.5\" fill=\"none\"/></svg>" +
+        " Copy</button>";
+    }
+
+    var body = document.createElement("div");
+    body.className = "message__body";
+    body.textContent = text;   // textContent is safe; no HTML injection
+
+    article.appendChild(heading);
+    article.appendChild(body);
+    log.appendChild(article);
+
+    // Scroll to latest, then move focus to the log so screen readers announce it
+    log.scrollTop = log.scrollHeight;
+    log.focus();
+    return article;
+  }
+
+  function appendThinkingMessage(model) {
+    if (emptyMsg) { emptyMsg.remove(); emptyMsg = null; }
+
+    var article = document.createElement("article");
+    article.className = "message message--assistant message--thinking";
+    article.setAttribute("aria-label", "AI response in progress");
+
+    var heading = document.createElement("h4");
+    heading.className = "message__heading";
+    heading.innerHTML = "AI response <span class=\"message__model\" aria-label=\"Model: " + escapeHtml(model || "") + "\">" + escapeHtml(model || "") + "</span>";
+
+    var body = document.createElement("div");
+    body.className = "message__body";
+    body.textContent = "Thinking…";
+
+    article.appendChild(heading);
+    article.appendChild(body);
+    log.appendChild(article);
+    log.scrollTop = log.scrollHeight;
+    log.setAttribute("aria-busy", "true");
+    return article;
+  }
+
+  function setTyping(visible) {
+    if (typing) {
+      typing.hidden = !visible;
+      typing.setAttribute("aria-hidden", visible ? "false" : "true");
+    }
+    if (log) {
+      log.setAttribute("aria-busy", visible ? "true" : "false");
+    }
+    sendBtn.disabled = visible;
+    textarea.disabled = visible;
+  }
+
+  // ── Character counter ─────────────────────────────────────────
+  if (textarea && charCount) {
+    textarea.addEventListener("input", function () {
+      var remaining = MAX_LEN - textarea.value.length;
+      charCount.textContent = remaining + " characters remaining";
+      charCount.classList.toggle("char-count--warn", remaining < 100);
+    });
+  }
+
+  // ── Enter to send (Shift+Enter for newline) ───────────────────
+  if (textarea) {
+    textarea.addEventListener("keydown", function (e) {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+      }
+    });
+  }
+
+  // ── Send message ──────────────────────────────────────────────
+  if (form) {
+    form.addEventListener("submit", function (e) {
+      e.preventDefault();
+      var message = textarea.value.trim();
+      if (!message) {
+        setStatus("Please type a message before sending.", "error");
+        textarea.focus();
+        return;
+      }
+      if (message.length > MAX_LEN) {
+        setStatus("Message is too long. Please shorten it to " + MAX_LEN + " characters.", "error");
+        return;
+      }
+
+      clearStatus();
+      appendMessage("user", message, null);
+      textarea.value = "";
+      if (charCount) charCount.textContent = MAX_LEN + " characters remaining";
+      setTyping(true);
+      var pendingAssistant = appendThinkingMessage(model);
+
+      fetch("{{ url_for('playground.playground_send') }}", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
+        body: JSON.stringify({ message: message }),
+      })
+        .then(function (r) {
+          return r.json().then(function (data) {
+            if (!r.ok || !data.ok) {
+              throw new Error(data.error || ("Server error " + r.status));
+            }
+            return data;
+          });
+        })
+        .then(function (data) {
+          if (pendingAssistant) {
+            pendingAssistant.classList.remove("message--thinking");
+            var body = pendingAssistant.querySelector(".message__body");
+            if (body) body.textContent = data.reply;
+            var heading = pendingAssistant.querySelector(".message__heading");
+            if (heading) {
+              heading.innerHTML = "AI response <span class=\"message__model\" aria-label=\"Model: " + escapeHtml(data.model || model || "") + "\">" + escapeHtml(data.model || model || "") + "</span> <button type=\"button\" class=\"copy-btn\" aria-label=\"Copy this response to clipboard\" title=\"Copy response\"><svg width=\"14\" height=\"14\" viewBox=\"0 0 16 16\" aria-hidden=\"true\" focusable=\"false\"><rect x=\"4\" y=\"4\" width=\"9\" height=\"11\" rx=\"1\" stroke=\"currentColor\" stroke-width=\"1.5\" fill=\"none\"/><path d=\"M3 3V2a1 1 0 011-1h7a1 1 0 011 1v9a1 1 0 01-1 1h-1\" stroke=\"currentColor\" stroke-width=\"1.5\" fill=\"none\"/></svg> Copy</button>";
+            }
+          } else {
+            appendMessage("assistant", data.reply, data.model);
+          }
+          if (activeModel && data.model) activeModel.textContent = data.model;
+          setStatus("Response received.", "success");
+          // Clear the success notice after 3 s so it's not permanently distracting
+          setTimeout(clearStatus, 3000);
+        })
+        .catch(function (err) {
+          var msg = (err && err.message) ? err.message : "Something went wrong. Please try again.";
+          setStatus("\u26A0 " + msg, "error");
+          log.scrollTop = log.scrollHeight;
+        })
+        .finally(function () {
+          setTyping(false);
+          if (log) log.removeAttribute("aria-busy");
+          textarea.focus();
+        });
+    });
+  }
+
+  // ── Clear conversation ────────────────────────────────────────
+  if (clearBtn) {
+    clearBtn.addEventListener("click", function () {
+      if (!confirm("Clear the entire conversation? This cannot be undone.")) return;
+
+      fetch("{{ url_for('playground.playground_clear') }}", {
+        method: "POST",
+        credentials: "same-origin",
+      })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          if (data.ok) {
+            // Remove all messages from the DOM
+            while (log.firstChild) log.removeChild(log.firstChild);
+
+            var placeholder = document.createElement("p");
+            placeholder.id = "empty-log-msg";
+            placeholder.className = "conversation-log__empty";
+            placeholder.textContent = "Conversation cleared. Start a new one below.";
+            log.appendChild(placeholder);
+            emptyMsg = placeholder;
+            log.removeAttribute("aria-busy");
+
+            setStatus("Conversation cleared.", "info");
+            setTimeout(clearStatus, 3000);
+            textarea.focus();
+          }
+        })
+        .catch(function () {
+          setStatus("Could not clear conversation. Please try again.", "error");
+        });
+    });
+  }
+
+  // Scroll to bottom on initial load (if history was restored from session)
+  log.scrollTop = log.scrollHeight;
+
+  // ── Copy response (delegated) ─────────────────────────────────
+  // Handles both server-rendered history and dynamically appended messages.
+  if (log) {
+    log.addEventListener("click", function (e) {
+      var btn = e.target.closest(".copy-btn");
+      if (!btn) return;
+
+      var article = btn.closest("article.message--assistant");
+      if (!article) return;
+
+      var bodyEl = article.querySelector(".message__body");
+      if (!bodyEl) return;
+
+      var text = bodyEl.textContent || "";
+
+      if (!navigator.clipboard) {
+        // Fallback for non-secure contexts
+        try {
+          var ta = document.createElement("textarea");
+          ta.value = text;
+          ta.style.position = "fixed";
+          ta.style.opacity = "0";
+          document.body.appendChild(ta);
+          ta.select();
+          document.execCommand("copy");
+          document.body.removeChild(ta);
+          flashCopied(btn);
+        } catch (_) {
+          setStatus("Copy not supported in this browser.", "error");
+        }
+        return;
+      }
+
+      navigator.clipboard.writeText(text).then(function () {
+        flashCopied(btn);
+      }).catch(function () {
+        setStatus("Could not copy to clipboard.", "error");
+      });
+    });
+  }
+
+  function flashCopied(btn) {
+    var original = btn.innerHTML;
+    btn.innerHTML = "<svg width=\"14\" height=\"14\" viewBox=\"0 0 16 16\" aria-hidden=\"true\" focusable=\"false\"><path d=\"M2 8l4 4 8-8\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" fill=\"none\"/></svg> Copied!";
+    btn.classList.add("copy-btn--copied");
+    btn.setAttribute("aria-label", "Copied to clipboard");
+    setTimeout(function () {
+      btn.innerHTML = original;
+      btn.classList.remove("copy-btn--copied");
+      btn.setAttribute("aria-label", "Copy this response to clipboard");
+    }, 2000);
+  }
+
+})();
+</script>
+{% endif %}
+{% endblock %}

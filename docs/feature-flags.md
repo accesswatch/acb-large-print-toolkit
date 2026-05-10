@@ -87,7 +87,7 @@ Flags reference
 ---------------
 This section documents every `GLOW_ENABLE_*` feature flag the application currently supports. Each entry lists the flag name, default value (as shipped), effect, and operational notes.
 
-- **`GLOW_ENABLE_AI`** (default: `false`)
+- **`GLOW_ENABLE_AI`** (default: `true`)
 	- Purpose: Master AI enable switch. When `false`, all user-facing AI features are hidden and AI-dependent routes raise `AIFeatureDisabled` or return gated responses.
 	- Notes: Toggling this flag in the admin UI cascades and forces all AI subfeatures off. Environment variable `GLOW_ENABLE_AI` overrides persisted settings for immediate effect.
 
@@ -99,7 +99,7 @@ This section documents every `GLOW_ENABLE_*` feature flag the application curren
 	- Purpose: Enables the BITS Whisperer (audio transcription) UI and routes.
 	- Notes: When `false`, Whisperer entry points are removed and audio POST handlers reject requests as unsupported.
 
-- **`GLOW_ENABLE_AI_HEADING_FIX`** (default: `false`)
+- **`GLOW_ENABLE_AI_HEADING_FIX`** (default: `true`)
 	- Purpose: Enables AI-powered heading detection/refinement used in the Fix workflow.
 	- Notes: When `false`, heading-detection form options that request AI are ignored and AI-based heuristics are disabled.
 
@@ -107,7 +107,7 @@ This section documents every `GLOW_ENABLE_*` feature flag the application curren
 	- Purpose: Enables AI-assisted alt-text suggestions UI and helpers.
 	- Notes: When `false`, AI alt-text controls are hidden and automated suggestions are disabled.
 
-- **`GLOW_ENABLE_AI_MARKITDOWN_LLM`** (default: `false`)
+- **`GLOW_ENABLE_AI_MARKITDOWN_LLM`** (default: `true`)
 	- Purpose: Enables MarkItDown LLM enhancements and integration points.
 	- Notes: When `false`, any experimental LLM-driven MarkItDown features are turned off.
 

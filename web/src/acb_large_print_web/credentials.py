@@ -83,11 +83,17 @@ _OLLAMA_CLOUD_URL = "https://ollama.com"
 _OLLAMA_CLOUD_API = f"{_OLLAMA_CLOUD_URL}/api"
 
 #: Models recommended per GLOW feature, shown in the setup UI.
+#: ``plan``  -- Ollama plan required: "free", "pro", or "max".
+#: ``speed`` -- subjective speed tier: "fast", "moderate", or "slow".
+#: Pricing info is maintained here manually; Ollama has no public pricing API.
+#: Reference: https://ollama.com/pricing
 OLLAMA_MODEL_RECOMMENDATIONS: list[dict] = [
     {
         "id": "llama3.2",
         "label": "Llama 3.2 (3B)",
         "recommended": True,
+        "plan": "free",
+        "speed": "fast",
         "features": ["heading_fix", "markitdown", "chat"],
         "note": "Fast, runs on most hardware. Good for all text features.",
     },
@@ -95,13 +101,17 @@ OLLAMA_MODEL_RECOMMENDATIONS: list[dict] = [
         "id": "llama3.3",
         "label": "Llama 3.3 (70B)",
         "recommended": False,
+        "plan": "pro",
+        "speed": "slow",
         "features": ["chat"],
-        "note": "Best accuracy for Document Chat. Requires Pro or Max plan.",
+        "note": "Best accuracy for Document Chat. Requires a paid Pro or Max plan.",
     },
     {
         "id": "mistral",
         "label": "Mistral (7B)",
         "recommended": False,
+        "plan": "free",
+        "speed": "moderate",
         "features": ["heading_fix", "markitdown", "chat"],
         "note": "Balanced quality and speed.",
     },
@@ -109,8 +119,28 @@ OLLAMA_MODEL_RECOMMENDATIONS: list[dict] = [
         "id": "qwen3:8b",
         "label": "Qwen3 (8B)",
         "recommended": False,
+        "plan": "free",
+        "speed": "moderate",
         "features": ["heading_fix", "markitdown", "chat"],
         "note": "Strong reasoning. Good alternative to Llama.",
+    },
+    {
+        "id": "phi4-mini",
+        "label": "Phi-4 Mini (3.8B)",
+        "recommended": False,
+        "plan": "free",
+        "speed": "fast",
+        "features": ["heading_fix", "markitdown"],
+        "note": "Microsoft small model. Very fast, lower accuracy than Llama.",
+    },
+    {
+        "id": "gemma3:4b",
+        "label": "Gemma 3 (4B)",
+        "recommended": False,
+        "plan": "free",
+        "speed": "fast",
+        "features": ["heading_fix", "markitdown", "chat"],
+        "note": "Google compact model. Fast, suitable for heading fix and formatting.",
     },
 ]
 
@@ -121,6 +151,7 @@ OLLAMA_FEATURE_DEFAULTS: dict[str, bool] = {
     "heading_fix": True,
     "markitdown": True,
     "chat": False,
+    "playground": True,  # Beta: open-ended chat playground, no document required
 }
 
 #: Human-readable labels for each toggleable Ollama feature.
@@ -128,6 +159,17 @@ OLLAMA_FEATURE_LABELS: dict[str, str] = {
     "heading_fix": "AI Heading Detection (Fix workflow)",
     "markitdown": "AI Document Formatting (MarkItDown)",
     "chat": "Document Chat",
+    "playground": "AI Playground (Beta)",
+}
+
+#: Default model to use for each feature. Falls back to the session global model.
+#: heading_fix and markitdown work best with fast small models.
+#: chat and playground benefit from slightly larger models when available.
+OLLAMA_FEATURE_MODEL_DEFAULTS: dict[str, str] = {
+    "heading_fix": "llama3.2",
+    "markitdown": "llama3.2",
+    "chat": "llama3.2",
+    "playground": "llama3.2",
 }
 
 
@@ -176,6 +218,21 @@ def get_user_ollama_model() -> str:
         return session.get("ollama_model", "llama3.2")
     except RuntimeError:
         return "llama3.2"
+
+
+def get_user_ollama_model_for(feature: str) -> str:
+    """Return the model the user has chosen for a specific feature.
+
+    Falls back to OLLAMA_FEATURE_MODEL_DEFAULTS, then to the session global model.
+    """
+    try:
+        from flask import session
+        feature_models: dict = session.get("ollama_feature_models", {})
+        if feature in feature_models and feature_models[feature]:
+            return feature_models[feature]
+    except RuntimeError:
+        pass
+    return OLLAMA_FEATURE_MODEL_DEFAULTS.get(feature, get_user_ollama_model())
 
 
 def is_ollama_configured() -> bool:

@@ -376,6 +376,7 @@ def create_app(config: dict | None = None) -> Flask:
     from .routes.consent import consent_bp, consent_required
     from .routes.process import process_bp
     from .routes.chat import chat_bp
+    from .routes.playground import playground_bp
     from .routes.admin import admin_bp
     from .routes.rules_ref import rules_ref_bp
     from .routes.speech import speech_bp
@@ -405,6 +406,7 @@ def create_app(config: dict | None = None) -> Flask:
     app.register_blueprint(about_bp, url_prefix="/about")
     app.register_blueprint(privacy_bp, url_prefix="/privacy")
     app.register_blueprint(chat_bp, url_prefix="/chat")
+    app.register_blueprint(playground_bp, url_prefix="/beta/chat")
     app.register_blueprint(admin_bp, url_prefix="/admin")
     app.register_blueprint(rules_ref_bp, url_prefix="/rules")
     app.register_blueprint(speech_bp, url_prefix="/speech")

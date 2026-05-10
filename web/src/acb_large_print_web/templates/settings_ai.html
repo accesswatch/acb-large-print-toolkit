@@ -60,13 +60,15 @@
       <label for="ollama-model">Model</label>
       <select id="ollama-model" name="ollama_model" aria-describedby="ollama-model-hint">
         {% for m in model_recommendations %}
-        <option value="{{ m.id }}"{% if m.id == ollama_model %} selected{% endif %}>
-          {{ m.label }}{% if m.recommended %} (recommended){% endif %}
+        {% set plan_badge = " — Free" if m.plan == "free" else (" — Pro plan" if m.plan == "pro" else " — Max plan") %}
+        <option value="{{ m.id }}"{% if m.id == ollama_model %} selected{% endif %}
+          data-plan="{{ m.plan }}" data-speed="{{ m.speed }}">
+          {{ m.label }}{{ plan_badge }}{% if m.recommended %} (recommended){% endif %}
         </option>
         {% endfor %}
-        <option value="other">Other (type below)</option>
+        <option value="other">Other / use model from your account</option>
       </select>
-      <p id="ollama-model-hint" class="help-text">All models run on Ollama's cloud GPUs. Larger models are slower and require a Pro or Max plan.</p>
+      <p id="ollama-model-hint" class="help-text">Plan labels above reflect Ollama's pricing as of May 2026. After checking your key, models actually available on your account are added automatically. <a href="https://ollama.com/pricing" rel="noopener noreferrer">View current Ollama pricing</a>.</p>
     </div>
 
     <div class="form-group" id="custom-model-group" hidden>
@@ -74,45 +76,35 @@
       <input type="text" id="ollama-custom-model" name="ollama_custom_model" placeholder="e.g. phi4-mini" autocomplete="off" style="font-family: monospace; max-width: 20rem;">
     </div>
 
-    <table class="model-guide" aria-label="Model recommendations by feature">
-      <caption>Which model is best for each feature</caption>
-      <thead>
-        <tr>
-          <th scope="col">Model</th>
-          <th scope="col">Good for</th>
-          <th scope="col">Plan needed</th>
-          <th scope="col">Speed</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <th scope="row"><code>llama3.2</code> (recommended)</th>
-          <td>Heading fix, MarkItDown, Document Chat</td>
-          <td>Free</td>
-          <td>Fast</td>
-        </tr>
-        <tr>
-          <th scope="row"><code>llama3.3</code></th>
-          <td>Document Chat (best accuracy)</td>
-          <td>Pro or Max</td>
-          <td>Slower</td>
-        </tr>
-        <tr>
-          <th scope="row"><code>mistral</code></th>
-          <td>Heading fix, MarkItDown, Document Chat</td>
-          <td>Free</td>
-          <td>Moderate</td>
-        </tr>
-        <tr>
-          <th scope="row"><code>qwen3:8b</code></th>
-          <td>Heading fix, MarkItDown, Document Chat</td>
-          <td>Free</td>
-          <td>Moderate</td>
-        </tr>
-      </tbody>
-    </table>
-
-    <p class="help-text">Features not supported by Ollama -- BITS Whisperer (audio transcription) -- remain hidden unless a server key is configured separately.</p>
+    <details class="model-guide-details">
+      <summary>Model comparison and plan requirements</summary>
+      <table class="model-guide" aria-label="Model recommendations by feature">
+        <caption>GLOW-recommended models -- plan requirements reflect Ollama pricing as of May 2026. <a href="https://ollama.com/pricing" rel="noopener noreferrer">Check current Ollama pricing.</a></caption>
+        <thead>
+          <tr>
+            <th scope="col">Model</th>
+            <th scope="col">Good for</th>
+            <th scope="col">Plan needed</th>
+            <th scope="col">Speed</th>
+            <th scope="col">Notes</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for m in model_recommendations %}
+          {% set plan_label = "Free" if m.plan == "free" else ("Pro or Max (paid)" if m.plan == "pro" else "Max (paid)") %}
+          {% set speed_label = m.speed | capitalize %}
+          <tr>
+            <th scope="row"><code>{{ m.id }}</code>{% if m.recommended %} <span class="badge badge--primary">recommended</span>{% endif %}</th>
+            <td>{{ m.features | join(", ") | replace("heading_fix", "Heading fix") | replace("markitdown", "MarkItDown") | replace("chat", "Document Chat") }}</td>
+            <td>{% if m.plan != "free" %}<strong>{{ plan_label }}</strong>{% else %}{{ plan_label }}{% endif %}</td>
+            <td>{{ speed_label }}</td>
+            <td>{{ m.note }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      <p class="help-text" style="margin-top: 0.5rem;">Paid plans are billed by Ollama directly -- GLOW never charges you or sees your billing details. BITS Whisperer (audio transcription) requires a separate server key and is not available via your personal Ollama key.</p>
+    </details>
 
     <div class="form-actions">
       <button type="button" id="validate-key-btn" class="btn btn--secondary">Check key</button>
@@ -132,23 +124,57 @@
 
   <form id="ai-features-form" novalidate>
     <fieldset>
-      <legend>Ollama-powered features</legend>
+      <legend>Ollama-powered features and recommended models</legend>
       {% for feature, label in ollama_feature_labels.items() %}
       {% set is_on = ollama_features.get(feature, ollama_feature_defaults.get(feature, False)) %}
-      {% set is_coming_soon = (feature == 'chat') %}
-      <div class="checkbox-group">
-        <label>
-          <input
-            type="checkbox"
-            name="feature_{{ feature }}"
-            value="1"
-            {% if is_on %}checked{% endif %}
-            {% if is_coming_soon %}disabled aria-describedby="feat-{{ feature }}-note"{% endif %}
+      {% set is_beta = (feature == 'playground') %}
+      {% set current_model = ollama_feature_models.get(feature, ollama_feature_model_defaults.get(feature, ollama_model)) %}
+      <section class="feature-model-card{% if is_beta %} feature-model-card--beta{% endif %}" aria-labelledby="feature-{{ feature }}-heading">
+        <div class="checkbox-group">
+          <label id="feature-{{ feature }}-heading">
+            <input
+              type="checkbox"
+              name="feature_{{ feature }}"
+              value="1"
+              {% if is_on %}checked{% endif %}
+            >
+            {{ label }}
+            {% if is_beta %}<span class="badge badge--muted" id="feat-{{ feature }}-note">beta</span>{% endif %}
+          </label>
+        </div>
+
+        <div class="form-group feature-model-group">
+          <label for="model-{{ feature }}">Model for {{ label }}</label>
+          <select
+            id="model-{{ feature }}"
+            name="model_{{ feature }}"
+            class="feature-model-select"
+            data-feature="{{ feature }}"
+            aria-describedby="model-{{ feature }}-hint"
           >
-          {{ label }}
-          {% if is_coming_soon %}<span class="badge badge--muted" id="feat-{{ feature }}-note">coming soon via Ollama</span>{% endif %}
-        </label>
-      </div>
+            {% for m in model_recommendations %}
+            {% set plan_badge = " — Free" if m.plan == "free" else (" — Pro plan" if m.plan == "pro" else " — Max plan") %}
+            {% set is_feature_fit = (feature in m.features) or feature == 'playground' %}
+            <option value="{{ m.id }}"{% if m.id == current_model %} selected{% endif %}{% if not is_feature_fit %} data-not-recommended="true"{% endif %}>
+              {{ m.label }}{{ plan_badge }}{% if m.recommended and is_feature_fit %} (recommended){% endif %}
+            </option>
+            {% endfor %}
+          </select>
+          <p id="model-{{ feature }}-hint" class="help-text">
+            {% if feature == 'chat' %}
+            Document Chat is document-aware and works best with a larger reasoning model.
+            {% elif feature == 'playground' %}
+            The playground is open-ended and is designed for quick model experiments without a document.
+            {% elif feature == 'heading_fix' %}
+            Heading-fix works best with fast models that respond quickly during audits.
+            {% elif feature == 'markitdown' %}
+            MarkItDown usually benefits from a balanced model with good text extraction.
+            {% else %}
+            Choose the model that works best for this feature.
+            {% endif %}
+          </p>
+        </div>
+      </section>
       {% endfor %}
     </fieldset>
     <div class="form-actions" style="margin-top: 1rem;">
@@ -250,6 +276,96 @@
     });
   }
 
+  // Known models with plan/speed metadata (mirrors credentials.py OLLAMA_MODEL_RECOMMENDATIONS).
+  // Used to enrich live model list returned from Ollama /api/tags after key validation.
+  var KNOWN_MODELS = {
+    {% for m in model_recommendations %}
+    "{{ m.id }}": { label: "{{ m.label }}", plan: "{{ m.plan }}", speed: "{{ m.speed }}", recommended: {{ "true" if m.recommended else "false" }} }{% if not loop.last %},{% endif %}
+    {% endfor %}
+  };
+
+  function planBadge(plan) {
+    if (plan === "free") return " \u2014 Free";
+    if (plan === "pro")  return " \u2014 Pro plan (paid)";
+    if (plan === "max")  return " \u2014 Max plan (paid)";
+    return "";
+  }
+
+  function mergeModelsIntoSelect(liveModels) {
+    if (!modelSel || !liveModels || !liveModels.length) return;
+    var currentValue = resolvedModel();
+    // Strip the leading tag qualifier from Ollama IDs e.g. "llama3.2:latest" -> "llama3.2"
+    var seen = new Set();
+    var options = [];
+    // First: add all known recommended models that appear in the live list OR are already in the select.
+    var allKnownIds = Object.keys(KNOWN_MODELS);
+    allKnownIds.forEach(function (id) {
+      seen.add(id);
+      var info = KNOWN_MODELS[id];
+      var label = info.label + planBadge(info.plan) + (info.recommended ? " (recommended)" : "");
+      options.push({ value: id, label: label, isKnown: true });
+    });
+    // Then: add any live models that aren't in the known list (account-specific or custom pulls).
+    liveModels.forEach(function (raw) {
+      var id = raw.replace(/:latest$/, "");
+      if (!seen.has(id)) {
+        seen.add(id);
+        options.push({ value: id, label: id + " \u2014 (from your account)", isKnown: false });
+      }
+    });
+    // Rebuild select options.
+    while (modelSel.options.length > 0) modelSel.remove(0);
+    options.forEach(function (opt) {
+      var el = document.createElement("option");
+      el.value = opt.value;
+      el.textContent = opt.label;
+      if (opt.value === currentValue) el.selected = true;
+      modelSel.appendChild(el);
+    });
+    // Always keep "Other" at the end.
+    var otherOpt = document.createElement("option");
+    otherOpt.value = "other";
+    otherOpt.textContent = "Other / use model from your account";
+    if (currentValue === "other") otherOpt.selected = true;
+    modelSel.appendChild(otherOpt);
+  }
+
+  function mergeModelsIntoFeatureSelects(liveModels) {
+    if (!liveModels || !liveModels.length) return;
+    var selects = document.querySelectorAll(".feature-model-select");
+    if (!selects.length) return;
+
+    selects.forEach(function (select) {
+      var currentValue = select.value;
+      var seen = new Set();
+      var options = [];
+
+      Object.keys(KNOWN_MODELS).forEach(function (id) {
+        seen.add(id);
+        var info = KNOWN_MODELS[id];
+        var label = info.label + planBadge(info.plan) + (info.recommended ? " (recommended)" : "");
+        options.push({ value: id, label: label });
+      });
+
+      liveModels.forEach(function (raw) {
+        var id = raw.replace(/:latest$/, "");
+        if (!seen.has(id)) {
+          seen.add(id);
+          options.push({ value: id, label: id + " \u2014 (from your account)" });
+        }
+      });
+
+      while (select.options.length > 0) select.remove(0);
+      options.forEach(function (opt) {
+        var el = document.createElement("option");
+        el.value = opt.value;
+        el.textContent = opt.label;
+        if (opt.value === currentValue) el.selected = true;
+        select.appendChild(el);
+      });
+    });
+  }
+
   if (validateBtn) {
     validateBtn.addEventListener("click", function () {
       const key = keyInput.value.trim();
@@ -265,7 +381,10 @@
         .then(function (r) { return parseJsonResponse(r, "validate-key"); })
         .then(function (data) {
           if (data.ok) {
-            valResult.textContent = "Key accepted. Models available: " + (data.models.length ? data.models.join(", ") : "none listed");
+            var count = data.models ? data.models.length : 0;
+            valResult.textContent = "Key accepted\u2014" + (count ? count + " model(s) found on your account and added to the list below." : "no models listed yet (you may need to pull a model on ollama.com first).");
+            mergeModelsIntoSelect(data.models || []);
+            mergeModelsIntoFeatureSelects(data.models || []);
           } else {
             valResult.textContent = "Problem: " + (data.error || "Unknown error.");
           }

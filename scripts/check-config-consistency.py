@@ -5,7 +5,7 @@ Pre-commit hook: Validate configuration consistency across GLOW surfaces.
 Checks:
 1. Feature flags consistency between web/src/acb_large_print_web/feature_flags.py
    and docker-compose.* files
-2. AI feature flags default to False/0
+2. AI feature flags match expected shipped defaults
 3. Tool integration flags default to True
 4. All required AI feature flags are defined
 5. Docker Compose files include all feature flags
@@ -31,14 +31,14 @@ DOCKER_PROD = REPO_ROOT / "web/docker-compose.prod.yml"
 DOCKER_WSL = REPO_ROOT / "web/docker-compose.wsl.yml"
 CI_REGRESSION = REPO_ROOT / ".github/workflows/accessibility-regression.yml"
 
-# Expected AI feature flags (must all be defined and default to False)
-REQUIRED_AI_FLAGS = {
-    "GLOW_ENABLE_AI",
-    "GLOW_ENABLE_AI_CHAT",
-    "GLOW_ENABLE_AI_WHISPERER",
-    "GLOW_ENABLE_AI_HEADING_FIX",
-    "GLOW_ENABLE_AI_ALT_TEXT",
-    "GLOW_ENABLE_AI_MARKITDOWN_LLM",
+# Expected AI feature defaults in feature_flags.py (must all be defined)
+EXPECTED_AI_DEFAULTS = {
+    "GLOW_ENABLE_AI": True,
+    "GLOW_ENABLE_AI_CHAT": False,
+    "GLOW_ENABLE_AI_WHISPERER": False,
+    "GLOW_ENABLE_AI_HEADING_FIX": True,
+    "GLOW_ENABLE_AI_ALT_TEXT": False,
+    "GLOW_ENABLE_AI_MARKITDOWN_LLM": True,
 }
 
 # Tool integration flags that should default to True
@@ -65,12 +65,13 @@ def check_feature_flags_py():
 
     content = FEATURE_FLAGS_PY.read_text()
 
-    # Check all required AI flags are defined
-    for flag in REQUIRED_AI_FLAGS:
-        pattern = rf'"{flag}":\s*False'
+    # Check all required AI flags are defined with expected defaults
+    for flag, expected in EXPECTED_AI_DEFAULTS.items():
+        expected_literal = "True" if expected else "False"
+        pattern = rf'"{flag}":\s*{expected_literal}'
         if not re.search(pattern, content):
             ERRORS.append(
-                f'[FAIL] AI flag "{flag}" not found or does not default to False '
+                f'[FAIL] AI flag "{flag}" not found or does not default to {expected_literal} '
                 f"in {FEATURE_FLAGS_PY}"
             )
 
@@ -93,7 +94,7 @@ def check_docker_compose(filepath: Path, name: str):
     content = filepath.read_text()
 
     # Check all AI flags are referenced (even if commented)
-    for flag in REQUIRED_AI_FLAGS:
+    for flag in EXPECTED_AI_DEFAULTS.keys():
         if flag not in content:
             ERRORS.append(
                 f'[FAIL] AI flag "{flag}" not found in {name} {filepath.name}'
@@ -146,7 +147,7 @@ def main():
         return 1
     else:
         print("[PASS] All configuration checks passed!")
-        print(f"   - AI flags: All {len(REQUIRED_AI_FLAGS)} flags present and False")
+        print(f"   - AI flags: All {len(EXPECTED_AI_DEFAULTS)} flags present with correct defaults")
         print(f"   - Tool flags: All {len(TOOL_INTEGRATION_FLAGS)} flags present and True")
         print(f"   - Docker Compose: All flags referenced")
         print(f"   - CI Regression: All AI flags set to false")

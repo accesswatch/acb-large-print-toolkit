@@ -48,6 +48,7 @@ from .credentials import (
     get_openrouter_api_key,
     get_user_ollama_key,
     get_user_ollama_model,
+    get_user_ollama_model_for,
     is_ollama_configured,
     get_ollama_cloud_url,
 )
@@ -612,11 +613,15 @@ def chat(
     session_hash: str,
     document_text: str = "",
     conversation_history: list[dict] | None = None,
+    feature: str = "chat",
 ) -> tuple[str, bool]:
     """Run a chat completion through the AI gateway.
 
     Routes to Ollama Cloud when the user has provided their own key;
     falls back to OpenRouter when only the server key is configured.
+
+    ``feature`` selects the per-feature model when Ollama is active
+    (e.g. 'chat', 'playground', 'heading_fix', 'markitdown').
 
     Returns:
         (answer_text, was_escalated)
@@ -637,9 +642,9 @@ def chat(
                 {"role": "user", "content": f"Document excerpt (first 4000 chars):\n{document_text[:4000]}"}
             )
         messages.append({"role": "user", "content": question})
-        model = get_user_ollama_model()
+        model = get_user_ollama_model_for(feature)
         answer, in_tok, out_tok, resolved = _ollama_completion(model, messages, session_hash)
-        _record_usage(session_hash, "chat", resolved, in_tok, out_tok, escalated=False)
+        _record_usage(session_hash, feature, resolved, in_tok, out_tok, escalated=False)
         return answer, False
 
     # --- OpenRouter path (server key) ---
