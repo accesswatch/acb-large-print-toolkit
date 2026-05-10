@@ -204,7 +204,7 @@
         {% endif %}
 
         <!-- ── Group 5: Explore and Learn ─────────────────────────── -->
-        <li class="sidebar-group sidebar-group--explore{% if request.blueprint in ['ai', 'chat', 'magic', 'guidelines', 'rules_ref', 'guide', 'faq', 'settings'] %} sidebar-group--active{% endif %}">
+        <li class="sidebar-group sidebar-group--explore{% if request.blueprint in ['ai', 'chat', 'guidelines', 'rules_ref', 'guide', 'faq', 'settings'] %} sidebar-group--active{% endif %}">
           <span class="sidebar-group-label" id="nav-group-explore">Explore and Learn</span>
           <ul aria-labelledby="nav-group-explore" role="list">
             {% if ai_entry_enabled %}
@@ -224,16 +224,6 @@
                  {% if request.blueprint == 'chat' %}aria-current="page"{% endif %}>
                 <svg class="nav-icon" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M2 2h12v9H5L2 14V2z" fill="currentColor"/><path d="M5 6h6M5 9h3" stroke="white" stroke-width="1.5" stroke-linecap="round"/></svg>
                 Document Chat
-              </a>
-            </li>
-            {% endif %}
-            {% if feature_table_advisor_enabled or feature_document_compare_enabled or feature_rule_contributions_enabled %}
-            <li>
-              <a href="{{ url_for('magic.magic_home') }}"
-                 class="sidebar-link{% if request.blueprint == 'magic' %} sidebar-link--active{% endif %}"
-                 {% if request.blueprint == 'magic' %}aria-current="page"{% endif %}>
-                <svg class="nav-icon" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M8 1l1.8 5H15l-4.5 3.3 1.7 5.2L8 11.5l-4.2 3 1.7-5.2L1 6h5.2L8 1z" fill="currentColor"/></svg>
-                Magic Lab
               </a>
             </li>
             {% endif %}
@@ -273,13 +263,14 @@
         </li>
 
         <!-- ── Beta group ────────────────────────────────────────────────── -->
-        {% if ai_playground_enabled %}
-        <li class="sidebar-group sidebar-group--beta{% if request.blueprint == 'playground' %} sidebar-group--active{% endif %}">
+        {% if ai_playground_enabled or (feature_table_advisor_enabled or feature_document_compare_enabled or feature_rule_contributions_enabled) %}
+        <li class="sidebar-group sidebar-group--beta{% if request.blueprint in ['playground', 'magic'] %} sidebar-group--active{% endif %}">
           <span class="sidebar-group-label" id="nav-group-beta">
             Beta
             <span class="sidebar-beta-badge" aria-label="Experimental">Experimental</span>
           </span>
           <ul aria-labelledby="nav-group-beta" role="list">
+            {% if ai_playground_enabled %}
             <li>
               <a href="{{ url_for('playground.playground_page') }}"
                  class="sidebar-link{% if request.blueprint == 'playground' %} sidebar-link--active{% endif %}"
@@ -288,6 +279,17 @@
                 AI Playground
               </a>
             </li>
+            {% endif %}
+            {% if feature_table_advisor_enabled or feature_document_compare_enabled or feature_rule_contributions_enabled %}
+            <li>
+              <a href="{{ url_for('magic.magic_home') }}"
+                 class="sidebar-link{% if request.blueprint == 'magic' %} sidebar-link--active{% endif %}"
+                 {% if request.blueprint == 'magic' %}aria-current="page"{% endif %}>
+                <svg class="nav-icon" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M8 1l1.8 5H15l-4.5 3.3 1.7 5.2L8 11.5l-4.2 3 1.7-5.2L1 6h5.2L8 1z" fill="currentColor"/></svg>
+                Magic Lab
+              </a>
+            </li>
+            {% endif %}
           </ul>
         </li>
         {% endif %}

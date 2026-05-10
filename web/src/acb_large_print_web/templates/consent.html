@@ -48,6 +48,12 @@
             <li>Transmitted content is not sold, shared, or used for advertising or independent product training by GLOW.</li>
             <li>AI-assisted options are always optional, clearly labelled, and can be skipped entirely.</li>
           </ul>
+          {% elif ai_entry_enabled %}
+          <h4>AI-Assisted Features</h4>
+          <ul>
+            <li>This server supports personal Ollama Cloud keys for AI-powered heading detection, MarkItDown support, and the AI Playground. You can configure your own key in Settings to enable AI features. Your key is never logged or stored on disk.</li>
+            <li>All AI-assisted options are optional, clearly labelled, and can be disabled at any time.</li>
+          </ul>
           {% else %}
           <h4>AI-Assisted Features</h4>
           <ul>
