@@ -25,20 +25,32 @@ Why this matters:
 - helps new contributors understand the expected workflow
 - aligns the release story with the open source contribution process already used in practice
 
-### 2. Personal Ollama Cloud AI setup
+### 2. Personal Ollama Cloud AI setup with AI Playground (Beta)
 
-Users can bring their own Ollama Cloud account and key, then enable only the features that make sense for the first release:
+Users can bring their own Ollama Cloud account and key, then enable the AI features that make sense for this release:
 
 - heading detection for Fix
 - MarkItDown support for document cleanup and extraction
+- **AI Playground (Beta)** -- a new standalone chat surface for experimenting with any Ollama model without document context
 
-Document Chat remains off by default in this release.
+The AI Playground introduces an experimental testing ground where users can explore model capabilities, try different Ollama models, and verify behavior before using AI in production workflows.
+
+What makes it magical:
+
+- Accessible conversation structure: questions appear as H3 headings, answers as H4, so you can navigate directly between them with a keyboard or screen reader
+- Smart response states: pending assistant messages show "Thinking…" while fetching, then transition seamlessly to the actual response with a copy button and model name
+- Per-feature model selection: choose different Ollama models for heading detection, MarkItDown, and the playground in one unified AI Features settings page
+- Temporary session history: conversations stay in your session only, never persisted by default, so exploration is safe and private
+- Typing indicator and smooth thinking animation: you see progress and feel heard while waiting for a response
+
+Document Chat remains off by default in this release. The Playground stays as Beta to keep expectations clear while we refine the experience.
 
 Why this matters:
 
 - keeps the first AI release focused and understandable
-- avoids overpromising features that are not yet part of the initial rollout
+- gives users a safe place to build confidence in Ollama before relying on AI in document workflows
 - makes it easier to explain what AI is for inside GLOW
+- the accessible heading structure (H3/H4) serves both sighted users navigating long conversations and screen reader users jumping between questions and answers
 
 ### 3. Visible AI usage tracking
 

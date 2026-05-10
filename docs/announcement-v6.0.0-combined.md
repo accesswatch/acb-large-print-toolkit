@@ -31,14 +31,19 @@ Why this matters:
 - it makes the project feel open and collaborative
 - it matches the way the project is already being used in practice
 
-### Personal Ollama Cloud AI support
+### Personal Ollama Cloud AI support with AI Playground (Beta)
 
 Users can add their own Ollama Cloud API key in GLOW and turn on the AI features that make sense for this release.
 
 What is enabled first:
 
-- heading detection in Fix
-- MarkItDown support for document cleanup and extraction
+- **heading detection** in Fix
+- **MarkItDown support** for document cleanup and extraction
+- **AI Playground (Beta)** -- a new experimental chat surface for testing Ollama models without document context
+
+The AI Playground is the new magic here.
+
+It is a standalone chat designed for exploration. Ask any question, try different Ollama models, see how the AI responds. Conversations stay private to your session. You can copy responses, regenerate them, switch models on the fly. The interface is accessible: your questions appear as headings, the AI responses as sub-headings, so you can navigate directly between them using a keyboard or screen reader.
 
 What stays off for now:
 

@@ -16,9 +16,10 @@ GLOW 6.0.0 is the open source release that makes the project easier to join, eas
 
 1. **Open source contribution process** -- The web site, release notes, and announcement files now explain how to fork the repo, open a branch, submit a pull request, and work through review under branch protection. The project is ready for community contributions, not just downloads.
 2. **Feedback-to-issue automation** -- Feedback submissions can now collect a name and email for follow-up and sync directly into GitHub Issues when a token is configured.
-3. **Personal Ollama Cloud AI support** -- Users can connect their own Ollama Cloud API key and enable the AI features that make sense for this release: heading detection and MarkItDown support. Document Chat stays off for now so the first release stays focused and reliable.
-4. **Visible AI usage meter** -- The sidebar now shows a live AI usage summary that refreshes on page load and after AI actions, so users can see what they have used during the current session.
-5. **Clearer AI guidance** -- The About page and this user guide now explain what AI can do in short form even when AI is not yet enabled, so users can understand the capability before they turn it on.
+3. **Personal Ollama Cloud AI support with AI Playground (Beta)** -- Users can connect their own Ollama Cloud API key and enable AI features. The playground is a new experimental chat surface for testing Ollama models without document context. You can explore model behavior, copy responses, switch models mid-conversation, and navigate questions and answers directly using your keyboard or screen reader. All conversation history is temporary and session-scoped.
+4. **Per-feature Ollama model selection** -- Choose different Ollama models for heading detection, MarkItDown support, and the playground from a unified AI Features settings page. The interface shows smart model recommendations based on what each feature does best.
+5. **Visible AI usage meter** -- The sidebar now shows a live AI usage summary that refreshes on page load and after AI actions, so users can see what they have used during the current session.
+6. **Clearer AI guidance** -- The About page and this user guide now explain what AI can do in short form even when AI is not yet enabled, so users can understand the capability before they turn it on.
 
 ### What stays simple
 
@@ -51,17 +52,18 @@ If AI is disabled, GLOW hides the AI-specific entry points and keeps the rest of
 7. [Braille Studio: Text-to-Braille Translation](#7-braille-studio-text-to-braille-translation)
 8. [Speech Studio: Document-to-Audio](#8-speech-studio-document-to-audio)
 9. [BITS Whisperer: Transcribe Audio](#9-bits-whisperer-transcribe-audio)
-10. [Document Chat](#10-document-chat)
-11. [Settings](#11-settings)
-12. [Understanding Your Results](#12-understanding-your-results)
-13. [Common Issues and How to Fix Them](#13-common-issues-and-how-to-fix-them)
-14. [Tips by Document Format](#14-tips-by-document-format)
-15. [Recommended Workflows](#15-recommended-workflows)
-16. [DAISY Accessibility Tools](#16-daisy-accessibility-tools)
-17. [Keyboard and Screen Reader Tips](#17-keyboard-and-screen-reader-tips)
-18. [Frequently Asked Questions](#18-frequently-asked-questions)
-19. [Website Accessibility Scans (Site Audit)](#19-website-accessibility-scans-site-audit)
-20. [Getting Help](#20-getting-help)
+10. [AI Playground (Beta): Explore Ollama Models](#10-ai-playground-beta-explore-ollama-models)
+11. [Document Chat](#11-document-chat)
+12. [Settings](#12-settings)
+13. [Understanding Your Results](#13-understanding-your-results)
+14. [Common Issues and How to Fix Them](#14-common-issues-and-how-to-fix-them)
+15. [Tips by Document Format](#15-tips-by-document-format)
+16. [Recommended Workflows](#16-recommended-workflows)
+17. [DAISY Accessibility Tools](#17-daisy-accessibility-tools)
+18. [Keyboard and Screen Reader Tips](#18-keyboard-and-screen-reader-tips)
+19. [Frequently Asked Questions](#19-frequently-asked-questions)
+20. [Website Accessibility Scans (Site Audit)](#20-website-accessibility-scans-site-audit)
+21. [Getting Help](#21-getting-help)
 
 ---
 
@@ -990,7 +992,66 @@ Your audio is uploaded to GLOW, optionally normalized for compatibility, sent to
 
 ---
 
-## 10. Document Chat
+## 10. AI Playground (Beta): Explore Ollama Models
+
+The AI Playground is your experimental testing ground for Ollama models. It is a standalone chat surface, separate from your documents, where you can explore how different models respond to questions and get comfortable with AI before relying on it for real accessibility work.
+
+Think of it as a safe space to build confidence. Ask any question. Switch models mid-conversation. Copy responses. Conversations stay in your session only and are never persisted to disk. It is magic because every part of it is designed to feel fluid and responsive.
+
+### Why the Playground exists
+
+- **Explore freely:** Try different Ollama models without risking document workflows.
+- **Learn by doing:** See how models respond to accessibility questions, repair guidance, formatting advice.
+- **Test before shipping:** Verify model behavior matches your expectations.
+- **Private experimentation:** Session-scoped history. You delete it when you close the browser.
+- **Accessible navigation:** Questions appear as H3 headings, answers as H4, so you can jump directly between them with a keyboard or screen reader.
+
+### How to access the Playground
+
+1. Go to the **Explore and Learn** section in the left sidebar.
+2. Click **Experimental** and select **AI Playground**.
+3. You will need an active Ollama Cloud API key (set up in Settings > Enable AI).
+
+### What the Playground feels like
+
+**Starting a conversation:**
+- Type a question or prompt in the text area.
+- Press Enter (or Shift+Enter for a new line) or click Send.
+- While GLOW fetches the response, a temporary assistant bubble appears showing "Thinking…"
+
+**Receiving a response:**
+- The thinking bubble smoothly transitions to the real response with no page reload.
+- The response includes the model name and a **Copy** button so you can grab the text.
+- A typing indicator animates to show progress during long responses.
+
+**Continuing the conversation:**
+- Ask follow-up questions. GLOW keeps the conversation history.
+- Notice the conversation log shows clear visual distinction: your questions as H3 headings, AI responses as H4 headings.
+- Screen reader users can jump directly between questions and answers using heading navigation.
+
+**Switching models:**
+- Click the model selector to try a different Ollama model without clearing history.
+- Re-ask your last question with a different model to compare responses.
+- Clear the entire conversation with the **Clear** button (you will be asked to confirm).
+
+### Starter questions to try
+
+- "Explain the ACB Large Print Guidelines in simple terms."
+- "What is the difference between em-dash and hyphen in accessible documents?"
+- "How would you fix italicized text in a low-vision document?"
+- "What heading hierarchy means and why it matters for screen readers."
+- "Describe the relationship between font size and line height in accessibility."
+
+### What the Playground is not
+
+- **Not Document Chat:** The Playground has no access to your documents. It is pure exploration.
+- **Not persistent:** Refresh the page and the conversation disappears.
+- **Not production-ready:** It is labeled Beta because we are still refining the experience.
+- **Not a replacement for Audit/Fix:** Use Document Chat or Audit for serious accessibility analysis.
+
+---
+
+## 11. Document Chat
 
 Document Chat lets you ask questions about an uploaded document in plain language. An OpenRouter-backed AI gateway answers using accessibility-focused tools across compliance, structure, content, and remediation. Core workflows remain available without AI if you prefer not to use it.
 
@@ -1060,7 +1121,7 @@ Conversation history is organized by heading-based turns for screen reader navig
 
 ---
 
-## 11. Settings
+## 12. Settings
 
 The **Settings** tab lets you configure default values once and apply them across every workflow.
 
@@ -1086,7 +1147,7 @@ Settings are saved in your browser's local storage. Nothing is sent to the serve
 
 ---
 
-## 12. Understanding Your Results
+## 13. Understanding Your Results
 
 ### Severity levels
 
@@ -1115,7 +1176,7 @@ Profile selection changes report filtering and template defaults. It does not ch
 
 ---
 
-## 13. Common Issues and How to Fix Them
+## 14. Common Issues and How to Fix Them
 
 ### "All text must use Arial font" (ACB-FONT-FAMILY)
 
@@ -1187,7 +1248,7 @@ The List Indentation fields are always visible. They are disabled while **Flush 
 
 ---
 
-## 14. Tips by Document Format
+## 15. Tips by Document Format
 
 ### Word (.docx)
 
@@ -1243,7 +1304,7 @@ The List Indentation fields are always visible. They are disabled while **Flush 
 
 ---
 
-## 15. Recommended Workflows
+## 16. Recommended Workflows
 
 ### Workflow A: Fix an existing document (streamlined)
 
@@ -1315,7 +1376,7 @@ Use this when you have a document you have worked on before and want a fast pass
 
 ---
 
-## 16. DAISY Accessibility Tools
+## 17. DAISY Accessibility Tools
 
 GLOW integrates with open source tools from the [DAISY Consortium](https://daisy.org/), an international association serving people with print disabilities.
 
@@ -1347,7 +1408,7 @@ When ePub files contain MathML, the audit detects it and provides guidance on ma
 
 ---
 
-## 17. Keyboard and Screen Reader Tips
+## 18. Keyboard and Screen Reader Tips
 
 GLOW is designed to work fully without a mouse.
 
@@ -1364,7 +1425,7 @@ GLOW is designed to work fully without a mouse.
 
 ---
 
-## 18. Frequently Asked Questions
+## 19. Frequently Asked Questions
 
 ### Is my document stored on the server?
 
@@ -1426,7 +1487,7 @@ Yes. GLOW includes an admin-only sign-in and approval workflow for operational d
 
 ---
 
-## 19. Website Accessibility Scans (Site Audit)
+## 20. Website Accessibility Scans (Site Audit)
 
 Site Audit is designed for page-level accessibility checks when your source is a URL instead of an uploaded document.
 
@@ -1548,7 +1609,7 @@ You can set default Site Audit options in **Settings**:
 
 If **Remember my settings** is enabled, these defaults persist in local browser storage.
 
-## 20. Getting Help
+## 21. Getting Help
 
 - **ACB Large Print Guidelines** -- [acb.org/large-print-guidelines](https://acb.org/large-print-guidelines)
 - **APH Large Print Guidelines** -- [aph.org/resources/large-print-guidelines](https://www.aph.org/resources/large-print-guidelines/)
