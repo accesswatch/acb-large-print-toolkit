@@ -8,8 +8,29 @@
 
 <div id="settings-status" class="flash-info" role="status" aria-live="polite" style="display:none;"></div>
 
+{% if ai_entry_enabled or ai_playground_enabled %}
+<section class="settings-ai-hub">
+  <h2>AI and Beta</h2>
+  <p>AI is optional. When you want it, GLOW supports your own Ollama key for heading detection, MarkItDown, and the experimental AI Playground. Beta features are grouped together so they are easy to find and easier to explain.</p>
+  <ul>
+    {% if ai_entry_enabled %}
+    <li><a href="{{ url_for('ai.settings_ai_page') }}">Open AI Features</a> to add or change your Ollama key and choose which AI workflows are enabled.</li>
+    {% endif %}
+    {% if ai_playground_enabled %}
+    <li><a href="{{ url_for('playground.playground_page') }}">Open AI Playground</a> to try open-ended prompts without a document.</li>
+    {% else %}
+    <li>The AI Playground is a beta feature. It appears in the sidebar when AI is available on this deployment.</li>
+    {% endif %}
+    {% if feature_table_advisor_enabled or feature_document_compare_enabled or feature_rule_contributions_enabled %}
+    <li><a href="{{ url_for('magic.magic_home') }}">Open Magic Lab</a> for experimental accessibility intelligence tools.</li>
+    {% endif %}
+  </ul>
+</section>
+{% endif %}
+
 <form id="settings-form" novalidate>
   <fieldset>
+    <h2 class="settings-group-heading">Appearance</h2>
     <legend>Appearance</legend>
     <p class="help-text">Choose how GLOW looks on this device. Your choice is saved in local storage on this browser only and applies before the page paints, so there is no flash on reload.</p>
     <div class="radio-group">
@@ -30,6 +51,7 @@
   </fieldset>
 
   <fieldset>
+    <h2 class="settings-group-heading">Privacy and Storage</h2>
     <legend>Privacy and Storage</legend>
     <label>
       <input type="checkbox" id="settings-opt-in" name="opt_in">
@@ -39,6 +61,7 @@
   </fieldset>
 
   <fieldset>
+    <h2 class="settings-group-heading">Custom Rule Sets</h2>
     <legend>Custom Rule Sets</legend>
     <p class="help-text">Use the Rules Reference page to save per-rule custom sets for Audit and Fix. These saved rule lists are used only when the corresponding workflow is set to Custom mode.</p>
 
@@ -66,6 +89,7 @@
   </fieldset>
 
   <fieldset>
+    <h2 class="settings-group-heading">Standards Profile Defaults</h2>
     <legend>Standards Profile Defaults</legend>
 
     <p class="help-text">These defaults pre-select profile radios in each workflow. ACB remains the baseline behavior.</p>
@@ -99,6 +123,7 @@
   </fieldset>
 
   <fieldset>
+    <h2 class="settings-group-heading">Audit Defaults</h2>
     <legend>Audit Defaults</legend>
     <div class="radio-group">
       <label><input type="radio" name="settings_audit_mode" value="full" checked> Full Audit</label>
@@ -118,6 +143,7 @@
   </fieldset>
 
   <fieldset>
+    <h2 class="settings-group-heading">Fix Defaults</h2>
     <legend>Fix Defaults</legend>
     <div class="radio-group">
       <label><input type="radio" name="settings_fix_mode" value="full" checked> Full Fix</label>
@@ -209,6 +235,7 @@
   </fieldset>
 
   <fieldset>
+    <h2 class="settings-group-heading">Template Defaults</h2>
     <legend>Template Defaults</legend>
     <div class="checkbox-group">
       <label><input type="checkbox" name="settings_template_include_sample"> Include sample content by default</label>
@@ -228,6 +255,7 @@
   </fieldset>
 
   <fieldset>
+    <h2 class="settings-group-heading">Export Defaults</h2>
     <legend>Export Defaults</legend>
     <div class="radio-group">
       <label><input type="radio" name="settings_export_mode" value="standalone" checked> Standalone HTML</label>
@@ -236,6 +264,7 @@
   </fieldset>
 
   <fieldset>
+    <h2 class="settings-group-heading">Convert Defaults</h2>
     <legend>Convert Defaults</legend>
     <div class="radio-group">
       {% set ns = namespace(default_set=false) %}
@@ -256,6 +285,7 @@
 
   {% if feature_site_audit_enabled %}
   <fieldset>
+    <h2 class="settings-group-heading">Site Audit Defaults</h2>
     <legend>Site Audit Defaults</legend>
     <div class="form-group form-group-inline">
       <label for="settings-site-audit-max-pages">Maximum pages per run:</label>
@@ -281,8 +311,8 @@
 
   {% if feature_speech_enabled %}
   <fieldset>
+    <h2 class="settings-group-heading">Speech Studio</h2>
     <legend>Speech Studio</legend>
-    <h2 id="settings-speech-heading">Speech Studio</h2>
     <p>Use Speech Studio for typed text preview and uploaded document-to-speech conversion with your saved voice settings.</p>
 
     <div class="form-group">

@@ -8,6 +8,13 @@ Releases are tagged in the [GitHub repository](https://github.com/Community-Acce
 
 ## [Unreleased]
 
+### Changed
+
+- **Settings page refreshed** with visible AI and Beta checkpoints, including a new AI and Beta hub that links to AI Features, AI Playground, and Magic Lab when available.
+- **Sidebar terminology cleaned up** so the experimental navigation group reads as Experimental instead of the run-together Beta/Experimental label.
+- **Home page What's New** now points to GLOW 6.0.0 and highlights AI Playground, AI Features, and MarkItDown + AI integration.
+- **Settings headings** now appear for each settings group so the page has explicit section headings in addition to fieldset legends.
+
 ---
 
 ## [6.0.0] - 2026-05-09

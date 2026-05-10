@@ -266,8 +266,7 @@
         {% if ai_playground_enabled or (feature_table_advisor_enabled or feature_document_compare_enabled or feature_rule_contributions_enabled) %}
         <li class="sidebar-group sidebar-group--beta{% if request.blueprint in ['playground', 'magic'] %} sidebar-group--active{% endif %}">
           <span class="sidebar-group-label" id="nav-group-beta">
-            Beta
-            <span class="sidebar-beta-badge" aria-label="Experimental">Experimental</span>
+            Experimental
           </span>
           <ul aria-labelledby="nav-group-beta" role="list">
             {% if ai_playground_enabled %}
