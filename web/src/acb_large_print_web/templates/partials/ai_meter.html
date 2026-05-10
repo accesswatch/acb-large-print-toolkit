@@ -1,6 +1,6 @@
 {# AI usage meter -- shown in sidebar when any AI provider is active #}
 {# Rendered server-side with initial values; updated live by ai-meter.js #}
-{% if ai_ollama_active is defined and ai_ollama_active %}
+{% if ai_entry_enabled is defined and ai_entry_enabled and ai_ollama_active is defined and ai_ollama_active %}
 <div
   class="ai-meter"
   id="ai-meter"
@@ -13,9 +13,9 @@
   <span class="ai-meter__detail" id="ai-meter-detail">
     <span id="ai-meter-requests">--</span> requests today &middot; <span id="ai-meter-model">--</span>
   </span>
-  <a href="{{ url_for('settings.settings_ai_page') }}" class="ai-meter__link" aria-label="AI settings -- change model or remove key">Change</a>
+  <a href="{{ url_for('ai.settings_ai_page') }}" class="ai-meter__link" aria-label="AI settings -- change model or remove key">Change</a>
 </div>
-{% elif ai_configured is defined and ai_configured %}
+{% elif ai_entry_enabled is defined and ai_entry_enabled and ai_configured is defined and ai_configured %}
 <div
   class="ai-meter ai-meter--shared"
   id="ai-meter"
@@ -32,9 +32,9 @@
     <span class="ai-meter__bar-fill" id="ai-meter-bar-fill" style="width: 0%;"></span>
   </span>
 </div>
-{% else %}
+{% elif ai_entry_enabled is defined and ai_entry_enabled %}
 <div class="ai-meter ai-meter--inactive">
   <span class="ai-meter__label">AI features</span>
-  <a href="{{ url_for('settings.settings_ai_page') }}" class="ai-meter__link">Enable with your Ollama key</a>
+  <a href="{{ url_for('ai.settings_ai_page') }}" class="ai-meter__link">Enable with your Ollama key</a>
 </div>
 {% endif %}

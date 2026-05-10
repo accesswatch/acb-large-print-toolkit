@@ -139,6 +139,17 @@ def settings_client(monkeypatch):
 
 
 class TestSettingsOllamaRoutes:
+    def test_ai_page_has_canonical_route(self, settings_client) -> None:
+        resp = settings_client.get("/ai/")
+        assert resp.status_code == 200
+        assert b"Enable AI Features" in resp.data
+        assert resp.headers.get("X-Request-ID")
+
+    def test_legacy_settings_ai_redirects_to_canonical_route(self, settings_client) -> None:
+        resp = settings_client.get("/settings/ai")
+        assert resp.status_code == 302
+        assert resp.headers["Location"].endswith("/ai/")
+
     def test_save_valid_key(self, settings_client) -> None:
         resp = settings_client.post(
             "/settings/ai/key",
@@ -202,3 +213,19 @@ class TestSettingsOllamaRoutes:
         data = resp.get_json()
         assert data["ok"] is False
         assert "rejected" in data["error"]
+
+    def test_client_log_endpoint_accepts_browser_errors(self, settings_client) -> None:
+        resp = settings_client.post(
+            "/ai/client-log",
+            json={
+                "kind": "ai-fetch-failure",
+                "action": "save-key",
+                "request_id": "req-client-123",
+                "message": "The request failed with status 500.",
+                "detail": "<html>server error</html>",
+            },
+        )
+
+        assert resp.status_code == 200
+        assert resp.get_json()["ok"] is True
+        assert resp.headers.get("X-Request-ID")

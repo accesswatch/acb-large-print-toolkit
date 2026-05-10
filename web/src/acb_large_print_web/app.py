@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 import os
+import uuid
 from datetime import UTC, datetime
 
 from flask import Flask, jsonify, render_template
@@ -68,8 +69,10 @@ def create_app(config: dict | None = None) -> Flask:
 
     @app.before_request
     def _record_request_start():
-        from flask import g as _g
+        from flask import g as _g, request as _req
         _g._request_start = _time.monotonic()
+        incoming_id = (_req.headers.get("X-Request-ID") or "").strip()
+        _g.request_id = incoming_id or uuid.uuid4().hex[:12]
 
     @app.before_request
     def _count_visitor():
@@ -90,12 +93,15 @@ def create_app(config: dict | None = None) -> Flask:
     @app.after_request
     def _log_request(response):
         from flask import g as _g, request as _req
+        request_id = getattr(_g, "request_id", "") or uuid.uuid4().hex[:12]
+        response.headers["X-Request-ID"] = request_id
         duration_ms = round((_time.monotonic() - getattr(_g, '_request_start', _time.monotonic())) * 1000)
         # Skip noisy health poll logs unless they fail or are slow
         if _req.path == '/health' and response.status_code == 200 and duration_ms < 2000:
             return response
         app.logger.info(
-            'REQUEST %s %s -> %s (%dms) ua=%s',
+            'REQUEST id=%s %s %s -> %s (%dms) ua=%s',
+            request_id,
             _req.method,
             _req.full_path.rstrip('?'),
             response.status_code,
@@ -364,7 +370,7 @@ def create_app(config: dict | None = None) -> Flask:
     from .routes.about import about_bp
     from .routes.convert import convert_bp
     from .routes.docs_pages import guide_bp, changelog_bp, prd_bp, faq_bp, announcement_bp
-    from .routes.settings import settings_bp
+    from .routes.settings import ai_bp, settings_bp
     from .routes.privacy import privacy_bp
     from .routes.whisperer import whisperer_bp
     from .routes.consent import consent_bp, consent_required
@@ -394,6 +400,7 @@ def create_app(config: dict | None = None) -> Flask:
     app.register_blueprint(faq_bp, url_prefix="/faq")
     app.register_blueprint(announcement_bp, url_prefix="/announcement")
     app.register_blueprint(settings_bp, url_prefix="/settings")
+    app.register_blueprint(ai_bp, url_prefix="/ai")
     app.register_blueprint(feedback_bp, url_prefix="/feedback")
     app.register_blueprint(about_bp, url_prefix="/about")
     app.register_blueprint(privacy_bp, url_prefix="/privacy")
