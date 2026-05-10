@@ -3,7 +3,7 @@
 import logging
 
 import requests
-from flask import Blueprint, jsonify, render_template, request, session
+from flask import Blueprint, jsonify, redirect, render_template, request, session, url_for
 
 from acb_large_print_web.rules import get_all_rule_ids
 from acb_large_print_web.credentials import (
@@ -19,21 +19,19 @@ from acb_large_print_web.credentials import (
 
 log = logging.getLogger(__name__)
 settings_bp = Blueprint("settings", __name__)
+ai_bp = Blueprint("ai", __name__)
 
 _OLLAMA_VALID_MODELS = {m["id"] for m in OLLAMA_MODEL_RECOMMENDATIONS}
 
 
-@settings_bp.route("/", methods=["GET"])
-def settings_page():
-    return render_template(
-        "settings.html",
-        total_rules=len(get_all_rule_ids()),
-    )
+def _trim_text(value: object, limit: int = 300) -> str:
+    text = str(value or "").strip()
+    if len(text) <= limit:
+        return text
+    return f"{text[:limit - 1]}..."
 
 
-@settings_bp.route("/ai", methods=["GET"])
-def settings_ai_page():
-    """Dedicated page for Ollama AI key setup, model selection, and feature toggles."""
+def _render_ai_settings_page():
     features = get_user_ollama_features()
     return render_template(
         "settings_ai.html",
@@ -46,7 +44,28 @@ def settings_ai_page():
     )
 
 
+@settings_bp.route("/", methods=["GET"])
+def settings_page():
+    return render_template(
+        "settings.html",
+        total_rules=len(get_all_rule_ids()),
+    )
+
+
+@settings_bp.route("/ai", methods=["GET"])
+def settings_ai_redirect():
+    """Legacy AI settings path kept for existing links and cached pages."""
+    return redirect(url_for("ai.settings_ai_page"), code=302)
+
+
+@ai_bp.route("/", methods=["GET"])
+def settings_ai_page():
+    """Dedicated page for Ollama AI key setup, model selection, and feature toggles."""
+    return _render_ai_settings_page()
+
+
 @settings_bp.route("/ai/key", methods=["POST"])
+@ai_bp.route("/key", methods=["POST"])
 def save_ollama_key():
     """Save the user's Ollama API key and chosen model to the session.
 
@@ -82,6 +101,7 @@ def save_ollama_key():
 
 
 @settings_bp.route("/ai/key", methods=["DELETE"])
+@ai_bp.route("/key", methods=["DELETE"])
 def forget_ollama_key():
     """Remove the Ollama API key, model, and feature toggles from the session."""
     session.pop("ollama_api_key", None)
@@ -92,6 +112,7 @@ def forget_ollama_key():
 
 
 @settings_bp.route("/ai/features", methods=["POST"])
+@ai_bp.route("/features", methods=["POST"])
 def save_ollama_features():
     """Persist the user's per-feature Ollama enable choices to the session.
 
@@ -114,6 +135,7 @@ def save_ollama_features():
 
 
 @settings_bp.route("/ai/validate", methods=["POST"])
+@ai_bp.route("/validate", methods=["POST"])
 def validate_ollama_key():
     """Validate an Ollama API key by making a lightweight /api/tags request.
 
@@ -141,3 +163,45 @@ def validate_ollama_key():
         return jsonify({"ok": True, "models": model_names[:20]})
     except requests.RequestException as exc:
         return jsonify({"ok": False, "error": f"Could not reach Ollama: {exc}"}), 200
+
+
+@ai_bp.route("/client-log", methods=["POST"])
+def client_log():
+    """Accept structured browser-side diagnostics for AI page failures."""
+    payload = request.get_json(silent=True)
+    if not isinstance(payload, dict):
+        return jsonify({"ok": False, "error": "JSON object required."}), 400
+
+    entry = {
+        "kind": _trim_text(payload.get("kind") or "client-error", 80),
+        "message": _trim_text(payload.get("message") or "Unknown browser error", 600),
+        "page": _trim_text(payload.get("page") or request.headers.get("Referer") or "", 200),
+        "request_id": _trim_text(payload.get("request_id") or payload.get("requestId"), 80),
+        "server_request_id": _trim_text(request.headers.get("X-Request-ID"), 80),
+        "source": _trim_text(payload.get("source"), 120),
+        "action": _trim_text(payload.get("action"), 120),
+        "status": _trim_text(payload.get("status"), 40),
+        "url": _trim_text(payload.get("url"), 200),
+        "line": _trim_text(payload.get("line"), 20),
+        "column": _trim_text(payload.get("column"), 20),
+        "detail": _trim_text(payload.get("detail"), 1200),
+        "stack": _trim_text(payload.get("stack"), 1500),
+        "user_agent": _trim_text(request.user_agent.string, 200),
+    }
+
+    log.warning(
+        "CLIENT_ERROR req=%s srv_req=%s kind=%s action=%s status=%s page=%s source=%s url=%s message=%s detail=%s stack=%s ua=%s",
+        entry["request_id"],
+        entry["server_request_id"],
+        entry["kind"],
+        entry["action"],
+        entry["status"],
+        entry["page"],
+        entry["source"],
+        entry["url"],
+        entry["message"],
+        entry["detail"],
+        entry["stack"],
+        entry["user_agent"],
+    )
+    return jsonify({"ok": True})
