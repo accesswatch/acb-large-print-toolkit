@@ -1,18 +1,23 @@
 # GLOW AI Roadmap: High-Value Features for Magical Experiences
 
 **Last Updated:** May 10, 2026  
-**Current Release:** 6.0.0 (AI Playground Beta, Per-feature Ollama Models)  
-**Next Release:** 6.1.0 (Streaming Responses, Session Quotas)  
+**Current Release:** 6.0.0 (AI Playground Beta, Per-feature Ollama Models, Streaming Responses)  
+**Next Release:** 6.1.0 (Session Quotas, Analytics)  
 **Vision:** Transform GLOW's AI capabilities into a fluid, responsive, and predictable conversation experience that makes accessibility guidance feel native and inevitable.
 
 ---
 
-## Phase 1: Fluidity & Responsiveness (6.1.0 - Next Sprint)
+## Phase 1: Fluidity & Responsiveness (6.0 rollout complete, 6.1.0 follow-ups)
 
-### 1. Streaming Responses
+### 1. Streaming Responses (Delivered)
 - **Why:** Current playground shows "Thinking…" then full response. Streaming makes responses feel more immediate and less like a "wait wall."
-- **Technical:** Modify `/playground/send` to use Server-Sent Events (SSE) instead of JSON polling. Frontend can render tokens as they arrive.
+- **Technical:** Added `/beta/chat/stream` Server-Sent Events (SSE) endpoint with incremental token rendering in the playground UI and fallback to `/beta/chat/send`.
 - **Value:** Users see progress. Feels less like a black box. Works better over slow connections.
+
+### 1b. Chat Surface Flag Split (Delivered)
+- **What:** Document Chat and general chat are now controlled independently.
+- **Technical:** `GLOW_ENABLE_AI_CHAT` gates Document Chat only, and `GLOW_ENABLE_AI_GENERAL_CHAT` gates AI Playground/general chat.
+- **Default posture:** General chat enabled for Ollama-first rollout; Document Chat remains disabled by default.
 
 ### 2. Response Regeneration for Playground
 - **Why:** Users should be able to re-ask with different models or settings without clearing history.

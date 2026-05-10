@@ -8,12 +8,18 @@ Releases are tagged in the [GitHub repository](https://github.com/Community-Acce
 
 ## [Unreleased]
 
+### Added
+
+- **AI Playground streaming responses (SSE)** at `/beta/chat/stream` for token-by-token output rendering with automatic fallback to the legacy JSON endpoint when streaming is unavailable.
+
 ### Changed
 
 - **Settings page refreshed** with visible AI and Beta checkpoints, including a new AI and Beta hub that links to AI Features, AI Playground, and Magic Lab when available.
 - **Sidebar terminology cleaned up** so the experimental navigation group reads as Experimental instead of the run-together Beta/Experimental label.
 - **Home page What's New** now points to GLOW 6.0.0 and highlights AI Playground, AI Features, and MarkItDown + AI integration.
 - **Settings headings** now appear for each settings group so the page has explicit section headings in addition to fieldset legends.
+- **AI feature flag split for chat surfaces**: `GLOW_ENABLE_AI_CHAT` now gates Document Chat only, while new `GLOW_ENABLE_AI_GENERAL_CHAT` gates AI Playground/general chat.
+- **Production AI defaults aligned to Ollama-first rollout**: `GLOW_ENABLE_AI`, `GLOW_ENABLE_AI_GENERAL_CHAT`, `GLOW_ENABLE_AI_HEADING_FIX`, and `GLOW_ENABLE_AI_MARKITDOWN_LLM` default on in production compose; Document Chat, Whisperer, and alt-text remain off by default.
 
 ---
 

@@ -467,6 +467,115 @@
     return article;
   }
 
+  function setAssistantContent(article, text, modelValue) {
+    if (!article) return;
+    article.classList.remove("message--thinking");
+    var body = article.querySelector(".message__body");
+    if (body) body.textContent = text;
+    var heading = article.querySelector(".message__heading");
+    if (heading) {
+      heading.innerHTML = "AI response <span class=\"message__model\" aria-label=\"Model: " + escapeHtml(modelValue || model || "") + "\">" + escapeHtml(modelValue || model || "") + "</span> <button type=\"button\" class=\"copy-btn\" aria-label=\"Copy this response to clipboard\" title=\"Copy response\"><svg width=\"14\" height=\"14\" viewBox=\"0 0 16 16\" aria-hidden=\"true\" focusable=\"false\"><rect x=\"4\" y=\"4\" width=\"9\" height=\"11\" rx=\"1\" stroke=\"currentColor\" stroke-width=\"1.5\" fill=\"none\"/><path d=\"M3 3V2a1 1 0 011-1h7a1 1 0 011 1v9a1 1 0 01-1 1h-1\" stroke=\"currentColor\" stroke-width=\"1.5\" fill=\"none\"/></svg> Copy</button>";
+    }
+  }
+
+  function parseSseEvents(buffer, onEvent) {
+    var parts = buffer.split("\n\n");
+    var remainder = parts.pop() || "";
+    parts.forEach(function (block) {
+      var lines = block.split("\n");
+      var dataLines = [];
+      lines.forEach(function (line) {
+        if (line.indexOf("data:") === 0) {
+          dataLines.push(line.slice(5).trim());
+        }
+      });
+      if (!dataLines.length) return;
+      try {
+        onEvent(JSON.parse(dataLines.join("\n")));
+      } catch (_) {
+        // Ignore malformed event blocks.
+      }
+    });
+    return remainder;
+  }
+
+  function streamReply(message, pendingAssistant) {
+    return fetch("{{ url_for('playground.playground_stream') }}", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "same-origin",
+      body: JSON.stringify({ message: message })
+    }).then(function (resp) {
+      if (!resp.ok) {
+        return resp.json().then(function (data) {
+          throw new Error(data.error || ("Server error " + resp.status));
+        });
+      }
+      if (!resp.body || typeof resp.body.getReader !== "function") {
+        throw new Error("Streaming is not supported in this browser session.");
+      }
+
+      var reader = resp.body.getReader();
+      var decoder = new TextDecoder("utf-8");
+      var buffer = "";
+      var assembled = "";
+      var streamedModel = model;
+
+      function handleEvent(evt) {
+        if (!evt || !evt.type) return;
+        if (evt.model) streamedModel = evt.model;
+        if (evt.type === "token") {
+          assembled += (evt.token || "");
+          setAssistantContent(pendingAssistant, assembled, streamedModel);
+        } else if (evt.type === "done") {
+          assembled = evt.reply || assembled;
+          setAssistantContent(pendingAssistant, assembled, streamedModel);
+          if (activeModel && streamedModel) activeModel.textContent = streamedModel;
+          setStatus("Response received.", "success");
+          setTimeout(clearStatus, 3000);
+        } else if (evt.type === "error") {
+          throw new Error(evt.error || "Streaming failed.");
+        }
+      }
+
+      function pump() {
+        return reader.read().then(function (result) {
+          if (result.done) {
+            return;
+          }
+          buffer += decoder.decode(result.value, { stream: true });
+          buffer = parseSseEvents(buffer, handleEvent);
+          return pump();
+        });
+      }
+
+      return pump();
+    });
+  }
+
+  function legacyReply(message, pendingAssistant) {
+    return fetch("{{ url_for('playground.playground_send') }}", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "same-origin",
+      body: JSON.stringify({ message: message }),
+    })
+      .then(function (r) {
+        return r.json().then(function (data) {
+          if (!r.ok || !data.ok) {
+            throw new Error(data.error || ("Server error " + r.status));
+          }
+          return data;
+        });
+      })
+      .then(function (data) {
+        setAssistantContent(pendingAssistant, data.reply || "", data.model || model);
+        if (activeModel && data.model) activeModel.textContent = data.model;
+        setStatus("Response received.", "success");
+        setTimeout(clearStatus, 3000);
+      });
+  }
+
   function setTyping(visible) {
     if (typing) {
       typing.hidden = !visible;
@@ -520,36 +629,9 @@
       setTyping(true);
       var pendingAssistant = appendThinkingMessage(model);
 
-      fetch("{{ url_for('playground.playground_send') }}", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "same-origin",
-        body: JSON.stringify({ message: message }),
-      })
-        .then(function (r) {
-          return r.json().then(function (data) {
-            if (!r.ok || !data.ok) {
-              throw new Error(data.error || ("Server error " + r.status));
-            }
-            return data;
-          });
-        })
-        .then(function (data) {
-          if (pendingAssistant) {
-            pendingAssistant.classList.remove("message--thinking");
-            var body = pendingAssistant.querySelector(".message__body");
-            if (body) body.textContent = data.reply;
-            var heading = pendingAssistant.querySelector(".message__heading");
-            if (heading) {
-              heading.innerHTML = "AI response <span class=\"message__model\" aria-label=\"Model: " + escapeHtml(data.model || model || "") + "\">" + escapeHtml(data.model || model || "") + "</span> <button type=\"button\" class=\"copy-btn\" aria-label=\"Copy this response to clipboard\" title=\"Copy response\"><svg width=\"14\" height=\"14\" viewBox=\"0 0 16 16\" aria-hidden=\"true\" focusable=\"false\"><rect x=\"4\" y=\"4\" width=\"9\" height=\"11\" rx=\"1\" stroke=\"currentColor\" stroke-width=\"1.5\" fill=\"none\"/><path d=\"M3 3V2a1 1 0 011-1h7a1 1 0 011 1v9a1 1 0 01-1 1h-1\" stroke=\"currentColor\" stroke-width=\"1.5\" fill=\"none\"/></svg> Copy</button>";
-            }
-          } else {
-            appendMessage("assistant", data.reply, data.model);
-          }
-          if (activeModel && data.model) activeModel.textContent = data.model;
-          setStatus("Response received.", "success");
-          // Clear the success notice after 3 s so it's not permanently distracting
-          setTimeout(clearStatus, 3000);
+      streamReply(message, pendingAssistant)
+        .catch(function () {
+          return legacyReply(message, pendingAssistant);
         })
         .catch(function (err) {
           var msg = (err && err.message) ? err.message : "Something went wrong. Please try again.";

@@ -23,6 +23,7 @@ jobs:
       E2E_PORT: "5100"
       E2E_BASE_URL: "http://127.0.0.1:5100"
       GLOW_ENABLE_AI: "false"
+      GLOW_ENABLE_AI_GENERAL_CHAT: "false"
       GLOW_ENABLE_AI_CHAT: "false"
       GLOW_ENABLE_AI_WHISPERER: "false"
     steps:

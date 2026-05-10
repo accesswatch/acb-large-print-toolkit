@@ -16,9 +16,10 @@ POST /beta/chat/clear   -- Clear server-side conversation history
 from __future__ import annotations
 
 import hashlib
+import json
 import logging
 
-from flask import Blueprint, jsonify, render_template, request, session
+from flask import Blueprint, Response, jsonify, render_template, request, session, stream_with_context
 
 from ..ai_features import AIFeatureDisabled, require_ai_feature
 from ..app import limiter
@@ -125,6 +126,75 @@ def playground_send():
 
     model_used = get_user_ollama_model_for("playground")
     return jsonify({"ok": True, "reply": reply, "model": model_used})
+
+
+@playground_bp.route("/stream", methods=["POST"])
+@limiter.limit("30 per minute")
+def playground_stream():
+    """Process a single chat turn and stream assistant output via SSE.
+
+    Event payloads:
+      {"type": "token", "token": "...", "model": "..."}
+      {"type": "done", "reply": "...", "model": "..."}
+      {"type": "error", "error": "..."}
+    """
+    try:
+        require_ai_feature("playground")
+    except AIFeatureDisabled as exc:
+        return jsonify({"ok": False, "error": str(exc)}), 403
+
+    if not is_ollama_configured():
+        return jsonify({"ok": False, "error": "The AI Playground requires your personal Ollama key."}), 403
+
+    raw = request.get_json(silent=True) or {}
+    message = (raw.get("message") or request.form.get("message") or "").strip()
+
+    if not message:
+        return jsonify({"ok": False, "error": "Message cannot be empty."}), 400
+    if len(message) > _MAX_QUESTION_LEN:
+        return jsonify({"ok": False, "error": f"Message too long (max {_MAX_QUESTION_LEN} characters)."}), 400
+
+    from ..ai_gateway import make_session_hash, stream_ollama_chat
+
+    history = _get_history()
+    sess_hash = make_session_hash(session)
+
+    @stream_with_context
+    def _event_stream():
+        chunks: list[str] = []
+        model_used = get_user_ollama_model_for("playground")
+        try:
+            for evt in stream_ollama_chat(
+                question=message,
+                system_prompt=_SYSTEM_PROMPT,
+                session_hash=sess_hash,
+                conversation_history=history,
+                feature="playground",
+            ):
+                if evt.get("model"):
+                    model_used = str(evt.get("model"))
+                if evt.get("token"):
+                    token = str(evt.get("token"))
+                    chunks.append(token)
+                    payload = {"type": "token", "token": token, "model": model_used}
+                    yield f"data: {json.dumps(payload)}\n\n"
+
+            reply = "".join(chunks)
+            updated = list(history)
+            updated.append({"role": "user", "content": message})
+            updated.append({"role": "assistant", "content": reply})
+            _set_history(updated)
+
+            done_payload = {"type": "done", "reply": reply, "model": model_used}
+            yield f"data: {json.dumps(done_payload)}\n\n"
+        except RuntimeError as exc:
+            err_payload = {"type": "error", "error": str(exc)}
+            yield f"data: {json.dumps(err_payload)}\n\n"
+
+    response = Response(_event_stream(), mimetype="text/event-stream")
+    response.headers["Cache-Control"] = "no-cache"
+    response.headers["X-Accel-Buffering"] = "no"
+    return response
 
 
 @playground_bp.route("/clear", methods=["POST"])

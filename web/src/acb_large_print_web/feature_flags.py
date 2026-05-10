@@ -48,6 +48,8 @@ def _now_iso() -> str:
 _DEFAULTS: dict[str, bool] = {
     # Master AI switch: enabled by default for Ollama-first deployments
     "GLOW_ENABLE_AI": True,
+    # General chat (AI Playground) switch
+    "GLOW_ENABLE_AI_GENERAL_CHAT": True,
     # Individual AI features (master flag still overrides)
     "GLOW_ENABLE_AI_CHAT": False,
     "GLOW_ENABLE_AI_WHISPERER": False,

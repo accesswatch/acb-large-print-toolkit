@@ -17,7 +17,8 @@ Rules
 Environment flags
 -----------------
 - ``GLOW_ENABLE_AI``: master AI switch. Defaults to enabled.
-- ``GLOW_ENABLE_AI_CHAT``: gate Document Chat. Defaults to enabled.
+- ``GLOW_ENABLE_AI_GENERAL_CHAT``: gate AI Playground (general chat).
+- ``GLOW_ENABLE_AI_CHAT``: gate Document Chat.
 - ``GLOW_ENABLE_AI_WHISPERER``: gate BITS Whisperer. Defaults to enabled.
 - ``GLOW_ENABLE_AI_HEADING_FIX``: gate AI heading refinement in Fix.
 - ``GLOW_ENABLE_AI_ALT_TEXT``: gate AI alt-text helpers.
@@ -132,7 +133,7 @@ def ai_markitdown_llm_enabled() -> bool:
 
 def ai_playground_enabled() -> bool:
     """Return whether the standalone Ollama playground is available."""
-    return _master_ai_enabled() and is_ollama_configured()
+    return _feature_enabled("GLOW_ENABLE_AI_GENERAL_CHAT") and is_ollama_configured()
 
 
 def get_all_flags() -> dict[str, bool]:

@@ -34,6 +34,7 @@ from __future__ import annotations
 
 import base64
 import hashlib
+import json
 import logging
 import os
 import sqlite3
@@ -498,6 +499,96 @@ def _ollama_completion(
         completion_tokens,
     )
     return text, prompt_tokens, completion_tokens, resolved_model
+
+
+def stream_ollama_chat(
+    question: str,
+    system_prompt: str,
+    session_hash: str,
+    conversation_history: list[dict] | None = None,
+    feature: str = "playground",
+    max_tokens: int = 1200,
+):
+    """Stream Ollama Cloud chat output as incremental token chunks.
+
+    Yields dict events with these shapes:
+      {"token": "...", "model": "..."}
+      {"done": True, "model": "..."}
+
+    Raises RuntimeError for authentication, quota, or transport failures.
+    """
+    api_key = get_user_ollama_key()
+    if not api_key:
+        raise RuntimeError("No Ollama API key in session.")
+
+    if not is_ollama_configured():
+        raise RuntimeError("Ollama is not configured for this session.")
+
+    messages: list[dict] = [{"role": "system", "content": system_prompt}]
+    if conversation_history:
+        messages.extend(conversation_history)
+    messages.append({"role": "user", "content": question})
+
+    model = get_user_ollama_model_for(feature)
+    base_url = get_ollama_cloud_url()
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json",
+    }
+    payload: dict[str, Any] = {
+        "model": model,
+        "messages": messages,
+        "stream": True,
+        "options": {"num_predict": max_tokens},
+    }
+
+    try:
+        resp = requests.post(
+            f"{base_url}/chat",
+            json=payload,
+            headers=headers,
+            timeout=_OLLAMA_CHAT_TIMEOUT,
+            stream=True,
+        )
+        if resp.status_code == 401:
+            raise RuntimeError(
+                "Ollama API key is invalid or has been revoked. "
+                "Please update your key in Settings."
+            )
+        if resp.status_code == 429:
+            raise RuntimeError(
+                "Ollama plan limit reached. Check your usage at ollama.com/settings."
+            )
+        resp.raise_for_status()
+    except requests.RequestException as exc:
+        raise RuntimeError(f"Ollama Cloud streaming request failed: {exc}") from exc
+
+    prompt_tokens = 0
+    completion_tokens = 0
+    resolved_model = model
+
+    for raw_line in resp.iter_lines(decode_unicode=True):
+        if not raw_line:
+            continue
+        try:
+            data = json.loads(raw_line)
+        except json.JSONDecodeError:
+            continue
+
+        if data.get("model"):
+            resolved_model = str(data.get("model"))
+
+        token = (data.get("message") or {}).get("content") or ""
+        if token:
+            yield {"token": token, "model": resolved_model}
+
+        if data.get("done"):
+            prompt_tokens = int(data.get("prompt_eval_count") or prompt_tokens)
+            completion_tokens = int(data.get("eval_count") or completion_tokens)
+            break
+
+    _record_usage(session_hash, feature, resolved_model, prompt_tokens, completion_tokens, escalated=False)
+    yield {"done": True, "model": resolved_model}
 
 
 def _openrouter_completion(

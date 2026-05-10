@@ -34,6 +34,7 @@ CI_REGRESSION = REPO_ROOT / ".github/workflows/accessibility-regression.yml"
 # Expected AI feature defaults in feature_flags.py (must all be defined)
 EXPECTED_AI_DEFAULTS = {
     "GLOW_ENABLE_AI": True,
+    "GLOW_ENABLE_AI_GENERAL_CHAT": True,  # General chat (AI Playground) enabled by default
     "GLOW_ENABLE_AI_CHAT": False,  # Beta: users can enable in Settings
     "GLOW_ENABLE_AI_WHISPERER": False,
     "GLOW_ENABLE_AI_HEADING_FIX": True,  # Enabled by default
@@ -110,7 +111,12 @@ def check_ci_regression():
     content = CI_REGRESSION.read_text()
 
     # Check that key AI flags are set to false
-    required_false = ["GLOW_ENABLE_AI:", "GLOW_ENABLE_AI_CHAT:", "GLOW_ENABLE_AI_WHISPERER:"]
+    required_false = [
+        "GLOW_ENABLE_AI:",
+        "GLOW_ENABLE_AI_GENERAL_CHAT:",
+        "GLOW_ENABLE_AI_CHAT:",
+        "GLOW_ENABLE_AI_WHISPERER:",
+    ]
     
     for flag in required_false:
         if flag not in content:

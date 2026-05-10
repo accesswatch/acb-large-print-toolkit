@@ -884,6 +884,7 @@ def admin_flags() -> Any:
     feature_keys = [
         # Master and AI subfeatures
         "GLOW_ENABLE_AI",
+        "GLOW_ENABLE_AI_GENERAL_CHAT",
         "GLOW_ENABLE_AI_CHAT",
         "GLOW_ENABLE_AI_WHISPERER",
         "GLOW_ENABLE_AI_HEADING_FIX",
@@ -953,6 +954,7 @@ def admin_flags() -> Any:
     categories = {
         "ai": [
             "GLOW_ENABLE_AI",
+            "GLOW_ENABLE_AI_GENERAL_CHAT",
             "GLOW_ENABLE_AI_CHAT",
             "GLOW_ENABLE_AI_WHISPERER",
             "GLOW_ENABLE_AI_HEADING_FIX",
@@ -1034,6 +1036,7 @@ def admin_flags() -> Any:
                 # Cascade: if master AI is off, ensure all AI subfeatures are off.
                 if not posted.get("GLOW_ENABLE_AI", False):
                     for child in [
+                        "GLOW_ENABLE_AI_GENERAL_CHAT",
                         "GLOW_ENABLE_AI_CHAT",
                         "GLOW_ENABLE_AI_WHISPERER",
                         "GLOW_ENABLE_AI_HEADING_FIX",

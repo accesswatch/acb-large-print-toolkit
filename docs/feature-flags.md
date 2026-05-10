@@ -91,8 +91,12 @@ This section documents every `GLOW_ENABLE_*` feature flag the application curren
 	- Purpose: Master AI enable switch. When `false`, all user-facing AI features are hidden and AI-dependent routes raise `AIFeatureDisabled` or return gated responses.
 	- Notes: Toggling this flag in the admin UI cascades and forces all AI subfeatures off. Environment variable `GLOW_ENABLE_AI` overrides persisted settings for immediate effect.
 
+- **`GLOW_ENABLE_AI_GENERAL_CHAT`** (default: `true`)
+	- Purpose: Enables the AI Playground / general chat UI (`/beta/chat`) and related route handlers.
+	- Notes: This is intentionally separate from Document Chat. Playground still requires a user Ollama key and `GLOW_ENABLE_AI=true`.
+
 - **`GLOW_ENABLE_AI_CHAT`** (default: `false`)
-	- Purpose: Enables the Document Chat UI and associated chat routes.
+	- Purpose: Enables Document Chat UI and associated document-grounded chat routes.
 	- Notes: When `false`, chat UI elements are hidden. Tests marked with `@pytest.mark.ai_live` should be skipped when chat is off.
 
 - **`GLOW_ENABLE_AI_WHISPERER`** (default: `false`)
