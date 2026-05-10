@@ -1,11 +1,13 @@
 # GLOW AI Roadmap: High-Value Features for Magical Experiences
 
 **Last Updated:** May 10, 2026  
+**Current Release:** 6.0.0 (AI Playground Beta, Per-feature Ollama Models)  
+**Next Release:** 6.1.0 (Streaming Responses, Session Quotas)  
 **Vision:** Transform GLOW's AI capabilities into a fluid, responsive, and predictable conversation experience that makes accessibility guidance feel native and inevitable.
 
 ---
 
-## Phase 1: Fluidity & Responsiveness (Next Sprint)
+## Phase 1: Fluidity & Responsiveness (6.1.0 - Next Sprint)
 
 ### 1. Streaming Responses
 - **Why:** Current playground shows "Thinking…" then full response. Streaming makes responses feel more immediate and less like a "wait wall."
@@ -92,20 +94,29 @@
 
 ## Implementation Priority
 
-**Tier 1 (Do First - 2 Weeks):**
-- Streaming responses (biggest UX leap)
-- Response regeneration (low friction, high value)
+**Tier 1 / 6.1.0 (Do Next - 2 Weeks):**
+- Streaming responses (biggest UX leap for 6.1.0)
+- Session quota enforcement (fair-use guardrail)
 - Token preview (trust builder)
 
-**Tier 2 (Next Month):**
+**Tier 2 / 6.2.0 (Next Month):**
 - Follow-up suggestions
 - Prompt templates
 - Conversation search
 
-**Tier 3 (Foundation Work):**
+**Tier 3 / 6.3.0+ (Foundation Work):**
 - ACB validation on responses
-- Rate limiting & quotas
 - Analytics dashboard
+- A/B testing infrastructure
+
+### 6.0.0 - What Shipped
+
+✅ AI Playground (Beta) at `/beta/chat/`  
+✅ Per-feature Ollama model selection  
+✅ H3/H4 heading structure for accessible navigation  
+✅ Smart response states (thinking bubble → response)  
+✅ Copy-to-clipboard on responses  
+✅ Beta sidebar section with Experimental badge
 
 ---
 
