@@ -32,6 +32,8 @@ Releases are tagged in the [GitHub repository](https://github.com/Community-Acce
 
 ### Added
 
+- **Web: dedicated AI Features entry and browser error reporting.** Added a first-class `/ai/` surface, a matching `AI Features` sidebar link, a browser-to-server `/ai/client-log` diagnostics endpoint, and shared `client-logging.js` so frontend failures on the AI setup flow are logged with request context instead of disappearing into the browser console.
+- **Web: request ID correlation for AI failures.** Added per-request `X-Request-ID` response headers, included the ID in server request logs, and passed request IDs through AI setup fetch/error handlers plus `/ai/client-log` payloads so frontend failures can be traced to specific backend requests.
 - **Web: CSS design tokens for mission accent colors.** Added `:root` custom properties `--color-assess`, `--color-fix`, `--color-transform`, `--color-listen`, `--color-explore`, and `--sidebar-width` to `forms.css` for consistent theming across all accent-color usages.
 - **Web: SVG icons on all 15 sidebar navigation links.** Each sidebar link now has a 16×16 inline SVG icon (`aria-hidden="true"`, `focusable="false"`, `class="nav-icon"`) in `base.html`. Icons fade to full opacity on hover/active. Covers: Quick Start, Document Audit, Site Audit, Fix Document, Build Template, Convert Format, Braille Studio, Speech Studio, BITS Whisperer, Document Chat, Magic Lab, Guidelines, User Guide, FAQ, Settings.
 - **Web: Active sidebar group label accent color.** When the current page belongs to a mission group, the group's `<span class="sidebar-group-label">` inherits the group's accent color and top-border accent. Implemented via `.sidebar-group--{group}.sidebar-group--active > .sidebar-group-label` rules (with dark-mode variants) in `forms.css`, and sidebar group `<li>` elements now carry both type and active classes in `base.html`.
@@ -41,6 +43,7 @@ Releases are tagged in the [GitHub repository](https://github.com/Community-Acce
 
 ### Changed
 
+- **Web: AI setup is no longer treated as a Settings subpage.** Legacy `/settings/ai` links now redirect to the canonical `/ai/` page, the AI usage meter and About page now point to the new route, and the AI page now shows a clear disabled-state message when the deployment-level AI switch is off instead of rendering nonfunctional controls.
 - **Office Add-in: patched `fast-uri` transitive vulnerability (GHSA-v39h-62p7-jpjc).** Added `"fast-uri": ">=3.1.2"` to `office-addin/package.json` `overrides` and regenerated `office-addin/package-lock.json` so `fast-uri` resolves to `3.1.2`.
 - **Office Add-in: patched `fast-xml-builder` transitive vulnerability.** Added `"fast-xml-builder": ">=1.1.7"` to `office-addin/package.json` `overrides` and regenerated `office-addin/package-lock.json` so `fast-xml-builder` resolves to `1.2.0`.
 - **Office Add-in: resolved remaining moderate transitive advisories.** Added `"hono": ">=4.12.18"`, `"express-rate-limit": ">=8.5.1"`, and `"ip-address": ">=10.1.1"` to `office-addin/package.json` `overrides` and regenerated `office-addin/package-lock.json`, resulting in `npm audit` reporting zero vulnerabilities in `office-addin`.

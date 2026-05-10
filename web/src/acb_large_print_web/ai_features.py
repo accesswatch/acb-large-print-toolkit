@@ -134,7 +134,9 @@ def get_all_flags() -> dict[str, bool]:
     """Return all AI feature flags as a dict for template injection."""
     configured = _master_ai_enabled()
     ollama_active = is_ollama_configured()
+    ai_entry_enabled = _env_flag("GLOW_ENABLE_AI", False)
     return {
+        "ai_entry_enabled": ai_entry_enabled,
         "ai_configured": configured,
         "ai_ollama_active": ollama_active,
         "ai_chat_enabled": ai_chat_enabled(),

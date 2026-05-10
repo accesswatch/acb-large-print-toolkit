@@ -4,6 +4,12 @@
 {% block heading %}Enable AI Features{% endblock %}
 
 {% block content %}
+{% if not ai_entry_enabled %}
+<div class="flash-warning" role="alert">
+  <div class="flash-icon" aria-hidden="true">&#x26A0;</div>
+  <p><strong>AI features are disabled on this server.</strong> This deployment is not currently accepting personal Ollama keys, so the setup controls are unavailable here.</p>
+</div>
+{% else %}
 <p>Connect your personal <a href="https://ollama.com" rel="noopener noreferrer">Ollama</a> account to unlock AI-powered heading detection, document formatting, and document chat. Your key is held in your session only and is never logged or stored on disk.</p>
 
 <div id="ai-key-status" role="status" aria-live="polite" aria-atomic="true"></div>
@@ -151,8 +157,11 @@
   </form>
 </section>
 {% endif %}
+{% endif %}
+{% endblock %}
 
 {% block extra_js %}
+{% if ai_entry_enabled %}
 <script>
 /* global fetch */
 (function () {
@@ -168,6 +177,67 @@
   const valResult  = document.getElementById("validate-result");
   const statusBox  = document.getElementById("ai-key-status");
   const forgetBtn  = document.getElementById("forget-key-btn");
+  var lastRequestId = "";
+
+  function reportClientError(kind, message, extra) {
+    if (!window.GlowClientLogger || typeof window.GlowClientLogger.report !== "function") {
+      return;
+    }
+    window.GlowClientLogger.report(kind, Object.assign({
+      page: window.location.pathname,
+      message: message
+    }, extra || {}));
+  }
+
+  function parseJsonResponse(response, action) {
+    var responseRequestId = response.headers.get("X-Request-ID") || "";
+    if (responseRequestId) {
+      lastRequestId = responseRequestId;
+    }
+    return response.text().then(function (text) {
+      var data = null;
+      if (text) {
+        try {
+          data = JSON.parse(text);
+        } catch (parseError) {
+          reportClientError("ai-response-parse", "AI settings response was not valid JSON.", {
+            action: action,
+            request_id: responseRequestId,
+            status: String(response.status),
+            detail: text.slice(0, 500),
+            source: response.url || window.location.pathname
+          });
+          throw new Error("The server returned an unreadable response.");
+        }
+      }
+
+      if (!response.ok) {
+        var errorMessage = data && data.error ? data.error : ("The request failed with status " + response.status + ".");
+        reportClientError("ai-http-error", errorMessage, {
+          action: action,
+          request_id: responseRequestId,
+          status: String(response.status),
+          detail: text.slice(0, 500),
+          source: response.url || window.location.pathname
+        });
+        throw new Error(errorMessage);
+      }
+
+      return data || {};
+    });
+  }
+
+  function handleRequestFailure(action, error, fallbackMessage) {
+    var message = (error && error.message) ? error.message : fallbackMessage;
+    var withRef = lastRequestId ? (message + " (Ref: " + lastRequestId + ")") : message;
+    reportClientError("ai-fetch-failure", message, {
+      action: action,
+      request_id: lastRequestId,
+      detail: error && error.stack ? error.stack : "",
+      source: window.location.pathname
+    });
+    return withRef;
+  }
 
   function resolvedModel() {
     return modelSel.value === "other" ? customIn.value.trim() : modelSel.value;
@@ -191,8 +261,8 @@
       const fd = new FormData();
       fd.append("ollama_api_key", key);
 
-      fetch("{{ url_for('settings.validate_ollama_key') }}", { method: "POST", body: fd })
-        .then(function (r) { return r.json(); })
+      fetch("{{ url_for('ai.validate_ollama_key') }}", { method: "POST", body: fd, credentials: "same-origin" })
+        .then(function (r) { return parseJsonResponse(r, "validate-key"); })
         .then(function (data) {
           if (data.ok) {
             valResult.textContent = "Key accepted. Models available: " + (data.models.length ? data.models.join(", ") : "none listed");
@@ -200,7 +270,9 @@
             valResult.textContent = "Problem: " + (data.error || "Unknown error.");
           }
         })
-        .catch(function () { valResult.textContent = "Could not reach Ollama. Check your connection."; })
+        .catch(function (error) {
+          valResult.textContent = handleRequestFailure("validate-key", error, "Could not reach Ollama. Check your connection.");
+        })
         .finally(function () {
           validateBtn.disabled = false;
           validateBtn.textContent = "Check key";
@@ -223,8 +295,8 @@
       fd.append("ollama_api_key", key);
       fd.append("ollama_model", model);
 
-      fetch("{{ url_for('settings.save_ollama_key') }}", { method: "POST", body: fd })
-        .then(function (r) { return r.json(); })
+      fetch("{{ url_for('ai.save_ollama_key') }}", { method: "POST", body: fd, credentials: "same-origin" })
+        .then(function (r) { return parseJsonResponse(r, "save-key"); })
         .then(function (data) {
           if (data.ok) {
             // Reload so the page reflects the active state and the sidebar meter appears
@@ -233,7 +305,9 @@
             statusBox.textContent = "Could not save: " + (data.error || "Unknown error.");
           }
         })
-        .catch(function () { statusBox.textContent = "Request failed. Try again."; })
+        .catch(function (error) {
+          statusBox.textContent = handleRequestFailure("save-key", error, "Request failed. Try again.");
+        })
         .finally(function () {
           saveBtn.disabled = false;
           saveBtn.textContent = "Save and enable AI";
@@ -244,10 +318,11 @@
   if (forgetBtn) {
     forgetBtn.addEventListener("click", function () {
       forgetBtn.disabled = true;
-      fetch("{{ url_for('settings.forget_ollama_key') }}", { method: "DELETE" })
+      fetch("{{ url_for('ai.forget_ollama_key') }}", { method: "DELETE", credentials: "same-origin" })
+        .then(function (r) { return parseJsonResponse(r, "forget-key"); })
         .then(function () { window.location.reload(); })
-        .catch(function () {
-          statusBox.textContent = "Could not remove key. Try again.";
+        .catch(function (error) {
+          statusBox.textContent = handleRequestFailure("forget-key", error, "Could not remove key. Try again.");
           forgetBtn.disabled = false;
         });
     });
@@ -268,8 +343,8 @@
         if (!fd.has("feature_" + key)) fd.append("feature_" + key, "0");
       });
 
-      fetch("{{ url_for('settings.save_ollama_features') }}", { method: "POST", body: fd })
-        .then(function (r) { return r.json(); })
+      fetch("{{ url_for('ai.save_ollama_features') }}", { method: "POST", body: fd, credentials: "same-origin" })
+        .then(function (r) { return parseJsonResponse(r, "save-features"); })
         .then(function (data) {
           if (data.ok) {
             var on = data.enabled && data.enabled.length ? data.enabled.join(", ") : "none";
@@ -278,7 +353,9 @@
             featStatus.textContent = "Could not save: " + (data.error || "Unknown error.");
           }
         })
-        .catch(function () { featStatus.textContent = "Request failed. Try again."; })
+        .catch(function (error) {
+          featStatus.textContent = handleRequestFailure("save-features", error, "Request failed. Try again.");
+        })
         .finally(function () {
           saveFeatsBtn.disabled = false;
           saveFeatsBtn.textContent = "Save feature choices";
@@ -287,4 +364,5 @@
   }
 }());
 </script>
+{% endif %}
 {% endblock %}
