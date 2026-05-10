@@ -129,7 +129,7 @@
       {% set is_on = ollama_features.get(feature, ollama_feature_defaults.get(feature, False)) %}
       {% set is_beta = (feature == 'playground') %}
       {% set current_model = ollama_feature_models.get(feature, ollama_feature_model_defaults.get(feature, ollama_model)) %}
-      <section class="feature-model-card{% if is_beta %} feature-model-card--beta{% endif %}" aria-labelledby="feature-{{ feature }}-heading">
+      <section class="feature-model-card{% if is_beta %} feature-model-card--beta{% endif %}">
         <div class="checkbox-group">
           <label id="feature-{{ feature }}-heading">
             <input
