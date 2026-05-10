@@ -4,7 +4,13 @@
 {% block heading %}{{ brand_heading_label }}{% endblock %}
 
 {% block content %}
-<p>Check and fix your Office documents for compliance with the <a href="{{ url_for('guidelines.guidelines_page') }}">{{ brand_guidelines_name }}</a> and WCAG 2.2 AA standards -- no installation required. Use the goal-oriented sidebar to jump straight to any tool, or start below. <a href="{{ url_for('changelog.changelog_page') }}">What's new in GLOW 5.0.0 &rarr;</a></p>
+<p>Check and fix your Office documents for compliance with the <a href="{{ url_for('guidelines.guidelines_page') }}">{{ brand_guidelines_name }}</a> and WCAG 2.2 AA standards -- no installation required. Use the goal-oriented sidebar to jump straight to any tool, or start below. <a href="{{ url_for('changelog.changelog_page') }}">What's new in GLOW 6.0.0 &rarr;</a> AI Playground (Beta), AI Features, and MarkItDown + AI integration are the latest additions.</p>
+
+<section class="home-whats-new">
+  <h2 id="home-whats-new-heading">What’s New in GLOW 6.0.0</h2>
+  <p>GLOW 6.0.0 adds a clearer AI setup flow, AI Playground (Beta), per-feature Ollama model selection, and LLM-enhanced MarkItDown support for smarter document extraction.</p>
+  <p><a href="{{ url_for('ai.settings_ai_page') }}">Open AI Features</a> to add your Ollama key, or read the <a href="{{ url_for('guide.guide_page') }}#11-markitdown--ai-integration-smarter-text-extraction">MarkItDown + AI Integration</a> section in the user guide for the latest details.</p>
+</section>
 
 <!-- Quick Start CTA -->
 <section class="home-quickstart">
