@@ -31,10 +31,16 @@ GLOW 6.0.0 is the open source release that makes the project easier to join, eas
 
 If you are deciding whether to turn AI on, here is the short version:
 
-- **Heading detection** helps turn bold, large text into actual semantic headings.
-- **MarkItDown support** helps text extraction and document cleanup in workflows that benefit from a smarter assistant.
-- **Document Chat** is planned, but it is not enabled in the Ollama-first setup yet.
+- **Heading detection** helps turn bold, large text into actual semantic headings. This runs automatically when Fix is available and runs in document workflows.
+
+- **MarkItDown + AI support** makes text extraction smarter and document cleanup faster. When you audit, fix, or convert a document, the AI-enhanced extraction understands context and structure, not just layout. The result is cleaner documents with fewer artifacts and better heading relationships. This is enabled by default when you connect an Ollama key.
+
+- **Document Chat** is planned, but it is not enabled in the Ollama-first setup yet. Beta users can express interest in Settings.
+
+- **AI Playground (Beta)** is a standalone chat surface where you can explore Ollama models, ask questions, and test model behavior before using AI in real accessibility workflows. The playground is intentionally separate from your documents so exploration is safe and private.
+
 - **Usage tracking** shows session-level request counts so you can see what you used while you were in GLOW.
+
 - **Whisperer** is separate and continues to use the server-side audio path when that is configured.
 
 If AI is disabled, GLOW hides the AI-specific entry points and keeps the rest of the app focused on its document workflows.
@@ -53,15 +59,16 @@ If AI is disabled, GLOW hides the AI-specific entry points and keeps the rest of
 8. [Speech Studio: Document-to-Audio](#8-speech-studio-document-to-audio)
 9. [BITS Whisperer: Transcribe Audio](#9-bits-whisperer-transcribe-audio)
 10. [AI Playground (Beta): Explore Ollama Models](#10-ai-playground-beta-explore-ollama-models)
-11. [Document Chat](#11-document-chat)
-12. [Settings](#12-settings)
-13. [Understanding Your Results](#13-understanding-your-results)
-14. [Common Issues and How to Fix Them](#14-common-issues-and-how-to-fix-them)
-15. [Tips by Document Format](#15-tips-by-document-format)
-16. [Recommended Workflows](#16-recommended-workflows)
-17. [DAISY Accessibility Tools](#17-daisy-accessibility-tools)
-18. [Keyboard and Screen Reader Tips](#18-keyboard-and-screen-reader-tips)
-19. [Frequently Asked Questions](#19-frequently-asked-questions)
+11. [MarkItDown + AI Integration: Smarter Text Extraction](#11-markitdown--ai-integration-smarter-text-extraction)
+12. [Document Chat](#12-document-chat)
+13. [Settings](#13-settings)
+14. [Understanding Your Results](#14-understanding-your-results)
+15. [Common Issues and How to Fix Them](#15-common-issues-and-how-to-fix-them)
+16. [Tips by Document Format](#16-tips-by-document-format)
+17. [Recommended Workflows](#17-recommended-workflows)
+18. [DAISY Accessibility Tools](#18-daisy-accessibility-tools)
+19. [Keyboard and Screen Reader Tips](#19-keyboard-and-screen-reader-tips)
+20. [Frequently Asked Questions](#20-frequently-asked-questions)
 20. [Website Accessibility Scans (Site Audit)](#20-website-accessibility-scans-site-audit)
 21. [Getting Help](#21-getting-help)
 
@@ -1051,7 +1058,62 @@ Think of it as a safe space to build confidence. Ask any question. Switch models
 
 ---
 
-## 11. Document Chat
+## 11. MarkItDown + AI Integration: Smarter Text Extraction
+
+MarkItDown is a powerful text extraction tool from Microsoft. GLOW 6.0.0 combines it with an LLM to make document extraction smarter and faster.
+
+### What is enabled
+
+When you connect an Ollama key in GLOW Settings, **MarkItDown + AI support is on by default** for:
+
+- **Heading detection** — converts bold or large text into semantic headings automatically
+- **Intelligent extraction** — understands context and structure, not just layout
+- **Cleaner documents** — removes page numbers, repeated footers, noise, and artifacts
+
+### How it works
+
+When you run Audit or Fix on any document (Word, PDF, Markdown, Excel, PowerPoint, ePub), the AI-enhanced extraction:
+
+1. Reads the document structure and content
+2. Identifies what should be a heading vs. body text
+3. Extracts text with AI awareness of importance and relationships
+4. Returns cleaner input for accessibility workflows
+
+### What you get
+
+- **Better heading detection** — catches heading patterns that rule-based extraction misses
+- **Less manual cleanup** — fewer artifacts and false structure to fix later
+- **Consistent results** — works across all formats (Word, PDF, Markdown, Excel, PowerPoint, ePub)
+- **Faster workflows** — more time for real accessibility work, less time on false positives
+
+### Why it matters
+
+Headings and document structure are objective problems:
+- Either a text block is a heading, or it is not.
+- Either a list item is a real list, or it is fake formatting.
+- Either a paragraph break is intentional, or it is a layout artifact.
+
+MarkItDown + AI solves these consistently. The combined approach produces documents that need less manual remediation before you can run Fix or convert to accessible output.
+
+### Try it
+
+1. **Audit mode:** Upload a document with missing or incorrect headings. The audit report will show what headings were detected and what remains. The score reflects both AI-found headings and manual structure issues.
+
+2. **Playground first (optional):** Before trusting heading detection in production, try the AI Playground with a few sample headings from your document. Test different Ollama models to see which one works best for your document types. Then configure that model in AI Features and run Fix.
+
+3. **Fix mode:** Run Fix on the document. Heading detection runs automatically if heading-fix AI is enabled. The corrected document shows the cleaned-up structure.
+
+4. **Re-audit:** After Fix, run Audit again on the corrected document to confirm the structure improvements and identify remaining manual fixes.
+
+### Performance and cost
+
+- MarkItDown + AI uses your Ollama key, so cost is proportional to the number of heading detection calls
+- Extraction happens once per document, not per heading
+- Results are deterministic but AI-influenced (different models may detect headings slightly differently; that is normal)
+
+---
+
+## 12. Document Chat
 
 Document Chat lets you ask questions about an uploaded document in plain language. An OpenRouter-backed AI gateway answers using accessibility-focused tools across compliance, structure, content, and remediation. Core workflows remain available without AI if you prefer not to use it.
 

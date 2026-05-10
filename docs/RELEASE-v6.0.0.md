@@ -52,6 +52,35 @@ Why this matters:
 - makes it easier to explain what AI is for inside GLOW
 - the accessible heading structure (H3/H4) serves both sighted users navigating long conversations and screen reader users jumping between questions and answers
 
+### 2.5 MarkItDown + AI Integration: Smarter Document Extraction
+
+GLOW now offers **LLM-enhanced MarkItDown support** — Microsoft's MarkItDown library combined with an LLM to produce better text extraction.
+
+What is enabled by default:
+
+- **Heading detection** — converts bold or large text into semantic headings
+- **Intelligent extraction** — MarkItDown + AI understands context and structure, not just layout
+- **Cleaner documents** — page numbers, repeated footers, and noise are dropped automatically
+
+How it works:
+
+- When you audit or fix a document, heading detection runs if configured
+- Text is extracted with AI awareness of structure and importance
+- The result is cleaner input for accessibility workflows
+
+Why this matters:
+
+- headings and structure are objective problems (text is either a heading or not)
+- MarkItDown + AI solves these consistently across formats (Word, PDF, Markdown, Excel, PowerPoint, ePub)
+- the combined approach catches heading relationships that rule-based extraction misses
+- less manual structure cleanup means more time for real accessibility fixes
+
+Try it:
+
+- Upload a document with missing or incorrect headings
+- Use the AI Playground to test different Ollama models on a few headings first
+- Then run Fix with heading detection on and see the full result
+
 ### 3. Visible AI usage tracking
 
 The web app now shows a lightweight AI usage meter in the sidebar.

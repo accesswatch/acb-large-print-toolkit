@@ -51,6 +51,29 @@ What stays off for now:
 
 That choice keeps the first release focused and easier to explain.
 
+### MarkItDown + AI Integration: Smarter Document Extraction
+
+MarkItDown is a powerful text extraction engine from Microsoft. GLOW 6.0.0 adds **LLM-enhanced MarkItDown support** so the text extraction process is smarter and more aware of document structure.
+
+**What you get:**
+
+- **Intelligent text extraction** — MarkItDown + AI understands not just text layout, but context and meaning. It keeps important structure (headings, lists, emphasis) and drops noise (page numbers, repeated headers/footers).
+- **Heading detection** — Bold or large text that should be a semantic heading gets converted to the right heading level automatically. No more fake headings made from bold text.
+- **Better preparation for accessibility fixes** — When documents come in via MarkItDown + AI, they are already cleaner, more structured, and closer to WCAG compliance. Fix workflows then spend less time on the same structural problems.
+- **Extraction quality that scales** — Long documents, complex layouts, mixed formats—MarkItDown + AI handles them more consistently than rule-based extraction alone.
+
+**Why it matters:**
+
+The first AI features in GLOW are text-focused because that is where the trust is highest. Headings and structure are objective—either a text block is a heading or it is not. MarkItDown + AI lets GLOW make that determination more reliably. The result is less manual cleanup, faster accessibility fixes, and better starting material for final output.
+
+**How to use it:**
+
+When you add an Ollama key in GLOW Settings, heading detection and MarkItDown support are on by default. Try it:
+
+1. Upload a document in Word, Excel, PowerPoint, PDF, Markdown, or ePub format
+2. Choose Audit or Fix
+3. If headings are missing or incorrect, the AI Playground lets you test heading detection with different Ollama models before you trust it in production
+
 ### Visible AI usage tracking
 
 The web app now includes a sidebar usage meter that refreshes on page load and after AI actions.

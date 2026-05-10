@@ -34,11 +34,11 @@ CI_REGRESSION = REPO_ROOT / ".github/workflows/accessibility-regression.yml"
 # Expected AI feature defaults in feature_flags.py (must all be defined)
 EXPECTED_AI_DEFAULTS = {
     "GLOW_ENABLE_AI": True,
-    "GLOW_ENABLE_AI_CHAT": False,
+    "GLOW_ENABLE_AI_CHAT": False,  # Beta: users can enable in Settings
     "GLOW_ENABLE_AI_WHISPERER": False,
-    "GLOW_ENABLE_AI_HEADING_FIX": True,
-    "GLOW_ENABLE_AI_ALT_TEXT": False,
-    "GLOW_ENABLE_AI_MARKITDOWN_LLM": True,
+    "GLOW_ENABLE_AI_HEADING_FIX": True,  # Enabled by default
+    "GLOW_ENABLE_AI_ALT_TEXT": False,  # Beta: users can enable in Settings
+    "GLOW_ENABLE_AI_MARKITDOWN_LLM": True,  # Enabled by default
 }
 
 # Tool integration flags that should default to True

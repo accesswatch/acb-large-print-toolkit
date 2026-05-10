@@ -8,6 +8,64 @@ Releases are tagged in the [GitHub repository](https://github.com/Community-Acce
 
 ## [Unreleased]
 
+---
+
+## [6.0.0] - 2026-05-09
+
+### Added
+
+- **AI Playground (Beta)** at `/beta/chat/` for open-ended Ollama model exploration
+  - Accessible H3/H4 heading structure for keyboard and screen reader navigation
+  - Per-feature Ollama model selection in unified AI Features settings
+  - Session-scoped conversation history (not persisted by default)
+  - Typing indicator, thinking animation, and copy-to-clipboard on responses
+  - Smart response states: pending bubble → response with model name
+
+- **MarkItDown + AI Integration** for intelligent document cleanup and extraction
+  - LLM-enhanced MarkItDown support for better text extraction quality
+  - Heading detection to convert bold/large text into semantic headings
+  - See [MarkItDown + AI Integration Guide](#markitdown--ai-integration-guide) for details
+
+- **Per-feature Ollama model selection** via unified AI Features settings page
+  - Choose different models for heading detection, MarkItDown, and playground
+  - Smart model recommendations based on feature workload
+  - Validate keys before saving without overwriting previous choices
+
+- **AI usage meter** in sidebar showing session-level request counts
+  - Refreshes on page load and after AI actions
+  - Helps users track what they have used in the current session
+
+- **Feedback-to-issue automation** for capture and GitHub sync
+  - Collect contact details for follow-up
+  - Optional sync into GitHub Issues when configured
+
+- **Open source contribution guidance** in README and release messaging
+  - Fork → branch → pull request → review workflow
+  - Clear branch protection and CI gating expectations
+
+### Changed
+
+- **AI feature defaults** for 6.0.0:
+  - `GLOW_ENABLE_AI`: `True` (master switch on)
+  - `GLOW_ENABLE_AI_HEADING_FIX`: `True` (heading detection enabled by default)
+  - `GLOW_ENABLE_AI_MARKITDOWN_LLM`: `True` (MarkItDown LLM enabled by default)
+  - `GLOW_ENABLE_AI_CHAT`: `False` (document chat off, beta)
+  - `GLOW_ENABLE_AI_ALT_TEXT`: `False` (alt-text generation off, beta)
+  - `GLOW_ENABLE_AI_WHISPERER`: `False` (uses OpenRouter, separate config)
+
+- **Ollama-first setup path**: Users bring their own Ollama Cloud key; no server-side AI provider required for heading/MarkItDown
+
+### Deprecated
+
+- Document Chat deferred to 6.1.0+ (not recommended in 6.0.0)
+- Direct OpenRouter support remains available for existing deployments
+
+### Security
+
+- Ollama API keys held only in server-side session storage, never logged or written to disk
+- Session cookies are HttpOnly and Secure
+- CSRF protection on all state-changing AI actions
+
 ### Planned for 6.1.0
 
 - **Streaming responses in AI Playground.** Token-by-token streaming using Server-Sent Events (SSE) so responses appear live instead of waiting for the full response.
