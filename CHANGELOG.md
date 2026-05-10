@@ -8,23 +8,11 @@ Releases are tagged in the [GitHub repository](https://github.com/Community-Acce
 
 ## [Unreleased]
 
-### Added
+### Planned for 6.1.0
 
-- **AI Playground (Beta).** New standalone chat surface at `/beta/chat/` for open-ended Ollama experimentation without document context. Features H3/H4 heading structure for keyboard/screen-reader navigation between questions and answers, typing indicator, temporary conversation storage, and copy-to-clipboard buttons on responses.
-- **Per-feature Ollama model selection.** Users can now choose different Ollama models for each AI feature (heading detection, MarkItDown, playground) in AI Features settings. Smart model recommendations based on feature capability hints (e.g., speed, reasoning).
-- **Smart response states in playground.** Pending assistant messages show "Thinking…" while fetching, then seamlessly transition to the actual response with copy button and model name on completion for fluid perceived performance.
-- **Playground UX enhancements.** Message headings use H3 for user prompts and H4 for assistant responses, enabling direct navigation by screen readers and keyboard users. Status region announces all feedback (success, error, info).
-- **Beta sidebar section.** Dedicated "Beta" navigation group with "Experimental" badge for playground and future beta features, keeping them visually separate from stable surfaces.
-- **Playground Ollama gating.** Requires active Ollama key to access playground, keeping it a pure Ollama testing surface. Explicit feature gate in `ai_features.py`.
-
-### Changed
-
-- **AI Feature enablement logic.** Playground feature is now properly gated in `require_ai_feature()` and is enabled when master AI is on and Ollama key is configured.
-- **Template context flags.** Added `ollama_active` and `ai_playground_enabled` aliases to feature flags for cleaner template logic.
-
-### Fixed
-
-- **Pre-commit checker compliance.** Fixed `check-config-consistency.py` to handle new `GLOW_ENABLE_AI` and per-feature toggles correctly.
+- **Streaming responses in AI Playground.** Token-by-token streaming using Server-Sent Events (SSE) so responses appear live instead of waiting for the full response.
+- **Session quota enforcement.** Rate limiting to prevent accidental AI overuse: configurable requests-per-session with countdown timer in UI.
+- **Conversation analytics dashboard.** Track model usage, success rates, and popular prompts (anonymized, no PII).
 
 ---
 
@@ -32,47 +20,54 @@ Releases are tagged in the [GitHub repository](https://github.com/Community-Acce
 
 ### Added
 
-- **Open source contribution flow.** Added release notes and combined announcement files that explain the community contribution process, including fork/branch/PR review and branch protection.
+- **AI Playground (Beta).** New standalone chat surface at `/beta/chat/` for open-ended Ollama experimentation without document context. Features H3/H4 heading structure for keyboard/screen-reader navigation, typing indicator, temporary conversation storage, and copy-to-clipboard buttons.
+- **Per-feature Ollama model selection.** Users can now choose different Ollama models for each AI feature (heading detection, MarkItDown, playground) in AI Features settings.
+- **Open source contribution flow.** Added release notes and combined announcement files explaining the community contribution process.
 - **Feedback-to-issue automation.** Feedback submissions can collect contributor name and email and sync into GitHub Issues when configured.
-- **Ollama Cloud user key support.** Added session-scoped Ollama Cloud key handling and per-feature toggles for heading detection and MarkItDown.
-- **Session AI usage meter.** Added a sidebar meter and `/ai/usage/` endpoint so users can see how much AI they used during the current session.
+- **Ollama Cloud user key support.** Added session-scoped Ollama Cloud key handling and per-feature toggles.
+- **Session AI usage meter.** Added a sidebar meter and `/ai/usage/` endpoint for session-level usage tracking.
 - **AI setup page.** Added a focused settings page for turning AI on, validating a key, and choosing a model.
 
 ### Changed
 
-- **AI feature defaults.** For the Ollama path, heading detection and MarkItDown are enabled by default; Document Chat stays off until explicitly enabled.
-- **About page and user guide.** Both now explain AI capabilities in short form when AI is disabled and show the active feature set when it is enabled.
-- **Changelog and release communication.** Added this 6.0.0 entry plus release notes and a combined announcement so the release story is consistent across the site.
+- **AI Feature enablement logic.** Playground feature is properly gated and enabled when master AI is on and Ollama key is configured.
+- **Template context flags.** Added `ollama_active` and `ai_playground_enabled` aliases for cleaner template logic.
+- **AI feature defaults.** For the Ollama path, heading detection and MarkItDown are enabled by default; Document Chat stays off.
+- **About page and user guide.** Both now explain AI capabilities in short form and show the active feature set when enabled.
+
+### Fixed
+
+- **Pre-commit checker compliance.** Fixed `check-config-consistency.py` to handle new `GLOW_ENABLE_AI` and per-feature toggles correctly.
 
 ### Security
 
-- **Session-only keys.** User-provided AI keys stay in the server-side session and are never logged or written to disk.
+- **Session-only keys.** User-provided AI keys stay in server-side session and are never logged or written to disk.
 
 ---
 
-## [Unreleased]
+## [Unreleased - Design System & UX Polish]
 
 ### Added
 
 - **Web: dedicated AI Features entry and browser error reporting.** Added a first-class `/ai/` surface, a matching `AI Features` sidebar link, a browser-to-server `/ai/client-log` diagnostics endpoint, and shared `client-logging.js` so frontend failures on the AI setup flow are logged with request context instead of disappearing into the browser console.
 - **Web: request ID correlation for AI failures.** Added per-request `X-Request-ID` response headers, included the ID in server request logs, and passed request IDs through AI setup fetch/error handlers plus `/ai/client-log` payloads so frontend failures can be traced to specific backend requests.
 - **Web: CSS design tokens for mission accent colors.** Added `:root` custom properties `--color-assess`, `--color-fix`, `--color-transform`, `--color-listen`, `--color-explore`, and `--sidebar-width` to `forms.css` for consistent theming across all accent-color usages.
-- **Web: SVG icons on all 15 sidebar navigation links.** Each sidebar link now has a 16×16 inline SVG icon (`aria-hidden="true"`, `focusable="false"`, `class="nav-icon"`) in `base.html`. Icons fade to full opacity on hover/active. Covers: Quick Start, Document Audit, Site Audit, Fix Document, Build Template, Convert Format, Braille Studio, Speech Studio, BITS Whisperer, Document Chat, Magic Lab, Guidelines, User Guide, FAQ, Settings.
-- **Web: Active sidebar group label accent color.** When the current page belongs to a mission group, the group's `<span class="sidebar-group-label">` inherits the group's accent color and top-border accent. Implemented via `.sidebar-group--{group}.sidebar-group--active > .sidebar-group-label` rules (with dark-mode variants) in `forms.css`, and sidebar group `<li>` elements now carry both type and active classes in `base.html`.
-- **Web: Page breadcrumb context pill.** A colored `.page-breadcrumb` chip now appears above the `<h1>` on every tool page, showing the current mission group name and accent color. Auto-generated in `base.html` from `request.blueprint` via `{% block breadcrumb %}`. Dark-mode variants included in `forms.css`.
-- **Web: Mission card hover lift animation.** Mission cards on the home page now lift `translateY(-2px)` with an elevated box-shadow on hover. Animation is gated behind `@media (prefers-reduced-motion: no-preference)` in `forms.css`.
-- **Web: Upload hero centered card layout.** The Quick Start file upload page (`process_form.html`) now renders inside a `.upload-hero` centered card with a gradient background, blue accent border, and a dashed drop-zone file input. Dark-mode variant included.
+- **Web: SVG icons on all 15 sidebar navigation links.** Each sidebar link now has a 16×16 inline SVG icon (`aria-hidden="true"`, `focusable="false"`, `class="nav-icon"`) in `base.html`. Icons fade to full opacity on hover/active.
+- **Web: Active sidebar group label accent color.** When the current page belongs to a mission group, the group's `<span class="sidebar-group-label">` inherits the group's accent color and top-border accent.
+- **Web: Page breadcrumb context pill.** A colored `.page-breadcrumb` chip now appears above the `<h1>` on every tool page, showing the current mission group name and accent color.
+- **Web: Mission card hover lift animation.** Mission cards on the home page now lift `translateY(-2px)` with an elevated box-shadow on hover. Animation is gated behind `@media (prefers-reduced-motion: no-preference)`.
+- **Web: Upload hero centered card layout.** The Quick Start file upload page (`process_form.html`) now renders inside a `.upload-hero` centered card with a gradient background, blue accent border, and a dashed drop-zone file input.
 
 ### Changed
 
 - **Web: AI defaults now ship enabled for Ollama-first rollout.** Updated `web/src/acb_large_print_web/feature_flags.py` and `web/instance/feature_flags.json` so `GLOW_ENABLE_AI`, `GLOW_ENABLE_AI_HEADING_FIX`, and `GLOW_ENABLE_AI_MARKITDOWN_LLM` default to `true`, while chat/whisperer/alt-text remain opt-in/off by default.
-- **Web: AI setup is no longer treated as a Settings subpage.** Legacy `/settings/ai` links now redirect to the canonical `/ai/` page, the AI usage meter and About page now point to the new route, and the AI page now shows a clear disabled-state message when the deployment-level AI switch is off instead of rendering nonfunctional controls.
+- **Web: AI setup is no longer treated as a Settings subpage.** Legacy `/settings/ai` links now redirect to the canonical `/ai/` page.
 - **Office Add-in: patched `fast-uri` transitive vulnerability (GHSA-v39h-62p7-jpjc).** Added `"fast-uri": ">=3.1.2"` to `office-addin/package.json` `overrides` and regenerated `office-addin/package-lock.json` so `fast-uri` resolves to `3.1.2`.
 - **Office Add-in: patched `fast-xml-builder` transitive vulnerability.** Added `"fast-xml-builder": ">=1.1.7"` to `office-addin/package.json` `overrides` and regenerated `office-addin/package-lock.json` so `fast-xml-builder` resolves to `1.2.0`.
-- **Office Add-in: resolved remaining moderate transitive advisories.** Added `"hono": ">=4.12.18"`, `"express-rate-limit": ">=8.5.1"`, and `"ip-address": ">=10.1.1"` to `office-addin/package.json` `overrides` and regenerated `office-addin/package-lock.json`, resulting in `npm audit` reporting zero vulnerabilities in `office-addin`.
-- **Web: Toast container relocated to fixed bottom-right overlay.** `#toast-container` moved from inside `<main>` to just before `</body>` in `base.html`, so toasts no longer shift page layout. Updated CSS in `forms.css` to `position: fixed; bottom: 1.5rem; right: 1.5rem` with mobile responsive sizing.
-- **Web: Sidebar dark-mode background deepened.** Dark mode sidebar background updated from `#1e1e1e` to `#141414` with a `box-shadow: 2px 0 8px rgba(0,0,0,0.35)` depth shadow in `forms.css`.
-- **Web: Home page mission hub de-duplicated (repetition fix).** Mission cards no longer list every sidebar navigation link. Each card now has a short outcome-focused description and a single primary CTA link ("Open Document Audit →" etc.), removing the redundancy with the sidebar. The inline-styled 5.0.0 announcement banner has been replaced by a slim inline "What's new in 5.0.0 →" text link in the intro paragraph. The "Not Sure Where to Start?" section has been merged into a `home-quickstart` strip. The "Explore and Learn" card now describes the group's value and links to the Guidelines reference rather than re-listing four sidebar links. Updated `web/src/acb_large_print_web/templates/index.html` and `web/src/acb_large_print_web/static/forms.css` (`.mission-card__cta`, `.home-quickstart` styles; removed `.mission-links`).
+- **Office Add-in: resolved remaining moderate transitive advisories.** Added `"hono": ">=4.12.18"`, `"express-rate-limit": ">=8.5.1"`, and `"ip-address": ">=10.1.1"` to `office-addin/package.json` `overrides` and regenerated `office-addin/package-lock.json`, resulting in `npm audit` reporting zero vulnerabilities.
+- **Web: Toast container relocated to fixed bottom-right overlay.** `#toast-container` moved from inside `<main>` to just before `</body>`, so toasts no longer shift page layout.
+- **Web: Sidebar dark-mode background deepened.** Dark mode sidebar background updated from `#1e1e1e` to `#141414` with depth shadow.
+- **Web: Home page mission hub de-duplicated (repetition fix).** Mission cards now have short outcome-focused descriptions and single primary CTA links instead of re-listing multiple sidebar links.
 
 ---
 
