@@ -553,8 +553,17 @@ def synthesize_document_text(
     *,
     speed: float = 1.0,
     pitch: int = 0,
+    progress_callback=None,
 ) -> tuple[bytes, str]:
-    """Synthesize long-form document text by chunking and concatenation."""
+    """Synthesize long-form document text by chunking and concatenation.
+
+    Parameters
+    ----------
+    progress_callback:
+        Optional callable ``(fraction: float, message: str) -> None`` called
+        after each chunk completes, where *fraction* is 0.0–1.0.  Used by the
+        async Celery task to stream progress to the SSE endpoint.
+    """
     normalized = normalize_document_text(text)
     if not normalized:
         raise SpeechError("Document text is empty after extraction.")
@@ -570,10 +579,17 @@ def synthesize_document_text(
 
     wav_segments: list[bytes] = []
     filename = "glow-speech-document.wav"
-    for chunk in chunks:
+    total = len(chunks)
+    for idx, chunk in enumerate(chunks):
         wav_bytes, suggested = synthesize(voice_id, chunk, speed=speed, pitch=pitch)
         filename = suggested.replace("glow-speech-", "glow-speech-document-")
         wav_segments.append(wav_bytes)
+        if progress_callback is not None:
+            try:
+                fraction = (idx + 1) / total
+                progress_callback(fraction, f"Synthesizing chunk {idx + 1} of {total}…")
+            except Exception:
+                pass
 
     return _concat_wav_segments(wav_segments), filename
 

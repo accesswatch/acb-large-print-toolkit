@@ -436,6 +436,32 @@ def send_batch_audit_report_email(
     return _send(payload, to_email)
 
 
+def send_email(
+    to: str,
+    subject: str,
+    html: str,
+    text: Optional[str] = None,
+) -> tuple[bool, str]:
+    """Send a generic transactional HTML email via Postmark.
+
+    This helper is used by admin/user workflow routes (for example promotion
+    requests) that do not need attachments.
+    """
+    if not email_configured():
+        log.warning("POSTMARK_SERVER_TOKEN not set -- generic email send skipped")
+        return False, "Email service is not configured. Contact the site administrator."
+
+    payload = {
+        "From": _from_address(),
+        "To": to,
+        "Subject": subject,
+        "HtmlBody": html,
+        "TextBody": text or "This message contains HTML content. Please view it in an HTML-capable email client.",
+        "MessageStream": _POSTMARK_STREAM,
+    }
+    return _send(payload, to)
+
+
 def send_whisperer_status_email(
     to_email: str,
     subject: str,

@@ -1,0 +1,3 @@
+# GLOW 7.0.0: Async, Secure, and Ready for the Future
+
+GLOW 7.0.0 brings a production-grade async job queue, Firebase authentication, Neon/Postgres migration, and a privacy-first account system. All major conversions and speech operations now run as background jobs with live progress and download links. End-user and admin login support Firebase, with approval-gated admin access. Your account dashboard lets you manage consent, provider keys (encrypted at rest), and data export/delete. A full migration toolkit and runbook make it easy to move from SQLite to Neon/Postgres. Project-level Agent Skills and MCP integration streamline Firebase/Neon workflows. See the user guide and migration plan for step-by-step details.

@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Role Has Been Updated</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; line-height: 1.5; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: #007bff; color: white; padding: 20px; border-radius: 4px; margin-bottom: 20px; text-align: center; }
+        .content { margin: 20px 0; }
+        .button { display: inline-block; padding: 12px 24px; background: #007bff; color: white; border-radius: 4px; text-decoration: none; font-weight: 600; }
+        .footer { border-top: 1px solid #ddd; padding-top: 20px; margin-top: 40px; font-size: 12px; color: #666; }
+        .info-box { background: #f8f9fa; padding: 15px; border-radius: 4px; margin: 20px 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h2>Your Role Has Been Updated</h2>
+        </div>
+
+        <div class="content">
+            <p>Hi {{ user.display_name or user.email }},</p>
+
+            <p>Your account role has been updated by a system administrator.</p>
+
+            <div class="info-box">
+                <strong>Updated by:</strong> {{ updated_by.display_name or updated_by.email }}<br>
+                <strong>Previous role:</strong> {{ old_role|replace('_', ' ')|title }}<br>
+                <strong>New role:</strong> <strong>{{ new_role|replace('_', ' ')|title }}</strong><br>
+                <strong>Updated at:</strong> Now
+            </div>
+
+            <p>This change grants you new capabilities in the GLOW platform. If you have questions about this update, please reach out to an admin.</p>
+
+            <p><a href="https://glow.bits-acb.org/account/settings" class="button">View Your Account</a></p>
+        </div>
+
+        <div class="footer">
+            <p>This is an automated notification from GLOW. Do not reply to this email.</p>
+        </div>
+    </div>
+</body>
+</html>

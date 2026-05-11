@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+{% block title %}Sign In / Create Account - GLOW{% endblock %}
+{% block content %}
+<section class="card" aria-labelledby="login-title">
+  <h1 id="login-title">Sign In or Create Account</h1>
+  <p>Use passwordless Email Link or GitHub. New users are enrolled automatically on first sign-in.</p>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for category, message in messages %}
+      <p class="{{ 'error-text' if category == 'error' else 'success-text' if category == 'success' else 'info-text' }}"
+         role="status">{{ message }}</p>
+    {% endfor %}
+  {% endwith %}
+
+  {% if not firebase_auth_enabled %}
+  <p class="error-text" role="alert">Firebase auth is not enabled on this server. Contact an administrator.</p>
+  {% else %}
+  <h2>Email Sign-In Link</h2>
+  <p>Enter your email and we will send a secure sign-in link.</p>
+  <form id="email-link-form" class="stack-gap" novalidate>
+    <label for="magic-email">Email address</label>
+    <input id="magic-email" name="email" type="email" required autocomplete="email"
+           aria-describedby="magic-email-hint">
+    <p id="magic-email-hint" class="field-hint">No password needed. This link signs you in and creates your account if needed.</p>
+    <button type="submit" class="button button--primary">Send Sign-In Link</button>
+  </form>
+
+  <h2>Or Continue With</h2>
+  <button id="github-signin" type="button" class="button button--secondary">Sign in with GitHub</button>
+  <p id="auth-status" class="field-hint" role="status" aria-live="polite"></p>
+  {% endif %}
+</section>
+
+{% if firebase_auth_enabled and firebase_web_api_key and firebase_auth_domain and firebase_project_id and firebase_app_id %}
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import {
+    getAuth,
+    GithubAuthProvider,
+    signInWithPopup,
+    sendSignInLinkToEmail,
+    isSignInWithEmailLink,
+    signInWithEmailLink,
+  } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+  const statusEl = document.getElementById("auth-status");
+  const emailInput = document.getElementById("magic-email");
+  const emailForm = document.getElementById("email-link-form");
+  const githubBtn = document.getElementById("github-signin");
+
+  const firebaseConfig = {
+    apiKey: {{ firebase_web_api_key | tojson }},
+    authDomain: {{ firebase_auth_domain | tojson }},
+    projectId: {{ firebase_project_id | tojson }},
+    appId: {{ firebase_app_id | tojson }},
+    measurementId: {{ firebase_measurement_id | tojson }},
+  };
+
+  const actionCodeSettings = {
+    url: window.location.origin + "{{ url_for('auth.login') }}",
+    handleCodeInApp: true,
+  };
+
+  function setStatus(message, isError = false) {
+    if (!statusEl) return;
+    statusEl.textContent = message || "";
+    statusEl.classList.toggle("error-text", Boolean(isError));
+  }
+
+  async function exchangeIdTokenForSession(idToken) {
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || "";
+    const response = await fetch("{{ url_for('auth.firebase_login') }}", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRFToken": csrfToken,
+      },
+      credentials: "same-origin",
+      body: JSON.stringify({ idToken }),
+    });
+    const data = await response.json();
+    if (!response.ok || !data.ok) {
+      throw new Error(data.error || "Sign-in failed. Please try again.");
+    }
+    window.location.href = data.redirect || "{{ url_for('account.dashboard') }}";
+  }
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+
+  emailForm?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const email = (emailInput?.value || "").trim().toLowerCase();
+    if (!email) {
+      setStatus("Enter a valid email address.", true);
+      return;
+    }
+
+    try {
+      await sendSignInLinkToEmail(auth, email, actionCodeSettings);
+      localStorage.setItem("glowEmailForSignIn", email);
+      setStatus("Email link sent. Check your inbox and then return here.");
+    } catch (error) {
+      setStatus(error?.message || "Could not send email link.", true);
+    }
+  });
+
+  githubBtn?.addEventListener("click", async () => {
+    setStatus("Starting GitHub sign-in...");
+    try {
+      const provider = new GithubAuthProvider();
+      const result = await signInWithPopup(auth, provider);
+      const idToken = await result.user.getIdToken();
+      await exchangeIdTokenForSession(idToken);
+    } catch (error) {
+      setStatus(error?.message || "GitHub sign-in failed.", true);
+    }
+  });
+
+  if (isSignInWithEmailLink(auth, window.location.href)) {
+    let email = localStorage.getItem("glowEmailForSignIn") || "";
+    if (!email) {
+      email = window.prompt("Confirm your email to finish sign-in:") || "";
+    }
+    if (!email) {
+      setStatus("Email confirmation is required to complete sign-in.", true);
+    } else {
+      setStatus("Completing sign-in...");
+      try {
+        const result = await signInWithEmailLink(auth, email, window.location.href);
+        localStorage.removeItem("glowEmailForSignIn");
+        const idToken = await result.user.getIdToken();
+        await exchangeIdTokenForSession(idToken);
+      } catch (error) {
+        setStatus(error?.message || "Email link sign-in failed.", true);
+      }
+    }
+  }
+</script>
+{% endif %}
+{% endblock %}

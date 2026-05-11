@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Promotion Approved</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; line-height: 1.5; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: #28a745; color: white; padding: 20px; border-radius: 4px; margin-bottom: 20px; text-align: center; }
+        .content { margin: 20px 0; }
+        .actions { margin: 30px 0; }
+        .button { display: inline-block; padding: 12px 24px; background: #007bff; color: white; border-radius: 4px; text-decoration: none; font-weight: 600; }
+        .footer { border-top: 1px solid #ddd; padding-top: 20px; margin-top: 40px; font-size: 12px; color: #666; }
+        .info-box { background: #f8f9fa; padding: 15px; border-radius: 4px; margin: 20px 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h2>✓ Admin Promotion Approved</h2>
+        </div>
+
+        <div class="content">
+            <p>Hi {{ user.display_name or user.email }},</p>
+
+            <p>Congratulations! Your request to become an admin has been <strong>approved</strong>.</p>
+
+            <div class="info-box">
+                <strong>Approved by:</strong> {{ approved_by.display_name or approved_by.email }}<br>
+                <strong>New role:</strong> Administrator<br>
+                <strong>Approved at:</strong> {{ user.promotion_reviewed_at.strftime('%Y-%m-%d %H:%M UTC') if user.promotion_reviewed_at else 'Now' }}
+            </div>
+
+            <p>You now have access to:</p>
+            <ul>
+                <li>User management dashboard</li>
+                <li>Admin settings and configuration</li>
+                <li>Role promotion reviews</li>
+                <li>System settings and monitoring</li>
+            </ul>
+
+            <p>Visit the admin dashboard to get started:</p>
+            <div class="actions">
+                <a href="https://glow.bits-acb.org/admin" class="button">Go to Admin Dashboard</a>
+            </div>
+
+            <p>If you have any questions, please contact support or reach out to another admin.</p>
+        </div>
+
+        <div class="footer">
+            <p>This is an automated notification from GLOW. Do not reply to this email.</p>
+        </div>
+    </div>
+</body>
+</html>

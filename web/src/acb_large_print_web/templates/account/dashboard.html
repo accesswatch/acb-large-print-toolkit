@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}My Account - GLOW{% endblock %}
+{% block content %}
+<section class="card" aria-labelledby="account-title">
+  <h1 id="account-title">My Account</h1>
+  <p>Signed in as {{ current_user.email }}</p>
+
+  <form method="post" action="{{ url_for('account.profile_update') }}" class="stack-gap">
+    <label for="display_name">Display name</label>
+    <input id="display_name" name="display_name" type="text" value="{{ current_user.display_name or '' }}" maxlength="120">
+    <button type="submit" class="button button--primary">Save profile</button>
+  </form>
+
+  <p><a href="{{ url_for('account.privacy') }}">Privacy and sync settings</a></p>
+  <p><a href="{{ url_for('account.export_data') }}">Export my data</a></p>
+
+  <h2>Recent Audit History</h2>
+  {% if history %}
+  <table>
+    <thead>
+      <tr><th>File</th><th>Score</th><th>Date</th></tr>
+    </thead>
+    <tbody>
+      {% for item in history %}
+      <tr>
+        <td>{{ item.filename }}</td>
+        <td>{{ item.score if item.score is not none else '-' }}</td>
+        <td>{{ item.created_at }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p>No history yet.</p>
+  {% endif %}
+
+  <form method="post" action="{{ url_for('account.delete_data') }}" onsubmit="return confirm('Delete account and all stored data? This cannot be undone.');">
+    <button type="submit" class="button button--danger">Delete account and data</button>
+  </form>
+</section>
+{% endblock %}

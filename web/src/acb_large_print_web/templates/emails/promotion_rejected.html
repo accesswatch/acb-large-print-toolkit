@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Promotion Request Declined</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; line-height: 1.5; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: #ffc107; color: #333; padding: 20px; border-radius: 4px; margin-bottom: 20px; text-align: center; }
+        .content { margin: 20px 0; }
+        .button { display: inline-block; padding: 12px 24px; background: #007bff; color: white; border-radius: 4px; text-decoration: none; font-weight: 600; }
+        .footer { border-top: 1px solid #ddd; padding-top: 20px; margin-top: 40px; font-size: 12px; color: #666; }
+        .info-box { background: #f8f9fa; padding: 15px; border-radius: 4px; margin: 20px 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h2>Admin Promotion Request Declined</h2>
+        </div>
+
+        <div class="content">
+            <p>Hi {{ user.display_name or user.email }},</p>
+
+            <p>Thank you for your interest in becoming an admin. Your promotion request has been reviewed and <strong>declined</strong> at this time.</p>
+
+            <div class="info-box">
+                <strong>Reviewed by:</strong> {{ rejected_by.display_name or rejected_by.email }}<br>
+                <strong>Reviewed at:</strong> {{ user.promotion_reviewed_at.strftime('%Y-%m-%d %H:%M UTC') if user.promotion_reviewed_at else 'Now' }}
+                {% if reason %}
+                <br><strong>Reason:</strong> {{ reason }}
+                {% endif %}
+            </div>
+
+            <p>You can submit another promotion request in the future if circumstances change. If you have questions about the decision, please reach out to an admin directly.</p>
+
+            <p><a href="https://glow.bits-acb.org/user/request-promotion" class="button">Submit Another Request</a></p>
+        </div>
+
+        <div class="footer">
+            <p>This is an automated notification from GLOW. Do not reply to this email.</p>
+        </div>
+    </div>
+</body>
+</html>

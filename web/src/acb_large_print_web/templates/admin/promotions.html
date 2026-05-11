@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard - Promotion Requests{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h1>Pending Promotion Requests</h1>
+    <p class="text-muted">Review and approve/reject admin promotion requests from users.</p>
+
+    {% if pending_requests %}
+        <div class="row mt-4">
+            {% for request in pending_requests %}
+                <div class="col-md-6 mb-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">{{ request.display_name or request.email }}</h5>
+                            <small class="text-muted">{{ request.email }}</small>
+                        </div>
+                        <div class="card-body">
+                            <dl class="row">
+                                <dt class="col-sm-4">Requested:</dt>
+                                <dd class="col-sm-8">{{ request.promotion_requested_at.strftime('%Y-%m-%d %H:%M UTC') if request.promotion_requested_at else 'Unknown' }}</dd>
+                                <dt class="col-sm-4">Current Role:</dt>
+                                <dd class="col-sm-8"><span class="badge bg-secondary">{{ request.role|replace('_', ' ')|title }}</span></dd>
+                            </dl>
+
+                            <div class="bg-light p-3 rounded mb-3">
+                                <strong>Reason:</strong><br>
+                                <p class="mb-0">{{ request.promotion_request_reason or '(No reason provided)' }}</p>
+                            </div>
+
+                            <div class="btn-group w-100" role="group">
+                                <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#approveModal{{ request.id }}">
+                                    ✓ Approve
+                                </button>
+                                <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#rejectModal{{ request.id }}">
+                                    ✕ Reject
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Approve Modal -->
+                    <div class="modal fade" id="approveModal{{ request.id }}" tabindex="-1">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title">Approve Promotion</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                </div>
+                                <form method="POST" action="{{ url_for('role.admin_approve_promotion', user_id=request.id) }}">
+                                    <div class="modal-body">
+                                        <p>Approve <strong>{{ request.email }}</strong> to <strong>admin</strong> role?</p>
+                                        <div class="mb-3">
+                                            <label for="newRole{{ request.id }}" class="form-label">Target Role:</label>
+                                            <select class="form-select" id="newRole{{ request.id }}" name="new_role" required>
+                                                <option value="admin" selected>Admin</option>
+                                                {% if current_user.is_super_admin() %}
+                                                    <option value="super_admin">Super Admin</option>
+                                                {% endif %}
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                        <button type="submit" class="btn btn-success">Approve & Notify</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Reject Modal -->
+                    <div class="modal fade" id="rejectModal{{ request.id }}" tabindex="-1">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title">Reject Promotion</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                </div>
+                                <form method="POST" action="{{ url_for('role.admin_reject_promotion', user_id=request.id) }}">
+                                    <div class="modal-body">
+                                        <p>Reject promotion request for <strong>{{ request.email }}</strong>?</p>
+                                        <div class="mb-3">
+                                            <label for="reason{{ request.id }}" class="form-label">Reason (optional):</label>
+                                            <textarea class="form-control" id="reason{{ request.id }}" name="reason" rows="3" placeholder="Brief explanation for the rejection..."></textarea>
+                                        </div>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                        <button type="submit" class="btn btn-danger">Reject & Notify</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="alert alert-info mt-4">
+            <strong>No pending requests.</strong> There are no promotion requests awaiting review.
+        </div>
+    {% endif %}
+
+    <hr class="mt-5">
+    <p class="mt-4"><a href="{{ url_for('role.admin_users') }}" class="btn btn-outline-secondary">Manage All Users →</a></p>
+</div>
+{% endblock %}

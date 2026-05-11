@@ -4,6 +4,18 @@ GLOW (Guided Layout and Output Workflow) helps you produce documents that people
 
 New to GLOW? Start at [Quick Start](#1-quick-start). Already familiar? Jump straight to the section you need.
 
+
+## What’s New in GLOW 7.0.0
+
+- **Async Job Queue:** All long-running conversions (Word, PDF, HTML, Markdown, EPUB, Speech) now run as background jobs. You’re redirected to a live job progress page with streaming status and download link when ready.
+- **Speech Studio and Convert:** Both now use the async queue for large jobs, with real-time progress and error handling.
+- **Firebase Authentication:** End-user and admin login now support Firebase, with approval-gated admin access. Existing OAuth and local login remain as fallback.
+- **Account & Privacy Dashboard:** New dashboard for managing your profile, consent, provider keys (encrypted at rest), and data export/delete.
+- **Neon/Postgres Migration:** All user, admin, and feature flag data now stored in Neon/Postgres (with SQLite fallback for local/dev).
+- **Migration Tools:** Built-in migration script and runbook for moving from SQLite to Neon, with full backup/restore and rollback.
+- **Agent Skills & MCP:** Project-level Agent Skills for Firebase and Neon, with step-by-step setup and diagnostics.
+- **Expanded Documentation:** New migration runbook, cutover/decommission guide, and troubleshooting matrix.
+
 If AI is part of your setup, skip ahead to [What’s New in GLOW 6.0.0](#whats-new-in-glow-6.0.0) and [AI Features at a Glance](#ai-features-at-a-glance) for the short version of what GLOW can do when AI is on, and what stays hidden when it is not.
 
 ---

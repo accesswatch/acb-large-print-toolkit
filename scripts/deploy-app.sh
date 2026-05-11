@@ -236,6 +236,28 @@ if [[ "$MISSING" -eq 1 ]]; then
 fi
 
 # ---------------------------------------------------------------------------
+# Inject OAuth credentials into .env (idempotent — skips if already present)
+# ---------------------------------------------------------------------------
+ENV_FILE="$WEB_ROOT/.env"
+log_ts "--- Checking OAuth credentials in $ENV_FILE ---"
+
+inject_env_var() {
+    local key="$1"
+    local value="$2"
+    if grep -q "^${key}=" "$ENV_FILE" 2>/dev/null; then
+        log_ts "  $key already set — skipping"
+    else
+        echo "${key}=${value}" >> "$ENV_FILE"
+        log_ts "  $key injected"
+    fi
+}
+
+inject_env_var "GITHUB_CLIENT_ID"     "Ov23li7l5O1nwh1dw9vG"
+inject_env_var "GITHUB_CLIENT_SECRET" "0c24f73653db088b17f2be704f4f22fb44a51497"
+
+log_ts "--- OAuth credential check complete ---"
+
+# ---------------------------------------------------------------------------
 # Optional: pull latest from Git
 # ---------------------------------------------------------------------------
 if [[ -d "$APP_ROOT/.git" ]]; then
@@ -326,6 +348,104 @@ if [[ "$HEALTHY" -eq 1 ]]; then
 
     log_ts "--- Caddy container state after recreation ---"
     docker compose -f "$COMPOSE_FILE" ps caddy
+
+    # ---------------------------------------------------------------------------
+    # One-time migration: SQLite glow_users.db → Neon PostgreSQL
+    #
+    # Runs only once per instance volume (guarded by a sentinel file).
+    # After successful migration the old SQLite file is renamed to
+    # glow_users.db.pre-neon so data is preserved but the app no longer
+    # loads it.  Safe to re-run -- sentinel makes it a no-op on every
+    # subsequent deploy.
+    # ---------------------------------------------------------------------------
+    log_ts "--- One-time SQLite → Neon user migration ---"
+    docker compose -f "$COMPOSE_FILE" exec -T web python -c "
+import os, sys, sqlite3, shutil
+from pathlib import Path
+
+instance = Path(os.environ.get('FLASK_INSTANCE_PATH', '/app/instance'))
+sentinel = instance / '.neon-migration-done'
+
+if sentinel.exists():
+    print('Neon migration: sentinel found -- already done, skipping.')
+    sys.exit(0)
+
+sqlite_path = instance / 'glow_users.db'
+if not sqlite_path.exists():
+    print('Neon migration: no glow_users.db -- fresh install, writing sentinel.')
+    sentinel.write_text('no-source-db')
+    sys.exit(0)
+
+from acb_large_print_web.app import create_app
+from acb_large_print_web.db import db
+from acb_large_print_web.models import User, UserOAuthIdentity
+
+app = create_app()
+with app.app_context():
+    db_uri = app.config.get('SQLALCHEMY_DATABASE_URI', '')
+    if not db_uri.startswith('postgresql'):
+        print(f'Neon migration: backend is not PostgreSQL -- skipping.')
+        sys.exit(0)
+
+    src = sqlite3.connect(str(sqlite_path))
+    src.row_factory = sqlite3.Row
+    try:
+        users = src.execute('SELECT * FROM user').fetchall()
+    except sqlite3.OperationalError:
+        print('Neon migration: no user table in glow_users.db -- writing sentinel.')
+        src.close()
+        sentinel.write_text('empty-source')
+        sys.exit(0)
+
+    migrated = skipped = 0
+    for row in users:
+        try:
+            u = User.__new__(User)
+            for col in row.keys():
+                if hasattr(User, col):
+                    setattr(u, col, row[col])
+            db.session.merge(u)
+            db.session.commit()
+            migrated += 1
+        except Exception as exc:
+            db.session.rollback()
+            skipped += 1
+            print(f'  WARNING: skipping user {dict(row).get(\"email\", \"?\")} -- {exc}')
+    src.close()
+    print(f'Neon migration: users migrated={migrated} skipped={skipped}')
+
+    try:
+        src2 = sqlite3.connect(str(sqlite_path))
+        src2.row_factory = sqlite3.Row
+        identities = src2.execute('SELECT * FROM user_oauth_identity').fetchall()
+        id_ok = 0
+        for row in identities:
+            try:
+                obj = UserOAuthIdentity.__new__(UserOAuthIdentity)
+                for col in row.keys():
+                    if hasattr(UserOAuthIdentity, col):
+                        setattr(obj, col, row[col])
+                db.session.merge(obj)
+                db.session.commit()
+                id_ok += 1
+            except Exception:
+                db.session.rollback()
+        src2.close()
+        print(f'Neon migration: oauth identities migrated={id_ok}')
+    except Exception as exc:
+        print(f'Neon migration: OAuth identity step skipped ({exc})')
+
+    archive = sqlite_path.with_suffix('.db.pre-neon')
+    try:
+        shutil.move(str(sqlite_path), str(archive))
+        print(f'Neon migration: old DB archived to {archive.name}')
+    except Exception as exc:
+        print(f'Neon migration: WARNING could not archive old DB: {exc}')
+
+    sentinel.write_text('migrated')
+    print('Neon migration: complete.')
+" 2>&1 || log_ts "WARNING: Neon migration step failed -- app continues with Neon tables from db.create_all()."
+    log_ts "--- Neon migration step complete ---"
 
     # ---------------------------------------------------------------------------
     # Ensure Kokoro speech model files are present in the speech-models volume.

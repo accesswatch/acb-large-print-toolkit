@@ -303,6 +303,49 @@
         </li>
         {% endif %}
 
+        <!-- ── Account group ──────────────────────────────────────────── -->
+        <li class="sidebar-group sidebar-group--account{% if request.blueprint in ['auth', 'account'] %} sidebar-group--active{% endif %}">
+          <span class="sidebar-group-label" id="nav-group-account">Account</span>
+          <ul aria-labelledby="nav-group-account" role="list">
+            {% if user_is_authenticated %}
+            <li>
+              <a href="{{ url_for('account.dashboard') }}"
+                 class="sidebar-link{% if request.blueprint == 'account' %} sidebar-link--active{% endif %}"
+                 {% if request.blueprint == 'account' %}aria-current="page"{% endif %}>
+                <svg class="nav-icon" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><circle cx="8" cy="5" r="3" stroke="currentColor" stroke-width="1.8" fill="none"/><path d="M2 14c0-2.5 2.7-4 6-4s6 1.5 6 4" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round"/></svg>
+                My Account
+              </a>
+            </li>
+            <li>
+              <a href="{{ url_for('account.privacy') }}" class="sidebar-link">Privacy and Sync</a>
+            </li>
+            {% if user_is_admin %}
+            <li>
+              <a href="{{ url_for('admin.admin_queue') }}"
+                 class="sidebar-link{% if request.blueprint == 'admin' %} sidebar-link--active{% endif %}"
+                 {% if request.blueprint == 'admin' %}aria-current="page"{% endif %}>
+                Admin Console
+              </a>
+            </li>
+            {% endif %}
+            <li>
+              <a href="{{ url_for('auth.logout') }}" class="sidebar-link">Sign Out</a>
+            </li>
+            {% else %}
+            <li>
+              <a href="{{ url_for('auth.login') }}"
+                 class="sidebar-link{% if request.blueprint == 'auth' %} sidebar-link--active{% endif %}"
+                 {% if request.blueprint == 'auth' %}aria-current="page"{% endif %}>
+                Sign In
+              </a>
+            </li>
+            <li>
+              <a href="{{ url_for('auth.register') }}" class="sidebar-link">Create Account</a>
+            </li>
+            {% endif %}
+          </ul>
+        </li>
+
       </ul>
     </nav>
     {% include 'partials/ai_meter.html' %}
@@ -314,7 +357,7 @@
     <div class="content-area">
 
       <main id="main">
-        {% block breadcrumb %}{% if request.blueprint in ['audit', 'site_audit'] %}<p class="page-breadcrumb"><span class="page-breadcrumb__label" data-group="assess">Assess</span></p>{% elif request.blueprint in ['fix', 'template'] %}<p class="page-breadcrumb"><span class="page-breadcrumb__label" data-group="fix">Fix and Build</span></p>{% elif request.blueprint in ['convert', 'export', 'braille'] %}<p class="page-breadcrumb"><span class="page-breadcrumb__label" data-group="transform">Transform</span></p>{% elif request.blueprint in ['speech', 'whisperer'] %}<p class="page-breadcrumb"><span class="page-breadcrumb__label" data-group="listen">Listen and Speak</span></p>{% elif request.blueprint in ['ai', 'chat', 'alt_text', 'magic', 'guidelines', 'rules_ref', 'guide', 'faq', 'settings'] %}<p class="page-breadcrumb"><span class="page-breadcrumb__label" data-group="explore">Explore and Learn</span></p>{% endif %}{% endblock %}
+        {% block breadcrumb %}{% if request.blueprint in ['audit', 'site_audit'] %}<p class="page-breadcrumb"><span class="page-breadcrumb__label" data-group="assess">Assess</span></p>{% elif request.blueprint in ['fix', 'template'] %}<p class="page-breadcrumb"><span class="page-breadcrumb__label" data-group="fix">Fix and Build</span></p>{% elif request.blueprint in ['convert', 'export', 'braille'] %}<p class="page-breadcrumb"><span class="page-breadcrumb__label" data-group="transform">Transform</span></p>{% elif request.blueprint in ['speech', 'whisperer'] %}<p class="page-breadcrumb"><span class="page-breadcrumb__label" data-group="listen">Listen and Speak</span></p>{% elif request.blueprint in ['ai', 'chat', 'alt_text', 'magic', 'guidelines', 'rules_ref', 'guide', 'faq', 'settings'] %}<p class="page-breadcrumb"><span class="page-breadcrumb__label" data-group="explore">Explore and Learn</span></p>{% elif request.blueprint in ['auth', 'account'] %}<p class="page-breadcrumb"><span class="page-breadcrumb__label" data-group="account">Account</span></p>{% endif %}{% endblock %}
         <h1>{% block heading %}{{ brand_heading_label }}{% endblock %}</h1>
 
         {% with messages = get_flashed_messages(with_categories=true) %}
@@ -346,7 +389,11 @@
             <li><a href="{{ url_for('feedback.feedback_form') }}"{% if request.blueprint == 'feedback' %} aria-current="page"{% endif %}>Feedback</a></li>
             <li><a href="{{ url_for('status_page') }}"{% if request.endpoint == 'status_page' %} aria-current="page"{% endif %}>Server Status</a></li>
             <li><a href="{{ url_for('prd.prd_page') }}"{% if request.blueprint == 'prd' %} aria-current="page"{% endif %}>PRD</a></li>
-            <li><a href="{{ url_for('admin.admin_login') }}"{% if request.blueprint == 'admin' %} aria-current="page"{% endif %}>Admin Sign-In</a></li>
+            {% if user_is_authenticated and user_is_admin %}
+            <li><a href="{{ url_for('admin.admin_queue') }}"{% if request.blueprint == 'admin' %} aria-current="page"{% endif %}>Admin Console</a></li>
+            {% else %}
+            <li><a href="{{ url_for('auth.login') }}"{% if request.blueprint == 'auth' %} aria-current="page"{% endif %}>Sign In</a></li>
+            {% endif %}
             <li><a href="{{ url_for('privacy.privacy_page') }}"{% if request.blueprint == 'privacy' %} aria-current="page"{% endif %}>Privacy Policy</a></li>
             <li><a href="{{ url_for('consent.consent_form') }}"{% if request.blueprint == 'consent' %} aria-current="page"{% endif %}>Terms of Use</a></li>
           </ul>

@@ -22,6 +22,7 @@ MarkItDown in the standard Convert flow.
 """
 
 import os
+import uuid
 
 from flask import Blueprint, abort, current_app, redirect, render_template, request, send_file, url_for
 
@@ -73,6 +74,7 @@ _MARKITDOWN_AUDIO_MAX_MINUTES = float(os.environ.get("GLOW_MARKITDOWN_AUDIO_MAX_
 
 # Sentinel path used to signal "skip ACB CSS" to pandoc_converter
 _NO_ACB_CSS_SENTINEL = Path("__no_acb_css__")
+_ASYNC_CONVERT_ENABLED = os.environ.get("GLOW_CONVERT_ASYNC", "1") == "1"
 
 
 # Allowed MIME types for the download/preview routes
@@ -397,6 +399,59 @@ def convert_submit():
             result_token = token
             token = None
             return redirect(url_for("speech.speech_form", token=result_token))
+
+        # Async queue path for potentially long-running conversions.
+        # Keep the upload token alive for the worker by nulling token before return.
+        async_op_map = {
+            "to-markdown": "to_markdown",
+            "to-html": "to_html",
+            "to-docx": "to_docx",
+            "to-odt": "to_odt",
+            "to-epub": "to_epub",
+            "to-pdf": "to_pdf",
+            "to-pipeline": "pipeline",
+        }
+        if _ASYNC_CONVERT_ENABLED and (direction in async_op_map or direction.startswith("pipeline-")):
+            from ..tasks.convert_tasks import create_job, run_convert_job
+
+            op = "pipeline" if direction.startswith("pipeline-") else async_op_map[direction]
+            conversion_key = ""
+            if direction == "to-pipeline":
+                conversion_key = request.form.get("pipeline_conversion", "")
+            elif direction.startswith("pipeline-"):
+                conversion_key = direction.replace("pipeline-", "")
+
+            if op == "pipeline":
+                if not pipeline_available():
+                    raise UploadError(
+                        "DAISY Pipeline is not installed on the server. "
+                        "Pipeline conversions are unavailable."
+                    )
+                if conversion_key not in get_available_conversions():
+                    raise UploadError(
+                        f"Pipeline conversion '{conversion_key}' is not available."
+                    )
+
+            options = {
+                "title": (request.form.get("title", "").strip() or saved_path.stem.replace("-", " ").replace("_", " ")),
+                "acb_format": request.form.get("acb_format") == "on",
+                "binding_margin": request.form.get("binding_margin") == "on",
+                "print_ready": request.form.get("print_ready") == "on",
+                "pipeline_conversion": conversion_key,
+                "llm_description": request.form.get("llm_description") == "on",
+            }
+
+            job_id = str(uuid.uuid4())
+            create_job(job_id, op, saved_path.name)
+            run_convert_job.delay(
+                job_id,
+                op,
+                token,
+                saved_path.name,
+                options,
+            )
+            token = None
+            return redirect(url_for("jobs.job_progress", job_id=job_id))
 
         if direction == "to-html":
             # Pandoc (or MarkItDown→Pandoc): document -> ACB HTML

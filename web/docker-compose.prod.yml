@@ -16,6 +16,21 @@
 #   docker compose -f docker-compose.prod.yml up -d --build
 
 services:
+  redis:
+    image: redis:7-alpine
+    command: redis-server --maxmemory 64mb --maxmemory-policy allkeys-lru --save ""
+    expose:
+      - "6379"
+    volumes:
+      - redis-data:/data
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "5m"
+        max-file: "3"
+        tag: "glow-redis/{{.Name}}"
+
   pipeline:
     image: daisyorg/pipeline:1.15.4
     environment:
@@ -52,6 +67,17 @@ services:
     environment:
       - FLASK_DEBUG=0
       - PIPELINE_URL=http://pipeline:8181/ws
+      - CELERY_BROKER_URL=${CELERY_BROKER_URL:-redis://redis:6379/0}
+      - CELERY_RESULT_BACKEND=${CELERY_RESULT_BACKEND:-redis://redis:6379/0}
+      - DATABASE_URL=${DATABASE_URL:-}
+      - DB_SSLMODE=${DB_SSLMODE:-require}
+      - FIREBASE_AUTH_ENABLED=${FIREBASE_AUTH_ENABLED:-0}
+      - FIREBASE_ADMIN_AUTH_ENABLED=${FIREBASE_ADMIN_AUTH_ENABLED:-0}
+      - FIREBASE_PROJECT_ID=${FIREBASE_PROJECT_ID:-}
+      - FIREBASE_WEB_API_KEY=${FIREBASE_WEB_API_KEY:-}
+      - FIREBASE_AUTH_DOMAIN=${FIREBASE_AUTH_DOMAIN:-}
+      - FIREBASE_APP_ID=${FIREBASE_APP_ID:-}
+      - FIREBASE_CREDENTIALS_PATH=${FIREBASE_CREDENTIALS_PATH:-/app/instance/firebase-service-account.json}
       # AI rollout defaults: Ollama-first setup.
       # Users can bring their own Ollama key from /ai without requiring
       # server-side OpenRouter configuration.
@@ -75,6 +101,8 @@ services:
     depends_on:
       pipeline:
         condition: service_healthy
+      redis:
+        condition: service_started
     restart: unless-stopped
     logging:
       driver: json-file
@@ -111,8 +139,44 @@ services:
         max-file: "3"
         tag: "glow-caddy/{{.Name}}"
 
+  worker:
+    build:
+      context: ..
+      dockerfile: web/Dockerfile
+      args:
+        SKIP_SPEECH_MODELS: ${SKIP_SPEECH_MODELS:-0}
+    command: celery -A acb_large_print_web.tasks worker --loglevel=INFO --concurrency=2
+    env_file: .env
+    environment:
+      - FLASK_DEBUG=0
+      - PIPELINE_URL=http://pipeline:8181/ws
+      - CELERY_BROKER_URL=${CELERY_BROKER_URL:-redis://redis:6379/0}
+      - CELERY_RESULT_BACKEND=${CELERY_RESULT_BACKEND:-redis://redis:6379/0}
+      - DATABASE_URL=${DATABASE_URL:-}
+      - DB_SSLMODE=${DB_SSLMODE:-require}
+      - FIREBASE_AUTH_ENABLED=${FIREBASE_AUTH_ENABLED:-0}
+      - FIREBASE_ADMIN_AUTH_ENABLED=${FIREBASE_ADMIN_AUTH_ENABLED:-0}
+      - FIREBASE_PROJECT_ID=${FIREBASE_PROJECT_ID:-}
+      - FIREBASE_CREDENTIALS_PATH=${FIREBASE_CREDENTIALS_PATH:-/app/instance/firebase-service-account.json}
+    volumes:
+      - feedback-data:/app/instance
+      - speech-models:/app/instance/speech_models
+    depends_on:
+      pipeline:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "20m"
+        max-file: "5"
+        tag: "glow-worker/{{.Name}}"
+
 volumes:
   feedback-data:
   speech-models:
+  redis-data:
   caddy_data:
   caddy_config:

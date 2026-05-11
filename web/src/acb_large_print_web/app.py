@@ -11,6 +11,7 @@ from flask import Flask, jsonify, render_template
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from flask_wtf.csrf import CSRFError, CSRFProtect
+from flask_login import current_user
 
 from .rules import get_help_urls_map, get_rules_by_category, get_rules_by_severity
 
@@ -60,6 +61,10 @@ def create_app(config: dict | None = None) -> Flask:
     # Extensions
     csrf.init_app(app)
     limiter.init_app(app)
+    from .db import init_extensions as _init_db_extensions
+    _init_db_extensions(app)
+    from .tasks import make_celery as _make_celery
+    _make_celery(app)
 
     # Logging
     _configure_logging(app)
@@ -137,6 +142,18 @@ def create_app(config: dict | None = None) -> Flask:
             "web_version": web_ver,
             "desktop_version": desktop_ver,
             "release_version": release_ver,
+            "current_user": current_user,
+            "user_is_authenticated": bool(getattr(current_user, "is_authenticated", False)),
+            "user_is_admin": bool(
+                getattr(current_user, "is_authenticated", False)
+                and callable(getattr(current_user, "is_admin", None))
+                and current_user.is_admin()
+            ),
+            "user_is_super_admin": bool(
+                getattr(current_user, "is_authenticated", False)
+                and callable(getattr(current_user, "is_super_admin", None))
+                and current_user.is_super_admin()
+            ),
         }
         # Inject AI flags (from ai_features)
         ctx.update(_get_ai_flags())
@@ -378,6 +395,7 @@ def create_app(config: dict | None = None) -> Flask:
     from .routes.chat import chat_bp
     from .routes.playground import playground_bp
     from .routes.admin import admin_bp
+    from .routes.role import role_bp
     from .routes.rules_ref import rules_ref_bp
     from .routes.speech import speech_bp
     from .routes.braille import braille_bp
@@ -385,6 +403,9 @@ def create_app(config: dict | None = None) -> Flask:
     from .routes.site_audit import site_audit_bp
     from .routes.ai_usage import ai_usage_bp
     from .routes.alt_text import alt_text_bp
+    from .routes.auth import auth_bp
+    from .routes.jobs import jobs_bp
+    from .routes.account import account_bp
 
     app.register_blueprint(main_bp)
     app.register_blueprint(consent_bp, url_prefix="/consent")
@@ -409,6 +430,7 @@ def create_app(config: dict | None = None) -> Flask:
     app.register_blueprint(chat_bp, url_prefix="/chat")
     app.register_blueprint(playground_bp, url_prefix="/beta/chat")
     app.register_blueprint(admin_bp, url_prefix="/admin")
+    app.register_blueprint(role_bp)  # Role management (no url_prefix; routes are /user/..., /admin/...)
     app.register_blueprint(rules_ref_bp, url_prefix="/rules")
     app.register_blueprint(speech_bp, url_prefix="/speech")
     app.register_blueprint(braille_bp, url_prefix="/braille")
@@ -416,6 +438,9 @@ def create_app(config: dict | None = None) -> Flask:
     app.register_blueprint(site_audit_bp, url_prefix="/site-audit")
     app.register_blueprint(ai_usage_bp, url_prefix="/ai/usage")
     app.register_blueprint(alt_text_bp, url_prefix="/alt-text")
+    app.register_blueprint(auth_bp, url_prefix="/auth")
+    app.register_blueprint(jobs_bp, url_prefix="/job")
+    app.register_blueprint(account_bp, url_prefix="/account")
 
     # Configure speech engine model directory from instance path
     try:
@@ -473,6 +498,15 @@ def create_app(config: dict | None = None) -> Flask:
             return redirect(
                 _url_for("consent.consent_form", next=req.full_path.rstrip("?"))
             )
+
+    @app.before_request
+    def _maybe_autosave_profile():
+        if getattr(current_user, "is_authenticated", False):
+            try:
+                from .profile_sync import maybe_autosave
+                maybe_autosave(current_user)
+            except Exception:
+                pass
 
     def _build_health_payload() -> tuple[dict, bool]:
         from .gating import get_capacity_metrics

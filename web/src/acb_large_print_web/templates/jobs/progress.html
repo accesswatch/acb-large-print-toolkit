@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block title %}Job Progress - GLOW{% endblock %}
+{% block content %}
+<section class="card" aria-labelledby="job-title">
+  <h1 id="job-title">Processing Job</h1>
+  <p id="job-message">{{ job_status.message or 'Queued...' }}</p>
+  <progress id="job-progress" max="100" value="{{ job_status.progress or 0 }}"></progress>
+  <p><span id="job-progress-text">{{ job_status.progress or 0 }}</span>%</p>
+  <p id="job-error" class="error-text"></p>
+  <p><a id="job-download" href="{{ url_for('jobs.job_result', job_id=job_id) }}" style="display:none;">Download result</a></p>
+</section>
+
+<script>
+(function () {
+  var state = "{{ job_status.state or 'PENDING' }}";
+  var download = document.getElementById('job-download');
+  var msg = document.getElementById('job-message');
+  var err = document.getElementById('job-error');
+  var bar = document.getElementById('job-progress');
+  var pctText = document.getElementById('job-progress-text');
+
+  function applyStatus(s) {
+    var pct = Number(s.progress || 0);
+    bar.value = pct;
+    pctText.textContent = String(pct);
+    msg.textContent = s.message || '';
+    if (s.state === 'SUCCESS') {
+      download.style.display = 'inline';
+      msg.textContent = 'Done.';
+      return true;
+    }
+    if (s.state === 'FAILURE') {
+      err.textContent = s.error || 'Job failed.';
+      return true;
+    }
+    return false;
+  }
+
+  if (state === 'SUCCESS') {
+    download.style.display = 'inline';
+    return;
+  }
+  if (state === 'FAILURE') {
+    err.textContent = "{{ job_status.error or 'Job failed.' }}";
+    return;
+  }
+
+  if (!!window.EventSource) {
+    var es = new EventSource("{{ url_for('jobs.job_status_stream', job_id=job_id) }}");
+    es.onmessage = function (e) {
+      var payload = JSON.parse(e.data || '{}');
+      if (applyStatus(payload)) es.close();
+    };
+    es.addEventListener('success', function (e) {
+      var payload = JSON.parse(e.data || '{}');
+      applyStatus(payload);
+      es.close();
+    });
+    es.addEventListener('failure', function (e) {
+      var payload = JSON.parse(e.data || '{}');
+      applyStatus(payload);
+      es.close();
+    });
+  } else {
+    var poll = function () {
+      fetch("{{ url_for('jobs.job_status_poll', job_id=job_id) }}")
+        .then(function (r) { return r.json(); })
+        .then(function (payload) {
+          if (!applyStatus(payload)) setTimeout(poll, 1000);
+        })
+        .catch(function () { setTimeout(poll, 1500); });
+    };
+    poll();
+  }
+})();
+</script>
+{% endblock %}

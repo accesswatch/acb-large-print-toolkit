@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+
+{% block title %}Request Admin Promotion{% endblock %}
+
+{% block content %}
+<div class="container mt-5 mb-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="card-title mb-0">Request Admin Promotion</h3>
+                </div>
+                <div class="card-body p-4">
+                    {% if error %}
+                        <div class="alert alert-danger alert-dismissible fade show">
+                            {{ error }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    {% endif %}
+
+                    {% if success %}
+                        <div class="alert alert-success alert-dismissible fade show">
+                            {{ success }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    {% endif %}
+
+                    {% if info %}
+                        <div class="alert alert-info alert-dismissible fade show">
+                            {{ info }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    {% endif %}
+
+                    {% if not success %}
+                        <form method="POST" class="needs-validation">
+                            <div class="mb-3">
+                                <label for="reason" class="form-label">Why do you want to become an admin?</label>
+                                <textarea 
+                                    class="form-control" 
+                                    id="reason" 
+                                    name="reason" 
+                                    rows="5" 
+                                    placeholder="Tell us about your interest in becoming an admin and how you plan to contribute to the GLOW community."
+                                    minlength="10"
+                                    required></textarea>
+                                <small class="text-muted">Minimum 10 characters. Be specific about your experience and intentions.</small>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary w-100">Submit Promotion Request</button>
+                        </form>
+
+                        <hr>
+
+                        <div class="alert alert-light mt-4">
+                            <h6 class="alert-heading">What to expect:</h6>
+                            <ul class="mb-0 small">
+                                <li>Your request will be reviewed by existing admins</li>
+                                <li>You'll receive an email notification when a decision is made</li>
+                                <li>Approval typically takes 1-2 business days</li>
+                                <li>You can submit another request if your first one is declined</li>
+                            </ul>
+                        </div>
+                    {% else %}
+                        <div class="text-center mt-3">
+                            <a href="{{ url_for('main.index') }}" class="btn btn-primary">Return to Dashboard</a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

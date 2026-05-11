@@ -80,4 +80,61 @@
   </form>
 </section>
 {% endif %}
+
+{% if firebase_admin_auth_enabled and firebase_auth_enabled and firebase_web_api_key and firebase_auth_domain and firebase_project_id and firebase_app_id %}
+<section>
+  <h2 id="firebase-admin-heading">Firebase Admin Sign-In</h2>
+  <p class="field-hint">Use your Firebase-authenticated account; admin approval is still required.</p>
+  <button type="button" class="btn-secondary" id="firebase-admin-login-btn">Sign in with Firebase</button>
+  <p id="firebase-admin-login-status" class="field-hint" aria-live="polite" aria-atomic="true"></p>
+</section>
+
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+import { getAuth, signInWithPopup, GoogleAuthProvider } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+
+const firebaseConfig = {
+  apiKey: "{{ firebase_web_api_key }}",
+  authDomain: "{{ firebase_auth_domain }}",
+  projectId: "{{ firebase_project_id }}",
+  appId: "{{ firebase_app_id }}",
+};
+
+const btn = document.getElementById('firebase-admin-login-btn');
+const statusEl = document.getElementById('firebase-admin-login-status');
+
+if (btn) {
+  btn.addEventListener('click', async () => {
+    try {
+      if (statusEl) statusEl.textContent = 'Opening Firebase sign-in...';
+      btn.disabled = true;
+
+      const app = initializeApp(firebaseConfig);
+      const auth = getAuth(app);
+      const provider = new GoogleAuthProvider();
+      const cred = await signInWithPopup(auth, provider);
+      const idToken = await cred.user.getIdToken(true);
+
+      const res = await fetch('{{ url_for("admin.admin_login_firebase") }}', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': '{{ csrf_token() }}',
+        },
+        body: JSON.stringify({ idToken }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) {
+        throw new Error(data.error || 'Firebase admin login failed.');
+      }
+      if (statusEl) statusEl.textContent = 'Signed in. Redirecting...';
+      window.location.href = data.redirect || '{{ url_for("admin.admin_queue") }}';
+    } catch (err) {
+      if (statusEl) statusEl.textContent = err && err.message ? err.message : 'Sign-in failed.';
+      btn.disabled = false;
+    }
+  });
+}
+</script>
+{% endif %}
 {% endblock %}

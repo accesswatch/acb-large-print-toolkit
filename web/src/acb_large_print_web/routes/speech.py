@@ -419,78 +419,60 @@ def speech_document_preview():
 @speech_bp.route("/document-download", methods=["POST"])
 @limiter.limit("6 per minute")
 def speech_document_download():
-    """Render full extracted document text to speech and return download."""
+    """Dispatch full-document speech synthesis to the async job queue."""
     if not _speech_flag("GLOW_ENABLE_EXPORT_SPEECH"):
         return _export_disabled_response()
     token = (request.form.get("token") or "").strip()
     voice_id = (request.form.get("voice") or "").strip()
     speed = _parse_float(request.form.get("speed"), default=1.0, lo=0.5, hi=2.0)
     pitch = _parse_int(request.form.get("pitch"), default=0, lo=-20, hi=20)
+    output_format = (request.form.get("format") or "mp3").strip().lower()
+    if output_format not in ("mp3", "wav"):
+        output_format = "mp3"
 
     if not token:
         return jsonify({"error": "Missing upload token."}), 400
     if not voice_id:
         return jsonify({"error": "No voice selected."}), 400
 
-    try:
-        text = _apply_pronunciation_dictionary_if_enabled(_load_extracted_text(token))
-        started = time.monotonic()
-        wav_bytes, wav_filename = synthesize_document_text(
-            voice_id,
-            text,
-            speed=speed,
-            pitch=pitch,
-        )
-        processing_seconds = max(0.01, time.monotonic() - started)
-    except UploadError as exc:
-        return jsonify({"error": str(exc)}), 400
-    except SpeechError as exc:
-        return jsonify({"error": str(exc)}), 503
+    # Derive a display filename for the job status page
+    input_filename = "document"
+    temp_dir = get_temp_dir(token)
+    if temp_dir:
+        for candidate in ("speech_source.txt", "speech_rendered.txt"):
+            if (temp_dir / candidate).exists():
+                input_filename = candidate
+                break
 
-    word_count = len(normalize_document_text(text).split())
-    char_count = len(normalize_document_text(text))
-    source_size_bytes = _source_size_for_token(token)
-    engine = (voice_id.split(":", 1)[0] if ":" in voice_id else "unknown")
-    speech_metrics.record_document_conversion(
-        engine=engine,
-        voice=voice_id,
-        speed=speed,
-        pitch=pitch,
-        word_count=word_count,
-        char_count=char_count,
-        source_size_bytes=source_size_bytes,
-        processing_seconds=processing_seconds,
-        audio_seconds=wav_duration_seconds(wav_bytes),
-    )
+    import uuid as _uuid
+    from ..tasks.convert_tasks import create_job, read_status, run_speech_job
+
+    job_id = str(_uuid.uuid4())
+    create_job(job_id, "speech", input_filename)
 
     from ..tool_usage import record_details as _record_usage_details
+    _record_usage_details("speech", {"mode": "document_download_async", "voice": voice_id,
+                                      "speed": f"{speed:.1f}", "pitch": str(pitch)})
 
-    _record_usage_details(
-        "speech",
-        {
-            "mode": "document_download",
-            "voice": voice_id,
-            "speed": f"{speed:.1f}",
-            "pitch": str(pitch),
-        },
+    run_speech_job.delay(
+        job_id,
+        upload_token=token,
+        input_filename=input_filename,
+        voice_id=voice_id,
+        speed=speed,
+        pitch=pitch,
+        output_format=output_format,
     )
 
-    mp3_bytes = wav_bytes_to_mp3(wav_bytes)
-    if mp3_bytes is not None:
-        content = mp3_bytes
-        content_type = "audio/mpeg"
-        filename = wav_filename.replace(".wav", ".mp3")
-    else:
-        content = wav_bytes
-        content_type = "audio/wav"
-        filename = wav_filename
+    # Fast-path: if Celery ran eagerly (no Redis), job is already done
+    status = read_status(job_id)
+    if status.get("state") == "SUCCESS":
+        from flask import redirect, url_for
+        return redirect(url_for("jobs.job_result", job_id=job_id))
 
-    resp = make_response(content)
-    resp.headers["Content-Type"] = content_type
-    resp.headers["Content-Disposition"] = f'attachment; filename="{filename}"'
-    resp.headers["Content-Length"] = len(content)
-    resp.headers["Cache-Control"] = "no-store"
-    return resp
+    # Async path: redirect to progress page; JS will poll SSE and offer download
+    from flask import redirect, url_for
+    return redirect(url_for("jobs.job_progress", job_id=job_id))
 
 
 @speech_bp.route("/stream", methods=["POST"])

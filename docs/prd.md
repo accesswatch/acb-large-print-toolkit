@@ -1,3 +1,20 @@
+## v7.0.0 Addendum (Async, Auth, Neon/Postgres, Account/Privacy — May 2026)
+
+| Feature | Status | Notes |
+|---------|--------|-------|
+| Async job queue for convert/speech | Done | All long-running jobs now use Celery/Redis, with SSE status and polling. |
+| Firebase authentication (user/admin) | Done | End-user and admin login via Firebase, with approval gating for admin. |
+| Account/privacy dashboard | Done | Profile, consent, provider key encryption, data export/delete. |
+| Neon/Postgres migration | Done | Neon/Postgres is now the default DB, with SQLite fallback. |
+| Migration toolkit and runbook | Done | Full backup, migration, cutover, and rollback docs/scripts. |
+| Agent Skills + MCP for Firebase/Neon | Done | Project-level skills, install/verify/update workflow, diagnostics. |
+
+### New User Stories
+
+- As a user, I want to see job progress and download results for long-running conversions.
+- As an admin, I want to approve Firebase logins and manage admin access securely.
+- As a user, I want to manage my account, consent, and provider keys securely.
+- As an operator, I want a step-by-step migration path from SQLite to Neon/Postgres.
 # PRD: GLOW (Guided Layout & Output Workflow) Accessibility Web Application
 
 **Status:** Implemented (v4.0.0 released)

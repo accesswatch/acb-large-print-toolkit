@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Promotion Request</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; line-height: 1.5; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: #f8f9fa; padding: 20px; border-radius: 4px; margin-bottom: 20px; }
+        .content { margin: 20px 0; }
+        .actions { margin: 30px 0; }
+        .button { display: inline-block; padding: 12px 24px; margin: 10px 10px 10px 0; border-radius: 4px; text-decoration: none; font-weight: 600; }
+        .button-approve { background: #28a745; color: white; }
+        .button-review { background: #007bff; color: white; }
+        .footer { border-top: 1px solid #ddd; padding-top: 20px; margin-top: 40px; font-size: 12px; color: #666; }
+        .reason-box { background: #f8f9fa; padding: 15px; border-left: 3px solid #007bff; margin: 20px 0; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h2>New Admin Promotion Request</h2>
+        </div>
+
+        <div class="content">
+            <p>Hello {{ admin.display_name or admin.email }},</p>
+
+            <p>A user has requested promotion to admin role. Here are the details:</p>
+
+            <div class="reason-box">
+                <strong>Requester:</strong> {{ requester.display_name or requester.email }}<br>
+                <strong>Email:</strong> {{ requester.email }}<br>
+                <strong>Requested:</strong> {{ requester.promotion_requested_at.strftime('%Y-%m-%d %H:%M UTC') if requester.promotion_requested_at else 'Unknown' }}<br>
+                <br>
+                <strong>Reason:</strong><br>
+                {{ requester.promotion_request_reason }}
+            </div>
+
+            <p>As an admin, you can review this request and approve or reject it.</p>
+
+            <div class="actions">
+                <a href="{{ review_url }}" class="button button-review">Review All Requests</a>
+                <a href="{{ approve_url }}" class="button button-approve">Quick Approve</a>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>This is an automated notification from GLOW. Do not reply to this email.</p>
+            <p>If you did not expect this, you can ignore it.</p>
+        </div>
+    </div>
+</body>
+</html>

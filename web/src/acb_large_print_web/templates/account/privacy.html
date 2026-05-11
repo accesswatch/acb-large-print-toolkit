@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}Privacy Settings - GLOW{% endblock %}
+{% block content %}
+<section class="card" aria-labelledby="privacy-title">
+  <h1 id="privacy-title">Privacy and Profile Sync</h1>
+  <p>Choose what can be saved to your profile.</p>
+
+  <form method="post" action="{{ url_for('account.privacy') }}" class="stack-gap">
+    <label><input type="checkbox" name="sync_ai_keys" {% if consent.sync_ai_keys %}checked{% endif %}> AI provider API keys (encrypted at rest)</label>
+    <label><input type="checkbox" name="sync_ai_features" {% if consent.sync_ai_features %}checked{% endif %}> AI feature toggles</label>
+    <label><input type="checkbox" name="sync_ai_prompts" {% if consent.sync_ai_prompts %}checked{% endif %}> Prompt settings</label>
+    <label><input type="checkbox" name="sync_ai_runtime" {% if consent.sync_ai_runtime %}checked{% endif %}> Runtime settings</label>
+    <label><input type="checkbox" name="sync_audit_history" {% if consent.sync_audit_history %}checked{% endif %}> Audit history</label>
+    <label><input type="checkbox" name="sync_ui_preferences" {% if consent.sync_ui_preferences %}checked{% endif %}> UI preferences</label>
+    <label><input type="checkbox" name="sync_rule_profile" {% if consent.sync_rule_profile %}checked{% endif %}> Rule profile</label>
+
+    <button type="submit" class="button button--primary">Save privacy choices</button>
+  </form>
+</section>
+{% endblock %}

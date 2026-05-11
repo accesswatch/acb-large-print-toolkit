@@ -9,26 +9,114 @@ Releases are tagged in the [GitHub repository](https://github.com/Community-Acce
 ## [Unreleased]
 
 ### Added
+- **Firebase Console Configuration:** Email/Password and Google sign-in providers enabled; `glow.bits-acb.org` added as authorized OAuth domain (Custom type).
+- **Firebase Login Template:** Login page renders a working `Sign In With Google` button using Firebase Web SDK v10 (`signInWithPopup` flow); ID token posted to `/auth/firebase-login` via CSRF-protected JSON endpoint.
+- **Firebase credentials path:** `FIREBASE_CREDENTIALS_PATH` env var added to `.env` so `firebase_auth.py` initializes the Admin SDK from `instance/firebase-service-account.json`.
+- **Production Checklist Status Section:** Added current rollout status and explicit remaining finish tasks to `docs/production-deployment-checklist.md`.
+- **Provider Credential Runbook:** Added direct console-link collection steps for Apple, Microsoft Entra, and Auth0 in `docs/production-deployment-checklist.md` and `docs/firebase-neon-auth-migration-plan.md`.
+- **Centralized OAuth Operator Runbook:** Added `docs/oauth-credential-collection-runbook.md` with provider console links, exact callback URLs, production/local env templates, and completion checklist.
+- **OAuth Rollout Tracker:** Added `docs/oauth-provider-progress-tracker.md` with per-provider status table, env variable checklist, validation log, and final go/no-go snapshot section.
+- **Unified Firebase Sign-In UX:** Login page now supports only Firebase Email Link (passwordless) and Firebase GitHub sign-in, with backend ID token exchange at `/auth/firebase-login` for server session creation.
+- **Manual Migration Cutover Script:** Added `scripts/manual-migration-cutover.sh` to create a clean tracked bundle, upload to server, run SQLite-to-Neon migration, validate row counts, and auto-rollback app/data on failure.
+
+### Changed
+- **Account Navigation for Admins:** Authenticated admins now keep all standard user navigation and also get direct `Admin Console` links in the sidebar and footer.
+- **Unified Sign-In Entry Point:** Footer sign-in link now routes through the shared auth login flow rather than a separate admin sign-in destination.
+- **Firebase User Provisioning Metadata:** Backend Firebase login now records provider intent (`passwordless` or `github`) in local user auth metadata while retaining SQLAlchemy RBAC.
+
+### Fixed
+- **RBAC Email Import Blocker:** Restored compatibility for role-management notification flows by adding generic `send_email(...)` helper in `web/src/acb_large_print_web/email.py` used by `web/src/acb_large_print_web/routes/role.py`.
+
+---
+
+## [7.0.0] – May 11, 2026
+
+### Added
+- **Role-Based Access Control (RBAC):** Three-tier user roles (User, Admin, Super Admin) with role-based route access control via decorators.
+- **Admin Promotion Workflow:** Users can request admin promotion via `/user/request-promotion`; admins review/approve/reject at `/admin/promotions`.
+- **Permission Decorators:** `@require_admin`, `@require_super_admin`, `@require_role()` for route protection; utility functions for template and code-level role checking.
+- **User Role Management:** Admins can directly promote/demote users (super_admin only); view all users and roles at `/admin/users`.
+- **Promotion Notification Emails:** HTML email templates for promotion requests, approvals, rejections, and role updates.
+- **Admin Dashboard Templates:** `/admin/promotions` (pending requests), `/admin/users` (user management), `/user/request-promotion` (user-facing form).
+- **Async Job Queue Infrastructure:** Celery + Redis with SSE progress streaming and fallback polling for convert, fix, audit, and speech operations.
+- **Firebase Authentication:** End-user and admin login via Firebase with 8 provider support: Email/Password, Google, GitHub, Microsoft (Entra), Apple, Auth0, WordPress, Passwordless Email Link.
+- **Account/Privacy Dashboard:** User controls for data export, hard delete, and encrypted provider key management (Fernet encryption at rest).
+- **Neon PostgreSQL Integration:** SQLAlchemy ORM with Neon connection pooling, SSL mode, and connection pool sizing.
+- **SQLite-to-Neon Migration Script:** Automated inventory and migration with rollback capability.
+- **Cutover & Decommission Runbook:** Complete step-by-step guide for production migration with health checks and rollback procedures.
+- **Role Model Fields:** `role` (enum: user/admin/super_admin), `promotion_request_status`, `promotion_request_reason`, `promotion_requested_at`, `promotion_reviewed_at`, `promotion_reviewed_by_id` columns added to `users` table.
+- **Environment Variable Documentation:** Comprehensive `.env` setup guide for all 8 authentication providers, Neon, Firebase, and RBAC.
+- **Production Deployment Checklist:** Step-by-step validation for RBAC, Firebase, Neon, SSL, DNS, and email configuration.
+
+### Changed
+- **Admin Login Process:** Replaced legacy SQLite-based admin auth with unified Firebase flow + role-based gating.
+- **Database Backend:** All new deployments now use Neon PostgreSQL by default; SQLite remains for local dev fallback.
+- **App Blueprint Registration:** Role management blueprint (`role_bp`) registered without URL prefix; routes use `/user/...` and `/admin/...` paths.
+- **User Model:** Extended with role columns, promotion workflow fields, and helper methods (`is_admin()`, `is_super_admin()`, `has_role()`, `request_promotion()`, `approve_promotion()`, `reject_promotion()`).
+- **GLOW Runbook:** Updated with complete RBAC documentation, provider setup, bootstrap options, and production checklist.
+
+### Fixed
+- Robust error handling for RBAC decorators and promotion workflow.
+- Proper isolation of admin routes behind role checks.
+- Email notification delivery validation with configured checks.
+
+### Removed
+- Legacy admin authentication database (`admin_auth.db`) is preserved for fallback but superseded by Firebase + RBAC.
+
+### Security
+- All admin routes now require explicit role checks; no more approval-gate-only access.
+- Encrypted API key storage for OAuth provider credentials (Fernet encryption).
+- Role hierarchy prevents privilege escalation (user cannot become super_admin without super_admin approval).
+- Session-based role caching with Flask-Login integration.
+
+### Infrastructure
+- **Docker Compose:** Updated with Redis service for Celery job queue, worker configuration, and persistent volumes.
+- **Celery Configuration:** Task routing to worker pool with Redis broker; eager mode fallback for local dev.
+- **Neon Setup:** Database provisioning with automatic SSL, connection pooling, and backup settings.
+
+### Deployment Notes
+- **Initial Admin Setup:** Use `ADMIN_BOOTSTRAP_EMAILS` env var to auto-elevate first admin(s) on login.
+- **Firebase Console:** Register web app, authorize `glow.bits-acb.org` domain, configure OAuth callbacks.
+- **SSL Certificate:** Required for production; use Let's Encrypt (free) or your certificate provider.
+- **DNS Configuration:** Point `glow.bits-acb.org` to server IP.
+- **Production Checklist:** Review complete validation steps in `docs/firebase-neon-auth-migration-plan.md`.
+
+### Docs & References
+- [Firebase + Neon Migration Plan](docs/firebase-neon-auth-migration-plan.md) — Complete setup, deployment, and rollback procedures.
+- [RBAC & Admin Management](docs/firebase-neon-auth-migration-plan.md#role-based-access-control-rbac--admin-management) — Role hierarchy, promotion workflow, permission enforcement.
+- [Production Deployment Checklist](docs/firebase-neon-auth-migration-plan.md#production-deployment-checklist) — Step-by-step validation before launch.
+
+---
+
+## [6.0.0] – Previous release
+
+### Added
+- Previous release features documented in archive.
 
 - **AI Playground streaming responses (SSE)** at `/beta/chat/stream` for token-by-token output rendering with automatic fallback to the legacy JSON endpoint when streaming is unavailable.
 - **AI Playground quick controls**: regenerate response, stop generation, in-page model switcher, prompt templates, session quota banner, and conversation export as Markdown.
 - **MarkItDown audio conversion choice for short MP3/WAV uploads** in the web Convert and Quick Start flows, so users can pick direct Markdown extraction for short clips while still using BITS Whisperer for larger recordings and broader audio format support.
 - **Alt-Text Helper** at `/alt-text/` for AI-assisted alternative text drafting across standalone image files, Word, PowerPoint, Excel, PDF, and EPUB uploads. Quick Start and audit results can now hand visual-rich files directly into this workflow.
 - **AI request cost preview endpoint** at `/ai/usage/estimate` so Document Chat and AI Playground can show rough token and price estimates before sending.
+- **Project-level Agent Skills installation** for Firebase and Neon in `.agents/skills/`, including Firebase skill pack and Neon Postgres workflow skills for GitHub Copilot/Codex-compatible agent flows.
 
 ### Changed
 
-- **Settings page refreshed** with visible AI and Beta checkpoints, including a new AI and Beta hub that links to AI Features, AI Playground, and Magic Lab when available.
-- **Sidebar terminology cleaned up** so the experimental navigation group reads as Experimental instead of the run-together Beta/Experimental label.
-- **Home page What's New** now points to GLOW 6.0.0 and highlights AI Playground, AI Features, and MarkItDown + AI integration.
-- **Settings headings** now appear for each settings group so the page has explicit section headings in addition to fieldset legends.
-- **AI feature flag split for chat surfaces**: `GLOW_ENABLE_AI_CHAT` now gates Document Chat only, while new `GLOW_ENABLE_AI_GENERAL_CHAT` gates AI Playground/general chat.
+ **Firebase authentication support** for end-user sign-in via backend ID token verification at `/auth/firebase-login`, with local profile linking and existing OAuth/local fallback retained.
+ **Firebase admin sign-in support** at `/admin/login/firebase`, including approval-gated access control so only approved admin emails can complete login.
+ **Async job infrastructure** for long-running convert/speech operations with Celery task workers, filesystem-backed status records, and SSE progress streaming routes under `/job/<id>/status`.
+ **Account and privacy management routes/templates** for profile dashboard, granular sync consent toggles, user data export, and account data deletion.
+ **Migration planning document** at `docs/firebase-neon-auth-migration-plan.md` with step-by-step developer setup for Neon, Firebase, admin auth, queue workers, and rollback controls.
+- **Migration/setup documentation expanded** with an Agent Skills section covering install/verify/update commands, project-vs-global scope guidance, and MCP + skills combined workflow recommendations for Firebase/Neon development.
+- **Convert route async dispatch** now queues long-running conversion directions (`to-markdown`, `to-html`, `to-docx`, `to-odt`, `to-epub`, `to-pdf`, and Pipeline) to worker-backed jobs and routes users to `/job/<id>/progress` for SSE/poll tracking and result download.
+- **Migration runbook hardening** in `docs/firebase-neon-auth-migration-plan.md` adds phase-by-phase gates, expected outcomes, a verification matrix, troubleshooting matrix, and explicit production sign-off criteria.
+- **SQLite-to-Neon migration utility** at `scripts/migrate_sqlite_to_neon.py` plus decommission runbook at `docs/neon-cutover-and-decommission-process.md` to support infrastructure slimming after cutover.
 - **Production AI defaults aligned to Ollama-first rollout**: `GLOW_ENABLE_AI`, `GLOW_ENABLE_AI_GENERAL_CHAT`, `GLOW_ENABLE_AI_HEADING_FIX`, and `GLOW_ENABLE_AI_MARKITDOWN_LLM` default on in production compose; Document Chat, Whisperer, and alt-text remain off by default.
 - **Ollama key setup flow** now requires successful key validation before save and keeps the save button disabled until validation succeeds.
 - **Ollama key format handling** now accepts valid keys even when they do not use the historical `ollama_` prefix.
-- **Ollama cloud defaults** now prefer `gemma3:4b` instead of `llama3.2`, and validation returns a suggested model based on what the account can actually run.
-- **AI settings and playground pages** now load through external static JS/CSS assets so they work under the site CSP instead of relying on blocked inline scripts.
-- **Ollama inference errors** now distinguish account inference authorization (`401`), paid-plan model gating (`403`), and missing account model access (`404`).
+ **Database configuration** now supports Neon/PostgreSQL via `DATABASE_URL` (with `postgres://` normalization), tuned connection pooling, and SSL options while keeping SQLite fallback for local development.
+ **Production compose topology** now includes Redis and a dedicated Celery worker service, with Neon/Firebase environment passthrough and shared instance volumes for queued job artifacts.
+ **Admin login page** now exposes Firebase-based sign-in flow (when enabled) alongside existing magic-link/OAuth/password fallback methods.
 - **AI Features setup** now supports multiple personal providers at the same time, including Ollama Cloud, OpenRouter, OpenAI, and Google Gemini, with provider-specific key validation and session-scoped storage.
 - **AI feature bindings** are now capability-aware: GLOW only offers models for a feature when the selected provider/model can actually support that workflow, including vision-gated alt-text suggestions and audio-gated Whisperer entry points.
 - **AI usage meter and AI settings terminology** now describe the active personal provider generically instead of assuming every personal AI session is Ollama.
