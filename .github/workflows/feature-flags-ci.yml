@@ -4,10 +4,16 @@ on:
   push:
     paths:
       - 'web/**'
+      - 'desktop/src/**'
+      - 'desktop/pyproject.toml'
+      - 'scripts/check-config-consistency.py'
       - '.github/workflows/feature-flags-ci.yml'
   pull_request:
     paths:
       - 'web/**'
+      - 'desktop/src/**'
+      - 'desktop/pyproject.toml'
+      - 'scripts/check-config-consistency.py'
 
 jobs:
   migrate-and-test:
@@ -18,10 +24,10 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python }}
 

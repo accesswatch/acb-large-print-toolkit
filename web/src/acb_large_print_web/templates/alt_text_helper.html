@@ -12,7 +12,7 @@
 </div>
 {% endif %}
 
-<section aria-labelledby="alt-text-upload-heading">
+<section>
   <h2 id="alt-text-upload-heading">Choose a visual source</h2>
   <form method="post" enctype="multipart/form-data" novalidate>
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -25,7 +25,7 @@
   </form>
 </section>
 
-<section aria-labelledby="alt-text-settings-heading">
+<section>
   <h2 id="alt-text-settings-heading">Model and prompt settings</h2>
   <p class="help-text">Current feature binding: <strong>{{ ai_alt_text_provider or 'not selected' }}</strong>{% if ai_alt_text_model %} using <strong>{{ ai_alt_text_model }}</strong>{% endif %}. You can change the provider/model choice and the base prompt in <a href="{{ url_for('ai.settings_ai_page') }}">AI Features</a>.</p>
   <div class="form-group">
@@ -36,7 +36,7 @@
 </section>
 
 {% if token and visual_items %}
-<section aria-labelledby="alt-text-results-heading">
+<section>
   <h2 id="alt-text-results-heading">Visual items from {{ source_name }}</h2>
   <p class="help-text">Review each suggestion before using it. For charts, diagrams, and dense visuals, you may still need to revise the wording to capture the key takeaway rather than every visible detail.</p>
   <div id="alt-text-status" role="status" aria-live="polite" aria-atomic="true"></div>
@@ -90,7 +90,7 @@
   </div>
 </section>
 {% elif token %}
-<section aria-labelledby="alt-text-no-items-heading">
+<section>
   <h2 id="alt-text-no-items-heading">No visual items found</h2>
   <p>GLOW did not find an image, chart, or rendered page preview in this file. Try a different file, or review whether the source contains visual content that should have alternative text.</p>
 </section>

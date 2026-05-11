@@ -40,6 +40,7 @@ Releases are tagged in the [GitHub repository](https://github.com/Community-Acce
 
 ### Fixed
 
+- **Feature Flags CI failures** now pass the web landmark guardrail again after removing redundant `section[aria-labelledby]` markup from the Alt-Text Helper and audit report templates, and the workflow now also triggers when its desktop or config-check dependencies change.
 - **AI Playground character counter** no longer announces every keystroke to screen readers while typing. The counter still updates visually and remains available through the textarea description without repeated live-region interruptions.
 - **AI Playground response cards** now keep model/copy controls after the response text instead of embedding them in the response heading, and assistant message wrappers no longer add extra spoken labels beyond the heading structure.
 - **AI usage meter** now increments correctly for Ollama-backed chat turns by reading the current quota field returned by the server.
