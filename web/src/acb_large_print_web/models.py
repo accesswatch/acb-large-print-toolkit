@@ -552,9 +552,6 @@ class ToolUsage(db.Model):
 
     __tablename__ = "tool_usage"
     __allow_unmapped__ = True
-    __table_args__ = (
-        db.Index("ix_tool_usage_tool", "tool"),
-    )
 
     id: int = db.Column(db.Integer, primary_key=True)
     tool: str = db.Column(db.String(64), nullable=False, unique=True, index=True)
@@ -573,7 +570,6 @@ class ToolUsageDetail(db.Model):
     __allow_unmapped__ = True
     __table_args__ = (
         db.UniqueConstraint("tool_id", "detail_key", "detail_value", name="uq_tool_detail"),
-        db.Index("ix_tool_usage_detail_composite", "tool_id", "detail_key"),
     )
 
     id: int = db.Column(db.Integer, primary_key=True)
@@ -595,9 +591,6 @@ class SpeechConversionMetric(db.Model):
 
     __tablename__ = "speech_conversion_metric"
     __allow_unmapped__ = True
-    __table_args__ = (
-        db.Index("ix_speech_conversion_created_at", "created_at"),
-    )
 
     id: int = db.Column(db.Integer, primary_key=True)
     created_at: datetime = db.Column(db.DateTime(timezone=True), nullable=False, default=_now, index=True)
@@ -652,6 +645,32 @@ class FeatureFlag(db.Model):
 
 
 # ---------------------------------------------------------------------------
+# Feature Flag Audit Trail
+# ---------------------------------------------------------------------------
+
+class FeatureFlagAudit(db.Model):
+    """Audit trail for feature flag changes."""
+
+    __tablename__ = "feature_flag_audit"
+    __allow_unmapped__ = True
+
+    id: int = db.Column(db.Integer, primary_key=True)
+    flag_name: str = db.Column(db.String(128), nullable=False, index=True)
+    old_value: bool | None = db.Column(db.Boolean, nullable=True)
+    new_value: bool = db.Column(db.Boolean, nullable=False)
+    changed_by: str | None = db.Column(db.String(256), nullable=True)  # email or username
+    changed_at: datetime = db.Column(db.DateTime(timezone=True), nullable=False, default=_now, index=True)
+
+    @classmethod
+    def record_change(cls, flag_name: str, old_value: bool | None, new_value: bool, changed_by: str | None = None) -> "FeatureFlagAudit":
+        """Record a flag change in the audit trail."""
+        entry = cls(flag_name=flag_name, old_value=old_value, new_value=new_value, changed_by=changed_by)
+        db.session.add(entry)
+        db.session.flush()
+        return entry
+
+
+# ---------------------------------------------------------------------------
 # Magic Features (pronunciation dict and rule proposals)
 # ---------------------------------------------------------------------------
 
@@ -673,10 +692,6 @@ class RuleProposal(db.Model):
 
     __tablename__ = "rule_proposal"
     __allow_unmapped__ = True
-    __table_args__ = (
-        db.Index("ix_rule_proposal_status", "status"),
-        db.Index("ix_rule_proposal_created_at", "created_at"),
-    )
 
     id: int = db.Column(db.Integer, primary_key=True)
     title: str = db.Column(db.String(255), nullable=False)
@@ -697,10 +712,7 @@ class AICostLedger(db.Model):
 
     __tablename__ = "ai_cost_ledger"
     __allow_unmapped__ = True
-    __table_args__ = (
-        db.Index("ix_ai_cost_ledger_created_at", "created_at"),
-        db.Index("ix_ai_cost_ledger_provider", "provider"),
-    )
+
 
     id: int = db.Column(db.Integer, primary_key=True)
     created_at: datetime = db.Column(db.DateTime(timezone=True), nullable=False, default=_now, index=True)

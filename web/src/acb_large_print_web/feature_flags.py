@@ -12,7 +12,7 @@ from datetime import UTC, datetime
 from typing import Any
 
 from .db import db
-from .models import FeatureFlag
+from .models import FeatureFlag, FeatureFlagAudit
 
 
 _DEFAULTS: dict[str, bool] = {
@@ -147,6 +147,8 @@ def set_flag(name: str, value: bool, changed_by: str | None = None) -> None:
 
     try:
         FeatureFlag.set_flag(name, value)
+        # Record audit entry
+        FeatureFlagAudit.record_change(name, old_val, value, changed_by)
         db.session.commit()
         # Attempt webhook notification (best-effort)
         _notify_webhook(name, old_val, bool(value), changed_by)
@@ -192,6 +194,31 @@ def reset_defaults() -> None:
         db.session.commit()
     except Exception:
         db.session.rollback()
+
+
+def get_audit_entries(flag_name: str, limit: int = 10) -> list[dict[str, Any]]:
+    """Return recent audit entries for a flag.
+
+    Returns a list of dicts with keys: changed_by, changed_at (ISO8601), old_value, new_value.
+    """
+    try:
+        entries = db.session.execute(
+            db.select(FeatureFlagAudit)
+            .where(FeatureFlagAudit.flag_name == flag_name)
+            .order_by(FeatureFlagAudit.changed_at.desc())
+            .limit(limit)
+        ).scalars().all()
+        return [
+            {
+                "changed_by": e.changed_by,
+                "changed_at": e.changed_at.isoformat() if e.changed_at else None,
+                "old_value": e.old_value,
+                "new_value": e.new_value,
+            }
+            for e in entries
+        ]
+    except Exception:
+        return []
 
 
 def _notify_webhook(name: str, old: bool | None, new: bool, changed_by: str | None = None) -> None:
