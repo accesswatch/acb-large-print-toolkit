@@ -1801,14 +1801,14 @@ class TestPipelineConversion:
         fake_epub = tmp_path / "output.epub"
         fake_epub.write_bytes(b"PK\x03\x04fake-epub-content")
 
-        def mock_convert(src_path, conversion_key, output_dir=None):
+        def mock_convert(src_path, conversion_key, output_dir=None, **kwargs):
             return fake_epub, "Converted to output.epub"
 
         monkeypatch.setattr(
-            "acb_large_print_web.routes.convert.pipeline_available", lambda: True
+            "acb_large_print.pipeline_converter.pipeline_available", lambda: True
         )
         monkeypatch.setattr(
-            "acb_large_print_web.routes.convert.get_available_conversions",
+            "acb_large_print.pipeline_converter.get_available_conversions",
             lambda: {
                 "html-to-epub": {
                     "label": "HTML to EPUB 3",
@@ -1820,7 +1820,7 @@ class TestPipelineConversion:
             },
         )
         monkeypatch.setattr(
-            "acb_large_print_web.routes.convert.convert_with_pipeline",
+            "acb_large_print.pipeline_converter.convert_with_pipeline",
             mock_convert,
         )
         html_content = b"<html><body><h1>Test</h1></body></html>"
@@ -1842,14 +1842,14 @@ class TestPipelineConversion:
         (daisy_dir / "ncc.html").write_text("<html><body>NCC</body></html>")
         (daisy_dir / "content.smil").write_text("<smil>test</smil>")
 
-        def mock_convert(src_path, conversion_key, output_dir=None):
+        def mock_convert(src_path, conversion_key, output_dir=None, **kwargs):
             return daisy_dir, "Converted to DAISY 2.02"
 
         monkeypatch.setattr(
-            "acb_large_print_web.routes.convert.pipeline_available", lambda: True
+            "acb_large_print.pipeline_converter.pipeline_available", lambda: True
         )
         monkeypatch.setattr(
-            "acb_large_print_web.routes.convert.get_available_conversions",
+            "acb_large_print.pipeline_converter.get_available_conversions",
             lambda: {
                 "epub-to-daisy202": {
                     "label": "EPUB to DAISY 2.02",
@@ -1861,7 +1861,7 @@ class TestPipelineConversion:
             },
         )
         monkeypatch.setattr(
-            "acb_large_print_web.routes.convert.convert_with_pipeline",
+            "acb_large_print.pipeline_converter.convert_with_pipeline",
             mock_convert,
         )
         epub_data = _make_fake_epub()
@@ -1880,14 +1880,14 @@ class TestPipelineConversion:
         fake_epub = tmp_path / "output.epub"
         fake_epub.write_bytes(b"PK\x03\x04fake-epub")
 
-        def mock_convert(src_path, conversion_key, output_dir=None):
+        def mock_convert(src_path, conversion_key, output_dir=None, **kwargs):
             return fake_epub, "Converted"
 
         monkeypatch.setattr(
-            "acb_large_print_web.routes.convert.pipeline_available", lambda: True
+            "acb_large_print.pipeline_converter.pipeline_available", lambda: True
         )
         monkeypatch.setattr(
-            "acb_large_print_web.routes.convert.get_available_conversions",
+            "acb_large_print.pipeline_converter.get_available_conversions",
             lambda: {
                 "html-to-epub": {
                     "label": "HTML to EPUB 3",
@@ -1899,7 +1899,7 @@ class TestPipelineConversion:
             },
         )
         monkeypatch.setattr(
-            "acb_large_print_web.routes.convert.convert_with_pipeline",
+            "acb_large_print.pipeline_converter.convert_with_pipeline",
             mock_convert,
         )
         html_content = b"<html><body><h1>Test</h1></body></html>"

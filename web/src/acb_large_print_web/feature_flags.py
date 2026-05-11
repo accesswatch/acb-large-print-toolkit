@@ -199,7 +199,7 @@ def reset_defaults() -> None:
 def get_audit_entries(flag_name: str, limit: int = 10) -> list[dict[str, Any]]:
     """Return recent audit entries for a flag.
 
-    Returns a list of dicts with keys: changed_by, changed_at (ISO8601), old_value, new_value.
+    Returns a list of dicts with keys: id, changed_by, changed_at (ISO8601), old_value, new_value.
     """
     try:
         entries = db.session.execute(
@@ -210,6 +210,7 @@ def get_audit_entries(flag_name: str, limit: int = 10) -> list[dict[str, Any]]:
         ).scalars().all()
         return [
             {
+                "id": e.id,
                 "changed_by": e.changed_by,
                 "changed_at": e.changed_at.isoformat() if e.changed_at else None,
                 "old_value": e.old_value,
@@ -253,31 +254,47 @@ def _notify_webhook(name: str, old: bool | None, new: bool, changed_by: str | No
 
 
 def migrate_json_to_sqlite() -> None:
-    """Migrate an existing JSON-backed flags file into sqlite backend.
+    """Import legacy JSON flags into the SQLAlchemy-backed flags table.
 
-    This is a best-effort convenience helper invoked when switching backends.
+    Kept for backward compatibility with existing tooling and CI helpers.
+    This function is best-effort and intentionally non-fatal.
     """
     try:
-        js = {}
-        p = _path()
-        if p.exists():
-            with p.open("r", encoding="utf-8") as fh:
-                js = json.load(fh)
-        if not js:
+        from pathlib import Path
+        from flask import current_app
+
+        path_override = os.environ.get("FEATURE_FLAGS_JSON_PATH", "").strip()
+        if path_override:
+            json_path = Path(path_override)
+        else:
+            try:
+                json_path = Path(current_app.instance_path) / "feature_flags.json"
+            except Exception:
+                json_path = Path("instance") / "feature_flags.json"
+
+        if not json_path.exists():
             return
-        conn = _sqlite_conn()
-        for k, v in js.items():
-            conn.execute(
-                "INSERT INTO flags (name, value, updated_at) VALUES (?, ?, ?) "
-                "ON CONFLICT(name) DO UPDATE SET value=excluded.value, updated_at=excluded.updated_at",
-                (k, int(bool(v)), _now_iso()),
-            )
-        conn.commit()
-        conn.close()
+
+        with json_path.open("r", encoding="utf-8") as fh:
+            raw = json.load(fh)
+
+        if not isinstance(raw, dict):
+            return
+
+        for key, value in raw.items():
+            if isinstance(key, str):
+                FeatureFlag.set_flag(key, bool(value))
+        db.session.commit()
     except Exception:
+        db.session.rollback()
         return
 
 
 def get_backend() -> str:
-    """Return the active backend name ('json' or 'sqlite')."""
-    return _BACKEND
+    """Return the configured backend label for compatibility with admin UI/tests.
+
+    The implementation is SQLAlchemy-backed. Historically this label was
+    'json' or 'sqlite', so we preserve that surface API.
+    """
+    backend = os.environ.get("FEATURE_FLAGS_BACKEND", "sqlite").strip().lower()
+    return backend if backend in {"json", "sqlite"} else "sqlite"

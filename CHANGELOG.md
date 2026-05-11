@@ -31,6 +31,8 @@ Releases are tagged in the [GitHub repository](https://github.com/Community-Acce
 - **RBAC Email Import Blocker:** Restored compatibility for role-management notification flows by adding generic `send_email(...)` helper in `web/src/acb_large_print_web/email.py` used by `web/src/acb_large_print_web/routes/role.py`.
 - **Feedback Review Response Construction:** Fixed review endpoint response generation and cache-control handling after ORM migration (`/feedback/review`).
 - **Feedback Test Coverage Updated for ORM Backend:** `web/tests/test_app.py` feedback persistence assertions now validate SQLAlchemy-backed rows instead of legacy `feedback.db` file expectations.
+- **Feature Flags CI Migration Crash:** Added missing runtime dependencies (including `flask-login`) to `web/pyproject.toml` so editable installs used by CI include Flask-Login during `web/tools/run_migrate.py` startup.
+- **Feature Flag Migration Helper Compatibility:** Repaired `migrate_json_to_sqlite()` and `get_backend()` in `web/src/acb_large_print_web/feature_flags.py` to remove stale references and keep legacy migration/admin surfaces operational.
 
 ---
 

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+from datetime import UTC, datetime
 
 import pytest
 from pathlib import Path
@@ -8,6 +9,8 @@ from pathlib import Path
 from acb_large_print_web import feature_flags
 from tests.helpers import assert_flag_rendered, parse_iso_ts
 from acb_large_print_web.app import create_app
+from acb_large_print_web.db import db
+from acb_large_print_web.models import User, UserRole
 
 
 @pytest.fixture(autouse=True)
@@ -32,14 +35,35 @@ def client(app):
     return app.test_client()
 
 
-def _login_as_admin(client):
-    with client.session_transaction() as sess:
-        sess["admin_email"] = "test-admin@example.com"
+def _login_as_admin(client, app):
+    """Log in a test admin user using Flask-Login (proper approach)."""
+    with app.app_context():
+        # Create or fetch the admin user
+        user = db.session.execute(
+            db.select(User).where(User.email == "test-admin@example.com")
+        ).scalar_one_or_none()
+        if user is None:
+            user = User(
+                email="test-admin@example.com",
+                display_name="Test Admin",
+                auth_provider="local",
+                is_active=True,
+                is_email_verified=True,
+                role=UserRole.ADMIN.value,
+                created_at=datetime.now(UTC),
+            )
+            db.session.add(user)
+            db.session.commit()
+        
+        # Set the user ID in the session directly (no request context needed)
+        with client.session_transaction() as sess:
+            sess['_user_id'] = str(user.id)
+            sess.permanent = True
 
 
-def test_admin_flags_page_shows_backend_and_flags(client, monkeypatch):
+def test_admin_flags_page_shows_backend_and_flags(client, app, monkeypatch):
     monkeypatch.setenv("FEATURE_FLAGS_BACKEND", "json")
-    _login_as_admin(client)
+    _login_as_admin(client, app)
 
     res = client.get("/admin/flags")
     assert res.status_code == 200
@@ -71,7 +95,7 @@ def test_admin_flags_page_shows_backend_and_flags(client, monkeypatch):
 
 def test_admin_update_flags_persists(app, client, monkeypatch):
     monkeypatch.setenv("FEATURE_FLAGS_BACKEND", "json")
-    _login_as_admin(client)
+    _login_as_admin(client, app)
 
     # Post with no checkbox for GLOW_ENABLE_AI to turn it off
     res = client.post("/admin/flags", data={}, follow_redirects=True)
@@ -81,7 +105,7 @@ def test_admin_update_flags_persists(app, client, monkeypatch):
         assert feature_flags.get_flag("GLOW_ENABLE_AI") is False
 
 
-def test_migrate_endpoint_invokes_helper(client, monkeypatch):
+def test_migrate_endpoint_invokes_helper(client, app, monkeypatch):
     monkeypatch.setenv("FEATURE_FLAGS_BACKEND", "sqlite")
     called = []
 
@@ -92,7 +116,7 @@ def test_migrate_endpoint_invokes_helper(client, monkeypatch):
     from acb_large_print_web.routes import admin as admin_routes
 
     monkeypatch.setattr(admin_routes, "_migrate_flags", fake_migrate)
-    _login_as_admin(client)
+    _login_as_admin(client, app)
 
     res = client.post("/admin/flags/migrate", data={}, follow_redirects=True)
     assert res.status_code == 200
@@ -102,7 +126,7 @@ def test_migrate_endpoint_invokes_helper(client, monkeypatch):
 def test_admin_audit_log_shows_recent_changes(app, client, monkeypatch):
     """When flags change (sqlite backend), the admin Flags page shows audit entries."""
     monkeypatch.setenv("FEATURE_FLAGS_BACKEND", "sqlite")
-    _login_as_admin(client)
+    _login_as_admin(client, app)
 
     # Ensure sqlite backend is fresh
     with app.app_context():
@@ -127,7 +151,7 @@ def test_admin_ai_cascade_persists_and_audit(app, client, monkeypatch):
     and create audit entries for the child flags (sqlite backend).
     """
     monkeypatch.setenv("FEATURE_FLAGS_BACKEND", "sqlite")
-    _login_as_admin(client)
+    _login_as_admin(client, app)
 
     # Prepare persisted store with AI features enabled
     with app.app_context():

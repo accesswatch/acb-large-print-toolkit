@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "acb-large-print-web"
-version = "6.0.0"
+version = "7.0.0"
 description = "Flask web interface for the ACB Large Print Tool"
 readme = "README.md"
 requires-python = ">=3.13"
@@ -25,6 +25,16 @@ dependencies = [
     "flask>=3.1",
     "flask-wtf>=1.2",
     "flask-limiter>=4.0",
+    "flask-sqlalchemy>=3.1",
+    "flask-login>=0.6",
+    "flask-mail>=0.10",
+    "bcrypt>=4.1",
+    "authlib>=1.3",
+    "cryptography>=42.0",
+    "firebase-admin>=6.5",
+    "celery[redis]>=5.3",
+    "redis>=5.0",
+    "psycopg[binary]>=3.2",
     "gunicorn>=25.0",
     "acb-large-print",
     "markitdown[all]>=0.1.5",
