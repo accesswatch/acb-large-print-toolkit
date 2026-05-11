@@ -749,3 +749,153 @@ class AICostLedger(db.Model):
             db.select(db.func.sum(cls.cost_usd)).where(cls.created_at >= month_start)
         ).scalar()
         return float(result or 0.0)
+
+
+# ---------------------------------------------------------------------------
+# AI Settings (runtime configuration key-value pairs)
+# ---------------------------------------------------------------------------
+
+class AISettings(db.Model):
+    """Persisted runtime configuration for AI gateway (budget, quotas, models, etc).
+    
+    Key-value store allowing admin UI to override environment defaults.
+    Keys: monthly_budget_usd, chat_daily_limit, audio_monthly_min, default_model,
+          fallback_model, vision_model, escalation_thresh, whisper_model,
+          session_quota_per_session, quota_reset_hours
+    """
+
+    __tablename__ = "ai_settings"
+    __allow_unmapped__ = True
+
+    id: int = db.Column(db.Integer, primary_key=True)
+    key: str = db.Column(db.String(128), nullable=False, unique=True, index=True)
+    value: str = db.Column(db.Text, nullable=False)
+    updated_at: datetime = db.Column(db.DateTime(timezone=True), nullable=False, default=_now, onupdate=_now)
+
+    @classmethod
+    def get_setting(cls, key: str, default: str | None = None) -> str | None:
+        """Get setting value or return default if not found."""
+        record = db.session.execute(
+            db.select(cls).where(cls.key == key)
+        ).scalar_one_or_none()
+        return record.value if record else default
+
+    @classmethod
+    def set_setting(cls, key: str, value: str) -> "AISettings":
+        """Set or create a setting."""
+        record = db.session.execute(
+            db.select(cls).where(cls.key == key)
+        ).scalar_one_or_none()
+        if record is None:
+            record = cls(key=key, value=value)
+            db.session.add(record)
+        else:
+            record.value = value
+            record.updated_at = _now()
+        db.session.flush()
+        return record
+
+
+# ---------------------------------------------------------------------------
+# AI Quota Sessions (per-session chat/audio usage tracking)
+# ---------------------------------------------------------------------------
+
+class AIQuotaSession(db.Model):
+    """Tracks per-session daily/monthly usage for chat turns and audio minutes.
+    
+    Primary key: (session_hash, date)
+    Used to enforce daily chat quotas and monthly audio quotas.
+    """
+
+    __tablename__ = "ai_quota_session"
+    __allow_unmapped__ = True
+    __table_args__ = (
+        db.PrimaryKeyConstraint("session_hash", "date", name="pk_quota_session"),
+    )
+
+    session_hash: str = db.Column(db.String(128), nullable=False, index=True)
+    date: str = db.Column(db.String(10), nullable=False)  # YYYY-MM-DD format
+    chat_turns: int = db.Column(db.Integer, nullable=False, default=0)
+    audio_seconds: int = db.Column(db.Integer, nullable=False, default=0)
+
+    @classmethod
+    def get_or_create(cls, session_hash: str, date: str) -> "AIQuotaSession":
+        """Get existing quota record or create new one."""
+        record = db.session.execute(
+            db.select(cls).where(cls.session_hash == session_hash, cls.date == date)
+        ).scalar_one_or_none()
+        if record is None:
+            record = cls(session_hash=session_hash, date=date)
+            db.session.add(record)
+            db.session.flush()
+        return record
+
+    @classmethod
+    def increment_chat(cls, session_hash: str, date: str, turns: int = 1) -> "AIQuotaSession":
+        """Increment chat turn count for a session/date."""
+        record = cls.get_or_create(session_hash, date)
+        record.chat_turns += turns
+        db.session.flush()
+        return record
+
+    @classmethod
+    def increment_audio(cls, session_hash: str, date: str, seconds: int) -> "AIQuotaSession":
+        """Increment audio seconds for a session/date."""
+        record = cls.get_or_create(session_hash, date)
+        record.audio_seconds += seconds
+        db.session.flush()
+        return record
+
+
+# ---------------------------------------------------------------------------
+# User Feedback (web form submissions with GitHub issue sync)
+# ---------------------------------------------------------------------------
+
+class Feedback(db.Model):
+    """Stores user feedback submissions from the web form."""
+
+    __tablename__ = "feedback"
+    __allow_unmapped__ = True
+
+    id: int = db.Column(db.Integer, primary_key=True)
+    timestamp: datetime = db.Column(db.DateTime(timezone=True), nullable=False, default=_now, index=True)
+    name: str | None = db.Column(db.String(255), nullable=True)
+    email: str | None = db.Column(db.String(255), nullable=True)
+    rating: str = db.Column(db.String(32), nullable=False)  # excellent/good/fair/poor
+    task: str | None = db.Column(db.String(255), nullable=True)
+    message: str = db.Column(db.Text, nullable=False)
+    # GitHub issue tracking
+    github_issue_number: int | None = db.Column(db.Integer, nullable=True)
+    github_issue_url: str | None = db.Column(db.String(512), nullable=True)
+    github_sync_status: str | None = db.Column(db.String(32), nullable=True)  # synced/failed
+    github_sync_error: str | None = db.Column(db.Text, nullable=True)
+    github_synced_at: datetime | None = db.Column(db.DateTime(timezone=True), nullable=True)
+
+    @classmethod
+    def create_from_form(cls, name: str | None, email: str | None, rating: str, 
+                        task: str | None, message: str) -> "Feedback":
+        """Create a new feedback entry."""
+        record = cls(
+            name=name,
+            email=email,
+            rating=rating,
+            task=task,
+            message=message,
+        )
+        db.session.add(record)
+        db.session.flush()
+        return record
+
+    def sync_github(self, issue_number: int | None, issue_url: str | None, 
+                   error: str | None = None) -> None:
+        """Update GitHub sync status for this feedback entry."""
+        if issue_number and issue_url:
+            self.github_issue_number = issue_number
+            self.github_issue_url = issue_url
+            self.github_sync_status = "synced"
+            self.github_sync_error = None
+            self.github_synced_at = _now()
+        else:
+            self.github_sync_status = "failed"
+            self.github_sync_error = error
+        db.session.flush()

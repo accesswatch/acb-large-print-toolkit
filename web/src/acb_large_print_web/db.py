@@ -20,30 +20,22 @@ def init_extensions(app) -> None:
     """Bind SQLAlchemy and Flask-Login to the application and create tables."""
     # Database URI -- defaults to SQLite with WAL mode in instance/ volume.
     # Override with DATABASE_URL env var for Neon/PostgreSQL.
-    db_uri = _resolve_database_uri(app)
-    if not db_uri:
-        instance_dir = Path(app.instance_path)
-        instance_dir.mkdir(parents=True, exist_ok=True)
-        db_path = instance_dir / "glow_users.db"
-        db_uri = f"sqlite:///{db_path}"
+    # In testing mode, use in-memory SQLite for isolation.
+    if app.config.get("TESTING", False):
+        db_uri = "sqlite:///:memory:"
+    else:
+        db_uri = _resolve_database_uri(app)
+        if not db_uri:
+            instance_dir = Path(app.instance_path)
+            instance_dir.mkdir(parents=True, exist_ok=True)
+            db_path = instance_dir / "glow_users.db"
+            db_uri = f"sqlite:///{db_path}"
 
     app.config.setdefault("SQLALCHEMY_DATABASE_URI", db_uri)
     app.config.setdefault("SQLALCHEMY_ENGINE_OPTIONS", _engine_options_for_uri(db_uri))
     app.config.setdefault("SQLALCHEMY_TRACK_MODIFICATIONS", False)
 
     db.init_app(app)
-
-    # Enable WAL mode for SQLite for better concurrent read performance.
-    if db_uri.startswith("sqlite"):
-        from sqlalchemy import event, text
-
-        @event.listens_for(db.engine, "connect", insert=True)
-        def _set_wal_mode(dbapi_conn, _conn_record):
-            cursor = dbapi_conn.cursor()
-            cursor.execute("PRAGMA journal_mode=WAL")
-            cursor.execute("PRAGMA synchronous=NORMAL")
-            cursor.execute("PRAGMA foreign_keys=ON")
-            cursor.close()
 
     # Flask-Login configuration
     login_manager.init_app(app)
@@ -57,10 +49,22 @@ def init_extensions(app) -> None:
         from .models import User
         return db.session.get(User, int(user_id))
 
-    # Create all tables (no-op if they already exist)
+    # Create all tables and configure database (inside app context)
     with app.app_context():
         from . import models as _models  # noqa: F401 -- ensures models are registered
         db.create_all()
+
+        # Enable WAL mode for SQLite for better concurrent read performance.
+        if db_uri.startswith("sqlite") and not db_uri.endswith(":memory:"):
+            from sqlalchemy import event, text
+
+            @event.listens_for(db.engine, "connect", insert=True)
+            def _set_wal_mode(dbapi_conn, _conn_record):
+                cursor = dbapi_conn.cursor()
+                cursor.execute("PRAGMA journal_mode=WAL")
+                cursor.execute("PRAGMA synchronous=NORMAL")
+                cursor.execute("PRAGMA foreign_keys=ON")
+                cursor.close()
 
 
 def _resolve_database_uri(app) -> str:

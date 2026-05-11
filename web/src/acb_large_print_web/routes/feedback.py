@@ -1,75 +1,22 @@
-"""Feedback route -- collect and review user feedback (SQLite-backed)."""
+"""Feedback route -- collect and review user feedback (SQLAlchemy-backed)."""
 
 import json
 import hmac
 import logging
 import os
-import sqlite3
-from datetime import datetime, timezone
-from pathlib import Path
+from datetime import UTC, datetime
 from urllib import error as urlerror
 from urllib import request as urlrequest
 
-from flask import Blueprint, abort, current_app, render_template, request
+from flask import Blueprint, abort, render_template, request
 
 from ..app import limiter
+from ..db import db
+from ..models import Feedback
 
 feedback_bp = Blueprint("feedback", __name__)
 
 log = logging.getLogger(__name__)
-
-
-def _get_db_path() -> Path:
-    """Return the path to the feedback SQLite database."""
-    instance_path = Path(current_app.instance_path)
-    instance_path.mkdir(parents=True, exist_ok=True)
-    return instance_path / "feedback.db"
-
-
-def _get_db() -> sqlite3.Connection:
-    """Open (and auto-create) the feedback database."""
-    db_path = _get_db_path()
-    conn = sqlite3.connect(str(db_path))
-    conn.execute("PRAGMA journal_mode=WAL")  # safe for concurrent reads
-    conn.execute(
-        "CREATE TABLE IF NOT EXISTS feedback ("
-        "  id INTEGER PRIMARY KEY AUTOINCREMENT,"
-        "  timestamp TEXT NOT NULL,"
-        "  name TEXT,"
-        "  email TEXT,"
-        "  rating TEXT NOT NULL,"
-        "  task TEXT,"
-        "  message TEXT NOT NULL,"
-        "  github_issue_number INTEGER,"
-        "  github_issue_url TEXT,"
-        "  github_sync_status TEXT,"
-        "  github_sync_error TEXT,"
-        "  github_synced_at TEXT"
-        ")"
-    )
-    _ensure_feedback_schema(conn)
-    conn.commit()
-    return conn
-
-
-def _ensure_feedback_schema(conn: sqlite3.Connection) -> None:
-    """Add missing columns for GitHub sync and contributor info when upgrading older databases."""
-    existing = {
-        row[1]
-        for row in conn.execute("PRAGMA table_info(feedback)").fetchall()
-    }
-    required = {
-        "name": "TEXT",
-        "email": "TEXT",
-        "github_issue_number": "INTEGER",
-        "github_issue_url": "TEXT",
-        "github_sync_status": "TEXT",
-        "github_sync_error": "TEXT",
-        "github_synced_at": "TEXT",
-    }
-    for col, col_type in required.items():
-        if col not in existing:
-            conn.execute(f"ALTER TABLE feedback ADD COLUMN {col} {col_type}")
 
 
 def _feedback_github_config() -> dict:
@@ -87,7 +34,7 @@ def _feedback_github_config() -> dict:
     }
 
 
-def _create_feedback_issue(entry: dict) -> tuple[int | None, str | None, str | None]:
+def _create_feedback_issue(feedback_entry: Feedback) -> tuple[int | None, str | None, str | None]:
     """Create a GitHub issue for a feedback entry.
 
     Returns (issue_number, issue_url, error_message).
@@ -97,27 +44,28 @@ def _create_feedback_issue(entry: dict) -> tuple[int | None, str | None, str | N
         return None, None, "FEEDBACK_GITHUB_TOKEN not configured"
 
     repo = cfg["repo"]
-    now_date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-    title = f"[Feedback] {entry['rating'].capitalize()} | {entry['task'] or 'general'} | {now_date}"
+    timestamp_str = feedback_entry.timestamp.isoformat() if feedback_entry.timestamp else ""
+    now_date = datetime.now(UTC).strftime("%Y-%m-%d")
+    title = f"[Feedback] {feedback_entry.rating.capitalize()} | {feedback_entry.task or 'general'} | {now_date}"
     
     body_parts = [
         "## User Feedback Submission\n",
-        f"- Feedback ID: `{entry['id']}`\n",
-        f"- Submitted at (UTC): `{entry['timestamp']}`\n",
-        f"- Rating: `{entry['rating']}`\n",
-        f"- Task: `{entry['task'] or 'not specified'}`\n",
+        f"- Feedback ID: `{feedback_entry.id}`\n",
+        f"- Submitted at (UTC): `{timestamp_str}`\n",
+        f"- Rating: `{feedback_entry.rating}`\n",
+        f"- Task: `{feedback_entry.task or 'not specified'}`\n",
     ]
     
-    if entry.get("name") or entry.get("email"):
+    if feedback_entry.name or feedback_entry.email:
         body_parts.append("- **Contributor contact:**\n")
-        if entry.get("name"):
-            body_parts.append(f"  - Name: {entry['name']}\n")
-        if entry.get("email"):
-            body_parts.append(f"  - Email: {entry['email']}\n")
+        if feedback_entry.name:
+            body_parts.append(f"  - Name: {feedback_entry.name}\n")
+        if feedback_entry.email:
+            body_parts.append(f"  - Email: {feedback_entry.email}\n")
     
     body_parts.extend([
         "\n### Message\n",
-        f"{entry['message']}\n",
+        f"{feedback_entry.message}\n",
         "\n---\n",
         "Source: GLOW web feedback form.",
     ])
@@ -199,44 +147,20 @@ def feedback_submit():
             400,
         )
 
-    timestamp = datetime.now(timezone.utc).isoformat()
-
     issue_url = None
     try:
-        conn = _get_db()
-        cur = conn.execute(
-            "INSERT INTO feedback (timestamp, name, email, rating, task, message) VALUES (?, ?, ?, ?, ?, ?)",
-            (timestamp, name, email, rating, task, message),
-        )
-        feedback_id = cur.lastrowid
+        feedback_entry = Feedback.create_from_form(name, email, rating, task, message)
+        db.session.commit()
 
-        entry = {
-            "id": feedback_id,
-            "timestamp": timestamp,
-            "name": name,
-            "email": email,
-            "rating": rating,
-            "task": task,
-            "message": message,
-        }
-        issue_number, issue_url, sync_error = _create_feedback_issue(entry)
-        if issue_number and issue_url:
-            conn.execute(
-                "UPDATE feedback SET github_issue_number=?, github_issue_url=?, github_sync_status=?, github_sync_error=?, github_synced_at=? WHERE id=?",
-                (issue_number, issue_url, "synced", None, datetime.now(timezone.utc).isoformat(), feedback_id),
-            )
-        else:
-            conn.execute(
-                "UPDATE feedback SET github_sync_status=?, github_sync_error=? WHERE id=?",
-                ("failed", sync_error, feedback_id),
-            )
-            if sync_error:
-                log.warning("Feedback GitHub sync failed for id=%s: %s", feedback_id, sync_error)
+        issue_number, issue_url, sync_error = _create_feedback_issue(feedback_entry)
+        feedback_entry.sync_github(issue_number, issue_url, sync_error)
+        db.session.commit()
 
-        conn.commit()
-        conn.close()
-    except (sqlite3.Error, OSError):
+        if sync_error:
+            log.warning("Feedback GitHub sync failed for id=%s: %s", feedback_entry.id, sync_error)
+    except Exception:
         log.exception("Failed to save feedback")
+        db.session.rollback()
 
     return render_template("feedback_thanks.html", issue_url=issue_url)
 
@@ -253,33 +177,30 @@ def feedback_review():
         abort(403)
 
     try:
-        conn = _get_db()
-        cursor = conn.execute(
-            "SELECT id, timestamp, name, email, rating, task, message, github_issue_number, github_issue_url, github_sync_status, github_sync_error "
-            "FROM feedback ORDER BY id DESC"
-        )
-        rows = [
+        rows = db.session.execute(
+            db.select(Feedback).order_by(Feedback.id.desc())
+        ).scalars().all()
+        
+        entries = [
             {
-                "id": r[0],
-                "timestamp": r[1],
-                "name": r[2],
-                "email": r[3],
-                "rating": r[4],
-                "task": r[5],
-                "message": r[6],
-                "github_issue_number": r[7],
-                "github_issue_url": r[8],
-                "github_sync_status": r[9],
-                "github_sync_error": r[10],
+                "id": r.id,
+                "timestamp": r.timestamp.isoformat() if r.timestamp else "",
+                "name": r.name,
+                "email": r.email,
+                "rating": r.rating,
+                "task": r.task,
+                "message": r.message,
+                "github_issue_number": r.github_issue_number,
+                "github_issue_url": r.github_issue_url,
+                "github_sync_status": r.github_sync_status,
+                "github_sync_error": r.github_sync_error,
             }
-            for r in cursor.fetchall()
+            for r in rows
         ]
-        conn.close()
-    except (sqlite3.Error, OSError):
+    except Exception:
         log.exception("Failed to load feedback")
-        rows = []
+        entries = []
 
-    response = render_template("feedback_review.html", entries=rows)
-    resp = current_app.make_response(response)
-    resp.headers["Cache-Control"] = "no-store"
+    response = render_template("feedback_review.html", entries=entries)
+    resp = render_template("feedback_review.html", entries=entries)
     return resp

@@ -47,7 +47,7 @@ import sqlalchemy as sa
 from sqlalchemy import func
 
 from .db import db
-from .models import AICostLedger
+from .models import AICostLedger, AISettings, AIQuotaSession
 from .credentials import (
     get_openrouter_api_key,
     get_user_ollama_key,
@@ -303,70 +303,18 @@ def fetch_user_provider_models(provider: str, api_key: str) -> list[dict[str, An
 
 
 # ---------------------------------------------------------------------------
-# SQLite cost ledger and quota tracking
+# Runtime Configuration (persisted in database, environment overridable)
 # ---------------------------------------------------------------------------
-
-
-def _db_path() -> Path:
-    """Resolve instance path for the AI cost/quota database."""
-    instance_path = Path(os.environ.get("FLASK_INSTANCE_PATH", "instance"))
-    instance_path.mkdir(parents=True, exist_ok=True)
-    return instance_path / "ai_quota.db"
-
-
-def _db() -> sqlite3.Connection:
-    conn = sqlite3.connect(str(_db_path()))
-    conn.row_factory = sqlite3.Row
-    conn.execute("PRAGMA journal_mode=WAL")
-    conn.execute(
-        """
-        CREATE TABLE IF NOT EXISTS ai_cost_ledger (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            session_hash TEXT NOT NULL,
-            request_at TEXT NOT NULL,
-            workload TEXT NOT NULL,
-            model TEXT NOT NULL,
-            input_tokens INTEGER DEFAULT 0,
-            output_tokens INTEGER DEFAULT 0,
-            audio_seconds INTEGER DEFAULT 0,
-            cost_usd REAL DEFAULT 0.0,
-            escalated INTEGER DEFAULT 0
-        )
-        """
-    )
-    conn.execute(
-        """
-        CREATE TABLE IF NOT EXISTS ai_quota_sessions (
-            session_hash TEXT NOT NULL,
-            date TEXT NOT NULL,
-            chat_turns INTEGER DEFAULT 0,
-            audio_seconds INTEGER DEFAULT 0,
-            PRIMARY KEY (session_hash, date)
-        )
-        """
-    )
-    conn.execute(
-        """
-        CREATE TABLE IF NOT EXISTS ai_settings (
-            key TEXT PRIMARY KEY,
-            value TEXT NOT NULL,
-            updated_at TEXT NOT NULL
-        )
-        """
-    )
-    conn.commit()
-    return conn
 
 
 def get_runtime_config() -> dict[str, Any]:
     """Return runtime config, with DB overrides on top of environment defaults."""
     cfg = dict(_DEFAULTS)
     try:
-        with _db() as conn:
-            rows = conn.execute("SELECT key, value FROM ai_settings").fetchall()
-        for row in rows:
-            k = row["key"]
-            v = row["value"]
+        settings = db.session.execute(db.select(AISettings)).scalars().all()
+        for setting in settings:
+            k = setting.key
+            v = setting.value
             if k in {"monthly_budget_usd", "escalation_thresh"}:
                 cfg[k] = float(v)
             elif k in {"chat_daily_limit", "audio_monthly_min", "session_quota_per_session", "quota_reset_hours"}:
@@ -392,20 +340,15 @@ def update_runtime_config(updates: dict[str, Any]) -> None:
         "session_quota_per_session",
         "quota_reset_hours",
     }
-    now = datetime.now(UTC).isoformat()
-    with _db() as conn:
+    try:
         for k, v in updates.items():
             if k not in allowed:
                 continue
-            conn.execute(
-                """
-                INSERT INTO ai_settings (key, value, updated_at)
-                VALUES (?, ?, ?)
-                ON CONFLICT(key) DO UPDATE SET value=excluded.value, updated_at=excluded.updated_at
-                """,
-                (k, str(v), now),
-            )
-        conn.commit()
+            AISettings.set_setting(k, str(v))
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+
 
 
 def _compute_cost(model: str, input_tokens: int, output_tokens: int) -> float:
