@@ -235,6 +235,9 @@ def chat_submit():
             else "AI features are temporarily unavailable. Please try again later."
         )
         return render_template("chat_form.html", error=reason, token=token, quota=quota), 429
+    if quota.get("session_quota_enabled") and not quota.get("session_available", True):
+        reason = "This browser session has reached the current AI request limit. Please wait for the reset window before sending another request."
+        return render_template("chat_form.html", error=reason, token=token, quota=quota), 429
 
     try:
         session_key = f"chat_{token}"

@@ -13,6 +13,8 @@ from datetime import UTC, datetime, timedelta
 _PROVIDERS_KEY = "user_ai_providers"
 _FEATURE_MODELS_KEY = "user_ai_feature_models"
 _FEATURE_FLAGS_KEY = "user_ai_features"
+_RUNTIME_SETTINGS_KEY = "user_ai_runtime_settings"
+_PROMPT_SETTINGS_KEY = "user_ai_prompt_settings"
 _VALIDATED_KEYS_KEY = "user_ai_validated_keys"
 _LEGACY_OLLAMA_KEY = "ollama_api_key"
 _LEGACY_OLLAMA_MODEL = "ollama_model"
@@ -20,7 +22,24 @@ _LEGACY_OLLAMA_EXPIRY = "ollama_key_expires_at"
 _SESSION_MINUTES = int(
     os.environ.get("USER_AI_SESSION_MINUTES", os.environ.get("SESSION_TIMEOUT_MINUTES", "240"))
 )
+_EXTEND_MINUTES = int(os.environ.get("USER_AI_SESSION_EXTEND_MINUTES", str(_SESSION_MINUTES)))
+_MIN_SESSION_MINUTES = 15
+_MAX_SESSION_MINUTES = 24 * 60
 MODEL_REF_SEPARATOR = "::"
+
+DEFAULT_ALT_TEXT_PROMPT = (
+    "You are writing alternative text for an accessibility-focused document workflow. "
+    "Generate one concise alt text suggestion for a non-decorative image. Focus on the meaning the image conveys, "
+    "include visible text when it is important to understanding the image, avoid leading phrases like 'image of' or 'picture of', "
+    "and usually keep the result under 125 characters unless essential clarity requires slightly more detail. "
+    "If the image appears decorative, return 'Decorative image.'"
+)
+
+DEFAULT_MARKITDOWN_IMAGE_PROMPT = (
+    "You are an accessibility specialist helping MarkItDown describe images extracted from documents. "
+    "Write a concise description that preserves important visible text, labels, chart meaning, and document context for downstream editing. "
+    "Do not add commentary outside the description."
+)
 
 USER_AI_PROVIDER_DEFINITIONS: dict[str, dict[str, object]] = {
     "ollama": {
@@ -232,7 +251,126 @@ def _session_or_none():
 
 
 def user_ai_session_minutes() -> int:
-    return max(15, _SESSION_MINUTES)
+    settings = get_user_ai_runtime_settings()
+    return int(settings["session_minutes"])
+
+
+def user_ai_extend_minutes() -> int:
+    settings = get_user_ai_runtime_settings()
+    return int(settings["extend_minutes"])
+
+
+def _normalize_runtime_minutes(value: object, fallback: int) -> int:
+    try:
+        parsed = int(str(value or "").strip())
+    except (TypeError, ValueError):
+        parsed = fallback
+    return max(_MIN_SESSION_MINUTES, min(_MAX_SESSION_MINUTES, parsed))
+
+
+def get_user_ai_runtime_settings() -> dict[str, int]:
+    session_data = _session_or_none()
+    defaults = {
+        "session_minutes": _normalize_runtime_minutes(_SESSION_MINUTES, _SESSION_MINUTES),
+        "extend_minutes": _normalize_runtime_minutes(_EXTEND_MINUTES, _EXTEND_MINUTES),
+    }
+    if session_data is None:
+        return defaults
+    stored = session_data.get(_RUNTIME_SETTINGS_KEY) or {}
+    if not isinstance(stored, dict):
+        return defaults
+    return {
+        "session_minutes": _normalize_runtime_minutes(stored.get("session_minutes"), defaults["session_minutes"]),
+        "extend_minutes": _normalize_runtime_minutes(stored.get("extend_minutes"), defaults["extend_minutes"]),
+    }
+
+
+def save_user_ai_runtime_settings(session_minutes: object, extend_minutes: object) -> dict[str, int]:
+    session_data = _session_or_none()
+    cleaned = {
+        "session_minutes": _normalize_runtime_minutes(session_minutes, _SESSION_MINUTES),
+        "extend_minutes": _normalize_runtime_minutes(extend_minutes, _EXTEND_MINUTES),
+    }
+    if session_data is None:
+        return cleaned
+    session_data[_RUNTIME_SETTINGS_KEY] = cleaned
+    session_data.modified = True
+    return cleaned
+
+
+def default_user_ai_prompt_settings() -> dict[str, str]:
+    return {
+        "alt_text_prompt": DEFAULT_ALT_TEXT_PROMPT,
+        "markitdown_image_prompt": DEFAULT_MARKITDOWN_IMAGE_PROMPT,
+    }
+
+
+def get_user_ai_prompt_settings() -> dict[str, str]:
+    session_data = _session_or_none()
+    defaults = default_user_ai_prompt_settings()
+    if session_data is None:
+        return defaults
+    stored = session_data.get(_PROMPT_SETTINGS_KEY) or {}
+    if not isinstance(stored, dict):
+        return defaults
+    return {
+        key: str(stored.get(key) or defaults[key]).strip() or defaults[key]
+        for key in defaults
+    }
+
+
+def save_user_ai_prompt_settings(values: dict[str, object]) -> dict[str, str]:
+    session_data = _session_or_none()
+    defaults = default_user_ai_prompt_settings()
+    cleaned = {
+        key: str(values.get(key) or defaults[key]).strip() or defaults[key]
+        for key in defaults
+    }
+    if session_data is None:
+        return cleaned
+    session_data[_PROMPT_SETTINGS_KEY] = cleaned
+    session_data.modified = True
+    return cleaned
+
+
+def build_alt_text_prompt(
+    *,
+    document_name: str = "",
+    image_index: int | None = None,
+    total_images: int | None = None,
+    current_alt_text: str = "",
+    surrounding_text: list[str] | None = None,
+    extra_instruction: str = "",
+) -> str:
+    prompts = get_user_ai_prompt_settings()
+    parts: list[str] = [prompts["alt_text_prompt"].strip()]
+
+    context_lines: list[str] = []
+    if document_name:
+        context_lines.append(f"Document: {document_name}")
+    if image_index is not None:
+        if total_images is not None and total_images > 0:
+            context_lines.append(f"Image position: {image_index + 1} of {total_images}")
+        else:
+            context_lines.append(f"Image position: {image_index + 1}")
+    if current_alt_text.strip():
+        context_lines.append(f"Existing alt text: {current_alt_text.strip()}")
+    if surrounding_text:
+        for item in surrounding_text:
+            text = str(item or "").strip()
+            if text:
+                context_lines.append(text)
+
+    if context_lines:
+        parts.append("Context:\n- " + "\n- ".join(context_lines))
+    if extra_instruction.strip():
+        parts.append(extra_instruction.strip())
+    parts.append("Return only the suggested alt text, with no quotation marks, labels, or explanation.")
+    return "\n\n".join(part for part in parts if part)
+
+
+def get_markitdown_image_prompt() -> str:
+    return get_user_ai_prompt_settings()["markitdown_image_prompt"]
 
 
 def format_model_ref(provider: str, model: str) -> str:
@@ -377,7 +515,7 @@ def refresh_provider_expiry(provider: str) -> datetime | None:
 def extend_provider_expiry(provider: str) -> datetime | None:
     current = get_provider_expiry(provider)
     base = current if current and current > datetime.now(UTC) else datetime.now(UTC)
-    return set_provider_expiry(provider, base + timedelta(minutes=user_ai_session_minutes()))
+    return set_provider_expiry(provider, base + timedelta(minutes=user_ai_extend_minutes()))
 
 
 def _cleanup_expired_provider(provider: str) -> None:
@@ -642,6 +780,7 @@ def provider_session_payload(provider: str) -> dict[str, object]:
         "provider": provider,
         "active": active,
         "duration_minutes": user_ai_session_minutes(),
+        "extend_minutes": user_ai_extend_minutes(),
         "expires_utc": expires_at.isoformat() if active and expires_at else None,
         "seconds_remaining": get_provider_seconds_remaining(provider) if active else 0,
     }

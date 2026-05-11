@@ -36,21 +36,22 @@
 
   function updateMeter(data) {
     var meterEl = el("ai-meter");
+    var quotaEl = el("ai-meter-quota");
     if (!meterEl) return;
 
     if (data.provider && data.chat_remaining_today == null) {
-      var reqEl    = el("ai-meter-requests");
-      var modelEl  = el("ai-meter-model");
-      if (reqEl)   reqEl.textContent   = data.session_requests_today;
+      var reqEl = el("ai-meter-requests");
+      var modelEl = el("ai-meter-model");
+      if (reqEl) reqEl.textContent = data.session_requests_today;
       if (modelEl) modelEl.textContent = data.provider_model || data.ollama_model || "unknown";
 
     } else if (data.provider === "openrouter") {
-      var reqEl2   = el("ai-meter-requests");
-      var limitEl  = el("ai-meter-limit");
-      var barEl    = el("ai-meter-bar");
-      var fillEl   = el("ai-meter-bar-fill");
+      var reqEl2 = el("ai-meter-requests");
+      var limitEl = el("ai-meter-limit");
+      var barEl = el("ai-meter-bar");
+      var fillEl = el("ai-meter-bar-fill");
 
-      if (reqEl2)  reqEl2.textContent  = data.session_requests_today;
+      if (reqEl2) reqEl2.textContent = data.session_requests_today;
       if (limitEl) {
         var limit = data.chat_remaining_today != null
           ? (data.session_requests_today + data.chat_remaining_today)
@@ -61,6 +62,21 @@
         barEl.setAttribute("aria-valuenow", data.budget_pct_remaining);
         if (fillEl) fillEl.style.width = data.budget_pct_remaining + "%";
       }
+    }
+
+    if (quotaEl) {
+      var bits = [];
+      if (data.budget_remaining_usd != null) {
+        bits.push('Budget left: $' + Number(data.budget_remaining_usd).toFixed(2));
+      }
+      if (data.session_quota_enabled) {
+        bits.push('Session requests left: ' + Number(data.session_requests_remaining || 0));
+        if (data.session_reset_seconds) {
+          bits.push('Resets in ' + formatDuration(data.session_reset_seconds));
+        }
+      }
+      quotaEl.textContent = bits.join(' | ');
+      quotaEl.hidden = !bits.length;
     }
   }
 
@@ -118,7 +134,7 @@
     fetch(sessionUrl, { credentials: 'same-origin' })
       .then(function (response) { return response.ok ? response.json() : null; })
       .then(function (data) { if (data) updateSessionStatus(data); })
-      .catch(function () {});
+      .catch(function () { });
   }
 
   function fetchUsage() {
@@ -168,7 +184,7 @@
               updateSessionStatus(data);
             }
           })
-          .catch(function () {})
+          .catch(function () { })
           .finally(function () {
             renderSessionCountdown();
           });

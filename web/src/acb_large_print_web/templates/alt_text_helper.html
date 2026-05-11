@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+
+{% block title %}Alt-Text Helper{% endblock %}
+{% block heading %}Alt-Text Helper{% endblock %}
+
+{% block content %}
+<p>Draft WCAG 2.2 AA-friendly alternative text for uploaded images and visual content from Word, PowerPoint, Excel, PDF, and EPUB files. GLOW keeps the prompt configurable in AI Features and adds file-specific context so the suggestion is more useful than a raw image caption.</p>
+
+{% if error %}
+<div class="error-box" role="alert">
+  <p><strong>Error:</strong> {{ error }}</p>
+</div>
+{% endif %}
+
+<section aria-labelledby="alt-text-upload-heading">
+  <h2 id="alt-text-upload-heading">Choose a visual source</h2>
+  <form method="post" enctype="multipart/form-data" novalidate>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="form-group">
+      <label for="document">Upload a file</label>
+      <input type="file" id="document" name="document" accept="{{ supported_exts | join(',') }}" aria-describedby="alt-text-upload-hint">
+      <p id="alt-text-upload-hint" class="help-text">Supported: standalone image files plus Word, PowerPoint, Excel, PDF, and EPUB documents that contain or render visual content.</p>
+    </div>
+    <button type="submit" class="btn-primary">Load visuals</button>
+  </form>
+</section>
+
+<section aria-labelledby="alt-text-settings-heading">
+  <h2 id="alt-text-settings-heading">Model and prompt settings</h2>
+  <p class="help-text">Current feature binding: <strong>{{ ai_alt_text_provider or 'not selected' }}</strong>{% if ai_alt_text_model %} using <strong>{{ ai_alt_text_model }}</strong>{% endif %}. You can change the provider/model choice and the base prompt in <a href="{{ url_for('ai.settings_ai_page') }}">AI Features</a>.</p>
+  <div class="form-group">
+    <label for="extra-instruction">Optional extra instruction for this page</label>
+    <textarea id="extra-instruction" rows="3" aria-describedby="extra-instruction-hint" placeholder="Example: Focus on the chart trend rather than the decorative background."></textarea>
+    <p id="extra-instruction-hint" class="help-text">This applies only to suggestion requests you trigger on this page. GLOW still adds the file name, image position, existing alt text, and nearby extracted context automatically.</p>
+  </div>
+</section>
+
+{% if token and visual_items %}
+<section aria-labelledby="alt-text-results-heading">
+  <h2 id="alt-text-results-heading">Visual items from {{ source_name }}</h2>
+  <p class="help-text">Review each suggestion before using it. For charts, diagrams, and dense visuals, you may still need to revise the wording to capture the key takeaway rather than every visible detail.</p>
+  <div id="alt-text-status" role="status" aria-live="polite" aria-atomic="true"></div>
+  <input type="hidden" id="alt-text-token" value="{{ token }}">
+  <div class="alt-text-item-list">
+    {% for item in visual_items %}
+    <article class="alt-text-item-card" aria-labelledby="alt-text-item-heading-{{ item.index }}">
+      <h3 id="alt-text-item-heading-{{ item.index }}">{{ item.label }}</h3>
+      <p><strong>Location:</strong> {{ item.location }}</p>
+      {% if item.current_alt_text %}
+      <p><strong>Current alt text:</strong> {{ item.current_alt_text }}</p>
+      {% else %}
+      <p><strong>Current alt text:</strong> None detected.</p>
+      {% endif %}
+
+      {% if not item.text_only and item.preview_data_uri %}
+      <figure>
+        <img src="{{ item.preview_data_uri }}" alt="Preview used for alt-text drafting" width="{{ item.width or 320 }}" height="{{ item.height or 240 }}" loading="lazy" decoding="async">
+        <figcaption class="help-text">Preview only. Use the surrounding context and the source document itself to verify the generated alt text.</figcaption>
+      </figure>
+      {% else %}
+      <div class="help-box" role="note">
+        <p>This item uses extracted structural context rather than a direct image preview. That usually means it came from a chart or rendered document surface.</p>
+      </div>
+      {% endif %}
+
+      {% if item.context_lines %}
+      <details>
+        <summary>Show extracted context</summary>
+        <div role="list" aria-label="Extracted context lines">
+          {% for line in item.context_lines %}<div role="listitem">{{ line }}</div>{% endfor %}
+        </div>
+      </details>
+      {% endif %}
+
+      <div class="form-actions">
+        <button type="button" class="btn-secondary alt-text-generate-btn" data-item-index="{{ item.index }}">Generate suggestion</button>
+      </div>
+
+      <div class="form-group">
+        <label for="suggestion-{{ item.index }}">Suggested alt text</label>
+        <textarea id="suggestion-{{ item.index }}" class="alt-text-suggestion" rows="3" readonly aria-describedby="suggestion-help-{{ item.index }}"></textarea>
+        <p id="suggestion-help-{{ item.index }}" class="help-text">Review and revise before using. Avoid redundant prefixes, filenames, or visual details that do not matter to understanding.</p>
+      </div>
+
+      <div class="form-actions">
+        <button type="button" class="btn-secondary alt-text-copy-btn" data-target="suggestion-{{ item.index }}">Copy suggestion</button>
+      </div>
+    </article>
+    {% endfor %}
+  </div>
+</section>
+{% elif token %}
+<section aria-labelledby="alt-text-no-items-heading">
+  <h2 id="alt-text-no-items-heading">No visual items found</h2>
+  <p>GLOW did not find an image, chart, or rendered page preview in this file. Try a different file, or review whether the source contains visual content that should have alternative text.</p>
+</section>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+{% if token and visual_items %}
+<script src="{{ url_for('static', filename='alt-text-helper.js') }}"></script>
+{% endif %}
+{% endblock %}

@@ -159,6 +159,8 @@ class TestCapabilityGating:
 
         monkeypatch.setattr(ai_features, "_env_flag", lambda name, default=False: True)
         monkeypatch.setattr(ai_features, "any_user_provider_supports_feature", lambda feature: feature == "alt_text")
+        monkeypatch.setattr(ai_features, "is_ai_configured", lambda: False)
+        monkeypatch.setattr(ai_features, "is_whisper_configured", lambda: False)
 
         assert ai_features.ai_alt_text_enabled() is True
         assert ai_features.ai_whisperer_enabled() is False
@@ -168,6 +170,8 @@ class TestCapabilityGating:
 
         monkeypatch.setattr(ai_features, "_env_flag", lambda name, default=False: True)
         monkeypatch.setattr(ai_features, "any_user_provider_supports_feature", lambda feature: feature == "whisperer")
+        monkeypatch.setattr(ai_features, "is_ai_configured", lambda: False)
+        monkeypatch.setattr(ai_features, "is_whisper_configured", lambda: False)
 
         assert ai_features.ai_whisperer_enabled() is True
         assert ai_features.ai_alt_text_enabled() is False

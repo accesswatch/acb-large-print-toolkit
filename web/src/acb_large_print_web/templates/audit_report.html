@@ -96,6 +96,13 @@
   {% endif %}
 </section>
 
+{% if ai_alt_text_enabled and chat_token and doc_format in ['docx', 'xlsx', 'pptx', 'pdf', 'epub'] %}
+<section class="info-box" aria-labelledby="alt-text-helper-heading">
+  <h2 id="alt-text-helper-heading">Need help drafting alternative text?</h2>
+  <p>Open the <a href="{{ url_for('alt_text.alt_text_form', token=chat_token) }}">Alt-Text Helper</a> to generate editable suggestions for images, charts, slide visuals, and rendered PDF content from this uploaded file. Review every suggestion before using it.</p>
+</section>
+{% endif %}
+
 {% if result.findings %}
 <section>
   <h2 id="findings-heading">Findings</h2>

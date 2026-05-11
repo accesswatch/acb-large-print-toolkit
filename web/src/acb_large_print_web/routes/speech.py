@@ -47,7 +47,7 @@ from ..speech import (
 )
 from ..magic_features import apply_pronunciation_dictionary
 from .. import speech_metrics
-from ..upload import CONVERT_EXTENSIONS, UploadError, get_temp_dir, validate_upload
+from ..upload import AUDIO_EXTENSIONS, CONVERT_EXTENSIONS, UploadError, get_temp_dir, validate_upload
 
 speech_bp = Blueprint("speech", __name__)
 
@@ -55,7 +55,7 @@ _TEXT_MAX_LEN = 500
 _DOC_EXTRACT_NAME = "speech_source.txt"
 _DOC_RENDERED_NAME = "speech_rendered.txt"
 _DOC_META_NAME = "speech_meta.json"
-_DOC_ALLOWED_EXTENSIONS = set(CONVERT_EXTENSIONS) | {".txt", ".rst"}
+_DOC_ALLOWED_EXTENSIONS = (set(CONVERT_EXTENSIONS) - AUDIO_EXTENSIONS - {".zip"}) | {".txt", ".rst"}
 _DOC_ACCEPT = ",".join(sorted(_DOC_ALLOWED_EXTENSIONS))
 _DEFAULT_DEMO_TEXT = (
     "Welcome to Speech Studio. "

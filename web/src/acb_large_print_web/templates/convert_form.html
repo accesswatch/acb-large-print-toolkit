@@ -10,7 +10,7 @@
 {% set tip_link_text = "Read the convert guide" %}
 {% include '_workflow_tip.html' %}
 
-<p>This page converts your documents between formats. You can extract plain text from almost any file, or create an accessible web page ready for publishing. Each step below walks you through the process.</p>
+<p>This page converts your documents between formats. You can extract plain text from almost any file, including short MP3 and WAV clips through MarkItDown, or create an accessible web page ready for publishing. Each step below walks you through the process.</p>
 
 {% if error %}
 <div class="error-box" role="alert">
@@ -202,9 +202,9 @@
       <li>Feed a document into an AI tool or text analysis pipeline</li>
       <li>Create a starting point for writing accessible Markdown documentation</li>
     </ul>
-    <p><strong>Accepts:</strong> Word (.docx), Excel (.xlsx, .xls), PowerPoint (.pptx), PDF (.pdf), HTML, CSV, JSON, XML, ePub (.epub), and ZIP files.</p>
+    <p><strong>Accepts:</strong> Word (.docx), Excel (.xlsx, .xls), PowerPoint (.pptx), PDF (.pdf), HTML, CSV, JSON, XML, Outlook (.msg), ePub (.epub), ZIP files, common images, and short MP3/WAV audio clips.</p>
     <p><strong>You get back:</strong> a <code>.md</code> (Markdown) file -- plain text with simple formatting marks for headings, lists, and links. Opens in any text editor.</p>
-    <p><strong>Powered by:</strong> <a href="https://github.com/microsoft/markitdown">MarkItDown</a> (Microsoft). This tool is optimized for extracting readable text and preserving document structure (headings, lists, tables, links) as lightweight Markdown. It handles the widest range of input formats but produces plain text, not a finished web page.</p>
+    <p><strong>Powered by:</strong> <a href="https://github.com/microsoft/markitdown">MarkItDown</a> (Microsoft). This tool is optimized for extracting readable text and preserving document structure (headings, lists, tables, links) as lightweight Markdown. It handles the widest range of input formats but produces plain text, not a finished web page. For audio, this path is intentionally limited to short MP3 and WAV files so the web request can complete promptly.</p>
 
     <h3>Choose "Accessible web page" when you want to:</h3>
     <ul>
@@ -472,7 +472,7 @@
     'to-epub':     new Set({{ pandoc_effective_exts | tojson | replace('".epub"', '"__excluded__"') }}),
     'to-pdf':      new Set({{ pandoc_effective_exts | tojson }}),
     'to-pipeline': new Set({{ pipeline_exts | tojson }}),
-    'to-speech':   new Set({{ markitdown_exts | tojson }}),
+    'to-speech':   new Set({{ speech_source_exts | tojson }}),
   };
 
   // Pipeline conversions: map input_ext -> list of keys
@@ -584,7 +584,7 @@
 {% if ai_whisperer_enabled %}
 <div class="info-box" role="note" aria-labelledby="whisperer-callout-heading">
   <h2 id="whisperer-callout-heading">Have audio to transcribe?</h2>
-  <p>Use <a href="{{ url_for('whisperer.whisperer_form') }}"><strong>BITS Whisperer</strong></a> -- a dedicated tool that transcribes MP3, WAV, M4A, OGG, FLAC, and other audio formats into accessible Markdown or Word documents. Runs entirely on this server. No audio leaves GLOW.</p>
+  <p>For short MP3 or WAV clips, you can now stay on this page and choose <strong>Plain text (Markdown)</strong> to use MarkItDown directly. For anything longer, larger than {{ markitdown_audio_max_mb }} MB, over {{ markitdown_audio_max_minutes|int }} minutes, or in another audio format, use <a href="{{ url_for('whisperer.whisperer_form') }}"><strong>BITS Whisperer</strong></a> for the more resilient transcription workflow.</p>
 </div>
 {% endif %}
 
@@ -599,7 +599,8 @@
     <li><strong>Start with a well-structured source.</strong> Documents with proper headings, lists, and styles convert more cleanly than documents that use only manual formatting (bold text, extra blank lines, and tab characters). This matters most for HTML and EPUB output, where document structure becomes semantic HTML elements.</li>
     <li><strong>Word documents work best for HTML conversion</strong> when they use Word's built-in heading styles (Heading 1, Heading 2, etc.) rather than manually formatted bold text. Pandoc reads these styles and produces correct heading hierarchy.</li>
     <li><strong>PDFs vary in quality.</strong> Tagged PDFs (created from Word or InDesign) convert well to plain text. Scanned PDFs or image-only PDFs may produce little or no text. For best results, convert PDFs to plain text first, clean up the Markdown, then convert to HTML or EPUB.</li>
-      <li><strong>Excel and PowerPoint</strong> now convert directly to HTML, Word, EPUB, and PDF using a two-stage process: text is extracted to Markdown first, then Pandoc applies full ACB Large Print formatting. You do not need to do this manually -- just upload your file and choose your output format.</li>
+    <li><strong>Short MP3 and WAV files</strong> can now go through the standard Convert tool with MarkItDown. GLOW keeps that web path conservative to avoid request timeouts. For longer recordings or more formats, use BITS Whisperer instead.</li>
+    <li><strong>Excel and PowerPoint</strong> now convert directly to HTML, Word, EPUB, and PDF using a two-stage process: text is extracted to Markdown first, then Pandoc applies full ACB Large Print formatting. You do not need to do this manually - just upload your file and choose your output format.</li>
     <li><strong>Markdown is the best input for all Pandoc outputs.</strong> Pandoc was built for Markdown conversion and produces the cleanest output from <code>.md</code> files -- whether you are creating HTML, Word, EPUB, or PDF. If your source is a PDF or PowerPoint, the two-step approach (extract to Markdown first, then convert) almost always gives better results.</li>
     {% if feature_audit_enabled %}<li><strong>Use Audit first.</strong> If you are converting a Word document to an accessible web page, run it through <a href="{{ url_for('audit.audit_form') }}">Audit</a> first to catch any issues in the source document before conversion.</li>{% endif %}
     {% if export_html_enabled %}<li><strong>For WordPress or Drupal,</strong> choose "CMS Fragment" in Step 2 -- it produces a scoped HTML snippet that avoids conflicts with your site theme. Only Word (.docx) files are supported for CMS Fragment.</li>{% endif %}

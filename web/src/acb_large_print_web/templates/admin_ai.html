@@ -76,6 +76,14 @@
 
       <label for="audio_monthly_min">Whisperer minutes per month (anonymous session):</label>
       <input id="audio_monthly_min" name="audio_monthly_min" type="number" min="0" value="{{ cfg.audio_monthly_min }}" required>
+
+      <label for="session_quota_per_session">Rolling AI request limit per session:</label>
+      <input id="session_quota_per_session" name="session_quota_per_session" type="number" min="0" value="{{ cfg.session_quota_per_session }}" required>
+      <p class="field-hint">Set to 0 to disable the rolling per-session cap. When enabled, all chat, vision, and audio AI requests in a browser session count toward this limit.</p>
+
+      <label for="quota_reset_hours">Rolling quota reset window (hours):</label>
+      <input id="quota_reset_hours" name="quota_reset_hours" type="number" min="1" value="{{ cfg.quota_reset_hours }}" required>
+      <p class="field-hint">GLOW counts AI requests made during this rolling window and shows a reset countdown when the session cap is reached.</p>
     </fieldset>
 
     <fieldset>

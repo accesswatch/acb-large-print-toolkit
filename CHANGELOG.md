@@ -12,6 +12,9 @@ Releases are tagged in the [GitHub repository](https://github.com/Community-Acce
 
 - **AI Playground streaming responses (SSE)** at `/beta/chat/stream` for token-by-token output rendering with automatic fallback to the legacy JSON endpoint when streaming is unavailable.
 - **AI Playground quick controls**: regenerate response, stop generation, in-page model switcher, prompt templates, session quota banner, and conversation export as Markdown.
+- **MarkItDown audio conversion choice for short MP3/WAV uploads** in the web Convert and Quick Start flows, so users can pick direct Markdown extraction for short clips while still using BITS Whisperer for larger recordings and broader audio format support.
+- **Alt-Text Helper** at `/alt-text/` for AI-assisted alternative text drafting across standalone image files, Word, PowerPoint, Excel, PDF, and EPUB uploads. Quick Start and audit results can now hand visual-rich files directly into this workflow.
+- **AI request cost preview endpoint** at `/ai/usage/estimate` so Document Chat and AI Playground can show rough token and price estimates before sending.
 
 ### Changed
 
@@ -29,6 +32,11 @@ Releases are tagged in the [GitHub repository](https://github.com/Community-Acce
 - **AI Features setup** now supports multiple personal providers at the same time, including Ollama Cloud, OpenRouter, OpenAI, and Google Gemini, with provider-specific key validation and session-scoped storage.
 - **AI feature bindings** are now capability-aware: GLOW only offers models for a feature when the selected provider/model can actually support that workflow, including vision-gated alt-text suggestions and audio-gated Whisperer entry points.
 - **AI usage meter and AI settings terminology** now describe the active personal provider generically instead of assuming every personal AI session is Ollama.
+- **AI Features settings** now include session-scoped lease timing controls plus configurable base prompts for alt-text drafting and MarkItDown image-description workflows.
+- **AI chat surfaces** now show rolling session quota information and rough token/cost preview text before request submission when model pricing is available.
+- **Admin AI settings** now support a rolling per-session AI request cap and reset window in addition to the existing monthly budget and workload-specific limits.
+- **MarkItDown capability coverage** now includes packaged support for all upstream extras in both the desktop and web Python package metadata, aligning installed behavior with the broader conversion formats already documented by MarkItDown upstream.
+- **Quick Start audio routing** now offers both Convert and BITS Whisperer for `.mp3` and `.wav` files, while keeping longer or broader audio workflows on Whisperer.
 
 ### Fixed
 
@@ -36,6 +44,9 @@ Releases are tagged in the [GitHub repository](https://github.com/Community-Acce
 - **AI Playground response cards** now keep model/copy controls after the response text instead of embedding them in the response heading, and assistant message wrappers no longer add extra spoken labels beyond the heading structure.
 - **AI usage meter** now increments correctly for Ollama-backed chat turns by reading the current quota field returned by the server.
 - **AI Playground long-running responses** now announce progress to screen reader users after a delay and announce completion when a delayed response arrives, instead of relying only on the visible thinking indicator.
+- **Server-side AI feature gates** now recognize built-in server-provider paths for alt-text and Whisperer instead of requiring a personal provider session before those features can appear.
+- **Legacy alt-text suggestion endpoint** no longer stops at DOCX media only. It now uses the shared visual extractor so PowerPoint, Excel, PDF, EPUB, and standalone image workflows stay aligned.
+- **Quick Start and Speech Studio routing** no longer advertise document-chat or speech actions for uploaded audio files that are outside those workflows.
 
 ---
 

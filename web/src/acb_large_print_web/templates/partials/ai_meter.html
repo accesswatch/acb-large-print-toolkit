@@ -19,6 +19,7 @@
     <span id="ai-meter-session-time">Key session: checking…</span>
     <button type="button" class="ai-meter__session-btn" id="ai-meter-extend-btn">Keep active</button>
   </span>
+  <span class="ai-meter__detail" id="ai-meter-quota" hidden></span>
   <a href="{{ url_for('ai.settings_ai_page') }}" class="ai-meter__link" aria-label="AI settings -- change model or remove key">Change</a>
 </div>
 {% elif ai_entry_enabled is defined and ai_entry_enabled and ai_configured is defined and ai_configured %}
@@ -37,6 +38,7 @@
   <span class="ai-meter__bar" role="progressbar" aria-label="Monthly AI budget remaining" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="ai-meter-bar">
     <span class="ai-meter__bar-fill" id="ai-meter-bar-fill" style="width: 0%;"></span>
   </span>
+  <span class="ai-meter__detail" id="ai-meter-quota" hidden></span>
 </div>
 {% elif ai_entry_enabled is defined and ai_entry_enabled %}
 <div class="ai-meter ai-meter--inactive">

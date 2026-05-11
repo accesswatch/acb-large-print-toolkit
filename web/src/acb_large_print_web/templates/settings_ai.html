@@ -30,7 +30,7 @@
         <h4>Key session</h4>
         <p><strong>Time remaining:</strong> <span class="provider-session-countdown">Checking…</span></p>
         <div class="form-actions">
-          <button type="button" class="btn btn--secondary provider-session-extend-btn">Keep {{ provider.label }} active for another {{ ai_session_duration_minutes }} minutes</button>
+          <button type="button" class="btn btn--secondary provider-session-extend-btn">Keep {{ provider.label }} active for another {{ ai_runtime_settings.extend_minutes }} minutes</button>
           <button type="button" class="btn btn--secondary provider-remove-btn" data-provider="{{ provider.id }}" data-remove-url="{{ url_for('ai.save_ollama_key', provider=provider.id) }}">Remove {{ provider.label }}</button>
         </div>
         <div class="provider-session-status" role="status" aria-live="polite" aria-atomic="true"></div>
@@ -42,6 +42,49 @@
 
 <hr>
 {% endif %}
+
+<section>
+  <h2 id="ai-preferences-heading">Session and Prompt Settings</h2>
+  <p>These settings apply only to your current browser session. Adjust how long personal provider keys stay active, how much time each extension adds, and the prompt text GLOW sends for image-description workflows.</p>
+
+  <div id="ai-preferences-status" role="status" aria-live="polite" aria-atomic="true"></div>
+
+  <form id="ai-preferences-form" novalidate data-save-url="{{ url_for('ai.save_ai_preferences') }}">
+    <fieldset>
+      <legend>Provider key lease timing</legend>
+      <div class="form-group">
+        <label for="session-minutes">Key session length in minutes</label>
+        <input type="number" id="session-minutes" name="session_minutes" min="15" max="1440" step="15" value="{{ ai_runtime_settings.session_minutes }}" aria-describedby="session-minutes-hint">
+        <p id="session-minutes-hint" class="help-text">When you save a personal AI provider key, GLOW keeps it active for this long before the session expires.</p>
+      </div>
+
+      <div class="form-group">
+        <label for="extend-minutes">Add this many minutes when extending a key</label>
+        <input type="number" id="extend-minutes" name="extend_minutes" min="15" max="1440" step="15" value="{{ ai_runtime_settings.extend_minutes }}" aria-describedby="extend-minutes-hint">
+        <p id="extend-minutes-hint" class="help-text">This controls the amount added when you use the Keep active button on an existing provider session.</p>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Image prompt customization</legend>
+      <div class="form-group">
+        <label for="alt-text-prompt">Alternative text suggestion prompt</label>
+        <textarea id="alt-text-prompt" name="alt_text_prompt" rows="6" aria-describedby="alt-text-prompt-hint">{{ ai_prompt_settings.alt_text_prompt }}</textarea>
+        <p id="alt-text-prompt-hint" class="help-text">Used by the alt-text helper. GLOW still appends document name, nearby text, image position, and a strict return-format instruction automatically.</p>
+      </div>
+
+      <div class="form-group">
+        <label for="markitdown-image-prompt">MarkItDown image description prompt</label>
+        <textarea id="markitdown-image-prompt" name="markitdown_image_prompt" rows="5" aria-describedby="markitdown-image-prompt-hint">{{ ai_prompt_settings.markitdown_image_prompt }}</textarea>
+        <p id="markitdown-image-prompt-hint" class="help-text">Reserved for MarkItDown image-description workflows so you can align extracted image descriptions with your editorial style when that path is enabled.</p>
+      </div>
+    </fieldset>
+
+    <div class="form-actions settings-ai-feature-actions">
+      <button type="submit" id="save-preferences-btn" class="btn btn--secondary">Save session and prompt settings</button>
+    </div>
+  </form>
+</section>
 
 <section>
   <h2 id="key-setup-heading">Add or update a provider</h2>

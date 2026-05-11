@@ -204,7 +204,7 @@
         {% endif %}
 
         <!-- ── Group 5: Explore and Learn ─────────────────────────── -->
-        <li class="sidebar-group sidebar-group--explore{% if request.blueprint in ['ai', 'chat', 'guidelines', 'rules_ref', 'guide', 'faq', 'settings'] %} sidebar-group--active{% endif %}">
+        <li class="sidebar-group sidebar-group--explore{% if request.blueprint in ['ai', 'chat', 'alt_text', 'guidelines', 'rules_ref', 'guide', 'faq', 'settings'] %} sidebar-group--active{% endif %}">
           <span class="sidebar-group-label" id="nav-group-explore">Explore and Learn</span>
           <ul aria-labelledby="nav-group-explore" role="list">
             {% if ai_entry_enabled %}
@@ -224,6 +224,16 @@
                  {% if request.blueprint == 'chat' %}aria-current="page"{% endif %}>
                 <svg class="nav-icon" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M2 2h12v9H5L2 14V2z" fill="currentColor"/><path d="M5 6h6M5 9h3" stroke="white" stroke-width="1.5" stroke-linecap="round"/></svg>
                 Document Chat
+              </a>
+            </li>
+            {% endif %}
+            {% if ai_alt_text_enabled is defined and ai_alt_text_enabled %}
+            <li>
+              <a href="{{ url_for('alt_text.alt_text_form') }}"
+                 class="sidebar-link{% if request.blueprint == 'alt_text' %} sidebar-link--active{% endif %}"
+                 {% if request.blueprint == 'alt_text' %}aria-current="page"{% endif %}>
+                <svg class="nav-icon" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><rect x="2" y="3" width="12" height="10" rx="1.5" stroke="currentColor" stroke-width="1.6" fill="none"/><circle cx="6" cy="7" r="1.3" fill="currentColor"/><path d="M4 11l2.6-2.7 2.1 1.9 2.3-2.5L12 11" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+                Alt-Text Helper
               </a>
             </li>
             {% endif %}
@@ -304,7 +314,7 @@
     <div class="content-area">
 
       <main id="main">
-        {% block breadcrumb %}{% if request.blueprint in ['audit', 'site_audit'] %}<p class="page-breadcrumb"><span class="page-breadcrumb__label" data-group="assess">Assess</span></p>{% elif request.blueprint in ['fix', 'template'] %}<p class="page-breadcrumb"><span class="page-breadcrumb__label" data-group="fix">Fix and Build</span></p>{% elif request.blueprint in ['convert', 'export', 'braille'] %}<p class="page-breadcrumb"><span class="page-breadcrumb__label" data-group="transform">Transform</span></p>{% elif request.blueprint in ['speech', 'whisperer'] %}<p class="page-breadcrumb"><span class="page-breadcrumb__label" data-group="listen">Listen and Speak</span></p>{% elif request.blueprint in ['ai', 'chat', 'magic', 'guidelines', 'rules_ref', 'guide', 'faq', 'settings'] %}<p class="page-breadcrumb"><span class="page-breadcrumb__label" data-group="explore">Explore and Learn</span></p>{% endif %}{% endblock %}
+        {% block breadcrumb %}{% if request.blueprint in ['audit', 'site_audit'] %}<p class="page-breadcrumb"><span class="page-breadcrumb__label" data-group="assess">Assess</span></p>{% elif request.blueprint in ['fix', 'template'] %}<p class="page-breadcrumb"><span class="page-breadcrumb__label" data-group="fix">Fix and Build</span></p>{% elif request.blueprint in ['convert', 'export', 'braille'] %}<p class="page-breadcrumb"><span class="page-breadcrumb__label" data-group="transform">Transform</span></p>{% elif request.blueprint in ['speech', 'whisperer'] %}<p class="page-breadcrumb"><span class="page-breadcrumb__label" data-group="listen">Listen and Speak</span></p>{% elif request.blueprint in ['ai', 'chat', 'alt_text', 'magic', 'guidelines', 'rules_ref', 'guide', 'faq', 'settings'] %}<p class="page-breadcrumb"><span class="page-breadcrumb__label" data-group="explore">Explore and Learn</span></p>{% endif %}{% endblock %}
         <h1>{% block heading %}{{ brand_heading_label }}{% endblock %}</h1>
 
         {% with messages = get_flashed_messages(with_categories=true) %}

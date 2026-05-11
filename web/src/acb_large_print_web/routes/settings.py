@@ -21,7 +21,9 @@ from acb_large_print_web.user_ai import (
     get_user_active_providers,
     get_user_ai_feature_flags,
     get_user_ai_feature_models,
+    get_user_ai_prompt_settings,
     get_user_ai_provider_and_model_for,
+    get_user_ai_runtime_settings,
     get_validated_key_hash,
     is_user_provider_configured,
     parse_model_ref,
@@ -32,6 +34,8 @@ from acb_large_print_web.user_ai import (
     remove_user_provider,
     save_user_ai_feature_flags,
     save_user_ai_feature_models,
+    save_user_ai_prompt_settings,
+    save_user_ai_runtime_settings,
     save_user_provider,
     set_validated_key_hash,
     user_ai_session_minutes,
@@ -147,6 +151,8 @@ def _render_ai_settings_page():
         for feature in USER_AI_FEATURE_DEFAULTS
     }
     primary_provider = primary_active_provider()
+    runtime_settings = get_user_ai_runtime_settings()
+    prompt_settings = get_user_ai_prompt_settings()
     return render_template(
         "settings_ai.html",
         ollama_active=is_user_provider_configured("ollama"),
@@ -161,6 +167,8 @@ def _render_ai_settings_page():
         ai_feature_models=feature_models,
         ai_feature_binding_defaults=feature_binding_defaults,
         ai_feature_model_options=feature_options,
+        ai_runtime_settings=runtime_settings,
+        ai_prompt_settings=prompt_settings,
         ai_session_duration_minutes=user_ai_session_minutes(),
     )
 
@@ -257,6 +265,29 @@ def save_ollama_features():
     save_user_ai_feature_models(feature_models)
     enabled = [USER_AI_FEATURE_LABELS.get(k, k) for k, v in updated.items() if v]
     return jsonify({"ok": True, "enabled": enabled})
+
+
+@settings_bp.route("/ai/preferences", methods=["POST"])
+@ai_bp.route("/preferences", methods=["POST"])
+def save_ai_preferences():
+    """Persist AI session-duration controls and prompt customizations."""
+    runtime = save_user_ai_runtime_settings(
+        request.form.get("session_minutes"),
+        request.form.get("extend_minutes"),
+    )
+    prompts = save_user_ai_prompt_settings(
+        {
+            "alt_text_prompt": request.form.get("alt_text_prompt"),
+            "markitdown_image_prompt": request.form.get("markitdown_image_prompt"),
+        }
+    )
+    return jsonify(
+        {
+            "ok": True,
+            "runtime": runtime,
+            "prompts": prompts,
+        }
+    )
 
 
 @settings_bp.route("/ai/validate", methods=["POST"])

@@ -9,10 +9,23 @@ import uuid
 from datetime import datetime
 from pathlib import Path
 
+from acb_large_print.converter import CONVERTIBLE_EXTENSIONS as MARKITDOWN_CONVERTIBLE_EXTENSIONS
+from acb_large_print.converter import MARKITDOWN_AUDIO_EXTENSIONS
+
 from werkzeug.datastructures import FileStorage
 from werkzeug.utils import secure_filename
 
 ALLOWED_EXTENSIONS = {".docx", ".xlsx", ".pptx", ".md", ".pdf", ".epub"}
+
+IMAGE_FILE_EXTENSIONS = {
+    ".jpg",
+    ".jpeg",
+    ".png",
+    ".gif",
+    ".webp",
+    ".bmp",
+    ".tiff",
+}
 
 # Audio extensions accepted by the BITS Whisperer route (/whisperer)
 # Includes Whisper API direct formats and formats that are normalized server-side.
@@ -30,9 +43,10 @@ AUDIO_EXTENSIONS = {
     ".mpga",
 }
 
-# Additional extensions accepted by the convert route (Pandoc + MarkItDown)
-# Audio is handled separately by /whisperer -- not included here
-CONVERT_EXTENSIONS = ALLOWED_EXTENSIONS | {
+# Additional extensions accepted by the convert route (Pandoc + MarkItDown).
+# MarkItDown audio is limited to short mp3/wav conversions; broader audio support
+# remains on the dedicated /whisperer route.
+CONVERT_EXTENSIONS = (ALLOWED_EXTENSIONS | {
     ".rst",
     ".odt",
     ".fodt",  # Flat OpenDocument Text
@@ -41,21 +55,11 @@ CONVERT_EXTENSIONS = ALLOWED_EXTENSIONS | {
     ".fods",  # Flat ODF Spreadsheet
     ".odp",  # LibreOffice Impress
     ".fodp",  # Flat ODF Presentation
-    ".html",
-    ".htm",  # MarkItDown
-    ".csv",
-    ".json",
-    ".xml",  # MarkItDown
-    ".zip",  # MarkItDown
-    # Image files (new in MarkItDown 0.2+, with optional LLM for alt text)
-    ".jpg",
-    ".jpeg",
-    ".png",
-    ".gif",
-    ".webp",
-    ".bmp",
-    ".tiff",
-}
+} | MARKITDOWN_CONVERTIBLE_EXTENSIONS)
+
+# Uploads that the AI alt-text helper can inspect directly because the file is
+# itself an image, embeds images, or can be rendered into visual pages.
+ALT_TEXT_SOURCE_EXTENSIONS = {".docx", ".xlsx", ".pptx", ".pdf", ".epub"} | IMAGE_FILE_EXTENSIONS
 
 # Human-readable format labels for error messages
 _FORMAT_LABELS = {

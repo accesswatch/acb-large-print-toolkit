@@ -18,8 +18,9 @@ GLOW 6.0.0 is the open source release that makes the project easier to join, eas
 2. **Feedback-to-issue automation** -- Feedback submissions can now collect a name and email for follow-up and sync directly into GitHub Issues when a token is configured.
 3. **Personal AI provider support with AI Playground (Beta)** -- Users can connect their own Ollama Cloud, OpenRouter, OpenAI, or Google Gemini API key and enable AI features. The playground is an experimental chat surface for testing compatible models without document context. You can explore model behavior, stream responses token-by-token, regenerate or stop responses, copy/export outputs, switch models mid-conversation, and navigate questions and answers directly using your keyboard or screen reader. Long-running replies now announce both in-progress and completed states to screen reader users. All conversation history is temporary and session-scoped.
 4. **Per-feature provider/model selection** -- Choose different compatible provider/model pairs for heading detection, MarkItDown support, the playground, alt-text suggestions, and Whisperer from a unified AI Features settings page. The interface filters out incompatible choices so vision and audio workflows only expose models that can support them.
-5. **Visible AI usage meter** -- The sidebar now shows a live AI usage summary that refreshes on page load and after AI actions, so users can see what they have used during the current session.
-6. **Clearer AI guidance** -- The About page and this user guide now explain what AI can do in short form even when AI is not yet enabled, so users can understand the capability before they turn it on.
+5. **Alt-Text Helper across visual formats** -- GLOW can now draft alternative text for standalone image files and visual content from Word, PowerPoint, Excel, PDF, and EPUB uploads from one shared helper surface.
+6. **Visible AI usage meter and cost preview** -- The sidebar now shows a live AI usage summary, while Document Chat and AI Playground can preview rough token/cost estimates before you send a request.
+7. **Clearer AI guidance** -- The About page and this user guide now explain what AI can do in short form even when AI is not yet enabled, so users can understand the capability before they turn it on.
 
 ### What stays simple
 
@@ -38,8 +39,10 @@ If you are deciding whether to turn AI on, here is the short version:
 - **Document Chat** remains a separate feature gate and is disabled by default in the personal-provider-first setup.
 
 - **AI Playground (Beta)** is a standalone chat surface where you can explore compatible personal-provider models, ask questions, and test model behavior before using AI in real accessibility workflows. It includes streaming responses, regenerate/stop controls, prompt templates, a quota status banner, Markdown export, and delayed screen reader announcements for in-progress and completed long-running replies.
+- **Alt-Text Helper** drafts editable alternative text for images, charts, slide visuals, rendered PDF pages, and other extracted visual items. It uses the alt-text model binding from AI Features and appends file-specific context automatically.
 
 - **Usage tracking** shows session-level request counts so you can see what you used while you were in GLOW.
+- **Cost preview and rolling session limits** show rough request cost before send and can enforce an admin-configured per-session AI request window with a reset countdown.
 
 - **Whisperer** is separate and only appears when an audio-transcription-capable provider path is active.
 

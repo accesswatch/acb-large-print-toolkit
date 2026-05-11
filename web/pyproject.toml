@@ -27,7 +27,7 @@ dependencies = [
     "flask-limiter>=4.0",
     "gunicorn>=25.0",
     "acb-large-print",
-    "markitdown[pdf,docx,xlsx,pptx]>=0.1.5",
+    "markitdown[all]>=0.1.5",
     "weasyprint>=68.0",
     "requests>=2.33.0",
     "mutagen>=1.47.0",

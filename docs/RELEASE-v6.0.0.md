@@ -51,6 +51,8 @@ What makes it magical:
 - Capability-aware filtering: GLOW only offers provider/model combinations that can actually support the selected feature, so vision and audio workflows do not expose broken choices
 - Temporary session history: conversations stay in your session only, never persisted by default, so exploration is safe and private
 - Typing indicator and smooth thinking animation: you see progress and feel heard while waiting for a response
+- Alt-Text Helper: AI-assisted alternative text drafting for standalone images plus visual content extracted from Word, PowerPoint, Excel, PDF, and EPUB uploads
+- Cost preview and rolling quota messaging: Document Chat and AI Playground now show rough token/cost estimates before send and display countdown-based session quota limits when configured
 
 AI setup improvements in this release:
 
@@ -60,6 +62,7 @@ AI setup improvements in this release:
 - Alt-text suggestions are only offered when a vision-capable provider/model is active
 - BITS Whisperer is only offered when an audio-transcription-capable provider path is active
 - Document Chat and General Chat are explicitly separated via feature flags
+- AI Features now let users tune key lease duration, extension duration, and the base prompts used for alt-text and MarkItDown image-description workflows without changing server environment variables
 
 Document Chat remains off by default in this release. The Playground stays as Beta to keep expectations clear while we refine the experience.
 

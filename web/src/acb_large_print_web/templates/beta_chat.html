@@ -106,7 +106,7 @@
 <section>
   <h2 id="send-heading" class="visually-hidden">Send a message</h2>
 
-  <form id="playground-form" novalidate aria-describedby="playground-instructions" data-stream-url="{{ url_for('playground.playground_stream') }}" data-send-url="{{ url_for('playground.playground_send') }}" data-clear-url="{{ url_for('playground.playground_clear') }}" data-quota-url="{{ url_for('playground.playground_quota') }}" data-regen-url="{{ url_for('playground.playground_regenerate') }}">
+  <form id="playground-form" novalidate aria-describedby="playground-instructions" data-stream-url="{{ url_for('playground.playground_stream') }}" data-send-url="{{ url_for('playground.playground_send') }}" data-clear-url="{{ url_for('playground.playground_clear') }}" data-quota-url="{{ url_for('playground.playground_quota') }}" data-regen-url="{{ url_for('playground.playground_regenerate') }}" data-estimate-url="{{ url_for('ai_usage.ai_estimate') }}">
     <p id="playground-instructions" class="help-text">
       Type a question or prompt and press <kbd>Enter</kbd> or the Send button.
       Press <kbd>Shift + Enter</kbd> for a new line.
@@ -137,6 +137,7 @@
       {% endfor %}
     </div>
     <p id="playground-char-count" class="help-text char-count" aria-live="off"></p>
+    <p id="playground-estimate" class="help-text" role="status" aria-live="polite" aria-atomic="true">Type a message to preview estimated tokens and cost.</p>
   </form>
 
   <div class="playground-actions">

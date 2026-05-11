@@ -116,7 +116,7 @@ def ai_whisperer_enabled() -> bool:
     return (
         _env_flag("GLOW_ENABLE_AI", False)
         and _env_flag("GLOW_ENABLE_AI_WHISPERER", True)
-        and any_user_provider_supports_feature("whisperer")
+        and (any_user_provider_supports_feature("whisperer") or is_whisper_configured())
     )
 
 
@@ -130,7 +130,7 @@ def ai_alt_text_enabled() -> bool:
     return (
         _env_flag("GLOW_ENABLE_AI", False)
         and _env_flag("GLOW_ENABLE_AI_ALT_TEXT", True)
-        and any_user_provider_supports_feature("alt_text")
+        and (any_user_provider_supports_feature("alt_text") or is_ai_configured())
     )
 
 

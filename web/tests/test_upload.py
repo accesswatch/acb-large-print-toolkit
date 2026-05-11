@@ -12,6 +12,7 @@ from acb_large_print_web.upload import (
     ALLOWED_EXTENSIONS,
     AUDIO_EXTENSIONS,
     CONVERT_EXTENSIONS,
+    MARKITDOWN_AUDIO_EXTENSIONS,
     UploadError,
     cleanup_token,
     get_temp_dir,
@@ -178,6 +179,12 @@ class TestUploadConstants:
         assert ".fods" in CONVERT_EXTENSIONS
         assert ".odp" in CONVERT_EXTENSIONS
         assert ".fodp" in CONVERT_EXTENSIONS
+        assert ".msg" in CONVERT_EXTENSIONS
+        assert ".mp3" in CONVERT_EXTENSIONS
+        assert ".wav" in CONVERT_EXTENSIONS
+
+    def test_markitdown_audio_extensions_are_limited(self):
+        assert MARKITDOWN_AUDIO_EXTENSIONS == {".mp3", ".wav"}
 
     def test_audio_extensions_include_cloud_supported_formats(self):
         assert ".mp3" in AUDIO_EXTENSIONS

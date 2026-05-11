@@ -71,7 +71,45 @@ def test_process_available_actions_hide_ai_when_gated(monkeypatch):
     assert audio_actions["whisperer"]["enabled"] is False
 
 
-def test_process_submit_rejects_audio_when_whisperer_is_gated(
+def test_process_available_actions_offer_convert_and_whisperer_for_markitdown_audio(monkeypatch):
+    from acb_large_print_web.routes import process as process_route
+
+    monkeypatch.setattr(process_route, "ai_chat_enabled", lambda: False)
+    monkeypatch.setattr(process_route, "ai_whisperer_enabled", lambda: True)
+
+    actions = process_route._get_available_actions(".mp3")
+
+    assert actions["convert"]["enabled"] is True
+    assert actions["whisperer"]["enabled"] is True
+
+
+def test_server_provider_paths_enable_alt_text_and_whisperer(monkeypatch):
+    monkeypatch.setattr(ai_features, "any_user_provider_supports_feature", lambda feature: False)
+    monkeypatch.setattr(ai_features, "is_whisper_configured", lambda: True)
+    monkeypatch.setattr(ai_features, "is_ai_configured", lambda: True)
+    monkeypatch.setenv("GLOW_ENABLE_AI", "1")
+    monkeypatch.setenv("GLOW_ENABLE_AI_ALT_TEXT", "1")
+    monkeypatch.setenv("GLOW_ENABLE_AI_WHISPERER", "1")
+
+    assert ai_features.ai_alt_text_enabled() is True
+    assert ai_features.ai_whisperer_enabled() is True
+
+
+def test_markitdown_audio_guardrail_flags_large_sync_audio(tmp_path, monkeypatch):
+    from acb_large_print_web.routes import convert as convert_route
+
+    audio_path = tmp_path / "sample.mp3"
+    audio_path.write_bytes(b"0" * (26 * 1024 * 1024))
+    monkeypatch.setattr(convert_route, "_estimate_audio_minutes", lambda path: 2.0)
+
+    message = convert_route._markitdown_audio_guardrail_message(audio_path)
+
+    assert message is not None
+    assert "MarkItDown audio conversion" in message
+    assert "BITS Whisperer" in message
+
+
+def test_process_submit_rejects_whisperer_only_audio_when_whisperer_is_gated(
     client, monkeypatch
 ):
     from acb_large_print_web.routes import process as process_route
@@ -80,7 +118,7 @@ def test_process_submit_rejects_audio_when_whisperer_is_gated(
 
     response = client.post(
         "/process/",
-        data={"file": (io.BytesIO(b"fake audio"), "sample.mp3")},
+        data={"file": (io.BytesIO(b"fake audio"), "sample.m4a")},
         content_type="multipart/form-data",
     )
 

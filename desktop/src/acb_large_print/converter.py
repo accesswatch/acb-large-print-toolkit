@@ -1,7 +1,9 @@
-"""Convert documents to Markdown using MarkItDown.
+"""Convert documents and remote sources to Markdown using MarkItDown.
 
 Wraps Microsoft's MarkItDown library for document-to-markdown conversion.
-Supports: .docx, .xlsx, .pptx, .pdf, .html, .csv, .json, .xml, .epub, .zip.
+Supports: .docx, .xlsx, .xls, .pptx, .pdf, .html, .csv, .json, .xml,
+.epub, .zip, .msg, common image formats, and HTTP(S) sources such as web pages
+and YouTube transcript URLs.
 
 Audio transcription (.mp3, .wav, .m4a, .ogg, .flac, .aac, .opus) is handled
 by whisper_convert() using faster-whisper (local CPU inference via CTranslate2).
@@ -13,6 +15,7 @@ from __future__ import annotations
 import logging
 import os
 from pathlib import Path
+from urllib.parse import urlparse
 
 log = logging.getLogger("acb_large_print")
 
@@ -37,7 +40,10 @@ def _resolve_whisper_cache_dir() -> Path:
     cache_dir.mkdir(parents=True, exist_ok=True)
     return cache_dir
 
-# File extensions MarkItDown can convert (no audio -- handled by whisper_convert)
+# Audio formats that MarkItDown can transcribe directly.
+MARKITDOWN_AUDIO_EXTENSIONS = {".mp3", ".wav"}
+
+# File extensions MarkItDown can convert locally.
 CONVERTIBLE_EXTENSIONS = {
     ".docx",
     ".xlsx",
@@ -51,6 +57,7 @@ CONVERTIBLE_EXTENSIONS = {
     ".xml",
     ".epub",
     ".zip",
+    ".msg",
     # Image files (new in MarkItDown 0.2+, with optional LLM for descriptions)
     ".jpg",
     ".jpeg",
@@ -59,9 +66,11 @@ CONVERTIBLE_EXTENSIONS = {
     ".webp",
     ".bmp",
     ".tiff",
+    *MARKITDOWN_AUDIO_EXTENSIONS,
 }
 
-# Audio file extensions handled by faster-whisper
+# Audio file extensions handled by faster-whisper.
+# This broader set remains available for the dedicated Whisper conversion path.
 AUDIO_EXTENSIONS = {".mp3", ".wav", ".m4a", ".ogg", ".flac", ".aac", ".opus"}
 
 # YouTube URL patterns (regex strings for detection)
@@ -70,6 +79,8 @@ _YOUTUBE_URL_PATTERNS = (
     r"https?://youtu\.be/",
     r"https?://(?:www\.)?youtube\.com/playlist\?list=",
 )
+
+_SOURCE_URL_SCHEMES = {"http", "https"}
 
 
 def convert_with_llm_descriptions(
@@ -218,6 +229,42 @@ def youtube_to_markdown(
         return output_path, text
     else:
         return None, text
+
+
+def convert_source_to_markdown(
+    source: str,
+    output_path: Path | None = None,
+) -> tuple[Path | None, str]:
+    """Convert an HTTP(S) source such as a web page or YouTube URL to Markdown."""
+    source = str(source or "").strip()
+    parsed = urlparse(source)
+    if parsed.scheme.lower() not in _SOURCE_URL_SCHEMES or not parsed.netloc:
+        raise ValueError(
+            "Source URL must start with http:// or https:// and include a host."
+        )
+
+    try:
+        from markitdown import MarkItDown  # type: ignore[import-untyped]
+    except ImportError as exc:
+        raise RuntimeError(
+            "MarkItDown is not installed. "
+            "Install it with: pip install 'markitdown[all]'"
+        ) from exc
+
+    if output_path is not None:
+        output_path = Path(output_path)
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    log.info("Fetching remote source via MarkItDown: %s", source)
+    md = MarkItDown(enable_plugins=False)
+    result = md.convert(source)
+    text = result.text_content or ""
+
+    if output_path is not None:
+        output_path.write_text(text, encoding="utf-8")
+        log.info("Remote source saved: %d characters", len(text))
+
+    return output_path, text
 
 
 def _bbox_overlaps_table(text_bbox: tuple, table_bbox: tuple) -> bool:

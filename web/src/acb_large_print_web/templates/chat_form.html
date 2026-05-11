@@ -17,6 +17,9 @@
 {% if quota %}
 <div class="info-box" role="status">
   <p><strong>Usage status:</strong> {{ quota.chat_remaining_today }} chat turn{{ 's' if quota.chat_remaining_today != 1 else '' }} remaining today in this session.</p>
+  {% if quota.session_quota_enabled %}
+  <p class="field-hint"><strong>Rolling session limit:</strong> {{ quota.session_requests_remaining }} AI request{{ 's' if quota.session_requests_remaining != 1 else '' }} remaining in the current {{ quota.session_reset_hours }}-hour window.</p>
+  {% endif %}
   <p class="field-hint">Large documents and image-assisted questions use bounded queue waits under load. If capacity is full, retry shortly.</p>
 </div>
 {% endif %}
@@ -43,19 +46,12 @@
 
       {% if turn.tool_calls %}
       <h3>Tools Used</h3>
-      <ul class="tool-list">
+      <div class="tool-list" role="list" aria-label="Tools used in this turn">
         {% for tool in turn.tool_calls %}
-        <li>
-          {% if tool.name %}
-          <code>{{ tool.name }}</code>
-          {% elif tool.escalated %}
-          <code>fallback-escalation</code>
-          {% else %}
-          <code>tool</code>
-          {% endif %}
-        </li>
+        {% set tool_label = tool.name if tool.name else ('fallback-escalation' if tool.escalated else 'tool') %}
+        <div role="listitem"><code>{{ tool_label }}</code></div>
         {% endfor %}
-      </ul>
+      </div>
       {% endif %}
 
       {% if turn.answer %}
@@ -83,7 +79,7 @@
 <section>
   <h2 id="ask-heading">Ask a Question</h2>
 
-  <form method="post" action="{{ url_for('chat.chat_submit') }}" novalidate>
+  <form method="post" action="{{ url_for('chat.chat_submit') }}" novalidate data-estimate-url="{{ url_for('ai_usage.ai_estimate') }}" data-conversation-count="{{ conversation|length }}">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <input type="hidden" name="token" value="{{ token }}">
 
@@ -104,6 +100,7 @@
       <p id="question-hint" class="field-hint">
         Tip: Use specific keywords or section names. The AI will search the document and use tools like table extraction or section summarization to answer.
       </p>
+      <p id="chat-cost-preview" class="field-hint" role="status" aria-live="polite" aria-atomic="true">Type a question to preview estimated tokens and cost.</p>
     </fieldset>
 
     <button type="submit" class="btn-primary" id="chat-ask-btn">Ask Question</button>
@@ -114,13 +111,77 @@
   (function () {
     'use strict';
     var form = document.querySelector('form[action*="chat_submit"]');
+    var question = document.getElementById('question');
+    var estimateEl = document.getElementById('chat-cost-preview');
+    var estimateTimer = null;
     if (!form) return;
+
+    function getCsrfToken() {
+      var meta = document.querySelector('meta[name="csrf-token"]');
+      return meta ? meta.getAttribute('content') || '' : '';
+    }
+
+    function renderEstimate(payload) {
+      if (!estimateEl) return;
+      if (!question || !question.value.trim()) {
+        estimateEl.textContent = 'Type a question to preview estimated tokens and cost.';
+        return;
+      }
+      if (!payload || !payload.estimate) {
+        estimateEl.textContent = 'Estimate unavailable right now.';
+        return;
+      }
+      var parts = ['Estimated tokens: ' + Number(payload.estimate.estimated_total_tokens || 0)];
+      if (payload.estimate.cost_available && payload.estimate.estimated_cost_usd != null) {
+        parts.push('Estimated cost: $' + Number(payload.estimate.estimated_cost_usd).toFixed(4));
+      } else {
+        parts.push('Estimated cost unavailable for this provider/model');
+      }
+      if (payload.quota && payload.quota.budget_remaining_usd != null) {
+        parts.push('Budget left: $' + Number(payload.quota.budget_remaining_usd).toFixed(2));
+      }
+      estimateEl.textContent = parts.join(' | ');
+    }
+
+    function fetchEstimate() {
+      if (!question || !form.dataset.estimateUrl) return;
+      if (!question.value.trim()) {
+        renderEstimate(null);
+        return;
+      }
+      fetch(form.dataset.estimateUrl, {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': getCsrfToken()
+        },
+        body: JSON.stringify({
+          feature: 'chat',
+          message: question.value,
+          token: document.getElementById('token') ? document.getElementById('token').value : '',
+          conversation_messages: Number(form.dataset.conversationCount || 0) * 2
+        })
+      })
+        .then(function (response) { return response.json(); })
+        .then(function (payload) { if (payload && payload.ok) renderEstimate(payload); })
+        .catch(function () { });
+    }
+
+    if (question) {
+      question.addEventListener('input', function () {
+        if (estimateTimer) clearTimeout(estimateTimer);
+        estimateTimer = setTimeout(fetchEstimate, 250);
+      });
+    }
+
     form.addEventListener('submit', function () {
       var statusEl = document.getElementById('chat-processing-status');
       var btn = document.getElementById('chat-ask-btn');
       if (statusEl) statusEl.textContent = 'Asking the AI\u2026 This can take up to 30 seconds for complex questions.';
       if (btn) { btn.disabled = true; btn.textContent = 'Thinking\u2026'; }
     });
+    fetchEstimate();
   }());
   </script>
 

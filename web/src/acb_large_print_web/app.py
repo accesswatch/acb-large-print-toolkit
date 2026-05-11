@@ -384,6 +384,7 @@ def create_app(config: dict | None = None) -> Flask:
     from .routes.magic import magic_bp
     from .routes.site_audit import site_audit_bp
     from .routes.ai_usage import ai_usage_bp
+    from .routes.alt_text import alt_text_bp
 
     app.register_blueprint(main_bp)
     app.register_blueprint(consent_bp, url_prefix="/consent")
@@ -414,6 +415,7 @@ def create_app(config: dict | None = None) -> Flask:
     app.register_blueprint(magic_bp, url_prefix="/magic")
     app.register_blueprint(site_audit_bp, url_prefix="/site-audit")
     app.register_blueprint(ai_usage_bp, url_prefix="/ai/usage")
+    app.register_blueprint(alt_text_bp, url_prefix="/alt-text")
 
     # Configure speech engine model directory from instance path
     try:

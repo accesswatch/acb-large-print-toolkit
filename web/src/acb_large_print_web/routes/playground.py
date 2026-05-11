@@ -113,9 +113,13 @@ def playground_send():
         return jsonify({"ok": False, "error": f"Message too long (max {_MAX_QUESTION_LEN} characters)."}), 400
 
     from ..ai_gateway import chat as gateway_chat
+    from ..ai_gateway import get_quota_status, make_session_hash
 
     history = _get_history()
     sess_hash = _session_hash()
+    quota = get_quota_status(sess_hash)
+    if quota.get("session_quota_enabled") and not quota.get("session_available", True):
+        return jsonify({"ok": False, "error": "This session has reached the current AI request limit. Please wait for the reset window before sending more requests."}), 429
 
     try:
         reply, _ = gateway_chat(
@@ -167,6 +171,9 @@ def playground_stream():
 
     history = _get_history()
     sess_hash = _session_hash()
+    quota = get_quota_status(sess_hash)
+    if quota.get("session_quota_enabled") and not quota.get("session_available", True):
+        return jsonify({"ok": False, "error": "This session has reached the current AI request limit. Please wait for the reset window before sending more requests."}), 429
 
     @stream_with_context
     def _event_stream():
@@ -230,8 +237,6 @@ def playground_set_model():
 @playground_bp.route("/quota", methods=["GET"])
 def playground_quota():
     """Return session quota status for UI meter/warnings."""
-    from ..ai_gateway import get_quota_status
-
     sess_hash = _session_hash()
     quota = get_quota_status(sess_hash)
     return jsonify({"ok": True, "quota": quota})
@@ -258,6 +263,9 @@ def playground_regenerate():
     from ..ai_gateway import chat as gateway_chat
 
     sess_hash = _session_hash()
+    quota = get_quota_status(sess_hash)
+    if quota.get("session_quota_enabled") and not quota.get("session_available", True):
+        return jsonify({"ok": False, "error": "This session has reached the current AI request limit. Please wait for the reset window before sending more requests."}), 429
     try:
         reply, _ = gateway_chat(
             question=last_user,

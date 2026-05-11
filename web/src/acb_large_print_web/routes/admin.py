@@ -793,6 +793,8 @@ def admin_ai_settings() -> Any:
                 "monthly_budget_usd": float(request.form.get("monthly_budget_usd") or "20"),
                 "chat_daily_limit": int(request.form.get("chat_daily_limit") or "50"),
                 "audio_monthly_min": int(request.form.get("audio_monthly_min") or "100"),
+                "session_quota_per_session": int(request.form.get("session_quota_per_session") or "0"),
+                "quota_reset_hours": int(request.form.get("quota_reset_hours") or "24"),
                 "whisper_model": (request.form.get("whisper_model") or "openai/whisper-large-v3").strip(),
             }
 
@@ -807,6 +809,10 @@ def admin_ai_settings() -> Any:
                 raise ValueError("Chat daily limit cannot be negative")
             if updates["audio_monthly_min"] < 0:
                 raise ValueError("Audio monthly limit cannot be negative")
+            if updates["session_quota_per_session"] < 0:
+                raise ValueError("Session AI request limit cannot be negative")
+            if updates["quota_reset_hours"] <= 0:
+                raise ValueError("Session quota reset hours must be greater than 0")
             if not updates["default_model"]:
                 raise ValueError("Default model is required")
             if not updates["fallback_model"]:

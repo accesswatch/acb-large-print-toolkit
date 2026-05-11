@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 import uuid
 
-from flask import Blueprint, Response, abort, render_template, request, url_for
+from flask import Blueprint, Response, abort, render_template, request, session, url_for
 from werkzeug.utils import secure_filename as _sf
 
 import re
@@ -313,22 +313,23 @@ def suggest_alt_text():
     """Return AI-generated alt-text suggestions for images in a preserved document.
 
     Requires a live chat_token (the document must still be on the server),
-    an image index (0-based), and the AI alt-text feature to be enabled.
-    Only DOCX files are supported for now.
+    an item index (0-based), and the AI alt-text feature to be enabled.
+    Supports standalone images plus Word, PowerPoint, Excel, PDF, and EPUB files.
 
     Request (JSON or form):
         token        str   Chat/audit session token
-        image_index  int   0-based index of the image in the document
+        image_index  int   0-based index of the visual item in the document
 
     Response (JSON):
         {suggestion: str} on success
         {error: str}      on failure
     """
     from ..ai_features import ai_alt_text_enabled
-    from ..upload import get_temp_dir, ALLOWED_EXTENSIONS
-    from ..ai_gateway import describe_image
-    import zipfile as _zf
-    import hashlib as _hl
+    from ..ai_gateway import chat as gateway_chat, describe_image, make_session_hash
+    from ..gating import GatingError, ai_gate, vision_gate
+    from ..upload import ALT_TEXT_SOURCE_EXTENSIONS, get_temp_dir
+    from ..user_ai import build_alt_text_prompt
+    from ..visual_items import extract_visual_items
 
     if not ai_alt_text_enabled():
         return {"error": "AI alt-text suggestions are not enabled on this server."}, 503
@@ -346,57 +347,54 @@ def suggest_alt_text():
     if temp_dir is None:
         return {"error": "Session expired. Please re-audit the document."}, 410
 
-    # Find the document in the temp dir
     doc_path = None
     for f in sorted(temp_dir.iterdir()):
-        if f.is_file() and f.suffix.lower() in ALLOWED_EXTENSIONS:
+        if f.is_file() and f.suffix.lower() in ALT_TEXT_SOURCE_EXTENSIONS:
             doc_path = f
             break
 
-    if doc_path is None or doc_path.suffix.lower() != ".docx":
-        return {"error": "Alt-text suggestions are only available for Word (.docx) documents."}, 400
+    if doc_path is None:
+        return {"error": "No supported visual source was found in this session."}, 400
 
-    # Extract images from the DOCX zip
-    try:
-        images: list[tuple[str, bytes]] = []  # (media filename, bytes)
-        with _zf.ZipFile(str(doc_path), "r") as z:
-            for name in sorted(z.namelist()):
-                if name.startswith("word/media/") and not name.endswith("/"):
-                    ext = Path(name).suffix.lower()
-                    if ext in {".png", ".jpg", ".jpeg", ".gif", ".bmp", ".tiff", ".webp"}:
-                        images.append((name, z.read(name)))
-    except Exception:
-        return {"error": "Could not read images from the document."}, 500
-
-    if not images:
-        return {"error": "No images found in this document."}, 404
-
-    if image_index >= len(images):
+    items = extract_visual_items(doc_path)
+    if not items:
+        return {"error": "No visual items found in this file."}, 404
+    if image_index >= len(items):
         image_index = 0
 
-    img_name, img_bytes = images[image_index]
-    ext = Path(img_name).suffix.lower()
-    mime_map = {
-        ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg",
-        ".gif": "image/gif", ".bmp": "image/bmp", ".webp": "image/webp",
-        ".tiff": "image/tiff",
-    }
-    mime_type = mime_map.get(ext, "image/png")
-    session_hash = _hl.sha256(token.encode()).hexdigest()
+    item = items[image_index]
+    session_hash = make_session_hash(session.get("_id", "") or token)
+    prompt = build_alt_text_prompt(
+        document_name=doc_path.name,
+        image_index=image_index,
+        total_images=len(items),
+        current_alt_text=str(item.get("current_alt_text") or ""),
+        surrounding_text=list(item.get("context_lines") or []),
+    )
 
     try:
-        suggestion = describe_image(
-            img_bytes,
-            mime_type,
-            "Provide a concise, meaningful alt-text description (under 125 characters) "
-            "for this image suitable for use in an accessible document. "
-            "Focus on what the image conveys, not its visual style.",
-            session_hash,
-        )
+        if item.get("text_only"):
+            with ai_gate(wait_seconds=30):
+                suggestion, _ = gateway_chat(
+                    question=prompt,
+                    system_prompt="You draft WCAG 2.2 AA-compliant alternative text. Return only the alt text.",
+                    session_hash=session_hash,
+                    feature="alt_text",
+                )
+        else:
+            with vision_gate(wait_seconds=20):
+                suggestion = describe_image(
+                    bytes(item.get("image_bytes") or b""),
+                    str(item.get("mime_type") or "image/png"),
+                    prompt,
+                    session_hash,
+                )
+    except GatingError:
+        return {"error": "Vision processing is busy right now. Please try again shortly."}, 503
     except Exception as exc:
         return {"error": str(exc)}, 503
 
-    return {"suggestion": suggestion, "image_index": image_index, "total_images": len(images)}
+    return {"suggestion": str(suggestion).strip(), "image_index": image_index, "total_images": len(items)}
 
 @audit_bp.route("/", methods=["POST"])
 @limiter.limit(

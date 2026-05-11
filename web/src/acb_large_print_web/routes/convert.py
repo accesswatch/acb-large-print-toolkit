@@ -17,7 +17,11 @@ Markdown via MarkItDown, then that Markdown is fed to Pandoc. This transparently
 extends Pandoc output to PowerPoint, Excel, PDF, and other MarkItDown-readable formats.
 
 Audio transcription has its own dedicated route at /whisperer (BITS Whisperer).
+Short `.mp3` and `.wav` files may also be converted to Markdown through
+MarkItDown in the standard Convert flow.
 """
+
+import os
 
 from flask import Blueprint, abort, current_app, redirect, render_template, request, send_file, url_for
 
@@ -25,6 +29,7 @@ from werkzeug.utils import secure_filename as _secure_filename
 
 from acb_large_print.converter import (
     CONVERTIBLE_EXTENSIONS,
+    MARKITDOWN_AUDIO_EXTENSIONS,
     convert_to_markdown,
 )
 from acb_large_print.exporter import export_cms_fragment
@@ -59,7 +64,12 @@ from ..feature_flags import get_all_flags
 
 from pathlib import Path
 
+from mutagen import File as MutagenFile
+
 convert_bp = Blueprint("convert", __name__)
+
+_MARKITDOWN_AUDIO_MAX_MB = int(os.environ.get("GLOW_MARKITDOWN_AUDIO_MAX_MB", "25"))
+_MARKITDOWN_AUDIO_MAX_MINUTES = float(os.environ.get("GLOW_MARKITDOWN_AUDIO_MAX_MINUTES", "8"))
 
 # Sentinel path used to signal "skip ACB CSS" to pandoc_converter
 _NO_ACB_CSS_SENTINEL = Path("__no_acb_css__")
@@ -226,9 +236,61 @@ def _template_context(**extra):
         pandoc_native_exts=sorted(PANDOC_INPUT_EXTENSIONS),
         pandoc_effective_exts=sorted(_PANDOC_EFFECTIVE_EXTENSIONS),
         markitdown_exts=sorted(CONVERTIBLE_EXTENSIONS),
+        speech_source_exts=sorted(CONVERTIBLE_EXTENSIONS - MARKITDOWN_AUDIO_EXTENSIONS - {".zip"}),
         pipeline_exts=sorted(PIPELINE_INPUT_EXTENSIONS),
         libreoffice_exts=sorted(LIBREOFFICE_CONVERSIONS),
+        markitdown_audio_exts=sorted(MARKITDOWN_AUDIO_EXTENSIONS),
+        markitdown_audio_max_mb=_MARKITDOWN_AUDIO_MAX_MB,
+        markitdown_audio_max_minutes=_MARKITDOWN_AUDIO_MAX_MINUTES,
         **extra,
+    )
+
+
+def _estimate_audio_minutes(path: Path) -> float | None:
+    """Return the best-effort duration of an audio file in minutes."""
+    try:
+        audio = MutagenFile(path)
+    except Exception:
+        return None
+    info = getattr(audio, "info", None)
+    length_seconds = float(getattr(info, "length", 0) or 0)
+    if length_seconds <= 0:
+        return None
+    return length_seconds / 60.0
+
+
+def _markitdown_audio_guardrail_message(path: Path) -> str | None:
+    """Return a user-facing guardrail message for long MarkItDown audio jobs."""
+    ext = path.suffix.lower()
+    if ext not in MARKITDOWN_AUDIO_EXTENSIONS:
+        return None
+
+    size_mb = path.stat().st_size / (1024 * 1024)
+    duration_minutes = _estimate_audio_minutes(path)
+
+    too_large = size_mb > _MARKITDOWN_AUDIO_MAX_MB
+    too_long = (
+        duration_minutes is not None
+        and duration_minutes > _MARKITDOWN_AUDIO_MAX_MINUTES
+    )
+    if not too_large and not too_long:
+        return None
+
+    details: list[str] = []
+    if too_large:
+        details.append(
+            f"size {size_mb:.1f} MB exceeds the {int(_MARKITDOWN_AUDIO_MAX_MB)} MB web limit"
+        )
+    if too_long and duration_minutes is not None:
+        details.append(
+            f"duration {duration_minutes:.1f} minutes exceeds the {_MARKITDOWN_AUDIO_MAX_MINUTES:g}-minute web limit"
+        )
+
+    detail_text = "; ".join(details) if details else "the file is too large for synchronous conversion"
+    return (
+        "MarkItDown audio conversion in Convert is limited to short MP3/WAV files so the request does not time out. "
+        f"This file cannot be processed here because {detail_text}. "
+        "Use BITS Whisperer for larger recordings, background processing, or non-MP3/WAV audio formats."
     )
 
 
@@ -669,6 +731,9 @@ def convert_submit():
                     f"Supported: {', '.join(sorted(CONVERTIBLE_EXTENSIONS))}. "
                     "To transcribe audio, use BITS Whisperer."
                 )
+            audio_guardrail = _markitdown_audio_guardrail_message(saved_path)
+            if audio_guardrail:
+                raise UploadError(audio_guardrail)
             md_output = temp_dir / f"{saved_path.stem}.md"
             output_path, _ = convert_to_markdown(
                 saved_path,

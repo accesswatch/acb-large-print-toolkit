@@ -13,12 +13,14 @@ from __future__ import annotations
 
 from flask import Blueprint, render_template, request, redirect, url_for, jsonify
 
-from ..ai_features import ai_chat_enabled, ai_whisperer_enabled
+from ..ai_features import ai_alt_text_enabled, ai_chat_enabled, ai_whisperer_enabled
 from ..feature_flags import get_all_flags
 from ..upload import (
+    ALT_TEXT_SOURCE_EXTENSIONS,
     AUDIO_EXTENSIONS,
     CONVERT_EXTENSIONS,
     ALLOWED_EXTENSIONS,
+    MARKITDOWN_AUDIO_EXTENSIONS,
     UploadError,
     extend_upload_session,
     get_temp_dir,
@@ -48,6 +50,7 @@ def _get_available_actions(file_ext: str) -> dict[str, dict]:
     """
     ext = file_ext.lower()
     chat_enabled = ai_chat_enabled()
+    alt_text_enabled = ai_alt_text_enabled()
     whisperer_enabled = ai_whisperer_enabled()
     all_flags = get_all_flags()
 
@@ -96,7 +99,14 @@ def _get_available_actions(file_ext: str) -> dict[str, dict]:
             "route": "chat.chat_form",
             "icon": "💬",
             "description": "Ask questions about this document with accessibility-focused AI assistance",
-            "enabled": chat_enabled and ext in (CONVERT_EXTENSIONS | ALLOWED_EXTENSIONS),
+            "enabled": chat_enabled and ext in ((CONVERT_EXTENSIONS | ALLOWED_EXTENSIONS) - AUDIO_EXTENSIONS),
+        },
+        "alt_text": {
+            "name": "Alt-Text Helper",
+            "route": "alt_text.alt_text_form",
+            "icon": "🖼️",
+            "description": "Draft WCAG-friendly alternative text for images, charts, slide visuals, rendered PDF pages, and standalone image files.",
+            "enabled": alt_text_enabled and ext in ALT_TEXT_SOURCE_EXTENSIONS,
         },
         "export": {
             "name": "CMS Fragment",
@@ -117,20 +127,30 @@ def _get_available_actions(file_ext: str) -> dict[str, dict]:
             "route": "speech.speech_form",
             "icon": "🔊",
             "description": "Convert document text into downloadable speech audio and preview how it sounds.",
-            "enabled": bool(all_flags.get("GLOW_ENABLE_SPEECH", True)) and ext in CONVERT_EXTENSIONS,
+            "enabled": bool(all_flags.get("GLOW_ENABLE_SPEECH", True)) and ext in (CONVERT_EXTENSIONS - AUDIO_EXTENSIONS - {".zip"}),
         },
     }
 
-    # Special handling for audio
+    # Special handling for audio. Short mp3/wav files can use either the
+    # synchronous MarkItDown convert path or Whisperer. Other audio formats stay
+    # on Whisperer only.
     if ext in AUDIO_EXTENSIONS:
-        actions = {
-            "whisperer": {
-                "name": "BITS Whisperer",
-                "route": "whisperer.whisperer_form",
-                "icon": "🎤",
-                "description": "Transcribe to Markdown or Word document using secure cloud transcription",
-                "enabled": whisperer_enabled,
+        actions = {}
+        if ext in MARKITDOWN_AUDIO_EXTENSIONS:
+            actions["convert"] = {
+                "name": "Convert",
+                "route": "convert.convert_form",
+                "icon": "📄",
+                "description": "Use MarkItDown to extract a Markdown transcript from a short MP3 or WAV file. Best for quick clips and small uploads.",
+                "enabled": bool(all_flags.get("GLOW_ENABLE_CONVERTER", True))
+                and bool(all_flags.get("GLOW_ENABLE_CONVERT_TO_MARKDOWN", True)),
             }
+        actions["whisperer"] = {
+            "name": "BITS Whisperer",
+            "route": "whisperer.whisperer_form",
+            "icon": "🎤",
+            "description": "Transcribe to Markdown or Word document using secure cloud transcription with better support for larger or longer recordings.",
+            "enabled": whisperer_enabled,
         }
 
     return actions
@@ -241,6 +261,7 @@ def process_go(action: str):
         "template": "template.template_form",
         "speech": "speech.speech_form",
         "chat": "chat.chat_form",
+        "alt_text": "alt_text.alt_text_form",
         "whisperer": "whisperer.whisperer_form",
     }
 

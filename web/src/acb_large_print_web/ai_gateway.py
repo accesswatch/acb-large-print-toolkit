@@ -56,6 +56,7 @@ from .credentials import (
 from .user_ai import (
     USER_AI_PROVIDER_DEFINITIONS,
     any_user_provider_configured,
+    get_user_provider_models,
     infer_model_capabilities,
     format_model_ref,
     get_user_ai_provider_and_model_for,
@@ -84,6 +85,8 @@ _FALLBACK_MODEL: str = os.environ.get("AI_FALLBACK_MODEL", "openai/gpt-4o")
 _VISION_MODEL: str = os.environ.get("AI_VISION_MODEL", "openai/gpt-4o-mini")
 _ESCALATION_THRESH: float = float(os.environ.get("AI_ESCALATION_THRESH", "0.70"))
 _WHISPER_MODEL: str = os.environ.get("WHISPER_MODEL", "openai/whisper-large-v3")
+_SESSION_QUOTA_PER_SESSION: int = int(os.environ.get("GLOW_AI_QUOTA_PER_SESSION", "0"))
+_SESSION_QUOTA_RESET_HOURS: int = int(os.environ.get("GLOW_AI_QUOTA_RESET_HOURS", "24"))
 
 _DEFAULTS = {
     "monthly_budget_usd": _MONTHLY_BUDGET,
@@ -94,6 +97,8 @@ _DEFAULTS = {
     "vision_model": _VISION_MODEL,
     "escalation_thresh": _ESCALATION_THRESH,
     "whisper_model": _WHISPER_MODEL,
+    "session_quota_per_session": _SESSION_QUOTA_PER_SESSION,
+    "quota_reset_hours": _SESSION_QUOTA_RESET_HOURS,
 }
 
 _OPENROUTER_BASE = "https://openrouter.ai/api/v1"
@@ -361,7 +366,7 @@ def get_runtime_config() -> dict[str, Any]:
             v = row["value"]
             if k in {"monthly_budget_usd", "escalation_thresh"}:
                 cfg[k] = float(v)
-            elif k in {"chat_daily_limit", "audio_monthly_min"}:
+            elif k in {"chat_daily_limit", "audio_monthly_min", "session_quota_per_session", "quota_reset_hours"}:
                 cfg[k] = int(v)
             else:
                 cfg[k] = v
@@ -381,6 +386,8 @@ def update_runtime_config(updates: dict[str, Any]) -> None:
         "vision_model",
         "escalation_thresh",
         "whisper_model",
+        "session_quota_per_session",
+        "quota_reset_hours",
     }
     now = datetime.now(UTC).isoformat()
     with _db() as conn:
@@ -402,6 +409,84 @@ def _compute_cost(model: str, input_tokens: int, output_tokens: int) -> float:
     """Estimate cost in USD for a text completion."""
     rates = _COST_TABLE.get(model, {"input": 0.15, "output": 0.60})
     return (input_tokens * rates["input"] + output_tokens * rates["output"]) / 1_000_000
+
+
+def _pricing_for_model(provider: str | None, model: str) -> dict[str, float] | None:
+    model = str(model or "").strip()
+    if not model:
+        return None
+    if model in _COST_TABLE:
+        return dict(_COST_TABLE[model])
+    if provider == "openrouter":
+        for item in get_user_provider_models("openrouter"):
+            if str(item.get("id") or "") == model:
+                in_price = item.get("input_per_million")
+                out_price = item.get("output_per_million")
+                if in_price is not None and out_price is not None:
+                    return {"input": float(in_price), "output": float(out_price)}
+    return None
+
+
+def _estimate_tokens_from_text(text: str) -> int:
+    stripped = str(text or "")
+    return max(1, (len(stripped) + 3) // 4)
+
+
+def _estimate_output_tokens(feature: str, input_tokens: int) -> int:
+    if feature == "alt_text":
+        return 90
+    if feature == "playground":
+        return min(700, max(180, input_tokens // 3))
+    return min(900, max(220, input_tokens // 2))
+
+
+def estimate_request_cost(
+    *,
+    feature: str,
+    message: str,
+    token: str = "",
+    conversation_messages: int = 0,
+    document_chars: int = 0,
+) -> dict[str, Any]:
+    """Return a rough request cost estimate for the current provider/model path."""
+    provider, selected_model = get_user_ai_provider_and_model_for(feature)
+    cfg = get_runtime_config()
+
+    if feature == "alt_text":
+        fallback_model = str(cfg.get("vision_model") or _VISION_MODEL)
+        resolved_provider = provider or ("openrouter" if get_openrouter_api_key() else None)
+    else:
+        fallback_model = str(cfg.get("default_model") or _DEFAULT_MODEL)
+        resolved_provider = provider or ("openrouter" if get_openrouter_api_key() else None)
+
+    resolved_model = selected_model or fallback_model
+    pricing = _pricing_for_model(resolved_provider, resolved_model)
+
+    base_chars = len(str(message or ""))
+    history_chars = max(0, int(conversation_messages or 0)) * 350
+    doc_chars = min(max(0, int(document_chars or 0)), 4000)
+    system_chars = 700 if feature in {"chat", "playground"} else 450
+    input_tokens = _estimate_tokens_from_text("x" * (base_chars + history_chars + doc_chars + system_chars))
+    output_tokens = _estimate_output_tokens(feature, input_tokens)
+    cost_usd = None
+    if pricing is not None:
+        cost_usd = round((input_tokens * pricing["input"] + output_tokens * pricing["output"]) / 1_000_000, 6)
+
+    return {
+        "feature": feature,
+        "provider": resolved_provider or "",
+        "model": resolved_model,
+        "estimated_input_tokens": input_tokens,
+        "estimated_output_tokens": output_tokens,
+        "estimated_total_tokens": input_tokens + output_tokens,
+        "estimated_cost_usd": cost_usd,
+        "cost_available": cost_usd is not None,
+        "note": (
+            "Estimate based on message length, recent conversation context, and current model pricing."
+            if cost_usd is not None
+            else "Token estimate available, but this provider/model does not expose reliable per-token pricing in GLOW yet."
+        ),
+    }
 
 
 def _record_usage(
@@ -502,9 +587,13 @@ def get_quota_status(session_hash: str) -> dict[str, Any]:
     monthly_budget = float(cfg["monthly_budget_usd"])
     chat_daily_limit = int(cfg["chat_daily_limit"])
     audio_monthly_min = int(cfg["audio_monthly_min"])
+    session_quota_limit = max(0, int(cfg.get("session_quota_per_session", 0) or 0))
+    quota_reset_hours = max(1, int(cfg.get("quota_reset_hours", 24) or 24))
     today = datetime.now(UTC).strftime("%Y-%m-%d")
     month = datetime.now(UTC).strftime("%Y-%m")
     monthly_spend = get_monthly_spend()
+    now = datetime.now(UTC)
+    window_start = now.timestamp() - (quota_reset_hours * 3600)
 
     try:
         with _db() as conn:
@@ -523,11 +612,41 @@ def get_quota_status(session_hash: str) -> dict[str, Any]:
                 (session_hash, f"{month}%"),
             ).fetchone()
             audio_month_seconds = int(audio_row["total"]) if audio_row else 0
+
+            if session_quota_limit > 0:
+                quota_row = conn.execute(
+                    """
+                    SELECT COUNT(*) as request_count, MIN(request_at) as oldest_request
+                    FROM ai_cost_ledger
+                    WHERE session_hash = ? AND request_at >= ?
+                    """,
+                    (session_hash, datetime.fromtimestamp(window_start, UTC).isoformat()),
+                ).fetchone()
+                session_requests = int(quota_row["request_count"] or 0) if quota_row else 0
+                oldest_request = str(quota_row["oldest_request"] or "") if quota_row else ""
+            else:
+                session_requests = 0
+                oldest_request = ""
     except Exception:
         chat_today = 0
         audio_month_seconds = 0
+        session_requests = 0
+        oldest_request = ""
 
     audio_month_minutes = audio_month_seconds // 60
+    if session_quota_limit > 0 and oldest_request:
+        try:
+            oldest_dt = datetime.fromisoformat(oldest_request)
+            if oldest_dt.tzinfo is None:
+                oldest_dt = oldest_dt.replace(tzinfo=UTC)
+            session_reset_seconds = max(0, int(((oldest_dt.timestamp() + (quota_reset_hours * 3600)) - now.timestamp())))
+        except ValueError:
+            session_reset_seconds = quota_reset_hours * 3600
+    else:
+        session_reset_seconds = 0
+
+    session_remaining = max(0, session_quota_limit - session_requests) if session_quota_limit > 0 else None
+    session_available = monthly_spend < monthly_budget and (session_quota_limit == 0 or session_requests < session_quota_limit)
 
     return {
         "ai_configured": is_ai_configured(),
@@ -545,7 +664,28 @@ def get_quota_status(session_hash: str) -> dict[str, Any]:
         "audio_monthly_limit": audio_monthly_min,
         "audio_remaining_min": max(0, audio_monthly_min - audio_month_minutes),
         "audio_available": audio_month_minutes < audio_monthly_min and monthly_spend < monthly_budget,
+        "session_quota_enabled": session_quota_limit > 0,
+        "session_requests_in_window": session_requests,
+        "session_quota_limit": session_quota_limit,
+        "session_requests_remaining": session_remaining,
+        "session_available": session_available,
+        "session_reset_hours": quota_reset_hours,
+        "session_reset_seconds": session_reset_seconds,
     }
+
+
+def enforce_session_quota(session_hash: str) -> None:
+    """Raise a runtime error when the configured per-session quota window is exhausted."""
+    quota = get_quota_status(session_hash)
+    if quota.get("session_available", True):
+        return
+    reset_seconds = int(quota.get("session_reset_seconds") or 0)
+    if reset_seconds > 0:
+        raise RuntimeError(
+            "This session has reached the current AI request limit. "
+            f"Try again in about {max(1, reset_seconds // 60)} minute(s)."
+        )
+    raise RuntimeError("This session has reached the current AI request limit. Please try again later.")
 
 
 def make_session_hash(flask_session_id: str) -> str:
@@ -693,6 +833,8 @@ def stream_ollama_chat(
 
     if not is_ollama_configured():
         raise RuntimeError("Ollama is not configured for this session.")
+
+    enforce_session_quota(session_hash)
 
     messages: list[dict] = [{"role": "system", "content": system_prompt}]
     if conversation_history:
@@ -1058,6 +1200,8 @@ def chat(
     if not is_ai_configured():
         raise RuntimeError("AI is not configured on this server.")
 
+    enforce_session_quota(session_hash)
+
     messages: list[dict] = [{"role": "system", "content": system_prompt}]
     if conversation_history:
         messages.extend(conversation_history)
@@ -1150,6 +1294,8 @@ def describe_image(
     """Describe image content using a vision-capable active provider/model."""
     if not is_ai_configured():
         raise RuntimeError("AI is not configured on this server.")
+
+    enforce_session_quota(session_hash)
 
     if is_budget_exhausted():
         raise RuntimeError(
@@ -1317,6 +1463,8 @@ def transcribe(
     """
     if not is_whisper_configured():
         raise RuntimeError("Audio transcription is not configured on this server.")
+
+    enforce_session_quota(session_hash)
 
     if is_budget_exhausted():
         raise RuntimeError(
@@ -1636,6 +1784,8 @@ def get_admin_stats() -> dict[str, Any]:
         "vision_model": str(cfg.get("vision_model", _VISION_MODEL)),
         "chat_daily_limit": int(cfg["chat_daily_limit"]),
         "audio_monthly_limit_min": int(cfg["audio_monthly_min"]),
+        "session_quota_per_session": int(cfg.get("session_quota_per_session", 0) or 0),
+        "quota_reset_hours": int(cfg.get("quota_reset_hours", 24) or 24),
         "daily_trend": [
             {"day": r["day"], "spend": round(float(r["spend"]), 4), "requests": int(r["requests"])}
             for r in daily_rows
