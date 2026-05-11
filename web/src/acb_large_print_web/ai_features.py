@@ -43,7 +43,8 @@ from __future__ import annotations
 import os
 
 from .ai_gateway import is_ai_configured, is_whisper_configured
-from .credentials import is_ollama_configured, is_ollama_feature_enabled
+from .credentials import is_ollama_configured
+from .user_ai import any_user_provider_configured, any_user_provider_supports_feature, is_user_ai_feature_enabled, primary_active_provider
 from . import feature_flags
 
 
@@ -77,17 +78,17 @@ def _master_ai_enabled() -> bool:
 
 
 def _ollama_feature_enabled(env_name: str, ollama_feature: str) -> bool:
-    """Return True when Ollama is active, the server env flag is on, AND the
-    user has enabled this specific feature in their session settings.
+    """Return True when a user-managed provider is active, the server env flag is on,
+    AND the user has enabled this specific feature in their session settings.
 
     ``ollama_feature`` is one of the keys in OLLAMA_FEATURE_DEFAULTS
     (e.g. 'heading_fix', 'markitdown', 'chat').
     """
     return (
-        is_ollama_configured()
+        any_user_provider_configured()
         and _env_flag("GLOW_ENABLE_AI", False)
         and _env_flag(env_name, True)
-        and is_ollama_feature_enabled(ollama_feature)
+        and is_user_ai_feature_enabled(ollama_feature)
     )
 
 
@@ -110,10 +111,13 @@ def ai_chat_enabled() -> bool:
 def ai_whisperer_enabled() -> bool:
     """Return whether the BITS Whisperer UI and routes are available.
 
-    Whisperer requires audio transcription -- Ollama does not support this.
-    Only OpenRouter is checked.
+    Whisperer requires audio-transcription capability from at least one active provider.
     """
-    return _openrouter_feature_enabled("GLOW_ENABLE_AI_WHISPERER")
+    return (
+        _env_flag("GLOW_ENABLE_AI", False)
+        and _env_flag("GLOW_ENABLE_AI_WHISPERER", True)
+        and any_user_provider_supports_feature("whisperer")
+    )
 
 
 def ai_heading_fix_enabled() -> bool:
@@ -123,7 +127,11 @@ def ai_heading_fix_enabled() -> bool:
 
 def ai_alt_text_enabled() -> bool:
     """AI-powered alt-text generation for images is available."""
-    return _feature_enabled("GLOW_ENABLE_AI_ALT_TEXT")
+    return (
+        _env_flag("GLOW_ENABLE_AI", False)
+        and _env_flag("GLOW_ENABLE_AI_ALT_TEXT", True)
+        and any_user_provider_supports_feature("alt_text")
+    )
 
 
 def ai_markitdown_llm_enabled() -> bool:
@@ -132,20 +140,26 @@ def ai_markitdown_llm_enabled() -> bool:
 
 
 def ai_playground_enabled() -> bool:
-    """Return whether the standalone Ollama playground is available."""
-    return _feature_enabled("GLOW_ENABLE_AI_GENERAL_CHAT") and is_ollama_configured()
+    """Return whether the standalone personal-provider playground is available."""
+    return _feature_enabled("GLOW_ENABLE_AI_GENERAL_CHAT") and any_user_provider_configured()
 
 
 def get_all_flags() -> dict[str, bool]:
     """Return all AI feature flags as a dict for template injection."""
     configured = _master_ai_enabled()
     ollama_active = is_ollama_configured()
+    user_provider_active = any_user_provider_configured()
+    primary_provider = primary_active_provider()
     ai_entry_enabled = _env_flag("GLOW_ENABLE_AI", True)
     return {
         "ai_entry_enabled": ai_entry_enabled,
         "ai_configured": configured,
         "ollama_active": ollama_active,
-        "ai_ollama_active": ollama_active,
+        "ai_ollama_active": user_provider_active,
+        "ai_user_provider_active": user_provider_active,
+        "ai_primary_provider_id": str(primary_provider.get("id") or "") if primary_provider else "",
+        "ai_primary_provider_label": str(primary_provider.get("label") or "") if primary_provider else "",
+        "ai_primary_provider_model": str(primary_provider.get("default_model") or "") if primary_provider else "",
         "ai_playground_enabled": ai_playground_enabled(),
         "ai_chat_enabled": ai_chat_enabled(),
         "ai_whisperer_enabled": ai_whisperer_enabled(),

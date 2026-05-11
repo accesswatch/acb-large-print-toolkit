@@ -7,177 +7,140 @@
 {% if not ai_entry_enabled %}
 <div class="flash-warning" role="alert">
   <div class="flash-icon" aria-hidden="true">&#x26A0;</div>
-  <p><strong>AI features are disabled on this server.</strong> This deployment is not currently accepting personal Ollama keys, so the setup controls are unavailable here.</p>
+  <p><strong>AI features are disabled on this server.</strong> Personal provider setup is currently unavailable here.</p>
 </div>
 {% else %}
-<p>Connect your personal <a href="https://ollama.com" rel="noopener noreferrer">Ollama</a> account to unlock AI-powered heading detection, document formatting, and General Chat (AI Playground). Document Chat remains a separate feature gate. Your key is held in your session only and is never logged or stored on disk.</p>
-<p class="help-text">After AI is active, look for the AI usage meter in the sidebar. It updates as you use AI features and gives you a quick session summary.</p>
+<p>Connect one or more personal AI providers to unlock GLOW AI workflows. GLOW stores your provider keys only in your session, never writes them to disk, and automatically limits feature choices to models that can actually support each workflow.</p>
+<p class="help-text">You do not need to know provider endpoints. Pick a provider, paste the key, validate it, and GLOW will fetch supported models and guide the safe choices for each feature.</p>
 
 <div id="ai-key-status" role="status" aria-live="polite" aria-atomic="true"></div>
 
-{% if ollama_active %}
-<div class="flash-success" role="region" aria-label="AI status">
-  <div class="flash-icon" aria-hidden="true">&#x2714;</div>
-  <p><strong>AI is active.</strong> Using model <code>{{ ollama_model }}</code> via your Ollama account.</p>
-</div>
-
+{% if active_providers %}
 <section>
-  <h2 id="ai-active-heading">Change or remove your key</h2>
-  <p>Your Ollama API key is active for this session. You can switch to a different key below, change your model, or remove your key to disable AI features.</p>
-  <button type="button" id="forget-key-btn" class="btn btn--secondary">
-    Remove my key and disable AI
-  </button>
+  <h2 id="active-providers-heading">Active providers</h2>
+  <p>You can keep multiple providers active at the same time. GLOW will use only compatible models for each feature.</p>
+  <div class="provider-cards" role="list" aria-labelledby="active-providers-heading">
+    {% for provider in active_providers %}
+    <article class="provider-card" data-provider-card data-provider="{{ provider.id }}">
+      <h3>{{ provider.label }}</h3>
+      <p>{{ provider.description }}</p>
+      <p><strong>Default model:</strong> <code>{{ provider.default_model }}</code></p>
+      <p><strong>Available models:</strong> {{ provider.models|length if provider.models else 1 }}</p>
+      <section class="ai-session-panel provider-session-panel" data-session-url="{{ url_for('ai.ollama_session_status', provider=provider.id) }}" data-extend-url="{{ url_for('ai.extend_ollama_session', provider=provider.id) }}">
+        <h4>Key session</h4>
+        <p><strong>Time remaining:</strong> <span class="provider-session-countdown">Checking…</span></p>
+        <div class="form-actions">
+          <button type="button" class="btn btn--secondary provider-session-extend-btn">Keep {{ provider.label }} active for another {{ ai_session_duration_minutes }} minutes</button>
+          <button type="button" class="btn btn--secondary provider-remove-btn" data-provider="{{ provider.id }}" data-remove-url="{{ url_for('ai.save_ollama_key', provider=provider.id) }}">Remove {{ provider.label }}</button>
+        </div>
+        <div class="provider-session-status" role="status" aria-live="polite" aria-atomic="true"></div>
+      </section>
+    </article>
+    {% endfor %}
+  </div>
 </section>
 
 <hr>
 {% endif %}
 
 <section>
-  <h2 id="key-setup-heading">{% if ollama_active %}Update key{% else %}Set up your Ollama key{% endif %}</h2>
-
+  <h2 id="key-setup-heading">Add or update a provider</h2>
   <ol class="setup-steps">
-    <li>Go to <a href="https://ollama.com/settings/keys" rel="noopener noreferrer">ollama.com/settings/keys</a> and create a new API key (free account required).</li>
-    <li>Copy the key from Ollama and paste it below.</li>
-    <li>Paste it below and choose your model.</li>
+    <li>Select the provider you want to use.</li>
+    <li>Create or copy an API key from that provider.</li>
+    <li>Check the key so GLOW can fetch compatible models and safe feature choices.</li>
   </ol>
 
-  <form
-    id="ai-key-form"
-    class="ai-key-form"
-    novalidate
-    data-validate-url="{{ url_for('ai.validate_ollama_key') }}"
-    data-save-url="{{ url_for('ai.save_ollama_key') }}"
-  >
+  <form id="ai-key-form" class="ai-key-form" novalidate data-validate-url="{{ url_for('ai.validate_ollama_key') }}" data-save-url="{{ url_for('ai.save_ollama_key') }}">
     <div class="form-group">
-      <label for="ollama-api-key">Ollama API key</label>
-      <input
-        type="password"
-        id="ollama-api-key"
-        name="ollama_api_key"
-        autocomplete="off"
-        spellcheck="false"
-        placeholder="Paste your Ollama API key"
-        aria-describedby="ollama-key-hint"
-        class="settings-ai-key-input"
-      >
-      <p id="ollama-key-hint" class="help-text">Paste your key from <a href="https://ollama.com/settings/keys" rel="noopener noreferrer">ollama.com/settings/keys</a>. It is never sent to the GLOW server in plain text -- only used to reach Ollama's API.</p>
-    </div>
-
-    <div class="form-group">
-      <label for="ollama-model">Model</label>
-      <select id="ollama-model" name="ollama_model" aria-describedby="ollama-model-hint">
-        {% for m in model_recommendations %}
-        {% set plan_badge = " — Free" if m.plan == "free" else (" — Pro plan" if m.plan == "pro" else " — Max plan") %}
-        <option value="{{ m.id }}"{% if m.id == ollama_model %} selected{% endif %}
-          data-plan="{{ m.plan }}" data-speed="{{ m.speed }}">
-          {{ m.label }}{{ plan_badge }}{% if m.recommended %} (recommended){% endif %}
-        </option>
+      <label for="ai-provider">Provider</label>
+      <select id="ai-provider" name="provider" aria-describedby="ai-provider-hint">
+        {% for provider in ai_provider_options %}
+        <option value="{{ provider.id }}"{% if provider.id == ai_primary_provider_id %} selected{% endif %} data-label="{{ provider.label }}" data-key-url="{{ provider.key_url }}" data-description="{{ provider.description }}">{{ provider.label }}</option>
         {% endfor %}
-        <option value="other">Other / use model from your account</option>
       </select>
-      <p id="ollama-model-hint" class="help-text">Plan labels above reflect Ollama's pricing as of May 2026. After checking your key, models actually available on your account are added automatically. <a href="https://ollama.com/pricing" rel="noopener noreferrer">View current Ollama pricing</a>.</p>
+      <p id="ai-provider-hint" class="help-text">Choose the service that should hold your personal model key. GLOW adapts model and feature choices based on the provider.</p>
     </div>
 
-    <div class="form-group" id="custom-model-group" hidden>
-      <label for="ollama-custom-model">Custom model name</label>
-      <input type="text" id="ollama-custom-model" name="ollama_custom_model" placeholder="e.g. phi4-mini" autocomplete="off" class="settings-ai-custom-model">
+    <div class="form-group">
+      <label for="ai-api-key">API key</label>
+      <input type="password" id="ai-api-key" name="api_key" autocomplete="off" spellcheck="false" placeholder="Paste your provider API key" aria-describedby="ai-key-hint" class="settings-ai-key-input">
+      <p id="ai-key-hint" class="help-text">Use the selected provider's key page. Your key stays session-scoped and is never written to disk.</p>
+      <p class="help-text"><a id="provider-key-link" href="{{ ai_provider_options[0].key_url if ai_provider_options else '#' }}" rel="noopener noreferrer">Open key page for selected provider</a></p>
     </div>
 
-    <details class="model-guide-details">
-      <summary>Model comparison and plan requirements</summary>
-      <table class="model-guide" aria-label="Model recommendations by feature">
-        <caption>GLOW-recommended models -- plan requirements reflect Ollama pricing as of May 2026. <a href="https://ollama.com/pricing" rel="noopener noreferrer">Check current Ollama pricing.</a></caption>
-        <thead>
-          <tr>
-            <th scope="col">Model</th>
-            <th scope="col">Good for</th>
-            <th scope="col">Plan needed</th>
-            <th scope="col">Speed</th>
-            <th scope="col">Notes</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for m in model_recommendations %}
-          {% set plan_label = "Free" if m.plan == "free" else ("Pro or Max (paid)" if m.plan == "pro" else "Max (paid)") %}
-          {% set speed_label = m.speed | capitalize %}
-          <tr>
-            <th scope="row"><code>{{ m.id }}</code>{% if m.recommended %} <span class="badge badge--primary">recommended</span>{% endif %}</th>
-            <td>{{ m.features | join(", ") | replace("heading_fix", "Heading fix") | replace("markitdown", "MarkItDown") | replace("chat", "Document Chat") }}</td>
-            <td>{% if m.plan != "free" %}<strong>{{ plan_label }}</strong>{% else %}{{ plan_label }}{% endif %}</td>
-            <td>{{ speed_label }}</td>
-            <td>{{ m.note }}</td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-      <p class="help-text settings-ai-model-guide-help">Paid plans are billed by Ollama directly -- GLOW never charges you or sees your billing details. BITS Whisperer (audio transcription) requires a separate server key and is not available via your personal Ollama key.</p>
-    </details>
+    <div class="form-group">
+      <label for="ai-default-model">Default model</label>
+      <select id="ai-default-model" name="default_model" aria-describedby="ai-default-model-hint">
+        {% if ai_primary_model %}
+        <option value="{{ ai_primary_model }}">{{ ai_primary_model }}</option>
+        {% else %}
+        <option value="">Check a key to load models</option>
+        {% endif %}
+      </select>
+      <p id="ai-default-model-hint" class="help-text">After validation, GLOW fills this list with models from the selected provider and marks the safe defaults.</p>
+    </div>
 
     <div class="form-actions">
       <button type="button" id="validate-key-btn" class="btn btn--secondary">Check key</button>
-      <button type="submit" id="save-key-btn" class="btn btn--primary" disabled aria-disabled="true">Save and enable AI</button>
+      <button type="submit" id="save-key-btn" class="btn btn--primary" disabled aria-disabled="true">Save provider</button>
     </div>
 
     <div id="validate-result" class="settings-ai-validate-result" role="status" aria-live="polite" aria-atomic="true"></div>
+    <div id="provider-model-summary" class="help-text"></div>
   </form>
 </section>
 
-{% if ollama_active %}
+{% if active_providers %}
 <section>
-  <h2 id="ai-features-heading">Enabled AI features</h2>
-  <p>Choose which GLOW workflows can use your Ollama key. Changes take effect immediately without re-entering your key. General Chat (Playground) and Document Chat are independently controlled.</p>
+  <h2 id="ai-features-heading">Feature bindings</h2>
+  <p>Only compatible provider/model options are shown for each workflow. Document Chat remains conservative and stays off by default.</p>
 
   <div id="ai-features-status" role="status" aria-live="polite" aria-atomic="true"></div>
 
   <form id="ai-features-form" novalidate data-save-url="{{ url_for('ai.save_ollama_features') }}">
     <fieldset>
-      <legend>Ollama-powered features and recommended models</legend>
-      {% for feature, label in ollama_feature_labels.items() %}
-      {% set is_on = ollama_features.get(feature, ollama_feature_defaults.get(feature, False)) %}
-      {% set is_beta = (feature == 'playground') %}
-      {% set current_model = ollama_feature_models.get(feature, ollama_feature_model_defaults.get(feature, ollama_model)) %}
-      <section class="feature-model-card{% if is_beta %} feature-model-card--beta{% endif %}">
+      <legend>Available AI features and safe model choices</legend>
+      {% for feature, label in ai_feature_labels.items() %}
+      {% set is_on = ai_feature_flags.get(feature, ai_feature_defaults.get(feature, False)) %}
+      {% set binding_value = ai_feature_models.get(feature) %}
+      {% set binding_pair = ai_feature_binding_defaults.get(feature, (None, '')) %}
+      {% set current_value = binding_value if binding_value else ((binding_pair[0] ~ '::' ~ binding_pair[1]) if binding_pair[0] and binding_pair[1] else '') %}
+      {% set options = ai_feature_model_options.get(feature, []) %}
+      <section class="feature-model-card{% if feature == 'playground' %} feature-model-card--beta{% endif %}">
         <div class="checkbox-group">
           <label id="feature-{{ feature }}-heading">
-            <input
-              type="checkbox"
-              name="feature_{{ feature }}"
-              value="1"
-              {% if is_on %}checked{% endif %}
-            >
+            <input type="checkbox" name="feature_{{ feature }}" value="1" {% if is_on %}checked{% endif %} {% if not options %}disabled{% endif %}>
             {{ label }}
-            {% if is_beta %}<span class="badge badge--muted" id="feat-{{ feature }}-note">beta</span>{% endif %}
+            {% if feature == 'playground' %}<span class="badge badge--muted">beta</span>{% endif %}
           </label>
         </div>
 
         <div class="form-group feature-model-group">
-          <label for="model-{{ feature }}">Model for {{ label }}</label>
-          <select
-            id="model-{{ feature }}"
-            name="model_{{ feature }}"
-            class="feature-model-select"
-            data-feature="{{ feature }}"
-            aria-describedby="model-{{ feature }}-hint"
-          >
-            {% for m in model_recommendations %}
-            {% set plan_badge = " — Free" if m.plan == "free" else (" — Pro plan" if m.plan == "pro" else " — Max plan") %}
-            {% set is_feature_fit = (feature in m.features) or feature == 'playground' %}
-            <option value="{{ m.id }}"{% if m.id == current_model %} selected{% endif %}{% if not is_feature_fit %} data-not-recommended="true"{% endif %}>
-              {{ m.label }}{{ plan_badge }}{% if m.recommended and is_feature_fit %} (recommended){% endif %}
-            </option>
-            {% endfor %}
+          <label for="model-{{ feature }}">Provider and model for {{ label }}</label>
+          <select id="model-{{ feature }}" name="model_{{ feature }}" class="feature-model-select" data-feature="{{ feature }}" aria-describedby="model-{{ feature }}-hint" {% if not options %}disabled{% endif %}>
+            {% if options %}
+              {% for option in options %}
+              <option value="{{ option.value }}"{% if option.value == current_value %} selected{% endif %}>
+                {{ option.provider_label }} -- {{ option.label }}
+                {% if option.input_per_million is not none and option.output_per_million is not none %}
+                ({{ option.input_per_million }}/{{ option.output_per_million }} per 1M)
+                {% endif %}
+              </option>
+              {% endfor %}
+            {% else %}
+              <option value="">No compatible active provider for this feature</option>
+            {% endif %}
           </select>
           <p id="model-{{ feature }}-hint" class="help-text">
-            {% if feature == 'chat' %}
-            Document Chat is document-aware and works best with a larger reasoning model.
-            {% elif feature == 'playground' %}
-            The playground is open-ended and is designed for quick model experiments without a document.
-            {% elif feature == 'heading_fix' %}
-            Heading-fix works best with fast models that respond quickly during audits.
-            {% elif feature == 'markitdown' %}
-            MarkItDown usually benefits from a balanced model with good text extraction.
+            {% if feature == 'alt_text' %}
+            Requires a vision-capable model.
+            {% elif feature == 'whisperer' %}
+            Requires an audio transcription-capable provider path.
+            {% elif feature == 'chat' %}
+            Best with larger long-context models and left off by default.
             {% else %}
-            Choose the model that works best for this feature.
+            GLOW filters this list to models that can safely support the feature.
             {% endif %}
           </p>
         </div>

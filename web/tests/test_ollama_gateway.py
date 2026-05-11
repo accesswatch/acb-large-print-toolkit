@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
+from datetime import UTC, datetime, timedelta
 
 import pytest
 
@@ -152,6 +153,26 @@ class TestIsAiConfigured:
         assert ai_gateway.is_whisper_configured() is False
 
 
+class TestCapabilityGating:
+    def test_alt_text_requires_vision_capable_provider(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        from acb_large_print_web import ai_features
+
+        monkeypatch.setattr(ai_features, "_env_flag", lambda name, default=False: True)
+        monkeypatch.setattr(ai_features, "any_user_provider_supports_feature", lambda feature: feature == "alt_text")
+
+        assert ai_features.ai_alt_text_enabled() is True
+        assert ai_features.ai_whisperer_enabled() is False
+
+    def test_whisperer_requires_audio_capable_provider(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        from acb_large_print_web import ai_features
+
+        monkeypatch.setattr(ai_features, "_env_flag", lambda name, default=False: True)
+        monkeypatch.setattr(ai_features, "any_user_provider_supports_feature", lambda feature: feature == "whisperer")
+
+        assert ai_features.ai_whisperer_enabled() is True
+        assert ai_features.ai_alt_text_enabled() is False
+
+
 # ---------------------------------------------------------------------------
 # Settings -- save/forget/validate routes
 # ---------------------------------------------------------------------------
@@ -243,7 +264,7 @@ class TestSettingsOllamaRoutes:
 
         data = resp.get_json()
         assert data["ok"] is True
-        assert "llama3.2" in data["models"]
+        assert any(model["id"] == "llama3.2" for model in data["models"])
         assert data["suggested_model"] == "mistral"
 
     def test_validate_surfaces_401(self, settings_client) -> None:
@@ -276,11 +297,64 @@ class TestSettingsOllamaRoutes:
         assert resp.get_json()["ok"] is True
         assert resp.headers.get("X-Request-ID")
 
+    def test_save_key_sets_ai_session_expiry(self, settings_client) -> None:
+        mock_resp = MagicMock()
+        mock_resp.status_code = 200
+        mock_resp.ok = True
+        mock_resp.raise_for_status = MagicMock()
+        mock_resp.json.return_value = {"models": [{"name": "gemma3:4b"}]}
+
+        with patch("acb_large_print_web.routes.settings.requests.get", return_value=mock_resp):
+            settings_client.post("/settings/ai/validate", data={"ollama_api_key": "ollama_abc123"})
+
+        settings_client.post(
+            "/settings/ai/key",
+            data={"ollama_api_key": "ollama_abc123", "ollama_model": "gemma3:4b"},
+        )
+
+        with settings_client.session_transaction() as session_data:
+            assert session_data.get("ollama_key_expires_at")
+
+    def test_ollama_session_status_and_extend(self, settings_client) -> None:
+        future = (datetime.now(UTC) + timedelta(minutes=30)).isoformat()
+        with settings_client.session_transaction() as session_data:
+            session_data["ollama_api_key"] = "ollama_abc123"
+            session_data["ollama_model"] = "gemma3:4b"
+            session_data["ollama_key_expires_at"] = future
+
+        status_resp = settings_client.get("/ai/session")
+        assert status_resp.status_code == 200
+        status_data = status_resp.get_json()
+        assert status_data["active"] is True
+        assert status_data["seconds_remaining"] > 0
+
+        extend_resp = settings_client.post("/ai/session/extend")
+        assert extend_resp.status_code == 200
+        extend_data = extend_resp.get_json()
+        assert extend_data["active"] is True
+        assert extend_data["seconds_remaining"] > status_data["seconds_remaining"]
+
+    def test_expired_ollama_session_reports_inactive(self, settings_client) -> None:
+        past = (datetime.now(UTC) - timedelta(minutes=5)).isoformat()
+        with settings_client.session_transaction() as session_data:
+            session_data["ollama_api_key"] = "ollama_abc123"
+            session_data["ollama_model"] = "gemma3:4b"
+            session_data["ollama_key_expires_at"] = past
+
+        resp = settings_client.get("/ai/session")
+        data = resp.get_json()
+        assert data["active"] is False
+        with settings_client.session_transaction() as session_data:
+            assert "ollama_api_key" not in session_data
+
 
 class TestAiUsageRoute:
     def test_ollama_usage_uses_chat_turns_today_field(self, settings_client, monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.setattr("acb_large_print_web.routes.ai_usage.is_ollama_configured", lambda: True)
-        monkeypatch.setattr("acb_large_print_web.routes.ai_usage.get_user_ollama_model", lambda: "gemma3:4b")
+        monkeypatch.setattr(
+            "acb_large_print_web.routes.ai_usage.primary_active_provider",
+            lambda: {"id": "ollama", "label": "Ollama Cloud", "default_model": "gemma3:4b"},
+        )
         monkeypatch.setattr("acb_large_print_web.routes.ai_usage.make_session_hash", lambda _value: "sess-hash")
         monkeypatch.setattr(
             "acb_large_print_web.routes.ai_usage.get_quota_status",
@@ -293,6 +367,7 @@ class TestAiUsageRoute:
         assert resp.status_code == 200
         data = resp.get_json()
         assert data["provider"] == "ollama"
+        assert data["provider_model"] == "gemma3:4b"
         assert data["session_requests_today"] == 7
         assert data["session_tokens_today"] == 42
 

@@ -13,6 +13,7 @@ from __future__ import annotations
 import os
 from functools import lru_cache
 from pathlib import Path
+from datetime import UTC, datetime, timedelta
 
 
 def _credentials_path() -> Path:
@@ -81,6 +82,10 @@ def get_openrouter_api_key() -> str:
 
 _OLLAMA_CLOUD_URL = "https://ollama.com"
 _OLLAMA_CLOUD_API = f"{_OLLAMA_CLOUD_URL}/api"
+_OLLAMA_SESSION_EXPIRY_KEY = "ollama_key_expires_at"
+_OLLAMA_SESSION_MINUTES = int(
+    os.environ.get("OLLAMA_KEY_SESSION_MINUTES", os.environ.get("SESSION_TIMEOUT_MINUTES", "240"))
+)
 
 #: Models recommended per GLOW feature, shown in the setup UI.
 #: ``plan``  -- Ollama plan required: "free", "pro", or "max".
@@ -195,6 +200,88 @@ def get_user_ollama_features() -> dict[str, bool]:
         return dict(OLLAMA_FEATURE_DEFAULTS)
 
 
+def get_ollama_session_duration_minutes() -> int:
+    """Return the configured Ollama key lease duration in minutes."""
+    return max(15, _OLLAMA_SESSION_MINUTES)
+
+
+def get_user_ollama_expiry() -> datetime | None:
+    """Return the expiration timestamp for the current session-scoped Ollama key."""
+    try:
+        from flask import session
+
+        raw = str(session.get(_OLLAMA_SESSION_EXPIRY_KEY, "") or "").strip()
+    except RuntimeError:
+        return None
+
+    if not raw:
+        return None
+    try:
+        expires_at = datetime.fromisoformat(raw)
+    except ValueError:
+        return None
+    if expires_at.tzinfo is None:
+        return expires_at.replace(tzinfo=UTC)
+    return expires_at.astimezone(UTC)
+
+
+def get_user_ollama_seconds_remaining() -> int:
+    """Return seconds until the Ollama key lease expires for this session."""
+    expires_at = get_user_ollama_expiry()
+    if not expires_at:
+        return 0
+    return max(0, int((expires_at - datetime.now(UTC)).total_seconds()))
+
+
+def set_user_ollama_expiry(expires_at: datetime) -> datetime | None:
+    """Persist the Ollama key expiration timestamp in the Flask session."""
+    try:
+        from flask import session
+    except RuntimeError:
+        return None
+
+    normalized = expires_at.astimezone(UTC) if expires_at.tzinfo else expires_at.replace(tzinfo=UTC)
+    session[_OLLAMA_SESSION_EXPIRY_KEY] = normalized.isoformat()
+    session.modified = True
+    return normalized
+
+
+def refresh_user_ollama_expiry() -> datetime | None:
+    """Reset the Ollama key lease to a fresh full-duration window from now."""
+    return set_user_ollama_expiry(
+        datetime.now(UTC) + timedelta(minutes=get_ollama_session_duration_minutes())
+    )
+
+
+def extend_user_ollama_expiry() -> datetime | None:
+    """Extend the Ollama key lease by another full-duration window."""
+    current = get_user_ollama_expiry()
+    base = current if current and current > datetime.now(UTC) else datetime.now(UTC)
+    return set_user_ollama_expiry(
+        base + timedelta(minutes=get_ollama_session_duration_minutes())
+    )
+
+
+def clear_user_ollama_session() -> None:
+    """Remove the session-scoped Ollama key, metadata, and feature choices."""
+    try:
+        from flask import session
+    except RuntimeError:
+        return
+
+    for key in (
+        "ollama_api_key",
+        "ollama_model",
+        "ollama_features",
+        "ollama_feature_models",
+        "ollama_validated",
+        "ollama_validated_key_hash",
+        _OLLAMA_SESSION_EXPIRY_KEY,
+    ):
+        session.pop(key, None)
+    session.modified = True
+
+
 def is_ollama_feature_enabled(feature: str) -> bool:
     """Return True if the named Ollama feature is active for this session.
 
@@ -246,7 +333,19 @@ def get_user_ollama_model_for(feature: str) -> str:
 
 def is_ollama_configured() -> bool:
     """Return True if the user has provided an Ollama Cloud API key this session."""
-    return bool(get_user_ollama_key())
+    key = get_user_ollama_key()
+    if not key:
+        return False
+
+    expires_at = get_user_ollama_expiry()
+    if not expires_at:
+        refresh_user_ollama_expiry()
+        return True
+
+    if get_user_ollama_seconds_remaining() <= 0:
+        clear_user_ollama_session()
+        return False
+    return True
 
 
 def get_ollama_cloud_url() -> str:

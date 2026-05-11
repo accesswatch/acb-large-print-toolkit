@@ -1,5 +1,7 @@
 """Settings route -- user preference controls with opt-in persistence."""
 
+from __future__ import annotations
+
 import hashlib
 import logging
 
@@ -7,25 +9,39 @@ import requests
 from flask import Blueprint, jsonify, redirect, render_template, request, session, url_for
 
 from acb_large_print_web.rules import get_all_rule_ids
-from acb_large_print_web.credentials import (
-    OLLAMA_FEATURE_DEFAULTS,
-    OLLAMA_FEATURE_LABELS,
-    OLLAMA_FEATURE_MODEL_DEFAULTS,
-    OLLAMA_MODEL_RECOMMENDATIONS,
-    get_ollama_cloud_url,
-    get_user_ollama_features,
-    get_user_ollama_key,
-    get_user_ollama_model,
-    get_user_ollama_model_for,
-    is_ollama_configured,
+from acb_large_print_web.ai_gateway import fetch_user_provider_models
+from acb_large_print_web.user_ai import (
+    USER_AI_FEATURE_DEFAULTS,
+    USER_AI_FEATURE_LABELS,
+    USER_AI_PROVIDER_DEFINITIONS,
+    all_provider_metadata,
+    clear_validated_key_hash,
+    extend_provider_expiry,
+    feature_model_options_for,
+    get_user_active_providers,
+    get_user_ai_feature_flags,
+    get_user_ai_feature_models,
+    get_user_ai_provider_and_model_for,
+    get_validated_key_hash,
+    is_user_provider_configured,
+    parse_model_ref,
+    primary_active_provider,
+    provider_model_supports_feature,
+    provider_metadata,
+    provider_session_payload,
+    remove_user_provider,
+    save_user_ai_feature_flags,
+    save_user_ai_feature_models,
+    save_user_provider,
+    set_validated_key_hash,
+    user_ai_session_minutes,
 )
 
 log = logging.getLogger(__name__)
 settings_bp = Blueprint("settings", __name__)
 ai_bp = Blueprint("ai", __name__)
 
-_OLLAMA_VALID_MODELS = {m["id"] for m in OLLAMA_MODEL_RECOMMENDATIONS}
-_PREFERRED_OLLAMA_MODELS = [
+_OLLAMA_PREFERRED_MODELS = [
     "gemma3:4b",
     "gemma3:12b",
     "gpt-oss:120b",
@@ -42,43 +58,116 @@ def _trim_text(value: object, limit: int = 300) -> str:
     return f"{text[:limit - 1]}..."
 
 
-def _normalize_model_names(model_names: list[str]) -> list[str]:
-    normalized: list[str] = []
-    seen: set[str] = set()
-    for raw in model_names:
-        candidate = str(raw or "").strip().replace(":latest", "")
-        if candidate and candidate not in seen:
-            seen.add(candidate)
-            normalized.append(candidate)
-    return normalized
+def _requested_provider() -> str:
+    provider = (
+        request.values.get("provider")
+        or (request.get_json(silent=True) or {}).get("provider")
+        or "ollama"
+    )
+    provider = str(provider or "ollama").strip().lower()
+    if provider not in USER_AI_PROVIDER_DEFINITIONS:
+        return "ollama"
+    return provider
 
 
-def _suggested_model(model_names: list[str]) -> str:
-    available = set(_normalize_model_names(model_names))
-    for model in _PREFERRED_OLLAMA_MODELS:
-        if model in available:
-            return model
-    return next(iter(available), "gemma3:4b")
+def _provider_key_field(provider: str) -> str:
+    if provider == "ollama":
+        return "ollama_api_key"
+    return f"{provider}_api_key"
+
+
+def _provider_api_key(provider: str) -> str:
+    key = (
+        request.values.get("api_key")
+        or request.values.get(_provider_key_field(provider))
+        or (request.get_json(silent=True) or {}).get("api_key")
+        or ""
+    )
+    return str(key).strip()
+
+
+def _provider_default_model(provider: str) -> str:
+    value = (
+        request.values.get("default_model")
+        or request.values.get("ollama_model")
+        or (request.get_json(silent=True) or {}).get("default_model")
+        or str(provider_metadata(provider).get("default_model") or "")
+    )
+    return str(value).strip()
+
+
+def _suggested_model(provider: str, models: list[dict[str, object]]) -> str:
+    default_model = str(provider_metadata(provider).get("default_model") or "")
+    available = [str(model.get("id") or "") for model in models if model.get("id")]
+    if provider == "ollama":
+        for candidate in _OLLAMA_PREFERRED_MODELS:
+            if candidate in available:
+                return candidate
+    if default_model and default_model in available:
+        return default_model
+    return available[0] if available else default_model
+
+
+def _serialize_provider_catalog(provider: str, models: list[dict[str, object]]) -> list[dict[str, object]]:
+    out: list[dict[str, object]] = []
+    for model in models:
+        caps = model.get("capabilities") or {}
+        out.append(
+            {
+                "id": str(model.get("id") or ""),
+                "name": str(model.get("name") or model.get("id") or ""),
+                "provider": provider,
+                "input_per_million": model.get("input_per_million"),
+                "output_per_million": model.get("output_per_million"),
+                "context_length": model.get("context_length"),
+                "note": model.get("note") or "",
+                "capabilities": {
+                    "text": bool(caps.get("text", False)),
+                    "vision": bool(caps.get("vision", False)),
+                    "audio_transcription": bool(caps.get("audio_transcription", False)),
+                    "long_context": bool(caps.get("long_context", False)),
+                    "reasoning": bool(caps.get("reasoning", False)),
+                    "streaming": bool(caps.get("streaming", False)),
+                },
+            }
+        )
+    return out
 
 
 def _render_ai_settings_page():
-    features = get_user_ollama_features()
-    # Build per-feature model map for template
-    feature_models = {
-        feature: get_user_ollama_model_for(feature)
-        for feature in OLLAMA_FEATURE_DEFAULTS
+    providers = get_user_active_providers()
+    features = get_user_ai_feature_flags()
+    feature_models = get_user_ai_feature_models()
+    feature_binding_defaults = {
+        feature: get_user_ai_provider_and_model_for(feature)
+        for feature in USER_AI_FEATURE_DEFAULTS
     }
+    feature_options = {
+        feature: feature_model_options_for(feature)
+        for feature in USER_AI_FEATURE_DEFAULTS
+    }
+    primary_provider = primary_active_provider()
     return render_template(
         "settings_ai.html",
-        ollama_active=is_ollama_configured(),
-        ollama_model=get_user_ollama_model(),
-        model_recommendations=OLLAMA_MODEL_RECOMMENDATIONS,
-        ollama_features=features,
-        ollama_feature_labels=OLLAMA_FEATURE_LABELS,
-        ollama_feature_defaults=OLLAMA_FEATURE_DEFAULTS,
-        ollama_feature_model_defaults=OLLAMA_FEATURE_MODEL_DEFAULTS,
-        ollama_feature_models=feature_models,
+        ollama_active=is_user_provider_configured("ollama"),
+        active_providers=providers,
+        ai_provider_options=all_provider_metadata(),
+        ai_primary_provider=primary_provider,
+        ai_primary_provider_id=str(primary_provider.get("id") or "") if primary_provider else "",
+        ai_primary_model=str(primary_provider.get("default_model") or "") if primary_provider else "",
+        ai_feature_flags=features,
+        ai_feature_labels=USER_AI_FEATURE_LABELS,
+        ai_feature_defaults=USER_AI_FEATURE_DEFAULTS,
+        ai_feature_models=feature_models,
+        ai_feature_binding_defaults=feature_binding_defaults,
+        ai_feature_model_options=feature_options,
+        ai_session_duration_minutes=user_ai_session_minutes(),
     )
+
+
+def _ai_session_payload() -> dict[str, object]:
+    provider = request.args.get("provider") or _requested_provider()
+    return provider_session_payload(provider)
 
 
 @settings_bp.route("/", methods=["GET"])
@@ -97,140 +186,127 @@ def settings_ai_redirect():
 
 @ai_bp.route("/", methods=["GET"])
 def settings_ai_page():
-    """Dedicated page for Ollama AI key setup, model selection, and feature toggles."""
+    """Dedicated page for personal AI provider setup, model selection, and feature toggles."""
     return _render_ai_settings_page()
 
 
 @settings_bp.route("/ai/key", methods=["POST"])
 @ai_bp.route("/key", methods=["POST"])
 def save_ollama_key():
-    """Save the user's Ollama API key and chosen model to the session.
-
-    The key is held only in server-side session storage and is never logged
-    or written to disk. The session cookie is HttpOnly and Secure.
-    """
-    api_key = (request.form.get("ollama_api_key") or "").strip()
-    model = (request.form.get("ollama_model") or "gemma3:4b").strip()
+    """Save a validated user-managed AI provider key and default model to the session."""
+    provider = _requested_provider()
+    api_key = _provider_api_key(provider)
+    model = _provider_default_model(provider)
 
     if not api_key:
         return jsonify({"ok": False, "error": "API key is required."}), 400
 
-    # Require explicit validation before saving so typoed keys are not persisted.
     key_hash = hashlib.sha256(api_key.encode("utf-8")).hexdigest()
-    validated_hash = session.get("ollama_validated_key_hash")
+    validated_hash = get_validated_key_hash(provider)
     if validated_hash != key_hash:
         return jsonify({
             "ok": False,
             "error": "Please check your key first, then save.",
         }), 400
 
-    # Validate model against known list; allow unknown models with a warning
-    if model not in _OLLAMA_VALID_MODELS:
-        log.info("User supplied unlisted Ollama model: %s", model)
+    models = request.get_json(silent=True)
+    if not isinstance(models, dict):
+        models = {}
+    known_models = models.get("models")
+    if not isinstance(known_models, list):
+        try:
+            known_models = fetch_user_provider_models(provider, api_key)
+        except Exception:
+            known_models = []
 
-    session["ollama_api_key"] = api_key
-    session["ollama_model"] = model
-    # Write feature defaults only when activating a key for the first time;
-    # preserve existing user choices on key rotation.
-    if "ollama_features" not in session:
-        session["ollama_features"] = dict(OLLAMA_FEATURE_DEFAULTS)
-    session["ollama_validated"] = True
-    session["ollama_validated_key_hash"] = key_hash
+    save_user_provider(provider, api_key, model, known_models)
+    if "user_ai_features" not in session and "ollama_features" not in session:
+        save_user_ai_feature_flags(dict(USER_AI_FEATURE_DEFAULTS))
     session.modified = True
 
-    return jsonify({"ok": True, "model": model})
+    return jsonify({"ok": True, "provider": provider, "model": model})
 
 
 @settings_bp.route("/ai/key", methods=["DELETE"])
 @ai_bp.route("/key", methods=["DELETE"])
 def forget_ollama_key():
-    """Remove the Ollama API key, model, and feature toggles from the session."""
-    session.pop("ollama_api_key", None)
-    session.pop("ollama_model", None)
-    session.pop("ollama_features", None)
-    session.pop("ollama_validated", None)
-    session.pop("ollama_validated_key_hash", None)
-    session.modified = True
-    return jsonify({"ok": True})
+    """Remove a user-managed provider key from the session."""
+    provider = request.args.get("provider") or _requested_provider()
+    remove_user_provider(provider)
+    return jsonify({"ok": True, "provider": provider})
 
 
 @settings_bp.route("/ai/features", methods=["POST"])
 @ai_bp.route("/features", methods=["POST"])
 def save_ollama_features():
-    """Persist the user's per-feature Ollama enable choices to the session.
-
-    Accepts form fields named ``feature_<key>`` (checkboxes -- present when
-    checked, absent when unchecked). Only recognises keys declared in
-    OLLAMA_FEATURE_DEFAULTS; unknown keys are ignored.
-    """
-    if not is_ollama_configured():
-        return jsonify({"ok": False, "error": "No Ollama key active."}), 400
+    """Persist per-feature AI enable flags and provider/model bindings."""
+    if not get_user_active_providers():
+        return jsonify({"ok": False, "error": "No personal AI provider is active."}), 400
 
     updated: dict[str, bool] = {}
-    for feature in OLLAMA_FEATURE_DEFAULTS:
-        updated[feature] = request.form.get(f"feature_{feature}") == "1"
-
-    session["ollama_features"] = updated
-
-    # Persist per-feature model selections
     feature_models: dict[str, str] = {}
-    valid_model_ids = {m["id"] for m in OLLAMA_MODEL_RECOMMENDATIONS}
-    for feature in OLLAMA_FEATURE_DEFAULTS:
-        chosen = (request.form.get(f"model_{feature}") or "").strip()
-        if chosen and (chosen in valid_model_ids or len(chosen) <= 80):
-            feature_models[feature] = chosen
-        else:
-            feature_models[feature] = OLLAMA_FEATURE_MODEL_DEFAULTS.get(feature, "gemma3:4b")
+    for feature in USER_AI_FEATURE_DEFAULTS:
+        updated[feature] = request.form.get(f"feature_{feature}") == "1"
+        chosen = str(request.form.get(f"model_{feature}") or "").strip()
+        if chosen:
+            provider, model = parse_model_ref(chosen)
+            if provider and model and provider_model_supports_feature(provider, model, feature):
+                feature_models[feature] = chosen
 
-    session["ollama_feature_models"] = feature_models
-    session.modified = True
-
-    enabled = [OLLAMA_FEATURE_LABELS.get(k, k) for k, v in updated.items() if v]
+    save_user_ai_feature_flags(updated)
+    save_user_ai_feature_models(feature_models)
+    enabled = [USER_AI_FEATURE_LABELS.get(k, k) for k, v in updated.items() if v]
     return jsonify({"ok": True, "enabled": enabled})
 
 
 @settings_bp.route("/ai/validate", methods=["POST"])
 @ai_bp.route("/validate", methods=["POST"])
 def validate_ollama_key():
-    """Validate an Ollama API key by making a lightweight /api/tags request.
-
-    Returns JSON {ok: bool, models: [...], error: str}.
-    The candidate key is read from the POST body, not yet saved to session.
-    """
-    api_key = (request.form.get("ollama_api_key") or "").strip()
+    """Validate a user-supplied provider key and return a normalized model catalog."""
+    provider = _requested_provider()
+    api_key = _provider_api_key(provider)
     if not api_key:
         return jsonify({"ok": False, "error": "No key supplied."}), 400
 
-    base_url = get_ollama_cloud_url()
     try:
-        resp = requests.get(
-            f"{base_url}/tags",
-            headers={"Authorization": f"Bearer {api_key}"},
-            timeout=10,
-        )
-        if resp.status_code == 401:
-            session["ollama_validated"] = False
-            session.pop("ollama_validated_key_hash", None)
-            session.modified = True
-            return jsonify({"ok": False, "error": "Key rejected -- check it and try again."}), 200
-        if resp.status_code == 429:
-            return jsonify({"ok": False, "error": "Rate limited. Wait a moment and try again."}), 200
-        resp.raise_for_status()
-        data = resp.json()
-        model_names = _normalize_model_names([m.get("name", "") for m in data.get("models", [])])
-        session["ollama_validated"] = True
-        session["ollama_validated_key_hash"] = hashlib.sha256(api_key.encode("utf-8")).hexdigest()
-        session.modified = True
+        models = fetch_user_provider_models(provider, api_key)
+        set_validated_key_hash(provider, hashlib.sha256(api_key.encode("utf-8")).hexdigest())
         return jsonify({
             "ok": True,
-            "models": model_names[:40],
-            "suggested_model": _suggested_model(model_names),
+            "provider": provider,
+            "models": _serialize_provider_catalog(provider, models)[:80],
+            "suggested_model": _suggested_model(provider, models),
         })
+    except requests.HTTPError as exc:
+        clear_validated_key_hash(provider)
+        if exc.response is not None and exc.response.status_code == 401:
+            return jsonify({"ok": False, "error": "Key rejected -- check it and try again."}), 200
+        if exc.response is not None and exc.response.status_code == 429:
+            return jsonify({"ok": False, "error": "Rate limited. Wait a moment and try again."}), 200
+        return jsonify({"ok": False, "error": f"Could not validate {provider_metadata(provider).get('label', provider)}: {exc}"}), 200
     except requests.RequestException as exc:
-        session["ollama_validated"] = False
-        session.pop("ollama_validated_key_hash", None)
-        session.modified = True
-        return jsonify({"ok": False, "error": f"Could not reach Ollama: {exc}"}), 200
+        clear_validated_key_hash(provider)
+        return jsonify({"ok": False, "error": f"Could not reach {provider_metadata(provider).get('label', provider)}: {exc}"}), 200
+
+
+@settings_bp.route("/ai/session", methods=["GET"])
+@ai_bp.route("/session", methods=["GET"])
+def ollama_session_status():
+    """Return the current active-provider key lease status for the session."""
+    return jsonify(_ai_session_payload())
+
+
+@settings_bp.route("/ai/session/extend", methods=["POST"])
+@ai_bp.route("/session/extend", methods=["POST"])
+def extend_ollama_session():
+    """Extend the selected provider key lease by one full duration window."""
+    provider = request.args.get("provider") or _requested_provider()
+    if not is_user_provider_configured(provider):
+        return jsonify({"ok": False, "error": "Your AI key session has expired. Re-enter your key to continue."}), 400
+    extend_provider_expiry(provider)
+    session.permanent = True
+    session.modified = True
+    return jsonify(provider_session_payload(provider))
 
 
 @ai_bp.route("/client-log", methods=["POST"])

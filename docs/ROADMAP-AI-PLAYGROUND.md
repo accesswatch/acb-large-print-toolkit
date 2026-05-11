@@ -1,7 +1,7 @@
 # GLOW AI Roadmap: High-Value Features for Magical Experiences
 
 **Last Updated:** May 10, 2026  
-**Current Release:** 6.0.0 (AI Playground Beta, Per-feature Ollama Models, Streaming Responses, Key Validation Flow)  
+**Current Release:** 6.0.0 (AI Playground Beta, Personal Provider Models, Streaming Responses, Key Validation Flow, Capability Gating)  
 **Next Release:** 6.1.0 (Session Quotas, Follow-up Suggestions, Token Preview)  
 **Vision:** Transform GLOW's AI capabilities into a fluid, responsive, and predictable conversation experience that makes accessibility guidance feel native and inevitable.
 
@@ -16,7 +16,7 @@
 
 ### 2. Token Counting & Cost Preview
 - **Why:** Transparency matters. Users should know "this conversation will cost ~$0.05" before hitting Send.
-- **Technical:** Use Ollama token counter or implement a rough estimator. Show budget remaining in the meter.
+- **Technical:** Use provider-aware token counters or implement a rough estimator. Show budget remaining in the meter when the provider exposes cost or quota meaningfully.
 - **Value:** Trust. Users feel in control of cost. Prevents surprise usage spikes.
 
 ## Phase 2: Intelligence & Context (2-3 Sprints)
@@ -54,7 +54,7 @@
 
 ### 8. Alternative Input Modes
 - **Why:** Some users may prefer voice or structured forms over free text.
-- **Technical:** Extend Whisperer integration to playground. Add "guided mode" with form fields instead of textarea.
+- **Technical:** Extend capability-aware Whisperer integration to playground. Add "guided mode" with form fields instead of textarea.
 - **Value:** Removes barriers for diverse users.
 
 ---
@@ -99,11 +99,14 @@
 ✅ Session quota meter/warning UI  
 ✅ Export conversation as Markdown  
 ✅ Stop generation control  
-✅ Per-feature Ollama model selection  
+✅ Per-feature provider/model selection  
 ✅ H3/H4 heading structure for accessible navigation  
 ✅ Copy-to-clipboard on responses  
 ✅ Chat surface feature-flag split (`GLOW_ENABLE_AI_GENERAL_CHAT` vs `GLOW_ENABLE_AI_CHAT`)  
 ✅ Beta sidebar section with Experimental badge
+✅ Delayed screen reader announcements for in-progress and completed long-running replies
+✅ Personal provider support for Ollama Cloud, OpenRouter, OpenAI, and Google Gemini
+✅ Capability-aware feature filtering for alt-text, Whisperer, playground, and text workflows
 
 ---
 
@@ -130,7 +133,7 @@
 
 See also:
 - `GLOW AI Playground (Beta)` — Completed in this session
-- `Per-feature Ollama model selection` — Completed in this session
+- `Per-feature provider/model selection` — Completed in this session
 - `AI Features settings page` — `/ai/` route
 - `Magic Lab` — Advanced experimentation workspace
 - `Document Chat` — Document-grounded AI Q&A

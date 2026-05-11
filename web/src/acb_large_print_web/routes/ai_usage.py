@@ -5,10 +5,8 @@ from __future__ import annotations
 from flask import Blueprint, jsonify, session
 
 from acb_large_print_web.ai_gateway import get_quota_status, make_session_hash
-from acb_large_print_web.credentials import (
-    get_user_ollama_model,
-    is_ollama_configured,
-)
+from acb_large_print_web.credentials import get_user_ollama_model, is_ollama_configured
+from acb_large_print_web.user_ai import any_user_provider_configured, primary_active_provider
 
 ai_usage_bp = Blueprint("ai_usage", __name__)
 
@@ -38,13 +36,14 @@ def ai_usage():
     sess_id = session.get("_id", "")
     sess_hash = make_session_hash(sess_id) if sess_id else "anonymous"
 
-    if is_ollama_configured():
-        # For Ollama, count from the ledger but surface as request counts only --
-        # Ollama billing is GPU-time based and we have no way to query their quota.
+    if any_user_provider_configured() or is_ollama_configured():
         quota = get_quota_status(sess_hash)
+        provider = primary_active_provider() or {}
         return jsonify({
-            "provider": "ollama",
-            "ollama_model": get_user_ollama_model(),
+            "provider": str(provider.get("id") or ("ollama" if is_ollama_configured() else "personal")),
+            "provider_label": str(provider.get("label") or "Personal AI"),
+            "provider_model": str(provider.get("default_model") or ""),
+            "ollama_model": str(provider.get("default_model") or ""),
             "session_requests_today": _chat_turn_count(quota),
             "session_tokens_today": _session_tokens_today(sess_hash),
             "chat_remaining_today": None,

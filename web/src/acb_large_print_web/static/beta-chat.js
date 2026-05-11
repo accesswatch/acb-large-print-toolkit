@@ -12,6 +12,8 @@
   var templateBtns = document.querySelectorAll('.template-btn');
   var log = document.getElementById('conversation-log');
   var status = document.getElementById('playground-status');
+  var progressAlert = document.getElementById('playground-progress-alert');
+  var completionAlert = document.getElementById('playground-complete-alert');
   var typing = document.getElementById('typing-indicator');
   var charCount = document.getElementById('playground-char-count');
   var emptyMsg = document.getElementById('empty-log-msg');
@@ -19,6 +21,9 @@
   var model = activeModel && activeModel.textContent ? activeModel.textContent : '';
   var maxLen = 3000;
   var activeStreamController = null;
+  var progressAnnouncementTimer = null;
+  var longProgressThresholdMs = 5000;
+  var longResponseThresholdMs = 8000;
 
   if (!form || !textarea || !log) {
     return;
@@ -46,6 +51,45 @@
   function clearStatus() {
     status.textContent = '';
     status.className = 'playground-status';
+  }
+
+  function announceCompletionIfDelayed(startedAt) {
+    if (!completionAlert || !startedAt) {
+      return;
+    }
+    if ((Date.now() - startedAt) < longResponseThresholdMs) {
+      return;
+    }
+    completionAlert.textContent = '';
+    window.setTimeout(function () {
+      completionAlert.textContent = 'AI response received.';
+      window.setTimeout(function () {
+        completionAlert.textContent = '';
+      }, 1500);
+    }, 50);
+  }
+
+  function clearProgressAnnouncement() {
+    if (progressAnnouncementTimer) {
+      window.clearTimeout(progressAnnouncementTimer);
+      progressAnnouncementTimer = null;
+    }
+    if (progressAlert) {
+      progressAlert.textContent = '';
+    }
+  }
+
+  function scheduleProgressAnnouncement() {
+    clearProgressAnnouncement();
+    if (!progressAlert) {
+      return;
+    }
+    progressAnnouncementTimer = window.setTimeout(function () {
+      progressAlert.textContent = '';
+      window.setTimeout(function () {
+        progressAlert.textContent = 'AI response still in progress.';
+      }, 50);
+    }, longProgressThresholdMs);
   }
 
   function setStopVisible(visible) {
@@ -216,7 +260,7 @@
     charCount.classList.toggle('char-count--warn', remaining < 100);
   }
 
-  function streamReply(message, pendingAssistant) {
+  function streamReply(message, pendingAssistant, startedAt) {
     activeStreamController = new AbortController();
     return fetch(form.dataset.streamUrl, {
       method: 'POST',
@@ -257,7 +301,9 @@
           if (activeModel && streamedModel) {
             activeModel.textContent = streamedModel;
           }
+          clearProgressAnnouncement();
           notifyAiRequestComplete();
+          announceCompletionIfDelayed(startedAt);
           setStatus('Response received.', 'success');
           window.setTimeout(clearStatus, 3000);
           return;
@@ -284,7 +330,7 @@
     });
   }
 
-  function legacyReply(message, pendingAssistant) {
+  function legacyReply(message, pendingAssistant, startedAt) {
     return fetch(form.dataset.sendUrl, {
       method: 'POST',
       headers: buildHeaders({ 'Content-Type': 'application/json' }),
@@ -311,6 +357,8 @@
           }
         }
         notifyAiRequestComplete();
+        clearProgressAnnouncement();
+        announceCompletionIfDelayed(startedAt);
         setStatus('Response received.', 'success');
         window.setTimeout(clearStatus, 3000);
       });
@@ -371,6 +419,7 @@
   form.addEventListener('submit', function (event) {
     var message = textarea.value.trim();
     var pendingAssistant;
+    var startedAt;
 
     event.preventDefault();
     if (!message) {
@@ -390,22 +439,27 @@
     setTyping(true);
     setStopVisible(true);
     pendingAssistant = appendThinkingMessage(model);
+    startedAt = Date.now();
+    scheduleProgressAnnouncement();
 
-    streamReply(message, pendingAssistant)
+    streamReply(message, pendingAssistant, startedAt)
       .catch(function (error) {
         if (error && error.name === 'AbortError') {
+          clearProgressAnnouncement();
           setStatus('Generation stopped.', 'info');
           return;
         }
         setStatus('Streaming unavailable, using standard response...', 'info');
-        return legacyReply(message, pendingAssistant);
+        return legacyReply(message, pendingAssistant, startedAt);
       })
       .catch(function (error) {
         var msg = error && error.message ? error.message : 'Something went wrong. Please try again.';
+        clearProgressAnnouncement();
         setStatus('⚠ ' + msg, 'error');
         log.scrollTop = log.scrollHeight;
       })
       .finally(function () {
+        clearProgressAnnouncement();
         setTyping(false);
         setStopVisible(false);
         log.removeAttribute('aria-busy');
@@ -424,6 +478,8 @@
 
   if (regenBtn) {
     regenBtn.addEventListener('click', function () {
+      var startedAt = Date.now();
+      scheduleProgressAnnouncement();
       regenBtn.disabled = true;
       fetch(form.dataset.regenUrl, {
         method: 'POST',
@@ -446,15 +502,19 @@
             }
           }
             notifyAiRequestComplete();
+          clearProgressAnnouncement();
+          announceCompletionIfDelayed(startedAt);
           setStatus('Response regenerated.', 'success');
           window.setTimeout(clearStatus, 3000);
           fetchQuota();
         })
         .catch(function (error) {
           var msg = error && error.message ? error.message : 'Could not regenerate response.';
+          clearProgressAnnouncement();
           setStatus('⚠ ' + msg, 'error');
         })
         .finally(function () {
+          clearProgressAnnouncement();
           regenBtn.disabled = false;
         });
     });

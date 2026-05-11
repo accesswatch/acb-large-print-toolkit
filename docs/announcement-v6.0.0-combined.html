@@ -1,121 +1,320 @@
 <!DOCTYPE html>
-<html lang="en">
+<html xmlns="http://www.w3.org/1999/xhtml">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>GLOW 6.0.0 Announcement</title>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>announcement-v6.0.0-combined</title>
   <style>
-body{font-family:Arial,sans-serif;font-size:1.125rem;line-height:1.5;margin:0;background:#f7f8fb;color:#1a1a1a}
-main{max-width:76ch;margin:2rem auto;background:#fff;padding:2rem 2.5rem;border:1px solid #d9deea}
-h1{font-size:1.75rem;line-height:1.2;margin-top:0}
-h2{font-size:1.4rem;margin-top:2.25rem}
-h3{font-size:1.15rem;margin-top:1.75rem}
-blockquote{border-left:4px solid #0c234b;margin:1.25rem 0;padding:.75rem 1.25rem;background:#f0f4fa}
-table{border-collapse:collapse;width:100%;margin:1.25rem 0;font-size:.9rem}
-th{background:#0c234b;color:#fff;padding:.5rem .75rem;text-align:left}
-td{border:1px solid #d0d7e3;padding:.4rem .75rem}
-code{background:#f0f0f0;padding:.1rem .25rem;border-radius:3px;font-size:.9rem}
-hr{border:none;border-top:1px solid #d9deea;margin:2rem 0}
-ul,ol{padding-left:1.5rem}
-a{color:#0c234b}
-</style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
 </head>
 <body>
-  <main>
-<h1>GLOW 6.0.0: Open Source, Easier to Join, Easier to Explain</h1>
-
-<p><strong>FOR IMMEDIATE RELEASE -- May 9, 2026</strong></p>
-
-<h2>Thank You First</h2>
-
-<p>GLOW keeps getting better because the community keeps being specific about what matters.</p>
-
-<p>This release continues that pattern. It makes the project easier to contribute to, gives users a clearer AI path when they want one, and keeps the first AI rollout focused on the text workflows that are easiest to trust.</p>
-
-<h2>Executive Summary</h2>
-
+<h1 id="glow-6.0.0-open-source-easier-to-join-easier-to-explain">GLOW
+6.0.0: Open Source, Easier to Join, Easier to Explain</h1>
+<p><strong>FOR IMMEDIATE RELEASE - May 9, 2026</strong></p>
+<h2 id="thank-you-first">Thank You First</h2>
+<p>GLOW keeps getting better because the community keeps being specific
+about what matters.</p>
+<p>This release continues that pattern. It makes the project easier to
+contribute to, gives users a clearer AI path when they want one, and
+keeps the first AI rollout focused on the text workflows that are
+easiest to trust.</p>
+<h2 id="executive-summary">Executive Summary</h2>
 <p>GLOW 6.0.0 is now available.</p>
-
 <p>This release does four things clearly:</p>
-
 <ul>
 <li>it explains the open source contribution process more plainly</li>
-<li>it gives users a personal Ollama Cloud setup path for AI features</li>
-<li>it limits that first AI release to heading detection and MarkItDown support</li>
-<li>it shows AI usage directly in the web app so people can see what is active in the current session</li>
+<li>it gives users a personal AI provider setup path for AI
+features</li>
+<li>it limits that first AI release to heading detection and MarkItDown
+support</li>
+<li>it shows AI usage directly in the web app so people can see what is
+active in the current session</li>
 </ul>
-
-<h2>What Is New in 6.0.0</h2>
-
-<h3>Open source contribution process</h3>
-
-<p>The project now presents the contribution path more directly. Fork the repository, create a branch, open a pull request, and work through review under branch protection.</p>
-
+<h2 id="what-is-new-in-6.0.0">What Is New in 6.0.0</h2>
+<h3 id="open-source-contribution-process">Open source contribution
+process</h3>
+<p>The project now presents the contribution path more directly. Fork
+the repository, create a branch, open a pull request, and work through
+review under branch protection.</p>
 <p>Why this matters:</p>
-
 <ul>
 <li>it lowers the barrier for first-time contributors</li>
 <li>it makes the project feel open and collaborative</li>
-<li>it matches the way the project is already being used in practice</li>
+<li>it matches the way the project is already being used in
+practice</li>
 </ul>
-
-<h3>Personal Ollama Cloud AI support</h3>
-
-<p>Users can add their own Ollama Cloud API key in GLOW and turn on the AI features that make sense for this release.</p>
-
+<h3 id="personal-ai-provider-support-with-ai-playground-beta">Personal
+AI provider support with AI Playground (Beta)</h3>
+<p>Users can add their own AI provider key in GLOW and turn on the AI
+features that make sense for this release. The current web app supports
+personal Ollama Cloud, OpenRouter, OpenAI, and Google Gemini keys in one
+AI Features page.</p>
 <p>What is enabled first:</p>
-
 <ul>
-<li>heading detection in Fix</li>
-<li>MarkItDown support for document cleanup and extraction</li>
+<li><strong>heading detection</strong> in Fix</li>
+<li><strong>MarkItDown support</strong> for document cleanup and
+extraction</li>
+<li><strong>AI Playground (Beta)</strong> – a new experimental chat
+surface for testing compatible personal-provider models without document
+context</li>
 </ul>
-
+<p>The AI Playground is the new magic here.</p>
+<p>It is a standalone chat designed for exploration. Ask any question,
+try different compatible models, and see responses stream in
+token-by-token. Conversations stay private to your session. You can copy
+responses, regenerate them, stop long generations, switch models on the
+fly, use prompt templates, and export conversations as Markdown. The
+interface is accessible: your questions appear as headings, the AI
+responses as sub-headings, and long-running replies now announce
+progress and completion to screen reader users.</p>
 <p>What stays off for now:</p>
-
 <ul>
 <li>Document Chat</li>
 </ul>
-
-<p>That choice keeps the first release focused and easier to explain.</p>
-
-<h3>Visible AI usage tracking</h3>
-
-<p>The web app now includes a sidebar usage meter that refreshes on page load and after AI actions.</p>
-
+<p>General Chat (AI Playground) and Document Chat are now explicitly
+separate feature gates, so deployments can keep Document Chat off while
+still enabling the playground.</p>
+<p>That choice keeps the first release focused and easier to
+explain.</p>
+<h3
+id="markitdown-ai-integration-smarter-document-extraction">MarkItDown +
+AI Integration: Smarter Document Extraction</h3>
+<p>MarkItDown is a powerful text extraction engine from Microsoft. GLOW
+6.0.0 adds <strong>LLM-enhanced MarkItDown support</strong> so the text
+extraction process is smarter and more aware of document structure.</p>
+<p><strong>What you get:</strong></p>
+<ul>
+<li><strong>Intelligent text extraction</strong> — MarkItDown + AI
+understands not just text layout, but context and meaning. It keeps
+important structure (headings, lists, emphasis) and drops noise (page
+numbers, repeated headers/footers).</li>
+<li><strong>Heading detection</strong> — Bold or large text that should
+be a semantic heading gets converted to the right heading level
+automatically. No more fake headings made from bold text.</li>
+<li><strong>Better preparation for accessibility fixes</strong> — When
+documents come in via MarkItDown + AI, they are already cleaner, more
+structured, and closer to WCAG compliance. Fix workflows then spend less
+time on the same structural problems.</li>
+<li><strong>Extraction quality that scales</strong> — Long documents,
+complex layouts, mixed formats—MarkItDown + AI handles them more
+consistently than rule-based extraction alone.</li>
+</ul>
+<p><strong>Why it matters:</strong></p>
+<p>The first AI features in GLOW are text-focused because that is where
+the trust is highest. Headings and structure are objective—either a text
+block is a heading or it is not. MarkItDown + AI lets GLOW make that
+determination more reliably. The result is less manual cleanup, faster
+accessibility fixes, and better starting material for final output.</p>
+<p><strong>How to use it:</strong></p>
+<p>When you add an Ollama key in GLOW Settings, heading detection and
+MarkItDown support are on by default. The setup flow now requires key
+validation before save and accepts valid keys even when they do not use
+the historical <code>ollama_</code> prefix. Try it:</p>
+<p>The current AI Features page also supports OpenRouter, OpenAI, and
+Google Gemini keys. GLOW filters feature choices dynamically so only
+compatible provider/model combinations appear for alt-text suggestions,
+Whisperer, and other AI workflows.</p>
+<ol type="1">
+<li>Upload a document in Word, Excel, PowerPoint, PDF, Markdown, or ePub
+format</li>
+<li>Choose Audit or Fix</li>
+<li>If headings are missing or incorrect, the AI Playground lets you
+test heading detection with different Ollama models before you trust it
+in production</li>
+</ol>
+<h3 id="visible-ai-usage-tracking">Visible AI usage tracking</h3>
+<p>The web app now includes a sidebar usage meter that refreshes on page
+load and after AI actions.</p>
 <p>It gives users a quick sense of:</p>
-
 <ul>
 <li>what AI path is active</li>
 <li>how many requests they have used during the current session</li>
 <li>what they can still do right now without guessing</li>
 </ul>
-
-<h3>Feedback-to-issue follow-through</h3>
-
-<p>Feedback can now carry contact information for follow-up and sync into GitHub Issues when configured.</p>
-
-<p>That helps turn direct user feedback into a visible development workflow.</p>
-
-<h2>What Stays Strong</h2>
-
+<h3 id="feedback-to-issue-follow-through">Feedback-to-issue
+follow-through</h3>
+<p>Feedback can now carry contact information for follow-up and sync
+into GitHub Issues when configured.</p>
+<p>That helps turn direct user feedback into a visible development
+workflow.</p>
+<h2 id="what-stays-strong">What Stays Strong</h2>
 <p>Non-AI workflows remain unchanged.</p>
-
-<p>If you do not use AI, GLOW still audits, fixes, converts, and templates documents exactly as before.</p>
-
-<h2>Where to Read More</h2>
-
+<p>If you do not use AI, GLOW still audits, fixes, converts, and
+templates documents exactly as before.</p>
+<h2 id="where-to-read-more">Where to Read More</h2>
 <ul>
 <li><a href="/about/">About GLOW</a></li>
 <li><a href="/guide/">User Guide</a></li>
 <li><a href="/changelog/">Changelog</a></li>
 </ul>
-
-<h2>Closing</h2>
-
+<h2 id="closing">Closing</h2>
 <p>GLOW 6.0.0 is not trying to do everything at once.</p>
-
-<p>It is trying to do the next right thing clearly: keep the core workflow strong, make the project easier to join, and make AI useful without making it confusing.</p>
-
-  </main>
+<p>It is trying to do the next right thing clearly: keep the core
+workflow strong, make the project easier to join, and make AI useful
+without making it confusing.</p>
 </body>
 </html>

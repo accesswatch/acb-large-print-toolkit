@@ -93,7 +93,7 @@ This section documents every `GLOW_ENABLE_*` feature flag the application curren
 
 - **`GLOW_ENABLE_AI_GENERAL_CHAT`** (default: `true`)
 	- Purpose: Enables the AI Playground / general chat UI (`/beta/chat`) and related route handlers.
-	- Notes: This is intentionally separate from Document Chat. Playground still requires a user Ollama key and `GLOW_ENABLE_AI=true`.
+	- Notes: This is intentionally separate from Document Chat. Playground requires at least one active personal provider/model binding that supports text chat and `GLOW_ENABLE_AI=true`.
 
 - **`GLOW_ENABLE_AI_CHAT`** (default: `false`)
 	- Purpose: Enables Document Chat UI and associated document-grounded chat routes.
@@ -101,7 +101,7 @@ This section documents every `GLOW_ENABLE_*` feature flag the application curren
 
 - **`GLOW_ENABLE_AI_WHISPERER`** (default: `false`)
 	- Purpose: Enables the BITS Whisperer (audio transcription) UI and routes.
-	- Notes: When `false`, Whisperer entry points are removed and audio POST handlers reject requests as unsupported.
+	- Notes: When `false`, Whisperer entry points are removed and audio POST handlers reject requests as unsupported. When `true`, Whisperer still appears only if a compatible audio-transcription provider path is active.
 
 - **`GLOW_ENABLE_AI_HEADING_FIX`** (default: `true`)
 	- Purpose: Enables AI-powered heading detection/refinement used in the Fix workflow.
@@ -109,11 +109,11 @@ This section documents every `GLOW_ENABLE_*` feature flag the application curren
 
 - **`GLOW_ENABLE_AI_ALT_TEXT`** (default: `false`)
 	- Purpose: Enables AI-assisted alt-text suggestions UI and helpers.
-	- Notes: When `false`, AI alt-text controls are hidden and automated suggestions are disabled.
+	- Notes: When `false`, AI alt-text controls are hidden and automated suggestions are disabled. When `true`, the UI still requires a vision-capable provider/model before exposing the feature.
 
 - **`GLOW_ENABLE_AI_MARKITDOWN_LLM`** (default: `true`)
 	- Purpose: Enables MarkItDown LLM enhancements and integration points.
-	- Notes: When `false`, any experimental LLM-driven MarkItDown features are turned off.
+	- Notes: When `false`, any experimental LLM-driven MarkItDown features are turned off. When `true`, the AI Features page still filters out incompatible provider/model bindings.
 
 Additional non-AI GLOW flags (defaults: `true`)
 

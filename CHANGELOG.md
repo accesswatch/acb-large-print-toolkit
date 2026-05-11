@@ -26,12 +26,16 @@ Releases are tagged in the [GitHub repository](https://github.com/Community-Acce
 - **Ollama cloud defaults** now prefer `gemma3:4b` instead of `llama3.2`, and validation returns a suggested model based on what the account can actually run.
 - **AI settings and playground pages** now load through external static JS/CSS assets so they work under the site CSP instead of relying on blocked inline scripts.
 - **Ollama inference errors** now distinguish account inference authorization (`401`), paid-plan model gating (`403`), and missing account model access (`404`).
+- **AI Features setup** now supports multiple personal providers at the same time, including Ollama Cloud, OpenRouter, OpenAI, and Google Gemini, with provider-specific key validation and session-scoped storage.
+- **AI feature bindings** are now capability-aware: GLOW only offers models for a feature when the selected provider/model can actually support that workflow, including vision-gated alt-text suggestions and audio-gated Whisperer entry points.
+- **AI usage meter and AI settings terminology** now describe the active personal provider generically instead of assuming every personal AI session is Ollama.
 
 ### Fixed
 
 - **AI Playground character counter** no longer announces every keystroke to screen readers while typing. The counter still updates visually and remains available through the textarea description without repeated live-region interruptions.
 - **AI Playground response cards** now keep model/copy controls after the response text instead of embedding them in the response heading, and assistant message wrappers no longer add extra spoken labels beyond the heading structure.
 - **AI usage meter** now increments correctly for Ollama-backed chat turns by reading the current quota field returned by the server.
+- **AI Playground long-running responses** now announce progress to screen reader users after a delay and announce completion when a delayed response arrives, instead of relying only on the visible thinking indicator.
 
 ---
 

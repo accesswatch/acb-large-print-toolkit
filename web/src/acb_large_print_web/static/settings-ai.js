@@ -1,23 +1,24 @@
 (function () {
   'use strict';
 
-  var keyInput = document.getElementById('ollama-api-key');
-  var modelSel = document.getElementById('ollama-model');
-  var customGrp = document.getElementById('custom-model-group');
-  var customIn = document.getElementById('ollama-custom-model');
+  var form = document.getElementById('ai-key-form');
+  var providerSelect = document.getElementById('ai-provider');
+  var keyInput = document.getElementById('ai-api-key');
+  var modelSelect = document.getElementById('ai-default-model');
   var validateBtn = document.getElementById('validate-key-btn');
   var saveBtn = document.getElementById('save-key-btn');
-  var form = document.getElementById('ai-key-form');
-  var valResult = document.getElementById('validate-result');
+  var validateResult = document.getElementById('validate-result');
+  var providerModelSummary = document.getElementById('provider-model-summary');
   var statusBox = document.getElementById('ai-key-status');
-  var forgetBtn = document.getElementById('forget-key-btn');
+  var keyLink = document.getElementById('provider-key-link');
   var featuresForm = document.getElementById('ai-features-form');
-  var keyValidated = false;
+  var providerCards = document.querySelectorAll('[data-provider-card]');
   var lastRequestId = '';
-  var knownModels = {};
-  var preferredModels = ['gemma3:4b', 'gemma3:12b', 'gpt-oss:120b', 'mistral', 'qwen3:8b', 'llama3.2'];
+  var validatedProvider = '';
+  var validatedKeyHash = '';
+  var validatedModels = [];
 
-  if (!form || !modelSel) {
+  if (!form || !providerSelect || !keyInput || !modelSelect) {
     return;
   }
 
@@ -33,19 +34,6 @@
       headers['X-CSRFToken'] = csrf;
     }
     return headers;
-  }
-
-  function setSaveEnabled(enabled) {
-    if (!saveBtn) {
-      return;
-    }
-    saveBtn.disabled = !enabled;
-    saveBtn.setAttribute('aria-disabled', enabled ? 'false' : 'true');
-  }
-
-  function invalidateValidationState() {
-    keyValidated = false;
-    setSaveEnabled(false);
   }
 
   function reportClientError(kind, message, extra) {
@@ -81,15 +69,7 @@
       }
 
       if (!response.ok) {
-        var errorMessage = data && data.error ? data.error : ('The request failed with status ' + response.status + '.');
-        reportClientError('ai-http-error', errorMessage, {
-          action: action,
-          request_id: responseRequestId,
-          status: String(response.status),
-          detail: text.slice(0, 500),
-          source: response.url || window.location.pathname
-        });
-        throw new Error(errorMessage);
+        throw new Error(data && data.error ? data.error : ('The request failed with status ' + response.status + '.'));
       }
 
       return data || {};
@@ -108,250 +88,128 @@
     return withRef;
   }
 
-  function resolvedModel() {
-    return modelSel.value === 'other' ? customIn.value.trim() : modelSel.value;
-  }
-
-  function normalizeModel(raw) {
-    return String(raw || '').trim().replace(/:latest$/, '');
-  }
-
-  function collectKnownModels() {
-    Array.prototype.forEach.call(modelSel.options, function (option) {
-      var value = normalizeModel(option.value);
-      if (!value || value === 'other') {
-        return;
-      }
-      knownModels[value] = {
-        label: option.textContent.replace(/\s+\(recommended\)$/, ''),
-        plan: option.getAttribute('data-plan') || '',
-        recommended: /\(recommended\)$/.test(option.textContent)
-      };
-    });
-  }
-
-  function planBadge(plan) {
-    if (plan === 'free') {
-      return ' — Free';
+  function updateProviderLink() {
+    var option = providerSelect.options[providerSelect.selectedIndex];
+    if (!option || !keyLink) {
+      return;
     }
-    if (plan === 'pro') {
-      return ' — Pro plan (paid)';
-    }
-    if (plan === 'max') {
-      return ' — Max plan (paid)';
-    }
-    return '';
+    keyLink.href = option.getAttribute('data-key-url') || '#';
+    keyLink.textContent = 'Open key page for ' + option.textContent;
   }
 
-  function preferredAvailableModel(liveModels, fallback) {
-    var available = {};
-    liveModels.forEach(function (model) {
-      available[normalizeModel(model)] = true;
-    });
-    for (var index = 0; index < preferredModels.length; index += 1) {
-      if (available[preferredModels[index]]) {
-        return preferredModels[index];
-      }
-    }
-    return liveModels.length ? normalizeModel(liveModels[0]) : fallback;
+  function setSaveEnabled(enabled) {
+    saveBtn.disabled = !enabled;
+    saveBtn.setAttribute('aria-disabled', enabled ? 'false' : 'true');
   }
 
-  function buildOptions(liveModels, selectedValue) {
-    var available = {};
-    var options = [];
-    liveModels.forEach(function (raw) {
-      var id = normalizeModel(raw);
-      if (!id || available[id]) {
-        return;
-      }
-      available[id] = true;
-      if (knownModels[id]) {
-        options.push({
-          value: id,
-          label: knownModels[id].label,
-          plan: knownModels[id].plan,
-          recommended: knownModels[id].recommended,
-          unavailable: false
-        });
-      } else {
-        options.push({
-          value: id,
-          label: id + ' — (from your account)',
-          plan: '',
-          recommended: false,
-          unavailable: false
-        });
-      }
-    });
+  function invalidateValidationState() {
+    validatedProvider = '';
+    validatedKeyHash = '';
+    validatedModels = [];
+    setSaveEnabled(false);
+  }
 
-    Object.keys(knownModels).forEach(function (id) {
-      if (available[id]) {
-        return;
+  function rebuildModelSelect(models, selectedValue) {
+    while (modelSelect.options.length > 0) {
+      modelSelect.remove(0);
+    }
+    if (!models || !models.length) {
+      modelSelect.appendChild(new Option('Check a key to load models', ''));
+      return;
+    }
+    models.forEach(function (model) {
+      var label = model.name || model.id;
+      if (model.capabilities && model.capabilities.vision) {
+        label += ' -- vision';
       }
-      options.push({
-        value: id,
-        label: knownModels[id].label + ' — not on your account',
-        plan: knownModels[id].plan,
-        recommended: false,
-        unavailable: true
-      });
-    });
-
-    options.sort(function (left, right) {
-      if (left.unavailable !== right.unavailable) {
-        return left.unavailable ? 1 : -1;
+      if (model.capabilities && model.capabilities.audio_transcription) {
+        label += ' -- audio';
       }
-      if (left.recommended !== right.recommended) {
-        return left.recommended ? -1 : 1;
+      if (model.input_per_million != null && model.output_per_million != null) {
+        label += ' (' + model.input_per_million + '/' + model.output_per_million + ' per 1M)';
       }
-      return left.label.localeCompare(right.label);
-    });
-
-    return options.map(function (item) {
-      var option = document.createElement('option');
-      option.value = item.value;
-      option.textContent = item.label + planBadge(item.plan) + (item.recommended && !item.unavailable ? ' (recommended)' : '');
-      option.selected = item.value === selectedValue;
-      if (item.unavailable) {
-        option.dataset.unavailable = 'true';
-      }
-      return option;
+      modelSelect.appendChild(new Option(label, model.id, false, model.id === selectedValue));
     });
   }
 
-  function rebuildSelect(select, liveModels, selectedValue) {
-    while (select.options.length > 0) {
-      select.remove(0);
-    }
-    buildOptions(liveModels, selectedValue).forEach(function (option) {
-      select.appendChild(option);
-    });
-    var otherOpt = document.createElement('option');
-    otherOpt.value = 'other';
-    otherOpt.textContent = 'Other / use model from your account';
-    otherOpt.selected = selectedValue === 'other';
-    select.appendChild(otherOpt);
+  function providerLabel() {
+    return providerSelect.options[providerSelect.selectedIndex].textContent;
   }
 
-  function mergeModelsIntoSelects(liveModels, suggestedModel) {
-    var normalized = liveModels.map(normalizeModel).filter(Boolean);
-    if (!normalized.length) {
+  function validateProviderKey() {
+    var provider = providerSelect.value;
+    var apiKey = keyInput.value.trim();
+    var fd = new FormData();
+
+    if (!apiKey) {
+      validateResult.textContent = 'Enter your key first.';
       return;
     }
 
-    var desired = suggestedModel || preferredAvailableModel(normalized, resolvedModel());
-    var currentValue = resolvedModel();
-    var currentAvailable = normalized.indexOf(normalizeModel(currentValue)) !== -1;
-    var selectedValue = currentAvailable ? normalizeModel(currentValue) : desired;
-
-    rebuildSelect(modelSel, normalized, selectedValue);
-    if (selectedValue && selectedValue !== 'other') {
-      modelSel.value = selectedValue;
-    }
-
-    var selects = document.querySelectorAll('.feature-model-select');
-    Array.prototype.forEach.call(selects, function (select) {
-      var featureCurrent = normalizeModel(select.value);
-      var featureSelected = normalized.indexOf(featureCurrent) !== -1 ? featureCurrent : desired;
-      rebuildSelect(select, normalized, featureSelected);
-      select.value = featureSelected;
-    });
-  }
-
-  function updateCustomModelVisibility() {
-    customGrp.hidden = modelSel.value !== 'other';
-    if (!customGrp.hidden) {
-      customIn.focus();
-    }
-  }
-
-  collectKnownModels();
-  setSaveEnabled(false);
-  updateCustomModelVisibility();
-
-  modelSel.addEventListener('change', updateCustomModelVisibility);
-  keyInput.addEventListener('input', invalidateValidationState);
-
-  validateBtn.addEventListener('click', function () {
-    var key = keyInput.value.trim();
-    var validateUrl = form.dataset.validateUrl;
-    if (!key) {
-      valResult.textContent = 'Enter your key first.';
-      return;
-    }
-
+    fd.append('provider', provider);
+    fd.append('api_key', apiKey);
     validateBtn.disabled = true;
     validateBtn.textContent = 'Checking...';
-    valResult.textContent = '';
+    validateResult.textContent = '';
 
-    var fd = new FormData();
-    fd.append('ollama_api_key', key);
-
-    fetch(validateUrl, {
+    fetch(form.dataset.validateUrl, {
       method: 'POST',
       body: fd,
       credentials: 'same-origin',
       headers: buildHeaders()
     })
-      .then(function (response) {
-        return parseJsonResponse(response, 'validate-key');
-      })
+      .then(function (response) { return parseJsonResponse(response, 'validate-key'); })
       .then(function (data) {
         if (!data.ok) {
           invalidateValidationState();
-          valResult.textContent = 'Problem: ' + (data.error || 'Unknown error.');
+          validateResult.textContent = 'Problem: ' + (data.error || 'Unknown error.');
           return;
         }
-        keyValidated = true;
+        validatedProvider = provider;
+        validatedModels = data.models || [];
         setSaveEnabled(true);
-        mergeModelsIntoSelects(data.models || [], normalizeModel(data.suggested_model || ''));
-        valResult.textContent = 'Key accepted — ' + (data.models && data.models.length ? data.models.length + ' model(s) found on your account.' : 'no models listed yet.') + (data.suggested_model ? ' Suggested model: ' + normalizeModel(data.suggested_model) + '.' : '');
+        rebuildModelSelect(validatedModels, data.suggested_model || '');
+        validateResult.textContent = providerLabel() + ' key accepted.';
+        providerModelSummary.textContent = (validatedModels.length ? (validatedModels.length + ' compatible model(s) found.') : 'No models returned.') + (data.suggested_model ? (' Suggested default: ' + data.suggested_model + '.') : '');
       })
       .catch(function (error) {
         invalidateValidationState();
-        valResult.textContent = handleRequestFailure('validate-key', error, 'Could not reach Ollama. Check your connection.');
+        validateResult.textContent = handleRequestFailure('validate-key', error, 'Could not validate this provider key.');
       })
       .finally(function () {
         validateBtn.disabled = false;
         validateBtn.textContent = 'Check key';
       });
-  });
+  }
 
-  form.addEventListener('submit', function (event) {
-    var key = keyInput.value.trim();
-    var model = resolvedModel();
-    var saveUrl = form.dataset.saveUrl;
+  function saveProvider(event) {
+    var provider = providerSelect.value;
+    var apiKey = keyInput.value.trim();
+    var fd = new FormData();
 
     event.preventDefault();
-    if (!key) {
-      statusBox.textContent = 'Enter your Ollama API key.';
+    if (!apiKey) {
+      statusBox.textContent = 'Enter an API key.';
       return;
     }
-    if (!model) {
-      statusBox.textContent = 'Choose or enter a model name.';
-      return;
-    }
-    if (!keyValidated) {
-      statusBox.textContent = 'Check your key before saving.';
+    if (validatedProvider !== provider) {
+      statusBox.textContent = 'Check the selected provider key before saving.';
       return;
     }
 
+    fd.append('provider', provider);
+    fd.append('api_key', apiKey);
+    fd.append('default_model', modelSelect.value || '');
     saveBtn.disabled = true;
     saveBtn.textContent = 'Saving...';
 
-    var fd = new FormData();
-    fd.append('ollama_api_key', key);
-    fd.append('ollama_model', model);
-
-    fetch(saveUrl, {
+    fetch(form.dataset.saveUrl, {
       method: 'POST',
       body: fd,
       credentials: 'same-origin',
       headers: buildHeaders()
     })
-      .then(function (response) {
-        return parseJsonResponse(response, 'save-key');
-      })
+      .then(function (response) { return parseJsonResponse(response, 'save-key'); })
       .then(function (data) {
         if (data.ok) {
           window.location.reload();
@@ -360,78 +218,177 @@
         statusBox.textContent = 'Could not save: ' + (data.error || 'Unknown error.');
       })
       .catch(function (error) {
-        statusBox.textContent = handleRequestFailure('save-key', error, 'Request failed. Try again.');
+        statusBox.textContent = handleRequestFailure('save-key', error, 'Could not save this provider.');
       })
       .finally(function () {
         saveBtn.disabled = false;
-        saveBtn.textContent = 'Save and enable AI';
+        saveBtn.textContent = 'Save provider';
       });
-  });
-
-  if (forgetBtn) {
-    forgetBtn.addEventListener('click', function () {
-      var saveUrl = form.dataset.saveUrl;
-      forgetBtn.disabled = true;
-      fetch(saveUrl, {
-        method: 'DELETE',
-        credentials: 'same-origin',
-        headers: buildHeaders()
-      })
-        .then(function (response) {
-          return parseJsonResponse(response, 'forget-key');
-        })
-        .then(function () {
-          window.location.reload();
-        })
-        .catch(function (error) {
-          statusBox.textContent = handleRequestFailure('forget-key', error, 'Could not remove key. Try again.');
-          forgetBtn.disabled = false;
-        });
-    });
   }
 
-  if (featuresForm) {
-    featuresForm.addEventListener('submit', function (event) {
-      var featStatus = document.getElementById('ai-features-status');
-      var saveFeatsBtn = document.getElementById('save-features-btn');
-      var saveUrl = featuresForm.dataset.saveUrl;
-      var fd;
+  function formatDuration(totalSeconds) {
+    var seconds = Math.max(0, Number(totalSeconds || 0));
+    var hours = Math.floor(seconds / 3600);
+    var minutes = Math.floor((seconds % 3600) / 60);
+    if (hours > 0) {
+      return hours + 'h ' + minutes + 'm remaining';
+    }
+    if (minutes > 0) {
+      return minutes + 'm remaining';
+    }
+    return Math.max(0, seconds) + 's remaining';
+  }
 
-      event.preventDefault();
-      saveFeatsBtn.disabled = true;
-      saveFeatsBtn.textContent = 'Saving...';
+  function bindProviderCard(card) {
+    var countdown = card.querySelector('.provider-session-countdown');
+    var extendBtn = card.querySelector('.provider-session-extend-btn');
+    var removeBtn = card.querySelector('.provider-remove-btn');
+    var status = card.querySelector('.provider-session-status');
+    var expiryMs = 0;
+    var timer = null;
 
-      fd = new FormData(featuresForm);
-      ['heading_fix', 'markitdown', 'chat', 'playground'].forEach(function (key) {
-        if (!fd.has('feature_' + key)) {
-          fd.append('feature_' + key, '0');
+    function renderCountdown() {
+      var secondsRemaining = Math.max(0, Math.floor((expiryMs - Date.now()) / 1000));
+      if (!expiryMs || secondsRemaining <= 0) {
+        countdown.textContent = 'Expired';
+        if (extendBtn) {
+          extendBtn.disabled = true;
         }
-      });
+        return;
+      }
+      countdown.textContent = formatDuration(secondsRemaining);
+      if (extendBtn) {
+        extendBtn.disabled = false;
+      }
+    }
 
-      fetch(saveUrl, {
-        method: 'POST',
-        body: fd,
+    function startTimer() {
+      if (timer) {
+        clearInterval(timer);
+      }
+      renderCountdown();
+      timer = setInterval(renderCountdown, 1000);
+    }
+
+    function fetchSession() {
+      var panel = card.querySelector('.provider-session-panel');
+      if (!panel) {
+        return;
+      }
+      fetch(panel.dataset.sessionUrl, {
+        method: 'GET',
         credentials: 'same-origin',
         headers: buildHeaders()
       })
-        .then(function (response) {
-          return parseJsonResponse(response, 'save-features');
-        })
+        .then(function (response) { return parseJsonResponse(response, 'session-status'); })
         .then(function (data) {
-          if (data.ok) {
-            var on = data.enabled && data.enabled.length ? data.enabled.join(', ') : 'none';
-            featStatus.textContent = 'Saved. Active: ' + on + '.';
-            return;
-          }
-          featStatus.textContent = 'Could not save: ' + (data.error || 'Unknown error.');
+          expiryMs = data && data.expires_utc ? Date.parse(data.expires_utc) : 0;
+          startTimer();
         })
-        .catch(function (error) {
-          featStatus.textContent = handleRequestFailure('save-features', error, 'Request failed. Try again.');
-        })
-        .finally(function () {
-          saveFeatsBtn.disabled = false;
-          saveFeatsBtn.textContent = 'Save feature choices';
+        .catch(function () {
+          countdown.textContent = 'Could not load';
         });
+    }
+
+    if (extendBtn) {
+      extendBtn.addEventListener('click', function () {
+        var panel = card.querySelector('.provider-session-panel');
+        extendBtn.disabled = true;
+        status.textContent = 'Extending key session…';
+        fetch(panel.dataset.extendUrl, {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: buildHeaders()
+        })
+          .then(function (response) { return parseJsonResponse(response, 'extend-session'); })
+          .then(function (data) {
+            expiryMs = data && data.expires_utc ? Date.parse(data.expires_utc) : 0;
+            startTimer();
+            status.textContent = 'Key session extended.';
+          })
+          .catch(function (error) {
+            status.textContent = handleRequestFailure('extend-session', error, 'Could not extend the key session.');
+          });
+      });
+    }
+
+    if (removeBtn) {
+      removeBtn.addEventListener('click', function () {
+        var provider = removeBtn.getAttribute('data-provider') || '';
+        var url = removeBtn.getAttribute('data-remove-url') + '?provider=' + encodeURIComponent(provider);
+        removeBtn.disabled = true;
+        fetch(url, {
+          method: 'DELETE',
+          credentials: 'same-origin',
+          headers: buildHeaders()
+        })
+          .then(function (response) { return parseJsonResponse(response, 'remove-provider'); })
+          .then(function () {
+            window.location.reload();
+          })
+          .catch(function (error) {
+            status.textContent = handleRequestFailure('remove-provider', error, 'Could not remove this provider.');
+            removeBtn.disabled = false;
+          });
+      });
+    }
+
+    fetchSession();
+  }
+
+  function saveFeatureBindings(event) {
+    var featStatus = document.getElementById('ai-features-status');
+    var saveBtnFeatures = document.getElementById('save-features-btn');
+    var fd = new FormData(featuresForm);
+
+    event.preventDefault();
+    saveBtnFeatures.disabled = true;
+    saveBtnFeatures.textContent = 'Saving...';
+
+    ['heading_fix', 'markitdown', 'playground', 'alt_text', 'whisperer', 'chat'].forEach(function (key) {
+      if (!fd.has('feature_' + key)) {
+        fd.append('feature_' + key, '0');
+      }
     });
+
+    fetch(featuresForm.dataset.saveUrl, {
+      method: 'POST',
+      body: fd,
+      credentials: 'same-origin',
+      headers: buildHeaders()
+    })
+      .then(function (response) { return parseJsonResponse(response, 'save-features'); })
+      .then(function (data) {
+        if (data.ok) {
+          featStatus.textContent = 'Saved. Active: ' + ((data.enabled && data.enabled.length) ? data.enabled.join(', ') : 'none') + '.';
+          return;
+        }
+        featStatus.textContent = 'Could not save: ' + (data.error || 'Unknown error.');
+      })
+      .catch(function (error) {
+        featStatus.textContent = handleRequestFailure('save-features', error, 'Could not save feature choices.');
+      })
+      .finally(function () {
+        saveBtnFeatures.disabled = false;
+        saveBtnFeatures.textContent = 'Save feature choices';
+      });
+  }
+
+  updateProviderLink();
+  setSaveEnabled(false);
+  providerSelect.addEventListener('change', function () {
+    updateProviderLink();
+    invalidateValidationState();
+    rebuildModelSelect([], '');
+    validateResult.textContent = '';
+    providerModelSummary.textContent = '';
+  });
+  keyInput.addEventListener('input', invalidateValidationState);
+  validateBtn.addEventListener('click', validateProviderKey);
+  form.addEventListener('submit', saveProvider);
+
+  Array.prototype.forEach.call(providerCards, bindProviderCard);
+  if (featuresForm) {
+    featuresForm.addEventListener('submit', saveFeatureBindings);
   }
 }());

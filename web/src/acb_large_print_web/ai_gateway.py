@@ -53,8 +53,22 @@ from .credentials import (
     is_ollama_configured,
     get_ollama_cloud_url,
 )
+from .user_ai import (
+    USER_AI_PROVIDER_DEFINITIONS,
+    any_user_provider_configured,
+    infer_model_capabilities,
+    format_model_ref,
+    get_user_ai_provider_and_model_for,
+    get_user_provider_key,
+)
 
 log = logging.getLogger(__name__)
+
+
+def _raise_for_status_explicit(resp: requests.Response) -> None:
+    if resp.status_code < 400:
+        return
+    raise requests.HTTPError(f"HTTP {resp.status_code}", response=resp)
 
 # ---------------------------------------------------------------------------
 # Configuration (resolved once at import time from environment)
@@ -85,6 +99,8 @@ _DEFAULTS = {
 _OPENROUTER_BASE = "https://openrouter.ai/api/v1"
 _OPENROUTER_AUDIO_URL = f"{_OPENROUTER_BASE}/audio/transcriptions"
 _OPENROUTER_CHAT_URL = f"{_OPENROUTER_BASE}/chat/completions"
+_OPENAI_BASE = "https://api.openai.com/v1"
+_GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta"
 _REQUEST_TIMEOUT = 60  # seconds
 
 # Ollama Cloud native API
@@ -133,7 +149,7 @@ def is_ai_configured() -> bool:
     Ollama (user session key) takes priority over the server OpenRouter key.
     Either alone is sufficient to enable text-based AI features.
     """
-    return is_ollama_configured() or bool(get_openrouter_api_key())
+    return is_ollama_configured() or any_user_provider_configured() or bool(get_openrouter_api_key())
 
 
 def is_whisper_configured() -> bool:
@@ -141,7 +157,141 @@ def is_whisper_configured() -> bool:
 
     Ollama does not support audio transcription, so this checks OpenRouter only.
     """
-    return bool(get_openrouter_api_key())
+    return bool(get_user_provider_key("openrouter") or get_openrouter_api_key())
+
+
+def _openrouter_key() -> str:
+    return get_user_provider_key("openrouter") or get_openrouter_api_key()
+
+
+def _model_ref(provider: str, model: str) -> str:
+    return format_model_ref(provider, model)
+
+
+def fetch_user_provider_models(provider: str, api_key: str) -> list[dict[str, Any]]:
+    """Fetch a normalized model catalog for a user-supplied provider key."""
+    provider = provider.strip().lower()
+    if provider == "ollama":
+        resp = requests.get(
+            f"{get_ollama_cloud_url()}/tags",
+            headers={"Authorization": f"Bearer {api_key}"},
+            timeout=20,
+        )
+        _raise_for_status_explicit(resp)
+        raw = resp.json().get("models", [])
+        out: list[dict[str, Any]] = []
+        for item in raw:
+            model_id = str(item.get("name") or item.get("model") or "").replace(":latest", "")
+            if not model_id:
+                continue
+            out.append(
+                {
+                    "id": model_id,
+                    "name": model_id,
+                    "provider": provider,
+                    "context_length": 0,
+                    "input_per_million": None,
+                    "output_per_million": None,
+                    "note": "Available on your Ollama account.",
+                    "capabilities": infer_model_capabilities(provider, model_id, model_name=model_id, raw=item),
+                }
+            )
+        return out
+
+    if provider == "openrouter":
+        resp = requests.get(
+            f"{_OPENROUTER_BASE}/models",
+            headers={
+                "Authorization": f"Bearer {api_key}",
+                "HTTP-Referer": "https://glow.bits-acb.org",
+                "X-Title": "GLOW",
+            },
+            timeout=20,
+        )
+        _raise_for_status_explicit(resp)
+        raw = resp.json().get("data", [])
+        out = []
+        for item in raw:
+            pricing = item.get("pricing", {}) or {}
+            model_id = str(item.get("id") or "")
+            model_name = str(item.get("name") or item.get("id") or "")
+            context_length = int(item.get("context_length") or 0)
+            out.append(
+                {
+                    "id": model_id,
+                    "name": model_name,
+                    "provider": provider,
+                    "context_length": context_length,
+                    "input_per_million": round(float(pricing.get("prompt", 0) or 0) * 1_000_000, 6),
+                    "output_per_million": round(float(pricing.get("completion", 0) or 0) * 1_000_000, 6),
+                    "note": "Pricing supplied by OpenRouter model catalog.",
+                    "capabilities": infer_model_capabilities(provider, model_id, model_name=model_name, context_length=context_length, raw=item),
+                }
+            )
+        out.sort(key=lambda value: (value.get("input_per_million") or 0, value.get("id") or ""))
+        return out
+
+    if provider == "openai":
+        resp = requests.get(
+            f"{_OPENAI_BASE}/models",
+            headers={"Authorization": f"Bearer {api_key}"},
+            timeout=20,
+        )
+        _raise_for_status_explicit(resp)
+        raw = resp.json().get("data", [])
+        out = []
+        for item in raw:
+            model_id = str(item.get("id") or "")
+            if not model_id:
+                continue
+            out.append(
+                {
+                    "id": model_id,
+                    "name": model_id,
+                    "provider": provider,
+                    "context_length": 0,
+                    "input_per_million": None,
+                    "output_per_million": None,
+                    "note": "Pricing not provided by the OpenAI models endpoint.",
+                    "capabilities": infer_model_capabilities(provider, model_id, model_name=model_id, raw=item),
+                }
+            )
+        out.sort(key=lambda value: value.get("id") or "")
+        return out
+
+    if provider == "gemini":
+        resp = requests.get(
+            f"{_GEMINI_BASE}/models",
+            params={"key": api_key},
+            timeout=20,
+        )
+        _raise_for_status_explicit(resp)
+        raw = resp.json().get("models", [])
+        out = []
+        for item in raw:
+            name = str(item.get("name") or "")
+            if not name:
+                continue
+            supported = item.get("supportedGenerationMethods") or []
+            if "generateContent" not in supported:
+                continue
+            model_id = name.split("/", 1)[-1]
+            out.append(
+                {
+                    "id": model_id,
+                    "name": str(item.get("displayName") or model_id),
+                    "provider": provider,
+                    "context_length": int(item.get("inputTokenLimit") or 0),
+                    "input_per_million": None,
+                    "output_per_million": None,
+                    "note": "Pricing not provided by the Gemini model list endpoint.",
+                    "capabilities": infer_model_capabilities(provider, model_id, model_name=str(item.get("displayName") or model_id), context_length=int(item.get("inputTokenLimit") or 0), raw=item),
+                }
+            )
+        out.sort(key=lambda value: value.get("id") or "")
+        return out
+
+    raise RuntimeError(f"Unsupported AI provider: {provider}")
 
 
 # ---------------------------------------------------------------------------
@@ -671,6 +821,151 @@ def _openrouter_completion(
     )
 
 
+def _openrouter_user_completion(
+    model: str,
+    messages: list[dict],
+    user_id: str,
+    max_tokens: int = 1200,
+) -> tuple[str, int, int, str]:
+    api_key = get_user_provider_key("openrouter")
+    if not api_key:
+        raise RuntimeError("No OpenRouter API key in session.")
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "HTTP-Referer": "https://glow.bits-acb.org",
+        "X-Title": "GLOW",
+        "Content-Type": "application/json",
+    }
+    model_candidates = _model_list(model)
+    payload: dict[str, Any] = {
+        "model": model_candidates[0],
+        "messages": messages,
+        "max_tokens": max_tokens,
+        "temperature": 0.3,
+        "provider": _provider_preferences(require_parameters=False),
+    }
+    if len(model_candidates) > 1:
+        payload["models"] = model_candidates
+    if user_id:
+        payload["user"] = user_id[:64]
+    data = _openrouter_post_chat(payload, headers)
+    text = data["choices"][0]["message"]["content"] or ""
+    usage = data.get("usage", {})
+    return (
+        text,
+        int(usage.get("prompt_tokens", 0) or 0),
+        int(usage.get("completion_tokens", 0) or 0),
+        data.get("model") or model_candidates[0],
+    )
+
+
+def _openai_completion(
+    model: str,
+    messages: list[dict],
+    user_id: str,
+    max_tokens: int = 1200,
+) -> tuple[str, int, int, str]:
+    api_key = get_user_provider_key("openai")
+    if not api_key:
+        raise RuntimeError("No OpenAI API key in session.")
+    resp = requests.post(
+        f"{_OPENAI_BASE}/chat/completions",
+        headers={
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json",
+        },
+        json={
+            "model": model,
+            "messages": messages,
+            "max_tokens": max_tokens,
+            "temperature": 0.3,
+            "user": user_id[:64] if user_id else None,
+        },
+        timeout=_REQUEST_TIMEOUT,
+    )
+    if resp.status_code >= 400:
+        try:
+            detail = resp.json().get("error", {}).get("message") or resp.text
+        except Exception:
+            detail = resp.text
+        raise RuntimeError(f"OpenAI request failed: {str(detail).strip()}")
+    data = resp.json()
+    text = (data.get("choices") or [{}])[0].get("message", {}).get("content") or ""
+    usage = data.get("usage", {}) or {}
+    return (
+        text,
+        int(usage.get("prompt_tokens", 0) or 0),
+        int(usage.get("completion_tokens", 0) or 0),
+        str(data.get("model") or model),
+    )
+
+
+def _gemini_messages(messages: list[dict]) -> tuple[str, list[dict[str, Any]]]:
+    system_parts: list[str] = []
+    contents: list[dict[str, Any]] = []
+    for message in messages:
+        role = str(message.get("role") or "user")
+        text = str(message.get("content") or "")
+        if not text:
+            continue
+        if role == "system":
+            system_parts.append(text)
+            continue
+        contents.append(
+            {
+                "role": "model" if role == "assistant" else "user",
+                "parts": [{"text": text}],
+            }
+        )
+    return "\n\n".join(system_parts), contents
+
+
+def _gemini_completion(
+    model: str,
+    messages: list[dict],
+    user_id: str,
+    max_tokens: int = 1200,
+) -> tuple[str, int, int, str]:
+    api_key = get_user_provider_key("gemini")
+    if not api_key:
+        raise RuntimeError("No Gemini API key in session.")
+    system_instruction, contents = _gemini_messages(messages)
+    payload: dict[str, Any] = {
+        "contents": contents,
+        "generationConfig": {
+            "temperature": 0.3,
+            "maxOutputTokens": max_tokens,
+        },
+    }
+    if system_instruction:
+        payload["systemInstruction"] = {"parts": [{"text": system_instruction}]}
+    resp = requests.post(
+        f"{_GEMINI_BASE}/models/{model}:generateContent",
+        params={"key": api_key},
+        json=payload,
+        timeout=_REQUEST_TIMEOUT,
+    )
+    if resp.status_code >= 400:
+        try:
+            detail = resp.json().get("error", {}).get("message") or resp.text
+        except Exception:
+            detail = resp.text
+        raise RuntimeError(f"Gemini request failed: {str(detail).strip()}")
+    data = resp.json()
+    candidates = data.get("candidates") or []
+    parts = []
+    if candidates:
+        parts = (candidates[0].get("content") or {}).get("parts") or []
+    text = "".join(str(part.get("text") or "") for part in parts).strip()
+    usage = data.get("usageMetadata") or {}
+    return (
+        text,
+        int(usage.get("promptTokenCount", 0) or 0),
+        int(usage.get("candidatesTokenCount", 0) or 0),
+        model,
+    )
+
+
 def _openrouter_post_chat(payload: dict[str, Any], headers: dict[str, str]) -> dict[str, Any]:
     """POST OpenRouter chat completion with bounded retries on throttling/server faults."""
     attempts = max(0, _OPENROUTER_MAX_RETRIES)
@@ -763,19 +1058,35 @@ def chat(
     if not is_ai_configured():
         raise RuntimeError("AI is not configured on this server.")
 
-    # --- Ollama Cloud path (user-supplied key) ---
-    if is_ollama_configured():
-        messages: list[dict] = [{"role": "system", "content": system_prompt}]
-        if conversation_history:
-            messages.extend(conversation_history)
-        if document_text:
-            messages.append(
-                {"role": "user", "content": f"Document excerpt (first 4000 chars):\n{document_text[:4000]}"}
-            )
-        messages.append({"role": "user", "content": question})
-        model = get_user_ollama_model_for(feature)
-        answer, in_tok, out_tok, resolved = _ollama_completion(model, messages, session_hash)
-        _record_usage(session_hash, feature, resolved, in_tok, out_tok, escalated=False)
+    messages: list[dict] = [{"role": "system", "content": system_prompt}]
+    if conversation_history:
+        messages.extend(conversation_history)
+    if document_text:
+        messages.append(
+            {"role": "user", "content": f"Document excerpt (first 4000 chars):\n{document_text[:4000]}"}
+        )
+    messages.append({"role": "user", "content": question})
+
+    provider, model = get_user_ai_provider_and_model_for(feature)
+
+    if provider == "ollama" and is_ollama_configured():
+        answer, in_tok, out_tok, resolved = _ollama_completion(model or get_user_ollama_model_for(feature), messages, session_hash)
+        _record_usage(session_hash, feature, _model_ref("ollama", resolved), in_tok, out_tok, escalated=False)
+        return answer, False
+
+    if provider == "openrouter" and get_user_provider_key("openrouter"):
+        answer, in_tok, out_tok, resolved = _openrouter_user_completion(model, messages, session_hash)
+        _record_usage(session_hash, feature, _model_ref("openrouter", resolved), in_tok, out_tok, escalated=False)
+        return answer, False
+
+    if provider == "openai" and get_user_provider_key("openai"):
+        answer, in_tok, out_tok, resolved = _openai_completion(model, messages, session_hash)
+        _record_usage(session_hash, feature, _model_ref("openai", resolved), in_tok, out_tok, escalated=False)
+        return answer, False
+
+    if provider == "gemini" and get_user_provider_key("gemini"):
+        answer, in_tok, out_tok, resolved = _gemini_completion(model, messages, session_hash)
+        _record_usage(session_hash, feature, _model_ref("gemini", resolved), in_tok, out_tok, escalated=False)
         return answer, False
 
     # --- OpenRouter path (server key) ---
@@ -788,17 +1099,7 @@ def chat(
     default_model = str(cfg["default_model"])
     fallback_model = str(cfg["fallback_model"])
 
-    or_messages: list[dict] = [{"role": "system", "content": system_prompt}]
-    if conversation_history:
-        or_messages.extend(conversation_history)
-    if document_text:
-        or_messages.append(
-            {
-                "role": "user",
-                "content": f"Document excerpt (first 4000 chars):\n{document_text[:4000]}",
-            }
-        )
-    or_messages.append({"role": "user", "content": question})
+    or_messages = messages
 
     # --- Try default (free) model first ---
     try:
@@ -846,7 +1147,7 @@ def describe_image(
     prompt: str,
     session_hash: str,
 ) -> str:
-    """Describe image content using a vision-capable OpenRouter model."""
+    """Describe image content using a vision-capable active provider/model."""
     if not is_ai_configured():
         raise RuntimeError("AI is not configured on this server.")
 
@@ -855,18 +1156,101 @@ def describe_image(
             "The monthly AI budget has been reached. Vision analysis will resume next month."
         )
 
+    provider, selected_model = get_user_ai_provider_and_model_for("alt_text")
     cfg = get_runtime_config()
-    vision_model = str(cfg.get("vision_model") or _VISION_MODEL)
-    api_key = get_openrouter_api_key()
+    vision_model = selected_model or str(cfg.get("vision_model") or _VISION_MODEL)
+
+    encoded = base64.b64encode(image_bytes).decode("ascii")
+    data_uri = f"data:{mime_type};base64,{encoded}"
+
+    if provider == "openai" and get_user_provider_key("openai"):
+        resp = requests.post(
+            f"{_OPENAI_BASE}/chat/completions",
+            headers={
+                "Authorization": f"Bearer {get_user_provider_key('openai')}",
+                "Content-Type": "application/json",
+            },
+            json={
+                "model": vision_model,
+                "messages": [
+                    {
+                        "role": "system",
+                        "content": (
+                            "You are an accessibility assistant. Describe visible content accurately, "
+                            "extract readable text when possible, and call out accessibility-relevant "
+                            "elements such as headings, charts, labels, and figure meaning."
+                        ),
+                    },
+                    {
+                        "role": "user",
+                        "content": [
+                            {"type": "text", "text": prompt},
+                            {"type": "image_url", "image_url": {"url": data_uri}},
+                        ],
+                    },
+                ],
+                "max_tokens": 700,
+                "temperature": 0.2,
+            },
+            timeout=_REQUEST_TIMEOUT,
+        )
+        if resp.status_code >= 400:
+            try:
+                detail = resp.json().get("error", {}).get("message") or resp.text
+            except Exception:
+                detail = resp.text
+            raise RuntimeError(f"OpenAI vision request failed: {str(detail).strip()}")
+        data = resp.json()
+        text = (data.get("choices", [{}])[0].get("message", {}).get("content") or "").strip()
+        usage = data.get("usage", {}) or {}
+        _record_usage(session_hash, "vision", _model_ref("openai", str(data.get("model") or vision_model)), int(usage.get("prompt_tokens", 0) or 0), int(usage.get("completion_tokens", 0) or 0), escalated=False)
+        return text
+
+    if provider == "gemini" and get_user_provider_key("gemini"):
+        resp = requests.post(
+            f"{_GEMINI_BASE}/models/{vision_model}:generateContent",
+            params={"key": get_user_provider_key("gemini")},
+            json={
+                "contents": [
+                    {
+                        "role": "user",
+                        "parts": [
+                            {"text": prompt},
+                            {"inline_data": {"mime_type": mime_type, "data": encoded}},
+                        ],
+                    }
+                ],
+                "systemInstruction": {
+                    "parts": [
+                        {
+                            "text": "You are an accessibility assistant. Describe visible content accurately, extract readable text when possible, and call out accessibility-relevant elements such as headings, charts, labels, and figure meaning."
+                        }
+                    ]
+                },
+                "generationConfig": {"temperature": 0.2, "maxOutputTokens": 700},
+            },
+            timeout=_REQUEST_TIMEOUT,
+        )
+        if resp.status_code >= 400:
+            try:
+                detail = resp.json().get("error", {}).get("message") or resp.text
+            except Exception:
+                detail = resp.text
+            raise RuntimeError(f"Gemini vision request failed: {str(detail).strip()}")
+        data = resp.json()
+        parts = ((data.get("candidates") or [{}])[0].get("content") or {}).get("parts") or []
+        text = "".join(str(part.get("text") or "") for part in parts).strip()
+        usage = data.get("usageMetadata") or {}
+        _record_usage(session_hash, "vision", _model_ref("gemini", vision_model), int(usage.get("promptTokenCount", 0) or 0), int(usage.get("candidatesTokenCount", 0) or 0), escalated=False)
+        return text
+
+    api_key = _openrouter_key()
     headers = {
         "Authorization": f"Bearer {api_key}",
         "HTTP-Referer": "https://glow.bits-acb.org",
         "X-Title": "GLOW",
         "Content-Type": "application/json",
     }
-
-    encoded = base64.b64encode(image_bytes).decode("ascii")
-    data_uri = f"data:{mime_type};base64,{encoded}"
     payload: dict[str, Any] = {
         "model": vision_model,
         "messages": [
@@ -899,7 +1283,7 @@ def describe_image(
     _record_usage(
         session_hash,
         "vision",
-        model_used,
+        _model_ref("openrouter", str(model_used)),
         int(usage.get("prompt_tokens", 0) or 0),
         int(usage.get("completion_tokens", 0) or 0),
         escalated=False,
@@ -941,7 +1325,7 @@ def transcribe(
 
     cfg = get_runtime_config()
     whisper_model = str(cfg.get("whisper_model", _WHISPER_MODEL))
-    api_key = get_openrouter_api_key()
+    api_key = _openrouter_key()
 
     transcript: str | None = None
     input_audio_error: str | None = None

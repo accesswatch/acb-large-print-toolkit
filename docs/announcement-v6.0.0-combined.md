@@ -15,7 +15,7 @@ GLOW 6.0.0 is now available.
 This release does four things clearly:
 
 - it explains the open source contribution process more plainly
-- it gives users a personal Ollama Cloud setup path for AI features
+- it gives users a personal AI provider setup path for AI features
 - it limits that first AI release to heading detection and MarkItDown support
 - it shows AI usage directly in the web app so people can see what is active in the current session
 
@@ -31,19 +31,19 @@ Why this matters:
 - it makes the project feel open and collaborative
 - it matches the way the project is already being used in practice
 
-### Personal Ollama Cloud AI support with AI Playground (Beta)
+### Personal AI provider support with AI Playground (Beta)
 
-Users can add their own Ollama Cloud API key in GLOW and turn on the AI features that make sense for this release.
+Users can add their own AI provider key in GLOW and turn on the AI features that make sense for this release. The current web app supports personal Ollama Cloud, OpenRouter, OpenAI, and Google Gemini keys in one AI Features page.
 
 What is enabled first:
 
 - **heading detection** in Fix
 - **MarkItDown support** for document cleanup and extraction
-- **AI Playground (Beta)** -- a new experimental chat surface for testing Ollama models without document context
+- **AI Playground (Beta)** -- a new experimental chat surface for testing compatible personal-provider models without document context
 
 The AI Playground is the new magic here.
 
-It is a standalone chat designed for exploration. Ask any question, try different Ollama models, and see responses stream in token-by-token. Conversations stay private to your session. You can copy responses, regenerate them, stop long generations, switch models on the fly, use prompt templates, and export conversations as Markdown. The interface is accessible: your questions appear as headings, the AI responses as sub-headings, so you can navigate directly between them using a keyboard or screen reader.
+It is a standalone chat designed for exploration. Ask any question, try different compatible models, and see responses stream in token-by-token. Conversations stay private to your session. You can copy responses, regenerate them, stop long generations, switch models on the fly, use prompt templates, and export conversations as Markdown. The interface is accessible: your questions appear as headings, the AI responses as sub-headings, and long-running replies now announce progress and completion to screen reader users.
 
 What stays off for now:
 
@@ -71,6 +71,8 @@ The first AI features in GLOW are text-focused because that is where the trust i
 **How to use it:**
 
 When you add an Ollama key in GLOW Settings, heading detection and MarkItDown support are on by default. The setup flow now requires key validation before save and accepts valid keys even when they do not use the historical `ollama_` prefix. Try it:
+
+The current AI Features page also supports OpenRouter, OpenAI, and Google Gemini keys. GLOW filters feature choices dynamically so only compatible provider/model combinations appear for alt-text suggestions, Whisperer, and other AI workflows.
 
 1. Upload a document in Word, Excel, PowerPoint, PDF, Markdown, or ePub format
 2. Choose Audit or Fix

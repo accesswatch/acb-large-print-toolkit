@@ -1,6 +1,6 @@
 {# AI usage meter -- shown in sidebar when any AI provider is active #}
 {# Rendered server-side with initial values; updated live by ai-meter.js #}
-{% if ai_entry_enabled is defined and ai_entry_enabled and ai_ollama_active is defined and ai_ollama_active %}
+{% if ai_entry_enabled is defined and ai_entry_enabled and ai_user_provider_active is defined and ai_user_provider_active %}
 <div
   class="ai-meter"
   id="ai-meter"
@@ -8,10 +8,16 @@
   aria-label="AI usage"
   aria-live="polite"
   aria-atomic="true"
+  data-session-url="{{ url_for('ai.ollama_session_status', provider=ai_primary_provider_id) }}"
+  data-extend-url="{{ url_for('ai.extend_ollama_session', provider=ai_primary_provider_id) }}"
 >
-  <span class="ai-meter__label">AI (Ollama)</span>
+  <span class="ai-meter__label">AI ({{ ai_primary_provider_label or 'Personal' }})</span>
   <span class="ai-meter__detail" id="ai-meter-detail">
-    <span id="ai-meter-requests">--</span> requests today &middot; <span id="ai-meter-model">--</span>
+    <span id="ai-meter-requests">--</span> requests today &middot; <span id="ai-meter-model">{{ ai_primary_provider_model or '--' }}</span>
+  </span>
+  <span class="ai-meter__session" id="ai-meter-session">
+    <span id="ai-meter-session-time">Key session: checking…</span>
+    <button type="button" class="ai-meter__session-btn" id="ai-meter-extend-btn">Keep active</button>
   </span>
   <a href="{{ url_for('ai.settings_ai_page') }}" class="ai-meter__link" aria-label="AI settings -- change model or remove key">Change</a>
 </div>
@@ -28,7 +34,7 @@
   <span class="ai-meter__detail" id="ai-meter-detail">
     <span id="ai-meter-requests">--</span> / <span id="ai-meter-limit">--</span> chats today
   </span>
-  <span class="ai-meter__bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="ai-meter-bar">
+  <span class="ai-meter__bar" role="progressbar" aria-label="Monthly AI budget remaining" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="ai-meter-bar">
     <span class="ai-meter__bar-fill" id="ai-meter-bar-fill" style="width: 0%;"></span>
   </span>
 </div>

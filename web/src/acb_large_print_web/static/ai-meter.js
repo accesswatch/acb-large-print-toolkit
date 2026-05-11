@@ -11,18 +11,38 @@
   var POLL_INTERVAL_MS = 30000;
   var USAGE_URL = "/ai/usage/";
   var _timer = null;
+  var _sessionExpiryMs = 0;
+  var _countdownTimer = null;
 
   function el(id) { return document.getElementById(id); }
+
+  function getCsrfToken() {
+    var meta = document.querySelector('meta[name="csrf-token"]');
+    return meta ? meta.getAttribute('content') || '' : '';
+  }
+
+  function formatDuration(totalSeconds) {
+    var seconds = Math.max(0, Number(totalSeconds || 0));
+    var hours = Math.floor(seconds / 3600);
+    var minutes = Math.floor((seconds % 3600) / 60);
+    if (hours > 0) {
+      return hours + 'h ' + minutes + 'm remaining';
+    }
+    if (minutes > 0) {
+      return minutes + 'm remaining';
+    }
+    return Math.max(0, seconds) + 's remaining';
+  }
 
   function updateMeter(data) {
     var meterEl = el("ai-meter");
     if (!meterEl) return;
 
-    if (data.provider === "ollama") {
+    if (data.provider && data.chat_remaining_today == null) {
       var reqEl    = el("ai-meter-requests");
       var modelEl  = el("ai-meter-model");
       if (reqEl)   reqEl.textContent   = data.session_requests_today;
-      if (modelEl) modelEl.textContent = data.ollama_model || "unknown";
+      if (modelEl) modelEl.textContent = data.provider_model || data.ollama_model || "unknown";
 
     } else if (data.provider === "openrouter") {
       var reqEl2   = el("ai-meter-requests");
@@ -44,11 +64,69 @@
     }
   }
 
+  function renderSessionCountdown() {
+    var sessionEl = el('ai-meter-session-time');
+    var extendBtn = el('ai-meter-extend-btn');
+    var secondsRemaining;
+    if (!sessionEl) return;
+
+    secondsRemaining = Math.max(0, Math.floor((_sessionExpiryMs - Date.now()) / 1000));
+    if (!_sessionExpiryMs || secondsRemaining <= 0) {
+      sessionEl.textContent = 'Key session expired';
+      if (extendBtn) {
+        extendBtn.disabled = true;
+      }
+      return;
+    }
+
+    sessionEl.textContent = 'Key session: ' + formatDuration(secondsRemaining);
+    if (extendBtn) {
+      extendBtn.disabled = false;
+    }
+  }
+
+  function startCountdownTimer() {
+    if (_countdownTimer) {
+      clearInterval(_countdownTimer);
+    }
+    renderSessionCountdown();
+    _countdownTimer = setInterval(renderSessionCountdown, 1000);
+  }
+
+  function updateSessionStatus(data) {
+    var sessionWrap = el('ai-meter-session');
+    if (!sessionWrap) {
+      return;
+    }
+    if (!data || !data.ok || !data.active || !data.expires_utc) {
+      _sessionExpiryMs = 0;
+      sessionWrap.hidden = false;
+      renderSessionCountdown();
+      return;
+    }
+    _sessionExpiryMs = Date.parse(data.expires_utc);
+    sessionWrap.hidden = false;
+    startCountdownTimer();
+  }
+
+  function fetchSessionStatus() {
+    var meterEl = el('ai-meter');
+    var sessionUrl = meterEl ? meterEl.getAttribute('data-session-url') : '';
+    if (!sessionUrl) {
+      return;
+    }
+    fetch(sessionUrl, { credentials: 'same-origin' })
+      .then(function (response) { return response.ok ? response.json() : null; })
+      .then(function (data) { if (data) updateSessionStatus(data); })
+      .catch(function () {});
+  }
+
   function fetchUsage() {
     fetch(USAGE_URL, { credentials: "same-origin" })
       .then(function (r) { return r.ok ? r.json() : null; })
       .then(function (data) { if (data) updateMeter(data); })
       .catch(function () { /* silent -- meter stays at last value */ });
+    fetchSessionStatus();
   }
 
   function resetTimer() {
@@ -69,5 +147,32 @@
       fetchUsage();
       resetTimer();
     });
+
+    var extendBtn = el('ai-meter-extend-btn');
+    if (extendBtn) {
+      extendBtn.addEventListener('click', function () {
+        var meterEl = el('ai-meter');
+        var extendUrl = meterEl ? meterEl.getAttribute('data-extend-url') : '';
+        if (!extendUrl) {
+          return;
+        }
+        extendBtn.disabled = true;
+        fetch(extendUrl, {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: { 'X-CSRFToken': getCsrfToken() }
+        })
+          .then(function (response) { return response.ok ? response.json() : null; })
+          .then(function (data) {
+            if (data) {
+              updateSessionStatus(data);
+            }
+          })
+          .catch(function () {})
+          .finally(function () {
+            renderSessionCountdown();
+          });
+      });
+    }
   }
 }());

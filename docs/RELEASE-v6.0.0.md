@@ -4,9 +4,9 @@
 
 GLOW 6.0.0 is the release where the project becomes easier to join and easier to explain.
 
-It introduces a cleaner open source contribution story, a focused Ollama-first AI setup path, a live sidebar usage indicator, and better release messaging across the website and docs.
+It introduces a cleaner open source contribution story, a focused personal-AI setup path, a live sidebar usage indicator, and better release messaging across the website and docs.
 
-This version is intentionally narrower than the long-term AI plan. The first release of personal AI support is limited to the text workflows that are easiest to trust: heading detection and MarkItDown support, plus General Chat in AI Playground. Document Chat remains intentionally separate and disabled by default.
+This version is intentionally narrower than the long-term AI plan. The first release of personal AI support is still limited to the workflows that are easiest to trust: heading detection, MarkItDown support, AI Playground, and capability-gated helper surfaces such as alt-text suggestions and Whisperer when compatible providers are active. Document Chat remains intentionally separate and disabled by default.
 
 ## Highlights
 
@@ -25,15 +25,15 @@ Why this matters:
 - helps new contributors understand the expected workflow
 - aligns the release story with the open source contribution process already used in practice
 
-### 2. Personal Ollama Cloud AI setup with AI Playground (Beta)
+### 2. Personal AI provider setup with AI Playground (Beta)
 
-Users can bring their own Ollama Cloud account and key, then enable the AI features that make sense for this release:
+Users can bring their own AI provider account and key, then enable the AI features that make sense for this release. The web app now supports personal Ollama Cloud, OpenRouter, OpenAI, and Google Gemini keys in the unified AI Features page.
 
 - heading detection for Fix
 - MarkItDown support for document cleanup and extraction
-- **AI Playground (Beta)** -- a new standalone chat surface for experimenting with any Ollama model without document context
+- **AI Playground (Beta)** -- a standalone chat surface for experimenting with compatible personal-provider models without document context
 
-The AI Playground introduces an experimental testing ground where users can explore model capabilities, try different Ollama models, and verify behavior before using AI in production workflows.
+The AI Playground introduces an experimental testing ground where users can explore model capabilities, try different compatible models, and verify behavior before using AI in production workflows.
 
 What makes it magical:
 
@@ -42,11 +42,13 @@ What makes it magical:
 - Streaming token-by-token responses with graceful fallback to standard response mode when streaming is unavailable
 - Regenerate last response without clearing conversation history
 - Stop generation control for long-running responses
+- Delayed screen reader progress announcement for long-running responses, followed by a completion announcement when the delayed response arrives
 - In-page model switcher for playground without leaving the chat page
 - Prompt template shortcuts for common tasks (summary, action items, plain language, ACB check, heading structure)
 - Session quota/status meter and warning indicators in the playground UI
 - Export conversation to Markdown for documentation handoff
-- Per-feature model selection: choose different Ollama models for heading detection, MarkItDown, and the playground in one unified AI Features settings page
+- Per-feature provider/model selection: choose different compatible provider/model pairs for heading detection, MarkItDown, playground, alt-text suggestions, and Whisperer from one unified AI Features settings page
+- Capability-aware filtering: GLOW only offers provider/model combinations that can actually support the selected feature, so vision and audio workflows do not expose broken choices
 - Temporary session history: conversations stay in your session only, never persisted by default, so exploration is safe and private
 - Typing indicator and smooth thinking animation: you see progress and feel heard while waiting for a response
 
@@ -54,6 +56,9 @@ AI setup improvements in this release:
 
 - Key validation now accepts valid Ollama API keys even when they do not use the historical `ollama_` prefix
 - Save is disabled until key validation succeeds, reducing accidental misconfiguration
+- Multiple personal providers can stay active in the same session at once
+- Alt-text suggestions are only offered when a vision-capable provider/model is active
+- BITS Whisperer is only offered when an audio-transcription-capable provider path is active
 - Document Chat and General Chat are explicitly separated via feature flags
 
 Document Chat remains off by default in this release. The Playground stays as Beta to keep expectations clear while we refine the experience.
@@ -61,7 +66,7 @@ Document Chat remains off by default in this release. The Playground stays as Be
 Why this matters:
 
 - keeps the first AI release focused and understandable
-- gives users a safe place to build confidence in Ollama before relying on AI in document workflows
+- gives users a safe place to build confidence in their chosen provider/model before relying on AI in document workflows
 - makes it easier to explain what AI is for inside GLOW
 - the accessible heading structure (H3/H4) serves both sighted users navigating long conversations and screen reader users jumping between questions and answers
 
@@ -91,7 +96,7 @@ Why this matters:
 Try it:
 
 - Upload a document with missing or incorrect headings
-- Use the AI Playground to test different Ollama models on a few headings first
+- Use the AI Playground to test different provider/model choices on a few headings first
 - Then run Fix with heading detection on and see the full result
 
 ### 3. Visible AI usage tracking
@@ -126,7 +131,7 @@ Why this matters:
 ## Compatibility and operations
 
 - Non-AI workflows continue to work normally.
-- Ollama AI features are intentionally limited in scope for 6.0.0.
+- Personal AI features are intentionally limited in scope for 6.0.0.
 - Shared OpenRouter-based AI paths remain available only where deployments already use them.
 
 ## Primary artifacts

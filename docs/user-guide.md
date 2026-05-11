@@ -16,8 +16,8 @@ GLOW 6.0.0 is the open source release that makes the project easier to join, eas
 
 1. **Open source contribution process** -- The web site, release notes, and announcement files now explain how to fork the repo, open a branch, submit a pull request, and work through review under branch protection. The project is ready for community contributions, not just downloads.
 2. **Feedback-to-issue automation** -- Feedback submissions can now collect a name and email for follow-up and sync directly into GitHub Issues when a token is configured.
-3. **Personal Ollama Cloud AI support with AI Playground (Beta)** -- Users can connect their own Ollama Cloud API key and enable AI features. The playground is a new experimental chat surface for testing Ollama models without document context. You can explore model behavior, stream responses token-by-token, regenerate or stop responses, copy/export outputs, switch models mid-conversation, and navigate questions and answers directly using your keyboard or screen reader. All conversation history is temporary and session-scoped.
-4. **Per-feature Ollama model selection** -- Choose different Ollama models for heading detection, MarkItDown support, and the playground from a unified AI Features settings page. The interface shows smart model recommendations based on what each feature does best.
+3. **Personal AI provider support with AI Playground (Beta)** -- Users can connect their own Ollama Cloud, OpenRouter, OpenAI, or Google Gemini API key and enable AI features. The playground is an experimental chat surface for testing compatible models without document context. You can explore model behavior, stream responses token-by-token, regenerate or stop responses, copy/export outputs, switch models mid-conversation, and navigate questions and answers directly using your keyboard or screen reader. Long-running replies now announce both in-progress and completed states to screen reader users. All conversation history is temporary and session-scoped.
+4. **Per-feature provider/model selection** -- Choose different compatible provider/model pairs for heading detection, MarkItDown support, the playground, alt-text suggestions, and Whisperer from a unified AI Features settings page. The interface filters out incompatible choices so vision and audio workflows only expose models that can support them.
 5. **Visible AI usage meter** -- The sidebar now shows a live AI usage summary that refreshes on page load and after AI actions, so users can see what they have used during the current session.
 6. **Clearer AI guidance** -- The About page and this user guide now explain what AI can do in short form even when AI is not yet enabled, so users can understand the capability before they turn it on.
 
@@ -33,15 +33,15 @@ If you are deciding whether to turn AI on, here is the short version:
 
 - **Heading detection** helps turn bold, large text into actual semantic headings. This runs automatically when Fix is available and runs in document workflows.
 
-- **MarkItDown + AI support** makes text extraction smarter and document cleanup faster. When you audit, fix, or convert a document, the AI-enhanced extraction understands context and structure, not just layout. The result is cleaner documents with fewer artifacts and better heading relationships. This is enabled by default when you connect an Ollama key.
+- **MarkItDown + AI support** makes text extraction smarter and document cleanup faster. When you audit, fix, or convert a document, the AI-enhanced extraction understands context and structure, not just layout. The result is cleaner documents with fewer artifacts and better heading relationships. This is enabled by default when you connect a compatible personal provider key.
 
-- **Document Chat** remains a separate feature gate and is disabled by default in the Ollama-first setup.
+- **Document Chat** remains a separate feature gate and is disabled by default in the personal-provider-first setup.
 
-- **AI Playground (Beta)** is a standalone chat surface where you can explore Ollama models, ask questions, and test model behavior before using AI in real accessibility workflows. It includes streaming responses, regenerate/stop controls, prompt templates, a quota status banner, and Markdown export.
+- **AI Playground (Beta)** is a standalone chat surface where you can explore compatible personal-provider models, ask questions, and test model behavior before using AI in real accessibility workflows. It includes streaming responses, regenerate/stop controls, prompt templates, a quota status banner, Markdown export, and delayed screen reader announcements for in-progress and completed long-running replies.
 
 - **Usage tracking** shows session-level request counts so you can see what you used while you were in GLOW.
 
-- **Whisperer** is separate and continues to use the server-side audio path when that is configured.
+- **Whisperer** is separate and only appears when an audio-transcription-capable provider path is active.
 
 If AI is disabled, GLOW hides the AI-specific entry points and keeps the rest of the app focused on its document workflows.
 
@@ -999,15 +999,15 @@ Your audio is uploaded to GLOW, optionally normalized for compatibility, sent to
 
 ---
 
-## 10. AI Playground (Beta): Explore Ollama Models
+## 10. AI Playground (Beta): Explore Personal AI Models
 
-The AI Playground is your experimental testing ground for Ollama models. It is a standalone chat surface, separate from your documents, where you can explore how different models respond to questions and get comfortable with AI before relying on it for real accessibility work.
+The AI Playground is your experimental testing ground for personal AI models. It is a standalone chat surface, separate from your documents, where you can explore how different compatible provider/model combinations respond to questions and get comfortable with AI before relying on it for real accessibility work.
 
 Think of it as a safe space to build confidence. Ask any question. Switch models mid-conversation. Copy responses. Conversations stay in your session only and are never persisted to disk. It is magic because every part of it is designed to feel fluid and responsive.
 
 ### Why the Playground exists
 
-- **Explore freely:** Try different Ollama models without risking document workflows.
+- **Explore freely:** Try different compatible provider/model choices without risking document workflows.
 - **Learn by doing:** See how models respond to accessibility questions, repair guidance, formatting advice.
 - **Test before shipping:** Verify model behavior matches your expectations.
 - **Private experimentation:** Session-scoped history. You delete it when you close the browser.
@@ -1017,7 +1017,7 @@ Think of it as a safe space to build confidence. Ask any question. Switch models
 
 1. Go to the **Explore and Learn** section in the left sidebar.
 2. Click **Experimental** and select **AI Playground**.
-3. You will need an active Ollama Cloud API key (set up in Settings > Enable AI).
+3. You will need at least one active personal AI provider key in AI Features.
 
 ### What the Playground feels like
 
@@ -1037,7 +1037,8 @@ Think of it as a safe space to build confidence. Ask any question. Switch models
 - Screen reader users can jump directly between questions and answers using heading navigation.
 
 **Switching models:**
-- Click the model selector to try a different Ollama model without clearing history.
+- Click the model selector to try a different compatible model without clearing history.
+- If a response runs longer than a few seconds, GLOW announces that it is still in progress for screen reader users and announces again when the delayed response arrives.
 - Re-ask your last question with a different model to compare responses.
 - Clear the entire conversation with the **Clear** button (you will be asked to confirm).
 
@@ -1064,7 +1065,7 @@ MarkItDown is a powerful text extraction tool from Microsoft. GLOW 6.0.0 combine
 
 ### What is enabled
 
-When you connect an Ollama key in GLOW Settings, **MarkItDown + AI support is on by default** for:
+When you connect a compatible personal AI provider key in GLOW Settings, **MarkItDown + AI support is on by default** for:
 
 - **Heading detection** — converts bold or large text into semantic headings automatically
 - **Intelligent extraction** — understands context and structure, not just layout
@@ -1099,7 +1100,7 @@ MarkItDown + AI solves these consistently. The combined approach produces docume
 
 1. **Audit mode:** Upload a document with missing or incorrect headings. The audit report will show what headings were detected and what remains. The score reflects both AI-found headings and manual structure issues.
 
-2. **Playground first (optional):** Before trusting heading detection in production, try the AI Playground with a few sample headings from your document. Test different Ollama models to see which one works best for your document types. Then configure that model in AI Features and run Fix.
+2. **Playground first (optional):** Before trusting heading detection in production, try the AI Playground with a few sample headings from your document. Test different compatible provider/model options to see which one works best for your document types. Then configure that provider/model in AI Features and run Fix.
 
 3. **Fix mode:** Run Fix on the document. Heading detection runs automatically if heading-fix AI is enabled. The corrected document shows the cleaned-up structure.
 
@@ -1107,7 +1108,7 @@ MarkItDown + AI solves these consistently. The combined approach produces docume
 
 ### Performance and cost
 
-- MarkItDown + AI uses your Ollama key, so cost is proportional to the number of heading detection calls
+- MarkItDown + AI uses your active personal provider/model binding, so cost depends on the provider and model you selected for that feature
 - Extraction happens once per document, not per heading
 - Results are deterministic but AI-influenced (different models may detect headings slightly differently; that is normal)
 
