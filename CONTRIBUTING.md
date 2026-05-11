@@ -74,7 +74,37 @@ If you're working on feedback features or testing the full workflow:
    # Check GitHub Issues to see the created issue
    ```
 
-### 4. Backfill Existing Feedback
+### 4. Security: Protecting Secrets and API Keys
+
+**NEVER commit credentials, API keys, or passwords to git.** Follow these practices:
+
+#### Local Secrets
+- Create a local `server.credentials` file for development (this is in `.gitignore`)
+- Use the `server.credentials.template` as a reference
+- Keep sensitive data local only; never push to GitHub
+
+#### API Keys and Sensitive Credentials
+- **Production API keys** (OpenRouter, Firebase tokens, etc.) are stored in **GitHub repository secrets**
+- **CI/CD pipelines** access these via `${{ secrets.SECRET_NAME }}`
+- **Local development** uses `.env` files (in `.gitignore`)
+- To update a GitHub secret:
+  ```bash
+  gh secret set OPENROUTER_API_KEY --body "sk-or-v1-..."
+  ```
+
+#### Environment Variables for Development
+All environment variables that contain secrets should be:
+1. Listed in the `.env.template` file (with dummy values)
+2. Loaded from `.env` at runtime (never checked in)
+3. Documented in this CONTRIBUTING.md
+
+#### If You Accidentally Commit Secrets
+1. **Immediately notify maintainers** via private message
+2. **Rotate all exposed credentials** (generate new API keys, etc.)
+3. Maintainers will use git history rewriting to remove the commit
+4. All affected systems will be updated to use new credentials
+
+### 5. Backfill Existing Feedback
 
 If you have historical feedback in your local `feedback.db`, sync it to GitHub issues:
 
@@ -83,7 +113,7 @@ export FEEDBACK_GITHUB_TOKEN=ghp_YOUR_TOKEN_HERE
 python3 scripts/sync-feedback-to-github.py
 ```
 
-### 5. Make Your Changes
+### 6. Make Your Changes
 
 1. **Create a feature branch:**
    ```bash

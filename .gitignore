@@ -40,6 +40,7 @@ Desktop.ini
 # Secrets and credentials
 .env
 *.credentials
+server.credentials
 
 # Logs
 *.log
