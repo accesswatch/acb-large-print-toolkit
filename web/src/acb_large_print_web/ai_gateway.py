@@ -463,6 +463,33 @@ def _ollama_completion(
         "options": {"num_predict": max_tokens},
     }
 
+    def _response_error_message(resp: requests.Response, requested_model: str) -> str:
+        try:
+            payload = resp.json()
+            detail = str(payload.get("error") or "").strip()
+        except ValueError:
+            detail = (resp.text or "").strip()
+
+        if resp.status_code == 401:
+            return (
+                "Ollama accepted the account key for model listing, but this account is not authorized "
+                "for cloud inference. The key may have been revoked, or your account may not have "
+                "inference entitlement."
+            )
+        if resp.status_code == 403:
+            if detail:
+                return f"Ollama denied access to model '{requested_model}': {detail}"
+            return f"Ollama denied access to model '{requested_model}'. This model may require a paid plan."
+        if resp.status_code == 404:
+            if detail:
+                return f"Ollama model '{requested_model}' is not available on this account: {detail}"
+            return f"Ollama model '{requested_model}' is not available on this account. Choose a model from your validated account list."
+        if resp.status_code == 429:
+            return "Ollama plan limit reached. Check your usage at ollama.com/settings."
+        if detail:
+            return f"Ollama Cloud request failed: {detail}"
+        return f"Ollama Cloud request failed with status {resp.status_code}."
+
     try:
         resp = requests.post(
             f"{base_url}/chat",
@@ -470,15 +497,8 @@ def _ollama_completion(
             headers=headers,
             timeout=_OLLAMA_CHAT_TIMEOUT,
         )
-        if resp.status_code == 401:
-            raise RuntimeError(
-                "Ollama API key is invalid or has been revoked. "
-                "Please update your key in Settings."
-            )
-        if resp.status_code == 429:
-            raise RuntimeError(
-                "Ollama plan limit reached. Check your usage at ollama.com/settings."
-            )
+        if resp.status_code >= 400:
+            raise RuntimeError(_response_error_message(resp, model))
         resp.raise_for_status()
     except requests.RequestException as exc:
         raise RuntimeError(f"Ollama Cloud request failed: {exc}") from exc
@@ -542,6 +562,33 @@ def stream_ollama_chat(
         "options": {"num_predict": max_tokens},
     }
 
+    def _stream_error_message(resp: requests.Response, requested_model: str) -> str:
+        try:
+            payload = resp.json()
+            detail = str(payload.get("error") or "").strip()
+        except ValueError:
+            detail = (resp.text or "").strip()
+
+        if resp.status_code == 401:
+            return (
+                "Ollama accepted the account key for model listing, but this account is not authorized "
+                "for cloud inference. The key may have been revoked, or your account may not have "
+                "inference entitlement."
+            )
+        if resp.status_code == 403:
+            if detail:
+                return f"Ollama denied access to model '{requested_model}': {detail}"
+            return f"Ollama denied access to model '{requested_model}'. This model may require a paid plan."
+        if resp.status_code == 404:
+            if detail:
+                return f"Ollama model '{requested_model}' is not available on this account: {detail}"
+            return f"Ollama model '{requested_model}' is not available on this account. Choose a model from your validated account list."
+        if resp.status_code == 429:
+            return "Ollama plan limit reached. Check your usage at ollama.com/settings."
+        if detail:
+            return f"Ollama Cloud streaming request failed: {detail}"
+        return f"Ollama Cloud streaming request failed with status {resp.status_code}."
+
     try:
         resp = requests.post(
             f"{base_url}/chat",
@@ -550,15 +597,8 @@ def stream_ollama_chat(
             timeout=_OLLAMA_CHAT_TIMEOUT,
             stream=True,
         )
-        if resp.status_code == 401:
-            raise RuntimeError(
-                "Ollama API key is invalid or has been revoked. "
-                "Please update your key in Settings."
-            )
-        if resp.status_code == 429:
-            raise RuntimeError(
-                "Ollama plan limit reached. Check your usage at ollama.com/settings."
-            )
+        if resp.status_code >= 400:
+            raise RuntimeError(_stream_error_message(resp, model))
         resp.raise_for_status()
     except requests.RequestException as exc:
         raise RuntimeError(f"Ollama Cloud streaming request failed: {exc}") from exc

@@ -1,5 +1,6 @@
 """Settings route -- user preference controls with opt-in persistence."""
 
+import hashlib
 import logging
 
 import requests
@@ -24,6 +25,14 @@ settings_bp = Blueprint("settings", __name__)
 ai_bp = Blueprint("ai", __name__)
 
 _OLLAMA_VALID_MODELS = {m["id"] for m in OLLAMA_MODEL_RECOMMENDATIONS}
+_PREFERRED_OLLAMA_MODELS = [
+    "gemma3:4b",
+    "gemma3:12b",
+    "gpt-oss:120b",
+    "mistral",
+    "qwen3:8b",
+    "llama3.2",
+]
 
 
 def _trim_text(value: object, limit: int = 300) -> str:
@@ -31,6 +40,25 @@ def _trim_text(value: object, limit: int = 300) -> str:
     if len(text) <= limit:
         return text
     return f"{text[:limit - 1]}..."
+
+
+def _normalize_model_names(model_names: list[str]) -> list[str]:
+    normalized: list[str] = []
+    seen: set[str] = set()
+    for raw in model_names:
+        candidate = str(raw or "").strip().replace(":latest", "")
+        if candidate and candidate not in seen:
+            seen.add(candidate)
+            normalized.append(candidate)
+    return normalized
+
+
+def _suggested_model(model_names: list[str]) -> str:
+    available = set(_normalize_model_names(model_names))
+    for model in _PREFERRED_OLLAMA_MODELS:
+        if model in available:
+            return model
+    return next(iter(available), "gemma3:4b")
 
 
 def _render_ai_settings_page():
@@ -82,16 +110,18 @@ def save_ollama_key():
     or written to disk. The session cookie is HttpOnly and Secure.
     """
     api_key = (request.form.get("ollama_api_key") or "").strip()
-    model = (request.form.get("ollama_model") or "llama3.2").strip()
+    model = (request.form.get("ollama_model") or "gemma3:4b").strip()
 
     if not api_key:
         return jsonify({"ok": False, "error": "API key is required."}), 400
 
-    # Reject keys that look obviously wrong (Ollama keys start with "ollama_")
-    if not api_key.startswith("ollama_"):
+    # Require explicit validation before saving so typoed keys are not persisted.
+    key_hash = hashlib.sha256(api_key.encode("utf-8")).hexdigest()
+    validated_hash = session.get("ollama_validated_key_hash")
+    if validated_hash != key_hash:
         return jsonify({
             "ok": False,
-            "error": "That does not look like an Ollama API key. Keys begin with 'ollama_'.",
+            "error": "Please check your key first, then save.",
         }), 400
 
     # Validate model against known list; allow unknown models with a warning
@@ -104,6 +134,8 @@ def save_ollama_key():
     # preserve existing user choices on key rotation.
     if "ollama_features" not in session:
         session["ollama_features"] = dict(OLLAMA_FEATURE_DEFAULTS)
+    session["ollama_validated"] = True
+    session["ollama_validated_key_hash"] = key_hash
     session.modified = True
 
     return jsonify({"ok": True, "model": model})
@@ -116,6 +148,8 @@ def forget_ollama_key():
     session.pop("ollama_api_key", None)
     session.pop("ollama_model", None)
     session.pop("ollama_features", None)
+    session.pop("ollama_validated", None)
+    session.pop("ollama_validated_key_hash", None)
     session.modified = True
     return jsonify({"ok": True})
 
@@ -146,7 +180,7 @@ def save_ollama_features():
         if chosen and (chosen in valid_model_ids or len(chosen) <= 80):
             feature_models[feature] = chosen
         else:
-            feature_models[feature] = OLLAMA_FEATURE_MODEL_DEFAULTS.get(feature, "llama3.2")
+            feature_models[feature] = OLLAMA_FEATURE_MODEL_DEFAULTS.get(feature, "gemma3:4b")
 
     session["ollama_feature_models"] = feature_models
     session.modified = True
@@ -175,14 +209,27 @@ def validate_ollama_key():
             timeout=10,
         )
         if resp.status_code == 401:
+            session["ollama_validated"] = False
+            session.pop("ollama_validated_key_hash", None)
+            session.modified = True
             return jsonify({"ok": False, "error": "Key rejected -- check it and try again."}), 200
         if resp.status_code == 429:
             return jsonify({"ok": False, "error": "Rate limited. Wait a moment and try again."}), 200
         resp.raise_for_status()
         data = resp.json()
-        model_names = [m.get("name", "") for m in data.get("models", [])]
-        return jsonify({"ok": True, "models": model_names[:20]})
+        model_names = _normalize_model_names([m.get("name", "") for m in data.get("models", [])])
+        session["ollama_validated"] = True
+        session["ollama_validated_key_hash"] = hashlib.sha256(api_key.encode("utf-8")).hexdigest()
+        session.modified = True
+        return jsonify({
+            "ok": True,
+            "models": model_names[:40],
+            "suggested_model": _suggested_model(model_names),
+        })
     except requests.RequestException as exc:
+        session["ollama_validated"] = False
+        session.pop("ollama_validated_key_hash", None)
+        session.modified = True
         return jsonify({"ok": False, "error": f"Could not reach Ollama: {exc}"}), 200
 
 

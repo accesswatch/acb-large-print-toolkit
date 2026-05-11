@@ -43,11 +43,13 @@ What is enabled first:
 
 The AI Playground is the new magic here.
 
-It is a standalone chat designed for exploration. Ask any question, try different Ollama models, see how the AI responds. Conversations stay private to your session. You can copy responses, regenerate them, switch models on the fly. The interface is accessible: your questions appear as headings, the AI responses as sub-headings, so you can navigate directly between them using a keyboard or screen reader.
+It is a standalone chat designed for exploration. Ask any question, try different Ollama models, and see responses stream in token-by-token. Conversations stay private to your session. You can copy responses, regenerate them, stop long generations, switch models on the fly, use prompt templates, and export conversations as Markdown. The interface is accessible: your questions appear as headings, the AI responses as sub-headings, so you can navigate directly between them using a keyboard or screen reader.
 
 What stays off for now:
 
 - Document Chat
+
+General Chat (AI Playground) and Document Chat are now explicitly separate feature gates, so deployments can keep Document Chat off while still enabling the playground.
 
 That choice keeps the first release focused and easier to explain.
 
@@ -68,7 +70,7 @@ The first AI features in GLOW are text-focused because that is where the trust i
 
 **How to use it:**
 
-When you add an Ollama key in GLOW Settings, heading detection and MarkItDown support are on by default. Try it:
+When you add an Ollama key in GLOW Settings, heading detection and MarkItDown support are on by default. The setup flow now requires key validation before save and accepts valid keys even when they do not use the historical `ollama_` prefix. Try it:
 
 1. Upload a document in Word, Excel, PowerPoint, PDF, Markdown, or ePub format
 2. Choose Audit or Fix

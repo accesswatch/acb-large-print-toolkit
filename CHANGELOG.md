@@ -11,6 +11,7 @@ Releases are tagged in the [GitHub repository](https://github.com/Community-Acce
 ### Added
 
 - **AI Playground streaming responses (SSE)** at `/beta/chat/stream` for token-by-token output rendering with automatic fallback to the legacy JSON endpoint when streaming is unavailable.
+- **AI Playground quick controls**: regenerate response, stop generation, in-page model switcher, prompt templates, session quota banner, and conversation export as Markdown.
 
 ### Changed
 
@@ -20,6 +21,11 @@ Releases are tagged in the [GitHub repository](https://github.com/Community-Acce
 - **Settings headings** now appear for each settings group so the page has explicit section headings in addition to fieldset legends.
 - **AI feature flag split for chat surfaces**: `GLOW_ENABLE_AI_CHAT` now gates Document Chat only, while new `GLOW_ENABLE_AI_GENERAL_CHAT` gates AI Playground/general chat.
 - **Production AI defaults aligned to Ollama-first rollout**: `GLOW_ENABLE_AI`, `GLOW_ENABLE_AI_GENERAL_CHAT`, `GLOW_ENABLE_AI_HEADING_FIX`, and `GLOW_ENABLE_AI_MARKITDOWN_LLM` default on in production compose; Document Chat, Whisperer, and alt-text remain off by default.
+- **Ollama key setup flow** now requires successful key validation before save and keeps the save button disabled until validation succeeds.
+- **Ollama key format handling** now accepts valid keys even when they do not use the historical `ollama_` prefix.
+- **Ollama cloud defaults** now prefer `gemma3:4b` instead of `llama3.2`, and validation returns a suggested model based on what the account can actually run.
+- **AI settings and playground pages** now load through external static JS/CSS assets so they work under the site CSP instead of relying on blocked inline scripts.
+- **Ollama inference errors** now distinguish account inference authorization (`401`), paid-plan model gating (`403`), and missing account model access (`404`).
 
 ---
 
@@ -81,7 +87,6 @@ Releases are tagged in the [GitHub repository](https://github.com/Community-Acce
 
 ### Planned for 6.1.0
 
-- **Streaming responses in AI Playground.** Token-by-token streaming using Server-Sent Events (SSE) so responses appear live instead of waiting for the full response.
 - **Session quota enforcement.** Rate limiting to prevent accidental AI overuse: configurable requests-per-session with countdown timer in UI.
 - **Conversation analytics dashboard.** Track model usage, success rates, and popular prompts (anonymized, no PII).
 

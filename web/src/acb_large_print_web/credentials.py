@@ -89,13 +89,31 @@ _OLLAMA_CLOUD_API = f"{_OLLAMA_CLOUD_URL}/api"
 #: Reference: https://ollama.com/pricing
 OLLAMA_MODEL_RECOMMENDATIONS: list[dict] = [
     {
-        "id": "llama3.2",
-        "label": "Llama 3.2 (3B)",
+        "id": "gemma3:4b",
+        "label": "Gemma 3 (4B)",
         "recommended": True,
         "plan": "free",
         "speed": "fast",
-        "features": ["heading_fix", "markitdown", "chat"],
-        "note": "Fast, runs on most hardware. Good for all text features.",
+        "features": ["heading_fix", "markitdown", "chat", "playground"],
+        "note": "Reliable free Ollama Cloud model for playground and document workflows.",
+    },
+    {
+        "id": "gemma3:12b",
+        "label": "Gemma 3 (12B)",
+        "recommended": False,
+        "plan": "free",
+        "speed": "moderate",
+        "features": ["chat", "playground", "markitdown"],
+        "note": "Stronger free model when available on your account.",
+    },
+    {
+        "id": "llama3.2",
+        "label": "Llama 3.2 (3B)",
+        "recommended": False,
+        "plan": "free",
+        "speed": "fast",
+        "features": ["heading_fix", "markitdown", "chat", "playground"],
+        "note": "Legacy recommendation. May not be available on every Ollama Cloud account.",
     },
     {
         "id": "llama3.3",
@@ -133,15 +151,6 @@ OLLAMA_MODEL_RECOMMENDATIONS: list[dict] = [
         "features": ["heading_fix", "markitdown"],
         "note": "Microsoft small model. Very fast, lower accuracy than Llama.",
     },
-    {
-        "id": "gemma3:4b",
-        "label": "Gemma 3 (4B)",
-        "recommended": False,
-        "plan": "free",
-        "speed": "fast",
-        "features": ["heading_fix", "markitdown", "chat"],
-        "note": "Google compact model. Fast, suitable for heading fix and formatting.",
-    },
 ]
 
 
@@ -166,10 +175,10 @@ OLLAMA_FEATURE_LABELS: dict[str, str] = {
 #: heading_fix and markitdown work best with fast small models.
 #: chat and playground benefit from slightly larger models when available.
 OLLAMA_FEATURE_MODEL_DEFAULTS: dict[str, str] = {
-    "heading_fix": "llama3.2",
-    "markitdown": "llama3.2",
-    "chat": "llama3.2",
-    "playground": "llama3.2",
+    "heading_fix": "gemma3:4b",
+    "markitdown": "gemma3:4b",
+    "chat": "gemma3:4b",
+    "playground": "gemma3:4b",
 }
 
 
@@ -212,12 +221,12 @@ def get_user_ollama_key() -> str:
 
 
 def get_user_ollama_model() -> str:
-    """Return the Ollama model the user has chosen, defaulting to llama3.2."""
+    """Return the Ollama model the user has chosen, defaulting to gemma3:4b."""
     try:
         from flask import session
-        return session.get("ollama_model", "llama3.2")
+        return session.get("ollama_model", "gemma3:4b")
     except RuntimeError:
-        return "llama3.2"
+        return "gemma3:4b"
 
 
 def get_user_ollama_model_for(feature: str) -> str:

@@ -16,7 +16,7 @@ GLOW 6.0.0 is the open source release that makes the project easier to join, eas
 
 1. **Open source contribution process** -- The web site, release notes, and announcement files now explain how to fork the repo, open a branch, submit a pull request, and work through review under branch protection. The project is ready for community contributions, not just downloads.
 2. **Feedback-to-issue automation** -- Feedback submissions can now collect a name and email for follow-up and sync directly into GitHub Issues when a token is configured.
-3. **Personal Ollama Cloud AI support with AI Playground (Beta)** -- Users can connect their own Ollama Cloud API key and enable AI features. The playground is a new experimental chat surface for testing Ollama models without document context. You can explore model behavior, copy responses, switch models mid-conversation, and navigate questions and answers directly using your keyboard or screen reader. All conversation history is temporary and session-scoped.
+3. **Personal Ollama Cloud AI support with AI Playground (Beta)** -- Users can connect their own Ollama Cloud API key and enable AI features. The playground is a new experimental chat surface for testing Ollama models without document context. You can explore model behavior, stream responses token-by-token, regenerate or stop responses, copy/export outputs, switch models mid-conversation, and navigate questions and answers directly using your keyboard or screen reader. All conversation history is temporary and session-scoped.
 4. **Per-feature Ollama model selection** -- Choose different Ollama models for heading detection, MarkItDown support, and the playground from a unified AI Features settings page. The interface shows smart model recommendations based on what each feature does best.
 5. **Visible AI usage meter** -- The sidebar now shows a live AI usage summary that refreshes on page load and after AI actions, so users can see what they have used during the current session.
 6. **Clearer AI guidance** -- The About page and this user guide now explain what AI can do in short form even when AI is not yet enabled, so users can understand the capability before they turn it on.
@@ -35,9 +35,9 @@ If you are deciding whether to turn AI on, here is the short version:
 
 - **MarkItDown + AI support** makes text extraction smarter and document cleanup faster. When you audit, fix, or convert a document, the AI-enhanced extraction understands context and structure, not just layout. The result is cleaner documents with fewer artifacts and better heading relationships. This is enabled by default when you connect an Ollama key.
 
-- **Document Chat** is planned, but it is not enabled in the Ollama-first setup yet. Beta users can express interest in Settings.
+- **Document Chat** remains a separate feature gate and is disabled by default in the Ollama-first setup.
 
-- **AI Playground (Beta)** is a standalone chat surface where you can explore Ollama models, ask questions, and test model behavior before using AI in real accessibility workflows. The playground is intentionally separate from your documents so exploration is safe and private.
+- **AI Playground (Beta)** is a standalone chat surface where you can explore Ollama models, ask questions, and test model behavior before using AI in real accessibility workflows. It includes streaming responses, regenerate/stop controls, prompt templates, a quota status banner, and Markdown export.
 
 - **Usage tracking** shows session-level request counts so you can see what you used while you were in GLOW.
 

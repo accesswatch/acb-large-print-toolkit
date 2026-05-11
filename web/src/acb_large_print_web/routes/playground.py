@@ -18,6 +18,7 @@ from __future__ import annotations
 import hashlib
 import json
 import logging
+from datetime import datetime, UTC
 
 from flask import Blueprint, Response, jsonify, render_template, request, session, stream_with_context
 
@@ -37,6 +38,13 @@ playground_bp = Blueprint("playground", __name__)
 _PLAYGROUND_HISTORY_KEY = "playground_history"
 _MAX_HISTORY_TURNS = 20       # keep last N user/assistant pairs in session
 _MAX_QUESTION_LEN  = 3000
+_PLAYGROUND_TEMPLATES = [
+    {"id": "summarize", "label": "Summarize this text", "prompt": "Summarize the following text into plain language bullet points for a low-vision audience:\n\n"},
+    {"id": "actions", "label": "Extract action items", "prompt": "Extract action items from this content and return an owner/action/deadline table:\n\n"},
+    {"id": "plain-language", "label": "Rewrite in plain language", "prompt": "Rewrite this content in plain language at approximately grade 8 reading level:\n\n"},
+    {"id": "acb-check", "label": "ACB quick check", "prompt": "Review this content for likely ACB large print issues and list concise fixes:\n\n"},
+    {"id": "headings", "label": "Propose heading structure", "prompt": "Suggest a semantic heading structure (H1-H3) for this content:\n\n"},
+]
 _SYSTEM_PROMPT = (
     "You are a helpful, friendly AI assistant embedded in GLOW -- an "
     "accessibility-focused document workflow tool for the blind and low-vision "
@@ -69,6 +77,7 @@ def playground_page():
         ollama_active=is_ollama_configured(),
         playground_model=get_user_ollama_model_for("playground"),
         model_recommendations=OLLAMA_MODEL_RECOMMENDATIONS,
+        prompt_templates=_PLAYGROUND_TEMPLATES,
         feature_label=OLLAMA_FEATURE_LABELS.get("playground", "AI Playground"),
         history=_get_history(),
     )
@@ -103,10 +112,10 @@ def playground_send():
     if len(message) > _MAX_QUESTION_LEN:
         return jsonify({"ok": False, "error": f"Message too long (max {_MAX_QUESTION_LEN} characters)."}), 400
 
-    from ..ai_gateway import chat as gateway_chat, make_session_hash
+    from ..ai_gateway import chat as gateway_chat
 
     history = _get_history()
-    sess_hash = make_session_hash(session)
+    sess_hash = _session_hash()
 
     try:
         reply, _ = gateway_chat(
@@ -154,10 +163,10 @@ def playground_stream():
     if len(message) > _MAX_QUESTION_LEN:
         return jsonify({"ok": False, "error": f"Message too long (max {_MAX_QUESTION_LEN} characters)."}), 400
 
-    from ..ai_gateway import make_session_hash, stream_ollama_chat
+    from ..ai_gateway import stream_ollama_chat
 
     history = _get_history()
-    sess_hash = make_session_hash(session)
+    sess_hash = _session_hash()
 
     @stream_with_context
     def _event_stream():
@@ -195,6 +204,99 @@ def playground_stream():
     response.headers["Cache-Control"] = "no-cache"
     response.headers["X-Accel-Buffering"] = "no"
     return response
+
+
+@playground_bp.route("/model", methods=["POST"])
+def playground_set_model():
+    """Set the active playground model in session without leaving the page."""
+    try:
+        require_ai_feature("playground")
+    except AIFeatureDisabled as exc:
+        return jsonify({"ok": False, "error": str(exc)}), 403
+
+    payload = request.get_json(silent=True) or {}
+    model = (payload.get("model") or "").strip()
+    valid = {m.get("id") for m in OLLAMA_MODEL_RECOMMENDATIONS if m.get("id")}
+    if model not in valid:
+        return jsonify({"ok": False, "error": "Invalid model selection."}), 400
+
+    feature_models = dict(session.get("ollama_feature_models") or {})
+    feature_models["playground"] = model
+    session["ollama_feature_models"] = feature_models
+    session.modified = True
+    return jsonify({"ok": True, "model": model})
+
+
+@playground_bp.route("/quota", methods=["GET"])
+def playground_quota():
+    """Return session quota status for UI meter/warnings."""
+    from ..ai_gateway import get_quota_status
+
+    sess_hash = _session_hash()
+    quota = get_quota_status(sess_hash)
+    return jsonify({"ok": True, "quota": quota})
+
+
+@playground_bp.route("/regenerate", methods=["POST"])
+@limiter.limit("20 per minute")
+def playground_regenerate():
+    """Regenerate the most recent assistant response for the last user message."""
+    try:
+        require_ai_feature("playground")
+    except AIFeatureDisabled as exc:
+        return jsonify({"ok": False, "error": str(exc)}), 403
+
+    history = _get_history()
+    if len(history) < 2:
+        return jsonify({"ok": False, "error": "No conversation available to regenerate."}), 400
+    if history[-1].get("role") != "assistant" or history[-2].get("role") != "user":
+        return jsonify({"ok": False, "error": "Could not locate the last user/assistant turn."}), 400
+
+    last_user = str(history[-2].get("content") or "").strip()
+    base_history = history[:-2]
+
+    from ..ai_gateway import chat as gateway_chat
+
+    sess_hash = _session_hash()
+    try:
+        reply, _ = gateway_chat(
+            question=last_user,
+            system_prompt=_SYSTEM_PROMPT,
+            session_hash=sess_hash,
+            conversation_history=base_history,
+            feature="playground",
+        )
+    except RuntimeError as exc:
+        return jsonify({"ok": False, "error": str(exc)}), 503
+
+    updated = list(base_history)
+    updated.append({"role": "user", "content": last_user})
+    updated.append({"role": "assistant", "content": reply})
+    _set_history(updated)
+
+    model_used = get_user_ollama_model_for("playground")
+    return jsonify({"ok": True, "reply": reply, "model": model_used})
+
+
+@playground_bp.route("/export", methods=["GET"])
+def playground_export():
+    """Export current conversation history as markdown."""
+    history = _get_history()
+    lines = ["# AI Playground Conversation", "", f"Exported: {datetime.now(UTC).isoformat()}", ""]
+    if not history:
+        lines.append("No messages in this session yet.")
+    else:
+        for item in history:
+            role = "User" if item.get("role") == "user" else "Assistant"
+            lines.append(f"## {role}")
+            lines.append("")
+            lines.append(str(item.get("content") or ""))
+            lines.append("")
+
+    body = "\n".join(lines)
+    resp = Response(body, mimetype="text/markdown")
+    resp.headers["Content-Disposition"] = "attachment; filename=playground-conversation.md"
+    return resp
 
 
 @playground_bp.route("/clear", methods=["POST"])

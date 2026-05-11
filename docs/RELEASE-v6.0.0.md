@@ -6,7 +6,7 @@ GLOW 6.0.0 is the release where the project becomes easier to join and easier to
 
 It introduces a cleaner open source contribution story, a focused Ollama-first AI setup path, a live sidebar usage indicator, and better release messaging across the website and docs.
 
-This version is intentionally narrower than the long-term AI plan. The first release of personal AI support is limited to the text workflows that are easiest to trust: heading detection and MarkItDown support. Document Chat is intentionally left for a later step.
+This version is intentionally narrower than the long-term AI plan. The first release of personal AI support is limited to the text workflows that are easiest to trust: heading detection and MarkItDown support, plus General Chat in AI Playground. Document Chat remains intentionally separate and disabled by default.
 
 ## Highlights
 
@@ -39,9 +39,22 @@ What makes it magical:
 
 - Accessible conversation structure: questions appear as H3 headings, answers as H4, so you can navigate directly between them with a keyboard or screen reader
 - Smart response states: pending assistant messages show "Thinking…" while fetching, then transition seamlessly to the actual response with a copy button and model name
+- Streaming token-by-token responses with graceful fallback to standard response mode when streaming is unavailable
+- Regenerate last response without clearing conversation history
+- Stop generation control for long-running responses
+- In-page model switcher for playground without leaving the chat page
+- Prompt template shortcuts for common tasks (summary, action items, plain language, ACB check, heading structure)
+- Session quota/status meter and warning indicators in the playground UI
+- Export conversation to Markdown for documentation handoff
 - Per-feature model selection: choose different Ollama models for heading detection, MarkItDown, and the playground in one unified AI Features settings page
 - Temporary session history: conversations stay in your session only, never persisted by default, so exploration is safe and private
 - Typing indicator and smooth thinking animation: you see progress and feel heard while waiting for a response
+
+AI setup improvements in this release:
+
+- Key validation now accepts valid Ollama API keys even when they do not use the historical `ollama_` prefix
+- Save is disabled until key validation succeeds, reducing accidental misconfiguration
+- Document Chat and General Chat are explicitly separated via feature flags
 
 Document Chat remains off by default in this release. The Playground stays as Beta to keep expectations clear while we refine the experience.
 

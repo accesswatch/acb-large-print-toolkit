@@ -52,7 +52,6 @@ class TestOllamaCompletion:
 
     def test_raises_on_401(self, monkeypatch: pytest.MonkeyPatch) -> None:
         from acb_large_print_web import ai_gateway
-        import requests as req_lib
 
         monkeypatch.setattr(ai_gateway, "get_user_ollama_key", lambda: "ollama_badkey")
         monkeypatch.setattr(ai_gateway, "get_ollama_cloud_url", lambda: "https://ollama.com/api")
@@ -62,7 +61,37 @@ class TestOllamaCompletion:
         bad_resp.raise_for_status = MagicMock()
 
         with patch("acb_large_print_web.ai_gateway.requests.post", return_value=bad_resp):
-            with pytest.raises(RuntimeError, match="invalid or has been revoked"):
+            with pytest.raises(RuntimeError, match="not authorized for cloud inference"):
+                ai_gateway._ollama_completion("llama3.2", [], "sess")
+
+    def test_raises_on_403_with_plan_guidance(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        from acb_large_print_web import ai_gateway
+
+        monkeypatch.setattr(ai_gateway, "get_user_ollama_key", lambda: "ollama_key")
+        monkeypatch.setattr(ai_gateway, "get_ollama_cloud_url", lambda: "https://ollama.com/api")
+
+        bad_resp = MagicMock()
+        bad_resp.status_code = 403
+        bad_resp.json.return_value = {"error": "this model requires a subscription"}
+        bad_resp.raise_for_status = MagicMock()
+
+        with patch("acb_large_print_web.ai_gateway.requests.post", return_value=bad_resp):
+            with pytest.raises(RuntimeError, match="requires a subscription"):
+                ai_gateway._ollama_completion("glm-5", [], "sess")
+
+    def test_raises_on_404_with_model_guidance(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        from acb_large_print_web import ai_gateway
+
+        monkeypatch.setattr(ai_gateway, "get_user_ollama_key", lambda: "ollama_key")
+        monkeypatch.setattr(ai_gateway, "get_ollama_cloud_url", lambda: "https://ollama.com/api")
+
+        bad_resp = MagicMock()
+        bad_resp.status_code = 404
+        bad_resp.json.return_value = {"error": "model 'llama3.2' not found"}
+        bad_resp.raise_for_status = MagicMock()
+
+        with patch("acb_large_print_web.ai_gateway.requests.post", return_value=bad_resp):
+            with pytest.raises(RuntimeError, match="not available on this account"):
                 ai_gateway._ollama_completion("llama3.2", [], "sess")
 
     def test_raises_on_429(self, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -151,6 +180,22 @@ class TestSettingsOllamaRoutes:
         assert resp.headers["Location"].endswith("/ai/")
 
     def test_save_valid_key(self, settings_client) -> None:
+        # Must validate first before save is accepted.
+        mock_resp = MagicMock()
+        mock_resp.status_code = 200
+        mock_resp.ok = True
+        mock_resp.raise_for_status = MagicMock()
+        mock_resp.json.return_value = {"models": [{"name": "llama3.2"}]}
+
+        with patch("acb_large_print_web.routes.settings.requests.get", return_value=mock_resp):
+            validate_resp = settings_client.post(
+                "/settings/ai/validate",
+                data={"ollama_api_key": "ollama_abc123"},
+            )
+
+        assert validate_resp.status_code == 200
+        assert validate_resp.get_json()["ok"] is True
+
         resp = settings_client.post(
             "/settings/ai/key",
             data={"ollama_api_key": "ollama_abc123", "ollama_model": "llama3.2"},
@@ -164,13 +209,13 @@ class TestSettingsOllamaRoutes:
         resp = settings_client.post("/settings/ai/key", data={"ollama_model": "llama3.2"})
         assert resp.status_code == 400
 
-    def test_save_rejects_bad_prefix(self, settings_client) -> None:
+    def test_save_requires_prior_validation(self, settings_client) -> None:
         resp = settings_client.post(
             "/settings/ai/key",
             data={"ollama_api_key": "sk-openai-notollama", "ollama_model": "llama3.2"},
         )
         assert resp.status_code == 400
-        assert "ollama_" in resp.get_json()["error"]
+        assert "check your key first" in resp.get_json()["error"].lower()
 
     def test_forget_key(self, settings_client) -> None:
         # Save first
@@ -199,6 +244,7 @@ class TestSettingsOllamaRoutes:
         data = resp.get_json()
         assert data["ok"] is True
         assert "llama3.2" in data["models"]
+        assert data["suggested_model"] == "mistral"
 
     def test_validate_surfaces_401(self, settings_client) -> None:
         mock_resp = MagicMock()
