@@ -6,40 +6,13 @@ server's actual observed throughput, not fixed heuristics.
 
 from __future__ import annotations
 
-import sqlite3
 from datetime import UTC, datetime
-from pathlib import Path
 from statistics import median
 
-from flask import current_app
+from sqlalchemy import func
 
-
-def _db_path() -> Path:
-    p = Path(current_app.instance_path)
-    p.mkdir(parents=True, exist_ok=True)
-    return p / "speech_metrics.db"
-
-
-def _conn() -> sqlite3.Connection:
-    conn = sqlite3.connect(str(_db_path()))
-    conn.execute("PRAGMA journal_mode=WAL")
-    conn.execute(
-        "CREATE TABLE IF NOT EXISTS document_conversions ("
-        "  id INTEGER PRIMARY KEY AUTOINCREMENT,"
-        "  created_at TEXT NOT NULL,"
-        "  engine TEXT NOT NULL,"
-        "  voice TEXT NOT NULL,"
-        "  speed REAL NOT NULL,"
-        "  pitch INTEGER NOT NULL,"
-        "  word_count INTEGER NOT NULL,"
-        "  char_count INTEGER NOT NULL,"
-        "  source_size_bytes INTEGER NOT NULL,"
-        "  processing_seconds REAL NOT NULL,"
-        "  audio_seconds REAL NOT NULL"
-        ")"
-    )
-    conn.commit()
-    return conn
+from .db import db
+from .models import SpeechConversionMetric
 
 
 def record_document_conversion(
@@ -56,28 +29,22 @@ def record_document_conversion(
 ) -> None:
     """Record one completed document-to-speech conversion."""
     try:
-        now = datetime.now(UTC).isoformat()
-        with _conn() as conn:
-            conn.execute(
-                "INSERT INTO document_conversions ("
-                "created_at, engine, voice, speed, pitch, word_count, char_count, "
-                "source_size_bytes, processing_seconds, audio_seconds"
-                ") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                (
-                    now,
-                    str(engine or "unknown"),
-                    str(voice or "unknown"),
-                    float(speed),
-                    int(pitch),
-                    max(0, int(word_count)),
-                    max(0, int(char_count)),
-                    max(0, int(source_size_bytes)),
-                    max(0.01, float(processing_seconds)),
-                    max(0.0, float(audio_seconds)),
-                ),
-            )
+        record = SpeechConversionMetric(
+            engine=str(engine or "unknown"),
+            voice=str(voice or "unknown"),
+            speed=float(speed),
+            pitch=int(pitch),
+            word_count=max(0, int(word_count)),
+            char_count=max(0, int(char_count)),
+            source_size_bytes=max(0, int(source_size_bytes)),
+            processing_seconds=max(0.01, float(processing_seconds)),
+            audio_seconds=max(0.0, float(audio_seconds)),
+        )
+        db.session.add(record)
+        db.session.commit()
     except Exception:
         # Telemetry must never break user workflow.
+        db.session.rollback()
         return
 
 
@@ -95,14 +62,17 @@ def estimate_processing_seconds(
     Returns: (estimated_seconds, estimate_source, sample_count)
     """
     try:
-        with _conn() as conn:
-            rows = conn.execute(
-                "SELECT word_count, source_size_bytes, processing_seconds "
-                "FROM document_conversions "
-                "WHERE engine = ? AND speed BETWEEN ? AND ? "
-                "ORDER BY id DESC LIMIT 250",
-                (str(engine or "unknown"), float(speed) - 0.25, float(speed) + 0.25),
-            ).fetchall()
+        rows = db.session.execute(
+            db.select(
+                SpeechConversionMetric.word_count,
+                SpeechConversionMetric.source_size_bytes,
+                SpeechConversionMetric.processing_seconds,
+            ).where(
+                SpeechConversionMetric.engine == str(engine or "unknown"),
+                SpeechConversionMetric.speed >= float(speed) - 0.25,
+                SpeechConversionMetric.speed <= float(speed) + 0.25,
+            ).order_by(SpeechConversionMetric.id.desc()).limit(250)
+        ).all()
     except Exception:
         rows = []
 
@@ -112,16 +82,16 @@ def estimate_processing_seconds(
 
     per_word = []
     per_byte = []
-    for r in rows:
-        w = int(r[0] or 0)
-        b = int(r[1] or 0)
-        s = float(r[2] or 0)
-        if s <= 0:
+    for w, b, s in rows:
+        word_count_val = int(w or 0)
+        bytes_val = int(b or 0)
+        seconds_val = float(s or 0)
+        if seconds_val <= 0:
             continue
-        if w > 0:
-            per_word.append(s / w)
-        if b > 0:
-            per_byte.append(s / b)
+        if word_count_val > 0:
+            per_word.append(seconds_val / word_count_val)
+        if bytes_val > 0:
+            per_byte.append(seconds_val / bytes_val)
 
     if not per_word:
         return max(1.0, float(baseline_seconds)), "baseline", sample_count
@@ -143,11 +113,14 @@ def estimate_processing_seconds(
 def get_summary() -> dict:
     """High-level telemetry summary for admin/about surfaces."""
     try:
-        with _conn() as conn:
-            row = conn.execute(
-                "SELECT COUNT(*), AVG(processing_seconds), AVG(word_count), AVG(source_size_bytes) "
-                "FROM document_conversions"
-            ).fetchone()
+        row = db.session.execute(
+            db.select(
+                func.count(SpeechConversionMetric.id),
+                func.avg(SpeechConversionMetric.processing_seconds),
+                func.avg(SpeechConversionMetric.word_count),
+                func.avg(SpeechConversionMetric.source_size_bytes),
+            )
+        ).one()
         total = int(row[0] or 0)
         return {
             "samples": total,

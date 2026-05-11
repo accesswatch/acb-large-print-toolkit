@@ -37,14 +37,17 @@ import hashlib
 import json
 import logging
 import os
-import sqlite3
 import time
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
 import requests
+import sqlalchemy as sa
+from sqlalchemy import func
 
+from .db import db
+from .models import AICostLedger
 from .credentials import (
     get_openrouter_api_key,
     get_user_ollama_key,
@@ -500,48 +503,25 @@ def _record_usage(
 ) -> float:
     """Write a usage record and return the cost incurred."""
     cost = _compute_cost(model, input_tokens, output_tokens)
-    now = datetime.now(UTC).isoformat()
-    today = datetime.now(UTC).strftime("%Y-%m-%d")
+    now = datetime.now(UTC)
 
-    with _db() as conn:
-        conn.execute(
-            """
-            INSERT INTO ai_cost_ledger
-                (session_hash, request_at, workload, model, input_tokens,
-                 output_tokens, audio_seconds, cost_usd, escalated)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """,
-            (
-                session_hash,
-                now,
-                workload,
-                model,
-                input_tokens,
-                output_tokens,
-                audio_seconds,
-                cost,
-                int(escalated),
-            ),
+    try:
+        record = AICostLedger(
+            session_hash=session_hash,
+            request_at=now,
+            workload=workload,
+            model=model,
+            input_tokens=input_tokens,
+            output_tokens=output_tokens,
+            audio_seconds=audio_seconds,
+            cost_usd=cost,
+            escalated=escalated,
         )
-        if workload == "chat":
-            conn.execute(
-                """
-                INSERT INTO ai_quota_sessions (session_hash, date, chat_turns, audio_seconds)
-                VALUES (?, ?, 1, 0)
-                ON CONFLICT(session_hash, date) DO UPDATE SET chat_turns = chat_turns + 1
-                """,
-                (session_hash, today),
-            )
-        elif workload == "audio":
-            conn.execute(
-                """
-                INSERT INTO ai_quota_sessions (session_hash, date, chat_turns, audio_seconds)
-                VALUES (?, ?, 0, ?)
-                ON CONFLICT(session_hash, date) DO UPDATE SET audio_seconds = audio_seconds + ?
-                """,
-                (session_hash, today, audio_seconds, audio_seconds),
-            )
-        conn.commit()
+        db.session.add(record)
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        log.exception("Failed to record AI usage")
 
     log.info(
         "AI usage: session=%s workload=%s model=%s tokens=%d/%d cost=$%.4f escalated=%s",
@@ -563,15 +543,16 @@ def _record_usage(
 
 def get_monthly_spend() -> float:
     """Return total AI spend in USD for the current calendar month."""
-    month = datetime.now(UTC).strftime("%Y-%m")
+    month_prefix = datetime.now(UTC).strftime("%Y-%m")
     try:
-        with _db() as conn:
-            row = conn.execute(
-                "SELECT COALESCE(SUM(cost_usd), 0.0) FROM ai_cost_ledger WHERE request_at LIKE ?",
-                (f"{month}%",),
-            ).fetchone()
-            return float(row[0])
+        result = db.session.execute(
+            sa.select(func.coalesce(func.sum(AICostLedger.cost_usd), 0.0)).where(
+                AICostLedger.request_at >= datetime.now(UTC).replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+            )
+        ).scalar()
+        return float(result)
     except Exception:
+        log.exception("Failed to calculate monthly spend")
         return 0.0
 
 

@@ -506,3 +506,234 @@ class UserUIPreferences(db.Model):
             db.session.add(record)
             db.session.flush()
         return record
+
+
+# ---------------------------------------------------------------------------
+# Visitor Counter (global site-wide counter)
+# ---------------------------------------------------------------------------
+
+class VisitorCounter(db.Model):
+    """Global site visitor counter - tracks unique sessions.
+
+    Single row with id=1 stores the cumulative visit count.
+    """
+
+    __tablename__ = "visitor_counter"
+    __allow_unmapped__ = True
+
+    id: int = db.Column(db.Integer, primary_key=True, default=1)
+    visits: int = db.Column(db.Integer, nullable=False, default=0)
+
+    @classmethod
+    def increment_and_get(cls) -> int:
+        """Atomically increment counter and return new value."""
+        record = db.session.get(cls, 1)
+        if record is None:
+            record = cls(id=1, visits=1)
+            db.session.add(record)
+        else:
+            record.visits += 1
+        db.session.flush()
+        return record.visits
+
+    @classmethod
+    def get_count(cls) -> int:
+        """Return current count without incrementing."""
+        record = db.session.get(cls, 1)
+        return record.visits if record else 0
+
+
+# ---------------------------------------------------------------------------
+# Tool Usage (per-tool and detail-level tracking)
+# ---------------------------------------------------------------------------
+
+class ToolUsage(db.Model):
+    """Tracks usage count and last_used_at per tool."""
+
+    __tablename__ = "tool_usage"
+    __allow_unmapped__ = True
+    __table_args__ = (
+        db.Index("ix_tool_usage_tool", "tool"),
+    )
+
+    id: int = db.Column(db.Integer, primary_key=True)
+    tool: str = db.Column(db.String(64), nullable=False, unique=True, index=True)
+    count: int = db.Column(db.Integer, nullable=False, default=0)
+    last_used_at: datetime | None = db.Column(db.DateTime(timezone=True), nullable=True)
+
+    details: list["ToolUsageDetail"] = db.relationship(
+        "ToolUsageDetail", back_populates="tool_usage", cascade="all, delete-orphan"
+    )
+
+
+class ToolUsageDetail(db.Model):
+    """Detail dimensions for tool usage (e.g. mode, voice, engine)."""
+
+    __tablename__ = "tool_usage_detail"
+    __allow_unmapped__ = True
+    __table_args__ = (
+        db.UniqueConstraint("tool_id", "detail_key", "detail_value", name="uq_tool_detail"),
+        db.Index("ix_tool_usage_detail_composite", "tool_id", "detail_key"),
+    )
+
+    id: int = db.Column(db.Integer, primary_key=True)
+    tool_id: int = db.Column(db.Integer, db.ForeignKey("tool_usage.id"), nullable=False, index=True)
+    detail_key: str = db.Column(db.String(128), nullable=False)
+    detail_value: str = db.Column(db.String(256), nullable=False)
+    count: int = db.Column(db.Integer, nullable=False, default=0)
+    last_used_at: datetime | None = db.Column(db.DateTime(timezone=True), nullable=True)
+
+    tool_usage: "ToolUsage" = db.relationship("ToolUsage", back_populates="details")
+
+
+# ---------------------------------------------------------------------------
+# Speech Conversion Metrics (for adaptive runtime estimation)
+# ---------------------------------------------------------------------------
+
+class SpeechConversionMetric(db.Model):
+    """Records telemetry for document-to-speech conversions for adaptive estimation."""
+
+    __tablename__ = "speech_conversion_metric"
+    __allow_unmapped__ = True
+    __table_args__ = (
+        db.Index("ix_speech_conversion_created_at", "created_at"),
+    )
+
+    id: int = db.Column(db.Integer, primary_key=True)
+    created_at: datetime = db.Column(db.DateTime(timezone=True), nullable=False, default=_now, index=True)
+    engine: str = db.Column(db.String(64), nullable=False)
+    voice: str = db.Column(db.String(128), nullable=False)
+    speed: float = db.Column(db.Float, nullable=False)
+    pitch: int = db.Column(db.Integer, nullable=False)
+    word_count: int = db.Column(db.Integer, nullable=False, default=0)
+    char_count: int = db.Column(db.Integer, nullable=False, default=0)
+    source_size_bytes: int = db.Column(db.Integer, nullable=False, default=0)
+    processing_seconds: float = db.Column(db.Float, nullable=False)
+    audio_seconds: float = db.Column(db.Float, nullable=False, default=0.0)
+
+
+# ---------------------------------------------------------------------------
+# Feature Flags (system-wide toggles)
+# ---------------------------------------------------------------------------
+
+class FeatureFlag(db.Model):
+    """System-wide feature flag storage (replaces JSON file backend)."""
+
+    __tablename__ = "feature_flag"
+    __allow_unmapped__ = True
+
+    id: int = db.Column(db.Integer, primary_key=True)
+    name: str = db.Column(db.String(128), nullable=False, unique=True, index=True)
+    value: bool = db.Column(db.Boolean, nullable=False)
+    updated_at: datetime = db.Column(db.DateTime(timezone=True), nullable=False, default=_now, onupdate=_now)
+
+    @classmethod
+    def get_flag(cls, name: str, default: bool = True) -> bool:
+        """Get flag value or return default if not found."""
+        record = db.session.execute(
+            db.select(cls).where(cls.name == name)
+        ).scalar_one_or_none()
+        return record.value if record else default
+
+    @classmethod
+    def set_flag(cls, name: str, value: bool) -> "FeatureFlag":
+        """Set or create a feature flag."""
+        record = db.session.execute(
+            db.select(cls).where(cls.name == name)
+        ).scalar_one_or_none()
+        if record is None:
+            record = cls(name=name, value=value)
+            db.session.add(record)
+        else:
+            record.value = value
+            record.updated_at = _now()
+        db.session.flush()
+        return record
+
+
+# ---------------------------------------------------------------------------
+# Magic Features (pronunciation dict and rule proposals)
+# ---------------------------------------------------------------------------
+
+class PronunciationDict(db.Model):
+    """User-facing pronunciation dictionary for speech synthesis customization."""
+
+    __tablename__ = "pronunciation_dict"
+    __allow_unmapped__ = True
+
+    id: int = db.Column(db.Integer, primary_key=True)
+    term: str = db.Column(db.String(256), nullable=False, unique=True, index=True)
+    replacement: str = db.Column(db.String(256), nullable=False)
+    notes: str | None = db.Column(db.Text, nullable=True)
+    updated_at: datetime = db.Column(db.DateTime(timezone=True), nullable=False, default=_now, onupdate=_now)
+
+
+class RuleProposal(db.Model):
+    """Community rule proposal for ACB accessibility guideline updates."""
+
+    __tablename__ = "rule_proposal"
+    __allow_unmapped__ = True
+    __table_args__ = (
+        db.Index("ix_rule_proposal_status", "status"),
+        db.Index("ix_rule_proposal_created_at", "created_at"),
+    )
+
+    id: int = db.Column(db.Integer, primary_key=True)
+    title: str = db.Column(db.String(255), nullable=False)
+    rationale: str = db.Column(db.Text, nullable=False)
+    suggested_rule_id: str | None = db.Column(db.String(128), nullable=True)
+    severity: str = db.Column(db.String(32), nullable=False)  # critical/high/medium/low
+    submitted_by: str | None = db.Column(db.String(256), nullable=True)
+    status: str = db.Column(db.String(16), nullable=False, default="pending", index=True)  # pending/approved/rejected
+    created_at: datetime = db.Column(db.DateTime(timezone=True), nullable=False, default=_now, index=True)
+
+
+# ---------------------------------------------------------------------------
+# AI Gateway Cost Tracking (OpenRouter budget enforcement)
+# ---------------------------------------------------------------------------
+
+class AICostLedger(db.Model):
+    """Tracks AI inference costs for budget enforcement and monitoring."""
+
+    __tablename__ = "ai_cost_ledger"
+    __allow_unmapped__ = True
+    __table_args__ = (
+        db.Index("ix_ai_cost_ledger_created_at", "created_at"),
+        db.Index("ix_ai_cost_ledger_provider", "provider"),
+    )
+
+    id: int = db.Column(db.Integer, primary_key=True)
+    created_at: datetime = db.Column(db.DateTime(timezone=True), nullable=False, default=_now, index=True)
+    provider: str = db.Column(db.String(32), nullable=False)  # openrouter/openai/ollama
+    model: str = db.Column(db.String(128), nullable=False)
+    input_tokens: int = db.Column(db.Integer, nullable=False, default=0)
+    output_tokens: int = db.Column(db.Integer, nullable=False, default=0)
+    cost_usd: float = db.Column(db.Float, nullable=False, default=0.0)
+    session_id: str | None = db.Column(db.String(128), nullable=True, index=True)
+
+    @classmethod
+    def record_cost(cls, provider: str, model: str, input_tokens: int,
+                   output_tokens: int, cost_usd: float, session_id: str | None = None) -> "AICostLedger":
+        """Record an AI inference cost."""
+        record = cls(
+            provider=provider,
+            model=model,
+            input_tokens=input_tokens,
+            output_tokens=output_tokens,
+            cost_usd=cost_usd,
+            session_id=session_id,
+        )
+        db.session.add(record)
+        db.session.flush()
+        return record
+
+    @classmethod
+    def get_monthly_cost(cls) -> float:
+        """Sum total cost for current month (UTC)."""
+        from datetime import timedelta
+        now = _now()
+        month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        result = db.session.execute(
+            db.select(db.func.sum(cls.cost_usd)).where(cls.created_at >= month_start)
+        ).scalar()
+        return float(result or 0.0)

@@ -5,13 +5,12 @@ import difflib
 import io
 import json
 import re
-import sqlite3
 from dataclasses import dataclass
-from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from flask import current_app
+from .db import db
+from .models import PronunciationDict, RuleProposal
 
 try:
     import fitz  # PyMuPDF
@@ -19,84 +18,74 @@ except Exception:  # pragma: no cover - optional at runtime
     fitz = None
 
 
-def _now_iso() -> str:
-    return datetime.now(timezone.utc).isoformat()
-
-
-def _db_path() -> Path:
-    p = Path(current_app.instance_path)
-    p.mkdir(parents=True, exist_ok=True)
-    return p / "magic_features.db"
-
-
-def _conn() -> sqlite3.Connection:
-    conn = sqlite3.connect(str(_db_path()))
-    conn.row_factory = sqlite3.Row
-    return conn
-
-
-def ensure_tables() -> None:
-    conn = _conn()
-    conn.execute(
-        "CREATE TABLE IF NOT EXISTS pronunciation_dict ("
-        " term TEXT PRIMARY KEY,"
-        " replacement TEXT NOT NULL,"
-        " notes TEXT,"
-        " updated_at TEXT NOT NULL"
-        ")"
-    )
-    conn.execute(
-        "CREATE TABLE IF NOT EXISTS rule_proposals ("
-        " id INTEGER PRIMARY KEY AUTOINCREMENT,"
-        " title TEXT NOT NULL,"
-        " rationale TEXT NOT NULL,"
-        " suggested_rule_id TEXT,"
-        " severity TEXT NOT NULL,"
-        " submitted_by TEXT,"
-        " status TEXT NOT NULL DEFAULT 'pending',"
-        " created_at TEXT NOT NULL"
-        ")"
-    )
-    conn.commit()
-    conn.close()
+@dataclass
+class TableAdvisory:
+    severity: str
+    code: str
+    message: str
 
 
 def list_pronunciations() -> list[dict[str, str]]:
-    ensure_tables()
-    conn = _conn()
-    rows = conn.execute(
-        "SELECT term, replacement, COALESCE(notes, '') AS notes, updated_at "
-        "FROM pronunciation_dict ORDER BY term COLLATE NOCASE"
-    ).fetchall()
-    conn.close()
-    return [dict(r) for r in rows]
+    """Return all pronunciation dictionary entries ordered by term."""
+    try:
+        records = db.session.execute(
+            db.select(PronunciationDict).order_by(PronunciationDict.term)
+        ).scalars().all()
+        return [
+            {
+                "term": r.term,
+                "replacement": r.replacement,
+                "notes": r.notes or "",
+                "updated_at": r.updated_at.isoformat() if r.updated_at else "",
+            }
+            for r in records
+        ]
+    except Exception:
+        return []
 
 
 def upsert_pronunciation(term: str, replacement: str, notes: str = "") -> None:
-    ensure_tables()
+    """Insert or update a pronunciation dictionary entry."""
     term = term.strip()
     replacement = replacement.strip()
     if not term or not replacement:
         raise ValueError("term and replacement are required")
-    conn = _conn()
-    conn.execute(
-        "INSERT INTO pronunciation_dict (term, replacement, notes, updated_at) VALUES (?, ?, ?, ?) "
-        "ON CONFLICT(term) DO UPDATE SET replacement=excluded.replacement, notes=excluded.notes, updated_at=excluded.updated_at",
-        (term, replacement, notes.strip(), _now_iso()),
-    )
-    conn.commit()
-    conn.close()
+    
+    try:
+        record = db.session.execute(
+            db.select(PronunciationDict).where(PronunciationDict.term == term)
+        ).scalar_one_or_none()
+        
+        if record:
+            record.replacement = replacement
+            record.notes = notes.strip() or None
+        else:
+            record = PronunciationDict(
+                term=term,
+                replacement=replacement,
+                notes=notes.strip() or None,
+            )
+            db.session.add(record)
+        
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        raise
 
 
 def delete_pronunciation(term: str) -> None:
-    ensure_tables()
-    conn = _conn()
-    conn.execute("DELETE FROM pronunciation_dict WHERE term = ?", (term.strip(),))
-    conn.commit()
-    conn.close()
+    """Delete a pronunciation dictionary entry."""
+    try:
+        db.session.execute(
+            db.delete(PronunciationDict).where(PronunciationDict.term == term.strip())
+        )
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
 
 
 def pronunciations_to_csv() -> str:
+    """Export pronunciation dictionary as CSV."""
     rows = list_pronunciations()
     buf = io.StringIO()
     writer = csv.DictWriter(buf, fieldnames=["term", "replacement", "notes", "updated_at"])
@@ -107,7 +96,7 @@ def pronunciations_to_csv() -> str:
 
 
 def import_pronunciations_csv(text: str) -> int:
-    ensure_tables()
+    """Import pronunciation dictionary from CSV text. Returns count imported."""
     reader = csv.DictReader(io.StringIO(text))
     count = 0
     for row in reader:
@@ -116,12 +105,16 @@ def import_pronunciations_csv(text: str) -> int:
         notes = (row.get("notes") or "").strip()
         if not term or not repl:
             continue
-        upsert_pronunciation(term, repl, notes)
-        count += 1
+        try:
+            upsert_pronunciation(term, repl, notes)
+            count += 1
+        except Exception:
+            continue
     return count
 
 
 def apply_pronunciation_dictionary(text: str) -> str:
+    """Apply pronunciation dictionary replacements to text."""
     rows = list_pronunciations()
     out = text
     # Replace longer terms first to avoid partial replacement collisions.
@@ -130,13 +123,6 @@ def apply_pronunciation_dictionary(text: str) -> str:
         term = re.escape(row["term"])
         out = re.sub(rf"\b{term}\b", row["replacement"], out, flags=re.IGNORECASE)
     return out
-
-
-@dataclass
-class TableAdvisory:
-    severity: str
-    code: str
-    message: str
 
 
 def _markdown_table_findings(text: str) -> list[TableAdvisory]:
@@ -213,6 +199,7 @@ def _html_table_findings(text: str) -> list[TableAdvisory]:
 
 
 def analyze_tables(text: str) -> dict[str, Any]:
+    """Analyze tables in markdown/HTML text for accessibility issues."""
     findings = _markdown_table_findings(text) + _html_table_findings(text)
     return {
         "status": "ok",
@@ -222,6 +209,7 @@ def analyze_tables(text: str) -> dict[str, Any]:
 
 
 def detect_reading_order_pdf(path: Path, max_pages: int = 5) -> dict[str, Any]:
+    """Detect potential reading order issues in PDF."""
     if fitz is None:
         return {"status": "unavailable", "detail": "PyMuPDF is not installed."}
 
@@ -268,6 +256,7 @@ def detect_reading_order_pdf(path: Path, max_pages: int = 5) -> dict[str, Any]:
 
 
 def ocr_pdf(path: Path, max_pages: int = 3) -> dict[str, Any]:
+    """OCR scanned PDF and return extracted text with confidence."""
     if fitz is None:
         return {"status": "unavailable", "detail": "PyMuPDF is not installed."}
     try:
@@ -315,6 +304,7 @@ def ocr_pdf(path: Path, max_pages: int = 3) -> dict[str, Any]:
 
 
 def extract_text_for_compare(path: Path) -> str:
+    """Extract text from document for comparison."""
     ext = path.suffix.lower()
     if ext in {".txt", ".md", ".rst", ".csv", ".json", ".xml", ".html", ".htm"}:
         return path.read_text(encoding="utf-8", errors="replace")
@@ -333,6 +323,7 @@ def extract_text_for_compare(path: Path) -> str:
 
 
 def compare_documents(path_a: Path, path_b: Path) -> dict[str, Any]:
+    """Compare two documents and return similarity and diff preview."""
     text_a = extract_text_for_compare(path_a)
     text_b = extract_text_for_compare(path_b)
 
@@ -371,7 +362,7 @@ def submit_rule_proposal(
     suggested_rule_id: str = "",
     submitted_by: str = "",
 ) -> int:
-    ensure_tables()
+    """Submit a new rule proposal. Returns proposal ID."""
     title = title.strip()
     rationale = rationale.strip()
     severity = severity.strip().lower() or "medium"
@@ -380,25 +371,41 @@ def submit_rule_proposal(
     if not title or not rationale:
         raise ValueError("title and rationale are required")
 
-    conn = _conn()
-    cur = conn.execute(
-        "INSERT INTO rule_proposals (title, rationale, suggested_rule_id, severity, submitted_by, status, created_at) "
-        "VALUES (?, ?, ?, ?, ?, 'pending', ?)",
-        (title, rationale, suggested_rule_id.strip(), severity, submitted_by.strip(), _now_iso()),
-    )
-    conn.commit()
-    proposal_id = int(cur.lastrowid)
-    conn.close()
-    return proposal_id
+    try:
+        proposal = RuleProposal(
+            title=title,
+            rationale=rationale,
+            suggested_rule_id=suggested_rule_id.strip() or None,
+            severity=severity,
+            submitted_by=submitted_by.strip() or None,
+            status="pending",
+        )
+        db.session.add(proposal)
+        db.session.commit()
+        return proposal.id
+    except Exception:
+        db.session.rollback()
+        raise
 
 
 def list_rule_proposals(limit: int = 100) -> list[dict[str, Any]]:
-    ensure_tables()
-    conn = _conn()
-    rows = conn.execute(
-        "SELECT id, title, rationale, suggested_rule_id, severity, submitted_by, status, created_at "
-        "FROM rule_proposals ORDER BY id DESC LIMIT ?",
-        (int(limit),),
-    ).fetchall()
-    conn.close()
-    return [dict(r) for r in rows]
+    """List rule proposals ordered by most recent first."""
+    try:
+        records = db.session.execute(
+            db.select(RuleProposal).order_by(RuleProposal.id.desc()).limit(int(limit))
+        ).scalars().all()
+        return [
+            {
+                "id": r.id,
+                "title": r.title,
+                "rationale": r.rationale,
+                "suggested_rule_id": r.suggested_rule_id,
+                "severity": r.severity,
+                "submitted_by": r.submitted_by,
+                "status": r.status,
+                "created_at": r.created_at.isoformat() if r.created_at else "",
+            }
+            for r in records
+        ]
+    except Exception:
+        return []

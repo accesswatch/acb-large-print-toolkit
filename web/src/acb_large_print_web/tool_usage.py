@@ -1,7 +1,7 @@
-"""Persistent tool-usage counters backed by SQLite.
+"""Persistent tool-usage counters backed by SQLAlchemy.
 
 Each call to ``record(tool)`` atomically increments the counter for that tool
-and updates a ``last_used_at`` timestamp.  Stored in ``instance/tool_usage.db``.
+and updates a ``last_used_at`` timestamp. Uses the main application database.
 
 Tools tracked:
     audit       -- document audit (single or batch)
@@ -16,11 +16,10 @@ Tools tracked:
 
 from __future__ import annotations
 
-import sqlite3
 from datetime import UTC, datetime
-from pathlib import Path
 
-from flask import current_app
+from .db import db
+from .models import ToolUsage, ToolUsageDetail
 
 
 # Human-friendly display labels for each tool key
@@ -36,56 +35,50 @@ TOOL_LABELS: dict[str, str] = {
 }
 
 
-def _db_path() -> Path:
-    p = Path(current_app.instance_path)
-    p.mkdir(parents=True, exist_ok=True)
-    return p / "tool_usage.db"
-
-
-def _conn() -> sqlite3.Connection:
-    conn = sqlite3.connect(str(_db_path()))
-    conn.execute("PRAGMA journal_mode=WAL")
-    conn.execute(
-        "CREATE TABLE IF NOT EXISTS usage ("
-        "  tool TEXT PRIMARY KEY,"
-        "  count INTEGER NOT NULL DEFAULT 0,"
-        "  last_used_at TEXT"
-        ")"
-    )
-    conn.execute(
-        "CREATE TABLE IF NOT EXISTS usage_details ("
-        "  tool TEXT NOT NULL,"
-        "  detail_key TEXT NOT NULL,"
-        "  detail_value TEXT NOT NULL,"
-        "  count INTEGER NOT NULL DEFAULT 0,"
-        "  last_used_at TEXT,"
-        "  PRIMARY KEY (tool, detail_key, detail_value)"
-        ")"
-    )
-    conn.commit()
-    return conn
+def _get_or_create_tool(tool: str) -> ToolUsage:
+    """Get or create a ToolUsage record."""
+    record = db.session.execute(
+        db.select(ToolUsage).where(ToolUsage.tool == tool)
+    ).scalar_one_or_none()
+    if record is None:
+        record = ToolUsage(tool=tool, count=0)
+        db.session.add(record)
+        db.session.flush()
+    return record
 
 
 def record(tool: str, detail: str | None = None) -> None:
     """Increment the counter for *tool*.  Silently swallows errors."""
     try:
-        now = datetime.now(UTC).isoformat()
-        with _conn() as conn:
-            conn.execute(
-                "INSERT INTO usage (tool, count, last_used_at) VALUES (?, 1, ?)"
-                " ON CONFLICT(tool) DO UPDATE SET count = count + 1, last_used_at = ?",
-                (tool, now, now),
-            )
-            if detail:
-                conn.execute(
-                    "INSERT INTO usage_details (tool, detail_key, detail_value, count, last_used_at) "
-                    "VALUES (?, ?, ?, 1, ?) "
-                    "ON CONFLICT(tool, detail_key, detail_value) DO UPDATE "
-                    "SET count = count + 1, last_used_at = ?",
-                    (tool, "detail", str(detail), now, now),
+        now = datetime.now(UTC)
+        tool_record = _get_or_create_tool(tool)
+        tool_record.count += 1
+        tool_record.last_used_at = now
+        
+        if detail:
+            detail_record = db.session.execute(
+                db.select(ToolUsageDetail).where(
+                    ToolUsageDetail.tool_id == tool_record.id,
+                    ToolUsageDetail.detail_key == "detail",
+                    ToolUsageDetail.detail_value == str(detail),
                 )
+            ).scalar_one_or_none()
+            if detail_record is None:
+                detail_record = ToolUsageDetail(
+                    tool_id=tool_record.id,
+                    detail_key="detail",
+                    detail_value=str(detail),
+                    count=1,
+                    last_used_at=now,
+                )
+                db.session.add(detail_record)
+            else:
+                detail_record.count += 1
+                detail_record.last_used_at = now
+        
+        db.session.commit()
     except Exception:
-        pass
+        db.session.rollback()
 
 
 def record_details(tool: str, details: dict[str, object]) -> None:
@@ -94,29 +87,42 @@ def record_details(tool: str, details: dict[str, object]) -> None:
     Example details: {"mode": "typed_preview", "voice": "kokoro:af_bella"}
     """
     try:
-        now = datetime.now(UTC).isoformat()
-        with _conn() as conn:
-            conn.execute(
-                "INSERT INTO usage (tool, count, last_used_at) VALUES (?, 1, ?)"
-                " ON CONFLICT(tool) DO UPDATE SET count = count + 1, last_used_at = ?",
-                (tool, now, now),
-            )
-            for k, v in (details or {}).items():
-                if v is None:
-                    continue
-                key = str(k).strip()
-                val = str(v).strip()
-                if not key or not val:
-                    continue
-                conn.execute(
-                    "INSERT INTO usage_details (tool, detail_key, detail_value, count, last_used_at) "
-                    "VALUES (?, ?, ?, 1, ?) "
-                    "ON CONFLICT(tool, detail_key, detail_value) DO UPDATE "
-                    "SET count = count + 1, last_used_at = ?",
-                    (tool, key, val, now, now),
+        now = datetime.now(UTC)
+        tool_record = _get_or_create_tool(tool)
+        tool_record.count += 1
+        tool_record.last_used_at = now
+        
+        for k, v in (details or {}).items():
+            if v is None:
+                continue
+            key = str(k).strip()
+            val = str(v).strip()
+            if not key or not val:
+                continue
+            
+            detail_record = db.session.execute(
+                db.select(ToolUsageDetail).where(
+                    ToolUsageDetail.tool_id == tool_record.id,
+                    ToolUsageDetail.detail_key == key,
+                    ToolUsageDetail.detail_value == val,
                 )
+            ).scalar_one_or_none()
+            if detail_record is None:
+                detail_record = ToolUsageDetail(
+                    tool_id=tool_record.id,
+                    detail_key=key,
+                    detail_value=val,
+                    count=1,
+                    last_used_at=now,
+                )
+                db.session.add(detail_record)
+            else:
+                detail_record.count += 1
+                detail_record.last_used_at = now
+        
+        db.session.commit()
     except Exception:
-        pass
+        db.session.rollback()
 
 
 def get_all() -> list[dict]:
@@ -126,13 +132,10 @@ def get_all() -> list[dict]:
     Tools that have never been used are included with count 0.
     """
     try:
-        with _conn() as conn:
-            rows = {
-                row[0]: {"count": row[1], "last_used_at": row[2]}
-                for row in conn.execute(
-                    "SELECT tool, count, last_used_at FROM usage"
-                ).fetchall()
-            }
+        records = db.session.execute(
+            db.select(ToolUsage)
+        ).scalars().all()
+        rows = {r.tool: {"count": r.count, "last_used_at": r.last_used_at} for r in records}
     except Exception:
         rows = {}
 
