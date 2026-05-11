@@ -13,6 +13,11 @@ from acb_large_print_web.credentials import (
 ai_usage_bp = Blueprint("ai_usage", __name__)
 
 
+def _chat_turn_count(quota: dict) -> int:
+    """Return the normalized chat-turn count from quota status payloads."""
+    return int(quota.get("chat_turns_today", quota.get("chat_today", 0)) or 0)
+
+
 @ai_usage_bp.route("/", methods=["GET"])
 def ai_usage():
     """Return AI usage counts for the current session as JSON.
@@ -40,7 +45,7 @@ def ai_usage():
         return jsonify({
             "provider": "ollama",
             "ollama_model": get_user_ollama_model(),
-            "session_requests_today": quota.get("chat_today", 0),
+            "session_requests_today": _chat_turn_count(quota),
             "session_tokens_today": _session_tokens_today(sess_hash),
             "chat_remaining_today": None,
             "budget_pct_remaining": None,
@@ -57,7 +62,7 @@ def ai_usage():
     return jsonify({
         "provider": "openrouter",
         "ollama_model": None,
-        "session_requests_today": quota.get("chat_today", 0),
+        "session_requests_today": _chat_turn_count(quota),
         "session_tokens_today": _session_tokens_today(sess_hash),
         "chat_remaining_today": quota.get("chat_remaining_today"),
         "budget_pct_remaining": pct_remaining,

@@ -1581,6 +1581,15 @@ select.input-narrow {
   font-size: 1rem;
 }
 
+.message__meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-top: 0.5rem;
+}
+
 .message--user {
   align-self: flex-end;
   background: var(--color-accent, #4a6fa5);
@@ -1602,6 +1611,10 @@ select.input-narrow {
 
 .message--thinking .message__body {
   font-style: italic;
+}
+
+.message--thinking .message__meta {
+  opacity: 0.7;
 }
 
 .copy-btn {

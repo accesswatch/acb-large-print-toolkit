@@ -275,3 +275,57 @@ class TestSettingsOllamaRoutes:
         assert resp.status_code == 200
         assert resp.get_json()["ok"] is True
         assert resp.headers.get("X-Request-ID")
+
+
+class TestAiUsageRoute:
+    def test_ollama_usage_uses_chat_turns_today_field(self, settings_client, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setattr("acb_large_print_web.routes.ai_usage.is_ollama_configured", lambda: True)
+        monkeypatch.setattr("acb_large_print_web.routes.ai_usage.get_user_ollama_model", lambda: "gemma3:4b")
+        monkeypatch.setattr("acb_large_print_web.routes.ai_usage.make_session_hash", lambda _value: "sess-hash")
+        monkeypatch.setattr(
+            "acb_large_print_web.routes.ai_usage.get_quota_status",
+            lambda _value: {"chat_turns_today": 7},
+        )
+        monkeypatch.setattr("acb_large_print_web.routes.ai_usage._session_tokens_today", lambda _value: 42)
+
+        resp = settings_client.get("/ai/usage/")
+
+        assert resp.status_code == 200
+        data = resp.get_json()
+        assert data["provider"] == "ollama"
+        assert data["session_requests_today"] == 7
+        assert data["session_tokens_today"] == 42
+
+
+class TestPlaygroundRendering:
+    def test_assistant_history_does_not_add_extra_ai_response_labels(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setenv("GLOW_ENABLE_AI", "true")
+        monkeypatch.setenv("GLOW_ENABLE_AI_GENERAL_CHAT", "true")
+        from acb_large_print_web.app import create_app
+
+        app = create_app({"TESTING": True, "SECRET_KEY": "test-secret", "WTF_CSRF_ENABLED": False})
+        app.config["SERVER_NAME"] = "localhost"
+
+        with app.test_client() as client:
+            with client.session_transaction() as session_data:
+                session_data["ollama_api_key"] = "ollama_test"
+                session_data["ollama_model"] = "gemma3:4b"
+                session_data["ollama_features"] = {
+                    "heading_fix": True,
+                    "markitdown": True,
+                    "chat": False,
+                    "playground": True,
+                }
+                session_data["playground_history"] = [
+                    {"role": "user", "content": "Hello"},
+                    {"role": "assistant", "content": "Hi there"},
+                ]
+
+            resp = client.get("/beta/chat/")
+
+        assert resp.status_code == 200
+        html = resp.data.decode("utf-8")
+        assert 'aria-label="AI response"' not in html
+        assert 'aria-label="You said"' not in html
+        assert 'Copy response' in html
+        assert 'Model: gemma3:4b' in html

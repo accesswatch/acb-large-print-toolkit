@@ -68,20 +68,21 @@
     {% if history %}
       {% for msg in history %}
         {% if msg.role == "user" %}
-        <article class="message message--user" aria-label="You said">
+        <article class="message message--user">
           <h3 class="message__heading">You asked</h3>
           <div class="message__body">{{ msg.content | e }}</div>
         </article>
         {% else %}
-        <article class="message message--assistant" aria-label="AI response">
-          <h4 class="message__heading">
-            AI response <span class="message__model" aria-label="Model: {{ playground_model }}">{{ playground_model }}</span>
+        <article class="message message--assistant">
+          <h4 class="message__heading">AI response</h4>
+          <div class="message__body">{{ msg.content | e }}</div>
+          <div class="message__meta">
+            <span class="message__model">Model: {{ playground_model }}</span>
             <button type="button" class="copy-btn" aria-label="Copy this response to clipboard" title="Copy response">
               <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><rect x="4" y="4" width="9" height="11" rx="1" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M3 3V2a1 1 0 011-1h7a1 1 0 011 1v9a1 1 0 01-1 1h-1" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>
-              Copy
+              Copy response
             </button>
-          </h4>
-          <div class="message__body">{{ msg.content | e }}</div>
+          </div>
         </article>
         {% endif %}
       {% endfor %}

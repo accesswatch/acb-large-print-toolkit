@@ -64,6 +64,36 @@
       .replace(/"/g, '&quot;');
   }
 
+  function notifyAiRequestComplete() {
+    document.dispatchEvent(new CustomEvent('ai:request-complete'));
+  }
+
+  function ensureAssistantMeta(article, modelName) {
+    var meta = article.querySelector('.message__meta');
+    var modelEl;
+    var copyBtn;
+    if (!meta) {
+      meta = document.createElement('div');
+      meta.className = 'message__meta';
+      modelEl = document.createElement('span');
+      modelEl.className = 'message__model';
+      copyBtn = document.createElement('button');
+      copyBtn.type = 'button';
+      copyBtn.className = 'copy-btn';
+      copyBtn.setAttribute('aria-label', 'Copy this response to clipboard');
+      copyBtn.setAttribute('title', 'Copy response');
+      copyBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><rect x="4" y="4" width="9" height="11" rx="1" stroke="currentColor" stroke-width="1.5" fill="none"></rect><path d="M3 3V2a1 1 0 011-1h7a1 1 0 011 1v9a1 1 0 01-1 1h-1" stroke="currentColor" stroke-width="1.5" fill="none"></path></svg> Copy response';
+      meta.appendChild(modelEl);
+      meta.appendChild(copyBtn);
+      article.appendChild(meta);
+    }
+    modelEl = meta.querySelector('.message__model');
+    if (modelEl) {
+      modelEl.textContent = 'Model: ' + (modelName || model || '');
+    }
+    return meta;
+  }
+
   function appendMessage(role, text, modelName) {
     var article = document.createElement('article');
     var heading = document.createElement(role === 'user' ? 'h3' : 'h4');
@@ -75,7 +105,6 @@
     }
 
     article.className = 'message message--' + role;
-    article.setAttribute('aria-label', role === 'user' ? 'You said' : 'AI response');
     heading.className = 'message__heading';
     body.className = 'message__body';
     body.textContent = text;
@@ -83,11 +112,14 @@
     if (role === 'user') {
       heading.textContent = 'You asked';
     } else {
-      heading.innerHTML = 'AI response <span class="message__model" aria-label="Model: ' + escapeHtml(modelName || '') + '">' + escapeHtml(modelName || '') + '</span> <button type="button" class="copy-btn" aria-label="Copy this response to clipboard" title="Copy response"><svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><rect x="4" y="4" width="9" height="11" rx="1" stroke="currentColor" stroke-width="1.5" fill="none"></rect><path d="M3 3V2a1 1 0 011-1h7a1 1 0 011 1v9a1 1 0 01-1 1h-1" stroke="currentColor" stroke-width="1.5" fill="none"></path></svg> Copy</button>';
+      heading.textContent = 'AI response';
     }
 
     article.appendChild(heading);
     article.appendChild(body);
+    if (role !== 'user') {
+      ensureAssistantMeta(article, modelName);
+    }
     log.appendChild(article);
     log.scrollTop = log.scrollHeight;
     log.focus();
@@ -97,26 +129,21 @@
   function appendThinkingMessage(modelName) {
     var article = appendMessage('assistant', 'Thinking…', modelName);
     article.classList.add('message--thinking');
-    article.setAttribute('aria-label', 'AI response in progress');
     log.setAttribute('aria-busy', 'true');
     return article;
   }
 
   function setAssistantContent(article, text, modelName) {
     var body;
-    var heading;
     if (!article) {
       return;
     }
     article.classList.remove('message--thinking');
     body = article.querySelector('.message__body');
-    heading = article.querySelector('.message__heading');
     if (body) {
       body.textContent = text;
     }
-    if (heading) {
-      heading.innerHTML = 'AI response <span class="message__model" aria-label="Model: ' + escapeHtml(modelName || model || '') + '">' + escapeHtml(modelName || model || '') + '</span> <button type="button" class="copy-btn" aria-label="Copy this response to clipboard" title="Copy response"><svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><rect x="4" y="4" width="9" height="11" rx="1" stroke="currentColor" stroke-width="1.5" fill="none"></rect><path d="M3 3V2a1 1 0 011-1h7a1 1 0 011 1v9a1 1 0 01-1 1h-1" stroke="currentColor" stroke-width="1.5" fill="none"></path></svg> Copy</button>';
-    }
+    ensureAssistantMeta(article, modelName || model || '');
   }
 
   function parseSseEvents(buffer, onEvent) {
@@ -230,6 +257,7 @@
           if (activeModel && streamedModel) {
             activeModel.textContent = streamedModel;
           }
+          notifyAiRequestComplete();
           setStatus('Response received.', 'success');
           window.setTimeout(clearStatus, 3000);
           return;
@@ -282,6 +310,7 @@
             modelSelect.value = data.model;
           }
         }
+        notifyAiRequestComplete();
         setStatus('Response received.', 'success');
         window.setTimeout(clearStatus, 3000);
       });
@@ -416,6 +445,7 @@
               modelSelect.value = data.model;
             }
           }
+            notifyAiRequestComplete();
           setStatus('Response regenerated.', 'success');
           window.setTimeout(clearStatus, 3000);
           fetchQuota();
