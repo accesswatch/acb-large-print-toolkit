@@ -5,7 +5,6 @@ from __future__ import annotations
 import io
 import json
 import re
-import sqlite3
 import sys
 import time
 import types
@@ -669,15 +668,17 @@ class TestFeedback:
         assert resp.status_code == 200
         assert b"Thank You" in resp.data
 
-        # Verify it was saved in SQLite
-        db_path = Path(app.instance_path) / "feedback.db"
-        assert db_path.exists()
-        conn = sqlite3.connect(str(db_path))
-        rows = conn.execute("SELECT rating, message FROM feedback").fetchall()
-        conn.close()
-        assert len(rows) == 1
-        assert rows[0][0] == "good"
-        assert rows[0][1] == "Works great!"
+        # Verify it was saved via SQLAlchemy model
+        from acb_large_print_web.db import db
+        from acb_large_print_web.models import Feedback
+
+        with app.app_context():
+            rows = db.session.execute(
+                db.select(Feedback.rating, Feedback.message)
+            ).all()
+            assert len(rows) == 1
+            assert rows[0][0] == "good"
+            assert rows[0][1] == "Works great!"
 
     def test_submit_feedback_missing_rating(self, client):
         resp = client.post(

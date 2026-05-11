@@ -38,7 +38,7 @@ import json
 import logging
 import os
 import time
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -486,7 +486,6 @@ def _record_usage(
 
 def get_monthly_spend() -> float:
     """Return total AI spend in USD for the current calendar month."""
-    month_prefix = datetime.now(UTC).strftime("%Y-%m")
     try:
         result = db.session.execute(
             sa.select(func.coalesce(func.sum(AICostLedger.cost_usd), 0.0)).where(
@@ -520,37 +519,39 @@ def get_quota_status(session_hash: str) -> dict[str, Any]:
     window_start = now.timestamp() - (quota_reset_hours * 3600)
 
     try:
-        with _db() as conn:
-            row = conn.execute(
-                "SELECT chat_turns, audio_seconds FROM ai_quota_sessions WHERE session_hash=? AND date=?",
-                (session_hash, today),
-            ).fetchone()
-            chat_today = int(row["chat_turns"]) if row else 0
+        row = db.session.execute(
+            db.select(AIQuotaSession).where(
+                AIQuotaSession.session_hash == session_hash,
+                AIQuotaSession.date == today,
+            )
+        ).scalar_one_or_none()
+        chat_today = int(row.chat_turns) if row else 0
 
-            audio_row = conn.execute(
-                """
-                SELECT COALESCE(SUM(audio_seconds), 0) as total
-                FROM ai_quota_sessions
-                WHERE session_hash=? AND date LIKE ?
-                """,
-                (session_hash, f"{month}%"),
-            ).fetchone()
-            audio_month_seconds = int(audio_row["total"]) if audio_row else 0
+        audio_month_seconds = int(
+            db.session.execute(
+                db.select(func.coalesce(func.sum(AIQuotaSession.audio_seconds), 0)).where(
+                    AIQuotaSession.session_hash == session_hash,
+                    AIQuotaSession.date.like(f"{month}%"),
+                )
+            ).scalar()
+            or 0
+        )
 
-            if session_quota_limit > 0:
-                quota_row = conn.execute(
-                    """
-                    SELECT COUNT(*) as request_count, MIN(request_at) as oldest_request
-                    FROM ai_cost_ledger
-                    WHERE session_hash = ? AND request_at >= ?
-                    """,
-                    (session_hash, datetime.fromtimestamp(window_start, UTC).isoformat()),
-                ).fetchone()
-                session_requests = int(quota_row["request_count"] or 0) if quota_row else 0
-                oldest_request = str(quota_row["oldest_request"] or "") if quota_row else ""
-            else:
-                session_requests = 0
-                oldest_request = ""
+        if session_quota_limit > 0:
+            quota_row = db.session.execute(
+                db.select(
+                    func.count(AICostLedger.id),
+                    func.min(AICostLedger.request_at),
+                ).where(
+                    AICostLedger.session_hash == session_hash,
+                    AICostLedger.request_at >= datetime.fromtimestamp(window_start, UTC),
+                )
+            ).first()
+            session_requests = int(quota_row[0] or 0) if quota_row else 0
+            oldest_request = quota_row[1].isoformat() if quota_row and quota_row[1] else ""
+        else:
+            session_requests = 0
+            oldest_request = ""
     except Exception:
         chat_today = 0
         audio_month_seconds = 0
@@ -1501,28 +1502,22 @@ def transcribe(
         except Exception:
             estimated_seconds = 60
         cost = (estimated_seconds / 60) * 0.006
-        now = datetime.now(UTC).isoformat()
         today = datetime.now(UTC).strftime("%Y-%m-%d")
         try:
-            with _db() as conn:
-                conn.execute(
-                    """
-                    INSERT INTO ai_cost_ledger
-                        (session_hash, request_at, workload, model, audio_seconds, cost_usd, escalated)
-                    VALUES (?, ?, 'audio', ?, ?, ?, 0)
-                    """,
-                    (session_hash, now, audio_model_used, estimated_seconds, cost),
-                )
-                conn.execute(
-                    """
-                    INSERT INTO ai_quota_sessions (session_hash, date, chat_turns, audio_seconds)
-                    VALUES (?, ?, 0, ?)
-                    ON CONFLICT(session_hash, date) DO UPDATE SET audio_seconds = audio_seconds + ?
-                    """,
-                    (session_hash, today, estimated_seconds, estimated_seconds),
-                )
-                conn.commit()
+            AICostLedger.record_cost(
+                session_hash=session_hash,
+                workload="audio",
+                model=audio_model_used,
+                input_tokens=0,
+                output_tokens=0,
+                audio_seconds=estimated_seconds,
+                cost_usd=cost,
+                escalated=False,
+            )
+            AIQuotaSession.increment_audio(session_hash, today, estimated_seconds)
+            db.session.commit()
         except Exception as exc:
+            db.session.rollback()
             log.warning("Failed to record audio usage: %s", exc)
 
     log.info(
@@ -1634,56 +1629,61 @@ def get_admin_stats() -> dict[str, Any]:
     month = datetime.now(UTC).strftime("%Y-%m")
     today = datetime.now(UTC).strftime("%Y-%m-%d")
 
+    month_start = datetime.now(UTC).replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    today_start = datetime.now(UTC).replace(hour=0, minute=0, second=0, microsecond=0)
+
     try:
-        with _db() as conn:
-            # Monthly totals
-            monthly = conn.execute(
-                """
-                SELECT
-                    COUNT(*) as requests,
-                    COALESCE(SUM(cost_usd), 0) as spend,
-                    COALESCE(SUM(CASE WHEN escalated=1 THEN 1 ELSE 0 END), 0) as escalations,
-                    COALESCE(SUM(CASE WHEN workload='chat' THEN 1 ELSE 0 END), 0) as chat_count,
-                    COALESCE(SUM(CASE WHEN workload='audio' THEN 1 ELSE 0 END), 0) as audio_count,
-                    COALESCE(SUM(audio_seconds), 0) as audio_seconds
-                FROM ai_cost_ledger WHERE request_at LIKE ?
-                """,
-                (f"{month}%",),
-            ).fetchone()
+        # Monthly totals
+        monthly = db.session.execute(
+            db.select(
+                func.count(AICostLedger.id),
+                func.coalesce(func.sum(AICostLedger.cost_usd), 0),
+                func.coalesce(func.sum(func.cast(AICostLedger.escalated, db.Integer)), 0),
+                func.coalesce(func.sum(sa.case((AICostLedger.workload == "chat", 1), else_=0)), 0),
+                func.coalesce(func.sum(sa.case((AICostLedger.workload == "audio", 1), else_=0)), 0),
+                func.coalesce(func.sum(AICostLedger.audio_seconds), 0),
+            ).where(AICostLedger.request_at >= month_start)
+        ).first()
 
-            # Daily spend trend (last 14 days)
-            daily_rows = conn.execute(
-                """
-                SELECT
-                    substr(request_at, 1, 10) as day,
-                    COALESCE(SUM(cost_usd), 0) as spend,
-                    COUNT(*) as requests
-                FROM ai_cost_ledger
-                WHERE request_at >= date('now', '-13 days')
-                GROUP BY day ORDER BY day
-                """,
-            ).fetchall()
+        # Daily spend trend (last 14 days)
+        trend_start = datetime.now(UTC).replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(days=13)
+        daily_rows = db.session.execute(
+            db.select(
+                func.date(AICostLedger.request_at).label("day"),
+                func.coalesce(func.sum(AICostLedger.cost_usd), 0).label("spend"),
+                func.count(AICostLedger.id).label("requests"),
+            )
+            .where(AICostLedger.request_at >= trend_start)
+            .group_by(func.date(AICostLedger.request_at))
+            .order_by(func.date(AICostLedger.request_at))
+        ).all()
 
-            # Today totals
-            today_row = conn.execute(
-                """
-                SELECT COUNT(*) as requests, COALESCE(SUM(cost_usd), 0) as spend
-                FROM ai_cost_ledger WHERE request_at LIKE ?
-                """,
-                (f"{today}%",),
-            ).fetchone()
+        # Today totals
+        today_row = db.session.execute(
+            db.select(
+                func.count(AICostLedger.id),
+                func.coalesce(func.sum(AICostLedger.cost_usd), 0),
+            ).where(AICostLedger.request_at >= today_start)
+        ).first()
 
-            # Unique sessions this month
-            session_count = conn.execute(
-                "SELECT COUNT(DISTINCT session_hash) FROM ai_cost_ledger WHERE request_at LIKE ?",
-                (f"{month}%",),
-            ).fetchone()[0]
+        # Unique sessions this month
+        session_count = db.session.execute(
+            db.select(func.count(func.distinct(AICostLedger.session_hash))).where(AICostLedger.request_at >= month_start)
+        ).scalar() or 0
 
     except Exception as exc:
         log.warning("Admin stats query failed: %s", exc)
         return {}
 
-    monthly_spend = float(monthly["spend"])
+    monthly_requests = int(monthly[0] or 0) if monthly else 0
+    monthly_spend = float(monthly[1] or 0) if monthly else 0.0
+    monthly_escalations = int(monthly[2] or 0) if monthly else 0
+    monthly_chat = int(monthly[3] or 0) if monthly else 0
+    monthly_audio = int(monthly[4] or 0) if monthly else 0
+    monthly_audio_seconds = int(monthly[5] or 0) if monthly else 0
+    today_requests = int(today_row[0] or 0) if today_row else 0
+    today_spend = float(today_row[1] or 0) if today_row else 0.0
+
     return {
         "month": month,
         "today": today,
@@ -1692,16 +1692,16 @@ def get_admin_stats() -> dict[str, Any]:
         "budget_remaining": round(max(0.0, monthly_budget - monthly_spend), 4),
         "budget_pct": round(min(100.0, monthly_spend / max(monthly_budget, 0.01) * 100), 1),
         "budget_exhausted": monthly_spend >= monthly_budget,
-        "monthly_requests": int(monthly["requests"]),
-        "monthly_escalations": int(monthly["escalations"]),
-        "monthly_chat": int(monthly["chat_count"]),
-        "monthly_audio": int(monthly["audio_count"]),
-        "monthly_audio_minutes": int(monthly["audio_seconds"]) // 60,
-        "today_requests": int(today_row["requests"]),
-        "today_spend": round(float(today_row["spend"]), 4),
+        "monthly_requests": monthly_requests,
+        "monthly_escalations": monthly_escalations,
+        "monthly_chat": monthly_chat,
+        "monthly_audio": monthly_audio,
+        "monthly_audio_minutes": monthly_audio_seconds // 60,
+        "today_requests": today_requests,
+        "today_spend": round(today_spend, 4),
         "unique_sessions_month": int(session_count),
         "escalation_rate_pct": round(
-            int(monthly["escalations"]) / max(int(monthly["requests"]), 1) * 100, 1
+            monthly_escalations / max(monthly_requests, 1) * 100, 1
         ),
         "default_model": str(cfg["default_model"]),
         "fallback_model": str(cfg["fallback_model"]),
@@ -1711,7 +1711,7 @@ def get_admin_stats() -> dict[str, Any]:
         "session_quota_per_session": int(cfg.get("session_quota_per_session", 0) or 0),
         "quota_reset_hours": int(cfg.get("quota_reset_hours", 24) or 24),
         "daily_trend": [
-            {"day": r["day"], "spend": round(float(r["spend"]), 4), "requests": int(r["requests"])}
+            {"day": str(r.day), "spend": round(float(r.spend), 4), "requests": int(r.requests)}
             for r in daily_rows
         ],
     }

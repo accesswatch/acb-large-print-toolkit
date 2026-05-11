@@ -715,25 +715,38 @@ class AICostLedger(db.Model):
 
 
     id: int = db.Column(db.Integer, primary_key=True)
-    created_at: datetime = db.Column(db.DateTime(timezone=True), nullable=False, default=_now, index=True)
-    provider: str = db.Column(db.String(32), nullable=False)  # openrouter/openai/ollama
+    session_hash: str = db.Column(db.String(128), nullable=False, index=True)
+    request_at: datetime = db.Column(db.DateTime(timezone=True), nullable=False, default=_now, index=True)
+    workload: str = db.Column(db.String(16), nullable=False, default="chat")  # chat/audio/vision
     model: str = db.Column(db.String(128), nullable=False)
     input_tokens: int = db.Column(db.Integer, nullable=False, default=0)
     output_tokens: int = db.Column(db.Integer, nullable=False, default=0)
+    audio_seconds: int = db.Column(db.Integer, nullable=False, default=0)
     cost_usd: float = db.Column(db.Float, nullable=False, default=0.0)
-    session_id: str | None = db.Column(db.String(128), nullable=True, index=True)
+    escalated: bool = db.Column(db.Boolean, nullable=False, default=False)
 
     @classmethod
-    def record_cost(cls, provider: str, model: str, input_tokens: int,
-                   output_tokens: int, cost_usd: float, session_id: str | None = None) -> "AICostLedger":
-        """Record an AI inference cost."""
+    def record_cost(
+        cls,
+        session_hash: str,
+        workload: str,
+        model: str,
+        input_tokens: int,
+        output_tokens: int,
+        cost_usd: float,
+        audio_seconds: int = 0,
+        escalated: bool = False,
+    ) -> "AICostLedger":
+        """Record an AI inference cost entry."""
         record = cls(
-            provider=provider,
+            session_hash=session_hash,
+            workload=workload,
             model=model,
             input_tokens=input_tokens,
             output_tokens=output_tokens,
+            audio_seconds=audio_seconds,
             cost_usd=cost_usd,
-            session_id=session_id,
+            escalated=escalated,
         )
         db.session.add(record)
         db.session.flush()
@@ -742,11 +755,10 @@ class AICostLedger(db.Model):
     @classmethod
     def get_monthly_cost(cls) -> float:
         """Sum total cost for current month (UTC)."""
-        from datetime import timedelta
         now = _now()
         month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
         result = db.session.execute(
-            db.select(db.func.sum(cls.cost_usd)).where(cls.created_at >= month_start)
+            db.select(db.func.sum(cls.cost_usd)).where(cls.request_at >= month_start)
         ).scalar()
         return float(result or 0.0)
 
@@ -807,7 +819,7 @@ class AIQuotaSession(db.Model):
     Used to enforce daily chat quotas and monthly audio quotas.
     """
 
-    __tablename__ = "ai_quota_session"
+    __tablename__ = "ai_quota_sessions"
     __allow_unmapped__ = True
     __table_args__ = (
         db.PrimaryKeyConstraint("session_hash", "date", name="pk_quota_session"),

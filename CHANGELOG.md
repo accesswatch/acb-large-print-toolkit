@@ -23,9 +23,14 @@ Releases are tagged in the [GitHub repository](https://github.com/Community-Acce
 - **Account Navigation for Admins:** Authenticated admins now keep all standard user navigation and also get direct `Admin Console` links in the sidebar and footer.
 - **Unified Sign-In Entry Point:** Footer sign-in link now routes through the shared auth login flow rather than a separate admin sign-in destination.
 - **Firebase User Provisioning Metadata:** Backend Firebase login now records provider intent (`passwordless` or `github`) in local user auth metadata while retaining SQLAlchemy RBAC.
+- **AI Gateway Runtime Config + Quota Storage Migrated to SQLAlchemy:** Replaced remaining SQLite helper usage in `web/src/acb_large_print_web/ai_gateway.py` with ORM-backed reads/writes through `AISettings`, `AIQuotaSession`, and `AICostLedger` models.
+- **Feedback Route Migrated to SQLAlchemy:** `web/src/acb_large_print_web/routes/feedback.py` now persists and loads feedback entries via `Feedback` model instead of direct SQLite connections.
+- **AI Cost/Quota Model Alignment:** Updated `web/src/acb_large_print_web/models.py` ledger/quota models to match existing AI gateway telemetry schema (`session_hash`, `request_at`, `workload`, `audio_seconds`, `escalated`) and pluralized quota table naming (`ai_quota_sessions`).
 
 ### Fixed
 - **RBAC Email Import Blocker:** Restored compatibility for role-management notification flows by adding generic `send_email(...)` helper in `web/src/acb_large_print_web/email.py` used by `web/src/acb_large_print_web/routes/role.py`.
+- **Feedback Review Response Construction:** Fixed review endpoint response generation and cache-control handling after ORM migration (`/feedback/review`).
+- **Feedback Test Coverage Updated for ORM Backend:** `web/tests/test_app.py` feedback persistence assertions now validate SQLAlchemy-backed rows instead of legacy `feedback.db` file expectations.
 
 ---
 

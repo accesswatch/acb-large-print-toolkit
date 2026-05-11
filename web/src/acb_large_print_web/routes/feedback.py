@@ -8,7 +8,7 @@ from datetime import UTC, datetime
 from urllib import error as urlerror
 from urllib import request as urlrequest
 
-from flask import Blueprint, abort, render_template, request
+from flask import Blueprint, abort, current_app, render_template, request
 
 from ..app import limiter
 from ..db import db
@@ -202,5 +202,6 @@ def feedback_review():
         entries = []
 
     response = render_template("feedback_review.html", entries=entries)
-    resp = render_template("feedback_review.html", entries=entries)
+    resp = current_app.make_response(response)
+    resp.headers["Cache-Control"] = "no-store"
     return resp
