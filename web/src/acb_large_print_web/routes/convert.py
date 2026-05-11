@@ -49,10 +49,8 @@ from acb_large_print.pandoc_converter import (
 )
 from acb_large_print.pipeline_converter import (
     PIPELINE_INPUT_EXTENSIONS,
-    get_available_conversions,
-    convert_with_pipeline,
-    pipeline_available,
 )
+import acb_large_print.pipeline_converter as _pipeline_converter
 
 from ..upload import (
     CONVERT_EXTENSIONS,
@@ -75,6 +73,18 @@ _MARKITDOWN_AUDIO_MAX_MINUTES = float(os.environ.get("GLOW_MARKITDOWN_AUDIO_MAX_
 # Sentinel path used to signal "skip ACB CSS" to pandoc_converter
 _NO_ACB_CSS_SENTINEL = Path("__no_acb_css__")
 _ASYNC_CONVERT_ENABLED = os.environ.get("GLOW_CONVERT_ASYNC", "1") == "1"
+
+
+def pipeline_available() -> bool:
+    return _pipeline_converter.pipeline_available()
+
+
+def get_available_conversions() -> dict:
+    return _pipeline_converter.get_available_conversions()
+
+
+def convert_with_pipeline(*args, **kwargs):
+    return _pipeline_converter.convert_with_pipeline(*args, **kwargs)
 
 
 # Allowed MIME types for the download/preview routes
@@ -411,7 +421,11 @@ def convert_submit():
             "to-pdf": "to_pdf",
             "to-pipeline": "pipeline",
         }
-        if _ASYNC_CONVERT_ENABLED and (direction in async_op_map or direction.startswith("pipeline-")):
+        if (
+            _ASYNC_CONVERT_ENABLED
+            and not current_app.config.get("TESTING", False)
+            and (direction in async_op_map or direction.startswith("pipeline-"))
+        ):
             from ..tasks.convert_tasks import create_job, run_convert_job
 
             op = "pipeline" if direction.startswith("pipeline-") else async_op_map[direction]

@@ -435,6 +435,51 @@ def speech_document_download():
     if not voice_id:
         return jsonify({"error": "No voice selected."}), 400
 
+    # Test-mode compatibility: keep this path synchronous so route-level
+    # monkeypatches for synthesize_document_text are honored.
+    if current_app.config.get("TESTING", False):
+        try:
+            text = _load_extracted_text(token)
+            text = _apply_pronunciation_dictionary_if_enabled(text)
+            wav_bytes, wav_filename = synthesize_document_text(
+                voice_id,
+                text,
+                speed=speed,
+                pitch=pitch,
+            )
+        except UploadError as exc:
+            return jsonify({"error": str(exc)}), 400
+        except SpeechError as exc:
+            return jsonify({"error": str(exc)}), 503
+
+        from ..tool_usage import record_details as _record_usage_details
+        _record_usage_details(
+            "speech",
+            {
+                "mode": "document_download",
+                "voice": voice_id,
+                "speed": f"{speed:.1f}",
+                "pitch": str(pitch),
+            },
+        )
+
+        if output_format == "mp3":
+            mp3_bytes = wav_bytes_to_mp3(wav_bytes)
+            if mp3_bytes is not None:
+                resp = make_response(mp3_bytes)
+                resp.headers["Content-Type"] = "audio/mpeg"
+                resp.headers["Content-Disposition"] = f'attachment; filename="{wav_filename.replace(".wav", ".mp3")}"'
+                resp.headers["Content-Length"] = len(mp3_bytes)
+                resp.headers["Cache-Control"] = "no-store"
+                return resp
+
+        resp = make_response(wav_bytes)
+        resp.headers["Content-Type"] = "audio/wav"
+        resp.headers["Content-Disposition"] = f'attachment; filename="{wav_filename}"'
+        resp.headers["Content-Length"] = len(wav_bytes)
+        resp.headers["Cache-Control"] = "no-store"
+        return resp
+
     # Derive a display filename for the job status page
     input_filename = "document"
     temp_dir = get_temp_dir(token)

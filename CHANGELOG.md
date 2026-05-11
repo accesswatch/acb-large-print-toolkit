@@ -33,6 +33,11 @@ Releases are tagged in the [GitHub repository](https://github.com/Community-Acce
 - **Feedback Test Coverage Updated for ORM Backend:** `web/tests/test_app.py` feedback persistence assertions now validate SQLAlchemy-backed rows instead of legacy `feedback.db` file expectations.
 - **Feature Flags CI Migration Crash:** Added missing runtime dependencies (including `flask-login`) to `web/pyproject.toml` so editable installs used by CI include Flask-Login during `web/tools/run_migrate.py` startup.
 - **Feature Flag Migration Helper Compatibility:** Repaired `migrate_json_to_sqlite()` and `get_backend()` in `web/src/acb_large_print_web/feature_flags.py` to remove stale references and keep legacy migration/admin surfaces operational.
+- **Speech Download Test Stability in CI:** `POST /speech/document-download` now runs a synchronous path in test mode (`TESTING=True`) so route-level synthesis monkeypatches are applied without requiring Kokoro model files in CI workers.
+- **Pipeline Conversion Test Monkeypatch Compatibility:** `web/src/acb_large_print_web/routes/convert.py` now resolves Pipeline helpers through runtime wrappers, allowing tests that monkeypatch `acb_large_print.pipeline_converter` functions to affect route behavior consistently.
+- **Convert Route Test Determinism:** Async conversion queue dispatch is skipped during tests, keeping convert route assertions synchronous and preventing Celery/eager side effects from changing HTTP responses.
+- **About Usage Section Data Query:** Repaired detail-count retrieval in `web/src/acb_large_print_web/tool_usage.py` to use SQLAlchemy models/tables (`tool_usage`, `tool_usage_detail`) so Speech Studio usage rows render correctly on `/about/`.
+- **Landmark Noise Guardrail Compliance:** Removed redundant `aria-labelledby` attributes from non-landmark `<section>` wrappers in account/auth/jobs templates to satisfy landmark aria guardrail tests.
 
 ---
 

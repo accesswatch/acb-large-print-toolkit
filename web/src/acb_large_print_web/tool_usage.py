@@ -164,15 +164,16 @@ def get_detail_counts(tool: str, detail_key: str, limit: int = 10) -> list[dict]
     Each item has: detail_value, count, last_used_at.
     """
     try:
-        with _conn() as conn:
-            rows = conn.execute(
-                "SELECT detail_value, count, last_used_at "
-                "FROM usage_details "
-                "WHERE tool = ? AND detail_key = ? "
-                "ORDER BY count DESC, detail_value ASC "
-                "LIMIT ?",
-                (tool, detail_key, int(limit)),
-            ).fetchall()
+        rows = db.session.execute(
+            db.select(ToolUsageDetail.detail_value, ToolUsageDetail.count, ToolUsageDetail.last_used_at)
+            .join(ToolUsage, ToolUsage.id == ToolUsageDetail.tool_id)
+            .where(
+                ToolUsage.tool == tool,
+                ToolUsageDetail.detail_key == detail_key,
+            )
+            .order_by(ToolUsageDetail.count.desc(), ToolUsageDetail.detail_value.asc())
+            .limit(int(limit))
+        ).all()
         return [
             {
                 "detail_value": r[0],
