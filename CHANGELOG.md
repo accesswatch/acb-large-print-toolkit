@@ -27,6 +27,10 @@ Releases are tagged in the [GitHub repository](https://github.com/Community-Acce
 - **AI settings and playground pages** now load through external static JS/CSS assets so they work under the site CSP instead of relying on blocked inline scripts.
 - **Ollama inference errors** now distinguish account inference authorization (`401`), paid-plan model gating (`403`), and missing account model access (`404`).
 
+### Fixed
+
+- **AI Playground character counter** no longer announces every keystroke to screen readers while typing. The counter still updates visually and remains available through the textarea description without repeated live-region interruptions.
+
 ---
 
 ## [6.0.0] - 2026-05-09
