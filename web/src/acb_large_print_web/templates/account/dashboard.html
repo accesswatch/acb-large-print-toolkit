@@ -6,8 +6,9 @@
   <p>Signed in as {{ current_user.email }}</p>
 
   <form method="post" action="{{ url_for('account.profile_update') }}" class="stack-gap">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <label for="display_name">Display name</label>
-    <input id="display_name" name="display_name" type="text" value="{{ current_user.display_name or '' }}" maxlength="120">
+    <input id="display_name" name="display_name" type="text" value="{{ display_name_value }}" maxlength="120" autocomplete="nickname">
     <button type="submit" class="button button--primary">Save profile</button>
   </form>
 
@@ -35,6 +36,7 @@
   {% endif %}
 
   <form method="post" action="{{ url_for('account.delete_data') }}" onsubmit="return confirm('Delete account and all stored data? This cannot be undone.');">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <button type="submit" class="button button--danger">Delete account and data</button>
   </form>
 </section>

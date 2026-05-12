@@ -1,9 +1,16 @@
 {% extends "base.html" %}
-{% block title %}Sign In / Create Account - GLOW{% endblock %}
+{% set is_register = auth_mode == 'register' %}
+{% block title %}{{ 'Create Account' if is_register else 'Sign In' }} - GLOW{% endblock %}
 {% block content %}
 <section class="card">
-  <h1 id="login-title">Sign In or Create Account</h1>
-  <p>Use passwordless Email Link or GitHub. New users are enrolled automatically on first sign-in.</p>
+  <h1 id="login-title">{{ 'Create Account' if is_register else 'Sign In' }}</h1>
+  <p>
+    {% if is_register %}
+    Use a passwordless Email Link or GitHub to create a GLOW account.
+    {% else %}
+    Use a passwordless Email Link or GitHub to sign in to an existing GLOW account.
+    {% endif %}
+  </p>
 
   {% with messages = get_flashed_messages(with_categories=true) %}
     {% for category, message in messages %}
@@ -15,19 +22,44 @@
   {% if not firebase_auth_enabled %}
   <p class="error-text" role="alert">Firebase auth is not enabled on this server. Contact an administrator.</p>
   {% else %}
-  <h2>Email Sign-In Link</h2>
-  <p>Enter your email and we will send a secure sign-in link.</p>
+  <h2 id="email-link-request-heading">{{ 'Email Account Link' if is_register else 'Email Sign-In Link' }}</h2>
+  <p id="email-link-request-copy">Enter your email and we will send a secure {{ 'account setup' if is_register else 'sign-in' }} link.</p>
   <form id="email-link-form" class="stack-gap" novalidate>
     <label for="magic-email">Email address</label>
     <input id="magic-email" name="email" type="email" required autocomplete="email"
            aria-describedby="magic-email-hint">
-    <p id="magic-email-hint" class="field-hint">No password needed. This link signs you in and creates your account if needed.</p>
-    <button type="submit" class="button button--primary">Send Sign-In Link</button>
+    <p id="magic-email-hint" class="field-hint">
+      {% if is_register %}
+      No password needed. This link creates your account and signs you in.
+      {% else %}
+      No password needed. This link signs you in to your existing account.
+      {% endif %}
+    </p>
+    <button type="submit" class="button button--primary">{{ 'Send Account Link' if is_register else 'Send Sign-In Link' }}</button>
   </form>
 
-  <h2>Or Continue With</h2>
-  <button id="github-signin" type="button" class="button button--secondary">Sign in with GitHub</button>
+  <section id="email-link-complete-panel" class="stack-gap" hidden aria-labelledby="email-link-complete-heading">
+    <h2 id="email-link-complete-heading">{{ 'Complete Account Setup' if is_register else 'Complete Email Sign-In' }}</h2>
+    <p>Confirm the email address that requested this {{ 'account link' if is_register else 'sign-in link' }} so GLOW can finish {{ 'creating your account and signing you in' if is_register else 'signing you in' }}.</p>
+    <form id="email-link-complete-form" class="stack-gap" novalidate>
+      <label for="complete-email">Email address used for this sign-in link</label>
+      <input id="complete-email" name="complete_email" type="email" autocomplete="email"
+             aria-describedby="complete-email-hint">
+      <p id="complete-email-hint" class="field-hint">Use the same email address where you received the sign-in message.</p>
+      <button id="complete-email-signin" type="submit" class="button button--primary">{{ 'Create Account' if is_register else 'Complete Sign-In' }}</button>
+    </form>
+  </section>
+
+  <h2 id="oauth-heading">Or Continue With</h2>
+  <button id="github-signin" type="button" class="button button--secondary">{{ 'Create account with GitHub' if is_register else 'Sign in with GitHub' }}</button>
   <p id="auth-status" class="field-hint" role="status" aria-live="polite"></p>
+  <p>
+    {% if is_register %}
+    Already have an account? <a href="{{ url_for('auth.login') }}">Sign in here</a>.
+    {% else %}
+    Need a new account? <a href="{{ url_for('auth.register') }}">Create one here</a>.
+    {% endif %}
+  </p>
   {% endif %}
 </section>
 
@@ -37,7 +69,9 @@
   import {
     getAuth,
     GithubAuthProvider,
+    onAuthStateChanged,
     signInWithPopup,
+    signOut,
     sendSignInLinkToEmail,
     isSignInWithEmailLink,
     signInWithEmailLink,
@@ -46,7 +80,15 @@
   const statusEl = document.getElementById("auth-status");
   const emailInput = document.getElementById("magic-email");
   const emailForm = document.getElementById("email-link-form");
+  const completePanel = document.getElementById("email-link-complete-panel");
+  const completeEmailInput = document.getElementById("complete-email");
+  const completeEmailForm = document.getElementById("email-link-complete-form");
+  const requestHeading = document.getElementById("email-link-request-heading");
+  const requestCopy = document.getElementById("email-link-request-copy");
+  const oauthHeading = document.getElementById("oauth-heading");
   const githubBtn = document.getElementById("github-signin");
+  const pendingSessionKey = "glowPendingFirebaseSession";
+  const createAccount = {{ auth_create_account | tojson }};
 
   const firebaseConfig = {
     apiKey: {{ firebase_web_api_key | tojson }},
@@ -57,7 +99,7 @@
   };
 
   const actionCodeSettings = {
-    url: window.location.origin + "{{ url_for('auth.login') }}",
+    url: window.location.origin + {{ (url_for('auth.register') if is_register else url_for('auth.login')) | tojson }},
     handleCodeInApp: true,
   };
 
@@ -65,6 +107,106 @@
     if (!statusEl) return;
     statusEl.textContent = message || "";
     statusEl.classList.toggle("error-text", Boolean(isError));
+  }
+
+  function clearEmailLinkParams() {
+    const cleanUrl = new URL(window.location.href);
+    cleanUrl.searchParams.delete("apiKey");
+    cleanUrl.searchParams.delete("mode");
+    cleanUrl.searchParams.delete("oobCode");
+    cleanUrl.searchParams.delete("continueUrl");
+    cleanUrl.searchParams.delete("lang");
+    cleanUrl.searchParams.delete("tenantId");
+    const nextUrl = cleanUrl.pathname + cleanUrl.search + cleanUrl.hash;
+    window.history.replaceState({}, document.title, nextUrl);
+  }
+
+  function setCompletionMode(active, email = "") {
+    requestHeading?.toggleAttribute("hidden", active);
+    requestCopy?.toggleAttribute("hidden", active);
+    emailForm?.toggleAttribute("hidden", active);
+    oauthHeading?.toggleAttribute("hidden", active);
+    githubBtn?.toggleAttribute("hidden", active);
+    completePanel?.toggleAttribute("hidden", !active);
+    if (active && completeEmailInput) {
+      completeEmailInput.value = email || completeEmailInput.value || emailInput?.value || "";
+      completeEmailInput.focus();
+      completeEmailInput.select();
+    }
+  }
+
+  async function completeEmailLinkSignIn(email) {
+    const normalizedEmail = (email || "").trim().toLowerCase();
+    if (!normalizedEmail) {
+      setStatus("Enter the email address that requested this sign-in link.", true);
+      setCompletionMode(true, normalizedEmail);
+      return;
+    }
+
+    setStatus("Completing sign-in...");
+    try {
+      const result = await signInWithEmailLink(auth, normalizedEmail, window.location.href);
+      localStorage.removeItem("glowEmailForSignIn");
+      localStorage.setItem(pendingSessionKey, "1");
+      clearEmailLinkParams();
+      await finalizeServerSession(result.user);
+    } catch (error) {
+      const errorText = `${error?.code || ""} ${error?.message || ""}`.toLowerCase();
+      if (errorText.includes("invalid-action-code")) {
+        clearEmailLinkParams();
+        localStorage.removeItem(pendingSessionKey);
+        setCompletionMode(false);
+        setStatus("This sign-in link is invalid, expired, or has already been used. Request a new email link.", true);
+        return;
+      }
+      if (error?.code === "account_not_found") {
+        localStorage.removeItem(pendingSessionKey);
+        await signOut(auth).catch(() => {});
+        setCompletionMode(false);
+      }
+      setStatus(error?.message || "Email link sign-in failed.", true);
+      setCompletionMode(true, normalizedEmail);
+    }
+  }
+
+  async function finalizeServerSession(user) {
+    const idToken = await user.getIdToken();
+    await exchangeIdTokenForSession(idToken);
+    localStorage.removeItem(pendingSessionKey);
+  }
+
+  async function resumePendingServerSession() {
+    if (!localStorage.getItem(pendingSessionKey)) {
+      return false;
+    }
+
+    const currentUser = auth.currentUser || await new Promise((resolve) => {
+      const timeoutId = window.setTimeout(() => unsubscribe(), 1500);
+      const unsubscribe = onAuthStateChanged(auth, (user) => {
+        window.clearTimeout(timeoutId);
+        unsubscribe();
+        resolve(user);
+      });
+    });
+
+    if (!currentUser) {
+      localStorage.removeItem(pendingSessionKey);
+      return false;
+    }
+
+    setCompletionMode(false);
+    setStatus("Finalizing sign-in...");
+    try {
+      await finalizeServerSession(currentUser);
+      return true;
+    } catch (error) {
+      if (error?.code === "account_not_found") {
+        localStorage.removeItem(pendingSessionKey);
+        await signOut(auth).catch(() => {});
+      }
+      setStatus(error?.message || "GLOW could not finish the server sign-in. Refresh this page to retry without requesting another email.", true);
+      return true;
+    }
   }
 
   async function exchangeIdTokenForSession(idToken) {
@@ -76,11 +218,13 @@
         "X-CSRFToken": csrfToken,
       },
       credentials: "same-origin",
-      body: JSON.stringify({ idToken }),
+      body: JSON.stringify({ idToken, createAccount }),
     });
     const data = await response.json();
     if (!response.ok || !data.ok) {
-      throw new Error(data.error || "Sign-in failed. Please try again.");
+      const error = new Error(data.error || "Sign-in failed. Please try again.");
+      error.code = data.code || "";
+      throw error;
     }
     window.location.href = data.redirect || "{{ url_for('account.dashboard') }}";
   }
@@ -117,23 +261,19 @@
     }
   });
 
-  if (isSignInWithEmailLink(auth, window.location.href)) {
-    let email = localStorage.getItem("glowEmailForSignIn") || "";
-    if (!email) {
-      email = window.prompt("Confirm your email to finish sign-in:") || "";
-    }
-    if (!email) {
-      setStatus("Email confirmation is required to complete sign-in.", true);
+  completeEmailForm?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    await completeEmailLinkSignIn(completeEmailInput?.value || "");
+  });
+
+  const resumed = await resumePendingServerSession();
+  if (!resumed && isSignInWithEmailLink(auth, window.location.href)) {
+    const storedEmail = localStorage.getItem("glowEmailForSignIn") || "";
+    if (storedEmail) {
+      await completeEmailLinkSignIn(storedEmail);
     } else {
-      setStatus("Completing sign-in...");
-      try {
-        const result = await signInWithEmailLink(auth, email, window.location.href);
-        localStorage.removeItem("glowEmailForSignIn");
-        const idToken = await result.user.getIdToken();
-        await exchangeIdTokenForSession(idToken);
-      } catch (error) {
-        setStatus(error?.message || "Email link sign-in failed.", true);
-      }
+      setCompletionMode(true, "");
+      setStatus("Confirm the email address that requested this sign-in link to finish signing in.");
     }
   }
 </script>

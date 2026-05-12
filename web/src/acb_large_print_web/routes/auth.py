@@ -69,6 +69,22 @@ def _redirect_after_login():
     return redirect(url_for("account.dashboard"))
 
 
+def _render_auth_page(mode: str):
+    """Render the Firebase auth UI in sign-in or account-creation mode."""
+    is_register = mode == "register"
+    return render_template(
+        "auth/login.html",
+        auth_mode=mode,
+        auth_create_account=is_register,
+        firebase_auth_enabled=(os.environ.get("FIREBASE_AUTH_ENABLED", "0") == "1"),
+        firebase_web_api_key=(os.environ.get("FIREBASE_WEB_API_KEY") or ""),
+        firebase_auth_domain=(os.environ.get("FIREBASE_AUTH_DOMAIN") or ""),
+        firebase_project_id=(os.environ.get("FIREBASE_PROJECT_ID") or ""),
+        firebase_app_id=(os.environ.get("FIREBASE_APP_ID") or ""),
+        firebase_measurement_id=(os.environ.get("FIREBASE_MEASUREMENT_ID") or ""),
+    )
+
+
 def _available_providers() -> list[dict]:
     """Return configured OAuth providers for the login UI.
 
@@ -87,8 +103,13 @@ def _available_providers() -> list[dict]:
 
 @auth_bp.route("/register", methods=["GET", "POST"])
 def register():
-    # Registration is handled by Firebase email-link or GitHub on the login page.
-    return redirect(url_for("auth.login"))
+    if current_user.is_authenticated:
+        return _redirect_after_login()
+
+    if request.method == "POST":
+        flash("Use the Email Link or GitHub buttons below to create your account.", "info")
+
+    return _render_auth_page("register")
 
 
 def _validate_registration(email: str, display_name: str, password: str, confirm: str) -> str | None:
@@ -117,15 +138,7 @@ def login():
         flash("Password sign-in is disabled. Use Email Link or GitHub.", "info")
         return redirect(url_for("auth.login"))
 
-    return render_template(
-        "auth/login.html",
-        firebase_auth_enabled=(os.environ.get("FIREBASE_AUTH_ENABLED", "0") == "1"),
-        firebase_web_api_key=(os.environ.get("FIREBASE_WEB_API_KEY") or ""),
-        firebase_auth_domain=(os.environ.get("FIREBASE_AUTH_DOMAIN") or ""),
-        firebase_project_id=(os.environ.get("FIREBASE_PROJECT_ID") or ""),
-        firebase_app_id=(os.environ.get("FIREBASE_APP_ID") or ""),
-        firebase_measurement_id=(os.environ.get("FIREBASE_MEASUREMENT_ID") or ""),
-    )
+    return _render_auth_page("login")
 
 
 @auth_bp.route("/firebase-login", methods=["POST"])
@@ -133,6 +146,7 @@ def firebase_login():
     """Sign in using a Firebase ID token posted by the browser/app client."""
     payload = request.get_json(silent=True) or {}
     id_token = str(payload.get("idToken") or "").strip()
+    create_account = bool(payload.get("createAccount"))
     if not id_token:
         return jsonify({"ok": False, "error": "Missing Firebase ID token."}), 400
 
@@ -152,7 +166,7 @@ def firebase_login():
         return jsonify({"ok": False, "error": "Firebase token does not include an email address."}), 400
 
     provider_uid = str(claims.get("uid") or "")
-    display_name = str(claims.get("name") or claims.get("email", "")).strip()
+    display_name = str(claims.get("name") or "").strip()
     email_verified = bool(claims.get("email_verified", False))
     sign_in_provider = str((claims.get("firebase") or {}).get("sign_in_provider") or "").strip()
     auth_provider = "github" if sign_in_provider == "github.com" else "passwordless"
@@ -163,7 +177,14 @@ def firebase_login():
         display_name=display_name,
         email_verified=email_verified,
         auth_provider=auth_provider,
+        create_account=create_account,
     )
+    if user is None:
+        return jsonify({
+            "ok": False,
+            "code": "account_not_found",
+            "error": "No GLOW account exists for this email address. Choose Create Account first.",
+        }), 404
     _complete_login(user)
     return jsonify({"ok": True, "redirect": url_for("account.dashboard")})
 
@@ -496,7 +517,7 @@ def _find_or_create_oauth_user(provider: str, user_info: dict):
         # 3. Create new account
         user = User(
             email=email,
-            display_name=user_info.get("name") or email.split("@")[0],
+            display_name=str(user_info.get("name") or "").strip(),
             auth_provider=provider,
             is_email_verified=True,  # Provider has verified the email
         )
@@ -521,6 +542,7 @@ def _find_or_create_firebase_user(
     display_name: str,
     email_verified: bool,
     auth_provider: str,
+    create_account: bool,
 ):
     """Find or create a local account from Firebase claims."""
     from ..db import db
@@ -545,16 +567,18 @@ def _find_or_create_firebase_user(
     ).scalar_one_or_none()
 
     if not user:
+        if not create_account:
+            return None
         user = User(
             email=email,
-            display_name=display_name or email.split("@")[0],
+            display_name=display_name,
             auth_provider=auth_provider,
             is_email_verified=email_verified,
         )
         db.session.add(user)
         db.session.flush()
     else:
-        if display_name and (not user.display_name or user.display_name == user.email.split("@")[0]):
+        if display_name and not user.display_name:
             user.display_name = display_name
         user.auth_provider = auth_provider
         if email_verified:

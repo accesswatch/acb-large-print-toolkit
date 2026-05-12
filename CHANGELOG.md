@@ -12,6 +12,7 @@ Releases are tagged in the [GitHub repository](https://github.com/Community-Acce
 - **Firebase Console Configuration:** Email/Password and Google sign-in providers enabled; `glow.bits-acb.org` added as authorized OAuth domain (Custom type).
 - **Firebase Login Template:** Login page renders a working `Sign In With Google` button using Firebase Web SDK v10 (`signInWithPopup` flow); ID token posted to `/auth/firebase-login` via CSRF-protected JSON endpoint.
 - **Firebase credentials path:** `FIREBASE_CREDENTIALS_PATH` env var added to `.env` so `firebase_auth.py` initializes the Admin SDK from `instance/firebase-service-account.json`.
+- **Super Admin Bootstrap Email List:** Added `SUPER_ADMIN_BOOTSTRAP_EMAILS` support so the first privileged passwordless account can be seeded as `super_admin` before any users exist.
 - **Production Checklist Status Section:** Added current rollout status and explicit remaining finish tasks to `docs/production-deployment-checklist.md`.
 - **Provider Credential Runbook:** Added direct console-link collection steps for Apple, Microsoft Entra, and Auth0 in `docs/production-deployment-checklist.md` and `docs/firebase-neon-auth-migration-plan.md`.
 - **Centralized OAuth Operator Runbook:** Added `docs/oauth-credential-collection-runbook.md` with provider console links, exact callback URLs, production/local env templates, and completion checklist.
@@ -20,6 +21,11 @@ Releases are tagged in the [GitHub repository](https://github.com/Community-Acce
 - **Manual Migration Cutover Script:** Added `scripts/manual-migration-cutover.sh` to create a clean tracked bundle, upload to server, run SQLite-to-Neon migration, validate row counts, and auto-rollback app/data on failure.
 
 ### Changed
+- **Home Page Release Messaging:** Updated the landing page release callout from GLOW 6.0.0 AI-focused copy to GLOW 7.0.0 platform messaging covering Firebase sign-in, Neon PostgreSQL, role-based administration, and optional-account workflows.
+- **About Page Platform Summary:** Updated the shipped web About page to describe the current 7.0.0 platform architecture, including Firebase Authentication, Neon PostgreSQL, SQLAlchemy/psycopg, Celery/Redis, and refreshed production integration links.
+- **About Page Optional Accounts Messaging:** Added explicit privacy-focused language clarifying that accounts remain optional, core document workflows still work without login, and sign-in is only for added continuity, consent, and admin features.
+- **Auth Flow Intent Split:** `GET /auth/login` is now existing-account sign-in only, while `GET /auth/register` is the explicit account-creation flow. Firebase session exchange now honors that intent instead of auto-provisioning a local account during every sign-in attempt.
+- **Cutover Runbooks Updated:** Documented `SUPER_ADMIN_BOOTSTRAP_EMAILS`, the first-passwordless-super-admin bootstrap flow for `jeff@jeffbishop.com`, and the release-candidate smoke test sequence for `/auth/login`, Neon-backed user creation, and no-login regression checks.
 - **Account Navigation for Admins:** Authenticated admins now keep all standard user navigation and also get direct `Admin Console` links in the sidebar and footer.
 - **Unified Sign-In Entry Point:** Footer sign-in link now routes through the shared auth login flow rather than a separate admin sign-in destination.
 - **Firebase User Provisioning Metadata:** Backend Firebase login now records provider intent (`passwordless` or `github`) in local user auth metadata while retaining SQLAlchemy RBAC.
@@ -28,6 +34,11 @@ Releases are tagged in the [GitHub repository](https://github.com/Community-Acce
 - **AI Cost/Quota Model Alignment:** Updated `web/src/acb_large_print_web/models.py` ledger/quota models to match existing AI gateway telemetry schema (`session_hash`, `request_at`, `workload`, `audio_seconds`, `escalated`) and pluralized quota table naming (`ai_quota_sessions`).
 
 ### Fixed
+- **Account Dashboard CSRF + Display Name Defaults:** Added missing CSRF fields to the account dashboard profile/delete forms, stopped pre-filling display names from Firebase email claims, and now let users clear an email-like placeholder display name back to blank.
+- **Footer Admin Access Blurb Removed:** Removed the shared footer sentence claiming admin features are restricted to approved administrative accounts so the home page and site footer no longer show outdated account-gating copy.
+- **Firebase Login Production Template Packaging:** Fixed `web/pyproject.toml` package-data globs so nested Jinja templates under `templates/auth/`, `templates/account/`, `templates/admin/`, `templates/jobs/`, `templates/user/`, and `templates/emails/` are included in built web distributions. This fixes the production `/auth/login` crash caused by `jinja2.exceptions.TemplateNotFound: auth/login.html`.
+- **Production CSP Aligned With Shipped UI Scripts:** Updated `web/Caddyfile` and `web/Caddyfile.example` so production CSP now permits the app's existing inline script/style handlers and the Firebase Web SDK origins required by passwordless email-link and popup sign-in flows. This resolves silent client-side failures on pages that rendered but could not execute their controls under `script-src 'self'` and `style-src 'self'`.
+- **Email Link Completion Survives Consent Redirects:** Replaced the Firebase email-link fallback `window.prompt()` on `web/src/acb_large_print_web/templates/auth/login.html` with an explicit in-page confirmation form, added pending-session resume handling after the email link is consumed, and now route expired or already-used links back to requesting a fresh email instead of prompting for the address again.
 - **RBAC Email Import Blocker:** Restored compatibility for role-management notification flows by adding generic `send_email(...)` helper in `web/src/acb_large_print_web/email.py` used by `web/src/acb_large_print_web/routes/role.py`.
 - **Feedback Review Response Construction:** Fixed review endpoint response generation and cache-control handling after ORM migration (`/feedback/review`).
 - **Feedback Test Coverage Updated for ORM Backend:** `web/tests/test_app.py` feedback persistence assertions now validate SQLAlchemy-backed rows instead of legacy `feedback.db` file expectations.

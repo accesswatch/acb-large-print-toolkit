@@ -25,7 +25,15 @@ def dashboard():
         .limit(50)
     ).scalars().all()
     consent = current_user.get_privacy_consent()
-    return render_template("account/dashboard.html", history=history, consent=consent)
+    display_name_value = current_user.display_name or ""
+    if display_name_value.strip().lower() == (current_user.email or "").strip().lower():
+        display_name_value = ""
+    return render_template(
+        "account/dashboard.html",
+        history=history,
+        consent=consent,
+        display_name_value=display_name_value,
+    )
 
 
 @account_bp.route("/privacy", methods=["GET", "POST"])
@@ -50,10 +58,9 @@ def privacy():
 @login_required
 def profile_update():
     display_name = (request.form.get("display_name") or "").strip()
-    if display_name:
-        current_user.display_name = display_name[:120]
-        db.session.commit()
-        flash("Profile updated.", "success")
+    current_user.display_name = display_name[:120]
+    db.session.commit()
+    flash("Profile updated.", "success")
     return redirect(url_for("account.dashboard"))
 
 
