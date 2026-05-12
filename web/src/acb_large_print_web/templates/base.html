@@ -339,9 +339,11 @@
                 Sign In
               </a>
             </li>
+            {% if user_login_enabled %}
             <li>
               <a href="{{ url_for('auth.register') }}" class="sidebar-link">Create Account</a>
             </li>
+            {% endif %}
             {% endif %}
           </ul>
         </li>

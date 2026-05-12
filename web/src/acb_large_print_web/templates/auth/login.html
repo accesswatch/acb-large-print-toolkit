@@ -65,7 +65,7 @@
     {% if is_register %}
     Already have an account? <a href="{{ url_for('auth.login') }}">Sign in here</a>.
     {% else %}
-    Need a new account? <a href="{{ url_for('auth.register') }}">Create one here</a>.
+    {% if user_login_enabled %}Need a new account? <a href="{{ url_for('auth.register') }}">Create one here</a>.{% else %}New account creation is currently disabled.{% endif %}
     {% endif %}
   </p>
   {% endif %}
