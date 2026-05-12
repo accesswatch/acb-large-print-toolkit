@@ -38,7 +38,7 @@
     <button type="submit" class="button button--primary">{{ 'Send Account Link' if is_register else 'Send Sign-In Link' }}</button>
   </form>
 
-  <section id="email-link-complete-panel" class="stack-gap" hidden aria-labelledby="email-link-complete-heading">
+  <section id="email-link-complete-panel" class="stack-gap" hidden>
     <h2 id="email-link-complete-heading">{{ 'Complete Account Setup' if is_register else 'Complete Email Sign-In' }}</h2>
     <p>Confirm the email address that requested this {{ 'account link' if is_register else 'sign-in link' }} so GLOW can finish {{ 'creating your account and signing you in' if is_register else 'signing you in' }}.</p>
     <form id="email-link-complete-form" class="stack-gap" novalidate>
