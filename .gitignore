@@ -62,5 +62,6 @@ web/instance/speech_models/
 glow-754e6-firebase-adminsdk-fbsvc-5de9dd2a07.json
 glow-754e6-firebase-adminsdk-fbsvc-5de9dd2a07 - Copy.json
 web/instance/firebase-service-account.json
+web/post_findings.json
 web/backups/
 tmp/
