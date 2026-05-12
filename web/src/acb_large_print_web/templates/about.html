@@ -7,36 +7,55 @@
 
 <section>
   <h2 id="mission-heading">Mission</h2>
-  <p>GLOW helps authors, publishers, and organizations produce documents that comply with the <a href="https://acb.org/large-print-guidelines">American Council of the Blind Large Print Guidelines</a> and <a href="https://www.w3.org/TR/WCAG22/">WCAG 2.2 Level AA</a>. GLOW audits, fixes, and templates Word, Excel, PowerPoint, Markdown, PDF, and ePub documents for accessibility.</p>
+  <p>GLOW helps authors, publishers, and organizations produce documents that comply with the <a href="https://acb.org/large-print-guidelines">American Council of the Blind Large Print Guidelines</a> and <a href="https://www.w3.org/TR/WCAG22/">WCAG 2.2 Level AA</a>. GLOW audits, fixes, converts, exports, and templates Word, Excel, PowerPoint, Markdown, PDF, and ePub documents for accessibility.</p>
   <p><strong>GLOW</strong> stands for <strong>Guided Layout &amp; Output Workflow</strong> -- a guided, confidence-building accessibility experience built for real publishing workflows.</p>
+  <p>The current web application also includes account-based access, role-aware administration, privacy controls, and production telemetry, with support for <a href="https://firebase.google.com/docs/auth">Firebase Authentication</a> and <a href="https://neon.com/docs">Neon PostgreSQL</a> in deployments that enable those services.</p>
   <a href="#main" class="back-to-top">Back to top</a>
 </section>
 
 <section>
-  <h2 id="release-heading">What’s New in GLOW 6.0.0</h2>
-  <p>GLOW 6.0.0 opens the project to community contribution, adds a clearer open source release story, and lets users bring their own Ollama Cloud account for the AI workflows that make sense in this first release.</p>
+  <h2 id="release-heading">What’s New in GLOW 7.0.0</h2>
+  <p>GLOW 7.0.0 adds the production platform pieces needed for authenticated accounts, role-based administration, and a managed relational backend while keeping the core document workflows available to users who only need the accessibility tools.</p>
 
-  {% if ai_ollama_active %}
   <ul>
-    <li><strong>Personal Ollama Cloud AI:</strong> You are using your own Ollama account for AI-assisted heading detection and MarkItDown support.</li>
-    <li><strong>Session-limited AI:</strong> The current session keeps your AI settings and usage meter visible so you always know what is active right now.</li>
-    <li><strong>Feature-level control:</strong> Document Chat stays off for the Ollama-first release so the initial rollout stays focused and easy to trust.</li>
+    <li><strong>Firebase sign-in and account linking:</strong> GLOW 7.0.0 adds support for <a href="https://firebase.google.com/docs/auth">Firebase Authentication</a> in end-user and admin sign-in flows, with local role checks still enforced inside the app.</li>
+    <li><strong>Neon-backed application data:</strong> GLOW 7.0.0 adds support for <a href="https://neon.com/">Neon PostgreSQL</a> through SQLAlchemy and <a href="https://www.psycopg.org/psycopg3/">psycopg 3</a>, while keeping SQLite fallback available for local development and simpler deployments.</li>
+    <li><strong>Role-based administration:</strong> User, admin, and super-admin roles now control promotion requests, account approvals, and access to admin-only routes.</li>
+    <li><strong>Async job infrastructure:</strong> Long-running convert, fix, audit, and speech operations can run through background jobs with status streaming instead of tying up the request thread.</li>
+    <li><strong>Optional AI remains optional:</strong> Rule-based audit, fix, template, export, and most conversion paths still work without any external AI provider enabled.</li>
   </ul>
-  {% elif ai_configured %}
+  <p><a href="{{ url_for('ai.settings_ai_page') }}">Open AI Features</a> to review AI controls for this deployment and your current session.</p>
+  <a href="#main" class="back-to-top">Back to top</a>
+</section>
+
+<section>
+  <h2 id="accounts-heading">Accounts Are Optional</h2>
+  <p><strong>You do not need an account to use GLOW's core document tools.</strong> Audit, fix, convert, template, export, guidelines, and the rest of the public workflow can continue exactly as before for people who prefer a lightweight, no-login experience.</p>
+  <p>If you do choose to sign in, the goal is not surveillance. The goal is continuity: GLOW can remember who you are, keep your account settings together, support privacy controls from a single dashboard, and unlock role-based features for the small number of people who need administration access.</p>
   <ul>
-    <li><strong>Cloud AI gateway:</strong> The shared AI path remains available for deployments that use the server-side key, with budget and quota controls.</li>
-    <li><strong>Feature summary:</strong> GLOW can help with text-focused AI workflows such as heading detection and document cleanup when AI is enabled.</li>
-    <li><strong>Usage tracking:</strong> The sidebar now reports AI use so operators and users can see what is happening during the session.</li>
+    <li><strong>Stay anonymous if you want:</strong> Public document workflows remain available without creating an account.</li>
+    <li><strong>Sign in only for added value:</strong> Accounts make it possible to keep profile settings, manage consent choices, and use account-specific features when they are enabled.</li>
+    <li><strong>Privacy first:</strong> GLOW does not require passwords for the default email-link flow, does not add ad tracking, and links you to the <a href="{{ url_for('privacy.privacy_page') }}">Privacy Policy</a> so you can see exactly what is stored and why.</li>
+    <li><strong>Admin access is separate from ordinary use:</strong> Most users never need it, but accounts make it possible to approve and protect admin capabilities without putting barriers in front of the public tools.</li>
   </ul>
-  {% else %}
-  <p>AI is optional. If you do not enable it, the rest of GLOW still works exactly as before. When you are ready to try it, the short version is: GLOW can help with heading detection, document cleanup, and later Document Chat -- but it keeps those tools hidden until they are switched on.</p>
-  <ul>
-    <li><strong>Heading detection:</strong> Helps turn visual headings into semantic structure.</li>
-    <li><strong>MarkItDown support:</strong> Helps text extraction and cleanup for document workflows.</li>
-    <li><strong>Document Chat:</strong> Planned, but not part of the initial Ollama-first setup.</li>
-  </ul>
-  {% endif %}
-  <p><a href="{{ url_for('ai.settings_ai_page') }}">Open AI Features</a> to add a personal Ollama key and choose which AI features you want to use.</p>
+  <a href="#main" class="back-to-top">Back to top</a>
+</section>
+
+<section>
+  <h2 id="platform-heading">Platform and Account Services</h2>
+  <dl>
+    <dt><a href="https://firebase.google.com/docs/auth">Firebase Authentication</a></dt>
+    <dd>{% if firebase_auth_enabled %}This deployment uses Firebase for sign-in flows, identity provider handoff, and ID-token verification for web accounts. GLOW then maps each verified account into local user, role, and privacy records.{% else %}GLOW can use Firebase for sign-in flows, identity provider handoff, and ID-token verification for web accounts when authentication is enabled for a deployment.{% endif %}</dd>
+
+    <dt><a href="https://neon.com/docs">Neon PostgreSQL</a></dt>
+    <dd>{% if postgres_backend_enabled %}This deployment is using a PostgreSQL backend for relational data, including user accounts, role workflow state, telemetry, feedback, AI usage records, and SQL-backed feature flags.{% else %}GLOW supports Neon PostgreSQL for relational data in production deployments, while SQLite remains available as a fallback for local development and smaller installs.{% endif %}</dd>
+
+    <dt><a href="https://docs.sqlalchemy.org/">SQLAlchemy</a> and <a href="https://www.psycopg.org/psycopg3/">psycopg 3</a></dt>
+    <dd>Provide the ORM and PostgreSQL driver used to normalize database access across local development and production deployments.</dd>
+
+    <dt><a href="https://docs.celeryq.dev/">Celery</a> and <a href="https://redis.io/">Redis</a></dt>
+    <dd>Support background jobs and progress reporting for long-running workflows such as document conversion, speech processing, and repair operations.</dd>
+  </dl>
   <a href="#main" class="back-to-top">Back to top</a>
 </section>
 
@@ -139,6 +158,24 @@
         <td>Web application framework</td>
       </tr>
       <tr>
+        <td><a href="https://flask-sqlalchemy.palletsprojects.com/">Flask-SQLAlchemy</a></td>
+        <td>3.1+</td>
+        <td>BSD-3-Clause</td>
+        <td>Flask integration layer for SQLAlchemy models, sessions, and migrations</td>
+      </tr>
+      <tr>
+        <td><a href="https://docs.sqlalchemy.org/">SQLAlchemy</a></td>
+        <td>2.0+</td>
+        <td>MIT</td>
+        <td>ORM and SQL toolkit used for Neon PostgreSQL and local database access</td>
+      </tr>
+      <tr>
+        <td><a href="https://flask-login.readthedocs.io/">Flask-Login</a></td>
+        <td>0.6+</td>
+        <td>MIT</td>
+        <td>Session management for authenticated users and role-aware account flows</td>
+      </tr>
+      <tr>
         <td><a href="https://flask-wtf.readthedocs.io/">Flask-WTF</a></td>
         <td>1.2+</td>
         <td>BSD-3-Clause</td>
@@ -155,6 +192,24 @@
         <td>23.0+</td>
         <td>MIT</td>
         <td>Production WSGI server</td>
+      </tr>
+      <tr>
+        <td><a href="https://www.psycopg.org/psycopg3/">psycopg 3</a></td>
+        <td>3.2+</td>
+        <td>LGPL-3.0</td>
+        <td>PostgreSQL driver used for Neon database connectivity</td>
+      </tr>
+      <tr>
+        <td><a href="https://firebase.google.com/docs/admin/setup">Firebase Admin SDK</a></td>
+        <td>6.5+</td>
+        <td>Apache 2.0</td>
+        <td>Server-side verification of Firebase ID tokens and authenticated account mapping</td>
+      </tr>
+      <tr>
+        <td><a href="https://docs.celeryq.dev/">Celery</a></td>
+        <td>5.4+</td>
+        <td>BSD-3-Clause</td>
+        <td>Background task orchestration for async convert, fix, audit, and speech jobs</td>
       </tr>
       <tr>
         <td><a href="https://python-docx.readthedocs.io/">python-docx</a></td>
@@ -358,6 +413,21 @@
     </thead>
     <tbody>
       <tr>
+        <td><a href="https://neon.com/">Neon PostgreSQL</a></td>
+        <td>Commercial service</td>
+        <td>Managed PostgreSQL platform used for production relational data, SSL connections, and pooled application access</td>
+      </tr>
+      <tr>
+        <td><a href="https://firebase.google.com/">Firebase</a></td>
+        <td>Commercial service</td>
+        <td>Identity platform used for account sign-in, provider federation, and token-based authentication workflows</td>
+      </tr>
+      <tr>
+        <td><a href="https://redis.io/">Redis</a></td>
+        <td>BSD-3-Clause</td>
+        <td>Broker and state backend for Celery job processing and progress updates</td>
+      </tr>
+      <tr>
         <td><a href="https://www.docker.com/">Docker</a></td>
         <td>Apache 2.0</td>
         <td>Container runtime for web deployment</td>
@@ -436,7 +506,7 @@
     <dt>Python version</dt>
     <dd>3.13+</dd>
   </dl>
-  <p><strong>Runtime secrets:</strong> OpenRouter uses one key (<code>OPENROUTER_API_KEY</code>) for both chat and transcription. The only optional additional third-party API token is <code>POSTMARK_SERVER_TOKEN</code> for outbound email delivery.</p>
+  <p><strong>Runtime integrations:</strong> Production deployments can use <code>DATABASE_URL</code> for Neon PostgreSQL, Firebase web/app settings plus a service account for authentication, <code>OPENROUTER_API_KEY</code> for optional AI workflows, and <code>POSTMARK_SERVER_TOKEN</code> for optional outbound email delivery.</p>
   {% if ai_chat_enabled or ai_whisperer_enabled or ai_alt_text_enabled or ai_markitdown_llm_enabled %}
   <p><strong>AI use in GLOW is optional.</strong> The core audit, fix, template, export, and most conversion workflows remain available without AI. Users who want to avoid AI processing can simply stay on those rule-based paths.</p>
   {% else %}

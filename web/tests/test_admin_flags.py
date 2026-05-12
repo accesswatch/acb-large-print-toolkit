@@ -91,6 +91,10 @@ def test_admin_flags_page_shows_backend_and_flags(client, app, monkeypatch):
         assert_flag_rendered(html, flag)
     assert "GLOW_ENABLE_SITE_AUDIT" in html
     assert_flag_rendered(html, "GLOW_ENABLE_SITE_AUDIT")
+    assert "GLOW_ENABLE_USER_LOGIN" in html
+    assert_flag_rendered(html, "GLOW_ENABLE_USER_LOGIN")
+    assert "GLOW_ENABLE_ADMIN_LOGIN" in html
+    assert_flag_rendered(html, "GLOW_ENABLE_ADMIN_LOGIN")
 
 
 def test_admin_update_flags_persists(app, client, monkeypatch):

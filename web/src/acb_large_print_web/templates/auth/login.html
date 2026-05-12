@@ -4,6 +4,7 @@
 {% block content %}
 <section class="card">
   <h1 id="login-title">{{ 'Create Account' if is_register else 'Sign In' }}</h1>
+  <p><strong>Login mode:</strong> {{ login_designation }}</p>
   <p>
     {% if is_register %}
     Use a passwordless Email Link or GitHub to create a GLOW account.
@@ -11,6 +12,13 @@
     Use a passwordless Email Link or GitHub to sign in to an existing GLOW account.
     {% endif %}
   </p>
+  {% if not user_login_enabled and admin_login_enabled %}
+  <p class="info-text" role="status">General user and new-account sign-in is currently disabled. Approved administrators can still sign in.</p>
+  {% elif user_login_enabled and admin_login_enabled %}
+  <p class="info-text" role="status">General users and administrators can sign in.</p>
+  {% elif not user_login_enabled and not admin_login_enabled %}
+  <p class="error-text" role="alert">All login access is currently disabled by the site administrator.</p>
+  {% endif %}
 
   {% with messages = get_flashed_messages(with_categories=true) %}
     {% for category, message in messages %}

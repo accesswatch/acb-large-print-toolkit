@@ -28,6 +28,15 @@ def app(tmp_path: Path):
     )
     application.instance_path = str(tmp_path / "instance")
     Path(application.instance_path).mkdir(parents=True, exist_ok=True)
+
+    # Baseline for legacy auth tests: keep both login classes enabled unless
+    # a specific test overrides them.
+    with application.app_context():
+        from acb_large_print_web import feature_flags
+
+        feature_flags.set_flag("GLOW_ENABLE_USER_LOGIN", True)
+        feature_flags.set_flag("GLOW_ENABLE_ADMIN_LOGIN", True)
+
     return application
 
 
@@ -75,6 +84,23 @@ def test_login_page_is_sign_in_only(client):
     assert "enrolled automatically" not in body
 
 
+def test_login_page_shows_admin_only_designation_when_user_login_disabled(client, app, monkeypatch):
+    monkeypatch.setenv("FEATURE_FLAGS_BACKEND", "sqlite")
+    from acb_large_print_web import feature_flags
+
+    with app.app_context():
+        feature_flags.set_flag("GLOW_ENABLE_USER_LOGIN", False)
+        feature_flags.set_flag("GLOW_ENABLE_ADMIN_LOGIN", True)
+
+    response = client.get("/auth/login")
+    body = response.get_data(as_text=True)
+
+    assert response.status_code == 200
+    assert "Login mode:" in body
+    assert "Administrators only" in body
+    assert "General user and new-account sign-in is currently disabled" in body
+
+
 def test_register_page_is_explicit_account_creation(client):
     response = client.get("/auth/register")
     body = response.get_data(as_text=True)
@@ -114,6 +140,115 @@ def test_firebase_login_requires_existing_account_when_not_creating(client, app,
         assert db.session.execute(
             db.select(User).where(User.email == "new-user@example.com")
         ).scalar_one_or_none() is None
+
+
+def test_firebase_login_blocks_new_account_when_user_login_disabled(client, app, monkeypatch):
+    monkeypatch.setenv("FEATURE_FLAGS_BACKEND", "sqlite")
+    from acb_large_print_web import feature_flags, firebase_auth
+
+    with app.app_context():
+        feature_flags.set_flag("GLOW_ENABLE_USER_LOGIN", False)
+        feature_flags.set_flag("GLOW_ENABLE_ADMIN_LOGIN", True)
+
+    monkeypatch.setattr(firebase_auth, "is_enabled", lambda: True)
+    monkeypatch.setattr(
+        firebase_auth,
+        "verify_id_token",
+        lambda _token: {
+            "uid": "firebase-user-new",
+            "email": "brand-new-user@example.com",
+            "email_verified": True,
+            "firebase": {"sign_in_provider": "emailLink"},
+        },
+    )
+
+    response = client.post(
+        "/auth/firebase-login",
+        json={"idToken": "token-new", "createAccount": True},
+    )
+
+    assert response.status_code == 403
+    payload = response.get_json()
+    assert payload["error"] == "New account creation is currently disabled."
+
+
+def test_firebase_login_blocks_non_admin_when_user_login_disabled(client, app, monkeypatch):
+    monkeypatch.setenv("FEATURE_FLAGS_BACKEND", "sqlite")
+    from acb_large_print_web import feature_flags, firebase_auth
+
+    with app.app_context():
+        feature_flags.set_flag("GLOW_ENABLE_USER_LOGIN", False)
+        feature_flags.set_flag("GLOW_ENABLE_ADMIN_LOGIN", True)
+
+    _login_as_user(client, app, email="general-user@example.com", display_name="General User")
+
+    monkeypatch.setattr(firebase_auth, "is_enabled", lambda: True)
+    monkeypatch.setattr(
+        firebase_auth,
+        "verify_id_token",
+        lambda _token: {
+            "uid": "firebase-general-user",
+            "email": "general-user@example.com",
+            "email_verified": True,
+            "firebase": {"sign_in_provider": "emailLink"},
+        },
+    )
+
+    response = client.post(
+        "/auth/firebase-login",
+        json={"idToken": "token-general", "createAccount": False},
+    )
+
+    assert response.status_code == 403
+    payload = response.get_json()
+    assert payload["error"] == "General user login is currently disabled."
+
+
+def test_firebase_login_allows_admin_when_user_login_disabled(client, app, monkeypatch):
+    monkeypatch.setenv("FEATURE_FLAGS_BACKEND", "sqlite")
+    from acb_large_print_web import feature_flags, firebase_auth
+    from acb_large_print_web.models import UserRole
+
+    with app.app_context():
+        feature_flags.set_flag("GLOW_ENABLE_USER_LOGIN", False)
+        feature_flags.set_flag("GLOW_ENABLE_ADMIN_LOGIN", True)
+
+    with app.app_context():
+        user = db.session.execute(
+            db.select(User).where(User.email == "admin-user@example.com")
+        ).scalar_one_or_none()
+        if user is None:
+            user = User(
+                email="admin-user@example.com",
+                display_name="Admin User",
+                auth_provider="passwordless",
+                is_active=True,
+                is_email_verified=True,
+                role=UserRole.ADMIN.value,
+            )
+            db.session.add(user)
+            db.session.commit()
+
+    monkeypatch.setattr(firebase_auth, "is_enabled", lambda: True)
+    monkeypatch.setattr(
+        firebase_auth,
+        "verify_id_token",
+        lambda _token: {
+            "uid": "firebase-admin-user",
+            "email": "admin-user@example.com",
+            "email_verified": True,
+            "firebase": {"sign_in_provider": "emailLink"},
+        },
+    )
+
+    response = client.post(
+        "/auth/firebase-login",
+        json={"idToken": "token-admin", "createAccount": False},
+    )
+
+    assert response.status_code == 200
+    payload = response.get_json()
+    assert payload["ok"] is True
 
 
 def test_firebase_login_rejects_invalid_token(client, monkeypatch):

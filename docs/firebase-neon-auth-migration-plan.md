@@ -388,7 +388,15 @@ Three core roles (ordered from least to most privileged):
 
 #### Bootstrap Admin (Recommended)
 
-Set `ADMIN_BOOTSTRAP_EMAILS` to automatically elevate users to admin on first login:
+Set `SUPER_ADMIN_BOOTSTRAP_EMAILS` for the very first privileged operator when there are no users yet. Use `ADMIN_BOOTSTRAP_EMAILS` only for additional bootstrap admins who should not be full super admins.
+
+Recommended first-account bootstrap for production:
+
+```bash
+export SUPER_ADMIN_BOOTSTRAP_EMAILS=jeff@jeffbishop.com
+```
+
+Additional admin bootstrap list:
 
 ```bash
 export ADMIN_BOOTSTRAP_EMAILS=alice@example.com,bob@example.com
@@ -396,11 +404,12 @@ export ADMIN_BOOTSTRAP_EMAILS=alice@example.com,bob@example.com
 
 #### Production Deployment Checklist
 
-- [ ] `ADMIN_BOOTSTRAP_EMAILS` set with first admin(s)
+- [ ] `SUPER_ADMIN_BOOTSTRAP_EMAILS` set with the first super admin
+- [ ] `ADMIN_BOOTSTRAP_EMAILS` set only for any additional admin-only users
 - [ ] `DATABASE_URL` pointing to production Neon instance
 - [ ] `FIREBASE_AUTH_ENABLED=1` and Firebase credentials configured
 - [ ] Role columns exist in `users` table (auto-created by SQLAlchemy)
-- [ ] First admin logs in and receives admin role
+- [ ] First super admin logs in and receives super_admin role
 - [ ] Admin tests promotion approval workflow
 - [ ] All `/admin/` routes require `@require_admin` or `@require_super_admin`
 
@@ -471,7 +480,8 @@ FIREBASE_AUTH_ENABLED=1
 FIREBASE_PROJECT_ID=glow-754e6
 FIREBASE_CREDENTIALS_PATH=/app/instance/firebase-service-account.json
 FIREBASE_ADMIN_AUTH_ENABLED=1
-ADMIN_BOOTSTRAP_EMAILS=admin1@yourdomain.com,admin2@yourdomain.com
+SUPER_ADMIN_BOOTSTRAP_EMAILS=jeff@jeffbishop.com
+ADMIN_BOOTSTRAP_EMAILS=
 ```
 
 3. Update `web/.env` with Firebase web client settings:
@@ -499,6 +509,34 @@ GLOW_CONVERT_ASYNC=1
 - PASS if all values are present and non-placeholder.
 - FAIL if any required setting is missing.
 
+### Phase 1.1: Production Release-Candidate Env Block
+
+Use this exact minimum block on the live host before the first auth smoke test:
+
+```env
+DATABASE_URL=postgresql://<user>:<password>@<host>/<db>?sslmode=require
+DB_SSLMODE=require
+DB_POOL_SIZE=5
+DB_MAX_OVERFLOW=10
+DB_APP_NAME=glow-web
+
+FIREBASE_AUTH_ENABLED=1
+FIREBASE_ADMIN_AUTH_ENABLED=1
+FIREBASE_PROJECT_ID=<your-firebase-project-id>
+FIREBASE_WEB_API_KEY=<your-firebase-web-api-key>
+FIREBASE_AUTH_DOMAIN=<your-project>.firebaseapp.com
+FIREBASE_APP_ID=<your-firebase-app-id>
+FIREBASE_CREDENTIALS_PATH=/app/instance/firebase-service-account.json
+
+SUPER_ADMIN_BOOTSTRAP_EMAILS=jeff@jeffbishop.com
+ADMIN_BOOTSTRAP_EMAILS=
+```
+
+Notes:
+
+- Keep `ADMIN_BOOTSTRAP_EMAILS` empty on first rollout unless you intentionally want additional non-super-admin bootstrap accounts.
+- `SUPER_ADMIN_BOOTSTRAP_EMAILS` avoids a first-user privilege dead-end when the `users` table is empty.
+
 ### Phase 2: Dependency and Stack Bring-Up Gate
 
 1. Install dependencies in the active environment:
@@ -518,6 +556,65 @@ docker compose -f docker-compose.prod.yml ps
 3. Expected state:
 
 - `web` service is healthy/running
+
+### Phase 2.1: Release-Candidate Deploy Gate
+
+Before any browser auth testing, confirm the deployed app is the auth-enabled branch and not the older public build.
+
+Required checks:
+
+- `/auth/login` returns `200 OK` instead of `404`
+- Footer/app version matches the release-candidate branch you are testing
+- Consent flow still works for anonymous users
+- Public routes such as `/audit/`, `/convert/`, and `/about/` still work without login
+
+If `/auth/login` is `404`, stop. You are still testing the old deployment, and Firebase passwordless cannot be validated yet.
+
+### Phase 2.2: First Super-Admin Passwordless Smoke Test
+
+Run this exact sequence after the release-candidate deploy:
+
+1. Open `/consent/?next=/auth/login` on production.
+2. Accept consent and continue.
+3. Verify `/auth/login` renders the Firebase Email Link form.
+4. Enter `jeff@jeffbishop.com` and request a sign-in link.
+5. Confirm the email arrives and open the link in the same browser profile.
+6. Complete login and verify the redirect lands on an authenticated account page.
+7. Visit an admin-protected route such as `/admin/users` or `/admin/promotions`.
+8. Verify admin access succeeds.
+9. Verify the first seeded account is stored in Neon as `super_admin`.
+
+Recommended Neon verification query:
+
+```sql
+SELECT email, role, is_active, is_email_verified
+FROM users
+WHERE email = 'jeff@jeffbishop.com';
+```
+
+Expected result:
+
+- `email = jeff@jeffbishop.com`
+- `role = super_admin`
+- `is_active = true`
+- `is_email_verified = true` or updated true after provider verification
+
+### Phase 2.3: No-Login Regression Gate
+
+After the first-account smoke test, immediately verify the public no-login promise still holds:
+
+1. Open a fresh private/incognito window.
+2. Complete consent only.
+3. Verify the following still work without sign-in:
+	- `/process/`
+	- `/audit/`
+	- `/fix/`
+	- `/convert/`
+	- `/template/`
+	- `/speech/` if enabled
+4. Confirm no route forces login for ordinary public document workflows.
+
+This is the release gate for the promise that accounts are optional and GLOW still works as before for public users.
 - `worker` service is running
 - `redis` service is running
 

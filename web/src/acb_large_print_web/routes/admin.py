@@ -63,6 +63,9 @@ def _send_admin_email(to_email: str, subject: str, body: str) -> bool:
 
 def _legacy_bootstrap_admin_emails() -> set[str]:
     emails: set[str] = set()
+    super_raw = os.environ.get("SUPER_ADMIN_BOOTSTRAP_EMAILS", "").strip()
+    if super_raw:
+        emails.update(_normalize_email(v) for v in super_raw.split(",") if v.strip())
     raw = os.environ.get("ADMIN_BOOTSTRAP_EMAILS", "").strip()
     if raw:
         emails.update(_normalize_email(v) for v in raw.split(",") if v.strip())
@@ -97,10 +100,33 @@ def _bootstrap_admins() -> None:
 
     changed = False
 
+    super_raw = os.environ.get("SUPER_ADMIN_BOOTSTRAP_EMAILS", "").strip()
+    super_emails = [_normalize_email(e) for e in super_raw.split(",") if e.strip()] if super_raw else []
+
+    now = datetime.now(UTC)
+    for email in super_emails:
+        user = db.session.execute(
+            db.select(User).where(User.email == email)
+        ).scalar_one_or_none()
+        if user is None:
+            user = User(
+                email=email,
+                display_name=email,
+                auth_provider="local",
+                is_active=True,
+                is_email_verified=True,
+                role=UserRole.SUPER_ADMIN.value,
+                created_at=now,
+            )
+            db.session.add(user)
+            changed = True
+        elif user.role != UserRole.SUPER_ADMIN.value:
+            user.role = UserRole.SUPER_ADMIN.value
+            changed = True
+
     raw = os.environ.get("ADMIN_BOOTSTRAP_EMAILS", "").strip()
     emails = [_normalize_email(e) for e in raw.split(",") if e.strip()] if raw else []
 
-    now = datetime.now(UTC)
     for email in emails:
         user = db.session.execute(
             db.select(User).where(User.email == email)
@@ -448,6 +474,8 @@ def admin_flags() -> Any:
         "GLOW_ENABLE_AI_HEADING_FIX",
         "GLOW_ENABLE_AI_ALT_TEXT",
         "GLOW_ENABLE_AI_MARKITDOWN_LLM",
+        "GLOW_ENABLE_USER_LOGIN",
+        "GLOW_ENABLE_ADMIN_LOGIN",
         "GLOW_ENABLE_AUDIT",
         "GLOW_ENABLE_CHECKER",
         "GLOW_ENABLE_HEADING_DETECTION",
@@ -511,6 +539,8 @@ def admin_flags() -> Any:
             "GLOW_ENABLE_AI_MARKITDOWN_LLM",
         ],
         "core": [
+            "GLOW_ENABLE_USER_LOGIN",
+            "GLOW_ENABLE_ADMIN_LOGIN",
             "GLOW_ENABLE_AUDIT",
             "GLOW_ENABLE_CHECKER",
             "GLOW_ENABLE_HEADING_DETECTION",

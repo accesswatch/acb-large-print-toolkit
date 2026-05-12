@@ -27,6 +27,8 @@ services:
         SKIP_SPEECH_MODELS: ${SKIP_SPEECH_MODELS:-0}
     ports:
       - "8000:8000"
+    env_file:
+      - .env
     environment:
       - FLASK_DEBUG=0
       - PIPELINE_URL=http://pipeline:8181/ws
@@ -38,6 +40,7 @@ services:
     volumes:
       - feedback-data:/app/instance
       - speech-models:/app/instance/speech_models
+      - ./instance/firebase-service-account.json:/app/instance/firebase-service-account.json:ro
     depends_on:
       pipeline:
         condition: service_healthy

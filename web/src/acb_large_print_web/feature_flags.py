@@ -29,6 +29,10 @@ _DEFAULTS: dict[str, bool] = {
     # Broad GLOW feature flags (non-AI features).
     # Defaults: non-AI features are enabled by default so typical
     # document processing (audit, convert, export) is available.
+    # Login controls: general user sign-in is disabled by default while
+    # administrator sign-in remains enabled.
+    "GLOW_ENABLE_USER_LOGIN": False,
+    "GLOW_ENABLE_ADMIN_LOGIN": True,
     "GLOW_ENABLE_AUDIT": True,
     "GLOW_ENABLE_CHECKER": True,
     "GLOW_ENABLE_HEADING_DETECTION": True,

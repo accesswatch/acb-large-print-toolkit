@@ -26,6 +26,11 @@ Reference runbook:
 - [ ] Set production env vars on the server (do not rely on local `.env`)
 - [ ] Run production deployment and post-deploy verification
 
+### Immediate Release-Candidate Gate
+- [ ] Deploy the auth-enabled release-candidate build before attempting any Firebase smoke test
+- [ ] Confirm `/auth/login` exists on production and does not return `404`
+- [ ] Confirm public no-login routes still work after deploy
+
 ## Phase 1: Infrastructure Prerequisites
 
 ### 1.1 Domain & DNS
@@ -236,7 +241,9 @@ python -c "from firebase_admin import initialize_app; initialize_app(); print('â
 
 ### 4.1 RBAC Configuration
 - [ ] Initial admin(s) identified
-- [ ] `ADMIN_BOOTSTRAP_EMAILS` set in production .env
+- [ ] `SUPER_ADMIN_BOOTSTRAP_EMAILS` set in production `.env` for the first privileged user
+  - Example: `SUPER_ADMIN_BOOTSTRAP_EMAILS=jeff@jeffbishop.com`
+- [ ] `ADMIN_BOOTSTRAP_EMAILS` set only if you want additional bootstrap admins
   - Example: `ADMIN_BOOTSTRAP_EMAILS=alice@example.com,bob@example.com`
 
 ### 4.2 Database Schema
@@ -350,10 +357,11 @@ docker-compose -f docker-compose.prod.yml ps
 - [ ] **GitHub OAuth:** Test GitHub OAuth flow
 - [ ] **Microsoft OAuth:** Test Entra ID flow
 - [ ] **Apple Sign In:** Test Apple OAuth flow
+- [ ] **First Super Admin Bootstrap:** `jeff@jeffbishop.com` receives `super_admin` on first successful login
 - [ ] **Admin Bootstrap:** Verify `ADMIN_BOOTSTRAP_EMAILS` users get admin role on first login
 
 ### 6.5 RBAC & Admin Workflow
-- [ ] First admin logs in and receives `role='admin'` automatically
+- [ ] First super admin logs in and receives `role='super_admin'` automatically
 - [ ] Admin can access `/admin/promotions` and `/admin/users`
 - [ ] Regular user can request promotion at `/user/request-promotion`
 - [ ] Admin receives email notification for promotion request
@@ -361,6 +369,11 @@ docker-compose -f docker-compose.prod.yml ps
 - [ ] User receives approval/rejection email notification
 - [ ] Approved user's role updated to `admin` in database
 - [ ] User can now access admin routes after session refresh
+
+### 6.5.1 Public No-Login Regression Check
+- [ ] In a fresh browser session, confirm consent flow still works without sign-in
+- [ ] Verify `/process/`, `/audit/`, `/fix/`, `/convert/`, and `/template/` remain usable without an account
+- [ ] Verify the About page states that accounts are optional and privacy-first
 
 ### 6.6 Email Delivery
 - [ ] Test email delivery (use `/feedback` or admin interface to send test email)

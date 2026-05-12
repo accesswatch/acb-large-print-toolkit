@@ -57,6 +57,27 @@ _MAGIC_LINK_EXPIRY_MINUTES = 20
 _EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
 
+def _login_flags() -> tuple[bool, bool]:
+    """Return (general_user_login_enabled, admin_login_enabled)."""
+    from ..feature_flags import get_flag
+
+    return (
+        bool(get_flag("GLOW_ENABLE_USER_LOGIN", False)),
+        bool(get_flag("GLOW_ENABLE_ADMIN_LOGIN", True)),
+    )
+
+
+def _login_designation(user_login_enabled: bool, admin_login_enabled: bool) -> str:
+    """Return a user-facing description of currently allowed login classes."""
+    if user_login_enabled and admin_login_enabled:
+        return "Users and administrators"
+    if admin_login_enabled and not user_login_enabled:
+        return "Administrators only"
+    if user_login_enabled and not admin_login_enabled:
+        return "General users only"
+    return "Logins are currently disabled"
+
+
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
@@ -72,10 +93,14 @@ def _redirect_after_login():
 def _render_auth_page(mode: str):
     """Render the Firebase auth UI in sign-in or account-creation mode."""
     is_register = mode == "register"
+    user_login_enabled, admin_login_enabled = _login_flags()
     return render_template(
         "auth/login.html",
         auth_mode=mode,
         auth_create_account=is_register,
+        user_login_enabled=user_login_enabled,
+        admin_login_enabled=admin_login_enabled,
+        login_designation=_login_designation(user_login_enabled, admin_login_enabled),
         firebase_auth_enabled=(os.environ.get("FIREBASE_AUTH_ENABLED", "0") == "1"),
         firebase_web_api_key=(os.environ.get("FIREBASE_WEB_API_KEY") or ""),
         firebase_auth_domain=(os.environ.get("FIREBASE_AUTH_DOMAIN") or ""),
@@ -105,6 +130,11 @@ def _available_providers() -> list[dict]:
 def register():
     if current_user.is_authenticated:
         return _redirect_after_login()
+
+    user_login_enabled, _ = _login_flags()
+    if not user_login_enabled:
+        flash("New account creation is currently disabled. Administrator login may still be available.", "error")
+        return redirect(url_for("auth.login"))
 
     if request.method == "POST":
         flash("Use the Email Link or GitHub buttons below to create your account.", "info")
@@ -165,6 +195,25 @@ def firebase_login():
     if not email:
         return jsonify({"ok": False, "error": "Firebase token does not include an email address."}), 400
 
+    user_login_enabled, admin_login_enabled = _login_flags()
+    if not user_login_enabled and not admin_login_enabled:
+        return jsonify({"ok": False, "error": "Login is currently disabled by the site administrator."}), 403
+
+    if create_account and not user_login_enabled:
+        return jsonify({"ok": False, "error": "New account creation is currently disabled."}), 403
+
+    from ..db import db
+    from ..models import User
+
+    existing_user = db.session.execute(db.select(User).where(User.email == email)).scalar_one_or_none()
+    if existing_user is not None:
+        if existing_user.is_admin() and not admin_login_enabled:
+            return jsonify({"ok": False, "error": "Administrator login is currently disabled."}), 403
+        if not existing_user.is_admin() and not user_login_enabled:
+            return jsonify({"ok": False, "error": "General user login is currently disabled."}), 403
+    elif not user_login_enabled:
+        return jsonify({"ok": False, "error": "General user login is currently disabled."}), 403
+
     provider_uid = str(claims.get("uid") or "")
     display_name = str(claims.get("name") or "").strip()
     email_verified = bool(claims.get("email_verified", False))
@@ -185,6 +234,12 @@ def firebase_login():
             "code": "account_not_found",
             "error": "No GLOW account exists for this email address. Choose Create Account first.",
         }), 404
+
+    if user.is_admin() and not admin_login_enabled:
+        return jsonify({"ok": False, "error": "Administrator login is currently disabled."}), 403
+    if not user.is_admin() and not user_login_enabled:
+        return jsonify({"ok": False, "error": "General user login is currently disabled."}), 403
+
     _complete_login(user)
     return jsonify({"ok": True, "redirect": url_for("account.dashboard")})
 

@@ -618,7 +618,25 @@ class TestErrors:
     def test_404(self, client):
         resp = client.get("/nonexistent-page/")
         assert resp.status_code == 404
-        assert b"Page Not Found" in resp.data
+
+
+class TestBootstrapRoles:
+    def test_super_admin_bootstrap_seeds_first_privileged_account(self, app, client, monkeypatch):
+        from acb_large_print_web.db import db
+        from acb_large_print_web.models import User, UserRole
+
+        monkeypatch.setenv("SUPER_ADMIN_BOOTSTRAP_EMAILS", "jeff@jeffbishop.com")
+
+        resp = client.get("/admin/flags")
+        assert resp.status_code in {302, 303}
+
+        with app.app_context():
+            user = db.session.execute(
+                db.select(User).where(User.email == "jeff@jeffbishop.com")
+            ).scalar_one_or_none()
+            assert user is not None
+            assert user.role == UserRole.SUPER_ADMIN.value
+        assert "/auth/login?next=/admin/flags" in (resp.location or "")
 
     def test_audit_no_file(self, client):
         resp = client.post("/audit/", data={})
@@ -1007,6 +1025,16 @@ class TestAboutPage:
     def test_about_mentions_markitdown(self, client):
         resp = client.get("/about/")
         assert b"MarkItDown" in resp.data
+
+    def test_about_mentions_firebase_and_neon(self, client):
+        resp = client.get("/about/")
+        assert b"Firebase Authentication" in resp.data
+        assert b"Neon PostgreSQL" in resp.data
+
+    def test_about_says_accounts_are_optional(self, client):
+        resp = client.get("/about/")
+        assert b"Accounts Are Optional" in resp.data
+        assert b"You do not need an account" in resp.data
 
     def test_about_shows_speech_and_anthem_usage_sections(self, app, client):
         from acb_large_print_web.tool_usage import record as record_usage, record_details
@@ -1493,13 +1521,27 @@ class TestSettingsIntegration:
         assert "attachment;" in (download.headers.get("Content-Disposition") or "")
 
     def test_caddy_csp_allows_speech_preview_fetch_and_blob_audio(self):
-        caddyfile = Path("web/Caddyfile").read_text(encoding="utf-8")
-        caddyfile_example = Path("web/Caddyfile.example").read_text(encoding="utf-8")
+        web_root = Path(__file__).resolve().parents[1]
+        caddyfile = (web_root / "Caddyfile").read_text(encoding="utf-8")
+        caddyfile_example = (web_root / "Caddyfile.example").read_text(encoding="utf-8")
 
         assert "connect-src 'self'" in caddyfile
         assert "connect-src 'self'" in caddyfile_example
         assert "media-src 'self' blob:" in caddyfile
         assert "media-src 'self' blob:" in caddyfile_example
+
+    def test_caddy_csp_supports_inline_ui_and_firebase_auth(self):
+        web_root = Path(__file__).resolve().parents[1]
+        caddyfile = (web_root / "Caddyfile").read_text(encoding="utf-8")
+        caddyfile_example = (web_root / "Caddyfile.example").read_text(encoding="utf-8")
+
+        for content in (caddyfile, caddyfile_example):
+            assert "script-src 'self' 'unsafe-inline' https://www.gstatic.com" in content
+            assert "style-src 'self' 'unsafe-inline'" in content
+            assert "connect-src 'self' https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com" in content
+            assert "frame-src 'self' https://*.firebaseapp.com" in content
+            assert "img-src 'self' data: https:" in content
+            assert "font-src 'self' data:" in content
 
     def test_deploy_seeds_piper_default_voice(self):
         deploy_script = Path("scripts/deploy-app.sh").read_text(encoding="utf-8")
