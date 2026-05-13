@@ -111,8 +111,8 @@ These features were requested by community members working through the accessibi
 
 | Feature | Route/File | Status |
 |---------|-----------|--------|
-| Post-fix re-audit button | `fix_result.html` → `/audit/from-fix` | Done |
-| Convert-to-audit bridge | `convert_result.html` → `/audit/from-convert` | Done |
+| Post-fix re-audit button | `fix_result.html` to `/audit/from-fix` | Done |
+| Convert-to-audit bridge | `convert_result.html` to `/audit/from-convert` | Done |
 | Prominent batch audit CTA | `audit_form.html` callout section | Done |
 | Enhanced findings diff sections | `audit_report.html` diff-findings-detail | Done |
 | Session audit history (5 entries) | `audit.py` session storage | Done |

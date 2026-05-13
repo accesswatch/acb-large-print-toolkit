@@ -32,6 +32,8 @@ Current feature-gate interpretation:
 
 ## Confirmed Issues To Address
 
+Current source status: all known deterministic axe findings from the latest completed crawl have source fixes. Production still needs a post-deploy re-scan before this can be called verified in the live environment. Local crawl testing was stopped because it was hanging in this environment; use production or a deployed staging target for the next count.
+
 ### 1. Production still showed heading-order issues on `/audit/` and `/template/`
 
 Status: Fixed in source, needs production verification after deploy.
@@ -89,18 +91,20 @@ Action:
 
 ## Manual Review Items
 
-The latest homepage crawl reported no additional confirmed axe violations beyond the heading-order findings above. It did report incomplete/manual-review checks:
+The latest homepage crawl reported no additional confirmed axe violations beyond the heading-order findings above. It did report incomplete/manual-review checks. The Rules Reference duplicate-ID items have now been fixed in source, and the Quick Start upload panel now uses solid high-contrast backgrounds so axe can calculate text contrast reliably.
 
 | Rule | Count | Notes |
 | --- | ---: | --- |
-| `color-contrast` | 17 | Requires visual/manual confirmation; often appears when axe cannot calculate contrast for complex or state-dependent styles. |
-| `duplicate-id-aria` | 1 | Found on Rules Reference in crawl output; needs targeted inspection. |
-| `form-field-multiple-labels` | 1 | Found on Rules Reference in crawl output; needs targeted inspection. |
+| `color-contrast` | 17 | Fixed in source for known gradient-backed Quick Start text; needs re-scan after deploy to confirm zero incomplete results. |
+| `duplicate-id-aria` | 1 | Fixed in source by removing the stale duplicate `filter-type` control from Rules Reference. |
+| `form-field-multiple-labels` | 1 | Fixed in source by removing the stale duplicate `filter-type` control from Rules Reference. |
+
+Last completed pre-deploy crawl evidence after the first fixes showed `0` confirmed axe violations, `0` crawl 404s after the Markdown link cleanup, and remaining color-contrast incomplete checks only. A final local count was intentionally not used because local crawling was stopped.
 
 Action:
 
-- Prioritize targeted inspection of the Rules Reference page for `duplicate-id-aria` and `form-field-multiple-labels`.
-- Review `color-contrast` incompletes with browser/Playwright evidence before treating them as failures.
+- Re-run the crawl after deployment and move any remaining items back to confirmed issues only if they reproduce against the updated source.
+- Use a production or deployed staging target for the next count, not the local Flask development server.
 
 ## Routes Excluded From Normal Page Accessibility Crawl
 
