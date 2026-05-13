@@ -41,6 +41,7 @@ Releases are tagged in the [GitHub repository](https://github.com/Community-Acce
 
 ### Fixed
 
+- **AI usage meter landmark:** The inactive AI meter now exposes the same complementary landmark semantics as active meter states, resolving axe `region` findings on the consent page.
 - **Web App Color Contrast:** Darkened low-contrast sidebar, breadcrumb, grade, copied-button, and disabled-button colors in `web/src/acb_large_print_web/static/forms.css`; added missing dark-mode overrides for file inputs, upload drop zones, AI panels, action cards, chat turns, and progress panels so core GLOW pages remain readable in dark theme.
 - **Feature Flags CI failures** now pass the web landmark guardrail again after removing redundant `section[aria-labelledby]` markup from the Alt-Text Helper and audit report templates, and the workflow now also triggers when its desktop or config-check dependencies change.
 - **AI Playground character counter** no longer announces every keystroke to screen readers while typing. The counter still updates visually and remains available through the textarea description without repeated live-region interruptions.
