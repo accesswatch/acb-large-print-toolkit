@@ -17,7 +17,12 @@ import pytest
 from flask import Flask
 from types import SimpleNamespace
 
-from acb_large_print_web.routes.consent import consent_required
+from acb_large_print_web.routes.consent import (
+    AUTOMATION_CONSENT_DEFAULT_TOKEN,
+    AUTOMATION_CONSENT_HEADER,
+    AUTOMATION_CONSENT_TOKEN_ENV,
+    consent_required,
+)
 
 from acb_large_print_web.app import create_app
 
@@ -89,6 +94,36 @@ def test_consent_post_relative_next_honoured(client):
 def test_status_path_is_exempt_from_consent_gate():
     req = SimpleNamespace(path="/status", cookies={})
     assert consent_required(req) is False
+
+
+def test_automation_consent_bypass_accepts_default_token(monkeypatch):
+    monkeypatch.delenv(AUTOMATION_CONSENT_TOKEN_ENV, raising=False)
+    req = SimpleNamespace(
+        path="/audit/",
+        cookies={},
+        headers={AUTOMATION_CONSENT_HEADER: AUTOMATION_CONSENT_DEFAULT_TOKEN},
+    )
+    assert consent_required(req) is False
+
+
+def test_automation_consent_bypass_accepts_matching_token(monkeypatch):
+    monkeypatch.setenv(AUTOMATION_CONSENT_TOKEN_ENV, "automation-secret")
+    req = SimpleNamespace(
+        path="/audit/",
+        cookies={},
+        headers={AUTOMATION_CONSENT_HEADER: "automation-secret"},
+    )
+    assert consent_required(req) is False
+
+
+def test_automation_consent_bypass_rejects_wrong_token(monkeypatch):
+    monkeypatch.delenv(AUTOMATION_CONSENT_TOKEN_ENV, raising=False)
+    req = SimpleNamespace(
+        path="/audit/",
+        cookies={},
+        headers={AUTOMATION_CONSENT_HEADER: "wrong-secret"},
+    )
+    assert consent_required(req) is True
 
 
 # ---------------------------------------------------------------------------

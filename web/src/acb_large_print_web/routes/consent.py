@@ -10,6 +10,8 @@ Routes:
 
 from __future__ import annotations
 
+import hmac
+import os
 from datetime import timedelta
 
 from flask import (
@@ -27,6 +29,9 @@ consent_bp = Blueprint("consent", __name__)
 #: so that returning users are asked to re-agree.
 CONSENT_COOKIE_NAME = "glow_consent_v1"
 CONSENT_COOKIE_MAX_AGE = int(timedelta(days=365).total_seconds())
+AUTOMATION_CONSENT_HEADER = "X-GLOW-Automation-Consent"
+AUTOMATION_CONSENT_DEFAULT_TOKEN = "GLOW"
+AUTOMATION_CONSENT_TOKEN_ENV = "GLOW_AUTOMATION_CONSENT_TOKEN"
 
 #: Routes the consent gate never intercepts.  Keep this list minimal.
 CONSENT_EXEMPT_PREFIXES = (
@@ -44,10 +49,26 @@ def has_consent(req) -> bool:
     return req.cookies.get(CONSENT_COOKIE_NAME) == "1"
 
 
+def has_automation_consent_bypass(req) -> bool:
+    """Return True when automation presents the configured bypass token."""
+    expected_token = os.environ.get(
+        AUTOMATION_CONSENT_TOKEN_ENV,
+        AUTOMATION_CONSENT_DEFAULT_TOKEN,
+    ).strip()
+    if not expected_token:
+        return False
+    supplied_token = req.headers.get(AUTOMATION_CONSENT_HEADER, "").strip()
+    if not supplied_token:
+        return False
+    return hmac.compare_digest(supplied_token, expected_token)
+
+
 def consent_required(req) -> bool:
     """Return True if this request should trigger the consent redirect."""
     path = req.path.rstrip("/") or "/"
     if any(path.startswith(prefix) for prefix in CONSENT_EXEMPT_PREFIXES):
+        return False
+    if has_automation_consent_bypass(req):
         return False
     return not has_consent(req)
 

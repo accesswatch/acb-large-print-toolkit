@@ -10,6 +10,7 @@ Releases are tagged in the [GitHub repository](https://github.com/Community-Acce
 
 ### Added
 
+- **Automation consent bypass** for scripted web workflows: requests that send `X-GLOW-Automation-Consent: GLOW` skip the first-visit consent redirect, and deployments can override the default with `GLOW_AUTOMATION_CONSENT_TOKEN`.
 - **AI Playground streaming responses (SSE)** at `/beta/chat/stream` for token-by-token output rendering with automatic fallback to the legacy JSON endpoint when streaming is unavailable.
 - **AI Playground quick controls**: regenerate response, stop generation, in-page model switcher, prompt templates, session quota banner, and conversation export as Markdown.
 - **MarkItDown audio conversion choice for short MP3/WAV uploads** in the web Convert and Quick Start flows, so users can pick direct Markdown extraction for short clips while still using BITS Whisperer for larger recordings and broader audio format support.
