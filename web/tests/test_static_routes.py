@@ -4,6 +4,7 @@ Covers:
 - consent gate (GET show, POST accept, open-redirect guard)
 - privacy page
 - docs pages (guide, changelog, prd, faq, announcement)
+- deployment guide page
 - security response headers present on every response
 - 429 error handler renders GLOW error page (not raw Flask text)
 - 404 error handler
@@ -154,6 +155,7 @@ def test_privacy_page_has_heading(client):
     ("/guide/",        "guide"),
     ("/changelog/",    "changelog"),
     ("/prd/",          "product"),
+    ("/deployment/",   "deployment"),
     ("/faq/",          "faq"),
     ("/announcement/", "glow"),
 ])

@@ -657,7 +657,7 @@ All templates use the ACB Large Print CSS for body text, headings, and spacing. 
 - `docker-compose.yml`: two services -- Caddy reverse proxy (auto-HTTPS) + Flask app container
 - Health check endpoint: `GET /health` returns 200
 - Caddy persists TLS certificates in a Docker named volume
-- See [docs/deployment.md](deployment.md) for step-by-step server setup and deployment commands
+- See the [Deployment Guide](/deployment/) for step-by-step server setup and deployment commands
 
 ### File Handling and Security
 
@@ -714,7 +714,7 @@ The app ships as a Docker container. Any of these hosting options work:
 3. `docker compose up -d --build`
 4. Caddy handles TLS automatically
 
-For complete step-by-step commands starting from a bare server, see [docs/deployment.md](deployment.md).
+For complete step-by-step commands starting from a bare server, see the [Deployment Guide](/deployment/).
 
 ### Concrete Technology Stack
 

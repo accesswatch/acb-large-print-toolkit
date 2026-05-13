@@ -1391,7 +1391,7 @@ feature pack and exposed through explicit server-side feature flags.</p>
 <li><code>docker-compose.yml</code>: two services -- Caddy reverse proxy (auto-HTTPS) + Flask app container</li>
 <li>Health check endpoint: <code>GET /health</code> returns 200</li>
 <li>Caddy persists TLS certificates in a Docker named volume</li>
-<li>See <a href="deployment.md">docs/deployment.md</a> for step-by-step server setup and deployment commands</li>
+<li>See the <a href="/deployment/">Deployment Guide</a> for step-by-step server setup and deployment commands</li>
 </ul>
 <h3 id="file-handling-and-security">File Handling and Security</h3>
 <ul>
@@ -1483,7 +1483,7 @@ feature pack and exposed through explicit server-side feature flags.</p>
 2. <code>git pull</code> (or <code>docker pull</code> from registry)<br />
 3. <code>docker compose up -d --build</code><br />
 4. Caddy handles TLS automatically</p>
-<p>For complete step-by-step commands starting from a bare server, see <a href="deployment.md">docs/deployment.md</a>.</p>
+<p>For complete step-by-step commands starting from a bare server, see the <a href="/deployment/">Deployment Guide</a>.</p>
 <h3 id="concrete-technology-stack">Concrete Technology Stack</h3>
 <table>
 <thead>
