@@ -188,6 +188,7 @@ Useful switches:
 | `GLOW_ENABLE_AI_HEADING_FIX` | `1` | Gate AI refinement in the Fix workflow while keeping heuristic heading detection available. |
 | `GLOW_ENABLE_AI_ALT_TEXT` | `1` | Gate AI-assisted alt-text helpers independently. |
 | `GLOW_ENABLE_AI_MARKITDOWN_LLM` | `1` | Gate MarkItDown LLM enhancements independently. |
+| `GLOW_AUTOMATION_CONSENT_TOKEN` | `GLOW` | Shared secret for automation. Requests that send the exact token in the `X-GLOW-Automation-Consent` header bypass the first-visit consent redirect. Override the default in production with a deployment-specific secret. |
 
 ## Security
 

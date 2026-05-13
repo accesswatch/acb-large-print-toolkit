@@ -9,6 +9,7 @@ Releases are tagged in the [GitHub repository](https://github.com/Community-Acce
 ## [Unreleased]
 
 ### Added
+- **Automation consent bypass** for scripted web workflows: requests that send `X-GLOW-Automation-Consent: GLOW` skip the first-visit consent redirect, and deployments can override the default with `GLOW_AUTOMATION_CONSENT_TOKEN`.
 - **Firebase Console Configuration:** Email/Password and Google sign-in providers enabled; `glow.bits-acb.org` added as authorized OAuth domain (Custom type).
 - **Firebase Login Template:** Login page renders a working `Sign In With Google` button using Firebase Web SDK v10 (`signInWithPopup` flow); ID token posted to `/auth/firebase-login` via CSRF-protected JSON endpoint.
 - **Firebase credentials path:** `FIREBASE_CREDENTIALS_PATH` env var added to `.env` so `firebase_auth.py` initializes the Admin SDK from `instance/firebase-service-account.json`.
