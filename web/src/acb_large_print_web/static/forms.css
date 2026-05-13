@@ -3016,17 +3016,22 @@ pre,
 code,
 kbd {
   border: 1px solid #666666;
+  box-sizing: border-box;
 }
 
 pre {
   white-space: pre-wrap;
-  overflow-x: visible;
+  overflow-wrap: anywhere;
+  overflow-x: auto;
+  max-width: 100%;
 }
 
 pre code {
   display: block;
   border: 0;
-  background-color: transparent;
+  background-color: #ffffff;
+  color: #1a1a1a;
+  overflow-wrap: anywhere;
 }
 
 textarea {
@@ -3039,6 +3044,16 @@ textarea {
 table {
   border-collapse: separate;
   border-spacing: 0;
+  table-layout: fixed;
+  max-width: 100%;
+}
+
+th,
+td {
+  box-sizing: border-box;
+  overflow-wrap: anywhere;
+  word-break: normal;
+  vertical-align: top;
 }
 
 .workflow-banner a {
