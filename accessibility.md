@@ -34,7 +34,7 @@ Current feature-gate interpretation:
 
 Current source status: all known deterministic axe violations from the latest completed crawl have source fixes. Local crawl testing was stopped because it was hanging in this environment; use production or a deployed staging target for ongoing counts.
 
-Latest live production re-scan on May 13, 2026 used urlCheck against `https://glow.bits-acb.org/` with same-origin crawl and the GLOW automation consent header. It discovered 28 URLs, scanned 28 URLs, and reported `0` confirmed axe violations and `0` scanner errors. It still reported `39` `color-contrast` incomplete/manual-review nodes across `/about/`, `/deployment/`, and `/prd/`, so the prior contrast/manual-review bucket is not yet verified at zero on the live server. A follow-up source fix now wraps long table/code content inside explicitly painted boxes; verify on production after deployment.
+Latest live production re-scan on May 13, 2026 used urlCheck against `https://glow.bits-acb.org/` with same-origin crawl and the GLOW automation consent header. It discovered 27 URLs, scanned 27 URLs, and reported `0` confirmed axe violations and `0` scanner errors. The previous table/code cleanup reduced `color-contrast` incomplete/manual-review nodes from `39` to `7`; the remaining `7` were all generated deployment guide bash code blocks. A follow-up source fix now renders the inner `pre code` element inline inside the painted `pre` container; verify on production after deployment.
 
 ### 1. Production still showed heading-order issues on `/audit/` and `/template/`
 
@@ -97,7 +97,7 @@ The latest homepage crawl reported no additional confirmed axe violations beyond
 
 | Rule | Count | Notes |
 | --- | ---: | --- |
-| `color-contrast` | 39 | Live production still reports incomplete/manual-review nodes on `/about/`, `/deployment/`, and `/prd/`; source now hardens documentation table/code wrapping and needs production re-scan after deployment. |
+| `color-contrast` | 7 | Live production still reports incomplete/manual-review nodes only on `/deployment/` bash code blocks; source now adjusts `pre code` rendering and needs production re-scan after deployment. |
 | `duplicate-id-aria` | 1 | Fixed in source by removing the stale duplicate `filter-type` control from Rules Reference. |
 | `form-field-multiple-labels` | 1 | Fixed in source by removing the stale duplicate `filter-type` control from Rules Reference. |
 

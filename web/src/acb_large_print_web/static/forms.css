@@ -3027,7 +3027,7 @@ pre {
 }
 
 pre code {
-  display: block;
+  display: inline;
   border: 0;
   background-color: #ffffff;
   color: #1a1a1a;
