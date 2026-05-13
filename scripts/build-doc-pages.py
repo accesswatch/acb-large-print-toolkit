@@ -9,6 +9,7 @@ Generated files:
 - web/src/acb_large_print_web/templates/partials/guide_body.html
 - web/src/acb_large_print_web/templates/partials/changelog_body.html
 - web/src/acb_large_print_web/templates/partials/prd_body.html
+- web/src/acb_large_print_web/templates/partials/deployment_body.html
 - web/src/acb_large_print_web/templates/partials/faq_body.html
 - web/src/acb_large_print_web/templates/partials/announcement_body.html
 
@@ -68,6 +69,16 @@ SOURCES: dict[str, tuple[Path, Path, dict[str, str | None]]] = {
             "toc_id": "prd-toc-heading",
             "body_class": "prd-content",
             "back_label": "Back to sections",
+        },
+    ),
+    "deployment": (
+        REPO_ROOT / "docs" / "deployment.md",
+        PARTIALS_DIR / "deployment_body.html",
+        {
+            "toc_heading": "Deployment Sections",
+            "toc_id": "deployment-toc-heading",
+            "body_class": "deployment-content",
+            "back_label": "Back to deployment sections",
         },
     ),
     "faq": (

@@ -6,6 +6,10 @@
   <h2 id="prd-toc-heading">Sections</h2>
 <div class="toc">
 <ul>
+<li><a href="#v700-addendum-async-auth-neonpostgres-accountprivacy-may-2026">v7.0.0 Addendum (Async, Auth, Neon/Postgres, Account/Privacy — May 2026)</a><ul>
+<li><a href="#new-user-stories">New User Stories</a></li>
+</ul>
+</li>
 <li><a href="#prd-glow-guided-layout-output-workflow-accessibility-web-application">PRD: GLOW (Guided Layout &amp; Output Workflow) Accessibility Web Application</a><ul>
 <li><a href="#implementation-status">Implementation Status</a><ul>
 <li><a href="#v400-addendum-conversion-hardening-and-public-doc-consistency----may-4-2026">v4.0.0 Addendum (Conversion hardening and public-doc consistency -- May 4, 2026)</a></li>
@@ -83,6 +87,55 @@
 
 </nav>
 <div class="prd-content">
+<h2 id="v700-addendum-async-auth-neonpostgres-accountprivacy-may-2026">v7.0.0 Addendum (Async, Auth, Neon/Postgres, Account/Privacy — May 2026)</h2>
+<table>
+<thead>
+<tr>
+<th>Feature</th>
+<th>Status</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Async job queue for convert/speech</td>
+<td>Done</td>
+<td>All long-running jobs now use Celery/Redis, with SSE status and polling.</td>
+</tr>
+<tr>
+<td>Firebase authentication (user/admin)</td>
+<td>Done</td>
+<td>End-user and admin login via Firebase, with approval gating for admin.</td>
+</tr>
+<tr>
+<td>Account/privacy dashboard</td>
+<td>Done</td>
+<td>Profile, consent, provider key encryption, data export/delete.</td>
+</tr>
+<tr>
+<td>Neon/Postgres migration</td>
+<td>Done</td>
+<td>Neon/Postgres is now the default DB, with SQLite fallback.</td>
+</tr>
+<tr>
+<td>Migration toolkit and runbook</td>
+<td>Done</td>
+<td>Full backup, migration, cutover, and rollback docs/scripts.</td>
+</tr>
+<tr>
+<td>Agent Skills + MCP for Firebase/Neon</td>
+<td>Done</td>
+<td>Project-level skills, install/verify/update workflow, diagnostics.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="new-user-stories">New User Stories</h3>
+<ul>
+<li>As a user, I want to see job progress and download results for long-running conversions.</li>
+<li>As an admin, I want to approve Firebase logins and manage admin access securely.</li>
+<li>As a user, I want to manage my account, consent, and provider keys securely.</li>
+<li>As an operator, I want a step-by-step migration path from SQLite to Neon/Postgres.</li>
+</ul>
 <h1 id="prd-glow-guided-layout-output-workflow-accessibility-web-application">PRD: GLOW (Guided Layout &amp; Output Workflow) Accessibility Web Application</h1>
 <p><strong>Status:</strong> Implemented (v4.0.0 released)<br />
 <strong>Author:</strong> Jeff Bishop, BITS<br />
@@ -1391,7 +1444,7 @@ feature pack and exposed through explicit server-side feature flags.</p>
 <li><code>docker-compose.yml</code>: two services -- Caddy reverse proxy (auto-HTTPS) + Flask app container</li>
 <li>Health check endpoint: <code>GET /health</code> returns 200</li>
 <li>Caddy persists TLS certificates in a Docker named volume</li>
-<li>See <a href="deployment.md">docs/deployment.md</a> for step-by-step server setup and deployment commands</li>
+<li>See the <a href="/deployment/">Deployment Guide</a> for step-by-step server setup and deployment commands</li>
 </ul>
 <h3 id="file-handling-and-security">File Handling and Security</h3>
 <ul>
@@ -1483,7 +1536,7 @@ feature pack and exposed through explicit server-side feature flags.</p>
 2. <code>git pull</code> (or <code>docker pull</code> from registry)<br />
 3. <code>docker compose up -d --build</code><br />
 4. Caddy handles TLS automatically</p>
-<p>For complete step-by-step commands starting from a bare server, see <a href="deployment.md">docs/deployment.md</a>.</p>
+<p>For complete step-by-step commands starting from a bare server, see the <a href="/deployment/">Deployment Guide</a>.</p>
 <h3 id="concrete-technology-stack">Concrete Technology Stack</h3>
 <table>
 <thead>

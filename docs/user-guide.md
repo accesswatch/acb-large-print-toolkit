@@ -1702,8 +1702,8 @@ If **Remember my settings** is enabled, these defaults persist in local browser 
 - **GitHub Issues** -- [report bugs or request features](https://github.com/Community-Access/glow/issues)
 - **DAISY Knowledge Base** -- [remediation guidance for ePub issues](https://kb.daisy.org/publishing/)
 - **Microsoft Accessibility Checker Guide** -- [Microsoft's guide to the Office accessibility checker](https://support.microsoft.com/en-us/office/improve-accessibility-with-the-accessibility-checker-a16f6de0-2f39-4a2b-8bd8-5ad801426c7f)
-- **Project README** -- [README.md](../README.md)
-- **Deployment and operations notes** -- [docs/deployment.md](deployment.md)
+- **Project overview** -- [About GLOW](/about/)
+- **Deployment and operations notes** -- [Deployment Guide](/deployment/)
 # GLOW (Guided Layout & Output Workflow) -- User Guide
 
 Everything you need to know to audit, fix, convert, and template your documents for ACB Large Print compliance using **GLOW (Guided Layout & Output Workflow)**. New to accessibility? Start with the **Quick Start** path below.
@@ -2819,9 +2819,9 @@ GLOW includes an admin-only sign-in and approval workflow for operational dashbo
 
 - **Full ACB Large Print Guidelines Reference** -- available on the web app Guidelines page or at [acb.org/large-print-guidelines](https://acb.org/large-print-guidelines)
 - **APH Large Print Guidelines (official source)** -- [aph.org/resources/large-print-guidelines](https://www.aph.org/resources/large-print-guidelines/)
-- **Project overview and release highlights** -- [README.md](../README.md)
-- **Web app operations and deployment notes** -- [web/README.md](../web/README.md)
-- **Web app product requirements and implementation log** -- [docs/prd.md](prd.md)
+- **Project overview and release highlights** -- [About GLOW](/about/)
+- **Web app operations and deployment notes** -- [Deployment Guide](/deployment/)
+- **Web app product requirements and implementation log** -- [Product Requirements Document](/prd/)
 - **Submit Feedback** -- use the Feedback page in the web app to report bugs, request features, or share your experience
 - **About This Project** -- mission, organizations, standards, and open source dependencies on the web app About page
 - **GitHub Issues** -- [report bugs or request features](https://github.com/Community-Access/glow/issues) on the open source repository

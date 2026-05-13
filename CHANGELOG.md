@@ -35,6 +35,7 @@ Releases are tagged in the [GitHub repository](https://github.com/Community-Acce
 - **AI Cost/Quota Model Alignment:** Updated `web/src/acb_large_print_web/models.py` ledger/quota models to match existing AI gateway telemetry schema (`session_hash`, `request_at`, `workload`, `audio_seconds`, `escalated`) and pluralized quota table naming (`ai_quota_sessions`).
 
 ### Fixed
+- **Public documentation links:** Replaced raw `.md` documentation links in web-facing guide, FAQ, and PRD pages with HTML routes, and added `/deployment/` as the public deployment guide page.
 - **Audit and Template heading order:** Promoted top-level in-content headings on `/audit/` and `/template/` to `h2`, resolving axe `heading-order` findings from same-origin urlCheck crawls.
 - **AI usage meter landmark:** The inactive AI meter now exposes the same complementary landmark semantics as active meter states, resolving axe `region` findings on the consent page.
 - **Web App Color Contrast:** Darkened low-contrast sidebar, breadcrumb, grade, copied-button, and disabled-button colors in `web/src/acb_large_print_web/static/forms.css`; added missing dark-mode overrides for file inputs, upload drop zones, AI panels, action cards, chat turns, and progress panels so core GLOW pages remain readable in dark theme.

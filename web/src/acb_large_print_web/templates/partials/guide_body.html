@@ -6,8 +6,19 @@
   <h2 id="guide-toc-heading">In This Guide</h2>
 <div class="toc">
 <ul>
-<li><a href="#glow-accessibility-toolkit----user-guide">GLOW -- User Guide</a><ul>
+<li><a href="#glow----user-guide">GLOW -- User Guide</a><ul>
+<li><a href="#whats-new-in-glow-700">What’s New in GLOW 7.0.0</a></li>
+<li><a href="#whats-new-in-glow-600">What’s New in GLOW 6.0.0</a><ul>
+<li><a href="#highlights-in-600">Highlights in 6.0.0</a></li>
+<li><a href="#what-stays-simple">What stays simple</a></li>
+</ul>
+</li>
+<li><a href="#ai-features-at-a-glance">AI Features at a Glance</a></li>
 <li><a href="#in-this-guide">In This Guide</a></li>
+<li><a href="#whats-new-in-glow-500">What's New in GLOW 5.0.0</a><ul>
+<li><a href="#highlights-in-500">Highlights in 5.0.0</a></li>
+</ul>
+</li>
 <li><a href="#whats-new-in-glow-400">What's New in GLOW 4.0.0</a><ul>
 <li><a href="#highlights-in-400">Highlights in 4.0.0</a></li>
 <li><a href="#what-remains-true-from-310">What remains true from 3.1.0</a></li>
@@ -129,7 +140,24 @@
 <li><a href="#privacy">Privacy</a></li>
 </ul>
 </li>
-<li><a href="#10-document-chat">10. Document Chat</a><ul>
+<li><a href="#10-ai-playground-beta-explore-personal-ai-models">10. AI Playground (Beta): Explore Personal AI Models</a><ul>
+<li><a href="#why-the-playground-exists">Why the Playground exists</a></li>
+<li><a href="#how-to-access-the-playground">How to access the Playground</a></li>
+<li><a href="#what-the-playground-feels-like">What the Playground feels like</a></li>
+<li><a href="#starter-questions-to-try">Starter questions to try</a></li>
+<li><a href="#what-the-playground-is-not">What the Playground is not</a></li>
+</ul>
+</li>
+<li><a href="#11-markitdown-ai-integration-smarter-text-extraction">11. MarkItDown + AI Integration: Smarter Text Extraction</a><ul>
+<li><a href="#what-is-enabled">What is enabled</a></li>
+<li><a href="#how-it-works">How it works</a></li>
+<li><a href="#what-you-get">What you get</a></li>
+<li><a href="#why-it-matters">Why it matters</a></li>
+<li><a href="#try-it">Try it</a></li>
+<li><a href="#performance-and-cost">Performance and cost</a></li>
+</ul>
+</li>
+<li><a href="#12-document-chat">12. Document Chat</a><ul>
 <li><a href="#when-to-use-document-chat">When to use Document Chat</a></li>
 <li><a href="#step-by-step_3">Step-by-step</a></li>
 <li><a href="#agent-categories-and-tools">Agent categories and tools</a></li>
@@ -138,19 +166,19 @@
 <li><a href="#accessibility-and-privacy">Accessibility and privacy</a></li>
 </ul>
 </li>
-<li><a href="#11-settings">11. Settings</a><ul>
+<li><a href="#12-settings">12. Settings</a><ul>
 <li><a href="#what-settings-controls">What Settings controls</a></li>
 <li><a href="#privacy-and-persistence">Privacy and persistence</a></li>
 <li><a href="#first-time-setup">First-time setup</a></li>
 </ul>
 </li>
-<li><a href="#12-understanding-your-results">12. Understanding Your Results</a><ul>
+<li><a href="#13-understanding-your-results">13. Understanding Your Results</a><ul>
 <li><a href="#severity-levels">Severity levels</a></li>
 <li><a href="#compliance-score">Compliance score</a></li>
 <li><a href="#standards-profiles_1">Standards profiles</a></li>
 </ul>
 </li>
-<li><a href="#13-common-issues-and-how-to-fix-them">13. Common Issues and How to Fix Them</a><ul>
+<li><a href="#14-common-issues-and-how-to-fix-them">14. Common Issues and How to Fix Them</a><ul>
 <li><a href="#all-text-must-use-arial-font-acb-font-family">"All text must use Arial font" (ACB-FONT-FAMILY)</a></li>
 <li><a href="#body-text-must-be-18pt-minimum-acb-font-size-body">"Body text must be 18pt minimum" (ACB-FONT-SIZE-BODY)</a></li>
 <li><a href="#italic-formatting-is-not-permitted-acb-no-italic">"Italic formatting is not permitted" (ACB-NO-ITALIC)</a></li>
@@ -163,7 +191,7 @@
 <li><a href="#epub-should-include-accessibility-metadata-epub-accessibility-metadata">"ePub should include accessibility metadata" (EPUB-ACCESSIBILITY-METADATA)</a></li>
 </ul>
 </li>
-<li><a href="#14-tips-by-document-format">14. Tips by Document Format</a><ul>
+<li><a href="#15-tips-by-document-format">15. Tips by Document Format</a><ul>
 <li><a href="#word-docx">Word (.docx)</a></li>
 <li><a href="#excel-xlsx">Excel (.xlsx)</a></li>
 <li><a href="#powerpoint-pptx">PowerPoint (.pptx)</a></li>
@@ -172,7 +200,7 @@
 <li><a href="#epub-epub">ePub (.epub)</a></li>
 </ul>
 </li>
-<li><a href="#15-recommended-workflows">15. Recommended Workflows</a><ul>
+<li><a href="#16-recommended-workflows">16. Recommended Workflows</a><ul>
 <li><a href="#workflow-a-fix-an-existing-document-streamlined">Workflow A: Fix an existing document (streamlined)</a></li>
 <li><a href="#workflow-b-start-a-new-document-from-scratch">Workflow B: Start a new document from scratch</a></li>
 <li><a href="#workflow-c-publish-meeting-minutes-or-agendas-online">Workflow C: Publish meeting minutes or agendas online</a></li>
@@ -183,15 +211,15 @@
 <li><a href="#workflow-h-rapid-compliance-pass-on-a-known-document">Workflow H: Rapid compliance pass on a known document</a></li>
 </ul>
 </li>
-<li><a href="#16-daisy-accessibility-tools">16. DAISY Accessibility Tools</a><ul>
+<li><a href="#17-daisy-accessibility-tools">17. DAISY Accessibility Tools</a><ul>
 <li><a href="#daisy-ace----epub-accessibility-checker">DAISY Ace -- EPUB Accessibility Checker</a></li>
 <li><a href="#daisy-pipeline----document-conversion">DAISY Pipeline -- Document Conversion</a></li>
 <li><a href="#daisy-knowledge-base">DAISY Knowledge Base</a></li>
 <li><a href="#mathml-and-mathematical-content">MathML and Mathematical Content</a></li>
 </ul>
 </li>
-<li><a href="#17-keyboard-and-screen-reader-tips">17. Keyboard and Screen Reader Tips</a></li>
-<li><a href="#18-frequently-asked-questions">18. Frequently Asked Questions</a><ul>
+<li><a href="#18-keyboard-and-screen-reader-tips">18. Keyboard and Screen Reader Tips</a></li>
+<li><a href="#19-frequently-asked-questions">19. Frequently Asked Questions</a><ul>
 <li><a href="#is-my-document-stored-on-the-server">Is my document stored on the server?</a></li>
 <li><a href="#what-is-the-maximum-file-size">What is the maximum file size?</a></li>
 <li><a href="#can-i-audit-multiple-documents-at-once">Can I audit multiple documents at once?</a></li>
@@ -206,15 +234,20 @@
 <li><a href="#is-there-an-admin-area">Is there an admin area?</a></li>
 </ul>
 </li>
-<li><a href="#19-website-accessibility-scans-site-audit">19. Website Accessibility Scans (Site Audit)</a><ul>
-<li><a href="#step-by-step_4">Step-by-step</a></li>
+<li><a href="#20-website-accessibility-scans-site-audit">20. Website Accessibility Scans (Site Audit)</a><ul>
+<li><a href="#what-each-site-audit-option-does">What each Site Audit option does</a></li>
+<li><a href="#step-by-step-walkthrough">Step-by-step walkthrough</a></li>
+<li><a href="#background-runs-status-and-cancel">Background runs, status, and cancel</a></li>
+<li><a href="#protected-private-runs">Protected private runs</a></li>
+<li><a href="#recommended-run-presets">Recommended run presets</a></li>
+<li><a href="#tips-to-get-the-most-out-of-site-audit">Tips to get the most out of Site Audit</a></li>
 <li><a href="#site-audit-defaults">Site Audit defaults</a></li>
 </ul>
 </li>
-<li><a href="#20-getting-help">20. Getting Help</a></li>
+<li><a href="#21-getting-help">21. Getting Help</a></li>
 </ul>
 </li>
-<li><a href="#glow-guided-layout-output-workflow-accessibility-toolkit----user-guide">GLOW (Guided Layout &amp; Output Workflow) Accessibility Toolkit -- User Guide</a><ul>
+<li><a href="#glow-guided-layout-output-workflow----user-guide">GLOW (Guided Layout &amp; Output Workflow) -- User Guide</a><ul>
 <li><a href="#in-this-guide_1">In This Guide</a></li>
 <li><a href="#1-quick-start-beginner-path">1. Quick Start (Beginner Path)</a><ul>
 <li><a href="#how-to-use-quick-start">How to use Quick Start</a></li>
@@ -257,13 +290,13 @@
 <li><a href="#3-how-to-audit-a-document">3. How to Audit a Document</a><ul>
 <li><a href="#supported-formats_2">Supported formats</a></li>
 <li><a href="#choosing-an-audit-mode_1">Choosing an audit mode</a></li>
-<li><a href="#step-by-step_5">Step-by-step</a></li>
+<li><a href="#step-by-step_4">Step-by-step</a></li>
 <li><a href="#email-delivery_1">Email delivery</a></li>
 </ul>
 </li>
 <li><a href="#4-how-to-fix-a-document">4. How to Fix a Document</a><ul>
 <li><a href="#what-gets-auto-fixed_1">What gets auto-fixed</a></li>
-<li><a href="#step-by-step_6">Step-by-step</a></li>
+<li><a href="#step-by-step_5">Step-by-step</a></li>
 <li><a href="#recent-fix-workflow-updates">Recent Fix workflow updates</a></li>
 <li><a href="#quick-rule-exceptions_1">Quick Rule Exceptions</a></li>
 <li><a href="#preserve-centered-headings_1">Preserve centered headings</a></li>
@@ -276,7 +309,7 @@
 </ul>
 </li>
 <li><a href="#5-how-to-create-a-template">5. How to Create a Template</a><ul>
-<li><a href="#step-by-step_7">Step-by-step</a></li>
+<li><a href="#step-by-step_6">Step-by-step</a></li>
 <li><a href="#template-profile-defaults">Template profile defaults</a></li>
 <li><a href="#template-heading-level-defaults">Template heading-level defaults</a></li>
 <li><a href="#how-to-install-the-template-in-word">How to install the template in Word</a></li>
@@ -289,7 +322,7 @@
 </ul>
 </li>
 <li><a href="#7-how-to-export-to-html">7. How to Export to HTML</a><ul>
-<li><a href="#step-by-step_8">Step-by-step</a></li>
+<li><a href="#step-by-step_7">Step-by-step</a></li>
 </ul>
 </li>
 <li><a href="#8-how-to-convert-between-formats">8. How to Convert Between Formats</a><ul>
@@ -369,9 +402,69 @@
 
 </nav>
 <div class="guide-content">
-<h1 id="glow-accessibility-toolkit----user-guide">GLOW -- User Guide</h1>
+<h1 id="glow----user-guide">GLOW -- User Guide</h1>
 <p>GLOW (Guided Layout and Output Workflow) helps you produce documents that people with low vision can read. It audits, fixes, converts, and templates Office documents, Markdown, PDFs, and ePubs against the ACB Large Print Guidelines and WCAG 2.2 Level AA.</p>
 <p>New to GLOW? Start at <a href="#1-quick-start">Quick Start</a>. Already familiar? Jump straight to the section you need.</p>
+<h2 id="whats-new-in-glow-700">What’s New in GLOW 7.0.0</h2>
+<ul>
+<li><strong>Async Job Queue:</strong> All long-running conversions (Word, PDF, HTML, Markdown, EPUB, Speech) now run as background jobs. You’re redirected to a live job progress page with streaming status and download link when ready.</li>
+<li><strong>Speech Studio and Convert:</strong> Both now use the async queue for large jobs, with real-time progress and error handling.</li>
+<li><strong>Firebase Authentication:</strong> End-user and admin login now support Firebase, with approval-gated admin access. Existing OAuth and local login remain as fallback.</li>
+<li><strong>Account &amp; Privacy Dashboard:</strong> New dashboard for managing your profile, consent, provider keys (encrypted at rest), and data export/delete.</li>
+<li><strong>Neon/Postgres Migration:</strong> All user, admin, and feature flag data now stored in Neon/Postgres (with SQLite fallback for local/dev).</li>
+<li><strong>Migration Tools:</strong> Built-in migration script and runbook for moving from SQLite to Neon, with full backup/restore and rollback.</li>
+<li><strong>Agent Skills &amp; MCP:</strong> Project-level Agent Skills for Firebase and Neon, with step-by-step setup and diagnostics.</li>
+<li><strong>Expanded Documentation:</strong> New migration runbook, cutover/decommission guide, and troubleshooting matrix.</li>
+</ul>
+<p>If AI is part of your setup, skip ahead to <a href="#whats-new-in-glow-6.0.0">What’s New in GLOW 6.0.0</a> and <a href="#ai-features-at-a-glance">AI Features at a Glance</a> for the short version of what GLOW can do when AI is on, and what stays hidden when it is not.</p>
+<hr />
+<h2 id="whats-new-in-glow-600">What’s New in GLOW 6.0.0</h2>
+<p>GLOW 6.0.0 is the open source release that makes the project easier to join, easier to explain, and easier to run with your own AI account when you want AI help.</p>
+<h3 id="highlights-in-600">Highlights in 6.0.0</h3>
+<ol>
+<li><strong>Open source contribution process</strong> -- The web site, release notes, and announcement files now explain how to fork the repo, open a branch, submit a pull request, and work through review under branch protection. The project is ready for community contributions, not just downloads.</li>
+<li><strong>Feedback-to-issue automation</strong> -- Feedback submissions can now collect a name and email for follow-up and sync directly into GitHub Issues when a token is configured.</li>
+<li><strong>Personal AI provider support with AI Playground (Beta)</strong> -- Users can connect their own Ollama Cloud, OpenRouter, OpenAI, or Google Gemini API key and enable AI features. The playground is an experimental chat surface for testing compatible models without document context. You can explore model behavior, stream responses token-by-token, regenerate or stop responses, copy/export outputs, switch models mid-conversation, and navigate questions and answers directly using your keyboard or screen reader. Long-running replies now announce both in-progress and completed states to screen reader users. All conversation history is temporary and session-scoped.</li>
+<li><strong>Per-feature provider/model selection</strong> -- Choose different compatible provider/model pairs for heading detection, MarkItDown support, the playground, alt-text suggestions, and Whisperer from a unified AI Features settings page. The interface filters out incompatible choices so vision and audio workflows only expose models that can support them.</li>
+<li><strong>Alt-Text Helper across visual formats</strong> -- GLOW can now draft alternative text for standalone image files and visual content from Word, PowerPoint, Excel, PDF, and EPUB uploads from one shared helper surface.</li>
+<li><strong>Visible AI usage meter and cost preview</strong> -- The sidebar now shows a live AI usage summary, while Document Chat and AI Playground can preview rough token/cost estimates before you send a request.</li>
+<li><strong>Clearer AI guidance</strong> -- The About page and this user guide now explain what AI can do in short form even when AI is not yet enabled, so users can understand the capability before they turn it on.</li>
+</ol>
+<h3 id="what-stays-simple">What stays simple</h3>
+<ul>
+<li>If you do not enable AI, every non-AI workflow in GLOW still works exactly as before.</li>
+<li>If you do enable AI, the feature toggles keep the initial release limited to the most dependable text workflows.</li>
+<li>Document Chat remains available as a future step, not the default starting point.</li>
+</ul>
+<h2 id="ai-features-at-a-glance">AI Features at a Glance</h2>
+<p>If you are deciding whether to turn AI on, here is the short version:</p>
+<ul>
+<li>
+<p><strong>Heading detection</strong> helps turn bold, large text into actual semantic headings. This runs automatically when Fix is available and runs in document workflows.</p>
+</li>
+<li>
+<p><strong>MarkItDown + AI support</strong> makes text extraction smarter and document cleanup faster. When you audit, fix, or convert a document, the AI-enhanced extraction understands context and structure, not just layout. The result is cleaner documents with fewer artifacts and better heading relationships. This is enabled by default when you connect a compatible personal provider key.</p>
+</li>
+<li>
+<p><strong>Document Chat</strong> remains a separate feature gate and is disabled by default in the personal-provider-first setup.</p>
+</li>
+<li>
+<p><strong>AI Playground (Beta)</strong> is a standalone chat surface where you can explore compatible personal-provider models, ask questions, and test model behavior before using AI in real accessibility workflows. It includes streaming responses, regenerate/stop controls, prompt templates, a quota status banner, Markdown export, and delayed screen reader announcements for in-progress and completed long-running replies.</p>
+</li>
+<li>
+<p><strong>Alt-Text Helper</strong> drafts editable alternative text for images, charts, slide visuals, rendered PDF pages, and other extracted visual items. It uses the alt-text model binding from AI Features and appends file-specific context automatically.</p>
+</li>
+<li>
+<p><strong>Usage tracking</strong> shows session-level request counts so you can see what you used while you were in GLOW.</p>
+</li>
+<li>
+<p><strong>Cost preview and rolling session limits</strong> show rough request cost before send and can enforce an admin-configured per-session AI request window with a reset countdown.</p>
+</li>
+<li>
+<p><strong>Whisperer</strong> is separate and only appears when an audio-transcription-capable provider path is active.</p>
+</li>
+</ul>
+<p>If AI is disabled, GLOW hides the AI-specific entry points and keeps the rest of the app focused on its document workflows.</p>
 <hr />
 <h2 id="in-this-guide">In This Guide</h2>
 <ol>
@@ -384,17 +477,36 @@
 <li><a href="#7-braille-studio-text-to-braille-translation">Braille Studio: Text-to-Braille Translation</a></li>
 <li><a href="#8-speech-studio-document-to-audio">Speech Studio: Document-to-Audio</a></li>
 <li><a href="#9-bits-whisperer-transcribe-audio">BITS Whisperer: Transcribe Audio</a></li>
-<li><a href="#10-document-chat">Document Chat</a></li>
-<li><a href="#11-settings">Settings</a></li>
-<li><a href="#12-understanding-your-results">Understanding Your Results</a></li>
-<li><a href="#13-common-issues-and-how-to-fix-them">Common Issues and How to Fix Them</a></li>
-<li><a href="#14-tips-by-document-format">Tips by Document Format</a></li>
-<li><a href="#15-recommended-workflows">Recommended Workflows</a></li>
-<li><a href="#16-daisy-accessibility-tools">DAISY Accessibility Tools</a></li>
-<li><a href="#17-keyboard-and-screen-reader-tips">Keyboard and Screen Reader Tips</a></li>
-<li><a href="#18-frequently-asked-questions">Frequently Asked Questions</a></li>
-<li><a href="#19-website-accessibility-scans-site-audit">Website Accessibility Scans (Site Audit)</a></li>
-<li><a href="#20-getting-help">Getting Help</a></li>
+<li><a href="#10-ai-playground-beta-explore-ollama-models">AI Playground (Beta): Explore Ollama Models</a></li>
+<li><a href="#11-markitdown--ai-integration-smarter-text-extraction">MarkItDown + AI Integration: Smarter Text Extraction</a></li>
+<li><a href="#12-document-chat">Document Chat</a></li>
+<li><a href="#13-settings">Settings</a></li>
+<li><a href="#14-understanding-your-results">Understanding Your Results</a></li>
+<li><a href="#15-common-issues-and-how-to-fix-them">Common Issues and How to Fix Them</a></li>
+<li><a href="#16-tips-by-document-format">Tips by Document Format</a></li>
+<li><a href="#17-recommended-workflows">Recommended Workflows</a></li>
+<li><a href="#18-daisy-accessibility-tools">DAISY Accessibility Tools</a></li>
+<li><a href="#19-keyboard-and-screen-reader-tips">Keyboard and Screen Reader Tips</a></li>
+<li><a href="#20-frequently-asked-questions">Frequently Asked Questions</a></li>
+<li><a href="#20-website-accessibility-scans-site-audit">Website Accessibility Scans (Site Audit)</a></li>
+<li><a href="#21-getting-help">Getting Help</a></li>
+</ol>
+<hr />
+<h2 id="whats-new-in-glow-500">What's New in GLOW 5.0.0</h2>
+<p>GLOW 5.0.0 is a full UX redesign release. The horizontal tab bar that previously ran across every page has been replaced with a goal-oriented left sidebar navigation. All tools remain the same -- only the way you navigate to them has changed.</p>
+<h3 id="highlights-in-500">Highlights in 5.0.0</h3>
+<ol>
+<li><strong>Goal-oriented sidebar navigation</strong> -- The left sidebar organises every tool into five mission groups so you can navigate by what you want to accomplish, not by tool name.</li>
+<li><strong>Five navigation groups:</strong></li>
+<li><strong>Assess</strong> -- Document Audit and Site Audit for finding accessibility barriers</li>
+<li><strong>Fix and Build</strong> -- Fix Document and Build Template for correcting and starting fresh</li>
+<li><strong>Transform</strong> -- Convert Format and Braille Studio for format and medium changes</li>
+<li><strong>Listen and Speak</strong> -- Speech Studio and Whisperer for audio workflows</li>
+<li><strong>Explore and Learn</strong> -- Document Chat, Magic Lab, Guidelines, User Guide, FAQ, and Settings</li>
+<li><strong>Responsive sidebar</strong> -- On small screens the sidebar collapses to a hamburger menu. Clicking the hamburger slides the sidebar over the page with a focus trap and Escape-key dismissal.</li>
+<li><strong>Correct ARIA pattern</strong> -- All navigation links now use <code>aria-current="page"</code> (the correct ARIA 1.1 attribute for navigation). The prior <code>role="tab"</code> misuse has been removed.</li>
+<li><strong>Mission Hub home page</strong> -- The home page now shows five goal-oriented mission cards with feature-flag-aware tool links, replacing the previous Quick Start workflow steps and card grid.</li>
+<li><strong>Version bumped to 5.0.0</strong> -- Web app, desktop CLI, and Office add-in all reflect version 5.0.0.</li>
 </ol>
 <hr />
 <h2 id="whats-new-in-glow-400">What's New in GLOW 4.0.0</h2>
@@ -560,7 +672,7 @@ workflows.</p>
 <li><strong>BRF (ASCII)</strong> -- Braille Ready Format, BANA-standard 40 cells per line, optional embosser pagination with form feeds; download as <code>.brf</code></li>
 </ul>
 <p><strong>Back-translation:</strong> Paste or upload a <code>.brl</code> or <code>.brf</code> file and get back readable English text. Useful for verifying embosser output or proofreading contracted braille.</p>
-<p><strong>How to reach it:</strong> Click the <strong>Braille</strong> tab in the main navigation. Braille Studio can be enabled or disabled via the <code>GLOW_ENABLE_BRAILLE</code> feature flag (default: enabled). When liblouis is not installed, the page explains the dependency clearly rather than showing a broken tool.</p>
+<p><strong>How to reach it:</strong> Select <strong>Braille Studio</strong> under the <strong>Transform</strong> group in the left sidebar. Braille Studio can be enabled or disabled via the <code>GLOW_ENABLE_BRAILLE</code> feature flag (default: enabled). When liblouis is not installed, the page explains the dependency clearly rather than showing a broken tool.</p>
 <h3 id="speech-studio-document-narration-via-pandoc">Speech Studio: document narration via Pandoc</h3>
 <p>When you upload a document to Speech Studio, GLOW now extracts the text using Pandoc before synthesis. This applies to every non-plain-text format: <code>.md</code>, <code>.rst</code>, <code>.docx</code>, <code>.pptx</code>, <code>.xlsx</code>, <code>.pdf</code>, <code>.epub</code>, and others. The result is consistent, clean narration regardless of the original format. Plain <code>.txt</code> files bypass Pandoc and work on servers where Pandoc is unavailable.</p>
 <p><strong>What you see in the UI:</strong> The narration flow now uses an explicit two-stage design:</p>
@@ -626,7 +738,7 @@ workflows.</p>
 <p>You have a document. Maybe a board meeting agenda, a newsletter, a training handout, a policy memo, or a recording of a conference call. You need it to be readable by people with low vision and compatible with screen readers. You are not sure where to begin.</p>
 <p>That is exactly what Quick Start is for.</p>
 <h3 id="step-1-go-to-quick-start">Step 1: Go to Quick Start</h3>
-<p>Click the <strong>Quick Start</strong> tab at the top of any GLOW page. You will land on a single upload form.</p>
+<p>Click <strong>Quick Start</strong> in the top section of the left sidebar navigation on any GLOW page. You will land on a single upload form.</p>
 <h3 id="step-2-upload-anything">Step 2: Upload anything</h3>
 <p>Quick Start accepts every format GLOW supports:</p>
 <table>
@@ -1015,7 +1127,7 @@ acb-lp detect-headings document.docx --ai --ai-prompt prompt.txt --threshold 75
 <p>In v2.7.0, the dedicated Export page was merged into Convert. All Export functionality is now available in <strong>Convert</strong> at the same URL (<code>/convert</code>).</p>
 <h3 id="what-changed">What changed</h3>
 <ul>
-<li>The <strong>Export</strong> tab has been removed from the navigation.</li>
+<li>The <strong>Export</strong> tab functionality has been folded into Convert (CMS Fragment option) and is no longer a separate navigation entry.</li>
 <li>Bookmarks and links to <code>/export</code> are automatically redirected to <code>/convert</code>.</li>
 <li>CMS Fragment output is available in Convert: upload a Word file and select <strong>CMS Fragment</strong> as the direction.</li>
 <li>Standalone HTML output is also available in Convert: select <strong>Accessible web page (HTML)</strong> as the direction.</li>
@@ -1168,7 +1280,7 @@ acb-lp detect-headings document.docx --ai --ai-prompt prompt.txt --threshold 75
 </ul>
 <h3 id="how-to-use-braille-studio">How to use Braille Studio</h3>
 <ol>
-<li><strong>Open Braille Studio</strong> — Click the <strong>Braille</strong> tab on the main navigation.</li>
+<li><strong>Open Braille Studio</strong> -- Select <strong>Braille Studio</strong> under the <strong>Transform</strong> group in the left sidebar.</li>
 <li><strong>Choose your direction:</strong></li>
 <li><strong>Text → Braille</strong> — Paste English text or upload a <code>.txt</code>, <code>.md</code> file</li>
 <li><strong>Braille → Text</strong> — Paste braille (Unicode or ASCII) or upload a <code>.brf</code>, <code>.brl</code> file</li>
@@ -1205,7 +1317,7 @@ acb-lp detect-headings document.docx --ai --ai-prompt prompt.txt --threshold 75
 <p>Speech Studio synthesizes English documents to MP3 or WAV audio. Users can narrate board minutes, newsletters, training materials, or any document in the voice of their choice.</p>
 <h3 id="how-to-use-speech-studio">How to use Speech Studio</h3>
 <ol>
-<li><strong>Open Speech Studio</strong> — Click the <strong>Speech</strong> tab on the main navigation.</li>
+<li><strong>Open Speech Studio</strong> -- Select <strong>Speech Studio</strong> under the <strong>Listen and Speak</strong> group in the left sidebar.</li>
 <li><strong>Paste text or upload a document</strong> — Paste English text directly or upload a file (Markdown, Word, PDF, Excel, PowerPoint, ePub, etc.)</li>
 <li><strong>Choose your voice</strong> — Select from curated Piper TTS voices (fast, local) or remote OpenRouter providers.</li>
 <li><strong>Adjust speed and pitch</strong> — Customize playback speed (0.5x to 2.0x) and pitch offset (−12 to +12 semitones).</li>
@@ -1303,7 +1415,110 @@ acb-lp detect-headings document.docx --ai --ai-prompt prompt.txt --threshold 75
 <h3 id="privacy">Privacy</h3>
 <p>Your audio is uploaded to GLOW, optionally normalized for compatibility, sent to the Whisper transcription service, and held only as long as needed to complete conversion and deliver your download. After download or expiry, temporary files are removed. Nothing is stored as permanent account data.</p>
 <hr />
-<h2 id="10-document-chat">10. Document Chat</h2>
+<h2 id="10-ai-playground-beta-explore-personal-ai-models">10. AI Playground (Beta): Explore Personal AI Models</h2>
+<p>The AI Playground is your experimental testing ground for personal AI models. It is a standalone chat surface, separate from your documents, where you can explore how different compatible provider/model combinations respond to questions and get comfortable with AI before relying on it for real accessibility work.</p>
+<p>Think of it as a safe space to build confidence. Ask any question. Switch models mid-conversation. Copy responses. Conversations stay in your session only and are never persisted to disk. It is magic because every part of it is designed to feel fluid and responsive.</p>
+<h3 id="why-the-playground-exists">Why the Playground exists</h3>
+<ul>
+<li><strong>Explore freely:</strong> Try different compatible provider/model choices without risking document workflows.</li>
+<li><strong>Learn by doing:</strong> See how models respond to accessibility questions, repair guidance, formatting advice.</li>
+<li><strong>Test before shipping:</strong> Verify model behavior matches your expectations.</li>
+<li><strong>Private experimentation:</strong> Session-scoped history. You delete it when you close the browser.</li>
+<li><strong>Accessible navigation:</strong> Questions appear as H3 headings, answers as H4, so you can jump directly between them with a keyboard or screen reader.</li>
+</ul>
+<h3 id="how-to-access-the-playground">How to access the Playground</h3>
+<ol>
+<li>Go to the <strong>Explore and Learn</strong> section in the left sidebar.</li>
+<li>Click <strong>Experimental</strong> and select <strong>AI Playground</strong>.</li>
+<li>You will need at least one active personal AI provider key in AI Features.</li>
+</ol>
+<h3 id="what-the-playground-feels-like">What the Playground feels like</h3>
+<p><strong>Starting a conversation:</strong><br />
+- Type a question or prompt in the text area.<br />
+- Press Enter (or Shift+Enter for a new line) or click Send.<br />
+- While GLOW fetches the response, a temporary assistant bubble appears showing "Thinking…"</p>
+<p><strong>Receiving a response:</strong><br />
+- The thinking bubble smoothly transitions to the real response with no page reload.<br />
+- The response includes the model name and a <strong>Copy</strong> button so you can grab the text.<br />
+- A typing indicator animates to show progress during long responses.</p>
+<p><strong>Continuing the conversation:</strong><br />
+- Ask follow-up questions. GLOW keeps the conversation history.<br />
+- Notice the conversation log shows clear visual distinction: your questions as H3 headings, AI responses as H4 headings.<br />
+- Screen reader users can jump directly between questions and answers using heading navigation.</p>
+<p><strong>Switching models:</strong><br />
+- Click the model selector to try a different compatible model without clearing history.<br />
+- If a response runs longer than a few seconds, GLOW announces that it is still in progress for screen reader users and announces again when the delayed response arrives.<br />
+- Re-ask your last question with a different model to compare responses.<br />
+- Clear the entire conversation with the <strong>Clear</strong> button (you will be asked to confirm).</p>
+<h3 id="starter-questions-to-try">Starter questions to try</h3>
+<ul>
+<li>"Explain the ACB Large Print Guidelines in simple terms."</li>
+<li>"What is the difference between em-dash and hyphen in accessible documents?"</li>
+<li>"How would you fix italicized text in a low-vision document?"</li>
+<li>"What heading hierarchy means and why it matters for screen readers."</li>
+<li>"Describe the relationship between font size and line height in accessibility."</li>
+</ul>
+<h3 id="what-the-playground-is-not">What the Playground is not</h3>
+<ul>
+<li><strong>Not Document Chat:</strong> The Playground has no access to your documents. It is pure exploration.</li>
+<li><strong>Not persistent:</strong> Refresh the page and the conversation disappears.</li>
+<li><strong>Not production-ready:</strong> It is labeled Beta because we are still refining the experience.</li>
+<li><strong>Not a replacement for Audit/Fix:</strong> Use Document Chat or Audit for serious accessibility analysis.</li>
+</ul>
+<hr />
+<h2 id="11-markitdown-ai-integration-smarter-text-extraction">11. MarkItDown + AI Integration: Smarter Text Extraction</h2>
+<p>MarkItDown is a powerful text extraction tool from Microsoft. GLOW 6.0.0 combines it with an LLM to make document extraction smarter and faster.</p>
+<h3 id="what-is-enabled">What is enabled</h3>
+<p>When you connect a compatible personal AI provider key in GLOW Settings, <strong>MarkItDown + AI support is on by default</strong> for:</p>
+<ul>
+<li><strong>Heading detection</strong> — converts bold or large text into semantic headings automatically</li>
+<li><strong>Intelligent extraction</strong> — understands context and structure, not just layout</li>
+<li><strong>Cleaner documents</strong> — removes page numbers, repeated footers, noise, and artifacts</li>
+</ul>
+<h3 id="how-it-works">How it works</h3>
+<p>When you run Audit or Fix on any document (Word, PDF, Markdown, Excel, PowerPoint, ePub), the AI-enhanced extraction:</p>
+<ol>
+<li>Reads the document structure and content</li>
+<li>Identifies what should be a heading vs. body text</li>
+<li>Extracts text with AI awareness of importance and relationships</li>
+<li>Returns cleaner input for accessibility workflows</li>
+</ol>
+<h3 id="what-you-get">What you get</h3>
+<ul>
+<li><strong>Better heading detection</strong> — catches heading patterns that rule-based extraction misses</li>
+<li><strong>Less manual cleanup</strong> — fewer artifacts and false structure to fix later</li>
+<li><strong>Consistent results</strong> — works across all formats (Word, PDF, Markdown, Excel, PowerPoint, ePub)</li>
+<li><strong>Faster workflows</strong> — more time for real accessibility work, less time on false positives</li>
+</ul>
+<h3 id="why-it-matters">Why it matters</h3>
+<p>Headings and document structure are objective problems:<br />
+- Either a text block is a heading, or it is not.<br />
+- Either a list item is a real list, or it is fake formatting.<br />
+- Either a paragraph break is intentional, or it is a layout artifact.</p>
+<p>MarkItDown + AI solves these consistently. The combined approach produces documents that need less manual remediation before you can run Fix or convert to accessible output.</p>
+<h3 id="try-it">Try it</h3>
+<ol>
+<li>
+<p><strong>Audit mode:</strong> Upload a document with missing or incorrect headings. The audit report will show what headings were detected and what remains. The score reflects both AI-found headings and manual structure issues.</p>
+</li>
+<li>
+<p><strong>Playground first (optional):</strong> Before trusting heading detection in production, try the AI Playground with a few sample headings from your document. Test different compatible provider/model options to see which one works best for your document types. Then configure that provider/model in AI Features and run Fix.</p>
+</li>
+<li>
+<p><strong>Fix mode:</strong> Run Fix on the document. Heading detection runs automatically if heading-fix AI is enabled. The corrected document shows the cleaned-up structure.</p>
+</li>
+<li>
+<p><strong>Re-audit:</strong> After Fix, run Audit again on the corrected document to confirm the structure improvements and identify remaining manual fixes.</p>
+</li>
+</ol>
+<h3 id="performance-and-cost">Performance and cost</h3>
+<ul>
+<li>MarkItDown + AI uses your active personal provider/model binding, so cost depends on the provider and model you selected for that feature</li>
+<li>Extraction happens once per document, not per heading</li>
+<li>Results are deterministic but AI-influenced (different models may detect headings slightly differently; that is normal)</li>
+</ul>
+<hr />
+<h2 id="12-document-chat">12. Document Chat</h2>
 <p>Document Chat lets you ask questions about an uploaded document in plain language. An OpenRouter-backed AI gateway answers using accessibility-focused tools across compliance, structure, content, and remediation. Core workflows remain available without AI if you prefer not to use it.</p>
 <h3 id="when-to-use-document-chat">When to use Document Chat</h3>
 <ul>
@@ -1357,7 +1572,7 @@ acb-lp detect-headings document.docx --ai --ai-prompt prompt.txt --threshold 75
 <h3 id="accessibility-and-privacy">Accessibility and privacy</h3>
 <p>Conversation history is organized by heading-based turns for screen reader navigation. All controls are keyboard accessible. No JavaScript is required for core chat usage. Sessions use GLOW's AI gateway and follow the same 1-hour retention policy for uploaded documents.</p>
 <hr />
-<h2 id="11-settings">11. Settings</h2>
+<h2 id="12-settings">12. Settings</h2>
 <p>The <strong>Settings</strong> tab lets you configure default values once and apply them across every workflow.</p>
 <h3 id="what-settings-controls">What Settings controls</h3>
 <ul>
@@ -1378,7 +1593,7 @@ acb-lp detect-headings document.docx --ai --ai-prompt prompt.txt --threshold 75
 <li>Open Audit or Fix and verify the defaults are pre-selected.</li>
 </ol>
 <hr />
-<h2 id="12-understanding-your-results">12. Understanding Your Results</h2>
+<h2 id="13-understanding-your-results">13. Understanding Your Results</h2>
 <h3 id="severity-levels">Severity levels</h3>
 <table>
 <thead>
@@ -1420,7 +1635,7 @@ acb-lp detect-headings document.docx --ai --ai-prompt prompt.txt --threshold 75
 <p><strong>Combined Strict</strong> -- includes all implemented checks across ACB, WCAG, and MSAC. Use for final pre-release quality gates.</p>
 <p>Profile selection changes report filtering and template defaults. It does not change the underlying auto-fix behavior for Word documents.</p>
 <hr />
-<h2 id="13-common-issues-and-how-to-fix-them">13. Common Issues and How to Fix Them</h2>
+<h2 id="14-common-issues-and-how-to-fix-them">14. Common Issues and How to Fix Them</h2>
 <h3 id="all-text-must-use-arial-font-acb-font-family">"All text must use Arial font" (ACB-FONT-FAMILY)</h3>
 <p><strong>Why it matters:</strong> Arial is required because it is a clean sans-serif font with excellent legibility at large sizes. Decorative, serif, and condensed fonts are harder to read for people with low vision.</p>
 <p><strong>Auto-fix:</strong> Yes. Fix changes all fonts to Arial.</p>
@@ -1456,7 +1671,7 @@ acb-lp detect-headings document.docx --ai --ai-prompt prompt.txt --threshold 75
 <p><strong>Why it matters:</strong> Accessibility metadata tells reading systems and library catalogs what features the publication offers, so users know whether it works with their assistive technology.</p>
 <p><strong>Manual fix:</strong> Add schema.org metadata to the OPF package document: <code>accessMode</code>, <code>accessibilityFeature</code>, <code>accessibilitySummary</code>, and <code>accessibilityHazard</code>. See the <a href="https://kb.daisy.org/publishing/docs/metadata/schema.org/index.html">DAISY Knowledge Base on schema.org metadata</a>.</p>
 <hr />
-<h2 id="14-tips-by-document-format">14. Tips by Document Format</h2>
+<h2 id="15-tips-by-document-format">15. Tips by Document Format</h2>
 <h3 id="word-docx">Word (.docx)</h3>
 <ul>
 <li>Use Word's built-in heading styles (Heading 1, Heading 2, etc.) instead of manually formatting text to look like a heading.</li>
@@ -1510,7 +1725,7 @@ acb-lp detect-headings document.docx --ai --ai-prompt prompt.txt --threshold 75
 <li>If your ePub contains MathML, the audit detects it and provides specific guidance for mathematical content accessibility.</li>
 </ul>
 <hr />
-<h2 id="15-recommended-workflows">15. Recommended Workflows</h2>
+<h2 id="16-recommended-workflows">16. Recommended Workflows</h2>
 <h3 id="workflow-a-fix-an-existing-document-streamlined">Workflow A: Fix an existing document (streamlined)</h3>
 <ol>
 <li><strong>Audit first</strong> -- upload to Audit to understand the scope of issues.</li>
@@ -1578,7 +1793,7 @@ acb-lp detect-headings document.docx --ai --ai-prompt prompt.txt --threshold 75
 <li>If the re-audit shows only Medium or Low findings, the document is ready to publish.</li>
 </ol>
 <hr />
-<h2 id="16-daisy-accessibility-tools">16. DAISY Accessibility Tools</h2>
+<h2 id="17-daisy-accessibility-tools">17. DAISY Accessibility Tools</h2>
 <p>GLOW integrates with open source tools from the <a href="https://daisy.org/">DAISY Consortium</a>, an international association serving people with print disabilities.</p>
 <h3 id="daisy-ace----epub-accessibility-checker">DAISY Ace -- EPUB Accessibility Checker</h3>
 <p><a href="https://daisy.github.io/ace/">Ace by DAISY</a> is bundled with the web application and runs automatically during every ePub audit:</p>
@@ -1601,11 +1816,12 @@ acb-lp detect-headings document.docx --ai --ai-prompt prompt.txt --threshold 75
 <h3 id="mathml-and-mathematical-content">MathML and Mathematical Content</h3>
 <p>When ePub files contain MathML, the audit detects it and provides guidance on making mathematical content accessible. The <a href="https://github.com/daisy/MathCAT">MathCAT project</a> by DAISY generates speech, braille, and navigation from MathML for screen readers. If your ePub uses MathML, ensure it is properly structured so MathCAT and MathJax can process it.</p>
 <hr />
-<h2 id="17-keyboard-and-screen-reader-tips">17. Keyboard and Screen Reader Tips</h2>
+<h2 id="18-keyboard-and-screen-reader-tips">18. Keyboard and Screen Reader Tips</h2>
 <p>GLOW is designed to work fully without a mouse.</p>
 <ul>
-<li><strong>Skip link:</strong> Press Tab on any page to reveal a "Skip to main content" link that jumps past the navigation.</li>
-<li><strong>Navigation:</strong> The main navigation is a list of links. Use Tab and Enter to move between pages.</li>
+<li><strong>Skip link:</strong> Press Tab on any page to reveal a "Skip to main content" link that jumps past the sidebar navigation.</li>
+<li><strong>Sidebar navigation:</strong> The left sidebar is a <code>&lt;nav&gt;</code> landmark with <code>aria-label="Primary navigation"</code>. Links are organised in five labelled groups. Use Tab and Enter to move between pages. The active page link carries <code>aria-current="page"</code>.</li>
+<li><strong>Mobile sidebar:</strong> On small screens, the sidebar is hidden until the hamburger button is pressed. Press Escape or click the overlay to close. Focus is trapped inside the sidebar while it is open, and returns to the toggle button when closed.</li>
 <li><strong>Forms:</strong> All form fields have visible labels and description text. Errors are announced with the alert role.</li>
 <li><strong>Help sections:</strong> Help text uses <code>&lt;details&gt;/&lt;summary&gt;</code> elements. Press Enter or Space on a summary to expand or collapse. Screen readers announce the expanded and collapsed state.</li>
 <li><strong>File upload:</strong> After selecting a file, Tab to the submit button and press Enter.</li>
@@ -1615,7 +1831,7 @@ acb-lp detect-headings document.docx --ai --ai-prompt prompt.txt --threshold 75
 <li><strong>Back to top:</strong> Each section on the Guidelines and Guide pages includes a "Back to table of contents" link.</li>
 </ul>
 <hr />
-<h2 id="18-frequently-asked-questions">18. Frequently Asked Questions</h2>
+<h2 id="19-frequently-asked-questions">19. Frequently Asked Questions</h2>
 <h3 id="is-my-document-stored-on-the-server">Is my document stored on the server?</h3>
 <p>Uploaded files are stored in an isolated temporary workspace for the time needed to complete your workflow. Temporary files are automatically removed. Nothing is retained as permanent account data. Upload workspaces are removed after one hour of inactivity. Active sessions stay alive as long as the session is in use.</p>
 <h3 id="what-is-the-maximum-file-size">What is the maximum file size?</h3>
@@ -1646,7 +1862,7 @@ acb-lp detect-headings document.docx --ai --ai-prompt prompt.txt --threshold 75
 <h3 id="is-there-an-admin-area">Is there an admin area?</h3>
 <p>Yes. GLOW includes an admin-only sign-in and approval workflow for operational dashboards. Admin features include viewing and managing the audio conversion queue, canceling queued jobs, and re-queuing failed jobs. No general user accounts are supported in the current release. Email configuration is required for admin sign-in features.</p>
 <hr />
-<h2 id="19-website-accessibility-scans-site-audit">19. Website Accessibility Scans (Site Audit)</h2>
+<h2 id="20-website-accessibility-scans-site-audit">20. Website Accessibility Scans (Site Audit)</h2>
 <p>Site Audit is designed for page-level accessibility checks when your source is a URL instead of an uploaded document.</p>
 <p>Use Site Audit when you need to:</p>
 <ul>
@@ -1654,33 +1870,116 @@ acb-lp detect-headings document.docx --ai --ai-prompt prompt.txt --threshold 75
 <li>crawl a section of a site from a seed URL</li>
 <li>generate a portable evidence bundle for engineering handoff</li>
 </ul>
-<h3 id="step-by-step_4">Step-by-step</h3>
+<h3 id="what-each-site-audit-option-does">What each Site Audit option does</h3>
+<ul>
+<li><strong>URLs to scan (one per line)</strong>: seed pages to scan directly</li>
+<li><strong>Sitemap URL (optional)</strong>: imports URLs from an XML sitemap and adds them to seeds</li>
+<li><strong>Maximum pages (1 to 50)</strong>: hard cap on total pages scanned in a run</li>
+<li><strong>Follow in-site links</strong>: discovers additional pages from links found on scanned pages</li>
+<li><strong>Crawl depth (0 to 5)</strong>:</li>
+<li>Depth 0: scan seed URLs only</li>
+<li>Depth 1: include links found on each seed page</li>
+<li>Depth 2+: continue link discovery across additional levels</li>
+<li><strong>Include subdomains</strong>: allow discovery across <code>www</code>, <code>docs</code>, <code>blog</code>, and other subdomains</li>
+<li><strong>Limit crawl to same path branch</strong>: keep discovery within the seed path hierarchy</li>
+<li>Example: seed <code>https://example.org/docs</code> includes <code>/docs/getting-started</code> and <code>/docs/api</code>, but not <code>/blog</code></li>
+<li><strong>Exclude URL patterns</strong>: skip URLs containing listed text fragments (one per line)</li>
+<li>Example patterns: <code>/tag/</code>, <code>?replytocom=</code>, <code>/print/</code>, <code>/calendar/</code></li>
+<li><strong>Strict open-source learning links only</strong>: for each finding, include only W3C/WAI and A11Y Project guidance links</li>
+<li><strong>Force re-scan existing pages in this run</strong>: do not reuse existing page outputs for matching URLs</li>
+<li><strong>Run in background and show live status</strong>: start crawl asynchronously, monitor progress, and cancel if needed</li>
+<li><strong>Protect run with tokenized link</strong>: require a private token URL; optionally add a password</li>
+</ul>
+<h3 id="step-by-step-walkthrough">Step-by-step walkthrough</h3>
 <ol>
 <li>Open the <strong>Site Audit</strong> tab.</li>
-<li>Enter one URL per line, or provide a sitemap URL.</li>
-<li>Set your run options:</li>
-<li><strong>Maximum pages</strong> (1 to 50)</li>
-<li><strong>Follow in-site links</strong></li>
-<li><strong>Include subdomains</strong> (optional)</li>
-<li><strong>Force re-scan existing pages</strong></li>
+<li>Add scan sources.</li>
+<li>Use one URL per line for focused checks.</li>
+<li>Add a sitemap URL when you need broad coverage quickly.</li>
+<li>Choose crawl behavior.</li>
+<li>Start with <strong>Follow in-site links</strong> enabled.</li>
+<li>Set <strong>Crawl depth</strong> based on intent:<ul>
+<li>0 for spot checks</li>
+<li>1 for section scans</li>
+<li>2 for broad audits with controlled spread</li>
+</ul>
+</li>
+<li>Constrain scope to reduce noise.</li>
+<li>Enable <strong>Limit crawl to same path branch</strong> for section-specific audits.</li>
+<li>Add <strong>Exclude URL patterns</strong> for low-value or repetitive paths.</li>
+<li>Set <strong>Maximum pages</strong> to match expected run size and time budget.</li>
 <li>Click <strong>Run Site Audit</strong>.</li>
-<li>Review the run summary and per-page status table.</li>
-<li>Download artifacts as needed:</li>
+<li>Review results.</li>
+<li>Run summary totals (scanned, failed, skipped, findings)</li>
+<li>Per-page status table</li>
+<li>WCAG tag rollup</li>
+<li>Scan configuration block (for reproducibility)</li>
+<li>Download artifacts for engineering handoff:</li>
 <li>summary JSON</li>
 <li>findings CSV</li>
 <li>session log</li>
 <li>full ZIP bundle</li>
 </ol>
+<h3 id="background-runs-status-and-cancel">Background runs, status, and cancel</h3>
+<p>When <strong>Run in background</strong> is enabled:</p>
+<ol>
+<li>GLOW creates a job status page immediately.</li>
+<li>The status page updates live with crawl progress and page currently being scanned.</li>
+<li>You can click <strong>Cancel crawl</strong> at any time.</li>
+<li>When complete, open the result page directly from the job status view.</li>
+</ol>
+<h3 id="protected-private-runs">Protected private runs</h3>
+<p>When <strong>Protect run with tokenized link</strong> is enabled:</p>
+<ol>
+<li>The run is stored with a token-hash (not plaintext token) and optional password hash.</li>
+<li>Opening the run requires the tokenized URL.</li>
+<li>If a password was set, users must also unlock with the password.</li>
+<li>Downloads and summary endpoints honor the same access protection.</li>
+</ol>
+<p>This allows teams to share targeted private scan links while keeping results out of reach without the token (and password if configured).</p>
+<h3 id="recommended-run-presets">Recommended run presets</h3>
+<ol>
+<li><strong>Quick smoke scan</strong></li>
+<li>Maximum pages: 5 to 10</li>
+<li>Follow links: on</li>
+<li>Crawl depth: 0 or 1</li>
+<li>Same path only: on</li>
+<li>Exclusions: optional</li>
+<li><strong>Section quality gate (release)</strong></li>
+<li>Maximum pages: 25 to 50</li>
+<li>Follow links: on</li>
+<li>Crawl depth: 1 or 2</li>
+<li>Same path only: on</li>
+<li>Exclusions: recommended</li>
+<li><strong>Cross-site discovery scan</strong></li>
+<li>Maximum pages: 50</li>
+<li>Follow links: on</li>
+<li>Crawl depth: 2</li>
+<li>Include subdomains: on</li>
+<li>Same path only: off</li>
+<li>Exclusions: strongly recommended</li>
+</ol>
+<h3 id="tips-to-get-the-most-out-of-site-audit">Tips to get the most out of Site Audit</h3>
+<ul>
+<li>Start narrow, then widen. Use depth 0 or 1 first, then increase depth if needed.</li>
+<li>Use path scoping plus exclusion patterns together. This removes common crawl traps and duplicate-value pages.</li>
+<li>Keep a reusable exclusion list in your team notes for known low-signal URL patterns.</li>
+<li>Use the findings CSV for triage and assignment, then use summary JSON and session log for traceability.</li>
+<li>Keep Force re-scan off for iterative runs unless content changed and you need fresh evidence.</li>
+</ul>
 <h3 id="site-audit-defaults">Site Audit defaults</h3>
 <p>You can set default Site Audit options in <strong>Settings</strong>:</p>
 <ul>
 <li>maximum pages per run</li>
 <li>crawl links on/off</li>
+<li>crawl depth default</li>
 <li>include subdomains on/off</li>
+<li>same path branch on/off</li>
+<li>default URL exclusion patterns</li>
 <li>force re-scan on/off</li>
 </ul>
 <p>If <strong>Remember my settings</strong> is enabled, these defaults persist in local browser storage.</p>
-<h2 id="20-getting-help">20. Getting Help</h2>
+<h2 id="21-getting-help">21. Getting Help</h2>
 <ul>
 <li><strong>ACB Large Print Guidelines</strong> -- <a href="https://acb.org/large-print-guidelines">acb.org/large-print-guidelines</a></li>
 <li><strong>APH Large Print Guidelines</strong> -- <a href="https://www.aph.org/resources/large-print-guidelines/">aph.org/resources/large-print-guidelines</a></li>
@@ -1697,10 +1996,10 @@ acb-lp detect-headings document.docx --ai --ai-prompt prompt.txt --threshold 75
 <li><strong>GitHub Issues</strong> -- <a href="https://github.com/Community-Access/glow/issues">report bugs or request features</a></li>
 <li><strong>DAISY Knowledge Base</strong> -- <a href="https://kb.daisy.org/publishing/">remediation guidance for ePub issues</a></li>
 <li><strong>Microsoft Accessibility Checker Guide</strong> -- <a href="https://support.microsoft.com/en-us/office/improve-accessibility-with-the-accessibility-checker-a16f6de0-2f39-4a2b-8bd8-5ad801426c7f">Microsoft's guide to the Office accessibility checker</a></li>
-<li><strong>Project README</strong> -- <a href="../README.md">README.md</a></li>
-<li><strong>Deployment and operations notes</strong> -- <a href="deployment.md">docs/deployment.md</a></li>
+<li><strong>Project overview</strong> -- <a href="/about/">About GLOW</a></li>
+<li><strong>Deployment and operations notes</strong> -- <a href="/deployment/">Deployment Guide</a></li>
 </ul>
-<h1 id="glow-guided-layout-output-workflow-accessibility-toolkit----user-guide">GLOW (Guided Layout &amp; Output Workflow) -- User Guide</h1>
+<h1 id="glow-guided-layout-output-workflow----user-guide">GLOW (Guided Layout &amp; Output Workflow) -- User Guide</h1>
 <p>Everything you need to know to audit, fix, convert, and template your documents for ACB Large Print compliance using <strong>GLOW (Guided Layout &amp; Output Workflow)</strong>. New to accessibility? Start with the <strong>Quick Start</strong> path below.</p>
 <h2 id="in-this-guide_1">In This Guide</h2>
 <ol>
@@ -1998,7 +2297,7 @@ acb-lp detect-headings document.docx --ai --ai-prompt prompt.txt --threshold 75
 <li><strong>Quick Audit</strong> -- Checks only Critical and High severity rules. Use this for a fast pass when you are already familiar with your document's formatting.</li>
 <li><strong>Custom Audit</strong> -- Pick individual rules to check. Useful when you are working on specific issues (e.g., only font rules) or running a targeted re-check.</li>
 </ul>
-<h3 id="step-by-step_5">Step-by-step</h3>
+<h3 id="step-by-step_4">Step-by-step</h3>
 <ol>
 <li>Go to Audit.</li>
 <li>Choose your rule categories (ACB Large Print, MS Accessibility Checker, or both).</li>
@@ -2040,7 +2339,7 @@ acb-lp detect-headings document.docx --ai --ai-prompt prompt.txt --threshold 75
 </tr>
 </tbody>
 </table>
-<h3 id="step-by-step_6">Step-by-step</h3>
+<h3 id="step-by-step_5">Step-by-step</h3>
 <ol>
 <li>Go to Fix.</li>
 <li>Upload your document.</li>
@@ -2242,7 +2541,7 @@ acb-lp detect-headings document.docx --ai --ai-prompt my-prompt.txt --threshold 
 <hr />
 <h2 id="5-how-to-create-a-template">5. How to Create a Template</h2>
 <p>A template (.dotx) is the easiest way to start compliant. Every new document you create from this template inherits all ACB formatting automatically.</p>
-<h3 id="step-by-step_7">Step-by-step</h3>
+<h3 id="step-by-step_6">Step-by-step</h3>
 <ol>
 <li>Go to Template.</li>
 <li>Enter a document title (or leave blank for the default).</li>
@@ -2307,7 +2606,7 @@ acb-lp detect-headings document.docx --ai --ai-prompt my-prompt.txt --threshold 
 <li><strong>Standalone HTML</strong> -- A complete web page with its own CSS file. Upload both files to your web server. Good for dedicated pages, intranet publishing, or email attachments.</li>
 <li><strong>CMS Fragment</strong> -- An HTML snippet with embedded CSS scoped to a wrapper class. Paste it into WordPress, Drupal, or any CMS editor block. The scoped CSS will not conflict with your site theme.</li>
 </ul>
-<h3 id="step-by-step_8">Step-by-step</h3>
+<h3 id="step-by-step_7">Step-by-step</h3>
 <ol>
 <li>Go to Export.</li>
 <li>Upload a Word (.docx) file.</li>
@@ -2660,9 +2959,9 @@ acb-lp detect-headings document.docx --ai --ai-prompt my-prompt.txt --threshold 
 <ul>
 <li><strong>Full ACB Large Print Guidelines Reference</strong> -- available on the web app Guidelines page or at <a href="https://acb.org/large-print-guidelines">acb.org/large-print-guidelines</a></li>
 <li><strong>APH Large Print Guidelines (official source)</strong> -- <a href="https://www.aph.org/resources/large-print-guidelines/">aph.org/resources/large-print-guidelines</a></li>
-<li><strong>Project overview and release highlights</strong> -- <a href="../README.md">README.md</a></li>
-<li><strong>Web app operations and deployment notes</strong> -- <a href="../web/README.md">web/README.md</a></li>
-<li><strong>Web app product requirements and implementation log</strong> -- <a href="prd.md">docs/prd.md</a></li>
+<li><strong>Project overview and release highlights</strong> -- <a href="/about/">About GLOW</a></li>
+<li><strong>Web app operations and deployment notes</strong> -- <a href="/deployment/">Deployment Guide</a></li>
+<li><strong>Web app product requirements and implementation log</strong> -- <a href="/prd/">Product Requirements Document</a></li>
 <li><strong>Submit Feedback</strong> -- use the Feedback page in the web app to report bugs, request features, or share your experience</li>
 <li><strong>About This Project</strong> -- mission, organizations, standards, and open source dependencies on the web app About page</li>
 <li><strong>GitHub Issues</strong> -- <a href="https://github.com/Community-Access/glow/issues">report bugs or request features</a> on the open source repository</li>
