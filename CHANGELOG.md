@@ -35,6 +35,9 @@ Releases are tagged in the [GitHub repository](https://github.com/Community-Acce
 - **AI Cost/Quota Model Alignment:** Updated `web/src/acb_large_print_web/models.py` ledger/quota models to match existing AI gateway telemetry schema (`session_hash`, `request_at`, `workload`, `audio_seconds`, `escalated`) and pluralized quota table naming (`ai_quota_sessions`).
 
 ### Fixed
+- **Rules Reference accessibility filters:** Removed a stale duplicate Type filter on `/rules/` that reused `id="filter-type"`, resolving axe `duplicate-id-aria` and `form-field-multiple-labels` findings.
+- **Quick Start contrast review noise:** Replaced gradient upload-hero backgrounds with solid high-contrast surfaces and added explicit foreground colors to file/text inputs and textareas so axe can calculate contrast reliably.
+- **Crawl accessibility cleanup:** Removed the remaining public raw Markdown deployment link, replaced decorative workflow banner glyphs, converted symbolic keyboard labels to text, and normalized code/table/textarea surfaces so automated contrast tools can compute foreground/background colors more reliably.
 - **Public documentation links:** Replaced raw `.md` documentation links in web-facing guide, FAQ, and PRD pages with HTML routes, and added `/deployment/` as the public deployment guide page.
 - **Audit and Template heading order:** Promoted top-level in-content headings on `/audit/` and `/template/` to `h2`, resolving axe `heading-order` findings from same-origin urlCheck crawls.
 - **AI usage meter landmark:** The inactive AI meter now exposes the same complementary landmark semantics as active meter states, resolving axe `region` findings on the consent page.

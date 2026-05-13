@@ -6,7 +6,7 @@
 
 - **Automated Deployment Script:** `bash ~/app/scripts/deploy-app.sh`
 - **Manual Maintenance Toggle:** `bash ~/app/scripts/maintenance-mode.sh {on|off|status}`
-- **Complete Strategy & Troubleshooting:** See [deployment-strategy.md](deployment-strategy.md)
+- **Complete Strategy & Troubleshooting:** The full deployment strategy is maintained in the repository documentation for operators working from the source tree.
 
 ---
 
