@@ -38,8 +38,14 @@ EXPECTED_AI_DEFAULTS = {
     "GLOW_ENABLE_AI_CHAT": False,  # Beta: users can enable in Settings
     "GLOW_ENABLE_AI_WHISPERER": False,
     "GLOW_ENABLE_AI_HEADING_FIX": True,  # Enabled by default
-    "GLOW_ENABLE_AI_ALT_TEXT": False,  # Beta: users can enable in Settings
+    "GLOW_ENABLE_AI_ALT_TEXT": True,  # Alt-Text Helper enabled for 7.1.0
     "GLOW_ENABLE_AI_MARKITDOWN_LLM": True,  # Enabled by default
+}
+
+# Authentication flags (should be present in feature_flags.py)
+REQUIRED_AUTH_FLAGS = {
+    "GLOW_ENABLE_USER_LOGIN": False,  # Disabled for 7.1.0
+    "GLOW_ENABLE_ADMIN_LOGIN": False,  # Disabled for 7.1.0
 }
 
 # Tool integration flags that should default to True
@@ -73,6 +79,16 @@ def check_feature_flags_py():
         if not re.search(pattern, content):
             ERRORS.append(
                 f'[FAIL] AI flag "{flag}" not found or does not default to {expected_literal} '
+                f"in {FEATURE_FLAGS_PY}"
+            )
+
+    # Check all required auth flags are defined with expected defaults
+    for flag, expected in REQUIRED_AUTH_FLAGS.items():
+        expected_literal = "True" if expected else "False"
+        pattern = rf'"{flag}":\s*{expected_literal}'
+        if not re.search(pattern, content):
+            ERRORS.append(
+                f'[FAIL] Auth flag "{flag}" not found or does not default to {expected_literal} '
                 f"in {FEATURE_FLAGS_PY}"
             )
 

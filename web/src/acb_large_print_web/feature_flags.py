@@ -54,8 +54,11 @@ _DEFAULTS: dict[str, bool] = {
     "GLOW_ENABLE_AI_CHAT": False,
     "GLOW_ENABLE_AI_WHISPERER": False,
     "GLOW_ENABLE_AI_HEADING_FIX": True,
-    "GLOW_ENABLE_AI_ALT_TEXT": False,
+    "GLOW_ENABLE_AI_ALT_TEXT": True,
     "GLOW_ENABLE_AI_MARKITDOWN_LLM": True,
+    # User and admin authentication (disabled for 7.1.0)
+    "GLOW_ENABLE_USER_LOGIN": False,
+    "GLOW_ENABLE_ADMIN_LOGIN": False,
     # Broad GLOW feature flags (non-AI features).
     # Defaults: non-AI features are enabled by default so typical
     # document processing (audit, convert, export) is available.
