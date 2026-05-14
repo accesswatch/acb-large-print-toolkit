@@ -1,4 +1,13 @@
 services:
+  redis:
+    image: redis:7-alpine
+    command: redis-server --maxmemory 64mb --maxmemory-policy allkeys-lru --save ""
+    expose:
+      - "6379"
+    volumes:
+      - redis-data:/data
+    restart: unless-stopped
+
   pipeline:
     image: daisyorg/pipeline:1.15.4
     environment:
@@ -30,6 +39,8 @@ services:
     environment:
       - FLASK_DEBUG=0
       - PIPELINE_URL=http://pipeline:8181/ws
+      - CELERY_BROKER_URL=${CELERY_BROKER_URL:-redis://redis:6379/0}
+      - CELERY_RESULT_BACKEND=${CELERY_RESULT_BACKEND:-redis://redis:6379/0}
       # Set FEEDBACK_PASSWORD to enable /feedback/review?key=<password>
       # - FEEDBACK_PASSWORD=change-me-in-production
       # Postmark email notifications (optional -- email reports to users)
@@ -41,6 +52,8 @@ services:
     depends_on:
       pipeline:
         condition: service_healthy
+      redis:
+        condition: service_started
     restart: unless-stopped
     logging:
       driver: json-file
@@ -57,3 +70,4 @@ services:
 volumes:
   feedback-data:
   speech-models:
+  redis-data:

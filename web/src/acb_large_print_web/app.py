@@ -64,6 +64,13 @@ def create_app(config: dict | None = None) -> Flask:
     # Logging
     _configure_logging(app)
 
+    # Optional queue wiring (Celery runs in eager mode when broker is unset).
+    try:
+        from .tasks import make_celery as _make_celery
+        _make_celery(app)
+    except Exception:
+        app.logger.exception("Failed to initialize Celery queue wiring")
+
     # Request timing (set before each request so after_request can compute duration)
     import time as _time
 
@@ -385,6 +392,7 @@ def create_app(config: dict | None = None) -> Flask:
     from .routes.site_audit import site_audit_bp
     from .routes.ai_usage import ai_usage_bp
     from .routes.alt_text import alt_text_bp
+    from .routes.jobs import jobs_bp
 
     app.register_blueprint(main_bp)
     app.register_blueprint(consent_bp, url_prefix="/consent")
@@ -417,6 +425,7 @@ def create_app(config: dict | None = None) -> Flask:
     app.register_blueprint(site_audit_bp, url_prefix="/site-audit")
     app.register_blueprint(ai_usage_bp, url_prefix="/ai/usage")
     app.register_blueprint(alt_text_bp, url_prefix="/alt-text")
+    app.register_blueprint(jobs_bp, url_prefix="/job")
 
     # Configure speech engine model directory from instance path
     try:

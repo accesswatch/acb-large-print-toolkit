@@ -6,7 +6,7 @@ Releases are tagged in the [GitHub repository](https://github.com/Community-Acce
 
 ---
 
-## [7.1.0] - 2026-05-13
+## [7.0.0] - 2026-05-13
 
 ### Added
 
@@ -19,7 +19,7 @@ Releases are tagged in the [GitHub repository](https://github.com/Community-Acce
 
 - **Accessibility improvements from main branch**: Contrast review noise fix, ARIA compliance enhancements, heading order corrections, landmark guardrails, and web app color contrast improvements.
 - **Version consistency validation**: Updated `scripts/check-version-consistency.py` to validate VERSION file as authoritative source.
-- **Feature flag defaults expanded**: Added `GLOW_ENABLE_USER_LOGIN` and `GLOW_ENABLE_ADMIN_LOGIN` flags (both disabled for 7.1.0) to support future user and admin authentication modes.
+- **Feature flag defaults expanded**: Added `GLOW_ENABLE_USER_LOGIN` and `GLOW_ENABLE_ADMIN_LOGIN` flags (both disabled for 7.0.0) to support future user and admin authentication modes.
 - **Public documentation link fixes**: Corrected broken internal links in user guide, PRD, and deployment documentation.
 - **Accessibility tracking infrastructure**: Added logging for accessibility scan status and crawl noise detection to support continuous monitoring and trend analysis.
 
@@ -33,6 +33,8 @@ Releases are tagged in the [GitHub repository](https://github.com/Community-Acce
 - **MarkItDown audio conversion choice for short MP3/WAV uploads** in the web Convert and Quick Start flows, so users can pick direct Markdown extraction for short clips while still using BITS Whisperer for larger recordings and broader audio format support.
 - **Alt-Text Helper** at `/alt-text/` for AI-assisted alternative text drafting across standalone image files, Word, PowerPoint, Excel, PDF, and EPUB uploads. Quick Start and audit results can now hand visual-rich files directly into this workflow.
 - **AI request cost preview endpoint** at `/ai/usage/estimate` so Document Chat and AI Playground can show rough token and price estimates before sending.
+- **Async conversion queue for web Convert** with Celery tasks, Redis-backed broker support, and a new /job route family for progress pages, SSE status streams, JSON polling, and secure result downloads.
+- **Job progress accessibility regression tests** in `web/tests/test_jobs_accessibility.py` covering core semantics, missing-job 404 handling, poll responses, and result download behavior.
 
 ### Changed
 
@@ -75,6 +77,7 @@ Releases are tagged in the [GitHub repository](https://github.com/Community-Acce
 - **Server-side AI feature gates** now recognize built-in server-provider paths for alt-text and Whisperer instead of requiring a personal provider session before those features can appear.
 - **Legacy alt-text suggestion endpoint** no longer stops at DOCX media only. It now uses the shared visual extractor so PowerPoint, Excel, PDF, EPUB, and standalone image workflows stay aligned.
 - **Quick Start and Speech Studio routing** no longer advertise document-chat or speech actions for uploaded audio files that are outside those workflows.
+- **Job progress page semantics** now provide clearer live-region and progress labeling (`aria-labelledby`, `aria-describedby`, assertive error alerts, and hidden-state download toggling) to improve screen reader behavior during queue updates.
 
 ---
 
