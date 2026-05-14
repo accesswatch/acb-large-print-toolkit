@@ -6,6 +6,12 @@ Releases are tagged in the [GitHub repository](https://github.com/Community-Acce
 
 ---
 
+
+## [7.1.0] – 2026-05-13
+
+### Accessibility Improvements
+All accessibility, ARIA, and contrast fixes from [Unreleased] are now released in 7.1.0.
+
 ## [Unreleased]
 
 ### Added
