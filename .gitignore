@@ -52,3 +52,24 @@ instance/tool_usage.db
 web/instance/speech_models/
 *.onnx
 *.onnx.json
+
+# Local runtime artifacts and state databases
+instance/*.db
+instance/.cleanup_lock
+instance/.cleanup_lock.tmp
+web/instance/*.db
+web/instance/*.db-shm
+web/instance/*.db-wal
+web/instance/.cleanup_lock
+web/instance/.cleanup_lock.tmp
+web/e2e/instance/*.db
+
+# Local secret material (never commit)
+glow-*-firebase-adminsdk-*.json
+web/instance/firebase-service-account.json
+
+# Local scratch exports/reports
+web/post_findings.json
+
+# Temporary migration and diagnostics workspace
+tmp/**
