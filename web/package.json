@@ -1,7 +1,7 @@
 {
   "name": "glow-web-e2e",
   "private": true,
-  "version": "4.0.0",
+  "version": "7.1.0", // Keep in sync with ../VERSION
   "description": "Playwright regression suite for GLOW web application",
   "scripts": {
     "test:e2e:install": "playwright install",

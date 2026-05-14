@@ -6,6 +6,20 @@ Releases are tagged in the [GitHub repository](https://github.com/Community-Acce
 
 ---
 
+## [7.1.0] - 2026-05-13
+
+### Added
+
+- **Centralized version management**: Created root-level VERSION file as single source of truth; all components (desktop, web, office-addin) now read from it.
+- **Version helper scripts**: Added `desktop/src/acb_large_print/version.py` and `web/src/acb_large_print_web/version.py` for dynamic version reading.
+- **Office Add-in version helper**: Added `office-addin/src/version.ts` for TypeScript component version synchronization.
+- **Increment version script**: New `scripts/increment-version.py` automates version bumping across all products with `--patch`, `--minor`, `--major` modes.
+
+### Fixed
+
+- **Accessibility improvements from main branch**: Contrast review noise fix, ARIA compliance enhancements, heading order corrections, landmark guardrails, and web app color contrast improvements.
+- **Version consistency validation**: Updated `scripts/check-version-consistency.py` to validate VERSION file as authoritative source.
+
 ## [Unreleased]
 
 ### Added
