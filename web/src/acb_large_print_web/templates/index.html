@@ -4,12 +4,18 @@
 {% block heading %}{{ brand_heading_label }}{% endblock %}
 
 {% block content %}
-<p>Check and fix your Office documents for compliance with the <a href="{{ url_for('guidelines.guidelines_page') }}">{{ brand_guidelines_name }}</a> and WCAG 2.2 AA standards -- no installation required. Use the goal-oriented sidebar to jump straight to any tool, or start below. <a href="{{ url_for('changelog.changelog_page') }}">What's new in GLOW 6.0.0 &rarr;</a> AI Playground (Beta), AI Features, and MarkItDown + AI integration are the latest additions.</p>
+<p>Check and fix your Office documents for compliance with the <a href="{{ url_for('guidelines.guidelines_page') }}">{{ brand_guidelines_name }}</a> and WCAG 2.2 AA standards -- no installation required. Use the goal-oriented sidebar to jump straight to any tool, or start below. <a href="{{ url_for('changelog.changelog_page') }}">Release notes &rarr;</a> See the latest 7.1.0 accessibility improvements and 7.0.0 platform foundation updates.</p>
 
 <section class="home-whats-new">
-  <h2 id="home-whats-new-heading">What’s New in GLOW 6.0.0</h2>
-  <p>GLOW 6.0.0 adds a clearer AI setup flow, AI Playground (Beta), per-feature Ollama model selection, and LLM-enhanced MarkItDown support for smarter document extraction.</p>
-  <p><a href="{{ url_for('ai.settings_ai_page') }}">Open AI Features</a> to add your Ollama key, or read the <a href="{{ url_for('guide.guide_page') }}#11-markitdown--ai-integration-smarter-text-extraction">MarkItDown + AI Integration</a> section in the user guide for the latest details.</p>
+  <h2 id="home-whats-new-heading">What's New in GLOW 7.1.0</h2>
+  <p>GLOW 7.1.0 focuses on accessibility improvements: enhanced color contrast, ARIA compliance, heading hierarchy corrections, landmark guardrails, and centralized version management. Authentication UI controls have been added to support future user and admin login modes (currently disabled for public deployments).</p>
+  <p><a href="{{ url_for('guide.guide_page') }}">Open the user guide</a> for the latest accessibility standards and best practices documentation.</p>
+</section>
+
+<section class="home-whats-new">
+  <h2 id="home-whats-new-7-0-0-heading">GLOW 7.0.0 Platform Foundation</h2>
+  <p>GLOW 7.0.0 introduces Firebase Authentication, Neon PostgreSQL integration, SQLAlchemy ORM, Celery + Redis async job queue, and role-based access control (RBAC) -- the foundation for multi-user, multi-tenant deployments. These platform changes enable future user accounts, admin dashboards, and scalable background job processing.</p>
+  <p><a href="{{ url_for('changelog.changelog_page') }}">Read the full 7.0.0 release notes</a> for migration guidance and deployment changes.</p>
 </section>
 
 <!-- Quick Start CTA -->

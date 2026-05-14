@@ -19,6 +19,10 @@ Releases are tagged in the [GitHub repository](https://github.com/Community-Acce
 
 - **Accessibility improvements from main branch**: Contrast review noise fix, ARIA compliance enhancements, heading order corrections, landmark guardrails, and web app color contrast improvements.
 - **Version consistency validation**: Updated `scripts/check-version-consistency.py` to validate VERSION file as authoritative source.
+- **Authentication UI controls**: Sidebar "Create Account" link and login page account-creation prompts are now hidden when user login is disabled (`GLOW_ENABLE_USER_LOGIN = false`), providing a cleaner interface for admin-only or public-read deployments.
+- **Feature flag defaults expanded**: Added `GLOW_ENABLE_USER_LOGIN` and `GLOW_ENABLE_ADMIN_LOGIN` flags (both disabled for 7.1.0) to support future user and admin authentication modes.
+- **Public documentation link fixes**: Corrected broken internal links in user guide, PRD, and deployment documentation.
+- **Accessibility tracking infrastructure**: Added logging for accessibility scan status and crawl noise detection to support continuous monitoring and trend analysis.
 
 ## [Unreleased]
 
