@@ -127,6 +127,7 @@ Releases are tagged in the [GitHub repository](https://github.com/Community-Acce
 ### Added
 - Previous release features documented in archive.
 
+- **Automation consent bypass** for scripted web workflows: requests that send `X-GLOW-Automation-Consent: GLOW` skip the first-visit consent redirect, and deployments can override the default with `GLOW_AUTOMATION_CONSENT_TOKEN`.
 - **AI Playground streaming responses (SSE)** at `/beta/chat/stream` for token-by-token output rendering with automatic fallback to the legacy JSON endpoint when streaming is unavailable.
 - **AI Playground quick controls**: regenerate response, stop generation, in-page model switcher, prompt templates, session quota banner, and conversation export as Markdown.
 - **MarkItDown audio conversion choice for short MP3/WAV uploads** in the web Convert and Quick Start flows, so users can pick direct Markdown extraction for short clips while still using BITS Whisperer for larger recordings and broader audio format support.
@@ -162,6 +163,15 @@ Releases are tagged in the [GitHub repository](https://github.com/Community-Acce
 
 ### Fixed
 
+- **Rules Reference accessibility filters:** Removed a stale duplicate Type filter on `/rules/` that reused `id="filter-type"`, resolving axe `duplicate-id-aria` and `form-field-multiple-labels` findings.
+- **Quick Start contrast review noise:** Replaced gradient upload-hero backgrounds with solid high-contrast surfaces and added explicit foreground colors to file/text inputs and textareas so axe can calculate contrast reliably.
+- **Crawl accessibility cleanup:** Removed the remaining public raw Markdown deployment link, replaced decorative workflow banner glyphs, converted symbolic keyboard labels to text, and normalized code/table/textarea surfaces so automated contrast tools can compute foreground/background colors more reliably.
+- **Documentation contrast review noise:** Hardened documentation table and code-block layout so long content wraps inside its own painted box instead of visually overlapping adjacent cells or partially obscuring code text during axe color-contrast analysis.
+- **Deployment guide code blocks:** Kept generated `<pre><code>` snippets from exposing the inner `code` element as a block-level box, clearing axe color-contrast incomplete checks caused by the scroll container partially covering bash examples.
+- **Public documentation links:** Replaced raw `.md` documentation links in web-facing guide, FAQ, and PRD pages with HTML routes, and added `/deployment/` as the public deployment guide page.
+- **Audit and Template heading order:** Promoted top-level in-content headings on `/audit/` and `/template/` to `h2`, resolving axe `heading-order` findings from same-origin urlCheck crawls.
+- **AI usage meter landmark:** The inactive AI meter now exposes the same complementary landmark semantics as active meter states, resolving axe `region` findings on the consent page.
+- **Web App Color Contrast:** Darkened low-contrast sidebar, breadcrumb, grade, copied-button, and disabled-button colors in `web/src/acb_large_print_web/static/forms.css`; added missing dark-mode overrides for file inputs, upload drop zones, AI panels, action cards, chat turns, and progress panels so core GLOW pages remain readable in dark theme.
 - **Feature Flags CI failures** now pass the web landmark guardrail again after removing redundant `section[aria-labelledby]` markup from the Alt-Text Helper and audit report templates, and the workflow now also triggers when its desktop or config-check dependencies change.
 - **AI Playground character counter** no longer announces every keystroke to screen readers while typing. The counter still updates visually and remains available through the textarea description without repeated live-region interruptions.
 - **AI Playground response cards** now keep model/copy controls after the response text instead of embedding them in the response heading, and assistant message wrappers no longer add extra spoken labels beyond the heading structure.
