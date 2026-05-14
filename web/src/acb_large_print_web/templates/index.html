@@ -4,13 +4,12 @@
 {% block heading %}{{ brand_heading_label }}{% endblock %}
 
 {% block content %}
-<p>Check and fix your Office documents for compliance with the <a href="{{ url_for('guidelines.guidelines_page') }}">{{ brand_guidelines_name }}</a> and WCAG 2.2 AA standards -- no installation required. Use the goal-oriented sidebar to jump straight to any tool, or start below. <a href="{{ url_for('changelog.changelog_page') }}">Release notes &rarr;</a> See the latest 7.1.0 accessibility improvements and 7.0.0 platform foundation updates.</p>
+<p>Check and fix your Office documents for compliance with the <a href="{{ url_for('guidelines.guidelines_page') }}">{{ brand_guidelines_name }}</a> and WCAG 2.2 AA standards -- no installation required. Use the goal-oriented sidebar to jump straight to any tool, or start below. <a href="{{ url_for('changelog.changelog_page') }}">Release notes &rarr;</a> See the latest shipped 7.1.0 improvements on main.</p>
 
 <section class="home-whats-new">
-  <h2 id="home-whats-new-heading">GLOW 7 Major Release</h2>
-  <p><strong>Platform Foundation (7.0.0):</strong> Firebase Authentication, Neon PostgreSQL, SQLAlchemy ORM, Celery + Redis async jobs, and role-based access control enable multi-user, multi-tenant deployments with future user accounts, admin dashboards, and scalable background processing.</p>
-  <p><strong>Accessibility Focus (7.1.0):</strong> Enhanced color contrast, ARIA compliance, heading hierarchy corrections, landmark guardrails, centralized version management, and authentication UI controls (currently disabled for public deployments).</p>
-  <p><a href="{{ url_for('changelog.changelog_page') }}">Read the full GLOW 7 release notes &rarr;</a></p>
+  <h2 id="home-whats-new-heading">What's New in GLOW 7.1.0</h2>
+  <p>GLOW 7.1.0 focuses on accessibility and release operations on the main branch: improved web color contrast, ARIA and heading-order fixes, landmark guardrail hardening, centralized version management, and documentation/deployment link cleanups.</p>
+  <p><a href="{{ url_for('changelog.changelog_page') }}">Read the full 7.1.0 release notes &rarr;</a></p>
 </section>
 
 <!-- Quick Start CTA -->
