@@ -93,6 +93,8 @@
                 var gates = deployment.gates || {};
                 var aa = label(gates.wcag22aa || 'unknown');
                 var aaa = label(gates.wcag22aaa || 'unknown');
+                var rawPhase = String(deployment.phase || '').toLowerCase();
+                var rawState = String(deployment.state || '').toLowerCase();
                 var phase = label(deployment.phase || 'unknown');
                 var state = label(deployment.state || 'unknown');
 
@@ -100,8 +102,20 @@
                     wcagEl.textContent = 'WCAG 2.2 AA gate: ' + aa + ', with selected AAA constellations tracked: ' + aaa + '.';
                 }
                 if (deployEl) {
-                    var detail = deployment.detail ? ' (' + deployment.detail + ')' : '';
-                    deployEl.textContent = 'Deployment: ' + phase + ' [' + state + ']' + detail;
+                    var updated = deployment.updated_at_utc ? ' Last update: ' + deployment.updated_at_utc + '.' : '';
+                    if ((rawPhase === 'none' || rawPhase === '') && (rawState === 'idle' || rawState === '')) {
+                        deployEl.textContent = 'Deployment: standing by. No active rollout right now.' + updated;
+                    } else if (rawState === 'in_progress') {
+                        deployEl.textContent = 'Deployment: in progress at phase ' + phase + '.' + updated;
+                    } else if (rawState === 'completed') {
+                        deployEl.textContent = 'Deployment: completed at phase ' + phase + '.' + updated;
+                    } else if (rawState === 'failed') {
+                        var detail = deployment.detail ? ' Details: ' + deployment.detail + '.' : '';
+                        deployEl.textContent = 'Deployment: failed at phase ' + phase + '.' + detail + updated;
+                    } else {
+                        var fallbackDetail = deployment.detail ? ' Details: ' + deployment.detail + '.' : '';
+                        deployEl.textContent = 'Deployment: phase ' + phase + ' (' + state + ').' + fallbackDetail + updated;
+                    }
                 }
             })
             .catch(function () {

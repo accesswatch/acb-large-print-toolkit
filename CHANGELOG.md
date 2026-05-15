@@ -62,6 +62,7 @@ Releases are tagged in the [GitHub repository](https://github.com/Community-Acce
 - **WCAG gate status wiring in deploy pipeline**: Updated `.github/workflows/deploy.yml` to resolve the `Accessibility Regression Gate` conclusion for the current commit and pass it to remote deployment via `WCAG22AA_GATE` / `WCAG22AAA_GATE` env vars, then updated `scripts/deploy-app.sh` and `scripts/post-deploy-check.sh` to persist these values in `instance/deploy-status.json` for `/health` and footer display.
 - **Footer gate/deploy labels normalized**: Updated `web/src/acb_large_print_web/static/a11y-enhancements.js` to translate raw internal states (for example `not-reported`, `not-configured`, `unknown`) into user-friendly phrases (`awaiting report`, `not configured`, `checking`).
 - **WCAG footer status consolidated into one magical line**: Replaced separate AA/AAA footer rows in `web/src/acb_large_print_web/templates/base.html` with a single sentence and updated `web/src/acb_large_print_web/static/a11y-enhancements.js` to report `WCAG 2.2 AA` status plus tracked `AAA` progress in one combined, reader-friendly phrase.
+- **Deployment footer status now uses plain-language states**: Updated `web/src/acb_large_print_web/static/a11y-enhancements.js` so idle/no-rollout, in-progress, completed, and failed deployment states render as clear human-readable messages (with optional last-update context) instead of terse phase/state placeholders.
 
 ### 7.2.0 (Unreleased)
 
