@@ -71,9 +71,8 @@ admin_bp = Blueprint("admin", __name__)
 _MAGIC_LINK_TTL_MINUTES = int(os.environ.get("ADMIN_MAGIC_LINK_TTL_MINUTES", "20"))
 
 
-@admin_bp.before_request
-def _enforce_admin_login_flag() -> None:
-    """Hide admin auth surfaces when admin login is feature-gated off."""
+def _abort_if_admin_login_disabled() -> None:
+    """Hide only admin authentication entry points when feature-gated off."""
     if not _get_flag("GLOW_ENABLE_ADMIN_LOGIN", False):
         abort(404)
 
@@ -388,6 +387,7 @@ def _decode_jwt_email(id_token: str) -> str:
 
 @admin_bp.route("/login", methods=["GET"])
 def admin_login() -> Any:
+    _abort_if_admin_login_disabled()
     _bootstrap_admins()
     providers = _provider_configs() if email_configured() else []
     local_password_email = _normalize_email(get_bootstrap_admin_email())
@@ -404,6 +404,7 @@ def admin_login() -> Any:
 @admin_bp.route("/login/password", methods=["POST"])
 @limiter.limit("10 per minute")
 def admin_login_password() -> Any:
+    _abort_if_admin_login_disabled()
     _bootstrap_admins()
     email = _normalize_email(request.form.get("email", ""))
     password = request.form.get("password", "")
@@ -471,6 +472,7 @@ def admin_logout() -> Any:
 @admin_bp.route("/request-access", methods=["GET", "POST"])
 @limiter.limit("5 per minute", methods=["POST"])
 def admin_request_access() -> Any:
+    _abort_if_admin_login_disabled()
     _bootstrap_admins()
     if not email_configured():
         return (
@@ -538,6 +540,7 @@ def admin_request_access() -> Any:
 @admin_bp.route("/login/email", methods=["POST"])
 @limiter.limit("5 per minute")
 def admin_login_email() -> Any:
+    _abort_if_admin_login_disabled()
     _bootstrap_admins()
     if not email_configured():
         return render_template("admin_login.html", providers=[], email_enabled=False, error="Email authentication is not available."), 400
@@ -581,6 +584,7 @@ def admin_login_email() -> Any:
 
 @admin_bp.route("/magic-link/consume", methods=["GET"])
 def admin_magic_link_consume() -> Any:
+    _abort_if_admin_login_disabled()
     _bootstrap_admins()
     token = request.args.get("token", "")
     if not token:
@@ -632,6 +636,7 @@ def _oauth_provider_by_key(key: str) -> _ProviderConfig | None:
 
 @admin_bp.route("/oauth/start/<provider_key>", methods=["GET"])
 def admin_oauth_start(provider_key: str) -> Any:
+    _abort_if_admin_login_disabled()
     _bootstrap_admins()
     if not email_configured():
         return redirect(url_for("admin.admin_login"))
@@ -656,6 +661,7 @@ def admin_oauth_start(provider_key: str) -> Any:
 
 @admin_bp.route("/oauth/callback/<provider_key>", methods=["GET"])
 def admin_oauth_callback(provider_key: str) -> Any:
+    _abort_if_admin_login_disabled()
     _bootstrap_admins()
     provider = _oauth_provider_by_key(provider_key)
     if provider is None:
