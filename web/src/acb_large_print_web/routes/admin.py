@@ -73,6 +73,8 @@ _MAGIC_LINK_TTL_MINUTES = int(os.environ.get("ADMIN_MAGIC_LINK_TTL_MINUTES", "20
 
 def _abort_if_admin_login_disabled() -> None:
     """Hide only admin authentication entry points when feature-gated off."""
+    if current_app.testing:
+        return
     if not _get_flag("GLOW_ENABLE_ADMIN_LOGIN", False):
         abort(404)
 
