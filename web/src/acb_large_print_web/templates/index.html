@@ -6,14 +6,14 @@
 
 {% block content %}
 <div class="alert alert-info" style="margin-bottom:1.5em;">
-  <strong>New in 7.2.0:</strong> GLOW now includes a <b>Model Context Protocol (MCP) server API</b> for agent-to-agent integration, automation, and batch workflows. <a href="{{ url_for('about.about_page') }}#mcp-heading">Learn more &rarr;</a> | <a href="https://github.com/Community-Access/glow/tree/main/mcp_server">API docs</a>
+  <strong>New in {{ release_version }}:</strong> GLOW now includes a <b>Model Context Protocol (MCP) server API</b> for agent-to-agent integration, automation, and batch workflows. <a href="{{ url_for('about.about_page') }}#mcp-heading">Learn more &rarr;</a> | <a href="https://github.com/Community-Access/glow/tree/main/mcp_server">API docs</a>
 </div>
-<p>Check and fix your Office documents for compliance with the <a href="{{ url_for('guidelines.guidelines_page') }}">{{ brand_guidelines_name }}</a> and WCAG 2.2 AA standards -- no installation required. Use the goal-oriented sidebar to jump straight to any tool, or start below. <a href="{{ url_for('changelog.changelog_page') }}">Release notes &rarr;</a> See the latest shipped 7.0.0 improvements on main.</p>
+<p>Check and fix your Office documents for compliance with the <a href="{{ url_for('guidelines.guidelines_page') }}">{{ brand_guidelines_name }}</a> and WCAG 2.2 AA standards -- no installation required. Use the goal-oriented sidebar to jump straight to any tool, or start below. <a href="{{ url_for('changelog.changelog_page') }}">Release notes &rarr;</a> See the latest shipped {{ release_version }} improvements on main.</p>
 
 <section class="home-whats-new">
-  <h2 id="home-whats-new-heading">What's New in GLOW 7.0.0</h2>
-  <p>GLOW 7.0.0 focuses on workflow reliability and accessibility on the main branch: async conversion queue support with live job progress tracking (SSE plus poll fallback), safer result download routing, improved web color contrast, ARIA and heading-order fixes, landmark guardrail hardening, and centralized version/deployment documentation cleanup.</p>
-  <p><a href="{{ url_for('changelog.changelog_page') }}">Read the full 7.0.0 release notes &rarr;</a></p>
+  <h2 id="home-whats-new-heading">What's New in GLOW {{ release_version }}</h2>
+  <p>GLOW {{ release_version }} focuses on workflow reliability and accessibility on the main branch: async conversion queue support with live job progress tracking (SSE plus poll fallback), safer result download routing, improved web color contrast, ARIA and heading-order fixes, landmark guardrail hardening, and centralized version/deployment documentation cleanup.</p>
+  <p><a href="{{ url_for('changelog.changelog_page') }}">Read the full {{ release_version }} release notes &rarr;</a></p>
 </section>
 
 <!-- Quick Start CTA -->

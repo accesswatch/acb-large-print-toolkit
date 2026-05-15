@@ -22,6 +22,11 @@ from acb_large_print.stress_profiles import describe_stress_corpus
 from acb_large_print_web.app import create_app
 
 
+def _expected_release_version() -> str:
+    version_file = Path(__file__).resolve().parents[2] / "VERSION"
+    return version_file.read_text(encoding="utf-8").strip()
+
+
 @pytest.fixture()
 def app(tmp_path: Path) -> Flask:
     """Create a test Flask application with a temporary instance folder."""
@@ -125,6 +130,21 @@ class TestPageLoads:
         assert resp.status_code == 200
         assert b"/status" in resp.data
         assert b"Server Status" in resp.data
+
+    def test_home_shows_release_from_version_file(self, client):
+        expected = _expected_release_version().encode()
+        resp = client.get("/")
+        assert resp.status_code == 200
+        assert b"Current release:" in resp.data
+        assert expected in resp.data
+        assert b"What&#39;s New in GLOW " + expected in resp.data
+
+    def test_about_mcp_shows_release_from_version_file(self, client):
+        expected = _expected_release_version().encode()
+        resp = client.get("/about/")
+        assert resp.status_code == 200
+        assert b"GLOW MCP Server API (" in resp.data
+        assert expected in resp.data
 
     def test_anthem_download_route(self, client):
         resp = client.get("/anthem/download")

@@ -120,23 +120,17 @@ def create_app(config: dict | None = None) -> Flask:
     # Make rule metadata available in all templates
     @app.context_processor
     def inject_rules():
-        from importlib.metadata import version as pkg_version
         from .ai_features import get_all_flags as _get_ai_flags
         from .branding import get_branding_context as _get_branding_context
+        from .version import get_version as _get_release_version
 
         try:
-            web_ver = pkg_version("acb-large-print-web")
+            release_ver = _get_release_version()
         except Exception:
-            web_ver = "1.0.0"
-        try:
-            desktop_ver = pkg_version("acb-large-print")
-        except Exception:
-            desktop_ver = "1.0.0"
+            release_ver = "1.0.0"
 
-        if web_ver == desktop_ver:
-            release_ver = web_ver
-        else:
-            release_ver = f"web {web_ver} / desktop {desktop_ver}"
+        web_ver = release_ver
+        desktop_ver = release_ver
         ctx = {
             "rules_by_severity": get_rules_by_severity(),
             "rules_by_category": get_rules_by_category(),
