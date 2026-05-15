@@ -16,6 +16,7 @@ on:
 
 permissions:
   contents: read
+  actions: read
 
 concurrency:
   group: deploy-production
@@ -73,15 +74,47 @@ jobs:
     runs-on: ubuntu-latest
     environment: production # requires GitHub environment approval (optional)
     steps:
+      - name: Resolve WCAG gate status
+        id: wcag_gate
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          line="$(gh api "repos/$REPO/actions/runs?head_sha=$SHA&event=push&per_page=100" --jq '.workflow_runs[] | select(.name=="Accessibility Regression Gate") | [.status,.conclusion] | @tsv' | head -n1 || true)"
+
+          aa_status="not-reported"
+          if [[ -n "$line" ]]; then
+            run_status="$(printf '%s' "$line" | cut -f1)"
+            run_conclusion="$(printf '%s' "$line" | cut -f2)"
+            if [[ "$run_status" == "completed" ]]; then
+              if [[ "$run_conclusion" == "success" ]]; then
+                aa_status="passed"
+              else
+                aa_status="failed"
+              fi
+            else
+              aa_status="in-progress"
+            fi
+          fi
+
+          echo "wcag22aa=$aa_status" >> "$GITHUB_OUTPUT"
+          echo "wcag22aaa=not-configured" >> "$GITHUB_OUTPUT"
+
       - name: Deploy via SSH
         id: deploy_ssh
         uses: appleboy/ssh-action@v1
+        env:
+          WCAG22AA_GATE: ${{ steps.wcag_gate.outputs.wcag22aa }}
+          WCAG22AAA_GATE: ${{ steps.wcag_gate.outputs.wcag22aaa }}
         with:
           host: ${{ secrets.DEPLOY_HOST }}
           username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_SSH_KEY }}
           port: 22
           command_timeout: 15m
+          envs: WCAG22AA_GATE,WCAG22AAA_GATE
           script: |
             set -e
             echo "=== Starting deploy at $(date -u) ==="

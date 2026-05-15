@@ -75,6 +75,15 @@
         var deployEl = document.getElementById('footer-deploy-phase');
         if (!aaEl && !aaaEl && !deployEl) return;
 
+        function label(value) {
+            var v = String(value || '').toLowerCase();
+            if (!v || v === 'unknown') return 'checking';
+            if (v === 'not-reported') return 'awaiting report';
+            if (v === 'not-configured') return 'not configured';
+            if (v === 'in_progress') return 'in progress';
+            return String(value);
+        }
+
         fetch('/health', { method: 'GET', credentials: 'same-origin' })
             .then(function (resp) {
                 if (!resp.ok) throw new Error('health http ' + resp.status);
@@ -83,10 +92,10 @@
             .then(function (payload) {
                 var deployment = payload && payload.deployment ? payload.deployment : {};
                 var gates = deployment.gates || {};
-                var aa = String(gates.wcag22aa || 'unknown');
-                var aaa = String(gates.wcag22aaa || 'unknown');
-                var phase = String(deployment.phase || 'unknown');
-                var state = String(deployment.state || 'unknown');
+                var aa = label(gates.wcag22aa || 'unknown');
+                var aaa = label(gates.wcag22aaa || 'unknown');
+                var phase = label(deployment.phase || 'unknown');
+                var state = label(deployment.state || 'unknown');
 
                 if (aaEl) aaEl.textContent = 'WCAG 2.2 AA gate: ' + aa;
                 if (aaaEl) aaaEl.textContent = 'WCAG 2.2 AAA gate: ' + aaa;

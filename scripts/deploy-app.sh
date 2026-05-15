@@ -61,6 +61,8 @@ CLEANUP_IMAGE_PRUNE="${CLEANUP_IMAGE_PRUNE:-1}"
 CLEANUP_BUILDER_PRUNE="${CLEANUP_BUILDER_PRUNE:-0}"
 CLEANUP_BUILDER_KEEP_STORAGE="${CLEANUP_BUILDER_KEEP_STORAGE:-4GB}"
 DEPLOY_STATUS_FILE="${DEPLOY_STATUS_FILE:-$APP_ROOT/instance/deploy-status.json}"
+WCAG22AA_GATE="${WCAG22AA_GATE:-not-reported}"
+WCAG22AAA_GATE="${WCAG22AAA_GATE:-not-configured}"
 
 
 PRE_DEPLOY_COMMIT=""
@@ -72,7 +74,7 @@ set_deploy_status() {
     local state="$2"
     local detail="${3:-}"
     mkdir -p "$(dirname "$DEPLOY_STATUS_FILE")"
-    python3 - "$DEPLOY_STATUS_FILE" "$phase" "$state" "$detail" <<'PYEOF' || true
+    python3 - "$DEPLOY_STATUS_FILE" "$phase" "$state" "$detail" "$WCAG22AA_GATE" "$WCAG22AAA_GATE" <<'PYEOF' || true
 import json
 import sys
 from datetime import datetime, timezone
@@ -82,6 +84,8 @@ path = Path(sys.argv[1])
 phase = sys.argv[2]
 state = sys.argv[3]
 detail = sys.argv[4]
+aa_default = sys.argv[5]
+aaa_default = sys.argv[6]
 
 payload = {}
 if path.exists():
@@ -97,8 +101,8 @@ payload.update({
     "detail": detail,
     "updated_at_utc": datetime.now(timezone.utc).isoformat(),
     "gates": {
-        "wcag22aa": str(gates.get("wcag22aa", "unknown")),
-        "wcag22aaa": str(gates.get("wcag22aaa", "unknown")),
+        "wcag22aa": str(gates.get("wcag22aa", aa_default)),
+        "wcag22aaa": str(gates.get("wcag22aaa", aaa_default)),
     },
 })
 path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
