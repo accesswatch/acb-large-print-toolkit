@@ -32,6 +32,8 @@ CONSENT_COOKIE_MAX_AGE = int(timedelta(days=365).total_seconds())
 AUTOMATION_CONSENT_HEADER = "X-GLOW-Automation-Consent"
 AUTOMATION_CONSENT_DEFAULT_TOKEN = "GLOW"
 AUTOMATION_CONSENT_TOKEN_ENV = "GLOW_AUTOMATION_CONSENT_TOKEN"
+BYPASS_CONSENT_ENV = "GLOW_BYPASS_CONSENT_FOR_AUTOMATION"
+ENABLE_AUTOMATION_BYPASS_ENDPOINT_ENV = "GLOW_ENABLE_AUTOMATION_CONSENT_ENDPOINT"
 
 #: Routes the consent gate never intercepts.  Keep this list minimal.
 CONSENT_EXEMPT_PREFIXES = (
@@ -63,10 +65,38 @@ def has_automation_consent_bypass(req) -> bool:
     return hmac.compare_digest(supplied_token, expected_token)
 
 
+def _expected_automation_token() -> str:
+    return os.environ.get(
+        AUTOMATION_CONSENT_TOKEN_ENV,
+        AUTOMATION_CONSENT_DEFAULT_TOKEN,
+    ).strip()
+
+
+def _is_automation_endpoint_enabled() -> bool:
+    value = os.environ.get(ENABLE_AUTOMATION_BYPASS_ENDPOINT_ENV, "").strip().lower()
+    return value in {"1", "true", "yes", "on"}
+
+
+def _is_valid_automation_token(token: str) -> bool:
+    expected_token = _expected_automation_token()
+    supplied_token = (token or "").strip()
+    if not expected_token or not supplied_token:
+        return False
+    return hmac.compare_digest(supplied_token, expected_token)
+
+
+def has_env_consent_bypass() -> bool:
+    """Return True when consent is globally bypassed for automation contexts."""
+    value = os.environ.get(BYPASS_CONSENT_ENV, "").strip().lower()
+    return value in {"1", "true", "yes", "on"}
+
+
 def consent_required(req) -> bool:
     """Return True if this request should trigger the consent redirect."""
     path = req.path.rstrip("/") or "/"
     if any(path.startswith(prefix) for prefix in CONSENT_EXEMPT_PREFIXES):
+        return False
+    if has_env_consent_bypass():
         return False
     if has_automation_consent_bypass(req):
         return False
@@ -97,6 +127,37 @@ def consent_submit():
             next_url=next_url,
             error="You must agree to the terms before continuing.",
         ), 400
+
+    resp = make_response(redirect(next_url))
+    resp.set_cookie(
+        CONSENT_COOKIE_NAME,
+        "1",
+        max_age=CONSENT_COOKIE_MAX_AGE,
+        httponly=True,
+        samesite="Strict",
+        secure=request.is_secure,
+    )
+    return resp
+
+
+@consent_bp.route("/bypass", methods=["GET"])
+def consent_automation_bypass():
+    """Set consent cookie for automation-driven browser inspection flows.
+
+    Guardrails:
+    - Disabled by default (requires GLOW_ENABLE_AUTOMATION_CONSENT_ENDPOINT=1)
+    - Requires valid token (query param ``token`` or header)
+    """
+    if not _is_automation_endpoint_enabled():
+        return "Not found", 404
+
+    supplied_token = request.args.get("token") or request.headers.get(AUTOMATION_CONSENT_HEADER, "")
+    if not _is_valid_automation_token(supplied_token):
+        return "Forbidden", 403
+
+    next_url = request.args.get("next") or url_for("main.index")
+    if next_url.startswith(("http://", "https://", "//")):
+        next_url = url_for("main.index")
 
     resp = make_response(redirect(next_url))
     resp.set_cookie(

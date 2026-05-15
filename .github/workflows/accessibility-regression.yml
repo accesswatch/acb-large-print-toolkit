@@ -14,6 +14,8 @@ on:
       - ".github/workflows/accessibility-regression.yml"
       - "scripts/pre-commit-check.py"
       - ".githooks/pre-commit"
+  schedule:
+    - cron: "0 9 * * 1"
 
 permissions:
   contents: read
@@ -26,6 +28,10 @@ jobs:
     env:
       E2E_PORT: "5100"
       E2E_BASE_URL: "http://127.0.0.1:5100"
+      E2E_AXE_FAIL_INCOMPLETE: "1"
+      GLOW_BYPASS_CONSENT_FOR_AUTOMATION: "1"
+      GLOW_ENABLE_AUTOMATION_CONSENT_ENDPOINT: "1"
+      GLOW_AUTOMATION_CONSENT_TOKEN: "GLOW"
       GLOW_ENABLE_AI: "false"
       GLOW_ENABLE_AI_GENERAL_CHAT: "false"
       GLOW_ENABLE_AI_CHAT: "false"
@@ -75,6 +81,17 @@ jobs:
         env:
           E2E_PORT: "5100"
           E2E_BASE_URL: "http://127.0.0.1:5100"
+          E2E_AXE_FAIL_INCOMPLETE: "1"
+
+      - name: Run weekly strict full axe-core audit
+        if: github.event_name == 'schedule'
+        working-directory: web
+        run: npm run test:axe:strict
+        env:
+          E2E_PORT: "5100"
+          E2E_BASE_URL: "http://127.0.0.1:5100"
+          E2E_AXE_STRICT: "1"
+          E2E_AXE_FAIL_INCOMPLETE: "1"
 
       - name: Run axe CLI scan and emit SARIF
         if: always()
@@ -82,7 +99,7 @@ jobs:
         run: |
           set -uo pipefail
           mkdir -p web/e2e/artifacts
-          python -m flask --app acb_large_print_web.app:create_app run --no-debugger --no-reload --port 5100 > web/e2e/artifacts/flask.log 2>&1 &
+          GLOW_BYPASS_CONSENT_FOR_AUTOMATION=1 GLOW_ENABLE_AUTOMATION_CONSENT_ENDPOINT=1 GLOW_AUTOMATION_CONSENT_TOKEN=GLOW python -m flask --app acb_large_print_web.app:create_app run --no-debugger --no-reload --port 5100 > web/e2e/artifacts/flask.log 2>&1 &
           FLASK_PID=$!
 
           ready=0

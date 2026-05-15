@@ -27,13 +27,21 @@ import { AxeBuilder } from '@axe-core/playwright';
 
 const ARTIFACTS_DIR = path.resolve('e2e/artifacts');
 
-const AXE_TAGS = [
+const DEFAULT_AXE_TAGS = [
   'wcag2a',
   'wcag2aa',
   'wcag21a',
   'wcag21aa',
   'wcag22aa',
 ];
+
+const AXE_TAGS = (process.env.E2E_AXE_TAGS || DEFAULT_AXE_TAGS.join(','))
+  .split(',')
+  .map((entry) => entry.trim())
+  .filter(Boolean);
+
+const AXE_STRICT = process.env.E2E_AXE_STRICT === '1';
+const AXE_FAIL_INCOMPLETE = process.env.E2E_AXE_FAIL_INCOMPLETE === '1';
 
 /**
  * Grant consent once for the given page so subsequent navigations within the
@@ -64,15 +72,26 @@ async function auditPage(page, url) {
   await ensureConsent(page);
   // Wait for the page to settle (no pending network requests, no animation)
   await page.waitForLoadState('networkidle');
+  const resolvedPath = new URL(page.url()).pathname;
 
-  const results = await new AxeBuilder({ page })
-    .withTags(AXE_TAGS)
-    // Disable rules that generate false positives in a dev/CI environment
-    // with no real document content loaded.
-    .disableRules([
-      'color-contrast', // CSS variables not resolved the same way in headless Chromium
-    ])
-    .analyze();
+  let builder = new AxeBuilder({ page }).withTags(AXE_TAGS);
+
+  // Exclude hidden script/template stubs that can pollute rule matching.
+  // Also exclude the diagnostic raw JSON blob on /status where axe can
+  // intermittently report a color-contrast incomplete false positive.
+  const excludeSelector = resolvedPath === '/status/'
+    ? 'script, template, [hidden], #status-raw-json'
+    : 'script, template, [hidden]';
+  builder = builder.exclude(excludeSelector);
+
+  if (!AXE_STRICT) {
+    // Non-strict mode keeps the historical compatibility profile.
+    builder = builder.disableRules([
+      'color-contrast',
+    ]);
+  }
+
+  const results = await builder.analyze();
 
   return {
     url: page.url(),
@@ -108,6 +127,15 @@ const STATIC_PAGES = [
   { label: 'status',        path: '/status/' },
 ];
 
+const AXE_PATH_FILTER = (process.env.E2E_AXE_PATHS || '')
+  .split(',')
+  .map((entry) => entry.trim())
+  .filter(Boolean);
+
+const ACTIVE_PAGES = AXE_PATH_FILTER.length
+  ? STATIC_PAGES.filter((page) => AXE_PATH_FILTER.includes(page.path))
+  : STATIC_PAGES;
+
 // ---------------------------------------------------------------------------
 // Accumulated results — written to artifact after all tests complete
 // ---------------------------------------------------------------------------
@@ -135,6 +163,17 @@ test.afterAll(async () => {
     console.error('\n=== AXE: BLOCKING violations (critical/serious) ===\n' + blocking.join('\n'));
   }
   if (advisory.length) {
+      if (AXE_FAIL_INCOMPLETE) {
+        const incompleteBlocking = allPageResults.flatMap((r) =>
+          r.incomplete
+            .filter((v) => ['critical', 'serious'].includes((v.impact || '').toLowerCase()))
+            .map((v) => `  [${v.impact}] ${v.id} (${v.nodes.length} node${v.nodes.length === 1 ? '' : 's'}) on ${r.url}`)
+        );
+        if (incompleteBlocking.length) {
+          console.error('\n=== AXE: BLOCKING incomplete checks (strict mode) ===\n' + incompleteBlocking.join('\n'));
+        }
+      }
+
     console.warn('\n=== AXE: Advisory violations (moderate/minor) ===\n' + advisory.join('\n'));
   }
   if (!blocking.length && !advisory.length) {
@@ -168,7 +207,7 @@ test.describe('GLOW axe-core WCAG 2.2 AA audit', () => {
     await sharedPage?.context().close();
   });
 
-  for (const { label, path: pagePath } of STATIC_PAGES) {
+  for (const { label, path: pagePath } of ACTIVE_PAGES) {
     test(`${label} — no critical/serious axe violations`, async () => {
       const result = await auditPage(sharedPage, pagePath);
       allPageResults.push(result);
@@ -177,16 +216,27 @@ test.describe('GLOW axe-core WCAG 2.2 AA audit', () => {
         ['critical', 'serious'].includes(v.impact)
       );
 
-      if (blocking.length) {
+      const incompleteBlocking = AXE_FAIL_INCOMPLETE
+        ? result.incomplete.filter((v) => ['critical', 'serious'].includes((v.impact || '').toLowerCase()))
+        : [];
+
+      if (blocking.length || incompleteBlocking.length) {
         const details = blocking.map((v) => {
           const nodeDetails = v.nodes.slice(0, 3).map((n) =>
             `    selector: ${(n.target || []).join(' > ')}\n    html: ${n.html?.slice(0, 120)}`
           ).join('\n');
           return `[${v.impact}] ${v.id}: ${v.help}\n  ${v.helpUrl}\n${nodeDetails}`;
         });
+        const incompleteDetails = incompleteBlocking.map((v) => {
+          const nodeDetails = (v.nodes || []).slice(0, 5).map((n) =>
+            `    selector: ${(n.target || []).join(' > ')}\n    html: ${n.html?.slice(0, 200)}`
+          ).join('\n');
+          return `[${v.impact || 'incomplete'}] ${v.id}: ${v.help}\n  ${v.helpUrl}\n${nodeDetails}`;
+        });
+
         throw new Error(
-          `${blocking.length} blocking axe violation(s) on ${pagePath}:\n\n` +
-          details.join('\n\n')
+          `${blocking.length} blocking axe violation(s) and ${incompleteBlocking.length} strict incomplete check(s) on ${pagePath}:\n\n` +
+          [...details, ...incompleteDetails].join('\n\n')
         );
       }
 
@@ -214,10 +264,9 @@ test.describe('GLOW axe-core — interactive states', () => {
     await ensureConsent(page);
     await page.waitForLoadState('networkidle');
 
-    const result = await new AxeBuilder({ page })
-      .withTags(AXE_TAGS)
-      .disableRules(['color-contrast'])
-      .analyze();
+    let builder = new AxeBuilder({ page }).withTags(AXE_TAGS);
+    if (!AXE_STRICT) builder = builder.disableRules(['color-contrast']);
+    const result = await builder.analyze();
 
     const blocking = result.violations.filter((v) =>
       ['critical', 'serious'].includes(v.impact)
@@ -230,10 +279,9 @@ test.describe('GLOW axe-core — interactive states', () => {
     await ensureConsent(page);
     await page.waitForLoadState('networkidle');
 
-    const result = await new AxeBuilder({ page })
-      .withTags(AXE_TAGS)
-      .disableRules(['color-contrast'])
-      .analyze();
+    let builder = new AxeBuilder({ page }).withTags(AXE_TAGS);
+    if (!AXE_STRICT) builder = builder.disableRules(['color-contrast']);
+    const result = await builder.analyze();
 
     const blocking = result.violations.filter((v) =>
       ['critical', 'serious'].includes(v.impact)
@@ -255,10 +303,9 @@ test.describe('GLOW axe-core — interactive states', () => {
     }
     await page.waitForLoadState('networkidle');
 
-    const result = await new AxeBuilder({ page })
-      .withTags(AXE_TAGS)
-      .disableRules(['color-contrast'])
-      .analyze();
+    let builder = new AxeBuilder({ page }).withTags(AXE_TAGS);
+    if (!AXE_STRICT) builder = builder.disableRules(['color-contrast']);
+    const result = await builder.analyze();
 
     const blocking = result.violations.filter((v) =>
       ['critical', 'serious'].includes(v.impact)
@@ -276,10 +323,9 @@ test.describe('GLOW axe-core — interactive states', () => {
     await ensureConsent(page);
     await page.waitForLoadState('networkidle');
 
-    const result = await new AxeBuilder({ page })
-      .withTags(AXE_TAGS)
-      .disableRules(['color-contrast'])
-      .analyze();
+    let builder = new AxeBuilder({ page }).withTags(AXE_TAGS);
+    if (!AXE_STRICT) builder = builder.disableRules(['color-contrast']);
+    const result = await builder.analyze();
 
     const blocking = result.violations.filter((v) =>
       ['critical', 'serious'].includes(v.impact)
@@ -299,10 +345,9 @@ test.describe('GLOW axe-core — interactive states', () => {
     await ensureConsent(page);
     await page.waitForLoadState('networkidle');
 
-    const result = await new AxeBuilder({ page })
-      .withTags(AXE_TAGS)
-      .disableRules(['color-contrast'])
-      .analyze();
+    let builder = new AxeBuilder({ page }).withTags(AXE_TAGS);
+    if (!AXE_STRICT) builder = builder.disableRules(['color-contrast']);
+    const result = await builder.analyze();
 
     const blocking = result.violations.filter((v) =>
       ['critical', 'serious'].includes(v.impact)
