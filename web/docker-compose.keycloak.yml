@@ -20,8 +20,14 @@ services:
       - "8080:8080"
     volumes:
       - keycloak-data:/opt/keycloak/data
-      - ./keycloak:/opt/keycloak/data/import:ro
+      - ./keycloak/import:/opt/keycloak/data/import:ro
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8080/auth/health/ready >/dev/null"]
+      interval: 20s
+      timeout: 5s
+      retries: 20
+      start_period: 60s
 
 volumes:
   keycloak-data:

@@ -728,7 +728,7 @@ The `.env` file contains secrets and configuration that the Flask application re
 
 If the server does not already have `web/.env`, `scripts/deploy-app.sh` now seeds it from `web/.env.example` and generates fresh values for `SECRET_KEY`, `KEYCLOAK_CLIENT_SECRET`, and `KEYCLOAK_ADMIN_PASSWORD` so the stack can start cleanly instead of failing at compose time. Review the generated file before enabling optional features such as feedback-to-GitHub sync or OpenRouter-backed AI features.
 
-Keycloak now runs as part of the production Compose stack at `https://lp.csedesigns.com/auth`. The deploy script also renders `web/keycloak/glow-realm.json` from `web/keycloak/realm.template.json` so the realm and OIDC client are imported automatically on startup.
+Keycloak now runs as part of the production Compose stack at `https://lp.csedesigns.com/auth`. The deploy script renders `web/keycloak/import/glow-realm.json` from `web/keycloak/realm.template.json`, and Compose mounts the entire generated import directory so stale template files in the persistent volume are never imported.
 
 Keycloak/OIDC login is configured through `KEYCLOAK_HOSTNAME`, `KEYCLOAK_BASE_URL`, `KEYCLOAK_REALM`, `KEYCLOAK_CLIENT_ID`, `KEYCLOAK_CLIENT_SECRET`, `KEYCLOAK_REDIRECT_URI`, and `KEYCLOAK_ADMIN_PASSWORD`. Those values are used by the web app and Keycloak container at startup.
 
