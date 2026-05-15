@@ -67,6 +67,25 @@ services:
       retries: 3
       start_period: 10s
 
+  keycloak:
+    image: jboss/keycloak:latest
+    environment:
+      KEYCLOAK_ADMIN_PASSWORD: "change-me-in-production"
+    expose:
+      - "8080"
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "5m"
+        max-file: "2"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/realms/master"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
 volumes:
   feedback-data:
   speech-models:

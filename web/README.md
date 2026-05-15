@@ -229,3 +229,12 @@ Useful switches:
 | Feedback storage | SQLite (WAL mode) |
 | Container | Docker + Compose |
 | Reverse proxy | Caddy 2.x (production) |
+
+# --- OIDC/Keycloak Integration ---
+# Flask-OIDC is included in requirements.txt for Google/Keycloak login.
+# The Dockerfile and docker-compose.keycloak.yml support local Keycloak for dev/testing.
+#
+# For production, use a managed Keycloak or secure your own instance with a persistent DB and HTTPS.
+#
+# See docs/AUTH-KEYCLOAK-GUIDED-SETUP.md for full setup and onboarding instructions.
+# ---

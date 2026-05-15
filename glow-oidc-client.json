@@ -1,0 +1,14 @@
+{
+  "client_id": "glow-app",
+  "client_secret": "<REPLACE_WITH_SECRET_FROM_KEYCLOAK>",
+  "issuer": "https://glow.bits-acb.org/auth/realms/glow",
+  "redirect_uris": [
+    "https://glow.bits-acb.org/oidc/callback",
+    "https://glow.bits-acb.org/login/callback"
+  ],
+  "post_logout_redirect_uris": [
+    "https://glow.bits-acb.org/"
+  ],
+  "scopes": ["openid", "email", "profile"],
+  "auth_methods": ["google", "github"]
+}

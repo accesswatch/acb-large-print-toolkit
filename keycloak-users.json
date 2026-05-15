@@ -1,0 +1,26 @@
+[
+  {
+    "email": "jeff.bishop@bits-acb.org",
+    "username": "jeff.bishop@bits-acb.org",
+    "roles": ["admin"],
+    "provider": "google"
+  },
+  {
+    "email": "jeff.bishop@bitsusers.org",
+    "username": "jeff.bishop@bitsusers.org",
+    "roles": ["user"],
+    "provider": "google"
+  },
+  {
+    "email": "jeff@jeffbishop.com",
+    "username": "accesswatch",
+    "roles": ["admin"],
+    "provider": "github"
+  },
+  {
+    "email": "jeff.bishop@outlook.com",
+    "username": "access-watch-student",
+    "roles": ["user"],
+    "provider": "github"
+  }
+]

@@ -1,0 +1,32 @@
+# Keycloak Docker Compose Service for GLOW
+
+# This file adds a Keycloak service to your GLOW docker-compose setup for local/dev use.
+# For production, use a secure, persistent database and enable HTTPS.
+
+version: '3.8'
+
+services:
+  keycloak:
+    image: quay.io/keycloak/keycloak:24.0.3
+    command: start-dev
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+      KC_DB: dev-mem
+      # For production, use KC_DB=postgres and configure DB env vars
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080"]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+# To use:
+# 1. docker-compose -f docker-compose.keycloak.yml up -d
+# 2. Visit http://localhost:8080/ (admin/admin)
+# 3. Configure realms, clients, and IdPs as in the guided setup.
+#
+# For production, see Keycloak docs for DB, HTTPS, and backup config.

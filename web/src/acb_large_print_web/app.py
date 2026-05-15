@@ -850,6 +850,22 @@ def create_app(config: dict | None = None) -> Flask:
         except Exception:
             pass  # Never crash a user request due to cleanup failure
 
+    # --- OIDC Authentication Integration ---
+    try:
+        from flask_oidc import OpenIDConnect
+        from .oidc_auth import oidc_auth_bp
+        app.config.setdefault('OIDC_CLIENT_SECRETS', os.path.join(os.path.dirname(__file__), 'client_secrets.json'))
+        app.config.setdefault('OIDC_RESOURCE_SERVER_ONLY', False)
+        app.config.setdefault('OIDC_SCOPES', ['openid', 'email', 'profile'])
+        oidc = OpenIDConnect(app)
+        app.register_blueprint(oidc_auth_bp)
+        app.logger.info("OIDC authentication enabled (Keycloak + Google login)")
+    except ImportError:
+        app.logger.warning("Flask-OIDC not installed; OIDC authentication is disabled.")
+    except Exception as exc:
+        app.logger.error(f"OIDC authentication setup failed: {exc}")
+    # --- End OIDC Integration ---
+
     return app
 
 
