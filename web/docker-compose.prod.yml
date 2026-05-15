@@ -52,6 +52,37 @@ services:
       retries: 10
       start_period: 60s
 
+  keycloak:
+    image: quay.io/keycloak/keycloak:24.0.3
+    command:
+      [
+        "start-dev",
+        "--http-relative-path=/auth",
+        "--import-realm",
+      ]
+    environment:
+      KEYCLOAK_ADMIN: "admin"
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-change-me-in-production}
+      KC_DB: "dev-file"
+      KC_HTTP_ENABLED: "true"
+      KC_HTTP_RELATIVE_PATH: "/auth"
+      KC_HOSTNAME: ${KEYCLOAK_HOSTNAME:-lp.csedesigns.com}
+      KC_HOSTNAME_STRICT: "false"
+      KC_PROXY_HEADERS: "xforwarded"
+      KC_HEALTH_ENABLED: "true"
+    expose:
+      - "8080"
+    volumes:
+      - keycloak-data:/opt/keycloak/data
+      - ./keycloak:/opt/keycloak/data/import:ro
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "20m"
+        max-file: "5"
+        tag: "glow-keycloak/{{.Name}}"
+
   web:
     build:
       context: ..
@@ -93,6 +124,8 @@ services:
       pipeline:
         condition: service_healthy
       redis:
+        condition: service_started
+      keycloak:
         condition: service_started
     restart: unless-stopped
     logging:
@@ -173,6 +206,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_started
+      keycloak:
+        condition: service_started
     restart: unless-stopped
     logging:
       driver: json-file
@@ -187,3 +222,4 @@ volumes:
   redis-data:
   caddy_data:
   caddy_config:
+  keycloak-data:

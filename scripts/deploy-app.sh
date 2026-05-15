@@ -304,6 +304,58 @@ log_ts "Compose file: $COMPOSE_FILE"
 log_ts "Domain:       $APP_DOMAIN"
 echo ""
 
+read_env_value() {
+    local file="$1"
+    local key="$2"
+    python3 - "$file" "$key" <<'PYEOF'
+from pathlib import Path
+import sys
+
+path = Path(sys.argv[1])
+key = sys.argv[2]
+if not path.exists():
+    print("")
+    raise SystemExit(0)
+for line in path.read_text(encoding="utf-8", errors="ignore").splitlines():
+    if line.startswith(key + "="):
+        print(line.split("=", 1)[1].strip())
+        break
+else:
+    print("")
+PYEOF
+}
+
+upsert_env_value() {
+    local file="$1"
+    local key="$2"
+    local value="$3"
+    python3 - "$file" "$key" "$value" <<'PYEOF'
+from pathlib import Path
+import sys
+
+path = Path(sys.argv[1])
+key = sys.argv[2]
+value = sys.argv[3]
+lines = []
+if path.exists():
+    lines = path.read_text(encoding="utf-8", errors="ignore").splitlines()
+
+updated = False
+for idx, line in enumerate(lines):
+    if line.startswith(key + "="):
+        lines[idx] = f"{key}={value}"
+        updated = True
+        break
+
+if not updated:
+    if lines and lines[-1] != "":
+        lines.append("")
+    lines.append(f"{key}={value}")
+
+path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+PYEOF
+}
+
 # Check required files
 MISSING=0
 for F in "$WEB_ROOT/$COMPOSE_FILE" "$WEB_ROOT/Caddyfile" "$WEB_ROOT/Dockerfile"; do
@@ -342,6 +394,83 @@ PYEOF
     fi
 else
     log_ts "OK: $WEB_ROOT/.env exists"
+fi
+
+KEYCLOAK_BASE_URL_VALUE="$(read_env_value "$WEB_ROOT/.env" "KEYCLOAK_BASE_URL")"
+if [[ -z "$KEYCLOAK_BASE_URL_VALUE" || "$KEYCLOAK_BASE_URL_VALUE" == "PASTE_GENERATED_KEY_HERE" ]]; then
+    KEYCLOAK_BASE_URL_VALUE="https://${APP_DOMAIN}/auth"
+fi
+KEYCLOAK_REALM_VALUE="$(read_env_value "$WEB_ROOT/.env" "KEYCLOAK_REALM")"
+if [[ -z "$KEYCLOAK_REALM_VALUE" || "$KEYCLOAK_REALM_VALUE" == "PASTE_GENERATED_KEY_HERE" ]]; then
+    KEYCLOAK_REALM_VALUE="glow"
+fi
+KEYCLOAK_CLIENT_ID_VALUE="$(read_env_value "$WEB_ROOT/.env" "KEYCLOAK_CLIENT_ID")"
+if [[ -z "$KEYCLOAK_CLIENT_ID_VALUE" || "$KEYCLOAK_CLIENT_ID_VALUE" == "PASTE_GENERATED_KEY_HERE" ]]; then
+    KEYCLOAK_CLIENT_ID_VALUE="glow-web"
+fi
+KEYCLOAK_REDIRECT_URI_VALUE="$(read_env_value "$WEB_ROOT/.env" "KEYCLOAK_REDIRECT_URI")"
+if [[ -z "$KEYCLOAK_REDIRECT_URI_VALUE" || "$KEYCLOAK_REDIRECT_URI_VALUE" == "PASTE_GENERATED_KEY_HERE" ]]; then
+    KEYCLOAK_REDIRECT_URI_VALUE="https://${APP_DOMAIN}/authorize"
+fi
+KEYCLOAK_HOSTNAME_VALUE="$(read_env_value "$WEB_ROOT/.env" "KEYCLOAK_HOSTNAME")"
+if [[ -z "$KEYCLOAK_HOSTNAME_VALUE" || "$KEYCLOAK_HOSTNAME_VALUE" == "PASTE_GENERATED_KEY_HERE" ]]; then
+    KEYCLOAK_HOSTNAME_VALUE="$APP_DOMAIN"
+fi
+KEYCLOAK_CLIENT_SECRET_VALUE="$(read_env_value "$WEB_ROOT/.env" "KEYCLOAK_CLIENT_SECRET")"
+if [[ -z "$KEYCLOAK_CLIENT_SECRET_VALUE" || "$KEYCLOAK_CLIENT_SECRET_VALUE" == "PASTE_GENERATED_KEY_HERE" ]]; then
+    KEYCLOAK_CLIENT_SECRET_VALUE="$(python3 - <<'PY'
+import secrets
+print(secrets.token_hex(32))
+PY
+)"
+    upsert_env_value "$WEB_ROOT/.env" "KEYCLOAK_CLIENT_SECRET" "$KEYCLOAK_CLIENT_SECRET_VALUE"
+fi
+KEYCLOAK_ADMIN_PASSWORD_VALUE="$(read_env_value "$WEB_ROOT/.env" "KEYCLOAK_ADMIN_PASSWORD")"
+if [[ -z "$KEYCLOAK_ADMIN_PASSWORD_VALUE" || "$KEYCLOAK_ADMIN_PASSWORD_VALUE" == "PASTE_GENERATED_KEY_HERE" ]]; then
+    KEYCLOAK_ADMIN_PASSWORD_VALUE="$(python3 - <<'PY'
+import secrets
+print(secrets.token_hex(32))
+PY
+)"
+    upsert_env_value "$WEB_ROOT/.env" "KEYCLOAK_ADMIN_PASSWORD" "$KEYCLOAK_ADMIN_PASSWORD_VALUE"
+fi
+upsert_env_value "$WEB_ROOT/.env" "KEYCLOAK_BASE_URL" "$KEYCLOAK_BASE_URL_VALUE"
+upsert_env_value "$WEB_ROOT/.env" "KEYCLOAK_REALM" "$KEYCLOAK_REALM_VALUE"
+upsert_env_value "$WEB_ROOT/.env" "KEYCLOAK_CLIENT_ID" "$KEYCLOAK_CLIENT_ID_VALUE"
+upsert_env_value "$WEB_ROOT/.env" "KEYCLOAK_REDIRECT_URI" "$KEYCLOAK_REDIRECT_URI_VALUE"
+upsert_env_value "$WEB_ROOT/.env" "KEYCLOAK_HOSTNAME" "$KEYCLOAK_HOSTNAME_VALUE"
+upsert_env_value "$WEB_ROOT/.env" "OIDC_SCOPES" "openid email profile"
+
+KEYCLOAK_IMPORT_DIR="$WEB_ROOT/keycloak"
+KEYCLOAK_TEMPLATE="$KEYCLOAK_IMPORT_DIR/realm.template.json"
+KEYCLOAK_REALM_FILE="$KEYCLOAK_IMPORT_DIR/glow-realm.json"
+if [[ -f "$KEYCLOAK_TEMPLATE" ]]; then
+    mkdir -p "$KEYCLOAK_IMPORT_DIR"
+    python3 - "$KEYCLOAK_TEMPLATE" "$KEYCLOAK_REALM_FILE" "$KEYCLOAK_REALM_VALUE" "$KEYCLOAK_CLIENT_ID_VALUE" "$KEYCLOAK_CLIENT_SECRET_VALUE" "$KEYCLOAK_BASE_URL_VALUE" "$KEYCLOAK_REDIRECT_URI_VALUE" <<'PYEOF'
+from pathlib import Path
+import sys
+
+template = Path(sys.argv[1]).read_text(encoding="utf-8")
+output = Path(sys.argv[2])
+realm = sys.argv[3]
+client_id = sys.argv[4]
+client_secret = sys.argv[5]
+base_url = sys.argv[6]
+redirect_uri = sys.argv[7]
+
+rendered = (
+    template.replace("__KEYCLOAK_REALM__", realm)
+    .replace("__KEYCLOAK_CLIENT_ID__", client_id)
+    .replace("__KEYCLOAK_CLIENT_SECRET__", client_secret)
+    .replace("__KEYCLOAK_BASE_URL__", base_url)
+    .replace("__KEYCLOAK_REDIRECT_URI__", redirect_uri)
+)
+output.write_text(rendered, encoding="utf-8")
+PYEOF
+    chmod 600 "$WEB_ROOT/.env"
+    log_ts "Keycloak realm import materialized at $KEYCLOAK_REALM_FILE"
+else
+    log_ts "WARNING: Keycloak realm template missing at $KEYCLOAK_TEMPLATE"
 fi
 
 if [[ ! -d "$APP_ROOT/desktop/src/acb_large_print" ]]; then

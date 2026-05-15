@@ -1,0 +1,36 @@
+{
+  "realm": "glow",
+  "enabled": true,
+  "displayName": "GLOW",
+  "clients": [
+    {
+      "clientId": "__KEYCLOAK_CLIENT_ID__",
+      "name": "GLOW Web",
+      "secret": "__KEYCLOAK_CLIENT_SECRET__",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "rootUrl": "__KEYCLOAK_BASE_URL__",
+      "baseUrl": "/",
+      "redirectUris": [
+        "__KEYCLOAK_REDIRECT_URI__"
+      ],
+      "webOrigins": [
+        "+"
+      ]
+    }
+  ],
+  "roles": {
+    "realm": [
+      {
+        "name": "admin"
+      },
+      {
+        "name": "user"
+      }
+    ]
+  }
+}

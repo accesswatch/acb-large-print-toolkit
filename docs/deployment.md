@@ -726,9 +726,11 @@ You should see `Dockerfile`, `docker-compose.prod.yml`, `pyproject.toml`, and `s
 
 The `.env` file contains secrets and configuration that the Flask application reads at runtime. Docker Compose injects these into the container via the `env_file:` directive in the production compose file.
 
-If the server does not already have `web/.env`, `scripts/deploy-app.sh` now seeds it from `web/.env.example` and generates a fresh `SECRET_KEY` so the container can start cleanly instead of failing at compose time. Review the generated file before enabling optional features such as feedback-to-GitHub sync or OpenRouter-backed AI features.
+If the server does not already have `web/.env`, `scripts/deploy-app.sh` now seeds it from `web/.env.example` and generates fresh values for `SECRET_KEY`, `KEYCLOAK_CLIENT_SECRET`, and `KEYCLOAK_ADMIN_PASSWORD` so the stack can start cleanly instead of failing at compose time. Review the generated file before enabling optional features such as feedback-to-GitHub sync or OpenRouter-backed AI features.
 
-Keycloak/OIDC login is configured separately through `KEYCLOAK_BASE_URL`, `KEYCLOAK_REALM`, `KEYCLOAK_CLIENT_ID`, `KEYCLOAK_CLIENT_SECRET`, and `KEYCLOAK_REDIRECT_URI`. Those values are used by the web app to build its OIDC client config at startup.
+Keycloak now runs as part of the production Compose stack at `https://lp.csedesigns.com/auth`. The deploy script also renders `web/keycloak/glow-realm.json` from `web/keycloak/realm.template.json` so the realm and OIDC client are imported automatically on startup.
+
+Keycloak/OIDC login is configured through `KEYCLOAK_HOSTNAME`, `KEYCLOAK_BASE_URL`, `KEYCLOAK_REALM`, `KEYCLOAK_CLIENT_ID`, `KEYCLOAK_CLIENT_SECRET`, `KEYCLOAK_REDIRECT_URI`, and `KEYCLOAK_ADMIN_PASSWORD`. Those values are used by the web app and Keycloak container at startup.
 
 ```bash
 cd ~/app/web
@@ -748,6 +750,13 @@ OPENROUTER_API_KEY=PASTE_OPENROUTER_KEY_HERE
 ADMIN_LOCAL_EMAIL=jeff@jeffbishop.com
 ADMIN_LOCAL_PASSWORD=CHOOSE_A_STRONG_PASSWORD
 LOG_LEVEL=INFO
+KEYCLOAK_HOSTNAME=lp.csedesigns.com
+KEYCLOAK_BASE_URL=https://lp.csedesigns.com/auth
+KEYCLOAK_REALM=glow
+KEYCLOAK_CLIENT_ID=glow-web
+KEYCLOAK_CLIENT_SECRET=PASTE_GENERATED_KEY_HERE
+KEYCLOAK_REDIRECT_URI=https://lp.csedesigns.com/authorize
+KEYCLOAK_ADMIN_PASSWORD=PASTE_GENERATED_KEY_HERE
 ```
 
 Optional resilience tuning for AI-heavy workloads (recommended for large files and peak traffic):
@@ -800,7 +809,7 @@ docker compose -f docker-compose.prod.yml up -d --build
 curl -s https://glow.bits-acb.org/health
 ```
 
-The JSON should show `services.openrouter.status` as `ok` and, if Whisper is configured, `services.whisper.status` as `ok`.
+The JSON should show `services.openrouter.status` as `ok`, `services.keycloak.status` as `ok`, and, if Whisper is configured, `services.whisper.status` as `ok`.
 
 ### 4.2b Bootstrap the Jeff Bishop admin account
 
@@ -1880,11 +1889,13 @@ These variables are set in `~/app/web/.env` and injected into the container via 
 | `SECRET_KEY` | **Yes** | Random per-start | Flask session and CSRF secret. **Set a fixed value in production** or sessions and CSRF tokens will not survive container restarts. |
 | `FEEDBACK_PASSWORD` | No | (unset) | Set to enable feedback review at `/feedback/review?key=<password>`. When unset, the review endpoint is disabled. |
 | `LOG_LEVEL` | No | `INFO` | Python logging level: DEBUG, INFO, WARNING, ERROR. |
-| `KEYCLOAK_BASE_URL` | No | (unset) | Base URL for the Keycloak server, for example `https://keycloak.example.com`. |
-| `KEYCLOAK_REALM` | No | (unset) | Keycloak realm name used to build the issuer and endpoint URLs. |
-| `KEYCLOAK_CLIENT_ID` | No | (unset) | OIDC client ID registered in Keycloak. |
-| `KEYCLOAK_CLIENT_SECRET` | No | (unset) | OIDC client secret registered in Keycloak. |
-| `KEYCLOAK_REDIRECT_URI` | No | (unset) | Absolute redirect URI registered in Keycloak, usually `https://lp.csedesigns.com/authorize`. |
+| `KEYCLOAK_HOSTNAME` | No | `lp.csedesigns.com` | Hostname used by the Keycloak container when generating URLs. |
+| `KEYCLOAK_BASE_URL` | No | `https://lp.csedesigns.com/auth` | Public Keycloak base URL used by the app health probe and OIDC issuer discovery. |
+| `KEYCLOAK_REALM` | No | `glow` | Keycloak realm name used to build the issuer and endpoint URLs. |
+| `KEYCLOAK_CLIENT_ID` | No | `glow-web` | OIDC client ID registered in Keycloak. |
+| `KEYCLOAK_CLIENT_SECRET` | No | generated | OIDC client secret registered in Keycloak. |
+| `KEYCLOAK_REDIRECT_URI` | No | `https://lp.csedesigns.com/authorize` | Absolute redirect URI registered in Keycloak. |
+| `KEYCLOAK_ADMIN_PASSWORD` | Yes | generated if missing | Keycloak admin password for the bundled container. |
 | `OIDC_SCOPES` | No | `openid email profile` | OIDC scopes requested during login. |
 | `SESSION_TIMEOUT_MINUTES` | No | `240` | Session lifetime in minutes. Increase for very long interactive workflows. |
 | `UPLOAD_MAX_AGE_HOURS` | No | `1` | Retention window for abandoned upload workspaces before cleanup. Active Whisper jobs keep their workspace alive while running. |

@@ -14,8 +14,8 @@ docker run -p 8080:8080 -e KEYCLOAK_ADMIN=admin -e KEYCLOAK_ADMIN_PASSWORD=admin
 - Log in with admin/admin
 
 **For production:**
-- Deploy on a VM, Kubernetes, or use a managed Keycloak provider (see docs).
-- Set strong admin credentials and enable HTTPS.
+- The production GLOW Compose stack now includes a Keycloak service at `https://lp.csedesigns.com/auth`.
+- Set strong admin credentials, keep the generated client secret private, and enable HTTPS.
 
 ---
 
@@ -52,7 +52,7 @@ docker run -p 8080:8080 -e KEYCLOAK_ADMIN=admin -e KEYCLOAK_ADMIN_PASSWORD=admin
 ## 5. Download OIDC Client Secrets for GLOW
 - In Keycloak, go to Clients → `glow-app` → Installation.
 - Download the `client_secrets.json` (format: OIDC JSON).
-- Place this file in `web/src/acb_large_print_web/` in your GLOW repo.
+- The production deploy now generates the needed OIDC settings from `web/.env` and `web/keycloak/realm.template.json`, so this step is only needed for manual setups.
 
 ---
 

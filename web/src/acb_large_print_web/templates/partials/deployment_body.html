@@ -789,8 +789,9 @@ sftp&gt; exit
 <p>You should see <code>Dockerfile</code>, <code>docker-compose.prod.yml</code>, <code>pyproject.toml</code>, and <code>src/</code> in the web directory, and <code>pyproject.toml</code> and <code>src/</code> in the desktop directory.</p>
 <h3 id="42-create-the-production-environment-file-env">4.2 Create the production environment file (.env)</h3>
 <p>The <code>.env</code> file contains secrets and configuration that the Flask application reads at runtime. Docker Compose injects these into the container via the <code>env_file:</code> directive in the production compose file.</p>
-<p>If the server does not already have <code>web/.env</code>, <code>scripts/deploy-app.sh</code> now seeds it from <code>web/.env.example</code> and generates a fresh <code>SECRET_KEY</code> so the container can start cleanly instead of failing at compose time. Review the generated file before enabling optional features such as feedback-to-GitHub sync or OpenRouter-backed AI features.</p>
-<p>Keycloak/OIDC login is configured separately through <code>KEYCLOAK_BASE_URL</code>, <code>KEYCLOAK_REALM</code>, <code>KEYCLOAK_CLIENT_ID</code>, <code>KEYCLOAK_CLIENT_SECRET</code>, and <code>KEYCLOAK_REDIRECT_URI</code>. Those values are used by the web app to build its OIDC client config at startup.</p>
+<p>If the server does not already have <code>web/.env</code>, <code>scripts/deploy-app.sh</code> now seeds it from <code>web/.env.example</code> and generates fresh values for <code>SECRET_KEY</code>, <code>KEYCLOAK_CLIENT_SECRET</code>, and <code>KEYCLOAK_ADMIN_PASSWORD</code> so the stack can start cleanly instead of failing at compose time. Review the generated file before enabling optional features such as feedback-to-GitHub sync or OpenRouter-backed AI features.</p>
+<p>Keycloak now runs as part of the production Compose stack at <code>https://lp.csedesigns.com/auth</code>. The deploy script also renders <code>web/keycloak/glow-realm.json</code> from <code>web/keycloak/realm.template.json</code> so the realm and OIDC client are imported automatically on startup.</p>
+<p>Keycloak/OIDC login is configured through <code>KEYCLOAK_HOSTNAME</code>, <code>KEYCLOAK_BASE_URL</code>, <code>KEYCLOAK_REALM</code>, <code>KEYCLOAK_CLIENT_ID</code>, <code>KEYCLOAK_CLIENT_SECRET</code>, <code>KEYCLOAK_REDIRECT_URI</code>, and <code>KEYCLOAK_ADMIN_PASSWORD</code>. Those values are used by the web app and Keycloak container at startup.</p>
 <pre><code class="language-bash">cd ~/app/web
 nano .env
 </code></pre>
@@ -805,6 +806,13 @@ OPENROUTER_API_KEY=PASTE_OPENROUTER_KEY_HERE
 ADMIN_LOCAL_EMAIL=jeff@jeffbishop.com
 ADMIN_LOCAL_PASSWORD=CHOOSE_A_STRONG_PASSWORD
 LOG_LEVEL=INFO
+KEYCLOAK_HOSTNAME=lp.csedesigns.com
+KEYCLOAK_BASE_URL=https://lp.csedesigns.com/auth
+KEYCLOAK_REALM=glow
+KEYCLOAK_CLIENT_ID=glow-web
+KEYCLOAK_CLIENT_SECRET=PASTE_GENERATED_KEY_HERE
+KEYCLOAK_REDIRECT_URI=https://lp.csedesigns.com/authorize
+KEYCLOAK_ADMIN_PASSWORD=PASTE_GENERATED_KEY_HERE
 </code></pre>
 <p>Optional resilience tuning for AI-heavy workloads (recommended for large files and peak traffic):</p>
 <pre><code>OPENROUTER_MAX_RETRIES=2
@@ -844,7 +852,7 @@ docker compose -f docker-compose.prod.yml up -d --build
 </ol>
 <pre><code class="language-bash">curl -s https://glow.bits-acb.org/health
 </code></pre>
-<p>The JSON should show <code>services.openrouter.status</code> as <code>ok</code> and, if Whisper is configured, <code>services.whisper.status</code> as <code>ok</code>.</p>
+<p>The JSON should show <code>services.openrouter.status</code> as <code>ok</code>, <code>services.keycloak.status</code> as <code>ok</code>, and, if Whisper is configured, <code>services.whisper.status</code> as <code>ok</code>.</p>
 <h3 id="42b-bootstrap-the-jeff-bishop-admin-account">4.2b Bootstrap the Jeff Bishop admin account</h3>
 <p>Set these values in <code>.env</code>:</p>
 <pre><code>ADMIN_LOCAL_EMAIL=jeff@jeffbishop.com
@@ -1816,34 +1824,46 @@ docker compose -f docker-compose.prod.yml ps
 <td>Python logging level: DEBUG, INFO, WARNING, ERROR.</td>
 </tr>
 <tr>
+<td><code>KEYCLOAK_HOSTNAME</code></td>
+<td>No</td>
+<td><code>lp.csedesigns.com</code></td>
+<td>Hostname used by the Keycloak container when generating URLs.</td>
+</tr>
+<tr>
 <td><code>KEYCLOAK_BASE_URL</code></td>
 <td>No</td>
-<td>(unset)</td>
-<td>Base URL for the Keycloak server, for example <code>https://keycloak.example.com</code>.</td>
+<td><code>https://lp.csedesigns.com/auth</code></td>
+<td>Public Keycloak base URL used by the app health probe and OIDC issuer discovery.</td>
 </tr>
 <tr>
 <td><code>KEYCLOAK_REALM</code></td>
 <td>No</td>
-<td>(unset)</td>
+<td><code>glow</code></td>
 <td>Keycloak realm name used to build the issuer and endpoint URLs.</td>
 </tr>
 <tr>
 <td><code>KEYCLOAK_CLIENT_ID</code></td>
 <td>No</td>
-<td>(unset)</td>
+<td><code>glow-web</code></td>
 <td>OIDC client ID registered in Keycloak.</td>
 </tr>
 <tr>
 <td><code>KEYCLOAK_CLIENT_SECRET</code></td>
 <td>No</td>
-<td>(unset)</td>
+<td>generated</td>
 <td>OIDC client secret registered in Keycloak.</td>
 </tr>
 <tr>
 <td><code>KEYCLOAK_REDIRECT_URI</code></td>
 <td>No</td>
-<td>(unset)</td>
-<td>Absolute redirect URI registered in Keycloak, usually <code>https://lp.csedesigns.com/authorize</code>.</td>
+<td><code>https://lp.csedesigns.com/authorize</code></td>
+<td>Absolute redirect URI registered in Keycloak.</td>
+</tr>
+<tr>
+<td><code>KEYCLOAK_ADMIN_PASSWORD</code></td>
+<td>Yes</td>
+<td>generated if missing</td>
+<td>Keycloak admin password for the bundled container.</td>
 </tr>
 <tr>
 <td><code>OIDC_SCOPES</code></td>
