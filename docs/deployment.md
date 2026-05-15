@@ -726,6 +726,8 @@ You should see `Dockerfile`, `docker-compose.prod.yml`, `pyproject.toml`, and `s
 
 The `.env` file contains secrets and configuration that the Flask application reads at runtime. Docker Compose injects these into the container via the `env_file:` directive in the production compose file.
 
+If the server does not already have `web/.env`, `scripts/deploy-app.sh` now seeds it from `web/.env.example` and generates a fresh `SECRET_KEY` so the container can start cleanly instead of failing at compose time. Review the generated file before enabling optional features such as feedback-to-GitHub sync or OpenRouter-backed AI features.
+
 ```bash
 cd ~/app/web
 nano .env
@@ -1678,7 +1680,7 @@ docker compose -f docker-compose.prod.yml logs web --tail 50
 
 **Common causes:**
 
-- **Missing `.env` file:** If `env_file: .env` is specified but the file does not exist, the container will not start. Create it per Phase 4.2.
+- **Missing `.env` file:** If `env_file: .env` is specified but the file does not exist, the container will not start. Run `scripts/deploy-app.sh` or create it per Phase 4.2 from `web/.env.example`.
 - **Python import error:** A dependency is missing or broken. The traceback will identify the module.
 - **Syntax error in app code:** The traceback will show the file and line.
 

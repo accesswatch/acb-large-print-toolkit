@@ -789,6 +789,7 @@ sftp&gt; exit
 <p>You should see <code>Dockerfile</code>, <code>docker-compose.prod.yml</code>, <code>pyproject.toml</code>, and <code>src/</code> in the web directory, and <code>pyproject.toml</code> and <code>src/</code> in the desktop directory.</p>
 <h3 id="42-create-the-production-environment-file-env">4.2 Create the production environment file (.env)</h3>
 <p>The <code>.env</code> file contains secrets and configuration that the Flask application reads at runtime. Docker Compose injects these into the container via the <code>env_file:</code> directive in the production compose file.</p>
+<p>If the server does not already have <code>web/.env</code>, <code>scripts/deploy-app.sh</code> now seeds it from <code>web/.env.example</code> and generates a fresh <code>SECRET_KEY</code> so the container can start cleanly instead of failing at compose time. Review the generated file before enabling optional features such as feedback-to-GitHub sync or OpenRouter-backed AI features.</p>
 <pre><code class="language-bash">cd ~/app/web
 nano .env
 </code></pre>
@@ -1570,7 +1571,7 @@ docker compose -f docker-compose.prod.yml logs caddy --tail 50
 </code></pre>
 <p><strong>Common causes:</strong></p>
 <ul>
-<li><strong>Missing <code>.env</code> file:</strong> If <code>env_file: .env</code> is specified but the file does not exist, the container will not start. Create it per Phase 4.2.</li>
+<li><strong>Missing <code>.env</code> file:</strong> If <code>env_file: .env</code> is specified but the file does not exist, the container will not start. Run <code>scripts/deploy-app.sh</code> or create it per Phase 4.2 from <code>web/.env.example</code>.</li>
 <li><strong>Python import error:</strong> A dependency is missing or broken. The traceback will identify the module.</li>
 <li><strong>Syntax error in app code:</strong> The traceback will show the file and line.</li>
 </ul>

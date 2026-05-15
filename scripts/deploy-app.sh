@@ -306,7 +306,7 @@ echo ""
 
 # Check required files
 MISSING=0
-for F in "$WEB_ROOT/$COMPOSE_FILE" "$WEB_ROOT/.env" "$WEB_ROOT/Caddyfile" "$WEB_ROOT/Dockerfile"; do
+for F in "$WEB_ROOT/$COMPOSE_FILE" "$WEB_ROOT/Caddyfile" "$WEB_ROOT/Dockerfile"; do
     if [[ ! -f "$F" ]]; then
         log_ts "ERROR: Required file missing: $F"
         MISSING=1
@@ -314,6 +314,35 @@ for F in "$WEB_ROOT/$COMPOSE_FILE" "$WEB_ROOT/.env" "$WEB_ROOT/Caddyfile" "$WEB_
         log_ts "OK: $F exists"
     fi
 done
+
+if [[ ! -f "$WEB_ROOT/.env" ]]; then
+    if [[ -f "$WEB_ROOT/.env.example" ]]; then
+        log_ts "WARNING: $WEB_ROOT/.env missing -- seeding from .env.example"
+        cp "$WEB_ROOT/.env.example" "$WEB_ROOT/.env"
+        GENERATED_SECRET="$(python3 - <<'PY'
+import secrets
+print(secrets.token_hex(32))
+PY
+)"
+        python3 - "$WEB_ROOT/.env" "$GENERATED_SECRET" <<'PYEOF'
+from pathlib import Path
+import sys
+
+path = Path(sys.argv[1])
+secret = sys.argv[2]
+text = path.read_text(encoding="utf-8")
+text = text.replace("SECRET_KEY=PASTE_GENERATED_KEY_HERE", f"SECRET_KEY={secret}")
+path.write_text(text, encoding="utf-8")
+PYEOF
+        chmod 600 "$WEB_ROOT/.env"
+        log_ts "WARNING: Review $WEB_ROOT/.env and replace placeholder values before enabling optional features."
+    else
+        log_ts "ERROR: Required file missing: $WEB_ROOT/.env"
+        MISSING=1
+    fi
+else
+    log_ts "OK: $WEB_ROOT/.env exists"
+fi
 
 if [[ ! -d "$APP_ROOT/desktop/src/acb_large_print" ]]; then
     log_ts "ERROR: desktop/src/acb_large_print/ directory missing (needed for Docker build)."
