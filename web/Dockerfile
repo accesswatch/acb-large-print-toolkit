@@ -6,6 +6,9 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
+# Canonical release version file used by web/src/acb_large_print_web/version.py
+COPY VERSION /app/VERSION
+
 # Install system dependencies:
 #   pandoc        -- Markdown/RST/ODT/RTF -> ACB HTML conversion
 #   nodejs + npm  -- DAISY Ace EPUB accessibility checker

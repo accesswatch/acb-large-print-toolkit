@@ -127,7 +127,11 @@ def create_app(config: dict | None = None) -> Flask:
         try:
             release_ver = _get_release_version()
         except Exception:
-            release_ver = "1.0.0"
+            try:
+                from importlib.metadata import version as _pkg_version
+                release_ver = _pkg_version("acb-large-print-web")
+            except Exception:
+                release_ver = "unknown"
 
         web_ver = release_ver
         desktop_ver = release_ver

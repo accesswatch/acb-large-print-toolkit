@@ -49,6 +49,8 @@ Releases are tagged in the [GitHub repository](https://github.com/Community-Acce
 - **Job progress accessibility test alignment**: Updated `web/tests/test_jobs_accessibility.py` to assert the current `<section class="card">` structure without `aria-labelledby`, keeping test expectations consistent with the section-landmark guardrail enforced in `web/tests/test_landmark_aria_guardrails.py`.
 - **Admin-login flag now hides login references and auth entry points**: Added `feature_admin_login_enabled` template context in `web/src/acb_large_print_web/app.py`, hid the footer Admin Sign-In link in `web/src/acb_large_print_web/templates/base.html` when disabled, removed admin-auth wording from `web/src/acb_large_print_web/templates/privacy.html` when disabled, and gated admin authentication entry routes in `web/src/acb_large_print_web/routes/admin.py` (login, request-access, magic-link, OAuth start/callback) with 404 when `GLOW_ENABLE_ADMIN_LOGIN` is false.
 - **Footer admin access sentence now feature-gated**: The footer text `Admin features are restricted to approved administrative accounts.` in `web/src/acb_large_print_web/templates/base.html` now renders only when `feature_admin_login_enabled` is true.
+- **Web container now carries canonical VERSION file**: Added `COPY VERSION /app/VERSION` to `web/Dockerfile` so `web/src/acb_large_print_web/version.py` can resolve release metadata at runtime in production containers.
+- **Release-version fallback hardened**: Updated `web/src/acb_large_print_web/app.py` to fall back to installed package metadata (`acb-large-print-web`) instead of hardcoded `1.0.0` when reading `VERSION` fails.
 
 ### 7.2.0 (Unreleased)
 
