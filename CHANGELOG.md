@@ -44,6 +44,8 @@ Releases are tagged in the [GitHub repository](https://github.com/Community-Acce
 - **Homepage wording and semantics refined**: Removed overly technical "main branch" wording from the homepage release summary, and updated the supported-formats list markup in `web/src/acb_large_print_web/templates/index.html` so the `<ul>` always contains direct `<li>` children (feature toggles now use `hidden` on list items) to satisfy accessibility linting.
 - **Deployment-gate test assertion hardened**: Updated `web/tests/test_app.py` to assert homepage release heading text using decoded response content instead of a brittle HTML-entity byte pattern, preventing false CI failures in the Deploy Web App workflow.
 - **Landmark guardrail compliance in job progress template**: Removed redundant `aria-labelledby` from the `<section>` wrapper in `web/src/acb_large_print_web/templates/jobs/progress.html` to satisfy `web/tests/test_landmark_aria_guardrails.py` and avoid unnecessary region landmark noise.
+- **Canonical version advanced to 7.2.0**: Updated root `VERSION` to `7.2.0` and synchronized `desktop/pyproject.toml`, `web/pyproject.toml`, `office-addin/package.json`, and `web/package.json` so all release surfaces read the same value.
+- **Version consistency validator source-of-truth corrected**: Updated `scripts/check-version-consistency.py` to read from root `VERSION` (single source of truth) and validate changelog coverage for either `## [X.X.X]` release headings or `### X.X.X (Unreleased)` markers.
 
 ### 7.2.0 (Unreleased)
 

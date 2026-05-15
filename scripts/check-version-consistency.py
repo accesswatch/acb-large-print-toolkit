@@ -3,12 +3,14 @@
 Version consistency validator for GLOW releases.
 
 Ensures all version strings across the project match the target release version.
+Source of truth:
+    - VERSION: X.X.X
 Required locations:
   - desktop/pyproject.toml: version = "X.X.X"
   - office-addin/package.json: "version": "X.X.X"
   - web/pyproject.toml: version = "X.X.X"
   - web/package.json: "version": "X.X.X"
-  - CHANGELOG.md: ## [X.X.X] - YYYY-MM-DD
+    - CHANGELOG.md: ## [X.X.X] - YYYY-MM-DD or ### X.X.X (Unreleased)
 """
 
 import re
@@ -18,19 +20,18 @@ from pathlib import Path
 # Repository root
 REPO_ROOT = Path(__file__).parent.parent
 
-# Target release version from desktop/pyproject.toml (source of truth)
+# Target release version from VERSION (source of truth)
 def get_target_version() -> str:
-    """Extract version from desktop/pyproject.toml (source of truth)."""
-    desktop_pyproject = REPO_ROOT / "desktop/pyproject.toml"
-    if not desktop_pyproject.exists():
-        raise FileNotFoundError(f"Cannot find {desktop_pyproject}")
-    
-    content = desktop_pyproject.read_text()
-    match = re.search(r'version\s*=\s*"([^"]+)"', content)
-    if not match:
-        raise ValueError("Cannot find version in desktop/pyproject.toml")
-    
-    return match.group(1)
+    """Extract version from VERSION file (single source of truth)."""
+    version_file = REPO_ROOT / "VERSION"
+    if not version_file.exists():
+        raise FileNotFoundError(f"Cannot find {version_file}")
+
+    version = version_file.read_text(encoding="utf-8").strip()
+    if not re.fullmatch(r"\d+\.\d+\.\d+", version):
+        raise ValueError(f"Invalid VERSION format: {version!r}")
+
+    return version
 
 
 def check_version_in_file(filepath: Path, pattern: str, expected_version: str) -> bool:
@@ -66,11 +67,12 @@ def main():
     
     # Files to check with their patterns
     checks = [
+        (REPO_ROOT / "VERSION", r"^VERSION$"),
         (REPO_ROOT / "desktop/pyproject.toml", r'version\s*=\s*"VERSION"'),
         (REPO_ROOT / "office-addin/package.json", r'"version":\s*"VERSION"'),
         (REPO_ROOT / "web/pyproject.toml", r'version\s*=\s*"VERSION"'),
         (REPO_ROOT / "web/package.json", r'"version":\s*"VERSION"'),
-        (REPO_ROOT / "CHANGELOG.md", r"## \[VERSION\]"),
+        (REPO_ROOT / "CHANGELOG.md", r"## \[VERSION\]|### VERSION \(Unreleased\)"),
     ]
     
     for filepath, pattern in checks:

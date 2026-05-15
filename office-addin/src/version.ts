@@ -19,9 +19,9 @@ export function getVersion(): string {
     try {
       const packageJsonPath = path.join(__dirname, "../package.json");
       const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, "utf-8"));
-      return packageJson.version || "7.1.0";
+      return packageJson.version || "7.2.0";
     } catch {
-      return "7.1.0";
+      return "7.2.0";
     }
   }
 }
