@@ -77,8 +77,9 @@
         function label(value) {
             var v = String(value || '').toLowerCase();
             if (!v || v === 'unknown') return 'checking';
+            if (v === 'not-run') return 'not run for this revision';
             if (v === 'not-reported') return 'awaiting report';
-            if (v === 'not-configured') return 'not configured';
+            if (v === 'not-configured') return 'not configured (manual tracking only)';
             if (v === 'in_progress') return 'in progress';
             return String(value);
         }
@@ -99,7 +100,11 @@
                 var state = label(deployment.state || 'unknown');
 
                 if (wcagEl) {
-                    wcagEl.textContent = 'WCAG 2.2 AA gate: ' + aa + ', with selected AAA constellations tracked: ' + aaa + '.';
+                    var note = '';
+                    if (aa === 'failed' || aa === 'not run for this revision' || aa === 'awaiting report') {
+                        note = ' See /status for full evidence and current check state.';
+                    }
+                    wcagEl.textContent = 'WCAG 2.2 AA gate: ' + aa + ', with selected AAA constellations tracked: ' + aaa + '.' + note;
                 }
                 if (deployEl) {
                     var updated = deployment.updated_at_utc ? ' Last update: ' + deployment.updated_at_utc + '.' : '';

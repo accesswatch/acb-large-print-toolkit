@@ -5,11 +5,15 @@ on:
     paths:
       - "web/**"
       - ".github/workflows/accessibility-regression.yml"
+      - "scripts/pre-commit-check.py"
+      - ".githooks/pre-commit"
   push:
     branches: [main]
     paths:
       - "web/**"
       - ".github/workflows/accessibility-regression.yml"
+      - "scripts/pre-commit-check.py"
+      - ".githooks/pre-commit"
 
 permissions:
   contents: read

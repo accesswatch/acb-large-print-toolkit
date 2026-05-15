@@ -367,6 +367,56 @@ def check_dependency_freshness():
     return True
 
 
+def check_local_accessibility_gate():
+    """8. Local WCAG smoke gate (blocking for staged web-facing changes).
+
+    Runs the Site Audit Playwright flow when web/UI files are staged so we
+    catch accessibility regressions before commit.
+    """
+    try:
+        result = subprocess.run(
+            ["git", "diff", "--cached", "--name-only", "--diff-filter=ACMRT"],
+            capture_output=True,
+            text=True,
+            cwd=str(REPO_ROOT),
+        )
+        changed = [line.strip() for line in result.stdout.splitlines() if line.strip()]
+        web_touched = any(
+            p.startswith("web/")
+            or p.startswith(".github/workflows/accessibility-regression.yml")
+            or p.startswith("web/src/acb_large_print_web/templates/")
+            or p.startswith("web/src/acb_large_print_web/static/")
+            for p in changed
+        )
+
+        if not web_touched:
+            print("[INFO] No web-facing staged changes detected; local WCAG smoke gate skipped")
+            return True
+
+        if not (REPO_ROOT / "web" / "package.json").exists():
+            print("[FAIL] web/package.json not found; cannot run local WCAG smoke gate")
+            return False
+
+        print("[CHECK] Running local WCAG smoke gate: npm --prefix web run test:e2e:site-audit")
+        smoke = subprocess.run(
+            ["npm", "--prefix", "web", "run", "test:e2e:site-audit"],
+            cwd=str(REPO_ROOT),
+            text=True,
+        )
+        if smoke.returncode != 0:
+            print("[FAIL] Local WCAG smoke gate failed. Fix accessibility regressions before commit.")
+            return False
+
+        print("[PASS] Local WCAG smoke gate passed")
+        return True
+    except FileNotFoundError:
+        print("[FAIL] npm is not installed or not on PATH. Install Node.js/npm to run local WCAG gate.")
+        return False
+    except Exception as e:
+        print(f"[FAIL] Local WCAG smoke gate error: {e}")
+        return False
+
+
 def main():
     """Run all pre-commit checks."""
     print("\n" + "=" * 70)
@@ -378,6 +428,7 @@ def main():
         ("Configuration Consistency", check_config_consistency),
         ("CHANGELOG.md Verification", check_changelog),
         ("Feature Flags Documentation", check_feature_flags_documented),
+        ("Local WCAG Smoke Gate", check_local_accessibility_gate),
         ("Documentation Build", build_documentation),
         ("Dependency Freshness", check_dependency_freshness),
         ("Prose Quality (Vale)", check_prose_quality),

@@ -94,7 +94,7 @@ jobs:
           set -euo pipefail
           line="$(gh api "repos/$REPO/actions/runs?head_sha=$SHA&event=push&per_page=100" --jq '.workflow_runs[] | select(.name=="Accessibility Regression Gate") | [.status,.conclusion] | @tsv' | head -n1 || true)"
 
-          aa_status="not-reported"
+          aa_status="not-run"
           if [[ -n "$line" ]]; then
             run_status="$(printf '%s' "$line" | cut -f1)"
             run_conclusion="$(printf '%s' "$line" | cut -f2)"
