@@ -65,6 +65,28 @@ Requires Python 3.10 or later.
 | markitdown | 0.1.5+ | Convert documents to Markdown |
 | wxPython | 4.2.0+ | Accessible cross-platform GUI |
 
+### Runtime configuration
+
+These settings are read at runtime. Leave them unset unless you are using the feature they control.
+
+| Variable | When used | Default | Purpose |
+|---|---|---|---|
+| `OPENROUTER_API_KEY` | OpenRouter AI provider | none | Required for OpenRouter-backed heading classification. |
+| `WHISPER_MODEL` | Audio transcription | `medium` | Chooses the local Whisper model used by MarkItDown/faster-whisper. |
+| `PIPELINE_URL` | DAISY Pipeline conversions | `http://pipeline:8181/ws` | Base URL for the Pipeline REST service. |
+| `EPUBCHECK_JAR` | EPUBCheck validation | none | Path to an `epubcheck` JAR when validating EPUB packages with Java. |
+| `GLOW_ENABLE_EPUBCHECK` | EPUBCheck validation | `true` | Enables or disables EPUBCheck-backed EPUB auditing. |
+
+The desktop app also expects the following external tools when you use the related features:
+
+- Ollama for local AI heading classification
+- Node.js plus `@daisy/ace` for full EPUB auditing
+- Java for `EPUBCHECK_JAR`-based EPUBCheck validation
+
+The code also honors `HUGGINGFACE_HUB_CACHE`, `HF_HOME`, and `XDG_CACHE_HOME` for Whisper/MarkItDown cache location, plus `NO_COLOR` for plain CLI output.
+
+Copy `desktop/.env.example` to `desktop/.env` if you want a local override file.
+
 ## Usage
 
 ### GUI mode (default)
