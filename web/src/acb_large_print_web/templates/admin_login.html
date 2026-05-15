@@ -15,7 +15,7 @@
 
 {% if not email_enabled %}
 <div class="notice-box" role="status">
-  <p>Admin authentication is unavailable because email delivery is not configured on this server.</p>
+  <p>Admin authentication is unavailable because email delivery is not configured on this server. Set <code>POSTMARK_SERVER_TOKEN</code> (and optionally <code>POSTMARK_FROM_EMAIL</code>) in <code>web/.env</code>.</p>
 </div>
 {% else %}
 <section>

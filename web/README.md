@@ -180,8 +180,12 @@ Useful switches:
 |----------|---------|-------------|
 | `SECRET_KEY` | Random per-start | Flask session secret. Set a fixed value in production. |
 | `FEEDBACK_PASSWORD` | (unset) | Set to enable `/feedback/review?key=<password>`. Disabled when unset. |
+| `POSTMARK_SERVER_TOKEN` | (unset) | Postmark server token used for audit-report emails, Whisperer notifications, and admin magic-link sign-in emails. |
+| `POSTMARK_FROM_EMAIL` | `reports@glow.bits-acb.org` | Sender address used by Postmark-delivered app emails. |
 | `LOG_LEVEL` | `INFO` | Python logging level (DEBUG, INFO, WARNING, ERROR). |
 | `MAX_CONTENT_LENGTH` | 500 MB | Maximum upload file size. |
+| `ADMIN_BOOTSTRAP_EMAILS` | (unset) | Comma-separated admin emails automatically approved for admin sign-in flows. |
+| `ADMIN_MAGIC_LINK_TTL_MINUTES` | `20` | Expiration window for admin email magic links. |
 | `GLOW_ENABLE_AI` | `1` | Master switch for all web AI features. Set to `0` to deploy the site with AI paths hidden and disabled while still shipping non-AI fixes. |
 | `GLOW_ENABLE_AI_CHAT` | `1` | Gate Document Chat independently. |
 | `GLOW_ENABLE_AI_WHISPERER` | `1` | Gate BITS Whisperer independently. |

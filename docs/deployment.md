@@ -747,8 +747,12 @@ FEEDBACK_GITHUB_REPO=Community-Access/glow
 FEEDBACK_GITHUB_ASSIGNEE=accesswatch
 FEEDBACK_GITHUB_LABELS=feedback,user-feedback
 OPENROUTER_API_KEY=PASTE_OPENROUTER_KEY_HERE
+POSTMARK_SERVER_TOKEN=PASTE_POSTMARK_SERVER_TOKEN
+POSTMARK_FROM_EMAIL=reports@glow.bits-acb.org
 ADMIN_LOCAL_EMAIL=jeff@jeffbishop.com
 ADMIN_LOCAL_PASSWORD=CHOOSE_A_STRONG_PASSWORD
+ADMIN_BOOTSTRAP_EMAILS=jeff@jeffbishop.com
+ADMIN_MAGIC_LINK_TTL_MINUTES=20
 LOG_LEVEL=INFO
 KEYCLOAK_HOSTNAME=lp.csedesigns.com
 KEYCLOAK_BASE_URL=https://lp.csedesigns.com/auth
@@ -789,7 +793,7 @@ Save and restrict permissions:
 chmod 600 ~/app/web/.env
 ```
 
-> **How .env works with Docker Compose:** Docker Compose has two `.env` mechanisms. First, it automatically reads a `.env` file next to the compose file for variable interpolation (`${VAR}` syntax inside the compose file itself). Second, the `env_file:` directive passes all variables from the specified file into the container as actual environment variables. This guide uses the second mechanism. The `env_file: .env` line in `docker-compose.prod.yml` injects `SECRET_KEY`, `FEEDBACK_PASSWORD`, `FEEDBACK_GITHUB_TOKEN`, `FEEDBACK_GITHUB_REPO`, `FEEDBACK_GITHUB_ASSIGNEE`, `FEEDBACK_GITHUB_LABELS`, `OPENROUTER_API_KEY`, `ADMIN_LOCAL_EMAIL`, `ADMIN_LOCAL_PASSWORD`, and `LOG_LEVEL` directly into the running container, where the Flask app reads them via `os.environ.get()`.
+> **How .env works with Docker Compose:** Docker Compose has two `.env` mechanisms. First, it automatically reads a `.env` file next to the compose file for variable interpolation (`${VAR}` syntax inside the compose file itself). Second, the `env_file:` directive passes all variables from the specified file into the container as actual environment variables. This guide uses the second mechanism. The `env_file: .env` line in `docker-compose.prod.yml` injects `SECRET_KEY`, `FEEDBACK_PASSWORD`, `FEEDBACK_GITHUB_TOKEN`, `FEEDBACK_GITHUB_REPO`, `FEEDBACK_GITHUB_ASSIGNEE`, `FEEDBACK_GITHUB_LABELS`, `OPENROUTER_API_KEY`, `POSTMARK_SERVER_TOKEN`, `POSTMARK_FROM_EMAIL`, `ADMIN_LOCAL_EMAIL`, `ADMIN_LOCAL_PASSWORD`, `ADMIN_BOOTSTRAP_EMAILS`, `ADMIN_MAGIC_LINK_TTL_MINUTES`, and `LOG_LEVEL` directly into the running container, where the Flask app reads them via `os.environ.get()`.
 
 ### 4.2a OpenRouter wiring
 
@@ -1888,6 +1892,8 @@ These variables are set in `~/app/web/.env` and injected into the container via 
 |----------|----------|---------|-------------|
 | `SECRET_KEY` | **Yes** | Random per-start | Flask session and CSRF secret. **Set a fixed value in production** or sessions and CSRF tokens will not survive container restarts. |
 | `FEEDBACK_PASSWORD` | No | (unset) | Set to enable feedback review at `/feedback/review?key=<password>`. When unset, the review endpoint is disabled. |
+| `POSTMARK_SERVER_TOKEN` | No | (unset) | Postmark server token used for audit-report emails, Whisperer notifications, and admin magic-link sign-in emails. Required for email-based admin auth. |
+| `POSTMARK_FROM_EMAIL` | No | `reports@glow.bits-acb.org` | Sender email address used by Postmark-delivered app emails. |
 | `LOG_LEVEL` | No | `INFO` | Python logging level: DEBUG, INFO, WARNING, ERROR. |
 | `KEYCLOAK_HOSTNAME` | No | `lp.csedesigns.com` | Hostname used by the Keycloak container when generating URLs. |
 | `KEYCLOAK_BASE_URL` | No | `https://lp.csedesigns.com/auth` | Public Keycloak base URL used by the app health probe and OIDC issuer discovery. |

@@ -67,6 +67,7 @@ Releases are tagged in the [GitHub repository](https://github.com/Community-Acce
 - **Deploy workflow now includes MCP changes and tests**: Updated `.github/workflows/deploy.yml` to trigger on `mcp_server/**` changes and run `mcp_server/tests` in the pre-deploy test job.
 - **Keycloak realm import isolation in production deploys**: Updated `scripts/deploy-app.sh` to render Keycloak realm JSON into `web/keycloak/import/` and clear stale generated files, updated `web/docker-compose.prod.yml` and `web/docker-compose.keycloak.yml` to mount that dedicated import directory, and updated deployment docs/partials so Keycloak no longer imports placeholder template files from persistent volume state.
 - **Keycloak admin UI proxy compatibility**: Scoped strict web security headers in `web/Caddyfile` to the Flask app handle only, so `/auth/*` responses keep Keycloak-managed headers and the admin console no longer hangs on `Loading...`.
+- **Postmark wiring for admin magic-link auth setup**: Added `POSTMARK_SERVER_TOKEN`, `POSTMARK_FROM_EMAIL`, `ADMIN_BOOTSTRAP_EMAILS`, and `ADMIN_MAGIC_LINK_TTL_MINUTES` to `web/.env.example`; clarified admin login messaging in `web/src/acb_large_print_web/templates/admin_login.html`; and documented these variables in `docs/deployment.md` and `web/README.md` so email-based admin magic links can be enabled cleanly.
 
 ### 7.2.0 (Unreleased)
 

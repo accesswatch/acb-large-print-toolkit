@@ -803,8 +803,12 @@ FEEDBACK_GITHUB_REPO=Community-Access/glow
 FEEDBACK_GITHUB_ASSIGNEE=accesswatch
 FEEDBACK_GITHUB_LABELS=feedback,user-feedback
 OPENROUTER_API_KEY=PASTE_OPENROUTER_KEY_HERE
+POSTMARK_SERVER_TOKEN=PASTE_POSTMARK_SERVER_TOKEN
+POSTMARK_FROM_EMAIL=reports@glow.bits-acb.org
 ADMIN_LOCAL_EMAIL=jeff@jeffbishop.com
 ADMIN_LOCAL_PASSWORD=CHOOSE_A_STRONG_PASSWORD
+ADMIN_BOOTSTRAP_EMAILS=jeff@jeffbishop.com
+ADMIN_MAGIC_LINK_TTL_MINUTES=20
 LOG_LEVEL=INFO
 KEYCLOAK_HOSTNAME=lp.csedesigns.com
 KEYCLOAK_BASE_URL=https://lp.csedesigns.com/auth
@@ -835,7 +839,7 @@ GLOW_AUDIO_QUEUE_WAIT_SECONDS=0
 <pre><code class="language-bash">chmod 600 ~/app/web/.env
 </code></pre>
 <blockquote>
-<p><strong>How .env works with Docker Compose:</strong> Docker Compose has two <code>.env</code> mechanisms. First, it automatically reads a <code>.env</code> file next to the compose file for variable interpolation (<code>${VAR}</code> syntax inside the compose file itself). Second, the <code>env_file:</code> directive passes all variables from the specified file into the container as actual environment variables. This guide uses the second mechanism. The <code>env_file: .env</code> line in <code>docker-compose.prod.yml</code> injects <code>SECRET_KEY</code>, <code>FEEDBACK_PASSWORD</code>, <code>FEEDBACK_GITHUB_TOKEN</code>, <code>FEEDBACK_GITHUB_REPO</code>, <code>FEEDBACK_GITHUB_ASSIGNEE</code>, <code>FEEDBACK_GITHUB_LABELS</code>, <code>OPENROUTER_API_KEY</code>, <code>ADMIN_LOCAL_EMAIL</code>, <code>ADMIN_LOCAL_PASSWORD</code>, and <code>LOG_LEVEL</code> directly into the running container, where the Flask app reads them via <code>os.environ.get()</code>.</p>
+<p><strong>How .env works with Docker Compose:</strong> Docker Compose has two <code>.env</code> mechanisms. First, it automatically reads a <code>.env</code> file next to the compose file for variable interpolation (<code>${VAR}</code> syntax inside the compose file itself). Second, the <code>env_file:</code> directive passes all variables from the specified file into the container as actual environment variables. This guide uses the second mechanism. The <code>env_file: .env</code> line in <code>docker-compose.prod.yml</code> injects <code>SECRET_KEY</code>, <code>FEEDBACK_PASSWORD</code>, <code>FEEDBACK_GITHUB_TOKEN</code>, <code>FEEDBACK_GITHUB_REPO</code>, <code>FEEDBACK_GITHUB_ASSIGNEE</code>, <code>FEEDBACK_GITHUB_LABELS</code>, <code>OPENROUTER_API_KEY</code>, <code>POSTMARK_SERVER_TOKEN</code>, <code>POSTMARK_FROM_EMAIL</code>, <code>ADMIN_LOCAL_EMAIL</code>, <code>ADMIN_LOCAL_PASSWORD</code>, <code>ADMIN_BOOTSTRAP_EMAILS</code>, <code>ADMIN_MAGIC_LINK_TTL_MINUTES</code>, and <code>LOG_LEVEL</code> directly into the running container, where the Flask app reads them via <code>os.environ.get()</code>.</p>
 </blockquote>
 <h3 id="42a-openrouter-wiring">4.2a OpenRouter wiring</h3>
 <ol>
@@ -1816,6 +1820,18 @@ docker compose -f docker-compose.prod.yml ps
 <td>No</td>
 <td>(unset)</td>
 <td>Set to enable feedback review at <code>/feedback/review?key=&lt;password&gt;</code>. When unset, the review endpoint is disabled.</td>
+</tr>
+<tr>
+<td><code>POSTMARK_SERVER_TOKEN</code></td>
+<td>No</td>
+<td>(unset)</td>
+<td>Postmark server token used for audit-report emails, Whisperer notifications, and admin magic-link sign-in emails. Required for email-based admin auth.</td>
+</tr>
+<tr>
+<td><code>POSTMARK_FROM_EMAIL</code></td>
+<td>No</td>
+<td><code>reports@glow.bits-acb.org</code></td>
+<td>Sender email address used by Postmark-delivered app emails.</td>
 </tr>
 <tr>
 <td><code>LOG_LEVEL</code></td>
