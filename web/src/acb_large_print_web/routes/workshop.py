@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
-from flask import Blueprint, Response, abort, redirect, render_template_string, request, url_for
+from pathlib import Path
+
+from flask import Blueprint, Response, abort, current_app, redirect, render_template_string, request, send_file, url_for
 
 from ..feature_flags import get_flag
 from ..workshop_store import (
@@ -44,6 +46,69 @@ ACTIVITY_PROMPTS = {
     "champion_studio": "Design a reusable workflow that teaches partner ownership and includes explicit human-review safeguards.",
     "capstone_shareout": "Summarize your workflow, who it helps, and how it supports sustained accessibility practice.",
     "action_plan_30_day": "Commit to one workflow, one partner/team, one safeguard, and one concrete next step in 30 days.",
+}
+
+EXERCISE_PACK = [
+  {
+    "name": "Accessibility Journey Check-In",
+    "time": "20 minutes",
+    "purpose": "Help participants locate themselves in the accessibility journey and identify partner support needs.",
+    "output": "Accessibility journey notes and shared barriers list.",
+  },
+  {
+    "name": "What Problem Are We Solving?",
+    "time": "35 minutes",
+    "purpose": "Train teams to start with the accessibility problem before selecting tools.",
+    "output": "Problem statement with capacity-building focus.",
+  },
+  {
+    "name": "Fix It for Me vs Teach Me to Improve It",
+    "time": "40 minutes",
+    "purpose": "Practice converting urgent fix requests into teachable coaching responses.",
+    "output": "Coaching response patterns for partner ownership.",
+  },
+  {
+    "name": "Helpful, Risky, or Human Required",
+    "time": "40 minutes",
+    "purpose": "Establish practical responsible-AI boundaries for accessibility tasks.",
+    "output": "AI boundary map with review safeguards.",
+  },
+  {
+    "name": "Accessibility Agent Formula",
+    "time": "45 minutes",
+    "purpose": "Build non-technical agent concepts using a repeatable formula.",
+    "output": "Role + Task + Guidance + Output + Human Review draft.",
+  },
+  {
+    "name": "GLOW Lab 1: Accessible Communications",
+    "time": "60 minutes",
+    "purpose": "Improve real communication artifacts while teaching reusable accessibility patterns.",
+    "output": "Revised communication and human-review checklist.",
+  },
+  {
+    "name": "GLOW Lab 2: Alt Text and Human Judgment",
+    "time": "55 minutes",
+    "purpose": "Use AI support without losing human control of image purpose and meaning.",
+    "output": "Image purpose decision checklist with verification questions.",
+  },
+  {
+    "name": "GLOW Lab 3: Remediation Planning",
+    "time": "55 minutes",
+    "purpose": "Turn large remediation requests into practical coaching workflows.",
+    "output": "Prioritized remediation coaching template.",
+  },
+  {
+    "name": "Accessibility Champion Studio",
+    "time": "50 minutes",
+    "purpose": "Design reusable partner-facing workflows for local institutional needs.",
+    "output": "Draft champion workflow artifact.",
+  },
+]
+
+RESOURCE_FILES = {
+  "guide": "workshop-frontfacing-guide.md",
+  "exercises": "workshop-frontfacing-exercises.md",
+  "utilization": "workshop-frontfacing-utilization.md",
 }
 
 
@@ -130,6 +195,16 @@ def workshop_home():
       Participants are guided through practical labs and leave with reusable
       artifacts that help partners become accessibility champions.
     </p>
+
+    <section aria-labelledby=\"frontfacing-docs\" class=\"join-box\">
+      <h2 id=\"frontfacing-docs\">Front-Facing Workshop Documentation</h2>
+      <p>Use these pages to run and scale the workshop in conference, onboarding, and institutional training environments.</p>
+      <p>
+        <a href=\"{{ url_for('workshop.workshop_guide') }}\">Workshop Guide</a> |
+        <a href=\"{{ url_for('workshop.workshop_exercises') }}\">Exercises Pack</a> |
+        <a href=\"{{ url_for('workshop.workshop_utilization') }}\">Utilization Guide</a>
+      </p>
+    </section>
 
     <section aria-labelledby=\"join-heading\" class=\"join-box\">
       <h2 id=\"join-heading\">Start or Join a Workshop Session</h2>
@@ -386,4 +461,195 @@ def workshop_export_markdown(session_code: str):
         markdown,
         mimetype="text/markdown",
         headers={"Content-Disposition": f'attachment; filename="{code}-workshop-artifacts.md"'},
+    )
+
+
+@workshop_bp.route("/guide", methods=["GET"])
+def workshop_guide():
+    if not _workshop_enabled():
+        abort(404)
+
+    return render_template_string(
+        """<!doctype html>
+<html lang=\"en\"><head>
+  <meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">
+  <title>Workshop Guide | GLOW</title>
+  <style>
+    :root { --ink:#112; --card:#ffffff; --line:#ccd; --hero1:#0a4b8f; --hero2:#0f766e; }
+    body { margin:0; font-family: system-ui, sans-serif; color:var(--ink); line-height:1.55; background:#f7fafc; }
+    .skip-link { position:absolute; left:-9999px; } .skip-link:focus { left:1rem; top:1rem; background:#fff; border:2px solid #000; padding:.5rem; }
+    .hero { background: linear-gradient(120deg, var(--hero1), var(--hero2)); color:#fff; padding:2rem 1rem; }
+    .wrap { max-width:72rem; margin:0 auto; }
+    .hero h1 { margin:0 0 .5rem 0; }
+    .hero p { margin:0; max-width:56rem; }
+    .main { max-width:72rem; margin:0 auto; padding:1rem; }
+    .grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); gap:.75rem; }
+    .card { background:var(--card); border:1px solid var(--line); border-radius:.5rem; padding:.875rem; }
+    h2 { margin-top:1.25rem; }
+    a.button { display:inline-block; background:#0a4b8f; color:#fff; padding:.55rem .85rem; border-radius:.35rem; text-decoration:none; }
+    a.button:focus, a.button:hover { text-decoration:underline; }
+  </style>
+</head>
+<body>
+  <a class=\"skip-link\" href=\"#main\">Skip to main content</a>
+  <header class=\"hero\"><div class=\"wrap\">
+    <h1>Accessibility Agents in Action</h1>
+    <p>A hands-on GLOW workshop design for conference and institutional training environments, centered on partner confidence, responsible AI use, and reusable accessibility workflows.</p>
+  </div></header>
+  <main id=\"main\" class=\"main\">
+    <h2>Core Promise</h2>
+    <p>Participants do not need to be AI scientists, developers, or programmers. They are guided through practical barriers and leave with artifacts that help others become accessibility champions.</p>
+    <ul>
+      <li><strong>G:</strong> Ground the work in a real accessibility problem.</li>
+      <li><strong>L:</strong> Learn what people need to understand.</li>
+      <li><strong>O:</strong> Organize a repeatable workflow.</li>
+      <li><strong>W:</strong> Walk forward as accessibility champions.</li>
+    </ul>
+
+    <h2>Learning Outcomes</h2>
+    <div class=\"grid\">
+      <section class=\"card\"><h3>Problem-First Practice</h3><p>Teams start with user barriers and capacity goals before selecting tooling.</p></section>
+      <section class=\"card\"><h3>Responsible AI Boundaries</h3><p>Every workflow defines what AI can draft and what humans must verify.</p></section>
+      <section class=\"card\"><h3>Reusable Artifacts</h3><p>Participants leave with prompts, checklists, and action plans ready for immediate use.</p></section>
+      <section class=\"card\"><h3>Champion Pathway</h3><p>Partners learn ownership patterns that scale accessibility beyond specialist bottlenecks.</p></section>
+    </div>
+
+    <h2>Use This Workshop Kit</h2>
+    <p><a class=\"button\" href=\"{{ url_for('workshop.workshop_exercises') }}\">Open Exercises Pack</a> <a class=\"button\" href=\"{{ url_for('workshop.workshop_utilization') }}\">Open Utilization Guide</a></p>
+    <p><a href=\"{{ url_for('workshop.workshop_home') }}\">Back to Workshop Mode home</a></p>
+  </main>
+</body></html>"""
+    )
+
+
+@workshop_bp.route("/exercises", methods=["GET"])
+def workshop_exercises():
+    if not _workshop_enabled():
+        abort(404)
+
+    return render_template_string(
+        """<!doctype html>
+<html lang=\"en\"><head>
+  <meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">
+  <title>Exercises Pack | GLOW Workshop Mode</title>
+  <style>
+    body { margin:0; font-family: system-ui, sans-serif; line-height:1.55; background:#f8fafc; }
+    .page { max-width:72rem; margin:0 auto; padding:1rem; }
+    .skip-link { position:absolute; left:-9999px; } .skip-link:focus { left:1rem; top:1rem; background:#fff; border:2px solid #000; padding:.5rem; }
+    .exercise { background:#fff; border:1px solid #c9d2e3; border-radius:.5rem; padding:.875rem; margin:.75rem 0; }
+    h1 { margin-bottom:.25rem; }
+    h2 { margin-top:1.25rem; }
+  </style>
+</head><body>
+  <a class=\"skip-link\" href=\"#main\">Skip to main content</a>
+  <main id=\"main\" class=\"page\">
+    <h1>Workshop Exercises Pack</h1>
+    <p>These activities are conference-ready and aligned to the full-day schedule. Each activity is designed for practical output and human-review accountability.</p>
+    {% for ex in exercises %}
+      <section class=\"exercise\" aria-labelledby=\"ex-{{ loop.index }}\">
+        <h2 id=\"ex-{{ loop.index }}\">{{ ex.name }}</h2>
+        <p><strong>Time:</strong> {{ ex.time }}</p>
+        <p><strong>Purpose:</strong> {{ ex.purpose }}</p>
+        <p><strong>Participant Output:</strong> {{ ex.output }}</p>
+      </section>
+    {% endfor %}
+    <p><a href=\"{{ url_for('workshop.workshop_guide') }}\">Back to Workshop Guide</a></p>
+  </main>
+</body></html>""",
+        exercises=EXERCISE_PACK,
+    )
+
+
+@workshop_bp.route("/utilization", methods=["GET"])
+def workshop_utilization():
+    if not _workshop_enabled():
+        abort(404)
+
+    return render_template_string(
+        """<!doctype html>
+<html lang=\"en\"><head>
+  <meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">
+  <title>Utilization Guide | GLOW Workshop Mode</title>
+  <style>
+    body { margin:0; font-family: system-ui, sans-serif; line-height:1.55; background:#f8fafc; }
+    .page { max-width:72rem; margin:0 auto; padding:1rem; }
+    .skip-link { position:absolute; left:-9999px; } .skip-link:focus { left:1rem; top:1rem; background:#fff; border:2px solid #000; padding:.5rem; }
+    .panel { background:#fff; border:1px solid #d1d5db; border-radius:.5rem; padding:.9rem; margin:.8rem 0; }
+  </style>
+</head><body>
+  <a class=\"skip-link\" href=\"#main\">Skip to main content</a>
+  <main id=\"main\" class=\"page\">
+    <h1>Utilization Guide for Conference and Training</h1>
+    <p>Use this guide to run Workshop Mode as a repeatable institutional experience with measurable learning outcomes.</p>
+
+    <section class=\"panel\" aria-labelledby=\"preflight\">
+      <h2 id=\"preflight\">Pre-Event Readiness</h2>
+      <ul>
+        <li>Enable workshop feature flags and validate route access.</li>
+        <li>Run keyboard-only and screen-reader smoke tests.</li>
+        <li>Prepare backup worksheets for offline fallback.</li>
+        <li>Confirm facilitator script, timing, and support contacts.</li>
+      </ul>
+    </section>
+
+    <section class=\"panel\" aria-labelledby=\"during\">
+      <h2 id=\"during\">During Workshop Delivery</h2>
+      <ul>
+        <li>Keep framing on partner confidence and ownership.</li>
+        <li>Require human-review checkpoints in every AI-assisted artifact.</li>
+        <li>Use gallery + peer feedback to strengthen trust and reuse.</li>
+        <li>Capture capstone artifacts and 30-day action commitments.</li>
+      </ul>
+    </section>
+
+    <section class=\"panel\" aria-labelledby=\"after\">
+      <h2 id=\"after\">Post-Event Follow Through</h2>
+      <ul>
+        <li>Export artifacts in Markdown for sharing and versioning.</li>
+        <li>Package top workflows into prompts/checklists for local teams.</li>
+        <li>Run a 30-day follow-up to measure adoption and confidence gains.</li>
+        <li>Promote successful workflows into reusable GLOW skills.</li>
+      </ul>
+    </section>
+
+    <section class=\"panel\" aria-labelledby=\"metrics\">
+      <h2 id=\"metrics\">Utilization Metrics</h2>
+      <ul>
+        <li>Activity completion rates</li>
+        <li>Capstone workflow quality and safeguard coverage</li>
+        <li>Artifact reuse at 30 days</li>
+        <li>Participant confidence delta (pre/post)</li>
+      </ul>
+    </section>
+
+    <p>
+      Download resources:
+      <a href=\"{{ url_for('workshop.workshop_resource_download', slug='guide') }}\">Guide (.md)</a>,
+      <a href=\"{{ url_for('workshop.workshop_resource_download', slug='exercises') }}\">Exercises (.md)</a>,
+      <a href=\"{{ url_for('workshop.workshop_resource_download', slug='utilization') }}\">Utilization (.md)</a>
+    </p>
+    <p><a href=\"{{ url_for('workshop.workshop_guide') }}\">Back to Workshop Guide</a></p>
+  </main>
+</body></html>"""
+    )
+
+
+@workshop_bp.route("/resources/<slug>", methods=["GET"])
+def workshop_resource_download(slug: str):
+    if not _workshop_enabled():
+        abort(404)
+    filename = RESOURCE_FILES.get((slug or "").strip().lower())
+    if not filename:
+        abort(404)
+
+    repo_root = Path(current_app.root_path).parent.parent.parent
+    path = repo_root / "docs" / filename
+    if not path.exists():
+        abort(404)
+
+    return send_file(
+        str(path),
+        mimetype="text/markdown",
+        as_attachment=True,
+        download_name=filename,
     )
