@@ -226,6 +226,10 @@ def create_app(config: dict | None = None) -> Flask:
             ctx["feature_site_audit_enabled"] = bool(all_flags.get("GLOW_ENABLE_SITE_AUDIT", True))
             ctx["feature_user_login_enabled"] = bool(all_flags.get("GLOW_ENABLE_USER_LOGIN", False))
             ctx["feature_admin_login_enabled"] = bool(all_flags.get("GLOW_ENABLE_ADMIN_LOGIN", False))
+            ctx["feature_workshop_mode_enabled"] = bool(all_flags.get("GLOW_ENABLE_WORKSHOP_MODE", True))
+            ctx["feature_workshop_lab_hub_enabled"] = bool(all_flags.get("GLOW_ENABLE_WORKSHOP_LAB_HUB", True))
+            ctx["feature_workshop_gallery_enabled"] = bool(all_flags.get("GLOW_ENABLE_WORKSHOP_GALLERY", True))
+            ctx["feature_workshop_peer_review_enabled"] = bool(all_flags.get("GLOW_ENABLE_WORKSHOP_PEER_REVIEW", True))
         except Exception:
             # Best-effort injection; templates should handle missing keys gracefully
             pass
@@ -395,6 +399,7 @@ def create_app(config: dict | None = None) -> Flask:
     from .routes.ai_usage import ai_usage_bp
     from .routes.alt_text import alt_text_bp
     from .routes.jobs import jobs_bp
+    from .routes.workshop import workshop_bp
 
     app.register_blueprint(main_bp)
     app.register_blueprint(consent_bp, url_prefix="/consent")
@@ -428,6 +433,7 @@ def create_app(config: dict | None = None) -> Flask:
     app.register_blueprint(ai_usage_bp, url_prefix="/ai/usage")
     app.register_blueprint(alt_text_bp, url_prefix="/alt-text")
     app.register_blueprint(jobs_bp, url_prefix="/job")
+    app.register_blueprint(workshop_bp, url_prefix="/workshop")
 
     # Configure speech engine model directory from instance path
     try:

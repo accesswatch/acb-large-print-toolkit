@@ -150,6 +150,12 @@ _DEFAULTS: dict[str, bool] = {
 
     # User-facing website accessibility scanner
     "GLOW_ENABLE_SITE_AUDIT": True,
+
+    # 7.3 Workshop Mode and Lab Hub foundations
+    "GLOW_ENABLE_WORKSHOP_MODE": True,
+    "GLOW_ENABLE_WORKSHOP_LAB_HUB": True,
+    "GLOW_ENABLE_WORKSHOP_GALLERY": True,
+    "GLOW_ENABLE_WORKSHOP_PEER_REVIEW": True,
 }
 
 
