@@ -66,6 +66,7 @@ Releases are tagged in the [GitHub repository](https://github.com/Community-Acce
 - **MCP server is now deployed and routed in production stack**: Added `mcp_server/Dockerfile`, introduced an `mcp` service in `web/docker-compose.prod.yml`, routed `/mcp/*` through `web/Caddyfile` to `mcp:8000`, and expanded deployment verification (`scripts/post-deploy-check.sh` and `scripts/deploy-app.sh`) to include MCP health checks.
 - **Deploy workflow now includes MCP changes and tests**: Updated `.github/workflows/deploy.yml` to trigger on `mcp_server/**` changes and run `mcp_server/tests` in the pre-deploy test job.
 - **Keycloak realm import isolation in production deploys**: Updated `scripts/deploy-app.sh` to render Keycloak realm JSON into `web/keycloak/import/` and clear stale generated files, updated `web/docker-compose.prod.yml` and `web/docker-compose.keycloak.yml` to mount that dedicated import directory, and updated deployment docs/partials so Keycloak no longer imports placeholder template files from persistent volume state.
+- **Keycloak admin UI proxy compatibility**: Scoped strict web security headers in `web/Caddyfile` to the Flask app handle only, so `/auth/*` responses keep Keycloak-managed headers and the admin console no longer hangs on `Loading...`.
 
 ### 7.2.0 (Unreleased)
 
