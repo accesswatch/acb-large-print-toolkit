@@ -374,8 +374,7 @@
         {% if feature_admin_login_enabled %}
         <p>Admin features are restricted to approved administrative accounts.</p>
         {% endif %}
-        <p id="footer-wcag-aa-status">WCAG 2.2 AA gate: checking...</p>
-        <p id="footer-wcag-aaa-status">WCAG 2.2 AAA gate: checking...</p>
+        <p id="footer-wcag-magic-status">WCAG 2.2 AA gate: checking, with selected AAA constellations being tracked.</p>
         <p id="footer-deploy-phase">Deployment: checking...</p>
         <p>Current release: {{ release_version }}</p>
         <p>Visitors: {{ "{:,}".format(visitor_count) }}</p>

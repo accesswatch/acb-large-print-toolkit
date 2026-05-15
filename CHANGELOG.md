@@ -61,6 +61,7 @@ Releases are tagged in the [GitHub repository](https://github.com/Community-Acce
 - **MCP server dependency security remediation**: Updated `mcp_server/requirements.txt` to bump `python-multipart` from `0.0.9` to `0.0.28`, addressing open Dependabot alerts against multipart parsing.
 - **WCAG gate status wiring in deploy pipeline**: Updated `.github/workflows/deploy.yml` to resolve the `Accessibility Regression Gate` conclusion for the current commit and pass it to remote deployment via `WCAG22AA_GATE` / `WCAG22AAA_GATE` env vars, then updated `scripts/deploy-app.sh` and `scripts/post-deploy-check.sh` to persist these values in `instance/deploy-status.json` for `/health` and footer display.
 - **Footer gate/deploy labels normalized**: Updated `web/src/acb_large_print_web/static/a11y-enhancements.js` to translate raw internal states (for example `not-reported`, `not-configured`, `unknown`) into user-friendly phrases (`awaiting report`, `not configured`, `checking`).
+- **WCAG footer status consolidated into one magical line**: Replaced separate AA/AAA footer rows in `web/src/acb_large_print_web/templates/base.html` with a single sentence and updated `web/src/acb_large_print_web/static/a11y-enhancements.js` to report `WCAG 2.2 AA` status plus tracked `AAA` progress in one combined, reader-friendly phrase.
 
 ### 7.2.0 (Unreleased)
 

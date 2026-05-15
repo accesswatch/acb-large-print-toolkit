@@ -70,10 +70,9 @@
 
     // --- 2b. Footer deploy + WCAG gate status -------------------------------
     function updateFooterHealthStatus() {
-        var aaEl = document.getElementById('footer-wcag-aa-status');
-        var aaaEl = document.getElementById('footer-wcag-aaa-status');
+        var wcagEl = document.getElementById('footer-wcag-magic-status');
         var deployEl = document.getElementById('footer-deploy-phase');
-        if (!aaEl && !aaaEl && !deployEl) return;
+        if (!wcagEl && !deployEl) return;
 
         function label(value) {
             var v = String(value || '').toLowerCase();
@@ -97,16 +96,16 @@
                 var phase = label(deployment.phase || 'unknown');
                 var state = label(deployment.state || 'unknown');
 
-                if (aaEl) aaEl.textContent = 'WCAG 2.2 AA gate: ' + aa;
-                if (aaaEl) aaaEl.textContent = 'WCAG 2.2 AAA gate: ' + aaa;
+                if (wcagEl) {
+                    wcagEl.textContent = 'WCAG 2.2 AA gate: ' + aa + ', with selected AAA constellations tracked: ' + aaa + '.';
+                }
                 if (deployEl) {
                     var detail = deployment.detail ? ' (' + deployment.detail + ')' : '';
                     deployEl.textContent = 'Deployment: ' + phase + ' [' + state + ']' + detail;
                 }
             })
             .catch(function () {
-                if (aaEl) aaEl.textContent = 'WCAG 2.2 AA gate: unavailable';
-                if (aaaEl) aaaEl.textContent = 'WCAG 2.2 AAA gate: unavailable';
+                if (wcagEl) wcagEl.textContent = 'WCAG 2.2 AA gate: unavailable, with selected AAA constellations tracked: unavailable.';
                 if (deployEl) deployEl.textContent = 'Deployment: unavailable';
             });
     }
