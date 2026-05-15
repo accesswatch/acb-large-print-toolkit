@@ -57,6 +57,7 @@ Releases are tagged in the [GitHub repository](https://github.com/Community-Acce
 - **Deploy scripts now publish deploy-phase status**: Updated `scripts/deploy-app.sh` and `scripts/post-deploy-check.sh` to write phase/state updates into `instance/deploy-status.json`, allowing `/health` and footer UI to reflect real-time deployment progress and verification state.
 - **Homepage 7.2.0 "What's New" now includes MCP docs link**: Updated `web/src/acb_large_print_web/templates/index.html` to include MCP server documentation link directly in the top "What's New in GLOW {{ release_version }}" section and removed the temporary footer MCP mention from `web/src/acb_large_print_web/templates/base.html`.
 - **Pre-commit now stages all generated HTML partial artifacts**: Updated `scripts/pre-commit-check.py` to auto-stage `deployment_body.html` and `announcement_body.html` in addition to existing generated partials after `scripts/build-doc-pages.py` runs.
+- **Office Add-in dependency security remediation**: Updated `office-addin/package.json` overrides and regenerated `office-addin/package-lock.json` to resolve transitive OpenTelemetry vulnerabilities (`@opentelemetry/exporter-prometheus`, `@opentelemetry/sdk-node`, and `@azure/monitor-opentelemetry`) reported by `npm audit`.
 
 ### 7.2.0 (Unreleased)
 

@@ -13,6 +13,9 @@
     "@fluentui/web-components": "^2.6.1"
   },
   "overrides": {
+    "@azure/monitor-opentelemetry": ">=1.18.0",
+    "@opentelemetry/exporter-prometheus": ">=0.217.0",
+    "@opentelemetry/sdk-node": ">=0.217.0",
     "express-rate-limit": ">=8.5.1",
     "fast-uri": ">=3.1.2",
     "fast-xml-builder": ">=1.1.7",
