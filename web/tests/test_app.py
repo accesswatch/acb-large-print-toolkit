@@ -132,12 +132,13 @@ class TestPageLoads:
         assert b"Server Status" in resp.data
 
     def test_home_shows_release_from_version_file(self, client):
-        expected = _expected_release_version().encode()
+        expected_text = _expected_release_version()
+        expected = expected_text.encode()
         resp = client.get("/")
         assert resp.status_code == 200
         assert b"Current release:" in resp.data
         assert expected in resp.data
-        assert b"What&#39;s New in GLOW " + expected in resp.data
+        assert f"What's New in GLOW {expected_text}" in resp.get_data(as_text=True)
 
     def test_about_mcp_shows_release_from_version_file(self, client):
         expected = _expected_release_version().encode()

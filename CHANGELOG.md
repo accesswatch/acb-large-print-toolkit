@@ -42,6 +42,7 @@ Releases are tagged in the [GitHub repository](https://github.com/Community-Acce
 - **Version-file resolution hardened**: Updated both `web/src/acb_large_print_web/version.py` and `desktop/src/acb_large_print/version.py` to locate the repository `VERSION` file using module-relative parent traversal instead of fragile CWD-relative paths.
 - **Regression coverage for release display sync**: Added tests in `web/tests/test_app.py` to assert homepage and about-page MCP version text matches the root `VERSION` value.
 - **Homepage wording and semantics refined**: Removed overly technical "main branch" wording from the homepage release summary, and updated the supported-formats list markup in `web/src/acb_large_print_web/templates/index.html` so the `<ul>` always contains direct `<li>` children (feature toggles now use `hidden` on list items) to satisfy accessibility linting.
+- **Deployment-gate test assertion hardened**: Updated `web/tests/test_app.py` to assert homepage release heading text using decoded response content instead of a brittle HTML-entity byte pattern, preventing false CI failures in the Deploy Web App workflow.
 
 ### 7.2.0 (Unreleased)
 
