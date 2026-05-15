@@ -68,6 +68,10 @@ jobs:
       - name: Install Pandoc
         run: sudo apt-get install -y pandoc
 
+      - name: Verify MCP test dependencies
+        run: |
+          python -c "import fastapi, starlette, pydantic"
+
       - name: Run web tests
         run: python -m pytest web/tests/ -x -q
 

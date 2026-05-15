@@ -73,6 +73,7 @@ set_deploy_status() {
     local phase="$1"
     local state="$2"
     local detail="${3:-}"
+    local container_status_file="/app/instance/deploy-status.json"
     mkdir -p "$(dirname "$DEPLOY_STATUS_FILE")"
     python3 - "$DEPLOY_STATUS_FILE" "$phase" "$state" "$detail" "$WCAG22AA_GATE" "$WCAG22AAA_GATE" <<'PYEOF' || true
 import json
@@ -107,6 +108,49 @@ payload.update({
 })
 path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
 PYEOF
+
+    # Keep the runtime status file in sync with what the web app actually reads
+    # from inside the container (/app/instance/deploy-status.json).
+    if [[ -f "$WEB_ROOT/$COMPOSE_FILE" ]]; then
+        local web_cid
+        web_cid="$(docker compose -f "$WEB_ROOT/$COMPOSE_FILE" ps -q web 2>/dev/null | head -n1)"
+        if [[ -n "$web_cid" ]]; then
+            docker compose -f "$WEB_ROOT/$COMPOSE_FILE" exec -T web python3 - "$container_status_file" "$phase" "$state" "$detail" "$WCAG22AA_GATE" "$WCAG22AAA_GATE" <<'PYEOF' || true
+import json
+import sys
+from datetime import datetime, timezone
+from pathlib import Path
+
+path = Path(sys.argv[1])
+phase = sys.argv[2]
+state = sys.argv[3]
+detail = sys.argv[4]
+aa_default = sys.argv[5]
+aaa_default = sys.argv[6]
+
+payload = {}
+if path.exists():
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        payload = {}
+
+gates = payload.get("gates") if isinstance(payload.get("gates"), dict) else {}
+payload.update({
+    "phase": phase,
+    "state": state,
+    "detail": detail,
+    "updated_at_utc": datetime.now(timezone.utc).isoformat(),
+    "gates": {
+        "wcag22aa": str(gates.get("wcag22aa", aa_default)),
+        "wcag22aaa": str(gates.get("wcag22aaa", aaa_default)),
+    },
+})
+path.parent.mkdir(parents=True, exist_ok=True)
+path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+PYEOF
+        fi
+    fi
 }
 
 # ---------------------------------------------------------------------------

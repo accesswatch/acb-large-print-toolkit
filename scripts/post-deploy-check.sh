@@ -42,6 +42,7 @@ set_deploy_status() {
     local detail="${3:-}"
     local aa="${4:-$WCAG22AA_GATE}"
     local aaa="${5:-$WCAG22AAA_GATE}"
+    local container_status_file="/app/instance/deploy-status.json"
     mkdir -p "$(dirname "$DEPLOY_STATUS_FILE")"
     python3 - "$DEPLOY_STATUS_FILE" "$phase" "$state" "$detail" "$aa" "$aaa" <<'PYEOF' || true
 import json
@@ -76,6 +77,48 @@ payload.update({
 })
 path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
 PYEOF
+
+    # Also write to the in-container instance path consumed by /health.
+    if [[ -f "$WEB_ROOT/$COMPOSE_FILE" ]]; then
+        local web_cid
+        web_cid="$(docker compose -f "$WEB_ROOT/$COMPOSE_FILE" ps -q web 2>/dev/null | head -n1)"
+        if [[ -n "$web_cid" ]]; then
+            docker compose -f "$WEB_ROOT/$COMPOSE_FILE" exec -T web python3 - "$container_status_file" "$phase" "$state" "$detail" "$aa" "$aaa" <<'PYEOF' || true
+import json
+import sys
+from datetime import datetime, timezone
+from pathlib import Path
+
+path = Path(sys.argv[1])
+phase = sys.argv[2]
+state = sys.argv[3]
+detail = sys.argv[4]
+aa = sys.argv[5]
+aaa = sys.argv[6]
+
+payload = {}
+if path.exists():
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        payload = {}
+
+existing = payload.get("gates") if isinstance(payload.get("gates"), dict) else {}
+payload.update({
+    "phase": phase,
+    "state": state,
+    "detail": detail,
+    "updated_at_utc": datetime.now(timezone.utc).isoformat(),
+    "gates": {
+        "wcag22aa": str(aa or existing.get("wcag22aa", "unknown")),
+        "wcag22aaa": str(aaa or existing.get("wcag22aaa", "unknown")),
+    },
+})
+path.parent.mkdir(parents=True, exist_ok=True)
+path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+PYEOF
+        fi
+    fi
 }
 
 compose() {
@@ -364,11 +407,11 @@ fi <<< "$HEALTH_JSON"
 echo ""
 if [[ "$URL_FAIL" -ne 0 || "$SERVICE_FAIL" -ne 0 || "$READINESS_FAIL" -ne 0 ]]; then
     echo "=== Post-deploy verification FAILED ==="
-    set_deploy_status "post_deploy_checks" "failed" "Post-deploy verification failed" "unknown" "unknown"
+    set_deploy_status "post_deploy_checks" "failed" "Post-deploy verification failed" "$WCAG22AA_GATE" "$WCAG22AAA_GATE"
     echo "See log file: $LOG_FILE"
     exit 1
 fi
 
 echo "=== Post-deploy verification PASSED ==="
-set_deploy_status "post_deploy_complete" "completed" "Post-deploy verification passed" "unknown" "unknown"
+set_deploy_status "post_deploy_complete" "completed" "Post-deploy verification passed" "$WCAG22AA_GATE" "$WCAG22AAA_GATE"
 echo "Log saved: $LOG_FILE"
