@@ -61,6 +61,8 @@ jobs:
 
           install_with_retry 4 python -m pip install -e ./desktop
           install_with_retry 4 python -m pip install -e ./web
+          install_with_retry 4 python -m pip install -r ./mcp_server/requirements.txt
+          install_with_retry 4 python -m pip install -r ./mcp_server/tests/requirements.txt
           install_with_retry 4 python -m pip install pytest
 
       - name: Install Pandoc
