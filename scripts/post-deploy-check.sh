@@ -18,6 +18,7 @@ WEB_ROOT="${WEB_ROOT:-$APP_ROOT/web}"
 COMPOSE_FILE="${COMPOSE_FILE:-docker-compose.prod.yml}"
 APP_DOMAIN="${APP_DOMAIN:-lp.csedesigns.com}"
 APP_ALIAS_DOMAIN="${APP_ALIAS_DOMAIN:-}"
+DEPLOY_STATUS_FILE="${DEPLOY_STATUS_FILE:-$APP_ROOT/instance/deploy-status.json}"
 LOG_DIR="${LOG_DIR:-$HOME/deploy-logs}"
 TS="$(date -u +%Y%m%d-%H%M%S)"
 LOG_FILE="${LOG_DIR}/post-deploy-check-${TS}.log"
@@ -32,6 +33,48 @@ finalize_log() {
 }
 
 trap finalize_log EXIT
+
+set_deploy_status() {
+    local phase="$1"
+    local state="$2"
+    local detail="${3:-}"
+    local aa="${4:-unknown}"
+    local aaa="${5:-unknown}"
+    mkdir -p "$(dirname "$DEPLOY_STATUS_FILE")"
+    python3 - "$DEPLOY_STATUS_FILE" "$phase" "$state" "$detail" "$aa" "$aaa" <<'PYEOF' || true
+import json
+import sys
+from datetime import datetime, timezone
+from pathlib import Path
+
+path = Path(sys.argv[1])
+phase = sys.argv[2]
+state = sys.argv[3]
+detail = sys.argv[4]
+aa = sys.argv[5]
+aaa = sys.argv[6]
+
+payload = {}
+if path.exists():
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        payload = {}
+
+existing = payload.get("gates") if isinstance(payload.get("gates"), dict) else {}
+payload.update({
+    "phase": phase,
+    "state": state,
+    "detail": detail,
+    "updated_at_utc": datetime.now(timezone.utc).isoformat(),
+    "gates": {
+        "wcag22aa": str(aa or existing.get("wcag22aa", "unknown")),
+        "wcag22aaa": str(aaa or existing.get("wcag22aaa", "unknown")),
+    },
+})
+path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+PYEOF
+}
 
 compose() {
     docker compose -f "$WEB_ROOT/$COMPOSE_FILE" "$@"
@@ -110,6 +153,7 @@ fi
 
 echo "=== Post-Deploy Maintenance ==="
 echo "Log file: $LOG_FILE"
+set_deploy_status "post_deploy_checks" "in_progress" "Running post-deploy verification"
 echo ""
 
 # --- 1. Backup cron job ---
@@ -310,9 +354,11 @@ fi <<< "$HEALTH_JSON"
 echo ""
 if [[ "$URL_FAIL" -ne 0 || "$SERVICE_FAIL" -ne 0 || "$READINESS_FAIL" -ne 0 ]]; then
     echo "=== Post-deploy verification FAILED ==="
+    set_deploy_status "post_deploy_checks" "failed" "Post-deploy verification failed" "unknown" "unknown"
     echo "See log file: $LOG_FILE"
     exit 1
 fi
 
 echo "=== Post-deploy verification PASSED ==="
+set_deploy_status "post_deploy_complete" "completed" "Post-deploy verification passed" "unknown" "unknown"
 echo "Log saved: $LOG_FILE"

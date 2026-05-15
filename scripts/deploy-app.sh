@@ -60,11 +60,50 @@ CLEANUP_ON_ROLLBACK="${CLEANUP_ON_ROLLBACK:-0}"
 CLEANUP_IMAGE_PRUNE="${CLEANUP_IMAGE_PRUNE:-1}"
 CLEANUP_BUILDER_PRUNE="${CLEANUP_BUILDER_PRUNE:-0}"
 CLEANUP_BUILDER_KEEP_STORAGE="${CLEANUP_BUILDER_KEEP_STORAGE:-4GB}"
+DEPLOY_STATUS_FILE="${DEPLOY_STATUS_FILE:-$APP_ROOT/instance/deploy-status.json}"
 
 
 PRE_DEPLOY_COMMIT=""
 ROLLED_BACK=0
 MAINTENANCE_ENABLED=0
+
+set_deploy_status() {
+    local phase="$1"
+    local state="$2"
+    local detail="${3:-}"
+    mkdir -p "$(dirname "$DEPLOY_STATUS_FILE")"
+    python3 - "$DEPLOY_STATUS_FILE" "$phase" "$state" "$detail" <<'PYEOF' || true
+import json
+import sys
+from datetime import datetime, timezone
+from pathlib import Path
+
+path = Path(sys.argv[1])
+phase = sys.argv[2]
+state = sys.argv[3]
+detail = sys.argv[4]
+
+payload = {}
+if path.exists():
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        payload = {}
+
+gates = payload.get("gates") if isinstance(payload.get("gates"), dict) else {}
+payload.update({
+    "phase": phase,
+    "state": state,
+    "detail": detail,
+    "updated_at_utc": datetime.now(timezone.utc).isoformat(),
+    "gates": {
+        "wcag22aa": str(gates.get("wcag22aa", "unknown")),
+        "wcag22aaa": str(gates.get("wcag22aaa", "unknown")),
+    },
+})
+path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+PYEOF
+}
 
 # ---------------------------------------------------------------------------
 # Helper: container state + health one-liner
@@ -188,6 +227,7 @@ wait_for_health() {
 # ---------------------------------------------------------------------------
 log_ts "=== ACB Large Print Toolkit -- Deploy (script started) ==="
 log_ts "Log file: $LOG_FILE"
+set_deploy_status "preflight" "in_progress" "deploy-app.sh preflight checks"
 echo ""
 
 if [[ "$(whoami)" == "root" ]]; then
@@ -272,6 +312,7 @@ fi
 log_ts "--- Enabling maintenance mode (MAINTENANCE_MODE=1) ---"
 export MAINTENANCE_MODE=1
 MAINTENANCE_ENABLED=1
+set_deploy_status "maintenance_on" "in_progress" "Maintenance mode enabled"
 
 # ---------------------------------------------------------------------------
 # Build and start containers
@@ -280,6 +321,7 @@ cd "$WEB_ROOT"
 
 log_ts "--- Building and starting containers (docker compose up -d --build) ---"
 log_ts "    Build output follows:"
+set_deploy_status "compose_up" "in_progress" "Building and starting containers"
 if [[ "$COMPOSE_REMOVE_ORPHANS" == "1" ]]; then
     docker compose -f "$COMPOSE_FILE" up -d --build --remove-orphans
 else
@@ -296,6 +338,7 @@ echo ""
 # Wait for health check
 # ---------------------------------------------------------------------------
 HEALTHY="$(wait_for_health "deploy")"
+set_deploy_status "health_wait" "in_progress" "Waiting for /health readiness"
 echo ""
 
 if [[ "$HEALTHY" -eq 1 ]]; then
@@ -305,6 +348,7 @@ if [[ "$HEALTHY" -eq 1 ]]; then
     log_ts "--- Disabling maintenance mode (site is now live) ---"
     export MAINTENANCE_MODE=0
     MAINTENANCE_ENABLED=0
+    set_deploy_status "maintenance_off" "in_progress" "Maintenance mode disabled"
     if [[ "$COMPOSE_REMOVE_ORPHANS" == "1" ]]; then
         docker compose -f "$COMPOSE_FILE" up -d --build --remove-orphans
     else
@@ -437,8 +481,11 @@ print('GLOW_ENABLE_SPEECH enabled.')
         log_ts "--- Skipping cleanup on success (CLEANUP_ON_SUCCESS=$CLEANUP_ON_SUCCESS) ---"
     fi
 
+    set_deploy_status "complete" "completed" "Deploy app script completed successfully"
+
 else
     log_ts "--- Health check: FAILED after ${HEALTH_MAX_ATTEMPTS} attempts ---"
+    set_deploy_status "health_failed" "failed" "Health check failed before maintenance-off"
     probe_health_json "Partial health state on failure"
 
     log_ts "--- Dumping recent container logs for all services ---"
@@ -481,6 +528,7 @@ Container: {{.Name}}
 
         if [[ "$ROLLBACK_HEALTHY" -eq 1 ]]; then
             ROLLED_BACK=1
+            set_deploy_status "rollback_complete" "degraded" "Deploy failed; rollback succeeded"
             log_ts "--- Rollback health check: PASSED ---"
             probe_health_json "Rollback health readiness"
 
@@ -491,12 +539,14 @@ Container: {{.Name}}
             fi
         else
             log_ts "--- Rollback health check: FAILED ---"
+            set_deploy_status "rollback_failed" "failed" "Deploy failed and rollback failed"
             dump_service_logs web 60
             log_ts "    Manual intervention required."
             exit 1
         fi
     else
         log_ts "--- Rollback unavailable (no Git commit baseline or no .git directory). ---"
+        set_deploy_status "rollback_unavailable" "failed" "Deploy failed and rollback unavailable"
         exit 1
     fi
 fi

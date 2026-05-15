@@ -52,6 +52,9 @@ Releases are tagged in the [GitHub repository](https://github.com/Community-Acce
 - **Web container now carries canonical VERSION file**: Added `COPY VERSION /app/VERSION` to `web/Dockerfile` so `web/src/acb_large_print_web/version.py` can resolve release metadata at runtime in production containers.
 - **Release-version fallback hardened**: Updated `web/src/acb_large_print_web/app.py` to fall back to installed package metadata (`acb-large-print-web`) instead of hardcoded `1.0.0` when reading `VERSION` fails.
 - **Admin auth gate test-mode compatibility**: Updated `web/src/acb_large_print_web/routes/admin.py` so the login-route feature gate (`GLOW_ENABLE_ADMIN_LOGIN`) is bypassed in Flask `TESTING` mode, preserving production lockout behavior while keeping existing admin auth tests valid in CI.
+- **Footer deploy and WCAG gate visibility**: Added footer status lines in `web/src/acb_large_print_web/templates/base.html` and client refresh logic in `web/src/acb_large_print_web/static/a11y-enhancements.js` to display `WCAG 2.2 AA` gate status, `WCAG 2.2 AAA` gate status, and current deployment phase from `/health`.
+- **Health endpoint deployment telemetry**: Extended `web/src/acb_large_print_web/app.py` `/health` payload with a new `deployment` section (`state`, `phase`, `detail`, `updated_at_utc`, and `gates`) and readiness summaries for `wcag22aa_gate` / `wcag22aaa_gate`.
+- **Deploy scripts now publish deploy-phase status**: Updated `scripts/deploy-app.sh` and `scripts/post-deploy-check.sh` to write phase/state updates into `instance/deploy-status.json`, allowing `/health` and footer UI to reflect real-time deployment progress and verification state.
 
 ### 7.2.0 (Unreleased)
 

@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
+import json
 import logging
 import os
 import uuid
 from datetime import UTC, datetime
+from pathlib import Path
 
 from flask import Flask, jsonify, render_template
 from flask_limiter import Limiter
@@ -508,6 +510,34 @@ def create_app(config: dict | None = None) -> Flask:
         budget_ok = not is_budget_exhausted()
         all_flags = _ff.get_all_flags()
 
+        deployment = {
+            "state": "unknown",
+            "phase": "unknown",
+            "detail": "No deployment status has been recorded yet.",
+            "updated_at_utc": None,
+            "gates": {
+                "wcag22aa": "unknown",
+                "wcag22aaa": "unknown",
+            },
+        }
+        try:
+            deploy_status_path = Path(app.instance_path) / "deploy-status.json"
+            if deploy_status_path.exists():
+                parsed = json.loads(deploy_status_path.read_text(encoding="utf-8"))
+                if isinstance(parsed, dict):
+                    deployment.update({
+                        "state": str(parsed.get("state", deployment["state"])),
+                        "phase": str(parsed.get("phase", deployment["phase"])),
+                        "detail": str(parsed.get("detail", deployment["detail"])),
+                        "updated_at_utc": parsed.get("updated_at_utc", deployment["updated_at_utc"]),
+                    })
+                    gates = parsed.get("gates")
+                    if isinstance(gates, dict):
+                        deployment["gates"]["wcag22aa"] = str(gates.get("wcag22aa", deployment["gates"]["wcag22aa"]))
+                        deployment["gates"]["wcag22aaa"] = str(gates.get("wcag22aaa", deployment["gates"]["wcag22aaa"]))
+        except Exception:
+            pass
+
         speech_enabled = bool(all_flags.get("GLOW_ENABLE_SPEECH", True))
         braille_enabled = bool(all_flags.get("GLOW_ENABLE_BRAILLE", True))
 
@@ -632,6 +662,12 @@ def create_app(config: dict | None = None) -> Flask:
                     1,
                 ),
             },
+            "wcag22aa_gate": {
+                "status": deployment["gates"]["wcag22aa"],
+            },
+            "wcag22aaa_gate": {
+                "status": deployment["gates"]["wcag22aaa"],
+            },
         }
 
         # Overall status: web always ok; degrade when configured dependencies
@@ -675,6 +711,7 @@ def create_app(config: dict | None = None) -> Flask:
                 "total": len(all_flags),
             },
             "capacity": capacity,
+            "deployment": deployment,
             "timestamp_utc": datetime.now(UTC).isoformat(),
             "duration_ms": _hduration_ms,
         }

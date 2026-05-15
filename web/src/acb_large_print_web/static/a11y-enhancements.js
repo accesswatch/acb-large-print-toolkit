@@ -68,6 +68,47 @@
         rewriteTimes();
     }
 
+    // --- 2b. Footer deploy + WCAG gate status -------------------------------
+    function updateFooterHealthStatus() {
+        var aaEl = document.getElementById('footer-wcag-aa-status');
+        var aaaEl = document.getElementById('footer-wcag-aaa-status');
+        var deployEl = document.getElementById('footer-deploy-phase');
+        if (!aaEl && !aaaEl && !deployEl) return;
+
+        fetch('/health', { method: 'GET', credentials: 'same-origin' })
+            .then(function (resp) {
+                if (!resp.ok) throw new Error('health http ' + resp.status);
+                return resp.json();
+            })
+            .then(function (payload) {
+                var deployment = payload && payload.deployment ? payload.deployment : {};
+                var gates = deployment.gates || {};
+                var aa = String(gates.wcag22aa || 'unknown');
+                var aaa = String(gates.wcag22aaa || 'unknown');
+                var phase = String(deployment.phase || 'unknown');
+                var state = String(deployment.state || 'unknown');
+
+                if (aaEl) aaEl.textContent = 'WCAG 2.2 AA gate: ' + aa;
+                if (aaaEl) aaaEl.textContent = 'WCAG 2.2 AAA gate: ' + aaa;
+                if (deployEl) {
+                    var detail = deployment.detail ? ' (' + deployment.detail + ')' : '';
+                    deployEl.textContent = 'Deployment: ' + phase + ' [' + state + ']' + detail;
+                }
+            })
+            .catch(function () {
+                if (aaEl) aaEl.textContent = 'WCAG 2.2 AA gate: unavailable';
+                if (aaaEl) aaaEl.textContent = 'WCAG 2.2 AAA gate: unavailable';
+                if (deployEl) deployEl.textContent = 'Deployment: unavailable';
+            });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', updateFooterHealthStatus);
+    } else {
+        updateFooterHealthStatus();
+    }
+    window.setInterval(updateFooterHealthStatus, 30 * 1000);
+
     // --- 5. Cognitive profile helpers -------------------------------------
     function cognitiveModeEnabled() {
         try {
