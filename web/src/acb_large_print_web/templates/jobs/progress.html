@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}Job Progress - GLOW{% endblock %}
 {% block content %}
-<section class="card" aria-labelledby="job-title">
+<section class="card">
   <h1 id="job-title">Processing Job</h1>
   <p id="job-message" aria-live="polite">{{ job_status.message or 'Queued...' }}</p>
   <label id="job-progress-label" for="job-progress">Progress</label>

@@ -43,6 +43,7 @@ Releases are tagged in the [GitHub repository](https://github.com/Community-Acce
 - **Regression coverage for release display sync**: Added tests in `web/tests/test_app.py` to assert homepage and about-page MCP version text matches the root `VERSION` value.
 - **Homepage wording and semantics refined**: Removed overly technical "main branch" wording from the homepage release summary, and updated the supported-formats list markup in `web/src/acb_large_print_web/templates/index.html` so the `<ul>` always contains direct `<li>` children (feature toggles now use `hidden` on list items) to satisfy accessibility linting.
 - **Deployment-gate test assertion hardened**: Updated `web/tests/test_app.py` to assert homepage release heading text using decoded response content instead of a brittle HTML-entity byte pattern, preventing false CI failures in the Deploy Web App workflow.
+- **Landmark guardrail compliance in job progress template**: Removed redundant `aria-labelledby` from the `<section>` wrapper in `web/src/acb_large_print_web/templates/jobs/progress.html` to satisfy `web/tests/test_landmark_aria_guardrails.py` and avoid unnecessary region landmark noise.
 
 ### 7.2.0 (Unreleased)
 
