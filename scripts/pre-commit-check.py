@@ -397,9 +397,9 @@ def check_local_accessibility_gate():
             print("[FAIL] web/package.json not found; cannot run local WCAG smoke gate")
             return False
 
-        print("[CHECK] Running local WCAG smoke gate: npm --prefix web run test:e2e:site-audit")
+        print("[CHECK] Running local WCAG impacted-route axe gate: npm --prefix web run test:axe:impacted")
         smoke = subprocess.run(
-            ["npm", "--prefix", "web", "run", "test:e2e:site-audit"],
+            ["npm", "--prefix", "web", "run", "test:axe:impacted"],
             cwd=str(REPO_ROOT),
             text=True,
         )
