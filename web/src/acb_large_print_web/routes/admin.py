@@ -45,6 +45,7 @@ from ..ai_gateway import (
 )
 from ..feature_flags import (
     get_all_flags as _get_all_flags,
+    get_flag as _get_flag,
     set_flag as _set_flag,
     reset_defaults as _reset_flag_defaults,
     get_flag_meta as _get_flag_meta,
@@ -68,6 +69,13 @@ from .whisperer import (
 admin_bp = Blueprint("admin", __name__)
 
 _MAGIC_LINK_TTL_MINUTES = int(os.environ.get("ADMIN_MAGIC_LINK_TTL_MINUTES", "20"))
+
+
+@admin_bp.before_request
+def _enforce_admin_login_flag() -> None:
+    """Hide admin auth surfaces when admin login is feature-gated off."""
+    if not _get_flag("GLOW_ENABLE_ADMIN_LOGIN", False):
+        abort(404)
 
 
 @dataclass

@@ -218,6 +218,8 @@ def create_app(config: dict | None = None) -> Flask:
             ctx["feature_forced_colors_mode_enabled"] = bool(all_flags.get("GLOW_ENABLE_FORCED_COLORS_MODE", True))
             ctx["feature_rule_contributions_enabled"] = bool(all_flags.get("GLOW_ENABLE_RULE_CONTRIBUTIONS", True))
             ctx["feature_site_audit_enabled"] = bool(all_flags.get("GLOW_ENABLE_SITE_AUDIT", True))
+            ctx["feature_user_login_enabled"] = bool(all_flags.get("GLOW_ENABLE_USER_LOGIN", False))
+            ctx["feature_admin_login_enabled"] = bool(all_flags.get("GLOW_ENABLE_ADMIN_LOGIN", False))
         except Exception:
             # Best-effort injection; templates should handle missing keys gracefully
             pass

@@ -73,7 +73,9 @@
 <section>
   <h2 id="accounts-heading">Accounts and Identity</h2>
   <p>GLOW does not require an account, login, or registration for standard document workflows. No personally identifiable information is collected as a condition of using the core tool.</p>
+  {% if feature_admin_login_enabled %}
   <p>Administrative dashboards use a separate admin-only authentication flow. Admin sign-in options (email magic link and configured OAuth providers) are only enabled when email delivery is configured. Admin access requests require approval by an existing approved admin.</p>
+  {% endif %}
   <p>If you submit feedback through the Feedback page, your message is stored in an encrypted SQLite database on the server and is accessible only to BITS administrators. Feedback is retained to help improve the tool and is not shared externally.</p>
   <p>If you choose to remember your preferences on the Settings page, GLOW stores those defaults in your browser's local storage on your device only. The saved data contains your chosen defaults, custom rule sets, and page-state preferences such as Rules Reference filters. It does not include document content and is not sent to the server.</p>
 </section>
