@@ -20,7 +20,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from typing import Optional
 import tempfile
 from pathlib import Path
-from glow_mcp_utils import run_audit, run_report
+try:
+    from .glow_mcp_utils import run_audit, run_report
+except ImportError:  # Support direct module execution in tests.
+    from glow_mcp_utils import run_audit, run_report
 
 app = FastAPI(title="GLOW MCP Server", description="Accessibility audit/fix/convert/report API for agent integration.", version="7.2.0")
 
@@ -59,7 +62,10 @@ async def audit(file: UploadFile = File(...), format: str = Form(...)):
 @app.post("/fix")
 async def fix(file: UploadFile = File(...), format: str = Form(...)):
     """Auto-fix accessibility issues in a document."""
-    from glow_mcp_utils import run_fix
+    try:
+        from .glow_mcp_utils import run_fix
+    except ImportError:
+        from glow_mcp_utils import run_fix
     import tempfile
     from pathlib import Path
     with tempfile.NamedTemporaryFile(delete=False, suffix=Path(file.filename).suffix) as tmp:
@@ -84,7 +90,10 @@ async def fix(file: UploadFile = File(...), format: str = Form(...)):
 @app.post("/convert")
 async def convert(file: UploadFile = File(...), from_format: str = Form(...), to_format: str = Form(...)):
     """Convert a document between supported formats."""
-    from glow_mcp_utils import run_convert
+    try:
+        from .glow_mcp_utils import run_convert
+    except ImportError:
+        from glow_mcp_utils import run_convert
     import tempfile
     from pathlib import Path
     with tempfile.NamedTemporaryFile(delete=False, suffix=Path(file.filename).suffix) as tmp:
@@ -106,7 +115,10 @@ async def convert(file: UploadFile = File(...), from_format: str = Form(...), to
 @app.post("/report")
 async def report(file: UploadFile = File(...), format: str = Form(...), report_type: str = Form("json")):
     """Generate a detailed accessibility report."""
-    from glow_mcp_utils import run_audit, run_report
+    try:
+        from .glow_mcp_utils import run_audit, run_report
+    except ImportError:
+        from glow_mcp_utils import run_audit, run_report
     import tempfile
     from pathlib import Path
     with tempfile.NamedTemporaryFile(delete=False, suffix=Path(file.filename).suffix) as tmp:

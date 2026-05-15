@@ -6,6 +6,7 @@ on:
     branches: [main, "release/**"]
     paths:
       - "web/**"
+      - "mcp_server/**"
       - "desktop/src/**"
       - "desktop/pyproject.toml"
       - "scripts/deploy-app.sh"
@@ -67,6 +68,9 @@ jobs:
 
       - name: Run web tests
         run: python -m pytest web/tests/ -x -q
+
+      - name: Run MCP server tests
+        run: python -m pytest mcp_server/tests/ -x -q
 
   deploy:
     name: Deploy to production

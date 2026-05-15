@@ -9,12 +9,12 @@ import tempfile
 import shutil
 
 
-from desktop.src.acb_large_print.auditor import audit_document
-from desktop.src.acb_large_print.md_auditor import audit_markdown
-from desktop.src.acb_large_print.fixer import fix_document
-from desktop.src.acb_large_print.converter import convert_to_markdown
-from desktop.src.acb_large_print.pandoc_converter import convert_to_html, convert_to_docx
-from desktop.src.acb_large_print.reporter import generate_json_report, generate_text_report, generate_html_report
+from acb_large_print.auditor import audit_document
+from acb_large_print.md_auditor import audit_markdown
+from acb_large_print.fixer import fix_document
+from acb_large_print.converter import convert_to_markdown
+from acb_large_print.pandoc_converter import convert_to_html, convert_to_docx
+from acb_large_print.reporter import generate_json_report, generate_text_report, generate_html_report
 
 SUPPORTED_FORMATS = {"markdown", "md", "docx", "html"}
 

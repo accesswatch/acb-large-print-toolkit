@@ -17,7 +17,7 @@ This server exposes GLOW's accessibility audit, fix, convert, and reporting feat
 Run the server:
 
 ```bash
-uvicorn mcp_server.main:app --reload
+uvicorn mcp_server.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
 ### Example: Audit a Markdown file

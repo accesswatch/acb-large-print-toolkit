@@ -210,6 +210,9 @@ wait_for_health() {
         for svc in pipeline web; do
             log_ts "    $svc: $(container_state "$svc")" >&2
         done
+        if docker compose -f "$COMPOSE_FILE" config --services 2>/dev/null | grep -Fxq mcp; then
+            log_ts "    mcp: $(container_state "mcp")" >&2
+        fi
 
         if docker compose -f "$COMPOSE_FILE" exec -T web python -c \
             "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=4)" 2>/dev/null; then

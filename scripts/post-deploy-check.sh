@@ -268,6 +268,9 @@ check_header_contains() {
 URL_FAIL=0
 check_url "${APP_DOMAIN}/health" "https://${APP_DOMAIN}/health" false || true
 check_url "${APP_DOMAIN}/" "https://${APP_DOMAIN}/" false true || true
+if compose_has_service "mcp"; then
+    check_url "${APP_DOMAIN}/mcp/health" "https://${APP_DOMAIN}/mcp/health" true || URL_FAIL=1
+fi
 check_url "${APP_DOMAIN}/speech/" "https://${APP_DOMAIN}/speech/" false || true
 check_header_contains "${APP_DOMAIN} CSP media-src" "https://${APP_DOMAIN}/static/let-it-glow.mp3" "Content-Security-Policy" "media-src 'self'" true || URL_FAIL=1
 if [[ -n "$APP_ALIAS_DOMAIN" ]]; then
@@ -285,6 +288,11 @@ echo ""
 echo "--- Required service health gates ---"
 SERVICE_FAIL=0
 REQUIRED_SERVICES=(pipeline web)
+if compose_has_service "mcp"; then
+    REQUIRED_SERVICES+=(mcp)
+else
+    echo "  mcp: skipped (service not defined in $COMPOSE_FILE)"
+fi
 if compose_has_service "ollama"; then
     REQUIRED_SERVICES+=(ollama)
 else
