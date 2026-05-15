@@ -511,13 +511,13 @@ def create_app(config: dict | None = None) -> Flask:
         all_flags = _ff.get_all_flags()
 
         deployment = {
-            "state": "unknown",
-            "phase": "unknown",
-            "detail": "No deployment status has been recorded yet.",
+            "state": "idle",
+            "phase": "none",
+            "detail": "No deployment is currently in progress.",
             "updated_at_utc": None,
             "gates": {
-                "wcag22aa": "unknown",
-                "wcag22aaa": "unknown",
+                "wcag22aa": "not-reported",
+                "wcag22aaa": "not-reported",
             },
         }
         try:
