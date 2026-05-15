@@ -46,6 +46,7 @@ Releases are tagged in the [GitHub repository](https://github.com/Community-Acce
 - **Landmark guardrail compliance in job progress template**: Removed redundant `aria-labelledby` from the `<section>` wrapper in `web/src/acb_large_print_web/templates/jobs/progress.html` to satisfy `web/tests/test_landmark_aria_guardrails.py` and avoid unnecessary region landmark noise.
 - **Canonical version advanced to 7.2.0**: Updated root `VERSION` to `7.2.0` and synchronized `desktop/pyproject.toml`, `web/pyproject.toml`, `office-addin/package.json`, and `web/package.json` so all release surfaces read the same value.
 - **Version consistency validator source-of-truth corrected**: Updated `scripts/check-version-consistency.py` to read from root `VERSION` (single source of truth) and validate changelog coverage for either `## [X.X.X]` release headings or `### X.X.X (Unreleased)` markers.
+- **Job progress accessibility test alignment**: Updated `web/tests/test_jobs_accessibility.py` to assert the current `<section class="card">` structure without `aria-labelledby`, keeping test expectations consistent with the section-landmark guardrail enforced in `web/tests/test_landmark_aria_guardrails.py`.
 
 ### 7.2.0 (Unreleased)
 
