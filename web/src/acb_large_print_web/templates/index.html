@@ -3,7 +3,11 @@
 {% block title %}Home{% endblock %}
 {% block heading %}{{ brand_heading_label }}{% endblock %}
 
+
 {% block content %}
+<div class="alert alert-info" style="margin-bottom:1.5em;">
+  <strong>New in 7.2.0:</strong> GLOW now includes a <b>Model Context Protocol (MCP) server API</b> for agent-to-agent integration, automation, and batch workflows. <a href="{{ url_for('about.about_page') }}#mcp-heading">Learn more &rarr;</a> | <a href="https://github.com/Community-Access/glow/tree/main/mcp_server">API docs</a>
+</div>
 <p>Check and fix your Office documents for compliance with the <a href="{{ url_for('guidelines.guidelines_page') }}">{{ brand_guidelines_name }}</a> and WCAG 2.2 AA standards -- no installation required. Use the goal-oriented sidebar to jump straight to any tool, or start below. <a href="{{ url_for('changelog.changelog_page') }}">Release notes &rarr;</a> See the latest shipped 7.0.0 improvements on main.</p>
 
 <section class="home-whats-new">

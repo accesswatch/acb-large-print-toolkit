@@ -1,0 +1,180 @@
+openapi: 3.0.3
+info:
+  title: GLOW MCP Server
+  version: 7.2.0
+  description: |
+    Exposes GLOW's accessibility audit, fix, convert, and reporting features via a Model Context Protocol (MCP) API for agent integration.
+    
+    **Endpoints:**
+    - /health: Health check
+    - /audit: Audit a document (Markdown, HTML, DOCX)
+    - /fix: Auto-fix accessibility issues
+    - /convert: Convert between formats (Markdown, HTML, DOCX)
+    - /report: Generate accessibility reports
+    
+    See README.md for usage and integration notes.
+servers:
+  - url: http://localhost:8000
+paths:
+  /health:
+    get:
+      summary: Health check
+      responses:
+        '200':
+          description: Server is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+  /audit:
+    post:
+      summary: Audit a document for accessibility issues
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                format:
+                  type: string
+                  enum: [markdown, html, docx]
+      responses:
+        '200':
+          description: Audit results
+          content:
+            application/json:
+              schema:
+                type: object
+  /fix:
+    post:
+      summary: Auto-fix accessibility issues in a document
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                format:
+                  type: string
+                  enum: [markdown, html, docx]
+      responses:
+        '200':
+          description: Fixed document or result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  fixed_file:
+                    type: string
+                  total_fixes:
+                    type: integer
+                  fix_records:
+                    type: array
+                    items:
+                      type: object
+                  post_fix_audit:
+                    type: object
+                  warnings:
+                    type: array
+                    items:
+                      type: string
+        '400':
+          description: Error response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+  /convert:
+    post:
+      summary: Convert a document between supported formats
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                from_format:
+                  type: string
+                  enum: [markdown, html, docx]
+                to_format:
+                  type: string
+                  enum: [markdown, html, docx]
+      responses:
+        '200':
+          description: Converted document or result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  output_file:
+                    type: string
+                  converted_text:
+                    type: string
+        '400':
+          description: Error response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+  /report:
+    post:
+      summary: Generate a detailed accessibility report
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                format:
+                  type: string
+                  enum: [markdown, html, docx]
+                report_type:
+                  type: string
+                  enum: [json, text, html]
+                  default: json
+      responses:
+        '200':
+          description: Report results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  report:
+                    type: string
+        '400':
+          description: Error response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string

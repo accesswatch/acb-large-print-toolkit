@@ -1,0 +1,4 @@
+# Add 'pytest' and 'python-docx' for testing
+pytest
+python-docx
+httpx
