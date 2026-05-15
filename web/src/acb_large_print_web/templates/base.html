@@ -371,7 +371,9 @@
           {%- else %} {{ _ns.parts[:-1] | join(", ") }}, and {{ _ns.parts[-1] }}
           {%- endif %} documents.</p>
         {% endif %}
+        {% if feature_admin_login_enabled %}
         <p>Admin features are restricted to approved administrative accounts.</p>
+        {% endif %}
         <p>Current release: {{ release_version }}</p>
         <p>Visitors: {{ "{:,}".format(visitor_count) }}</p>
         <span id="theme-status" class="visually-hidden" aria-live="polite"></span>
