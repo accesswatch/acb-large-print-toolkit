@@ -8,7 +8,7 @@
 <div class="alert alert-info" style="margin-bottom:1.5em;">
   <strong>New in {{ release_version }}:</strong> GLOW now includes a <b>Model Context Protocol (MCP) server API</b> for agent-to-agent integration, automation, and batch workflows. <a href="{{ url_for('about.about_page') }}#mcp-heading">Learn more &rarr;</a> | <a href="https://github.com/Community-Access/glow/tree/main/mcp_server">API docs</a>
 </div>
-<p>Check and fix your Office documents for compliance with the <a href="{{ url_for('guidelines.guidelines_page') }}">{{ brand_guidelines_name }}</a> and WCAG 2.2 AA standards -- no installation required. Use the goal-oriented sidebar to jump straight to any tool, or start below. <a href="{{ url_for('changelog.changelog_page') }}">Release notes &rarr;</a> See the latest shipped {{ release_version }} improvements on main.</p>
+<p>Check and fix your Office documents for compliance with the <a href="{{ url_for('guidelines.guidelines_page') }}">{{ brand_guidelines_name }}</a> and WCAG 2.2 AA standards -- no installation required. Use the goal-oriented sidebar to jump straight to any tool, or start below. <a href="{{ url_for('changelog.changelog_page') }}">Release notes &rarr;</a> See the latest shipped {{ release_version }} improvements.</p>
 
 <section class="home-whats-new">
   <h2 id="home-whats-new-heading">What's New in GLOW {{ release_version }}</h2>
@@ -96,12 +96,12 @@
 <section>
   <h2 id="formats-heading">Supported Document Formats</h2>
   <ul class="format-pills">
-    {% if feature_word_enabled %}<li class="format-pill format-docx">Word (.docx)</li>{% endif %}
-    {% if feature_excel_enabled %}<li class="format-pill format-xlsx">Excel (.xlsx)</li>{% endif %}
-    {% if feature_powerpoint_enabled %}<li class="format-pill format-pptx">PowerPoint (.pptx)</li>{% endif %}
-    {% if feature_markdown_enabled %}<li class="format-pill format-md">Markdown (.md)</li>{% endif %}
-    {% if feature_pdf_enabled %}<li class="format-pill format-pdf">PDF (.pdf)</li>{% endif %}
-    {% if feature_epub_enabled %}<li class="format-pill format-epub">ePub (.epub)</li>{% endif %}
+    <li class="format-pill format-docx"{% if not feature_word_enabled %} hidden{% endif %}>Word (.docx)</li>
+    <li class="format-pill format-xlsx"{% if not feature_excel_enabled %} hidden{% endif %}>Excel (.xlsx)</li>
+    <li class="format-pill format-pptx"{% if not feature_powerpoint_enabled %} hidden{% endif %}>PowerPoint (.pptx)</li>
+    <li class="format-pill format-md"{% if not feature_markdown_enabled %} hidden{% endif %}>Markdown (.md)</li>
+    <li class="format-pill format-pdf"{% if not feature_pdf_enabled %} hidden{% endif %}>PDF (.pdf)</li>
+    <li class="format-pill format-epub"{% if not feature_epub_enabled %} hidden{% endif %}>ePub (.epub)</li>
   </ul>
 </section>
 
