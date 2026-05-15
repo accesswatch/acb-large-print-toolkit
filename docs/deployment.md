@@ -728,6 +728,8 @@ The `.env` file contains secrets and configuration that the Flask application re
 
 If the server does not already have `web/.env`, `scripts/deploy-app.sh` now seeds it from `web/.env.example` and generates a fresh `SECRET_KEY` so the container can start cleanly instead of failing at compose time. Review the generated file before enabling optional features such as feedback-to-GitHub sync or OpenRouter-backed AI features.
 
+Keycloak/OIDC login is configured separately through `KEYCLOAK_BASE_URL`, `KEYCLOAK_REALM`, `KEYCLOAK_CLIENT_ID`, `KEYCLOAK_CLIENT_SECRET`, and `KEYCLOAK_REDIRECT_URI`. Those values are used by the web app to build its OIDC client config at startup.
+
 ```bash
 cd ~/app/web
 nano .env
@@ -1878,6 +1880,12 @@ These variables are set in `~/app/web/.env` and injected into the container via 
 | `SECRET_KEY` | **Yes** | Random per-start | Flask session and CSRF secret. **Set a fixed value in production** or sessions and CSRF tokens will not survive container restarts. |
 | `FEEDBACK_PASSWORD` | No | (unset) | Set to enable feedback review at `/feedback/review?key=<password>`. When unset, the review endpoint is disabled. |
 | `LOG_LEVEL` | No | `INFO` | Python logging level: DEBUG, INFO, WARNING, ERROR. |
+| `KEYCLOAK_BASE_URL` | No | (unset) | Base URL for the Keycloak server, for example `https://keycloak.example.com`. |
+| `KEYCLOAK_REALM` | No | (unset) | Keycloak realm name used to build the issuer and endpoint URLs. |
+| `KEYCLOAK_CLIENT_ID` | No | (unset) | OIDC client ID registered in Keycloak. |
+| `KEYCLOAK_CLIENT_SECRET` | No | (unset) | OIDC client secret registered in Keycloak. |
+| `KEYCLOAK_REDIRECT_URI` | No | (unset) | Absolute redirect URI registered in Keycloak, usually `https://lp.csedesigns.com/authorize`. |
+| `OIDC_SCOPES` | No | `openid email profile` | OIDC scopes requested during login. |
 | `SESSION_TIMEOUT_MINUTES` | No | `240` | Session lifetime in minutes. Increase for very long interactive workflows. |
 | `UPLOAD_MAX_AGE_HOURS` | No | `1` | Retention window for abandoned upload workspaces before cleanup. Active Whisper jobs keep their workspace alive while running. |
 | `WHISPER_MAX_AUDIO_MB` | No | `500` | Maximum accepted audio file size for BITS Whisperer uploads. |

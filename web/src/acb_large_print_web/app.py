@@ -556,6 +556,31 @@ def create_app(config: dict | None = None) -> Flask:
             "status": "not-configured",
             "detail": "OPENROUTER_API_KEY not set -- BITS Whisperer disabled",
         }
+        from .keycloak import get_keycloak_health_url
+        keycloak_url = get_keycloak_health_url()
+        if keycloak_url:
+            try:
+                import requests as _requests
+
+                resp = _requests.get(keycloak_url, timeout=3)
+                keycloak_probe = {
+                    "status": "ok" if resp.status_code == 200 else "unhealthy",
+                    "detail": (
+                        f"Keycloak reachable (HTTP {resp.status_code})"
+                        if resp.status_code == 200
+                        else f"Keycloak returned HTTP {resp.status_code}"
+                    ),
+                }
+            except Exception as exc:
+                keycloak_probe = {
+                    "status": "unreachable",
+                    "detail": f"Keycloak probe failed: {exc}",
+                }
+        else:
+            keycloak_probe = {
+                "status": "not-configured",
+                "detail": "Keycloak OIDC is not configured",
+            }
 
         if speech_enabled:
             try:
@@ -612,6 +637,7 @@ def create_app(config: dict | None = None) -> Flask:
 
         services = {
             "web": {"status": "ok", "detail": "service responding"},
+            "keycloak": keycloak_probe,
             "openrouter": openrouter_probe,
             "whisper": whisper_probe,
             "speech": speech_probe,
@@ -638,6 +664,11 @@ def create_app(config: dict | None = None) -> Flask:
                 "provider": "openrouter",
                 "key_set": ai_configured,
                 "reachable": whisper_probe["status"] == "ok",
+            },
+            "keycloak": {
+                "status": "ready" if keycloak_probe["status"] == "ok" else keycloak_probe["status"],
+                "enabled": keycloak_probe["status"] != "not-configured",
+                "reachable": keycloak_probe["status"] == "ok",
             },
             "speech": {
                 "status": (
@@ -679,15 +710,17 @@ def create_app(config: dict | None = None) -> Flask:
         # Overall status: web always ok; degrade when configured dependencies
         # are unavailable.
         provider_ok = (not ai_configured or openrouter_probe["status"] == "ok")
+        keycloak_ok = keycloak_probe["status"] in ("ok", "not-configured")
         speech_ok = (not speech_enabled) or (speech_probe["status"] == "ok")
         braille_ok = (not braille_enabled) or (braille_probe["status"] == "ok")
-        all_ok = provider_ok and budget_ok and speech_ok and braille_ok
+        all_ok = provider_ok and budget_ok and keycloak_ok and speech_ok and braille_ok
 
         _hduration_ms = round((_htime.monotonic() - _hstart) * 1000)
         app.logger.info(
-            "HEALTH status=%s openrouter=%s whisper=%s speech=%s braille=%s budget_pct=%.1f%% duration_ms=%d",
+            "HEALTH status=%s openrouter=%s keycloak=%s whisper=%s speech=%s braille=%s budget_pct=%.1f%% duration_ms=%d",
             "ok" if all_ok else "degraded",
             openrouter_probe["status"],
+            keycloak_probe["status"],
             whisper_probe["status"],
             speech_probe["status"],
             braille_probe["status"],
@@ -850,16 +883,27 @@ def create_app(config: dict | None = None) -> Flask:
         except Exception:
             pass  # Never crash a user request due to cleanup failure
 
+    from .routes.status import status_bp
+
+    app.register_blueprint(status_bp)
+
     # --- OIDC Authentication Integration ---
     try:
         from flask_oidc import OpenIDConnect
         from .oidc_auth import oidc_auth_bp
-        app.config.setdefault('OIDC_CLIENT_SECRETS', os.path.join(os.path.dirname(__file__), 'client_secrets.json'))
-        app.config.setdefault('OIDC_RESOURCE_SERVER_ONLY', False)
-        app.config.setdefault('OIDC_SCOPES', ['openid', 'email', 'profile'])
-        oidc = OpenIDConnect(app)
-        app.register_blueprint(oidc_auth_bp)
-        app.logger.info("OIDC authentication enabled (Keycloak + Google login)")
+        from .keycloak import build_oidc_settings
+
+        oidc_settings = build_oidc_settings()
+        if oidc_settings is None:
+            app.logger.warning(
+                "OIDC authentication is disabled until KEYCLOAK_BASE_URL, KEYCLOAK_REALM, "
+                "KEYCLOAK_CLIENT_ID, KEYCLOAK_CLIENT_SECRET, and KEYCLOAK_REDIRECT_URI are set."
+            )
+        else:
+            app.config.update(oidc_settings)
+            OpenIDConnect(app)
+            app.register_blueprint(oidc_auth_bp)
+            app.logger.info("OIDC authentication enabled (Keycloak)")
     except ImportError:
         app.logger.warning("Flask-OIDC not installed; OIDC authentication is disabled.")
     except Exception as exc:

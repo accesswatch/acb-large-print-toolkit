@@ -790,6 +790,7 @@ sftp&gt; exit
 <h3 id="42-create-the-production-environment-file-env">4.2 Create the production environment file (.env)</h3>
 <p>The <code>.env</code> file contains secrets and configuration that the Flask application reads at runtime. Docker Compose injects these into the container via the <code>env_file:</code> directive in the production compose file.</p>
 <p>If the server does not already have <code>web/.env</code>, <code>scripts/deploy-app.sh</code> now seeds it from <code>web/.env.example</code> and generates a fresh <code>SECRET_KEY</code> so the container can start cleanly instead of failing at compose time. Review the generated file before enabling optional features such as feedback-to-GitHub sync or OpenRouter-backed AI features.</p>
+<p>Keycloak/OIDC login is configured separately through <code>KEYCLOAK_BASE_URL</code>, <code>KEYCLOAK_REALM</code>, <code>KEYCLOAK_CLIENT_ID</code>, <code>KEYCLOAK_CLIENT_SECRET</code>, and <code>KEYCLOAK_REDIRECT_URI</code>. Those values are used by the web app to build its OIDC client config at startup.</p>
 <pre><code class="language-bash">cd ~/app/web
 nano .env
 </code></pre>
@@ -1813,6 +1814,42 @@ docker compose -f docker-compose.prod.yml ps
 <td>No</td>
 <td><code>INFO</code></td>
 <td>Python logging level: DEBUG, INFO, WARNING, ERROR.</td>
+</tr>
+<tr>
+<td><code>KEYCLOAK_BASE_URL</code></td>
+<td>No</td>
+<td>(unset)</td>
+<td>Base URL for the Keycloak server, for example <code>https://keycloak.example.com</code>.</td>
+</tr>
+<tr>
+<td><code>KEYCLOAK_REALM</code></td>
+<td>No</td>
+<td>(unset)</td>
+<td>Keycloak realm name used to build the issuer and endpoint URLs.</td>
+</tr>
+<tr>
+<td><code>KEYCLOAK_CLIENT_ID</code></td>
+<td>No</td>
+<td>(unset)</td>
+<td>OIDC client ID registered in Keycloak.</td>
+</tr>
+<tr>
+<td><code>KEYCLOAK_CLIENT_SECRET</code></td>
+<td>No</td>
+<td>(unset)</td>
+<td>OIDC client secret registered in Keycloak.</td>
+</tr>
+<tr>
+<td><code>KEYCLOAK_REDIRECT_URI</code></td>
+<td>No</td>
+<td>(unset)</td>
+<td>Absolute redirect URI registered in Keycloak, usually <code>https://lp.csedesigns.com/authorize</code>.</td>
+</tr>
+<tr>
+<td><code>OIDC_SCOPES</code></td>
+<td>No</td>
+<td><code>openid email profile</code></td>
+<td>OIDC scopes requested during login.</td>
 </tr>
 <tr>
 <td><code>SESSION_TIMEOUT_MINUTES</code></td>
