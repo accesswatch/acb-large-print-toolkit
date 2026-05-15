@@ -83,17 +83,30 @@ Phase A (Foundation)
 - `GET /workshop/`
 - workshop metadata and static agenda view
 
+Status:
+- Complete on branch `feature/glow-7-3-workshop-mode`.
+
 Phase B (Guided Forms)
 - `GET /workshop/session/<code>/activity/<activity_key>`
 - `POST /workshop/session/<code>/activity/<activity_key>`
+
+Status:
+- Initial implementation complete (session start/join + activity submission flow).
 
 Phase C (Gallery + Peer Review)
 - `GET /workshop/session/<code>/gallery`
 - `POST /workshop/session/<code>/peer-feedback`
 
+Status:
+- Initial implementation complete (gallery + peer feedback persistence).
+
 Phase D (Facilitator Console)
 - `GET /workshop/session/<code>/facilitator`
 - `POST /workshop/session/<code>/export`
+
+Status:
+- Export path partially complete (markdown export endpoint implemented).
+- Facilitator dashboard remains planned.
 
 ## WCAG 2.2 AA Engineering Checklist
 - Use semantic landmarks and heading order.

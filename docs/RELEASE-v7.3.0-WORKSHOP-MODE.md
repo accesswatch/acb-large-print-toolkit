@@ -14,7 +14,7 @@ GLOW framework:
 - O: Organize a repeatable workflow.
 - W: Walk forward as accessibility champions.
 
-## What is Included in This Foundation Build
+## What is Included in This Build
 - New feature flags for Workshop Mode rollout control.
 - New workshop route at `/workshop/`.
 - Initial accessible workshop experience with:
@@ -23,6 +23,12 @@ GLOW framework:
   - outcomes list,
   - agenda table with caption and scoped headers,
   - lab-hub capability indicators.
+- Workshop Lab Hub persistence and flow:
+  - session start/join by session code,
+  - guided activity submissions,
+  - shared gallery view,
+  - peer feedback capture,
+  - markdown artifact export.
 - Documentation set for implementation, facilitation, and WCAG quality gates.
 
 ## Feature Flags
@@ -63,6 +69,13 @@ Participants leave with at least one reusable artifact:
 - Keep feature-flagged in early internal pilots.
 - Run facilitator dry-runs before conference deployment.
 - Validate with keyboard and screen reader smoke tests before each event.
+
+## Implemented Routes (Current)
+- `GET/POST /workshop/` - workshop home plus session join/start.
+- `GET/POST /workshop/session/<code>/activity/<activity_key>` - guided activity form flow.
+- `GET /workshop/session/<code>/gallery` - workshop submissions and peer feedback.
+- `POST /workshop/session/<code>/submission/<id>/feedback` - structured peer review save.
+- `GET /workshop/session/<code>/export/markdown` - export workshop artifacts.
 
 ## Next Steps
 - Implement guided form flow for all workshop worksheets.
