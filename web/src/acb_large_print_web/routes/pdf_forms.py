@@ -57,8 +57,8 @@ def api_pdf_forms_inspect():
     uploaded = request.files.get("document") or request.files.get("file")
     try:
         token, path = validate_upload(uploaded, allowed_extensions={".pdf"})
-    except UploadError as exc:
-        return jsonify({"error": str(exc)}), 400
+    except UploadError:
+        return jsonify({"error": "Invalid PDF upload request."}), 400
 
     try:
         inspection = inspect_pdf_form(path)
@@ -66,4 +66,3 @@ def api_pdf_forms_inspect():
         cleanup_token(token)
 
     return jsonify(inspection)
-
