@@ -289,6 +289,16 @@
               </a>
             </li>
             {% endif %}
+            {% if feature_workshop_mode_enabled %}
+            <li>
+              <a href="{{ url_for('workshop.workshop_home') }}"
+                 class="sidebar-link{% if request.blueprint == 'workshop' %} sidebar-link--active{% endif %}"
+                 {% if request.blueprint == 'workshop' %}aria-current="page"{% endif %}>
+                <svg class="nav-icon" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M2 3h12v10H2z" stroke="currentColor" stroke-width="1.8" fill="none"/><path d="M4 5h8M4 8h5M4 11h3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+                Workshop Follow-Through
+              </a>
+            </li>
+            {% endif %}
             {% if feature_table_advisor_enabled or feature_document_compare_enabled or feature_rule_contributions_enabled %}
             <li>
               <a href="{{ url_for('magic.magic_home') }}"
@@ -314,7 +324,7 @@
     <div class="content-area">
 
       <main id="main">
-        {% block breadcrumb %}{% if request.blueprint in ['audit', 'site_audit'] %}<p class="page-breadcrumb"><span class="page-breadcrumb__label" data-group="assess">Assess</span></p>{% elif request.blueprint in ['fix', 'template'] %}<p class="page-breadcrumb"><span class="page-breadcrumb__label" data-group="fix">Fix and Build</span></p>{% elif request.blueprint in ['convert', 'export', 'braille'] %}<p class="page-breadcrumb"><span class="page-breadcrumb__label" data-group="transform">Transform</span></p>{% elif request.blueprint in ['speech', 'whisperer'] %}<p class="page-breadcrumb"><span class="page-breadcrumb__label" data-group="listen">Listen and Speak</span></p>{% elif request.blueprint in ['ai', 'chat', 'alt_text', 'magic', 'guidelines', 'rules_ref', 'guide', 'faq', 'settings'] %}<p class="page-breadcrumb"><span class="page-breadcrumb__label" data-group="explore">Explore and Learn</span></p>{% endif %}{% endblock %}
+        {% block breadcrumb %}{% if request.blueprint in ['audit', 'site_audit'] %}<p class="page-breadcrumb"><span class="page-breadcrumb__label" data-group="assess">Assess</span></p>{% elif request.blueprint in ['fix', 'template'] %}<p class="page-breadcrumb"><span class="page-breadcrumb__label" data-group="fix">Fix and Build</span></p>{% elif request.blueprint in ['convert', 'export', 'braille'] %}<p class="page-breadcrumb"><span class="page-breadcrumb__label" data-group="transform">Transform</span></p>{% elif request.blueprint in ['speech', 'whisperer'] %}<p class="page-breadcrumb"><span class="page-breadcrumb__label" data-group="listen">Listen and Speak</span></p>{% elif request.blueprint in ['ai', 'chat', 'alt_text', 'magic', 'guidelines', 'rules_ref', 'guide', 'faq', 'settings', 'workshop'] %}<p class="page-breadcrumb"><span class="page-breadcrumb__label" data-group="explore">Explore and Learn</span></p>{% endif %}{% endblock %}
         <h1>{% block heading %}{{ brand_heading_label }}{% endblock %}</h1>
 
         {% with messages = get_flashed_messages(with_categories=true) %}
@@ -375,7 +385,6 @@
         <p>Admin features are restricted to approved administrative accounts.</p>
         {% endif %}
         <p id="footer-a11y-confidence">Latest full strict accessibility scan: green (22/22 checks passed, 0 blocking WCAG 2.2 AA issues).</p>
-        <p id="footer-wcag-magic-status">WCAG 2.2 AA gate: checking, with selected AAA constellations being tracked.</p>
         <p id="footer-deploy-phase">Deployment: checking...</p>
         <p>Current release: {{ release_version }}</p>
         <p>Visitors: {{ "{:,}".format(visitor_count) }}</p>

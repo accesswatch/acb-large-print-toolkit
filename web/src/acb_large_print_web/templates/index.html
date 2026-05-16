@@ -6,13 +6,13 @@
 
 {% block content %}
 <div class="alert alert-info" style="margin-bottom:1.5em;">
-  <strong>New in {{ release_version }}:</strong> GLOW now includes a <b>Model Context Protocol (MCP) server API</b> for agent-to-agent integration, automation, and batch workflows. <a href="{{ url_for('about.about_page') }}#mcp-heading">Learn more &rarr;</a> | <a href="https://github.com/Community-Access/glow/tree/main/mcp_server">API docs</a>
+  <strong>New in {{ release_version }}:</strong> GLOW now includes a <b>Model Context Protocol (MCP) server API</b>, Workshop Follow-Through, and richer workshop exports for coaching templates, checklists, and 30-day commitments. <a href="{{ url_for('about.about_page') }}#mcp-heading">Learn more &rarr;</a> | <a href="https://github.com/Community-Access/glow/tree/main/mcp_server">API docs</a>
 </div>
 <p>Check and fix your Office documents for compliance with the <a href="{{ url_for('guidelines.guidelines_page') }}">{{ brand_guidelines_name }}</a> and WCAG 2.2 AA standards -- no installation required. Use the goal-oriented sidebar to jump straight to any tool, or start below. <a href="{{ url_for('changelog.changelog_page') }}">Release notes &rarr;</a> See the latest shipped {{ release_version }} improvements.</p>
 
 <section class="home-whats-new">
   <h2 id="home-whats-new-heading">What's New in GLOW {{ release_version }}</h2>
-  <p>GLOW {{ release_version }} focuses on workflow reliability and accessibility: async conversion queue support with live job progress tracking (SSE plus poll fallback), safer result download routing, improved web color contrast, ARIA and heading-order fixes, landmark guardrail hardening, centralized version/deployment documentation cleanup, and the new MCP server API for agent-to-agent automation. <a href="https://github.com/Community-Access/glow/tree/main/mcp_server">MCP server documentation &rarr;</a></p>
+  <p>GLOW {{ release_version }} focuses on workflow reliability and accessibility: async conversion queue support with live job progress tracking (SSE plus poll fallback), safer result download routing, improved web color contrast, ARIA and heading-order fixes, landmark guardrail hardening, Workshop Follow-Through for saved coaching templates and 30-day commitments, richer workshop exports, centralized version/deployment documentation cleanup, and the new MCP server API for agent-to-agent automation. <a href="https://github.com/Community-Access/glow/tree/main/mcp_server">MCP server documentation &rarr;</a></p>
   <p><a href="{{ url_for('changelog.changelog_page') }}">Read the full {{ release_version }} release notes &rarr;</a></p>
 </section>
 
@@ -88,6 +88,14 @@
       <p>Browse the full ACB and WCAG rule library with rationale, read the user guide, or save your workflow defaults in Settings.</p>
       <a class="mission-card__cta" href="{{ url_for('guidelines.guidelines_page') }}">Open Guidelines Reference &rarr;</a>
     </div>
+
+    {% if feature_workshop_mode_enabled %}
+    <div class="mission-card mission-card--explore">
+      <h3 id="mission-workshop">Workshop Follow-Through</h3>
+      <p>Continue the workshop after the room clears by saving coaching templates, checklists, and 30-day commitments.</p>
+      <a class="mission-card__cta" href="{{ url_for('workshop.workshop_home') }}">Open Workshop Follow-Through &rarr;</a>
+    </div>
+    {% endif %}
 
   </div><!-- /.mission-grid -->
 </section>

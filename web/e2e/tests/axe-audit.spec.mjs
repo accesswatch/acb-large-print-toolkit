@@ -108,23 +108,23 @@ async function auditPage(page, url) {
 // ---------------------------------------------------------------------------
 
 const STATIC_PAGES = [
-  { label: 'home',          path: '/' },
-  { label: 'audit form',    path: '/audit/' },
-  { label: 'fix form',      path: '/fix/' },
-  { label: 'convert form',  path: '/convert/' },
+  { label: 'home', path: '/' },
+  { label: 'audit form', path: '/audit/' },
+  { label: 'fix form', path: '/fix/' },
+  { label: 'convert form', path: '/convert/' },
   { label: 'template form', path: '/template/' },
   { label: 'speech studio', path: '/speech/' },
-  { label: 'braille studio',path: '/braille/' },
-  { label: 'settings',      path: '/settings/' },
-  { label: 'guidelines',    path: '/guidelines/' },
-  { label: 'user guide',    path: '/guide/' },
-  { label: 'about',         path: '/about/' },
-  { label: 'changelog',     path: '/changelog/' },
-  { label: 'faq',           path: '/faq/' },
+  { label: 'braille studio', path: '/braille/' },
+  { label: 'settings', path: '/settings/' },
+  { label: 'guidelines', path: '/guidelines/' },
+  { label: 'user guide', path: '/guide/' },
+  { label: 'about', path: '/about/' },
+  { label: 'changelog', path: '/changelog/' },
+  { label: 'faq', path: '/faq/' },
   { label: 'rules reference', path: '/rules/' },
-  { label: 'feedback',      path: '/feedback/' },
+  { label: 'feedback', path: '/feedback/' },
   { label: 'privacy policy', path: '/privacy/' },
-  { label: 'status',        path: '/status/' },
+  { label: 'status', path: '/status/' },
 ];
 
 const AXE_PATH_FILTER = (process.env.E2E_AXE_PATHS || '')
@@ -163,16 +163,16 @@ test.afterAll(async () => {
     console.error('\n=== AXE: BLOCKING violations (critical/serious) ===\n' + blocking.join('\n'));
   }
   if (advisory.length) {
-      if (AXE_FAIL_INCOMPLETE) {
-        const incompleteBlocking = allPageResults.flatMap((r) =>
-          r.incomplete
-            .filter((v) => ['critical', 'serious'].includes((v.impact || '').toLowerCase()))
-            .map((v) => `  [${v.impact}] ${v.id} (${v.nodes.length} node${v.nodes.length === 1 ? '' : 's'}) on ${r.url}`)
-        );
-        if (incompleteBlocking.length) {
-          console.error('\n=== AXE: BLOCKING incomplete checks (strict mode) ===\n' + incompleteBlocking.join('\n'));
-        }
+    if (AXE_FAIL_INCOMPLETE) {
+      const incompleteBlocking = allPageResults.flatMap((r) =>
+        r.incomplete
+          .filter((v) => ['critical', 'serious'].includes((v.impact || '').toLowerCase()))
+          .map((v) => `  [${v.impact}] ${v.id} (${v.nodes.length} node${v.nodes.length === 1 ? '' : 's'}) on ${r.url}`)
+      );
+      if (incompleteBlocking.length) {
+        console.error('\n=== AXE: BLOCKING incomplete checks (strict mode) ===\n' + incompleteBlocking.join('\n'));
       }
+    }
 
     console.warn('\n=== AXE: Advisory violations (moderate/minor) ===\n' + advisory.join('\n'));
   }
@@ -182,7 +182,7 @@ test.afterAll(async () => {
 
   const totalPages = allPageResults.length;
   const totalViolations = allPageResults.reduce((s, r) => s + r.violations.length, 0);
-  const totalPasses   = allPageResults.reduce((s, r) => s + r.passes.length, 0);
+  const totalPasses = allPageResults.reduce((s, r) => s + r.passes.length, 0);
   console.log(`\nAxe summary: ${totalPages} pages, ${totalViolations} violation rule(s), ${totalPasses} passing rule(s)`);
 });
 

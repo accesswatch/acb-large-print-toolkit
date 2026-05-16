@@ -20,7 +20,7 @@ Total day: 8:30 AM to 4:30 PM
 2. Validate environment
 - workshop routes reachable
 - forms submit path available
-- export paths operational
+- export paths operational (markdown/json/html/docx)
 - fallback worksheets ready
 
 3. Accessibility validation
@@ -69,6 +69,18 @@ Participants should provide:
 - one recommendation for reuse at scale
 
 Keep tone supportive and improvement-oriented.
+
+## Facilitator Dashboard and Delivery Surfaces
+- Facilitator dashboard: `/workshop/session/<code>/facilitator`
+  - monitor total submissions, anonymous participation, feedback coverage, and activity-level completion.
+- Coach mode: `/workshop/session/<code>/coach`
+  - keep teams focused on partner-centered teaching language.
+- Review mode: `/workshop/session/<code>/review`
+  - reinforce human-required decisions and final safeguards.
+- Share mode: `/workshop/session/<code>/share`
+  - publish reusable artifacts and trigger export downloads.
+- Follow-Through page: `/workshop/session/<code>/follow-through`
+  - save reusable coaching templates, checklists, and 30-day commitments.
 
 ## Capstone and Exit
 Each participant or team leaves with:

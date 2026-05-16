@@ -15,9 +15,13 @@ Use this guide to deploy Workshop Mode for conferences, onboarding, institutiona
 - Apply responsible-AI boundary consistently.
 - Require explicit human-review checkpoints in all outputs.
 - Use gallery and peer feedback to increase trust and transfer learning.
+- Use Coach/Review/Share pages to keep facilitation language and handoff expectations consistent.
+- Track participation and peer-feedback coverage from the facilitator dashboard.
+- Save reusable templates and 30-day commitments on the Follow-Through page so teams can continue after the event.
 
 ## Post-Event Follow Through
 - Export and distribute workshop artifacts.
+- Use JSON/HTML/DOCX exports when recipients need structured data, web-ready packets, or Office-native handouts.
 - Package top workflows into prompts/checklists.
 - Run 30-day follow-up for adoption and confidence tracking.
 - Identify high-value workflows for promotion into GLOW skills.

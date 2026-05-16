@@ -52,6 +52,15 @@ Participants leave with at least one reusable artifact:
 - peer-reviewed workflow
 - 30-day action plan
 
+Workshop artifacts can now be exported directly from GLOW in Markdown, JSON, HTML, and DOCX formats for immediate reuse in institutional follow-up workflows.
+Use the new Follow-Through page to save coaching templates, checklists, and 30-day commitments from workshop outputs.
+
+## Product Surfaces During Delivery
+- **Coach mode** (`/workshop/session/<code>/coach`) reinforces teaching language and partner-centered support.
+- **Review mode** (`/workshop/session/<code>/review`) reinforces human accountability checkpoints before deployment.
+- **Share mode** (`/workshop/session/<code>/share`) packages artifacts for downstream adoption and team dissemination.
+- **Facilitator dashboard** (`/workshop/session/<code>/facilitator`) provides participation and peer-feedback coverage snapshots in real time.
+
 ## Responsible AI Boundary
 AI supports analysis and drafting.
 

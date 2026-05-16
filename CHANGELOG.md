@@ -25,6 +25,8 @@ Releases are tagged in the [GitHub repository](https://github.com/Community-Acce
 
 ## [Unreleased]
 
+### 7.5.0 (Unreleased)
+
 ### Added
 
 - **Automation consent bypass** for scripted web workflows: requests that send `X-GLOW-Automation-Consent: GLOW` skip the first-visit consent redirect, and deployments can override the default with `GLOW_AUTOMATION_CONSENT_TOKEN`.
@@ -35,6 +37,12 @@ Releases are tagged in the [GitHub repository](https://github.com/Community-Acce
 - **AI request cost preview endpoint** at `/ai/usage/estimate` so Document Chat and AI Playground can show rough token and price estimates before sending.
 - **Async conversion queue for web Convert** with Celery tasks, Redis-backed broker support, and a new /job route family for progress pages, SSE status streams, JSON polling, and secure result downloads.
 - **Job progress accessibility regression tests** in `web/tests/test_jobs_accessibility.py` covering core semantics, missing-job 404 handling, poll responses, and result download behavior.
+- **Workshop facilitator dashboard and delivery surfaces**: added `/workshop/session/<code>/facilitator` with live participation metrics and activity snapshots, plus explicit `/coach`, `/review`, and `/share` surfaces for workshop workflow handoffs.
+- **Workshop multi-format artifact exports**: added JSON (`/export/json`), HTML (`/export/html`), and DOCX (`/export/docx`) exports in addition to existing markdown exports, and wired these into gallery/share/facilitator navigation.
+- **Workshop route coverage tests** in `web/tests/test_workshop_routes.py` validating facilitator/coach/review/share routes and export endpoints.
+- **Workshop follow-through persistence**: added `/workshop/session/<code>/follow-through` plus follow-through markdown export so users can save coaching templates, checklists, and 30-day commitments from workshop outputs.
+- **Workshop follow-through discovery**: surfaced Workshop Follow-Through links in the main sidebar and homepage mission grid so users can continue after the workshop without hunting for the entry point.
+- **Workshop follow-through tests** in `web/tests/test_workshop_routes.py` validating saved commitments and exported follow-through markdown.
 
 ### Changed
 
@@ -68,6 +76,7 @@ Releases are tagged in the [GitHub repository](https://github.com/Community-Acce
 - **Keycloak realm import isolation in production deploys**: Updated `scripts/deploy-app.sh` to render Keycloak realm JSON into `web/keycloak/import/` and clear stale generated files, updated `web/docker-compose.prod.yml` and `web/docker-compose.keycloak.yml` to mount that dedicated import directory, and updated deployment docs/partials so Keycloak no longer imports placeholder template files from persistent volume state.
 - **Keycloak admin UI proxy compatibility**: Scoped strict web security headers in `web/Caddyfile` to the Flask app handle only, so `/auth/*` responses keep Keycloak-managed headers and the admin console no longer hangs on `Loading...`.
 - **Postmark wiring for admin magic-link auth setup**: Added `POSTMARK_SERVER_TOKEN`, `POSTMARK_FROM_EMAIL`, `ADMIN_BOOTSTRAP_EMAILS`, and `ADMIN_MAGIC_LINK_TTL_MINUTES` to `web/.env.example`; clarified admin login messaging in `web/src/acb_large_print_web/templates/admin_login.html`; and documented these variables in `docs/deployment.md` and `web/README.md` so email-based admin magic links can be enabled cleanly.
+- **Canonical version advanced to 7.5.0**: Updated root `VERSION` to `7.5.0` and synchronized `desktop/pyproject.toml`, `web/pyproject.toml`, `office-addin/package.json`, and `web/package.json`.
 
 ### 7.2.0 (Unreleased)
 

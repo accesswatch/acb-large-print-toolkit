@@ -68,11 +68,10 @@
         rewriteTimes();
     }
 
-    // --- 2b. Footer deploy + WCAG gate status -------------------------------
+    // --- 2b. Footer deploy status -------------------------------------------
     function updateFooterHealthStatus() {
-        var wcagEl = document.getElementById('footer-wcag-magic-status');
         var deployEl = document.getElementById('footer-deploy-phase');
-        if (!wcagEl && !deployEl) return;
+        if (!deployEl) return;
 
         function label(value) {
             var v = String(value || '').toLowerCase();
@@ -91,21 +90,11 @@
             })
             .then(function (payload) {
                 var deployment = payload && payload.deployment ? payload.deployment : {};
-                var gates = deployment.gates || {};
-                var aa = label(gates.wcag22aa || 'unknown');
-                var aaa = label(gates.wcag22aaa || 'unknown');
                 var rawPhase = String(deployment.phase || '').toLowerCase();
                 var rawState = String(deployment.state || '').toLowerCase();
                 var phase = label(deployment.phase || 'unknown');
                 var state = label(deployment.state || 'unknown');
 
-                if (wcagEl) {
-                    var note = '';
-                    if (aa === 'failed' || aa === 'not run for this revision' || aa === 'awaiting report') {
-                        note = ' See /status for full evidence and current check state.';
-                    }
-                    wcagEl.textContent = 'WCAG 2.2 AA gate: ' + aa + ', with selected AAA constellations tracked: ' + aaa + '.' + note;
-                }
                 if (deployEl) {
                     var updated = deployment.updated_at_utc ? ' Last update: ' + deployment.updated_at_utc + '.' : '';
                     if ((rawPhase === 'none' || rawPhase === '') && (rawState === 'idle' || rawState === '')) {
@@ -124,7 +113,6 @@
                 }
             })
             .catch(function () {
-                if (wcagEl) wcagEl.textContent = 'WCAG 2.2 AA gate: unavailable, with selected AAA constellations tracked: unavailable.';
                 if (deployEl) deployEl.textContent = 'Deployment: unavailable';
             });
     }

@@ -7,9 +7,12 @@ environments without additional infrastructure.
 
 from __future__ import annotations
 
+import json
 import re
 import sqlite3
 from datetime import datetime, timezone
+from html import escape
+from io import BytesIO
 from pathlib import Path
 
 from flask import current_app
@@ -71,6 +74,23 @@ def _ensure_schema(conn: sqlite3.Connection) -> None:
         " created_at_utc TEXT NOT NULL,"
         " FOREIGN KEY(session_code) REFERENCES workshop_sessions(session_code),"
         " FOREIGN KEY(submission_id) REFERENCES workshop_submissions(id)"
+        ")"
+    )
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS workshop_follow_through ("
+        " id INTEGER PRIMARY KEY AUTOINCREMENT,"
+        " session_code TEXT NOT NULL,"
+        " source_submission_id INTEGER,"
+        " kind TEXT NOT NULL,"
+        " title TEXT NOT NULL,"
+        " details TEXT NOT NULL,"
+        " owner_name TEXT NOT NULL,"
+        " due_date TEXT,"
+        " status TEXT NOT NULL DEFAULT 'open',"
+        " created_at_utc TEXT NOT NULL,"
+        " updated_at_utc TEXT NOT NULL,"
+        " FOREIGN KEY(session_code) REFERENCES workshop_sessions(session_code),"
+        " FOREIGN KEY(source_submission_id) REFERENCES workshop_submissions(id)"
         ")"
     )
     conn.commit()
@@ -177,6 +197,74 @@ def add_feedback(
     return feedback_id
 
 
+def save_follow_through_item(
+    session_code: str,
+    kind: str,
+    title: str,
+    details: str,
+    owner_name: str,
+    *,
+    due_date: str | None = None,
+    source_submission_id: int | None = None,
+) -> int:
+    code = normalize_session_code(session_code)
+    now = _utc_now()
+    conn = _conn()
+    cur = conn.execute(
+        "INSERT INTO workshop_follow_through (session_code, source_submission_id, kind, title, details, owner_name, due_date, status, created_at_utc, updated_at_utc) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        (
+            code,
+            None if source_submission_id is None else int(source_submission_id),
+            (kind or "action_commitment").strip() or "action_commitment",
+            (title or "Workshop follow-through item").strip() or "Workshop follow-through item",
+            (details or "").strip(),
+            (owner_name or "Participant").strip() or "Participant",
+            (due_date or "").strip() or None,
+            "open",
+            now,
+            now,
+        ),
+    )
+    conn.commit()
+    new_id = int(cur.lastrowid)
+    conn.close()
+    return new_id
+
+
+def list_follow_through_items(session_code: str, *, kind: str | None = None) -> list[dict]:
+    code = normalize_session_code(session_code)
+    conn = _conn()
+    if kind:
+        rows = conn.execute(
+            "SELECT id, session_code, source_submission_id, kind, title, details, owner_name, due_date, status, created_at_utc, updated_at_utc "
+            "FROM workshop_follow_through WHERE session_code=? AND kind=? ORDER BY updated_at_utc DESC, id DESC",
+            (code, kind),
+        ).fetchall()
+    else:
+        rows = conn.execute(
+            "SELECT id, session_code, source_submission_id, kind, title, details, owner_name, due_date, status, created_at_utc, updated_at_utc "
+            "FROM workshop_follow_through WHERE session_code=? ORDER BY updated_at_utc DESC, id DESC",
+            (code,),
+        ).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+
+def update_follow_through_status(session_code: str, item_id: int, status: str) -> None:
+    code = normalize_session_code(session_code)
+    normalized = (status or "").strip().lower()
+    if normalized not in {"open", "done", "paused"}:
+        raise ValueError("Status must be open, done, or paused.")
+    conn = _conn()
+    conn.execute(
+        "UPDATE workshop_follow_through SET status=?, updated_at_utc=? WHERE session_code=? AND id=?",
+        (normalized, _utc_now(), code, int(item_id)),
+    )
+    conn.commit()
+    conn.close()
+
+
 def list_feedback_for_session(session_code: str) -> dict[int, list[dict]]:
     code = normalize_session_code(session_code)
     conn = _conn()
@@ -235,5 +323,149 @@ def export_session_markdown(session_code: str, *, session_title: str = "GLOW Wor
                 lines.append(f"  - Recommended safeguard: {f.get('recommended_safeguard', '')}")
                 lines.append(f"  - Reuse suggestion: {f.get('reuse_suggestion', '')}")
             lines.append("")
+
+    return "\n".join(lines)
+
+
+def export_session_json(session_code: str, *, session_title: str = "GLOW Workshop Session") -> str:
+    code = normalize_session_code(session_code)
+    payload = {
+        "session": get_session(code) or {"session_code": code, "title": session_title},
+        "submissions": list_submissions(code),
+        "feedback_by_submission": list_feedback_for_session(code),
+    }
+    return json.dumps(payload, indent=2)
+
+
+def export_session_html(session_code: str, *, session_title: str = "GLOW Workshop Session") -> str:
+    code = normalize_session_code(session_code)
+    submissions = list_submissions(code)
+    feedback = list_feedback_for_session(code)
+
+    cards: list[str] = []
+    if not submissions:
+        cards.append("<p>No submissions captured yet.</p>")
+    else:
+        for s in submissions:
+            submitter = "Anonymous participant" if int(s.get("anonymity_mode", 0)) else escape(s.get("display_name", "Participant"))
+            body = escape((s.get("content_text") or "").strip())
+            parts = [
+                f"<article><h2>{escape(s.get('activity_key', 'unknown_activity'))}</h2>",
+                f"<p><strong>Submitter:</strong> {submitter}</p>",
+                f"<p><strong>Updated (UTC):</strong> {escape(s.get('updated_at_utc', ''))}</p>",
+                f"<pre>{body}</pre>",
+            ]
+            items = feedback.get(int(s.get("id", 0)), [])
+            if items:
+                parts.append("<h3>Peer Feedback</h3><ul>")
+                for f in items:
+                    parts.append(
+                        "<li>"
+                        f"<strong>{escape(f.get('reviewer_display_name', 'Peer Reviewer'))}</strong>: "
+                        f"{escape(f.get('strength', ''))} "
+                        f"(Risk/gap: {escape(f.get('risk_or_gap', ''))}; "
+                        f"Safeguard: {escape(f.get('recommended_safeguard', ''))}; "
+                        f"Reuse: {escape(f.get('reuse_suggestion', ''))})"
+                        "</li>"
+                    )
+                parts.append("</ul>")
+            parts.append("</article>")
+            cards.append("\n".join(parts))
+
+    title = escape(session_title)
+    return f"""<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{title}</title>
+  <style>
+    body {{ font-family: system-ui, sans-serif; line-height: 1.5; margin: 0; background: #f8fafc; }}
+    main {{ max-width: 72rem; margin: 0 auto; padding: 1rem; }}
+    article {{ background: #fff; border: 1px solid #ccd; border-radius: .5rem; padding: .875rem; margin: .75rem 0; }}
+    pre {{ white-space: pre-wrap; }}
+  </style>
+</head>
+<body>
+  <main>
+    <h1>{title}</h1>
+    <p><strong>Session code:</strong> {escape(code)}</p>
+    {''.join(cards)}
+  </main>
+</body>
+</html>"""
+
+
+def export_session_docx_bytes(session_code: str, *, session_title: str = "GLOW Workshop Session") -> bytes:
+    code = normalize_session_code(session_code)
+    submissions = list_submissions(code)
+    feedback = list_feedback_for_session(code)
+
+    # python-docx is available via desktop package dependency in this repository.
+    from docx import Document  # type: ignore
+
+    doc = Document()
+    doc.add_heading(session_title, level=1)
+    doc.add_paragraph(f"Session code: {code}")
+
+    if not submissions:
+        doc.add_paragraph("No submissions captured yet.")
+    else:
+        for s in submissions:
+            activity = s.get("activity_key", "unknown_activity")
+            submitter = "Anonymous participant" if int(s.get("anonymity_mode", 0)) else s.get("display_name", "Participant")
+            doc.add_heading(str(activity), level=2)
+            doc.add_paragraph(f"Submitter: {submitter}")
+            doc.add_paragraph(f"Updated (UTC): {s.get('updated_at_utc', '')}")
+            doc.add_paragraph((s.get("content_text") or "").strip() or "(empty)")
+
+            items = feedback.get(int(s.get("id", 0)), [])
+            if items:
+                doc.add_heading("Peer Feedback", level=3)
+                for f in items:
+                    doc.add_paragraph(
+                        f"Reviewer: {f.get('reviewer_display_name', 'Peer Reviewer')}",
+                        style="List Bullet",
+                    )
+                    doc.add_paragraph(f"Strength: {f.get('strength', '')}")
+                    doc.add_paragraph(f"Risk/gap: {f.get('risk_or_gap', '')}")
+                    doc.add_paragraph(f"Safeguard: {f.get('recommended_safeguard', '')}")
+                    doc.add_paragraph(f"Reuse suggestion: {f.get('reuse_suggestion', '')}")
+
+    out = BytesIO()
+    doc.save(out)
+    return out.getvalue()
+
+
+def export_follow_through_markdown(session_code: str, *, session_title: str = "GLOW Workshop Session") -> str:
+    code = normalize_session_code(session_code)
+    items = list_follow_through_items(code)
+
+    lines: list[str] = []
+    lines.append(f"# {session_title} Follow-Through")
+    lines.append("")
+    lines.append(f"Session code: `{code}`")
+    lines.append("")
+    lines.append("## Saved coaching artifacts")
+    lines.append("")
+
+    if not items:
+        lines.append("No follow-through items saved yet.")
+        lines.append("")
+        return "\n".join(lines)
+
+    for item in items:
+        lines.append(f"### {item.get('title', 'Follow-through item')}")
+        lines.append("")
+        lines.append(f"- Kind: {item.get('kind', 'action_commitment')}")
+        lines.append(f"- Owner: {item.get('owner_name', 'Participant')}")
+        if item.get("due_date"):
+            lines.append(f"- Due date: {item.get('due_date')}")
+        lines.append(f"- Status: {item.get('status', 'open')}")
+        lines.append("")
+        lines.append("```text")
+        lines.append(item.get("details", ""))
+        lines.append("```")
+        lines.append("")
 
     return "\n".join(lines)

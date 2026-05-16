@@ -10,12 +10,19 @@ from ..feature_flags import get_flag
 from ..workshop_store import (
     add_feedback,
     ensure_session,
+    export_follow_through_markdown,
+    export_session_docx_bytes,
+    export_session_html,
+    export_session_json,
     export_session_markdown,
     get_session,
     list_feedback_for_session,
+    list_follow_through_items,
     list_submissions,
     normalize_session_code,
     save_submission,
+    save_follow_through_item,
+    update_follow_through_status,
 )
 
 workshop_bp = Blueprint("workshop", __name__)
@@ -202,7 +209,8 @@ def workshop_home():
       <p>
         <a href=\"{{ url_for('workshop.workshop_guide') }}\">Workshop Guide</a> |
         <a href=\"{{ url_for('workshop.workshop_exercises') }}\">Exercises Pack</a> |
-        <a href=\"{{ url_for('workshop.workshop_utilization') }}\">Utilization Guide</a>
+        <a href=\"{{ url_for('workshop.workshop_utilization') }}\">Utilization Guide</a> |
+        <a href=\"{{ url_for('workshop.workshop_follow_through', session_code=session_code) }}\">Follow-Through</a>
       </p>
     </section>
 
@@ -322,6 +330,10 @@ def workshop_activity(session_code: str, activity_key: str):
       {% if prev_key %}<a href=\"{{ url_for('workshop.workshop_activity', session_code=session_code, activity_key=prev_key) }}\">Previous activity</a>{% endif %}
       {% if next_key %}<a href=\"{{ url_for('workshop.workshop_activity', session_code=session_code, activity_key=next_key) }}\">Next activity</a>{% endif %}
       {% if gallery_enabled %}<a href=\"{{ url_for('workshop.workshop_gallery', session_code=session_code) }}\">Open gallery</a>{% endif %}
+      <a href=\"{{ url_for('workshop.workshop_coach', session_code=session_code) }}\">Coach</a>
+      <a href=\"{{ url_for('workshop.workshop_review', session_code=session_code) }}\">Review</a>
+      <a href=\"{{ url_for('workshop.workshop_share', session_code=session_code) }}\">Share</a>
+      <a href=\"{{ url_for('workshop.workshop_follow_through', session_code=session_code) }}\">Follow-Through</a>
     </nav>
   </main>
 </body></html>""",
@@ -365,7 +377,14 @@ def workshop_gallery(session_code: str):
 <body><main class=\"page\" id=\"main\">
   <h1>Workshop Gallery</h1>
   <p><strong>Session:</strong> {{ session_code }}</p>
-  <p><a href=\"{{ url_for('workshop.workshop_export_markdown', session_code=session_code) }}\">Export Markdown artifacts</a></p>
+  <p>
+    Export artifacts:
+    <a href=\"{{ url_for('workshop.workshop_export_markdown', session_code=session_code) }}\">Markdown</a> |
+    <a href=\"{{ url_for('workshop.workshop_export_json', session_code=session_code) }}\">JSON</a> |
+    <a href=\"{{ url_for('workshop.workshop_export_html', session_code=session_code) }}\">HTML</a> |
+    <a href=\"{{ url_for('workshop.workshop_export_docx', session_code=session_code) }}\">DOCX</a> |
+    <a href=\"{{ url_for('workshop.workshop_follow_through', session_code=session_code) }}\">Follow-Through</a>
+  </p>
   {% if not submissions %}
     <p>No submissions yet.</p>
   {% else %}
@@ -401,10 +420,32 @@ def workshop_gallery(session_code: str):
           <p><button type=\"submit\">Save peer feedback</button></p>
         </form>
         {% endif %}
+
+        <h3>Promote to follow-through</h3>
+        <form method=\"post\" action=\"{{ url_for('workshop.workshop_follow_through', session_code=session_code) }}\">
+          <input type=\"hidden\" name=\"csrf_token\" value=\"{{ csrf_token() }}\">
+          <input type=\"hidden\" name=\"source_submission_id\" value=\"{{ s.id }}\">
+          <label>Kind
+            <select name=\"item_kind\">
+              <option value=\"template\">Reusable coaching template</option>
+              <option value=\"checklist\">Checklist</option>
+              <option value=\"action_commitment\">30-day action commitment</option>
+            </select>
+          </label>
+          <label>Title <input type=\"text\" name=\"item_title\" value=\"{{ s.activity_key }} follow-through\"></label>
+          <label>Owner <input type=\"text\" name=\"owner_name\" value=\"{% if s.anonymity_mode %}Workshop participant{% else %}{{ s.display_name }}{% endif %}\"></label>
+          <label>Due date <input type=\"date\" name=\"due_date\"></label>
+          <label>Details<textarea name=\"item_details\" required>{{ s.content_text }}</textarea></label>
+          <p><button type=\"submit\">Save follow-through item</button></p>
+        </form>
       </article>
     {% endfor %}
   {% endif %}
-  <p><a href=\"{{ url_for('workshop.workshop_home') }}\">Back to workshop home</a></p>
+  <p>
+    <a href=\"{{ url_for('workshop.workshop_home') }}\">Back to workshop home</a> |
+    <a href=\"{{ url_for('workshop.workshop_facilitator', session_code=session_code) }}\">Facilitator dashboard</a> |
+    <a href=\"{{ url_for('workshop.workshop_follow_through', session_code=session_code) }}\">Follow-through log</a>
+  </p>
 </main></body></html>
 """,
         session_code=code,
@@ -412,6 +453,202 @@ def workshop_gallery(session_code: str):
         feedback=feedback,
         peer_review_enabled=_peer_review_enabled(),
     )
+
+
+@workshop_bp.route("/session/<session_code>/follow-through", methods=["GET", "POST"])
+def workshop_follow_through(session_code: str):
+    if not _workshop_enabled():
+        abort(404)
+    try:
+        code = normalize_session_code(session_code)
+    except ValueError:
+        abort(404)
+    session_meta = get_session(code)
+    if session_meta is None:
+        abort(404)
+
+    message = ""
+    if request.method == "POST":
+        kind = (request.form.get("item_kind") or "action_commitment").strip() or "action_commitment"
+        title = (request.form.get("item_title") or "").strip()
+        details = (request.form.get("item_details") or "").strip()
+        owner_name = (request.form.get("owner_name") or "Participant").strip() or "Participant"
+        due_date = (request.form.get("due_date") or "").strip() or None
+        source_submission_id_raw = (request.form.get("source_submission_id") or "").strip()
+        source_submission_id = int(source_submission_id_raw) if source_submission_id_raw.isdigit() else None
+
+        if not title or not details:
+            message = "Please add a title and details before saving."
+        else:
+            save_follow_through_item(
+                code,
+                kind,
+                title,
+                details,
+                owner_name,
+                due_date=due_date,
+                source_submission_id=source_submission_id,
+            )
+            message = "Saved follow-through item."
+
+    items = list_follow_through_items(code)
+    templates = [item for item in items if item.get("kind") == "template"]
+    checklists = [item for item in items if item.get("kind") == "checklist"]
+    commitments = [item for item in items if item.get("kind") == "action_commitment"]
+
+    return render_template_string(
+        """<!doctype html>
+<html lang="en"><head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Follow-Through | {{ session_code }}</title>
+  <style>
+    body { font-family: system-ui, sans-serif; line-height: 1.5; margin: 0; background: #f7fafc; }
+    .page { max-width: 72rem; margin: 0 auto; padding: 1rem; }
+    .panel { background: #fff; border: 1px solid #ccd; border-radius: .5rem; padding: .9rem; margin: .85rem 0; }
+    label { display: block; margin-top: .5rem; }
+    input[type=text], input[type=date], textarea, select { width: min(48rem, 100%); }
+    textarea { min-height: 9rem; }
+  </style>
+</head><body><main class="page">
+  <h1>Workshop Follow-Through</h1>
+  <p><strong>Session:</strong> {{ session_code }} — {{ session_title }}</p>
+  <p>This is where coaching outputs become reusable templates, checklists, and 30-day commitments.</p>
+  {% if message %}<p role="status"><strong>{{ message }}</strong></p>{% endif %}
+
+  <section class="panel" aria-labelledby="save-item">
+    <h2 id="save-item">Save a follow-through item</h2>
+    <form method="post" action="{{ url_for('workshop.workshop_follow_through', session_code=session_code) }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <label for="item_kind">Kind</label>
+      <select id="item_kind" name="item_kind">
+        <option value="action_commitment">30-day action commitment</option>
+        <option value="template">Reusable coaching template</option>
+        <option value="checklist">Checklist</option>
+      </select>
+      <label for="item_title">Title</label>
+      <input id="item_title" name="item_title" type="text" required>
+      <label for="owner_name">Owner</label>
+      <input id="owner_name" name="owner_name" type="text" value="Participant">
+      <label for="due_date">Due date</label>
+      <input id="due_date" name="due_date" type="date">
+      <label for="item_details">Details</label>
+      <textarea id="item_details" name="item_details" required></textarea>
+      <p><button type="submit">Save item</button></p>
+    </form>
+  </section>
+
+  <section class="panel" aria-labelledby="commitments">
+    <h2 id="commitments">30-day commitments</h2>
+    {% if commitments %}
+      <ul>
+      {% for item in commitments %}
+        <li>
+          <strong>{{ item.title }}</strong> — {{ item.owner_name }}{% if item.due_date %} (due {{ item.due_date }}){% endif %}: {{ item.details }}
+          <form method="post" action="{{ url_for('workshop.workshop_follow_through_status', session_code=session_code, item_id=item.id) }}" style="display:inline">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="status" value="{% if item.status == 'done' %}open{% else %}done{% endif %}">
+            <button type="submit">{% if item.status == 'done' %}Reopen{% else %}Mark complete{% endif %}</button>
+          </form>
+        </li>
+      {% endfor %}
+      </ul>
+    {% else %}
+      <p>No commitments saved yet.</p>
+    {% endif %}
+  </section>
+
+  <section class="panel" aria-labelledby="templates">
+    <h2 id="templates">Reusable coaching templates</h2>
+    {% if templates %}
+      <ul>
+      {% for item in templates %}
+        <li>
+          <strong>{{ item.title }}</strong> — {{ item.owner_name }}: {{ item.details }}
+          <form method="post" action="{{ url_for('workshop.workshop_follow_through_status', session_code=session_code, item_id=item.id) }}" style="display:inline">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="status" value="{% if item.status == 'done' %}open{% else %}done{% endif %}">
+            <button type="submit">{% if item.status == 'done' %}Reopen{% else %}Mark complete{% endif %}</button>
+          </form>
+        </li>
+      {% endfor %}
+      </ul>
+    {% else %}
+      <p>No templates saved yet.</p>
+    {% endif %}
+  </section>
+
+  <section class="panel" aria-labelledby="checklists">
+    <h2 id="checklists">Checklists</h2>
+    {% if checklists %}
+      <ul>
+      {% for item in checklists %}
+        <li>
+          <strong>{{ item.title }}</strong> — {{ item.owner_name }}: {{ item.details }}
+          <form method="post" action="{{ url_for('workshop.workshop_follow_through_status', session_code=session_code, item_id=item.id) }}" style="display:inline">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="status" value="{% if item.status == 'done' %}open{% else %}done{% endif %}">
+            <button type="submit">{% if item.status == 'done' %}Reopen{% else %}Mark complete{% endif %}</button>
+          </form>
+        </li>
+      {% endfor %}
+      </ul>
+    {% else %}
+      <p>No checklists saved yet.</p>
+    {% endif %}
+  </section>
+
+  <p>
+    <a href="{{ url_for('workshop.workshop_export_markdown', session_code=session_code) }}">Export workshop artifacts</a> |
+    <a href="{{ url_for('workshop.workshop_follow_through_export', session_code=session_code) }}">Export follow-through markdown</a> |
+    <a href="{{ url_for('workshop.workshop_home') }}">Back to workshop home</a>
+  </p>
+</main></body></html>""",
+        session_code=code,
+        session_title=session_meta.get("title", "GLOW Workshop Session"),
+        message=message,
+        commitments=commitments,
+        templates=templates,
+        checklists=checklists,
+    )
+
+
+@workshop_bp.route("/session/<session_code>/follow-through/export/markdown", methods=["GET"])
+def workshop_follow_through_export(session_code: str):
+    if not _workshop_enabled() or not _lab_hub_enabled():
+        abort(404)
+    try:
+        code = normalize_session_code(session_code)
+    except ValueError:
+        abort(404)
+    session_meta = get_session(code)
+    if session_meta is None:
+        abort(404)
+
+    markdown = export_follow_through_markdown(code, session_title=session_meta.get("title", "GLOW Workshop Session"))
+    return Response(
+        markdown,
+        mimetype="text/markdown",
+        headers={"Content-Disposition": f'attachment; filename="{code}-follow-through.md"'},
+    )
+
+
+@workshop_bp.route("/session/<session_code>/follow-through/<int:item_id>/status", methods=["POST"])
+def workshop_follow_through_status(session_code: str, item_id: int):
+    if not _workshop_enabled():
+        abort(404)
+    try:
+        code = normalize_session_code(session_code)
+    except ValueError:
+        abort(404)
+    if get_session(code) is None:
+        abort(404)
+
+    status = (request.form.get("status") or "").strip().lower()
+    if status not in {"open", "done", "paused"}:
+        abort(400)
+
+    update_follow_through_status(code, item_id, status)
+    return redirect(url_for("workshop.workshop_follow_through", session_code=code))
 
 
 @workshop_bp.route("/session/<session_code>/submission/<int:submission_id>/feedback", methods=["POST"])
@@ -461,6 +698,262 @@ def workshop_export_markdown(session_code: str):
         markdown,
         mimetype="text/markdown",
         headers={"Content-Disposition": f'attachment; filename="{code}-workshop-artifacts.md"'},
+    )
+
+
+@workshop_bp.route("/session/<session_code>/export/json", methods=["GET"])
+def workshop_export_json(session_code: str):
+    if not _workshop_enabled() or not _lab_hub_enabled():
+        abort(404)
+    try:
+        code = normalize_session_code(session_code)
+    except ValueError:
+        abort(404)
+    session_meta = get_session(code)
+    if session_meta is None:
+        abort(404)
+
+    payload = export_session_json(code, session_title=session_meta.get("title", "GLOW Workshop Session"))
+    return Response(
+        payload,
+        mimetype="application/json",
+        headers={"Content-Disposition": f'attachment; filename="{code}-workshop-artifacts.json"'},
+    )
+
+
+@workshop_bp.route("/session/<session_code>/export/html", methods=["GET"])
+def workshop_export_html(session_code: str):
+    if not _workshop_enabled() or not _lab_hub_enabled():
+        abort(404)
+    try:
+        code = normalize_session_code(session_code)
+    except ValueError:
+        abort(404)
+    session_meta = get_session(code)
+    if session_meta is None:
+        abort(404)
+
+    html = export_session_html(code, session_title=session_meta.get("title", "GLOW Workshop Session"))
+    return Response(
+        html,
+        mimetype="text/html",
+        headers={"Content-Disposition": f'attachment; filename="{code}-workshop-artifacts.html"'},
+    )
+
+
+@workshop_bp.route("/session/<session_code>/export/docx", methods=["GET"])
+def workshop_export_docx(session_code: str):
+    if not _workshop_enabled() or not _lab_hub_enabled():
+        abort(404)
+    try:
+        code = normalize_session_code(session_code)
+    except ValueError:
+        abort(404)
+    session_meta = get_session(code)
+    if session_meta is None:
+        abort(404)
+
+    try:
+        content = export_session_docx_bytes(code, session_title=session_meta.get("title", "GLOW Workshop Session"))
+    except ImportError:
+        return Response("DOCX export unavailable: python-docx is not installed.", status=503, mimetype="text/plain")
+    return Response(
+        content,
+        mimetype="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        headers={"Content-Disposition": f'attachment; filename="{code}-workshop-artifacts.docx"'},
+    )
+
+
+@workshop_bp.route("/session/<session_code>/facilitator", methods=["GET"])
+def workshop_facilitator(session_code: str):
+    if not _workshop_enabled() or not _lab_hub_enabled():
+        abort(404)
+    try:
+        code = normalize_session_code(session_code)
+    except ValueError:
+        abort(404)
+    session_meta = get_session(code)
+    if session_meta is None:
+        abort(404)
+
+    submissions = list_submissions(code)
+    feedback = list_feedback_for_session(code)
+    by_activity = {key: 0 for key in ACTIVITY_ORDER}
+    anonymous_count = 0
+    covered_feedback = 0
+    for s in submissions:
+        activity = s.get("activity_key", "")
+        if activity in by_activity:
+            by_activity[activity] += 1
+        if int(s.get("anonymity_mode", 0)):
+            anonymous_count += 1
+        if feedback.get(int(s.get("id", 0))):
+            covered_feedback += 1
+
+    recent_submissions = submissions[:12]
+    return render_template_string(
+        """<!doctype html>
+<html lang="en"><head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Facilitator Dashboard | {{ session_code }}</title>
+  <style>
+    body { font-family: system-ui, sans-serif; line-height: 1.5; margin: 0; background: #f7fafc; }
+    .page { max-width: 72rem; margin: 0 auto; padding: 1rem; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); gap: .75rem; }
+    .card { background: #fff; border: 1px solid #ccd; border-radius: .5rem; padding: .8rem; }
+    table { border-collapse: collapse; width: 100%; background: #fff; }
+    th, td { border: 1px solid #ccd; padding: .45rem; text-align: left; }
+    th { background: #eef3f9; }
+  </style>
+</head><body><main class="page">
+  <h1>Facilitator Dashboard</h1>
+  <p><strong>Session:</strong> {{ session_code }} — {{ session_title }}</p>
+
+  <section class="grid" aria-label="Session metrics">
+    <article class="card"><h2>Total submissions</h2><p>{{ total_submissions }}</p></article>
+    <article class="card"><h2>Anonymous submissions</h2><p>{{ anonymous_count }}</p></article>
+    <article class="card"><h2>Submissions with peer feedback</h2><p>{{ covered_feedback }}</p></article>
+    <article class="card"><h2>Feedback coverage</h2><p>{{ feedback_coverage_pct }}%</p></article>
+  </section>
+
+  <h2>Activity completion snapshot</h2>
+  <table>
+    <thead><tr><th scope="col">Activity</th><th scope="col">Submission count</th></tr></thead>
+    <tbody>
+    {% for key, count in by_activity.items() %}
+      <tr><th scope="row">{{ key }}</th><td>{{ count }}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+
+  <h2>Recent submissions</h2>
+  {% if recent_submissions %}
+  <table>
+    <thead><tr><th scope="col">Updated (UTC)</th><th scope="col">Activity</th><th scope="col">Submitter</th><th scope="col">Peer feedback</th></tr></thead>
+    <tbody>
+    {% for s in recent_submissions %}
+      <tr>
+        <td>{{ s.updated_at_utc }}</td>
+        <td>{{ s.activity_key }}</td>
+        <td>{% if s.anonymity_mode %}Anonymous participant{% else %}{{ s.display_name }}{% endif %}</td>
+        <td>{{ "Yes" if feedback.get(s.id) else "No" }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p>No submissions captured yet.</p>
+  {% endif %}
+
+  <p>
+    <a href="{{ url_for('workshop.workshop_gallery', session_code=session_code) }}">Open gallery</a> |
+    <a href="{{ url_for('workshop.workshop_export_markdown', session_code=session_code) }}">Export markdown</a> |
+    <a href="{{ url_for('workshop.workshop_export_json', session_code=session_code) }}">Export json</a> |
+    <a href="{{ url_for('workshop.workshop_export_html', session_code=session_code) }}">Export html</a> |
+    <a href="{{ url_for('workshop.workshop_export_docx', session_code=session_code) }}">Export docx</a>
+  </p>
+</main></body></html>""",
+        session_code=code,
+        session_title=session_meta.get("title", "GLOW Workshop Session"),
+        by_activity=by_activity,
+        total_submissions=len(submissions),
+        anonymous_count=anonymous_count,
+        covered_feedback=covered_feedback,
+        feedback_coverage_pct=(round((covered_feedback / len(submissions)) * 100, 1) if submissions else 0.0),
+        recent_submissions=recent_submissions,
+        feedback=feedback,
+    )
+
+
+@workshop_bp.route("/session/<session_code>/coach", methods=["GET"])
+def workshop_coach(session_code: str):
+    if not _workshop_enabled():
+        abort(404)
+    try:
+        code = normalize_session_code(session_code)
+    except ValueError:
+        abort(404)
+    if get_session(code) is None:
+        abort(404)
+    return render_template_string(
+        """<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Coach Mode | {{ session_code }}</title></head>
+<body><main style="max-width:72rem;margin:0 auto;padding:1rem;font-family:system-ui,sans-serif;">
+  <h1>Coach Mode</h1>
+  <p>Use this surface to frame partner-centered coaching language that teaches ownership, not dependency.</p>
+  <ul>
+    <li>Start with the partner's real barrier and immediate need.</li>
+    <li>Translate accessibility guidance into plain language the partner can reuse.</li>
+    <li>Attach one human-review checkpoint before finalizing changes.</li>
+  </ul>
+  <p><a href="{{ url_for('workshop.workshop_activity', session_code=session_code, activity_key='teach_vs_fix') }}">Open Teach vs Fix activity</a></p>
+  <p><a href="{{ url_for('workshop.workshop_home') }}">Back to workshop home</a></p>
+</main></body></html>""",
+        session_code=code,
+    )
+
+
+@workshop_bp.route("/session/<session_code>/review", methods=["GET"])
+def workshop_review(session_code: str):
+    if not _workshop_enabled():
+        abort(404)
+    try:
+        code = normalize_session_code(session_code)
+    except ValueError:
+        abort(404)
+    if get_session(code) is None:
+        abort(404)
+    return render_template_string(
+        """<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Review Mode | {{ session_code }}</title></head>
+<body><main style="max-width:72rem;margin:0 auto;padding:1rem;font-family:system-ui,sans-serif;">
+  <h1>Review Mode</h1>
+  <p>Review keeps humans accountable for final context, policy fit, and disability-centered quality checks.</p>
+  <ul>
+    <li>Verify assumptions, audience context, and institutional requirements.</li>
+    <li>Check whether proposed fixes are teachable and reusable by partners.</li>
+    <li>Confirm each artifact has explicit safeguards and escalation points.</li>
+  </ul>
+  <p><a href="{{ url_for('workshop.workshop_gallery', session_code=session_code) }}">Open gallery for peer review</a></p>
+  <p><a href="{{ url_for('workshop.workshop_home') }}">Back to workshop home</a></p>
+</main></body></html>""",
+        session_code=code,
+    )
+
+
+@workshop_bp.route("/session/<session_code>/share", methods=["GET"])
+def workshop_share(session_code: str):
+    if not _workshop_enabled():
+        abort(404)
+    try:
+        code = normalize_session_code(session_code)
+    except ValueError:
+        abort(404)
+    if get_session(code) is None:
+        abort(404)
+    return render_template_string(
+        """<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Share Mode | {{ session_code }}</title></head>
+<body><main style="max-width:72rem;margin:0 auto;padding:1rem;font-family:system-ui,sans-serif;">
+  <h1>Share Mode</h1>
+  <p>Share mode packages workshop artifacts so teams can reuse strong workflows after the session.</p>
+  <ul>
+    <li>Publish anonymized gallery examples for team learning.</li>
+    <li>Export artifacts as markdown, json, html, or docx for adoption and training.</li>
+    <li>Promote proven workflows into templates and future GLOW skills.</li>
+  </ul>
+  <p>
+    <a href="{{ url_for('workshop.workshop_export_markdown', session_code=session_code) }}">Export markdown</a> |
+    <a href="{{ url_for('workshop.workshop_export_json', session_code=session_code) }}">Export json</a> |
+    <a href="{{ url_for('workshop.workshop_export_html', session_code=session_code) }}">Export html</a> |
+    <a href="{{ url_for('workshop.workshop_export_docx', session_code=session_code) }}">Export docx</a>
+  </p>
+  <p><a href="{{ url_for('workshop.workshop_home') }}">Back to workshop home</a></p>
+</main></body></html>""",
+        session_code=code,
     )
 
 
