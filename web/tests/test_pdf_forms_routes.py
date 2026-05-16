@@ -7,7 +7,6 @@ import pytest
 from flask import Flask
 
 from acb_large_print_web.app import create_app
-from acb_large_print_web import feature_flags
 
 
 @pytest.fixture()
@@ -28,22 +27,24 @@ def client(app: Flask):
     return app.test_client()
 
 
-def test_pdf_forms_disabled_by_default_returns_404(client):
-    feature_flags.set_flag("GLOW_ENABLE_PDF_FORM_ROUNDTRIP_BETA", False)
+def test_pdf_forms_disabled_by_default_returns_404(client, monkeypatch):
+    from acb_large_print_web.routes import pdf_forms as pdf_forms_routes
+    monkeypatch.setattr(pdf_forms_routes, "_beta_enabled", lambda: False)
     resp = client.get("/pdf-forms/")
     assert resp.status_code == 404
 
 
-def test_pdf_forms_home_renders_when_enabled(client):
-    feature_flags.set_flag("GLOW_ENABLE_PDF_FORM_ROUNDTRIP_BETA", True)
+def test_pdf_forms_home_renders_when_enabled(client, monkeypatch):
+    from acb_large_print_web.routes import pdf_forms as pdf_forms_routes
+    monkeypatch.setattr(pdf_forms_routes, "_beta_enabled", lambda: True)
     resp = client.get("/pdf-forms/")
     assert resp.status_code == 200
     assert "PDF Forms Beta" in resp.get_data(as_text=True)
 
 
 def test_pdf_forms_api_inspect_returns_json_when_enabled(client, monkeypatch):
-    feature_flags.set_flag("GLOW_ENABLE_PDF_FORM_ROUNDTRIP_BETA", True)
     from acb_large_print_web.routes import pdf_forms as pdf_forms_routes
+    monkeypatch.setattr(pdf_forms_routes, "_beta_enabled", lambda: True)
 
     monkeypatch.setattr(
         pdf_forms_routes,
@@ -71,4 +72,3 @@ def test_pdf_forms_api_inspect_returns_json_when_enabled(client, monkeypatch):
     payload = resp.get_json()
     assert payload is not None
     assert payload["classification"]["class"] == "acroform_supported"
-

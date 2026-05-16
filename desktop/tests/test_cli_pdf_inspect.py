@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-from pathlib import Path
 
 from acb_large_print import cli
 
@@ -38,4 +37,3 @@ def test_pdf_inspect_command_rejects_non_pdf(tmp_path):
     sample.write_text("not pdf", encoding="utf-8")
     code = cli.main(["pdf-inspect", str(sample)], force_cli=True)
     assert code == 1
-
