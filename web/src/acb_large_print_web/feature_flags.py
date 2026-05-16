@@ -132,6 +132,8 @@ _DEFAULTS: dict[str, bool] = {
 
     # 3.5 OCR for scanned PDFs
     "GLOW_ENABLE_PDF_OCR": True,
+    # PDF form round-trip beta flow (inspect/classify first slice)
+    "GLOW_ENABLE_PDF_FORM_ROUNDTRIP_BETA": False,
 
     # 3.6 Document comparison and change tracking
     "GLOW_ENABLE_DOCUMENT_COMPARE": True,

@@ -218,6 +218,9 @@ def create_app(config: dict | None = None) -> Flask:
             ctx["feature_table_advisor_enabled"] = bool(all_flags.get("GLOW_ENABLE_TABLE_ADVISOR", True))
             ctx["feature_reading_order_detection_enabled"] = bool(all_flags.get("GLOW_ENABLE_READING_ORDER_DETECTION", True))
             ctx["feature_pdf_ocr_enabled"] = bool(all_flags.get("GLOW_ENABLE_PDF_OCR", True))
+            ctx["feature_pdf_form_roundtrip_beta_enabled"] = bool(
+                all_flags.get("GLOW_ENABLE_PDF_FORM_ROUNDTRIP_BETA", False)
+            )
             ctx["feature_document_compare_enabled"] = bool(all_flags.get("GLOW_ENABLE_DOCUMENT_COMPARE", True))
             ctx["feature_convert_to_odt_enabled"] = bool(all_flags.get("GLOW_ENABLE_CONVERT_TO_ODT", True))
             ctx["feature_cognitive_profile_enabled"] = bool(all_flags.get("GLOW_ENABLE_COGNITIVE_PROFILE", True))
@@ -399,6 +402,7 @@ def create_app(config: dict | None = None) -> Flask:
     from .routes.ai_usage import ai_usage_bp
     from .routes.alt_text import alt_text_bp
     from .routes.jobs import jobs_bp
+    from .routes.pdf_forms import pdf_forms_bp
     from .routes.workshop import workshop_bp
 
     app.register_blueprint(main_bp)
@@ -433,6 +437,7 @@ def create_app(config: dict | None = None) -> Flask:
     app.register_blueprint(ai_usage_bp, url_prefix="/ai/usage")
     app.register_blueprint(alt_text_bp, url_prefix="/alt-text")
     app.register_blueprint(jobs_bp, url_prefix="/job")
+    app.register_blueprint(pdf_forms_bp, url_prefix="/pdf-forms")
     app.register_blueprint(workshop_bp, url_prefix="/workshop")
 
     # Configure speech engine model directory from instance path

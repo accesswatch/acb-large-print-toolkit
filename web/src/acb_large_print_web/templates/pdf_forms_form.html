@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+
+{% block title %}PDF Forms Beta{% endblock %}
+{% block heading %}PDF Forms Beta: Inspect and Classify{% endblock %}
+
+{% block content %}
+<p>Upload a PDF to inspect round-trip eligibility and extract form fields with confidence and warning metadata.</p>
+
+{% if error %}
+<div class="error-box" role="alert">
+  <p><strong>Error:</strong> {{ error }}</p>
+</div>
+{% endif %}
+
+<form method="post" action="{{ url_for('pdf_forms.pdf_forms_inspect') }}" enctype="multipart/form-data" novalidate>
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <fieldset>
+    <legend>Inspect a PDF form</legend>
+    <div class="form-group">
+      <label for="document">Choose a PDF file</label>
+      <input
+        type="file"
+        id="document"
+        name="document"
+        accept=".pdf,application/pdf"
+        aria-describedby="pdf-help"
+        required>
+      <p id="pdf-help" class="help-text">Maximum file size: 500 MB.</p>
+    </div>
+  </fieldset>
+  <button type="submit">Inspect PDF form</button>
+</form>
+
+{% if inspection %}
+<section class="card" aria-labelledby="pdf-inspection-summary-heading">
+  <h2 id="pdf-inspection-summary-heading">Inspection Summary</h2>
+  {% if source_filename %}
+  <p><strong>Source file:</strong> {{ source_filename }}</p>
+  {% endif %}
+  <ul>
+    <li><strong>Classification:</strong> {{ inspection.classification.class }}</li>
+    <li><strong>Supported:</strong> {% if inspection.classification.supported %}Yes{% else %}No{% endif %}</li>
+    <li><strong>Round-trip support:</strong> {{ inspection.classification.round_trip_support }}</li>
+    <li><strong>Reason:</strong> {{ inspection.classification.reason }}</li>
+    <li><strong>Total fields:</strong> {{ inspection.summary.total_fields }}</li>
+    <li><strong>Low-confidence labels:</strong> {{ inspection.summary.low_confidence_fields }}</li>
+  </ul>
+  {% if inspection.warnings %}
+  <h3>Form-level warnings</h3>
+  <ul>
+    {% for warning in inspection.warnings %}
+    <li>{{ warning }}</li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+</section>
+
+{% if inspection.fields %}
+<section class="card" aria-labelledby="pdf-fields-heading">
+  <h2 id="pdf-fields-heading">Extracted Fields</h2>
+  <table>
+    <caption>Field extraction output with inferred labels and confidence</caption>
+    <thead>
+      <tr>
+        <th scope="col">Page</th>
+        <th scope="col">Field Name</th>
+        <th scope="col">Type</th>
+        <th scope="col">Label</th>
+        <th scope="col">Confidence</th>
+        <th scope="col">Warnings</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for field in inspection.fields %}
+      <tr>
+        <td>{{ field.page_number }}</td>
+        <td>{{ field.raw_field_name or 'Unnamed field' }}</td>
+        <td>{{ field.field_type }}</td>
+        <td>{{ field.inferred_label.value }}</td>
+        <td>{{ '%.2f'|format(field.inferred_label.confidence) }}</td>
+        <td>
+          {% if field.warnings %}
+          <ul>
+            {% for warning in field.warnings %}
+            <li>{{ warning }}</li>
+            {% endfor %}
+          </ul>
+          {% else %}
+          None
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endif %}
+{% endif %}
+{% endblock %}

@@ -3,12 +3,14 @@
 from __future__ import annotations
 
 import argparse
+import json
 import logging
 import os
 import sys
 from pathlib import Path
 
 from . import __app_name__, __version__
+from .pdf_forms import inspect_pdf_form
 
 log = logging.getLogger("acb_large_print")
 
@@ -55,6 +57,7 @@ def _build_parser() -> argparse.ArgumentParser:
             "  acb-large-print export report.docx --cms\n"
             "  acb-large-print convert slides.pptx\n"
             "  acb-large-print convert report.pdf -o report.md\n"
+            "  acb-large-print pdf-inspect intake-form.pdf -f json\n"
             "  acb-large-print convert-html notes.md\n"
             "  acb-large-print convert-html report.rst -o report.html\n"
             "\n"
@@ -685,6 +688,31 @@ def _build_parser() -> argparse.ArgumentParser:
         "--apply",
         action="store_true",
         help="Apply detected heading styles to the document",
+    )
+
+    # ---- pdf-inspect ----
+    pdf_inspect_p = sub.add_parser(
+        "pdf-inspect",
+        help="Inspect PDF form round-trip eligibility and field extraction",
+        description=(
+            "Inspect a PDF form for v1 round-trip support, then extract "
+            "field metadata with inferred labels, confidence, and warnings."
+        ),
+    )
+    pdf_inspect_p.add_argument("file", type=Path, help="Path to .pdf file to inspect")
+    pdf_inspect_p.add_argument(
+        "--format",
+        "-f",
+        choices=["text", "json"],
+        default="text",
+        help="Output format (default: text)",
+    )
+    pdf_inspect_p.add_argument(
+        "--output",
+        "-o",
+        type=Path,
+        default=None,
+        help="Save inspection report to file instead of printing to console",
     )
 
     return parser
@@ -1471,10 +1499,49 @@ def _cmd_detect_headings(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_pdf_inspect(args: argparse.Namespace) -> int:
+    """Inspect a PDF form and emit summary + extracted fields."""
+    if not args.file.exists():
+        log.error("File not found: %s", args.file)
+        return 1
+    if args.file.suffix.lower() != ".pdf":
+        log.error("pdf-inspect accepts only .pdf files: %s", args.file)
+        return 1
+
+    inspection = inspect_pdf_form(args.file)
+    if args.format == "json":
+        output = json.dumps(inspection, indent=2, ensure_ascii=False)
+    else:
+        cls = inspection.get("classification", {})
+        summary = inspection.get("summary", {})
+        lines = [
+            f"File: {inspection.get('file_path', args.file)}",
+            f"Class: {cls.get('class', 'unknown')}",
+            f"Supported: {'yes' if cls.get('supported') else 'no'}",
+            f"Round-trip support: {cls.get('round_trip_support', 'no')}",
+            f"Reason: {cls.get('reason', '')}",
+            f"Total fields: {summary.get('total_fields', 0)}",
+            f"Field types: {summary.get('field_type_counts', {})}",
+            f"Low-confidence labels: {summary.get('low_confidence_fields', 0)}",
+        ]
+        warnings = inspection.get("warnings", [])
+        if warnings:
+            lines.append(f"Warnings: {', '.join(str(w) for w in warnings)}")
+        output = "\n".join(lines)
+
+    if args.output:
+        args.output.parent.mkdir(parents=True, exist_ok=True)
+        args.output.write_text(output, encoding="utf-8")
+        log.info("Inspection report saved to: %s", args.output)
+    else:
+        print(output)
+    return 0
+
+
 def _cmd_completions(args: argparse.Namespace) -> int:
     """Generate shell completion script."""
     prog = "acb-large-print"
-    commands = "audit fix template batch export convert convert-html detect-headings gui completions"
+    commands = "audit fix template batch export convert convert-html detect-headings pdf-inspect gui completions"
     prog_under = prog.replace("-", "_")
 
     if args.shell == "bash":
@@ -1574,6 +1641,7 @@ def main(argv: list[str] | None = None, *, force_cli: bool = False) -> int:
         "convert": _cmd_convert,
         "convert-html": _cmd_convert_html,
         "detect-headings": _cmd_detect_headings,
+        "pdf-inspect": _cmd_pdf_inspect,
         "gui": _cmd_gui,
         "completions": _cmd_completions,
     }
