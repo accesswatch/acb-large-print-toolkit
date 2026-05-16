@@ -29,6 +29,10 @@ Releases are tagged in the [GitHub repository](https://github.com/Community-Acce
 
 ### Added
 
+- **Comprehensive PDF forms technical blueprint** in `pdf.md` with v1 execution scope, standards constraints, accessibility-first Field Definition Studio design, WCAG 2.2 AA keyboard and error-model requirements, open-source/commercial library evaluation notes, and a full data-storage architecture for documents, templates, submissions, artifacts, retention, and diagnostics. Generated companion HTML artifact at `pdf.html`.
+- **Full ISO inspection framework for PDF forms** in `pdf.md`, including clause-family checkpoints (metadata, structure tree, semantics, forms/annotations, font/text mapping, destinations), multi-validator evidence normalization, mandatory human verification gates, licensed-text conformance-claim checkpointing, and a traceability artifact matrix for auditable technical review.
+- **Production-grade AI operating model for PDF forms beta** in `pdf.md`, defining AI capability lanes (labels, options/grouping, help text, validation hints, sectioning), confidence and acceptance policy, human-in-the-loop review controls, prompt/version traceability, evaluation metrics and beta quality gates, cost/performance guardrails, and per-lane rollout/kill-switch feature flags.
+
 - **Automation consent bypass** for scripted web workflows: requests that send `X-GLOW-Automation-Consent: GLOW` skip the first-visit consent redirect, and deployments can override the default with `GLOW_AUTOMATION_CONSENT_TOKEN`.
 - **AI Playground streaming responses (SSE)** at `/beta/chat/stream` for token-by-token output rendering with automatic fallback to the legacy JSON endpoint when streaming is unavailable.
 - **AI Playground quick controls**: regenerate response, stop generation, in-page model switcher, prompt templates, session quota banner, and conversation export as Markdown.

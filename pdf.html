@@ -1,0 +1,2460 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>pdf</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+</head>
+<body>
+<h1 id="pdf-form-round-trip-plan">PDF Form Round-Trip Plan</h1>
+<h2 id="purpose">Purpose</h2>
+<p>This document lays out a practical plan for GLOW to inspect PDF
+forms, render an accessible web form, let a helper enrich missing
+structure, and write the data back into the PDF when the source document
+supports it.</p>
+<p>The plan aims to be useful in the real world, not just technically
+impressive in a demo. The product should feel magical where it can, but
+it must stay explicit about uncertainty, unsupported inputs, and when
+human review is required.</p>
+<h2 id="product-vision">Product Vision</h2>
+<p>The target workflow is:</p>
+<ol type="1">
+<li>A user uploads a PDF.</li>
+<li>GLOW determines whether the PDF is a real interactive form, a
+partially structured form, or only a visual form.</li>
+<li>GLOW extracts every field it can find.</li>
+<li>GLOW builds an accessible HTML form from that extraction.</li>
+<li>A helper can review and enrich anything missing: labels, help text,
+option names, grouping, expected data type, required state, and reading
+order.</li>
+<li>GLOW saves that enriched definition as a reusable template profile
+for the same form in the future.</li>
+<li>A user or helper fills the accessible web form.</li>
+<li>GLOW writes the values back into the source PDF when the PDF is a
+supported round-trip candidate.</li>
+<li>GLOW also returns structured JSON so the data is never trapped
+inside the PDF.</li>
+</ol>
+<p>That workflow supports two kinds of users:</p>
+<ol type="1">
+<li>A person filling out a form directly.</li>
+<li>A person assisting someone else and building a better accessible
+representation of the form over time.</li>
+</ol>
+<h2 id="core-principle">Core Principle</h2>
+<p>PDF form handling must be treated as a confidence-based system with
+human correction, not as a perfect parser.</p>
+<p>GLOW should always distinguish between:</p>
+<ol type="1">
+<li>What the PDF explicitly says.</li>
+<li>What GLOW inferred from geometry, names, or heuristics.</li>
+<li>What a human helper confirmed.</li>
+</ol>
+<p>That distinction is the foundation of trust.</p>
+<h2 id="what-we-are-building">What We Are Building</h2>
+<p>The feature is not just “fill a PDF.” It is a layered system with
+four major capabilities:</p>
+<ol type="1">
+<li>PDF form inspection and eligibility classification.</li>
+<li>Accessible form reconstruction.</li>
+<li>Human-assisted metadata enrichment.</li>
+<li>PDF write-back and export.</li>
+</ol>
+<p>The enrichment layer is the part that makes this more than a thin
+wrapper over a PDF library.</p>
+<h2 id="supported-input-classes">Supported Input Classes</h2>
+<p>The following table defines the product support model for input
+PDFs.</p>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr>
+<th>Input class</th>
+<th>Description</th>
+<th>Round-trip support</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>AcroForm with widgets</td>
+<td>Standard interactive PDF form with page widgets</td>
+<td>Yes</td>
+<td>Primary v1 target</td>
+</tr>
+<tr>
+<td>AcroForm with weak metadata</td>
+<td>Real fields exist, but labels or tooltips are poor</td>
+<td>Yes, with warnings</td>
+<td>Strong candidate for helper enrichment</td>
+</tr>
+<tr>
+<td>AcroForm with incomplete widgets</td>
+<td>Field tree exists but widget data is partial or odd</td>
+<td>Limited</td>
+<td>Allow if field identity is stable</td>
+</tr>
+<tr>
+<td>Hybrid form</td>
+<td>Mixed AcroForm and unusual viewer behavior</td>
+<td>Limited</td>
+<td>Case-by-case support</td>
+</tr>
+<tr>
+<td>XFA form</td>
+<td>Adobe XML Forms Architecture</td>
+<td>No in v1</td>
+<td>Reject clearly</td>
+</tr>
+<tr>
+<td>Flattened PDF</td>
+<td>Former fields burned into page content</td>
+<td>No round-trip</td>
+<td>Offer assistive transcription path</td>
+</tr>
+<tr>
+<td>Static visual form</td>
+<td>Looks like a form but has no real fields</td>
+<td>No round-trip</td>
+<td>Requires template capture and overlay mode</td>
+</tr>
+<tr>
+<td>Scanned form</td>
+<td>Image-only or mostly image-based PDF</td>
+<td>No round-trip in v1</td>
+<td>Route to OCR workflow</td>
+</tr>
+<tr>
+<td>Signed form</td>
+<td>Digital signature present</td>
+<td>Read-only or reject</td>
+<td>Any write-back may invalidate signature</td>
+</tr>
+</tbody>
+</table>
+<h2 id="product-modes">Product Modes</h2>
+<p>The system should expose three product modes rather than one.</p>
+<h3 id="native-round-trip-mode">1. Native Round-Trip Mode</h3>
+<p>Use this when the PDF is a supported AcroForm.</p>
+<p>Behavior:</p>
+<ol type="1">
+<li>Extract fields.</li>
+<li>Render accessible HTML.</li>
+<li>Let a helper enrich missing metadata.</li>
+<li>Write values back to the original PDF.</li>
+</ol>
+<h3 id="assisted-template-mode">2. Assisted Template Mode</h3>
+<p>Use this when the PDF has some useful structure but is
+incomplete.</p>
+<p>Behavior:</p>
+<ol type="1">
+<li>Extract what can be trusted.</li>
+<li>Ask the helper to supply missing labels, options, group semantics,
+and ordering.</li>
+<li>Save the enriched template.</li>
+<li>Attempt write-back only for fields mapped to real PDF form
+objects.</li>
+</ol>
+<h3 id="accessible-surrogate-mode">3. Accessible Surrogate Mode</h3>
+<p>Use this when the PDF is not really fillable.</p>
+<p>Behavior:</p>
+<ol type="1">
+<li>Build an accessible surrogate form from OCR, visual detection, or
+manual helper input.</li>
+<li>Export JSON and an accessible HTML record.</li>
+<li>Optionally produce an overlay PDF or companion packet.</li>
+<li>Do not pretend the original PDF is truly interactive.</li>
+</ol>
+<p>This mode still has value for assisted completion, even when
+round-trip write-back is impossible.</p>
+<h2 id="user-journeys">User Journeys</h2>
+<h3 id="journey-a-direct-fill-of-a-good-pdf">Journey A: Direct fill of a
+good PDF</h3>
+<ol type="1">
+<li>Upload PDF.</li>
+<li>GLOW classifies it as a supported AcroForm.</li>
+<li>GLOW extracts fields and renders a usable web form.</li>
+<li>User fills it out.</li>
+<li>GLOW returns a filled PDF and JSON.</li>
+</ol>
+<h3 id="journey-b-helper-builds-a-better-version-of-the-form">Journey B:
+Helper builds a better version of the form</h3>
+<ol type="1">
+<li>Upload PDF.</li>
+<li>GLOW extracts fields but some labels and options are weak.</li>
+<li>Helper opens a form-definition review screen.</li>
+<li>Helper corrects labels, adds help text, groups radios, fixes option
+names, marks required fields, and reorders controls.</li>
+<li>GLOW saves those corrections as a template profile.</li>
+<li>Future uploads of the same form start from the enriched
+profile.</li>
+</ol>
+<h3
+id="journey-c-static-visual-form-that-is-not-truly-interactive">Journey
+C: Static visual form that is not truly interactive</h3>
+<ol type="1">
+<li>Upload PDF.</li>
+<li>GLOW classifies it as non-round-trip.</li>
+<li>GLOW offers a helper workflow to create an accessible surrogate
+form.</li>
+<li>User completes the surrogate form.</li>
+<li>GLOW exports JSON, an accessible HTML summary, and optionally an
+overlay or companion output.</li>
+</ol>
+<h2 id="what-magical-means-in-practice">What “Magical” Means in
+Practice</h2>
+<p>The system should feel magical in four ways:</p>
+<ol type="1">
+<li>It finds more structure than a naive parser would.</li>
+<li>It makes useful guesses without hiding that they are guesses.</li>
+<li>It learns from helper corrections for future uploads.</li>
+<li>It always leaves the user with structured data, even if the PDF
+itself cannot be rewritten cleanly.</li>
+</ol>
+<p>The system should not be magical in the dishonest sense. It must
+never silently invent certainty.</p>
+<h2 id="heuristic-inference-system">Heuristic Inference System</h2>
+<p>The heuristic engine is how GLOW can recover missing meaning from
+imperfect PDFs.</p>
+<p>Every inferred property should store:</p>
+<ol type="1">
+<li><code>value</code></li>
+<li><code>confidence</code></li>
+<li><code>evidence_sources</code></li>
+<li><code>human_confirmed</code></li>
+</ol>
+<h3 id="signals-to-use">Signals to use</h3>
+<h4 id="explicit-field-metadata">1. Explicit field metadata</h4>
+<p>Highest-trust sources:</p>
+<ol type="1">
+<li>field name</li>
+<li>alternate name or tooltip</li>
+<li>mapping name</li>
+<li>field type</li>
+<li>choice list values</li>
+<li>export values</li>
+<li>default value</li>
+<li>required or readonly flags</li>
+</ol>
+<h4 id="field-name-parsing">2. Field name parsing</h4>
+<p>Transform names like:</p>
+<ol type="1">
+<li><code>firstName</code> to <code>First Name</code></li>
+<li><code>applicant.address.city</code> to
+<code>Applicant Address City</code></li>
+<li><code>q12_yes</code> to <code>Question 12 - Yes</code></li>
+<li><code>dependent_3_dob</code> to
+<code>Dependent 3 Date of Birth</code></li>
+</ol>
+<p>This requires:</p>
+<ol type="1">
+<li>camelCase splitting</li>
+<li>underscore splitting</li>
+<li>dot-path grouping</li>
+<li>abbreviation expansion</li>
+<li>ordinal and row parsing</li>
+<li>noise-token removal such as <code>fld</code>, <code>txt</code>,
+<code>cb</code>, <code>rb</code>, <code>grp</code></li>
+</ol>
+<h4 id="geometry-based-nearby-text">3. Geometry-based nearby text</h4>
+<p>For widgets that have page coordinates, inspect nearby visible text
+blocks:</p>
+<ol type="1">
+<li>immediately left of the field</li>
+<li>immediately above the field</li>
+<li>on the same baseline</li>
+<li>adjacent to a checkbox or radio circle</li>
+<li>within the local section heading region</li>
+</ol>
+<p>This is a major source of label recovery for poorly-authored
+forms.</p>
+<h4 id="option-semantics">4. Option semantics</h4>
+<p>Infer likely meaning from option sets:</p>
+<ol type="1">
+<li>state abbreviations suggest a state selector</li>
+<li><code>Yes</code>, <code>No</code> suggests boolean confirmation</li>
+<li><code>Mr</code>, <code>Ms</code>, <code>Dr</code> suggests
+honorific</li>
+<li>month names suggest date-related semantics</li>
+</ol>
+<h4 id="shape-and-size">5. Shape and size</h4>
+<p>Use widget geometry to infer probable field purpose:</p>
+<ol type="1">
+<li>very short field may be ZIP, month, day, or state</li>
+<li>multiline rectangle may be comments or address</li>
+<li>repeated short fields in a row may be phone or date segments</li>
+</ol>
+<h4 id="repetition-patterns">6. Repetition patterns</h4>
+<p>Infer repeated groups from naming and layout:</p>
+<ol type="1">
+<li><code>child1_name</code>, <code>child1_dob</code></li>
+<li><code>child2_name</code>, <code>child2_dob</code></li>
+<li><code>employer_1_name</code>, <code>employer_2_name</code></li>
+</ol>
+<p>That can drive sectioning and fieldset generation.</p>
+<h4 id="section-context">7. Section context</h4>
+<p>Nearby headings and instructional text should influence
+interpretation.</p>
+<p>Examples:</p>
+<ol type="1">
+<li><code>city</code> inside <code>Mailing Address</code> should become
+<code>Mailing Address City</code></li>
+<li><code>phone</code> inside <code>Emergency Contact</code> should
+become <code>Emergency Contact Phone</code></li>
+</ol>
+<h4 id="existing-values">8. Existing values</h4>
+<p>Prefilled values can improve classification:</p>
+<ol type="1">
+<li>date-like content</li>
+<li>phone-number patterns</li>
+<li>email patterns</li>
+<li>ZIP patterns</li>
+</ol>
+<h3 id="confidence-model">Confidence Model</h3>
+<p>The following table summarizes the scoring model. The exact numbers
+can be tuned during implementation.</p>
+<table>
+<thead>
+<tr>
+<th>Signal</th>
+<th>Example contribution</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Explicit tooltip or alternate label</td>
+<td>+40</td>
+</tr>
+<tr>
+<td>Exact nearby left or above label</td>
+<td>+30</td>
+</tr>
+<tr>
+<td>Strong parsed field-name match</td>
+<td>+20</td>
+</tr>
+<tr>
+<td>Known option-set semantic match</td>
+<td>+15</td>
+</tr>
+<tr>
+<td>Section heading context</td>
+<td>+10</td>
+</tr>
+<tr>
+<td>Size and shape agreement</td>
+<td>+10</td>
+</tr>
+<tr>
+<td>Repetition template match</td>
+<td>+10</td>
+</tr>
+<tr>
+<td>Conflicting nearby text candidates</td>
+<td>-20</td>
+</tr>
+<tr>
+<td>Ambiguous internal field name</td>
+<td>-15</td>
+</tr>
+<tr>
+<td>Missing widget geometry</td>
+<td>-25</td>
+</tr>
+</tbody>
+</table>
+<p>Suggested bands:</p>
+<ol type="1">
+<li><code>0.85</code> and above: high confidence</li>
+<li><code>0.60</code> to <code>0.84</code>: medium confidence</li>
+<li>below <code>0.60</code>: low confidence and helper review
+required</li>
+</ol>
+<h2 id="human-assisted-enrichment-workflow">Human-Assisted Enrichment
+Workflow</h2>
+<p>This is the heart of the plan.</p>
+<p>The helper review screen should let someone richly define what the
+PDF is missing.</p>
+<p>For each extracted field, the helper must be able to edit:</p>
+<ol type="1">
+<li>display label</li>
+<li>help text or instructions</li>
+<li>control type</li>
+<li>required state</li>
+<li>readonly state</li>
+<li>placeholder text for the web form</li>
+<li>group membership</li>
+<li>section membership</li>
+<li>display order</li>
+<li>validation type such as email, phone, date, numeric, ZIP</li>
+<li>normalization rules such as uppercase state abbreviation</li>
+<li>field options for dropdowns, radios, and checkboxes</li>
+<li>human-friendly option labels separate from PDF export values</li>
+<li>mapping to PDF object or widget identifier</li>
+<li>whether the field is safe for write-back</li>
+</ol>
+<p>The helper should also be able to create missing structure:</p>
+<ol type="1">
+<li>add a label where the PDF only has a cryptic field name</li>
+<li>split a bad radio group into meaningful options</li>
+<li>merge multiple widgets into one logical field</li>
+<li>add section headings and fieldsets</li>
+<li>mark ambiguous fields as “needs confirmation”</li>
+<li>suppress junk fields that exist in the PDF but should not be
+shown</li>
+</ol>
+<h3 id="helper-actions-at-the-form-level">Helper actions at the form
+level</h3>
+<p>The helper should also be able to define:</p>
+<ol type="1">
+<li>form title</li>
+<li>form description</li>
+<li>page descriptions</li>
+<li>section headings</li>
+<li>reading order overrides</li>
+<li>repeated row templates</li>
+<li>completion notes for the assisted user</li>
+<li>export behavior: editable PDF, flattened PDF, JSON only, surrogate
+only</li>
+</ol>
+<h2 id="template-memory">Template Memory</h2>
+<p>GLOW should store corrected form definitions as reusable template
+profiles.</p>
+<p>Each profile should include:</p>
+<ol type="1">
+<li>a PDF fingerprint</li>
+<li>document title if available</li>
+<li>page count</li>
+<li>stable field signatures</li>
+<li>helper-supplied labels and help text</li>
+<li>corrected option lists</li>
+<li>ordering overrides</li>
+<li>grouping rules</li>
+<li>validation rules</li>
+<li>known write-back-safe mappings</li>
+</ol>
+<p>The system should try to reapply the profile on future uploads of the
+same or nearly identical form.</p>
+<h3 id="fingerprint-strategy">Fingerprint strategy</h3>
+<p>Use a layered fingerprint:</p>
+<ol type="1">
+<li>file-level hash for exact match</li>
+<li>normalized field-tree signature</li>
+<li>page-count and widget-count signature</li>
+<li>relaxed similarity score for minor version changes of the same
+form</li>
+</ol>
+<p>This allows the system to reuse helper knowledge even when the PDF
+changes slightly.</p>
+<h2 id="standards-and-authoritative-constraints">Standards and
+Authoritative Constraints</h2>
+<p>The implementation needs to respect the fact that three different
+concerns are in play.</p>
+<h3 id="pdf-form-mechanics">1. PDF form mechanics</h3>
+<p>This is the raw PDF question:</p>
+<ol type="1">
+<li>does the PDF contain an AcroForm field tree</li>
+<li>do the pages contain widget annotations</li>
+<li>can values be written back without corrupting the file</li>
+<li>can appearance streams be made reliable across viewers</li>
+</ol>
+<p>This is not the same thing as accessibility.</p>
+<h3 id="pdf-accessibility-semantics">2. PDF accessibility semantics</h3>
+<p>This is the tagged-PDF and PDF/UA question:</p>
+<ol type="1">
+<li>does the PDF expose structure and relationships to assistive
+technology</li>
+<li>are labels, instructions, and grouping expressed semantically</li>
+<li>does the PDF remain usable in assistive reading workflows</li>
+</ol>
+<p>This matters greatly, but many real PDFs with fillable fields are
+weak here.</p>
+<h3 id="accessible-web-form-reconstruction">3. Accessible web form
+reconstruction</h3>
+<p>This is the HTML and WCAG 2.2 AA question:</p>
+<ol type="1">
+<li>can GLOW represent the form in a screen-reader-friendly,
+keyboard-friendly web UI</li>
+<li>can labels, grouping, errors, and instructions be made explicit</li>
+<li>can the interaction model be made better than the source PDF</li>
+</ol>
+<p>This is where DAISY guidance is especially relevant.</p>
+<h3 id="what-the-standards-imply-for-glow">What the standards imply for
+GLOW</h3>
+<p>The standards landscape implies several non-negotiable truths:</p>
+<ol type="1">
+<li>a fillable PDF is not automatically an accessible PDF</li>
+<li>a tagged PDF is not automatically a well-labeled or
+assistive-friendly form</li>
+<li>WCAG-quality HTML reconstruction is often more achievable than
+direct remediation of the original PDF</li>
+<li>writing values back into a PDF does not make the PDF/UA problem
+solved</li>
+</ol>
+<h2 id="iso-technical-inspection-framework">ISO Technical Inspection
+Framework</h2>
+<p>This section defines the complete standards-inspection model for PDF
+form work in GLOW.</p>
+<p>The goal is to make standards coverage explicit, testable, and
+auditable across machine checks and human review.</p>
+<h3 id="inspection-scope">Inspection scope</h3>
+<p>The ISO inspection should treat each uploaded document as an evidence
+package evaluated across these standards domains:</p>
+<ol type="1">
+<li>PDF core and form mechanics (ISO 32000 family)</li>
+<li>Accessible PDF semantics (ISO 14289 family, PDF/UA)</li>
+<li>Workflow profile expectations when relevant (for example WTPDF
+profile checks used by validator ecosystems)</li>
+<li>HTML reconstruction conformance for user interaction (WCAG 2.2 AA
+baseline)</li>
+</ol>
+<h3 id="clause-family-inspection-map">Clause-family inspection map</h3>
+<p>Inspection should be organized by requirement families rather than by
+tool output order.</p>
+<h4 id="family-a-identification-and-metadata">Family A: Identification
+and metadata</h4>
+<p>Verify:</p>
+<ol type="1">
+<li>metadata stream presence and type</li>
+<li>document title availability</li>
+<li>display title preference state</li>
+<li>PDF/UA identification schema presence and expected part/revision
+values for target conformance mode</li>
+</ol>
+<p>Evidence sources:</p>
+<ol type="1">
+<li>metadata dictionary and XMP package extraction</li>
+<li>validator rule hits for identification and metadata
+requirements</li>
+</ol>
+<h4 id="family-b-tagged-structure-integrity">Family B: Tagged structure
+integrity</h4>
+<p>Verify:</p>
+<ol type="1">
+<li>MarkInfo tagged state</li>
+<li>StructTreeRoot presence</li>
+<li>structure parent linkage integrity</li>
+<li>role-map validity and no circular mapping</li>
+<li>real-content versus Artifact separation</li>
+</ol>
+<p>Evidence sources:</p>
+<ol type="1">
+<li>raw object inspection</li>
+<li>validator failures for structure-tree and role-map rule
+families</li>
+</ol>
+<h4 id="family-c-structural-semantics-and-reading-model">Family C:
+Structural semantics and reading model</h4>
+<p>Verify:</p>
+<ol type="1">
+<li>heading strategy consistency</li>
+<li>list and table structural constraints</li>
+<li>language tagging at catalog and local levels</li>
+<li>caption and referencing semantics where applicable</li>
+</ol>
+<p>Evidence sources:</p>
+<ol type="1">
+<li>validator rules for heading/list/table/lang families</li>
+<li>helper review for semantic intent in ambiguous regions</li>
+</ol>
+<h4 id="family-d-form-and-annotation-semantics">Family D: Form and
+annotation semantics</h4>
+<p>Verify:</p>
+<ol type="1">
+<li>widget and form structure tagging expectations</li>
+<li>annotation containment and allowed subtype behavior</li>
+<li>tab-order keys for annotated pages</li>
+<li>XFA exclusion requirements for conformance modes that disallow
+XFA</li>
+</ol>
+<p>Evidence sources:</p>
+<ol type="1">
+<li>AcroForm and annotation object inspection</li>
+<li>validator rule outcomes for form and annotation families</li>
+</ol>
+<h4 id="family-e-text-and-font-mapping-reliability">Family E: Text and
+font mapping reliability</h4>
+<p>Verify:</p>
+<ol type="1">
+<li>embedded font coverage where required</li>
+<li>Unicode mapping availability</li>
+<li>.notdef prohibition checks</li>
+<li>private-use-area handling constraints</li>
+</ol>
+<p>Evidence sources:</p>
+<ol type="1">
+<li>font dictionary and mapping inspection</li>
+<li>validator rule outcomes for text and font families</li>
+</ol>
+<h4 id="family-f-navigation-and-destination-semantics">Family F:
+Navigation and destination semantics</h4>
+<p>Verify:</p>
+<ol type="1">
+<li>destination strategy suitability for profile target</li>
+<li>TOC or TOCI reference integrity where present</li>
+<li>internal link target consistency</li>
+</ol>
+<p>Evidence sources:</p>
+<ol type="1">
+<li>destination object extraction</li>
+<li>validator rule outcomes for destination and TOC families</li>
+</ol>
+<h3 id="machine-validator-stack">Machine validator stack</h3>
+<p>Use a multi-validator posture because no single engine is
+authoritative for every practical edge case.</p>
+<p>Primary automated evidence should include:</p>
+<ol type="1">
+<li>a ruleset-based validator pass for PDF/UA-1, PDF/UA-2, and relevant
+profile checks</li>
+<li>a secondary validator pass for cross-tool disagreement
+detection</li>
+<li>local heuristic diagnostics from GLOW extraction for field mapping
+and geometry context</li>
+</ol>
+<p>Automated output should be normalized into a single internal finding
+format:</p>
+<ol type="1">
+<li>requirement family</li>
+<li>rule identifier</li>
+<li>severity</li>
+<li>affected object references</li>
+<li>machine confidence</li>
+<li>remediation hint</li>
+</ol>
+<h3 id="human-verification-gates">Human verification gates</h3>
+<p>Certain checkpoints should never be considered closed from machine
+output alone.</p>
+<p>Mandatory helper-review gates:</p>
+<ol type="1">
+<li>ambiguous label and instruction recovery</li>
+<li>radio or checkbox grouping semantics when layout is unclear</li>
+<li>section and reading order correctness for assistive interaction</li>
+<li>error-message clarity and required-state communication in HTML
+reconstruction</li>
+</ol>
+<p>Each gate should produce a review outcome:</p>
+<ol type="1">
+<li>accepted</li>
+<li>accepted with caveat</li>
+<li>unresolved and blocked for conformance claim</li>
+</ol>
+<h3 id="conformance-claim-policy">Conformance claim policy</h3>
+<p>GLOW should separate operational outcomes from formal conformance
+claims.</p>
+<p>Operational outcomes:</p>
+<ol type="1">
+<li>write-back eligible</li>
+<li>write-back limited</li>
+<li>surrogate-only</li>
+</ol>
+<p>Conformance outcomes:</p>
+<ol type="1">
+<li>no claim</li>
+<li>partial claim with listed unresolved checkpoints</li>
+<li>claim candidate pending licensed-text legal review</li>
+</ol>
+<h3 id="licensed-text-verification-gate">Licensed-text verification
+gate</h3>
+<p>Clause-level legal conformance statements require direct review
+against licensed ISO publications.</p>
+<p>Therefore:</p>
+<ol type="1">
+<li>validator mappings and public technical summaries can drive
+engineering behavior</li>
+<li>formal external conformance assertions must pass a documented
+licensed-text verification checkpoint</li>
+<li>if licensed-text verification is not completed, output must be
+labeled as engineering assessment only</li>
+</ol>
+<h3 id="acceptance-checklist-for-implementation">Acceptance checklist
+for implementation</h3>
+<p>A document-level ISO inspection is complete only when all items below
+are satisfied:</p>
+<ol type="1">
+<li>document classified into the correct support mode</li>
+<li>machine validator passes executed and normalized</li>
+<li>all high-severity findings triaged to disposition</li>
+<li>helper-review gates completed for ambiguous semantics</li>
+<li>write-back safety decision recorded with evidence</li>
+<li>reconstruction accessibility checks completed against WCAG 2.2 AA
+requirements</li>
+<li>conformance claim status explicitly set to no claim, partial, or
+claim candidate</li>
+</ol>
+<h3 id="traceability-artifacts">Traceability artifacts</h3>
+<p>Store the following artifacts for each inspected document:</p>
+<ol type="1">
+<li>normalized validator findings</li>
+<li>helper review decisions and rationale</li>
+<li>template version used or produced</li>
+<li>submission and write-back diagnostics</li>
+<li>final inspection summary with requirement-family status matrix</li>
+</ol>
+<h3 id="daisy-guidance-that-should-shape-the-web-form">DAISY guidance
+that should shape the web form</h3>
+<p>The system therefore needs to treat PDF write-back and accessible
+interaction as related but separate deliverables.</p>
+<h3 id="daisy-guidance-that-should-shape-the-web-form-1">DAISY guidance
+that should shape the web form</h3>
+<p>The DAISY Accessible Publishing Knowledge Base is directly relevant
+to the surrogate and reconstructed HTML form layer.</p>
+<p>Its form guidance reinforces that accessible forms must:</p>
+<ol type="1">
+<li>use explicit labels</li>
+<li>group related controls such as checkbox and radio sets</li>
+<li>identify required fields</li>
+<li>identify and explain input errors</li>
+<li>use <code>aria-describedby</code> for supporting instructions when
+the label alone is not enough</li>
+<li>avoid relying on visual layout alone for understanding</li>
+</ol>
+<p>That should become a hard requirement for the GLOW review and fill
+flows.</p>
+<h3 id="pdfua-reality-for-this-project">PDF/UA reality for this
+project</h3>
+<p>For this project, PDF/UA should be treated as a validation and
+aspiration layer, not as something the open-source Python stack can
+guarantee for arbitrary existing forms.</p>
+<p>The accurate product stance is:</p>
+<ol type="1">
+<li>GLOW can inspect and fill many AcroForm PDFs</li>
+<li>GLOW can reconstruct an accessible HTML form that follows WCAG 2.2
+AA patterns</li>
+<li>GLOW cannot claim that rewriting field values alone makes an
+arbitrary source PDF PDF/UA conformant</li>
+<li>if PDF/UA remediation becomes a formal requirement, it will likely
+require a narrower source profile, dedicated remediation logic, or
+commercial tooling</li>
+</ol>
+<h2 id="field-definition-studio">Field Definition Studio</h2>
+<p>The helper workflow should be formalized as a Field Definition Studio
+rather than treated as a simple edit screen.</p>
+<p>This studio is where GLOW turns raw PDF extraction into a durable,
+accessible form model.</p>
+<h3 id="studio-goals">Studio goals</h3>
+<p>The studio should let a helper:</p>
+<ol type="1">
+<li>understand what the PDF contains</li>
+<li>correct or enrich what the PDF is missing</li>
+<li>organize the form into meaningful sections and groups</li>
+<li>preview the accessible web experience before the end user sees
+it</li>
+<li>preserve exact write-back mappings separately from human-friendly
+labels</li>
+</ol>
+<h3 id="studio-information-architecture">Studio information
+architecture</h3>
+<p>The studio should be organized into five regions.</p>
+<h4 id="form-overview-panel">1. Form overview panel</h4>
+<p>This panel should show:</p>
+<ol type="1">
+<li>document title</li>
+<li>form classification</li>
+<li>support status</li>
+<li>page count</li>
+<li>number of extracted fields</li>
+<li>number of unresolved low-confidence fields</li>
+<li>number of unsupported or suppressed fields</li>
+</ol>
+<h4 id="field-inventory-panel">2. Field inventory panel</h4>
+<p>This panel should show every extracted logical field as a
+keyboard-navigable list or table.</p>
+<p>Each row should include:</p>
+<ol type="1">
+<li>visible label or fallback label</li>
+<li>raw PDF field name</li>
+<li>field type</li>
+<li>section membership</li>
+<li>confidence badge</li>
+<li>write-back status</li>
+<li>unresolved warnings</li>
+</ol>
+<p>This inventory should support keyboard filtering and sorting.</p>
+<h4 id="field-editor-panel">3. Field editor panel</h4>
+<p>This panel should allow detailed editing of the selected field.</p>
+<p>Editable properties should include:</p>
+<ol type="1">
+<li>display label</li>
+<li>short label for compact views</li>
+<li>help text</li>
+<li>required state</li>
+<li>readonly state</li>
+<li>field type override when safe</li>
+<li>validation type</li>
+<li>placeholder text for HTML only</li>
+<li>autocomplete hint when appropriate</li>
+<li>visible option labels</li>
+<li>export value mapping</li>
+<li>write-back-safe flag</li>
+</ol>
+<h4 id="form-organization-panel">4. Form organization panel</h4>
+<p>This panel should let a helper define:</p>
+<ol type="1">
+<li>sections</li>
+<li>section descriptions</li>
+<li>subsection order</li>
+<li>fieldset membership</li>
+<li>repeatable row groups</li>
+<li>page-to-section mapping where helpful</li>
+</ol>
+<h4 id="preview-panel">5. Preview panel</h4>
+<p>This panel should render the accessible HTML version of the form
+using the current reviewed definition.</p>
+<p>The preview should make it easy to test:</p>
+<ol type="1">
+<li>heading structure</li>
+<li>label clarity</li>
+<li>radio and checkbox grouping</li>
+<li>required-field announcements</li>
+<li>error messaging</li>
+<li>tab order</li>
+</ol>
+<h3 id="field-definition-richness">Field definition richness</h3>
+<p>The field definition model should be richer than the PDF model.</p>
+<p>Each reviewed field should be able to carry:</p>
+<ol type="1">
+<li>a human-facing label</li>
+<li>a human-facing description</li>
+<li>a machine write-back mapping</li>
+<li>visible options and machine export values</li>
+<li>a section and subgroup placement</li>
+<li>a preferred control presentation in HTML</li>
+<li>a confidence state</li>
+<li>a provenance record showing whether the value came from the PDF,
+heuristics, AI suggestion, or a human review</li>
+</ol>
+<h3 id="why-rich-field-definitions-matter">Why rich field definitions
+matter</h3>
+<p>This richness is what lets GLOW avoid two common failures:</p>
+<ol type="1">
+<li>a technically correct but unusable web form</li>
+<li>a nice web form that can no longer write back to the source PDF</li>
+</ol>
+<p>The model must preserve both human meaning and machine mapping.</p>
+<h2 id="accessible-web-form-requirements">Accessible Web Form
+Requirements</h2>
+<p>The generated web form must be better than the original PDF from an
+accessibility standpoint.</p>
+<p>Requirements:</p>
+<ol type="1">
+<li>semantic labels for every control</li>
+<li><code>fieldset</code> and <code>legend</code> for grouped radios and
+related controls</li>
+<li>explicit error summary plus inline errors</li>
+<li>keyboard-only full operability</li>
+<li>high-contrast and zoom-safe layout</li>
+<li>visible page and section context where useful</li>
+<li>no dependence on spatial PDF layout for comprehension</li>
+<li>helper notes and descriptions exposed as normal text, not only as
+tooltips</li>
+<li>support for screen readers, magnification, and switch control
+workflows</li>
+</ol>
+<h2 id="keyboard-and-wcag-2.2-aa-design-requirements">Keyboard and WCAG
+2.2 AA Design Requirements</h2>
+<p>The review and fill experiences should be designed as first-class
+accessible applications, not as PDF utilities with accessibility added
+later.</p>
+<h3 id="review-studio-keyboard-model">Review studio keyboard model</h3>
+<p>The Field Definition Studio should support:</p>
+<ol type="1">
+<li>full tab access to every actionable control</li>
+<li>visible focus indicators at all times</li>
+<li>keyboard-operable filter, sort, and navigation controls</li>
+<li>arrow-key navigation only where it matches established widget
+patterns</li>
+<li>no keyboard traps in side panels, dialogs, or preview regions</li>
+<li>a skip link or equivalent jump controls for large review
+screens</li>
+</ol>
+<p>If a grid or listbox pattern is used, it must follow the established
+ARIA interaction model consistently. If the team cannot maintain that
+fidelity, use simpler native HTML patterns.</p>
+<h3 id="fill-form-keyboard-model">Fill form keyboard model</h3>
+<p>The end-user fill page should support:</p>
+<ol type="1">
+<li>linear tab order that follows the reviewed logical order, not the
+PDF geometry</li>
+<li><code>fieldset</code> and <code>legend</code> for every radio group
+and related set of controls</li>
+<li>Enter and Space behavior consistent with native HTML controls</li>
+<li>reliable submission and error recovery without moving keyboard users
+unpredictably</li>
+<li>no drag-and-drop-only interactions</li>
+</ol>
+<h3 id="error-handling-model">Error handling model</h3>
+<p>The fill page should include:</p>
+<ol type="1">
+<li>a top-level error summary on failed submission</li>
+<li>inline field errors adjacent to each failing field</li>
+<li><code>aria-invalid</code> only after a validation failure is
+known</li>
+<li><code>aria-describedby</code> wiring from each field to help and
+error text</li>
+<li>clear required-state exposure in both visual and programmatic
+form</li>
+</ol>
+<h3 id="wcag-2.2-aa-topics-that-matter-most-here">WCAG 2.2 AA topics
+that matter most here</h3>
+<p>For this feature, the most important success criteria to explicitly
+design for are:</p>
+<ol type="1">
+<li>Info and Relationships</li>
+<li>Labels or Instructions</li>
+<li>Error Identification</li>
+<li>Focus Visible</li>
+<li>Dragging Movements, by ensuring no drag-only requirement exists</li>
+<li>Target Size, for pointer users on review controls and dense form
+editors</li>
+<li>Consistent Help, so helper guidance appears in stable locations</li>
+</ol>
+<h3 id="safe-ui-pattern-preference">Safe UI pattern preference</h3>
+<p>Use native HTML whenever possible:</p>
+<ol type="1">
+<li><code>input</code></li>
+<li><code>select</code></li>
+<li><code>textarea</code></li>
+<li><code>fieldset</code></li>
+<li><code>legend</code></li>
+<li><code>details</code> and <code>summary</code> only where their
+behavior helps, not where they hide critical instructions</li>
+</ol>
+<p>Avoid custom composite widgets unless they materially improve the
+workflow and can be implemented accessibly.</p>
+<p>The goal is not to reproduce the page visually. The goal is to
+produce an accessible interaction model.</p>
+<h2 id="architecture-for-glow">Architecture for GLOW</h2>
+<p>The implementation should follow GLOW’s current pattern of shared
+core logic in <code>desktop/src/acb_large_print/</code> and web routes
+in <code>web/src/acb_large_print_web/</code>.</p>
+<h3 id="proposed-core-modules">Proposed core modules</h3>
+<ol type="1">
+<li><code>desktop/src/acb_large_print/pdf_form_classifier.py</code></li>
+<li><code>desktop/src/acb_large_print/pdf_form_extract.py</code></li>
+<li><code>desktop/src/acb_large_print/pdf_form_infer.py</code></li>
+<li><code>desktop/src/acb_large_print/pdf_form_template.py</code></li>
+<li><code>desktop/src/acb_large_print/pdf_form_fill.py</code></li>
+<li><code>desktop/src/acb_large_print/pdf_form_models.py</code></li>
+</ol>
+<h3 id="proposed-web-modules">Proposed web modules</h3>
+<ol type="1">
+<li><code>web/src/acb_large_print_web/routes/pdf_forms.py</code></li>
+<li><code>web/src/acb_large_print_web/templates/pdf_forms_upload.html</code></li>
+<li><code>web/src/acb_large_print_web/templates/pdf_forms_review.html</code></li>
+<li><code>web/src/acb_large_print_web/templates/pdf_forms_fill.html</code></li>
+<li><code>web/src/acb_large_print_web/templates/pdf_forms_result.html</code></li>
+</ol>
+<h3 id="proposed-feature-flags">Proposed feature flags</h3>
+<ol type="1">
+<li><code>GLOW_ENABLE_PDF_FORM_ROUNDTRIP</code></li>
+<li><code>GLOW_ENABLE_PDF_FORM_TEMPLATE_MEMORY</code></li>
+<li><code>GLOW_ENABLE_PDF_FORM_SURROGATE_MODE</code></li>
+<li><code>GLOW_ENABLE_PDF_FORM_AI_ASSIST</code></li>
+</ol>
+<h2 id="data-model">Data Model</h2>
+<p>The following entities should exist in the implementation.</p>
+<h3 id="extracted-form-document">1. Extracted form document</h3>
+<p>Stores raw machine extraction.</p>
+<p>Key properties:</p>
+<ol type="1">
+<li>document id</li>
+<li>classification</li>
+<li>eligibility</li>
+<li>warnings</li>
+<li>pages</li>
+<li>fields</li>
+<li>widgets</li>
+</ol>
+<h3 id="enriched-form-template">2. Enriched form template</h3>
+<p>Stores helper-confirmed structure.</p>
+<p>Key properties:</p>
+<ol type="1">
+<li>template id</li>
+<li>document fingerprint</li>
+<li>version</li>
+<li>human-edited labels</li>
+<li>field groups</li>
+<li>ordering</li>
+<li>validation rules</li>
+<li>write-back rules</li>
+<li>display rules</li>
+</ol>
+<h3 id="submission-payload">3. Submission payload</h3>
+<p>Stores end-user answers.</p>
+<p>Key properties:</p>
+<ol type="1">
+<li>submission id</li>
+<li>template id</li>
+<li>field values</li>
+<li>validation state</li>
+<li>write-back result</li>
+<li>generated files</li>
+</ol>
+<h2 id="storage-strategy">Storage Strategy</h2>
+<p>The first implementation can use SQLite in the instance directory,
+consistent with existing lightweight persistence patterns in the web
+app.</p>
+<p>Suggested tables:</p>
+<ol type="1">
+<li><code>pdf_form_templates</code></li>
+<li><code>pdf_form_fields</code></li>
+<li><code>pdf_form_options</code></li>
+<li><code>pdf_form_submissions</code></li>
+<li><code>pdf_form_reviews</code></li>
+<li><code>pdf_form_fingerprints</code></li>
+</ol>
+<p>Binary outputs should stay in the existing temp-file model, not in
+the database.</p>
+<h2 id="data-storage-architecture">Data Storage Architecture</h2>
+<p>This section defines the concrete storage architecture for
+implementation.</p>
+<h3 id="storage-layers">Storage layers</h3>
+<p>The feature should use three storage layers with clear
+responsibilities.</p>
+<h4 id="ephemeral-upload-and-output-storage">1. Ephemeral upload and
+output storage</h4>
+<p>Purpose:</p>
+<ol type="1">
+<li>hold uploaded source PDFs</li>
+<li>hold intermediate extraction artifacts</li>
+<li>hold generated filled PDF outputs</li>
+</ol>
+<p>Implementation:</p>
+<ol type="1">
+<li>reuse the existing tokenized temp directory model from the web
+upload system</li>
+<li>keep files under request-scoped or session-scoped token
+directories</li>
+<li>clean up by TTL and explicit completion cleanup</li>
+</ol>
+<p>Retention:</p>
+<ol type="1">
+<li>short-lived only</li>
+<li>no long-term persistence by default</li>
+</ol>
+<h4 id="persistent-metadata-and-template-storage">2. Persistent metadata
+and template storage</h4>
+<p>Purpose:</p>
+<ol type="1">
+<li>store extracted field metadata</li>
+<li>store helper-reviewed field definitions</li>
+<li>store reusable template mappings and fingerprints</li>
+<li>store diagnostic events and outcomes</li>
+</ol>
+<p>Implementation:</p>
+<ol type="1">
+<li>SQLite database in <code>instance/</code> for v1 and early v2</li>
+<li>schema versioning with forward-only migrations</li>
+<li>JSON columns for flexible metadata where relational shape would be
+too rigid</li>
+</ol>
+<p>Retention:</p>
+<ol type="1">
+<li>template metadata is long-lived</li>
+<li>reviewed definitions are versioned, not overwritten in place</li>
+</ol>
+<h4 id="submission-record-storage">3. Submission record storage</h4>
+<p>Purpose:</p>
+<ol type="1">
+<li>record fill submissions and write-back results</li>
+<li>support auditing and troubleshooting</li>
+<li>preserve structured JSON payloads when allowed by policy</li>
+</ol>
+<p>Implementation:</p>
+<ol type="1">
+<li>SQLite records keyed to template version and submission id</li>
+<li>optional payload minimization mode for privacy-sensitive
+deployments</li>
+</ol>
+<p>Retention:</p>
+<ol type="1">
+<li>configurable via policy</li>
+<li>default to short retention unless explicit persistence is
+enabled</li>
+</ol>
+<h3 id="database-location-and-naming">Database location and naming</h3>
+<p>Use <code>Path(current_app.instance_path)</code> to align with
+existing GLOW persistence patterns.</p>
+<p>Suggested database path:</p>
+<ol type="1">
+<li><code>instance/pdf_forms.db</code></li>
+</ol>
+<p>This keeps PDF-form persistence isolated from unrelated feature
+databases.</p>
+<h3 id="logical-data-model">Logical data model</h3>
+<p>The following logical entities should exist in the storage model.</p>
+<h4 id="source-documents">1. Source documents</h4>
+<p>Tracks uploaded documents at the metadata level.</p>
+<p>Key fields:</p>
+<ol type="1">
+<li>document id (UUID)</li>
+<li>upload token</li>
+<li>original filename</li>
+<li>sha256 digest</li>
+<li>page count</li>
+<li>detected form class</li>
+<li>eligibility status</li>
+<li>created at</li>
+<li>expires at</li>
+</ol>
+<h4 id="extraction-snapshots">2. Extraction snapshots</h4>
+<p>Stores machine extraction results from a specific run.</p>
+<p>Key fields:</p>
+<ol type="1">
+<li>extraction id (UUID)</li>
+<li>document id</li>
+<li>extractor version</li>
+<li>extraction json</li>
+<li>confidence summary</li>
+<li>warning summary</li>
+<li>created at</li>
+</ol>
+<h4 id="template-fingerprints">3. Template fingerprints</h4>
+<p>Maps form signatures to reusable reviewed templates.</p>
+<p>Key fields:</p>
+<ol type="1">
+<li>fingerprint id (UUID)</li>
+<li>exact hash</li>
+<li>normalized signature hash</li>
+<li>page count</li>
+<li>widget count</li>
+<li>similarity profile json</li>
+<li>created at</li>
+</ol>
+<h4 id="reviewed-templates">4. Reviewed templates</h4>
+<p>Represents helper-reviewed form definitions.</p>
+<p>Key fields:</p>
+<ol type="1">
+<li>template id (UUID)</li>
+<li>fingerprint id</li>
+<li>template version</li>
+<li>title</li>
+<li>description</li>
+<li>status (draft, active, retired)</li>
+<li>created by</li>
+<li>created at</li>
+<li>supersedes template id</li>
+</ol>
+<h4 id="reviewed-fields">5. Reviewed fields</h4>
+<p>Stores the reviewed field definitions used to render accessible HTML
+and map write-back.</p>
+<p>Key fields:</p>
+<ol type="1">
+<li>reviewed field id (UUID)</li>
+<li>template id</li>
+<li>raw pdf field name</li>
+<li>widget refs json</li>
+<li>display label</li>
+<li>help text</li>
+<li>control type</li>
+<li>required flag</li>
+<li>readonly flag</li>
+<li>section key</li>
+<li>display order</li>
+<li>write-back policy</li>
+<li>confidence</li>
+<li>provenance json</li>
+</ol>
+<h4 id="reviewed-options">6. Reviewed options</h4>
+<p>Stores option label and export mappings for discrete-choice
+fields.</p>
+<p>Key fields:</p>
+<ol type="1">
+<li>option id (UUID)</li>
+<li>reviewed field id</li>
+<li>display label</li>
+<li>export value</li>
+<li>order index</li>
+<li>selected by default flag</li>
+</ol>
+<h4 id="submissions">7. Submissions</h4>
+<p>Stores form completion events.</p>
+<p>Key fields:</p>
+<ol type="1">
+<li>submission id (UUID)</li>
+<li>template id</li>
+<li>template version</li>
+<li>status (draft, submitted, written, failed)</li>
+<li>submitted by</li>
+<li>submitted at</li>
+<li>write-back outcome</li>
+<li>diagnostic json</li>
+</ol>
+<h4 id="submission-values">8. Submission values</h4>
+<p>Stores field-level answers for a submission.</p>
+<p>Key fields:</p>
+<ol type="1">
+<li>submission value id (UUID)</li>
+<li>submission id</li>
+<li>reviewed field id</li>
+<li>submitted value text</li>
+<li>submitted value json for multi-select cases</li>
+<li>normalized value</li>
+<li>validation state</li>
+</ol>
+<h4 id="output-artifacts">9. Output artifacts</h4>
+<p>Tracks generated files and download metadata.</p>
+<p>Key fields:</p>
+<ol type="1">
+<li>artifact id (UUID)</li>
+<li>submission id</li>
+<li>artifact type (pdf_editable, pdf_flattened, json, report)</li>
+<li>token</li>
+<li>relative path</li>
+<li>mime type</li>
+<li>file size</li>
+<li>created at</li>
+<li>expires at</li>
+</ol>
+<h3 id="physical-sqlite-schema-design">Physical SQLite schema
+design</h3>
+<p>Use normalized core tables plus JSON columns for flexible
+metadata.</p>
+<p>Recommended table set:</p>
+<ol type="1">
+<li><code>pdf_form_documents</code></li>
+<li><code>pdf_form_extractions</code></li>
+<li><code>pdf_form_fingerprints</code></li>
+<li><code>pdf_form_templates</code></li>
+<li><code>pdf_form_template_fields</code></li>
+<li><code>pdf_form_template_options</code></li>
+<li><code>pdf_form_submissions</code></li>
+<li><code>pdf_form_submission_values</code></li>
+<li><code>pdf_form_artifacts</code></li>
+<li><code>pdf_form_events</code></li>
+</ol>
+<h3 id="index-strategy">Index strategy</h3>
+<p>Create explicit indexes for expected access paths.</p>
+<p>Required indexes:</p>
+<ol type="1">
+<li><code>pdf_form_documents(sha256)</code></li>
+<li><code>pdf_form_fingerprints(exact_hash)</code></li>
+<li><code>pdf_form_fingerprints(normalized_hash)</code></li>
+<li><code>pdf_form_templates(fingerprint_id, status, template_version)</code></li>
+<li><code>pdf_form_template_fields(template_id, section_key, display_order)</code></li>
+<li><code>pdf_form_submissions(template_id, submitted_at)</code></li>
+<li><code>pdf_form_artifacts(submission_id, artifact_type)</code></li>
+</ol>
+<p>Optional full-text indexes can be added later for helper search
+across field labels and help text.</p>
+<h3 id="event-and-audit-log-model">Event and audit log model</h3>
+<p>Store lifecycle events as append-only rows in
+<code>pdf_form_events</code>.</p>
+<p>Event examples:</p>
+<ol type="1">
+<li>document_uploaded</li>
+<li>extraction_completed</li>
+<li>template_created</li>
+<li>template_published</li>
+<li>submission_validated</li>
+<li>writeback_started</li>
+<li>writeback_succeeded</li>
+<li>writeback_failed</li>
+<li>artifact_downloaded</li>
+</ol>
+<p>Each event should include:</p>
+<ol type="1">
+<li>actor type</li>
+<li>actor id where available</li>
+<li>correlation id</li>
+<li>payload json</li>
+<li>timestamp</li>
+</ol>
+<p>This is critical for debugging difficult PDF edge cases.</p>
+<h3 id="versioning-strategy">Versioning strategy</h3>
+<p>Template and schema versioning should be explicit.</p>
+<p>Template versioning:</p>
+<ol type="1">
+<li>immutable template versions</li>
+<li>editable drafts branch from a prior version</li>
+<li>publication creates a new active version</li>
+<li>old versions remain queryable for historical submissions</li>
+</ol>
+<p>Schema versioning:</p>
+<ol type="1">
+<li>one migration ledger table such as
+<code>pdf_form_schema_migrations</code></li>
+<li>forward-only migrations</li>
+<li>startup migration check in app initialization</li>
+</ol>
+<h3 id="data-retention-and-cleanup">Data retention and cleanup</h3>
+<p>Retention needs to separate temporary artifacts from durable
+metadata.</p>
+<p>Recommended defaults:</p>
+<ol type="1">
+<li>uploaded source files: short TTL (for example 1 to 24 hours)</li>
+<li>generated artifacts: short TTL unless user explicitly saves</li>
+<li>submission value records: policy-driven TTL</li>
+<li>templates and reviewed definitions: durable</li>
+<li>event logs: longer retention but bounded by size policy</li>
+</ol>
+<p>Cleanup jobs:</p>
+<ol type="1">
+<li>file cleanup for expired token directories</li>
+<li>DB cleanup for expired artifacts and old submission payloads</li>
+<li>periodic compaction and vacuum scheduling</li>
+</ol>
+<h3 id="privacy-and-sensitive-data-controls">Privacy and sensitive-data
+controls</h3>
+<p>Because forms may contain personal data, storage controls must be
+explicit.</p>
+<p>Controls:</p>
+<ol type="1">
+<li>configurable submission payload persistence mode:</li>
+<li>mode A: full payload retention</li>
+<li>mode B: metadata-only retention with payload hash</li>
+<li>mode C: no persistence beyond generated output window</li>
+<li>explicit redaction hooks before persistence</li>
+<li>separation of template metadata from user-submitted values</li>
+</ol>
+<p>The policy should be deployment-configurable through environment
+flags.</p>
+<h3 id="concurrency-and-integrity">Concurrency and integrity</h3>
+<p>SQLite is appropriate for v1 if writes are disciplined.</p>
+<p>Approach:</p>
+<ol type="1">
+<li>short transactions</li>
+<li>WAL mode enabled</li>
+<li>explicit retry for transient lock contention</li>
+<li>idempotency keys for inspect and fill operations</li>
+<li>unique constraints on template version tuples</li>
+</ol>
+<h3 id="failure-recovery-model">Failure recovery model</h3>
+<p>The storage architecture should support safe partial failure
+recovery.</p>
+<p>Requirements:</p>
+<ol type="1">
+<li>extraction can fail without leaving half-created templates</li>
+<li>submission failure preserves diagnostics and user-safe recovery
+guidance</li>
+<li>write-back failure does not delete the validated JSON payload</li>
+<li>artifact generation failure does not corrupt submission status
+transitions</li>
+</ol>
+<p>Recommended status machine for submissions:</p>
+<ol type="1">
+<li>draft</li>
+<li>validated</li>
+<li>writeback_in_progress</li>
+<li>writeback_failed</li>
+<li>writeback_succeeded</li>
+<li>artifact_ready</li>
+</ol>
+<h3 id="example-storage-lifecycle">Example storage lifecycle</h3>
+<p>A typical successful flow should look like:</p>
+<ol type="1">
+<li>upload creates token directory and document metadata row</li>
+<li>extraction creates extraction snapshot row</li>
+<li>helper review creates template version rows</li>
+<li>submission creates submission and submission value rows</li>
+<li>write-back updates submission status and diagnostic fields</li>
+<li>artifact rows are created with expiry timestamps</li>
+<li>cleanup removes expired files and artifact metadata</li>
+</ol>
+<h2 id="library-strategy">Library Strategy</h2>
+<p>Start with the libraries already in the repo.</p>
+<h3 id="primary-open-source-stack">Primary open-source stack</h3>
+<ol type="1">
+<li>PyMuPDF for widget inspection, geometry, text extraction, and
+page-local analysis</li>
+<li>pypdf for AcroForm reads, field-tree access, write-back, and
+flattening</li>
+<li>pikepdf as an optional low-level support library for repair-oriented
+PDF handling, metadata work, and appearance-stream support when the
+higher-level libraries hit malformed files</li>
+</ol>
+<p>This is the correct default because both are already present in the
+project dependencies.</p>
+<h3 id="open-source-library-roles">Open-source library roles</h3>
+<p>The current best-fit division of labor is:</p>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr>
+<th>Library</th>
+<th>Best role in GLOW</th>
+<th>Strengths</th>
+<th>Important limitations</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>PyMuPDF</td>
+<td>extraction and inspection</td>
+<td>widgets, field labels, field values, choice values, coordinates,
+script metadata, fast page-local inspection</td>
+<td>not a turnkey PDF/UA remediation stack</td>
+</tr>
+<tr>
+<td>pypdf</td>
+<td>write-back and export</td>
+<td><code>get_fields()</code>,
+<code>update_page_form_field_values()</code>, flattening flow, AcroForm
+tree access</td>
+<td>appearance fidelity and viewer behavior still require testing; not a
+complete XFA or PDF/UA solution</td>
+</tr>
+<tr>
+<td>pikepdf</td>
+<td>low-level support</td>
+<td>AcroForm helper, appearance stream generation, metadata editing, PDF
+repair-friendly object model</td>
+<td>higher-level form helper has real limitations, including
+duplicate-name problems and no signature support</td>
+</tr>
+<tr>
+<td>PyPDFForm</td>
+<td>optional abstraction layer</td>
+<td>simple high-level fill API for text, checkbox, radio, dropdown,
+image, and signature-image style workflows</td>
+<td>less transparent than using the core stack directly; should be
+treated as optional, not foundational</td>
+</tr>
+<tr>
+<td>pypdfium2</td>
+<td>optional preview and rendering support</td>
+<td>strong rendering and flattening support, useful for preview fidelity
+and form rendering checks</td>
+<td>not needed for a first implementation unless rendering validation
+becomes a pain point</td>
+</tr>
+</tbody>
+</table>
+<h3 id="recommended-stack-decision">Recommended stack decision</h3>
+<p>The best technical starting point is:</p>
+<ol type="1">
+<li>PyMuPDF for extraction</li>
+<li>pypdf for write-back</li>
+<li>pikepdf held in reserve as a support library when malformed PDFs or
+appearance regeneration become blockers</li>
+</ol>
+<p>That gives GLOW a clean architecture without prematurely depending on
+a heavier rendering stack.</p>
+<h3 id="what-the-open-source-stack-can-do-accurately">What the
+open-source stack can do accurately</h3>
+<p>The current open-source Python stack can accurately support:</p>
+<ol type="1">
+<li>AcroForm presence detection</li>
+<li>widget enumeration</li>
+<li>field name and basic label extraction</li>
+<li>option extraction for common choice controls</li>
+<li>page-local geometry inspection</li>
+<li>text-near-widget heuristics</li>
+<li>write-back for common field types</li>
+<li>flattening for distribution copies</li>
+</ol>
+<h3
+id="what-the-open-source-stack-cannot-honestly-promise-by-itself">What
+the open-source stack cannot honestly promise by itself</h3>
+<p>The current open-source Python stack should not be described as
+automatically providing:</p>
+<ol type="1">
+<li>full XFA support</li>
+<li>signature-preserving workflows</li>
+<li>full PDF/UA remediation for arbitrary source PDFs</li>
+<li>universal viewer-consistent appearance regeneration for every
+malformed or exotic form</li>
+<li>turnkey assistive semantics for forms whose source PDF lacks
+trustworthy structure</li>
+</ol>
+<h3 id="optional-commercial-upgrade-path">Optional commercial upgrade
+path</h3>
+<p>If open-source behavior proves too inconsistent for production
+quality, evaluate a commercial SDK.</p>
+<p>Evaluation criteria:</p>
+<ol type="1">
+<li>accurate AcroForm and XFA coverage</li>
+<li>robust appearance regeneration</li>
+<li>stable write-back across Acrobat, Edge, and Chrome viewers</li>
+<li>Python or service-friendly integration</li>
+<li>permissive deployment model for a web application</li>
+<li>reasonable annual cost relative to user value</li>
+</ol>
+<p>Possible categories to evaluate:</p>
+<ol type="1">
+<li>full PDF SDKs with strong form APIs</li>
+<li>server-side PDF rendering and write-back services</li>
+<li>hybrid browser plus server SDKs if they materially improve
+accessibility review workflows</li>
+</ol>
+<p>Commercial evaluation should happen only after the open-source spike
+produces clear failure cases.</p>
+<h2 id="role-of-ai">Role of AI</h2>
+<p>AI is the force multiplier that makes this feature workable at
+real-world quality, but it must run inside a deterministic safety
+envelope.</p>
+<p>Core rule:</p>
+<ol type="1">
+<li>deterministic extraction remains the system of record</li>
+<li>AI generates ranked suggestions, never silent overrides</li>
+<li>every AI output carries confidence, evidence, and provenance</li>
+<li>high-impact decisions require helper confirmation</li>
+</ol>
+<h3 id="ai-capability-lanes">AI capability lanes</h3>
+<p>Implement AI in clear capability lanes so behavior is predictable and
+testable.</p>
+<h4 id="lane-a-label-recovery-and-normalization">Lane A: Label recovery
+and normalization</h4>
+<p>Purpose:</p>
+<ol type="1">
+<li>recover user-friendly labels from weak field names and nearby
+text</li>
+<li>normalize style to consistent form language</li>
+</ol>
+<p>Input:</p>
+<ol type="1">
+<li>raw field name</li>
+<li>nearby text windows from geometry extraction</li>
+<li>section context</li>
+<li>known label dictionary from prior reviewed templates</li>
+</ol>
+<p>Output:</p>
+<ol type="1">
+<li>top 3 label candidates</li>
+<li>confidence score</li>
+<li>evidence snippets used to generate each candidate</li>
+</ol>
+<p>Hard constraints:</p>
+<ol type="1">
+<li>never delete a deterministic label when one is already
+high-confidence</li>
+<li>never auto-accept low-confidence labels</li>
+</ol>
+<h4 id="lane-b-option-semantics-and-group-repair">Lane B: Option
+semantics and group repair</h4>
+<p>Purpose:</p>
+<ol type="1">
+<li>propose human-friendly option labels for radios, checkboxes, and
+dropdowns</li>
+<li>suggest radio grouping where widgets are fragmented</li>
+</ol>
+<p>Input:</p>
+<ol type="1">
+<li>option export values</li>
+<li>widget geometry clusters</li>
+<li>nearby heading and instruction text</li>
+</ol>
+<p>Output:</p>
+<ol type="1">
+<li>proposed option label map</li>
+<li>proposed group key and group title</li>
+<li>confidence and ambiguity flags</li>
+</ol>
+<p>Hard constraints:</p>
+<ol type="1">
+<li>export values are immutable unless helper explicitly remaps</li>
+<li>write-back map changes require helper approval</li>
+</ol>
+<h4 id="lane-c-help-text-and-instruction-drafting">Lane C: Help text and
+instruction drafting</h4>
+<p>Purpose:</p>
+<ol type="1">
+<li>draft concise assistive help text for fields with missing
+instructions</li>
+<li>improve plain-language clarity</li>
+</ol>
+<p>Output requirements:</p>
+<ol type="1">
+<li>short help variant</li>
+<li>detailed help variant</li>
+<li>reason code showing what gap is being addressed</li>
+</ol>
+<p>Hard constraints:</p>
+<ol type="1">
+<li>no legal or compliance interpretation claims</li>
+<li>no invented mandatory requirements</li>
+</ol>
+<h4 id="lane-d-data-type-and-validation-hinting">Lane D: Data-type and
+validation hinting</h4>
+<p>Purpose:</p>
+<ol type="1">
+<li>suggest likely validation type when deterministic signals are
+mixed</li>
+<li>detect probable formatting intent such as phone, ZIP, date,
+currency</li>
+</ol>
+<p>Hard constraints:</p>
+<ol type="1">
+<li>validation suggestions are advisory until confirmed</li>
+<li>any suggestion that changes rejection behavior must be reviewed</li>
+</ol>
+<h4 id="lane-e-sectioning-and-ordering-assistance">Lane E: Sectioning
+and ordering assistance</h4>
+<p>Purpose:</p>
+<ol type="1">
+<li>propose logical section headings</li>
+<li>propose display order for accessibility-first interaction</li>
+</ol>
+<p>Hard constraints:</p>
+<ol type="1">
+<li>final order used in fill UI must be helper-confirmed for medium or
+low confidence</li>
+</ol>
+<h3 id="ai-model-strategy">AI model strategy</h3>
+<p>Use role-specific model selection rather than one model for
+everything.</p>
+<p>Recommended strategy:</p>
+<ol type="1">
+<li>small, low-latency model for classification and normalization
+tasks</li>
+<li>stronger reasoning model for ambiguous label, grouping, and
+sectioning tasks</li>
+<li>optional vision-capable model only when image-derived text context
+is required</li>
+</ol>
+<p>Model routing should be capability-driven by feature, with per-lane
+defaults and override support in admin configuration.</p>
+<h3 id="prompt-architecture">Prompt architecture</h3>
+<p>Store prompts as versioned assets and not hard-coded strings.</p>
+<p>Required prompt sets:</p>
+<ol type="1">
+<li>label recovery prompt</li>
+<li>option and grouping prompt</li>
+<li>help text drafting prompt</li>
+<li>validation hint prompt</li>
+<li>sectioning and ordering prompt</li>
+</ol>
+<p>Each prompt should include:</p>
+<ol type="1">
+<li>strict output schema</li>
+<li>disallowed behaviors</li>
+<li>uncertainty handling instructions</li>
+<li>explanation field for helper transparency</li>
+</ol>
+<h3 id="confidence-and-acceptance-policy">Confidence and acceptance
+policy</h3>
+<p>Use deterministic plus AI fusion scoring.</p>
+<p>Suggested final decision bands:</p>
+<ol type="1">
+<li>high confidence: auto-apply but visibly marked as AI-assisted</li>
+<li>medium confidence: pre-fill suggestion, helper review required</li>
+<li>low confidence: do not pre-fill, helper action required</li>
+</ol>
+<p>Suggested thresholds:</p>
+<ol type="1">
+<li>high at 0.85 and above</li>
+<li>medium at 0.60 to 0.84</li>
+<li>low below 0.60</li>
+</ol>
+<p>The threshold values should be deployment-configurable for beta
+tuning.</p>
+<h3 id="human-in-the-loop-ux-requirements">Human-in-the-loop UX
+requirements</h3>
+<p>For each AI suggestion, the review UI should support:</p>
+<ol type="1">
+<li>accept</li>
+<li>edit then accept</li>
+<li>reject</li>
+<li>compare alternatives</li>
+<li>show evidence source</li>
+</ol>
+<p>The UI should also capture rejection reason tags to improve future
+prompt tuning.</p>
+<h3 id="evaluation-and-quality-gates">Evaluation and quality gates</h3>
+<p>AI should ship with explicit evaluation, not anecdotal quality
+checks.</p>
+<p>Create a labeled evaluation corpus with expected outputs for:</p>
+<ol type="1">
+<li>label recovery</li>
+<li>option mapping</li>
+<li>grouping</li>
+<li>help text usefulness</li>
+<li>validation type suggestion</li>
+</ol>
+<p>Track per-lane metrics:</p>
+<ol type="1">
+<li>top-1 and top-3 label accuracy</li>
+<li>helper acceptance rate</li>
+<li>helper edit distance after accept</li>
+<li>false-confidence rate</li>
+<li>p95 latency</li>
+<li>estimated cost per document</li>
+</ol>
+<p>Beta release gate recommendation:</p>
+<ol type="1">
+<li>no lane should default on if helper acceptance is below 80
+percent</li>
+<li>false-confidence rate should stay below 5 percent for
+high-confidence auto-apply</li>
+</ol>
+<h3 id="safety-and-policy-controls">Safety and policy controls</h3>
+<p>AI output handling must include:</p>
+<ol type="1">
+<li>prompt and output sanitization</li>
+<li>schema validation before UI display</li>
+<li>redaction pass for sensitive text where policy requires it</li>
+<li>full audit trail of model, prompt version, and response id</li>
+</ol>
+<p>Never use AI output to:</p>
+<ol type="1">
+<li>infer legal commitments</li>
+<li>infer identity attributes beyond explicit document context</li>
+<li>silently alter write-back mappings</li>
+</ol>
+<h3 id="cost-and-performance-controls">Cost and performance
+controls</h3>
+<p>To keep the feature practical in beta:</p>
+<ol type="1">
+<li>run deterministic heuristics first, AI only on unresolved
+fields</li>
+<li>batch fields by section to reduce call overhead</li>
+<li>cache AI suggestions by fingerprint and prompt version</li>
+<li>enforce request budgets per document and per session</li>
+<li>provide a hard timeout with safe fallback to deterministic
+behavior</li>
+</ol>
+<h3 id="beta-rollout-wiring">Beta rollout wiring</h3>
+<p>This feature should be beta by design.</p>
+<p>Add AI beta controls:</p>
+<ol type="1">
+<li><code>GLOW_ENABLE_PDF_FORM_AI_ASSIST</code> master switch</li>
+<li>per-lane switches for labels, options, help text, validation, and
+ordering</li>
+<li>percentage rollout by session or tenant</li>
+<li>kill switch that instantly reverts to deterministic-only mode</li>
+</ol>
+<h3 id="planned-ai-endpoint-shape">Planned AI endpoint shape</h3>
+<p>Suggested internal endpoints for clean separation:</p>
+<ol type="1">
+<li><code>POST /api/pdf-forms/ai/labels/suggest</code></li>
+<li><code>POST /api/pdf-forms/ai/options/suggest</code></li>
+<li><code>POST /api/pdf-forms/ai/help/suggest</code></li>
+<li><code>POST /api/pdf-forms/ai/validation/suggest</code></li>
+<li><code>POST /api/pdf-forms/ai/sections/suggest</code></li>
+</ol>
+<p>Every endpoint should return:</p>
+<ol type="1">
+<li><code>suggestions</code></li>
+<li><code>confidence</code></li>
+<li><code>evidence</code></li>
+<li><code>model</code></li>
+<li><code>prompt_version</code></li>
+<li><code>trace_id</code></li>
+</ol>
+<h3 id="definition-of-amazing-in-practice">Definition of amazing in
+practice</h3>
+<p>The AI layer is successful when:</p>
+<ol type="1">
+<li>helpers spend less time fixing label and option noise</li>
+<li>confidence is honest and predictable</li>
+<li>write-back mappings remain stable and safe</li>
+<li>accessibility quality improves without hiding uncertainty</li>
+<li>costs remain low enough for routine use</li>
+</ol>
+<h2 id="fill-and-write-back-rules">Fill and Write-Back Rules</h2>
+<p>Write-back should be governed by conservative rules.</p>
+<h3 id="safe-write-back-cases">Safe write-back cases</h3>
+<ol type="1">
+<li>standard text fields</li>
+<li>checkboxes with stable export values</li>
+<li>radio groups with confirmed mappings</li>
+<li>dropdowns with known option mappings</li>
+<li>list boxes where option values are explicit</li>
+</ol>
+<h3 id="high-risk-cases">High-risk cases</h3>
+<ol type="1">
+<li>XFA forms</li>
+<li>digitally signed forms</li>
+<li>JavaScript-heavy calculated forms</li>
+<li>forms requiring viewer-specific behavior</li>
+<li>fields with unstable appearance streams</li>
+</ol>
+<p>For high-risk cases, the UI should explain why the PDF cannot be
+trusted for direct rewrite.</p>
+<h2 id="result-outputs">Result Outputs</h2>
+<p>Every successful workflow should produce at least one structured
+output beyond the PDF.</p>
+<p>Supported outputs:</p>
+<ol type="1">
+<li>editable filled PDF</li>
+<li>flattened PDF</li>
+<li>JSON submission payload</li>
+<li>accessible HTML review record</li>
+<li>helper-reviewed template profile</li>
+</ol>
+<p>This ensures the data remains portable.</p>
+<h2 id="proposed-web-flow">Proposed Web Flow</h2>
+<h3 id="step-1-upload-and-classify">Step 1: Upload and classify</h3>
+<p>The user uploads a PDF and receives:</p>
+<ol type="1">
+<li>support classification</li>
+<li>warnings</li>
+<li>confidence summary</li>
+<li>recommended path: round-trip, assisted template, or surrogate</li>
+</ol>
+<h3 id="step-2-inspect-extracted-fields">Step 2: Inspect extracted
+fields</h3>
+<p>Show:</p>
+<ol type="1">
+<li>raw field names</li>
+<li>inferred labels</li>
+<li>current values</li>
+<li>page references</li>
+<li>confidence indicators</li>
+<li>fields missing labels or options</li>
+</ol>
+<h3 id="step-3-helper-review-and-enrichment">Step 3: Helper review and
+enrichment</h3>
+<p>Allow a helper to:</p>
+<ol type="1">
+<li>rename fields</li>
+<li>define help text</li>
+<li>fix options</li>
+<li>create sections and groups</li>
+<li>reorder fields</li>
+<li>suppress broken fields</li>
+<li>mark write-back eligibility</li>
+</ol>
+<h3 id="step-4-fill-form">Step 4: Fill form</h3>
+<p>Render the enriched accessible form.</p>
+<h3 id="step-5-export">Step 5: Export</h3>
+<p>Return the requested outputs and a write-back status report.</p>
+<h2 id="proposed-api-shape">Proposed API Shape</h2>
+<p>The route structure should make the stages explicit.</p>
+<p>Suggested endpoints:</p>
+<ol type="1">
+<li><code>GET /pdf-forms/</code></li>
+<li><code>POST /pdf-forms/inspect</code></li>
+<li><code>POST /pdf-forms/review</code></li>
+<li><code>POST /pdf-forms/template/save</code></li>
+<li><code>POST /pdf-forms/fill</code></li>
+<li><code>GET /pdf-forms/download/&lt;token&gt;/&lt;filename&gt;</code></li>
+</ol>
+<p>Optional JSON endpoints for future integrations:</p>
+<ol type="1">
+<li><code>POST /api/pdf-forms/inspect</code></li>
+<li><code>POST /api/pdf-forms/template/save</code></li>
+<li><code>POST /api/pdf-forms/fill</code></li>
+</ol>
+<h2 id="validation-model">Validation Model</h2>
+<p>Validation should exist at two layers.</p>
+<h3 id="form-definition-validation">1. Form-definition validation</h3>
+<p>Checks whether the helper-defined structure is internally
+coherent.</p>
+<p>Examples:</p>
+<ol type="1">
+<li>every visible field has a label</li>
+<li>radio groups have options</li>
+<li>dropdown values map to write-back values</li>
+<li>display order is unique within a section</li>
+</ol>
+<h3 id="submission-validation">2. Submission validation</h3>
+<p>Checks whether user answers meet the template rules.</p>
+<p>Examples:</p>
+<ol type="1">
+<li>required field completion</li>
+<li>email format</li>
+<li>date format</li>
+<li>numeric range</li>
+<li>ZIP or phone normalization</li>
+</ol>
+<h2 id="testing-strategy">Testing Strategy</h2>
+<p>This feature needs a strong corpus, not just unit tests.</p>
+<h3 id="test-corpus-categories">Test corpus categories</h3>
+<ol type="1">
+<li>clean AcroForm with text fields</li>
+<li>checkbox-heavy government-style form</li>
+<li>radio-heavy application form</li>
+<li>dropdown and list-box form</li>
+<li>repeated row form with duplicate naming patterns</li>
+<li>form with weak internal names but visible labels</li>
+<li>form with tooltips only</li>
+<li>hybrid or strange viewer-dependent form</li>
+<li>signed form</li>
+<li>XFA form</li>
+<li>flattened form</li>
+<li>scanned pseudo-form</li>
+</ol>
+<h3 id="required-verification-targets">Required verification
+targets</h3>
+<p>Every write-back-capable output should be checked in:</p>
+<ol type="1">
+<li>Adobe Acrobat Reader</li>
+<li>Microsoft Edge PDF viewer</li>
+<li>Chrome PDF viewer</li>
+</ol>
+<h3 id="required-automated-test-layers">Required automated test
+layers</h3>
+<ol type="1">
+<li>classifier tests</li>
+<li>field extraction tests</li>
+<li>heuristic scoring tests</li>
+<li>template persistence tests</li>
+<li>write-back tests</li>
+<li>route tests</li>
+<li>accessibility tests for rendered HTML</li>
+</ol>
+<h2 id="security-and-privacy">Security and Privacy</h2>
+<p>PDF forms often contain sensitive data. The implementation must
+assume that personal data may appear in uploads and submissions.</p>
+<p>Requirements:</p>
+<ol type="1">
+<li>keep uploads in request-scoped temp storage unless the user
+explicitly saves a template</li>
+<li>never store raw submission data longer than necessary</li>
+<li>separate template metadata from end-user answers</li>
+<li>allow deployments to disable template memory if privacy policy
+requires it</li>
+<li>preserve existing filename sanitization and path traversal
+protections</li>
+</ol>
+<h2 id="metrics-for-success">Metrics for Success</h2>
+<p>The following table defines the quality targets for the first useful
+release.</p>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Initial target</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Correct field-type extraction on supported AcroForms</td>
+<td>95 percent</td>
+</tr>
+<tr>
+<td>Correct label recovery without helper edits</td>
+<td>80 percent</td>
+</tr>
+<tr>
+<td>Correct label recovery after helper review</td>
+<td>98 percent</td>
+</tr>
+<tr>
+<td>Successful write-back on supported corpus</td>
+<td>95 percent</td>
+</tr>
+<tr>
+<td>Forms requiring surrogate mode correctly classified</td>
+<td>95 percent</td>
+</tr>
+<tr>
+<td>Repeat uploads benefiting from saved template memory</td>
+<td>90 percent of matching templates</td>
+</tr>
+</tbody>
+</table>
+<h2 id="v1-execution-plan">V1 Execution Plan</h2>
+<p>The rest of this document defines the full long-term system. This
+section defines the first production-worthy version.</p>
+<p>V1 should be built to solve one narrow problem well:</p>
+<ol type="1">
+<li>inspect a supported AcroForm PDF</li>
+<li>reconstruct an accessible web form</li>
+<li>let a helper fix missing labels and option names</li>
+<li>collect answers through the web form</li>
+<li>write those answers back into the original PDF</li>
+<li>export the same answers as JSON</li>
+</ol>
+<h3 id="v1-product-promise">V1 product promise</h3>
+<p>The user-facing promise for v1 should be:</p>
+<p>“Upload a supported interactive PDF form, review or correct missing
+field details, fill it out accessibly in the browser, and download a
+filled PDF plus structured JSON.”</p>
+<p>That promise is narrow enough to be testable and strong enough to be
+useful.</p>
+<h3 id="v1-goals">V1 goals</h3>
+<p>V1 goals:</p>
+<ol type="1">
+<li>support real AcroForm PDFs reliably</li>
+<li>avoid silent corruption or misleading output</li>
+<li>let helpers enrich weak field definitions before use</li>
+<li>produce an accessible HTML interaction model that is better than the
+original PDF</li>
+<li>preserve structured data outside the PDF itself</li>
+</ol>
+<h3 id="v1-non-goals">V1 non-goals</h3>
+<p>V1 should explicitly avoid:</p>
+<ol type="1">
+<li>XFA support</li>
+<li>scanned-form round-trip editing</li>
+<li>arbitrary overlay generation for visually drawn fake forms</li>
+<li>full PDF JavaScript emulation</li>
+<li>signature-preserving rewrite</li>
+<li>AI-first extraction that bypasses deterministic parsing</li>
+</ol>
+<h3 id="v1-target-inputs">V1 target inputs</h3>
+<p>V1 should accept only:</p>
+<ol type="1">
+<li>AcroForm PDFs with stable widget annotations</li>
+<li>text fields</li>
+<li>multiline text fields</li>
+<li>checkboxes</li>
+<li>radio groups</li>
+<li>dropdowns and simple list boxes</li>
+</ol>
+<p>V1 should reject or downgrade:</p>
+<ol type="1">
+<li>XFA forms</li>
+<li>digitally signed forms</li>
+<li>forms with missing field-tree stability</li>
+<li>forms with no reliable write-back mapping</li>
+</ol>
+<h3 id="v1-helper-workflow">V1 helper workflow</h3>
+<p>The helper workflow is part of v1, not a future nice-to-have.</p>
+<p>V1 helper review must support:</p>
+<ol type="1">
+<li>editing display labels</li>
+<li>editing help text</li>
+<li>changing visible option labels</li>
+<li>mapping visible option labels to PDF export values</li>
+<li>grouping radio buttons into a single logical question</li>
+<li>setting section headings</li>
+<li>setting display order</li>
+<li>suppressing broken or junk fields</li>
+<li>marking a field as view-only or not safe for write-back</li>
+</ol>
+<p>The helper review should not require perfect PDF structure to be
+useful.</p>
+<h3 id="v1-end-user-workflow">V1 end-user workflow</h3>
+<p>The end-user workflow for v1 should be:</p>
+<ol type="1">
+<li>upload PDF</li>
+<li>inspect support classification</li>
+<li>if needed, helper reviews and enriches the form</li>
+<li>user fills accessible HTML form</li>
+<li>submit answers</li>
+<li>download editable PDF, optionally flattened PDF, and JSON</li>
+</ol>
+<h3 id="v1-implementation-slices">V1 implementation slices</h3>
+<p>V1 should be built in vertical slices rather than by building every
+backend piece first.</p>
+<h4 id="slice-1-classification-and-extraction">Slice 1: classification
+and extraction</h4>
+<p>Deliverables:</p>
+<ol type="1">
+<li>AcroForm classifier</li>
+<li>field extraction JSON</li>
+<li>confidence and warning model</li>
+<li>unsupported-state messages</li>
+</ol>
+<h4 id="slice-2-review-ui">Slice 2: review UI</h4>
+<p>Deliverables:</p>
+<ol type="1">
+<li>extracted field list page</li>
+<li>editable labels and help text</li>
+<li>option editor for radios and dropdowns</li>
+<li>ordering and grouping controls</li>
+</ol>
+<h4 id="slice-3-fill-ui-and-validation">Slice 3: fill UI and
+validation</h4>
+<p>Deliverables:</p>
+<ol type="1">
+<li>accessible HTML form rendering</li>
+<li>required-field validation</li>
+<li>basic type validation for email, date, numeric, phone, ZIP</li>
+<li>result summary page</li>
+</ol>
+<h4 id="slice-4-write-back-and-export">Slice 4: write-back and
+export</h4>
+<p>Deliverables:</p>
+<ol type="1">
+<li>editable filled PDF</li>
+<li>flattened PDF option</li>
+<li>JSON export</li>
+<li>write-back diagnostics report</li>
+</ol>
+<h3 id="v1-architecture-decisions">V1 architecture decisions</h3>
+<p>V1 should lock in these decisions early:</p>
+<ol type="1">
+<li>PyMuPDF is the primary extraction and geometry engine</li>
+<li>pypdf is the primary write-back engine</li>
+<li>helper-reviewed template data lives in SQLite in the instance
+directory</li>
+<li>temporary uploads and outputs stay in the existing temp-file
+model</li>
+<li>every inferred field property carries a confidence score</li>
+</ol>
+<h3 id="v1-data-model">V1 data model</h3>
+<p>V1 only needs a minimal but explicit data model.</p>
+<h4 id="extracted-field">Extracted field</h4>
+<p>Required properties:</p>
+<ol type="1">
+<li>raw PDF field name</li>
+<li>widget id or xref</li>
+<li>page number</li>
+<li>field type</li>
+<li>current value</li>
+<li>option values if present</li>
+<li>inferred label</li>
+<li>confidence</li>
+<li>warnings</li>
+</ol>
+<h4 id="reviewed-field-definition">Reviewed field definition</h4>
+<p>Required properties:</p>
+<ol type="1">
+<li>display label</li>
+<li>help text</li>
+<li>visible options</li>
+<li>PDF export value mapping</li>
+<li>required state</li>
+<li>readonly state</li>
+<li>display order</li>
+<li>section id</li>
+<li>write-back eligibility</li>
+</ol>
+<h4 id="submission-record">Submission record</h4>
+<p>Required properties:</p>
+<ol type="1">
+<li>reviewed template id</li>
+<li>submitted values</li>
+<li>validation outcome</li>
+<li>write-back outcome</li>
+<li>generated file names</li>
+</ol>
+<h3 id="v1-acceptance-criteria">V1 acceptance criteria</h3>
+<p>V1 should not ship until the following are true:</p>
+<ol type="1">
+<li>supported AcroForm PDFs are correctly classified with a clear
+supported or unsupported reason</li>
+<li>field types are extracted accurately for the v1 corpus</li>
+<li>radio groups can be reviewed and written back correctly</li>
+<li>helpers can rename labels and option text without touching raw PDF
+export values</li>
+<li>the rendered HTML form is keyboard-operable and
+screen-reader-usable</li>
+<li>editable and flattened PDF downloads both work on the supported
+corpus</li>
+<li>JSON output matches the submitted form values exactly</li>
+<li>unsupported files fail safely with clear user guidance</li>
+</ol>
+<h3 id="v1-test-corpus">V1 test corpus</h3>
+<p>V1 needs a test set that reflects the actual promise.</p>
+<p>Required examples:</p>
+<ol type="1">
+<li>clean text-field AcroForm</li>
+<li>checkbox-heavy form</li>
+<li>radio-heavy form</li>
+<li>dropdown form</li>
+<li>duplicate-name repeated-row form</li>
+<li>form with poor field names but usable nearby text</li>
+<li>form with broken labels needing helper fixes</li>
+<li>unsupported XFA form</li>
+<li>signed form</li>
+</ol>
+<h3 id="v1-operational-risks">V1 operational risks</h3>
+<p>The main risks for v1 are:</p>
+<ol type="1">
+<li>appearance streams render inconsistently across PDF viewers</li>
+<li>duplicate field names produce ambiguous write-back behavior</li>
+<li>helper edits drift away from the real PDF mapping if the review
+model is too loose</li>
+<li>low-confidence label guesses create user trust problems if
+uncertainty is not visible</li>
+</ol>
+<h3 id="v1-launch-recommendation">V1 launch recommendation</h3>
+<p>V1 should launch behind a feature flag and should initially be
+described as a guided beta.</p>
+<p>Recommended rollout:</p>
+<ol type="1">
+<li>internal spike corpus first</li>
+<li>maintainer-only or admin-enabled beta</li>
+<li>limited real-form pilot with saved templates</li>
+<li>broader release after viewer compatibility and write-back
+diagnostics are stable</li>
+</ol>
+<h2 id="delivery-plan">Delivery Plan</h2>
+<h3 id="phase-0-research-spike">Phase 0: Research spike</h3>
+<p>Goal: prove the real boundaries of the open-source stack.</p>
+<p>Deliverables:</p>
+<ol type="1">
+<li>classification script</li>
+<li>write-back proof of concept</li>
+<li>corpus of representative PDFs</li>
+<li>failure taxonomy</li>
+<li>recommendation on whether commercial SDK evaluation is
+necessary</li>
+</ol>
+<h3 id="phase-1-core-extraction-and-classification">Phase 1: Core
+extraction and classification</h3>
+<p>Goal: identify support level reliably.</p>
+<p>Deliverables:</p>
+<ol type="1">
+<li>classifier module</li>
+<li>extracted field model</li>
+<li>raw JSON inspection output</li>
+<li>confidence and warning model</li>
+</ol>
+<h3 id="phase-2-accessible-inspection-ui">Phase 2: Accessible inspection
+UI</h3>
+<p>Goal: let users inspect what GLOW found.</p>
+<p>Deliverables:</p>
+<ol type="1">
+<li>upload route</li>
+<li>inspection page</li>
+<li>confidence presentation</li>
+<li>unsupported-state messaging</li>
+</ol>
+<h3 id="phase-3-helper-enrichment-ui">Phase 3: Helper enrichment UI</h3>
+<p>Goal: allow rich human correction.</p>
+<p>Deliverables:</p>
+<ol type="1">
+<li>field editing interface</li>
+<li>option editor</li>
+<li>grouping and ordering controls</li>
+<li>template save flow</li>
+</ol>
+<h3 id="phase-4-fill-and-export">Phase 4: Fill and export</h3>
+<p>Goal: make the system genuinely useful.</p>
+<p>Deliverables:</p>
+<ol type="1">
+<li>accessible fill page</li>
+<li>editable PDF output</li>
+<li>flattened PDF output</li>
+<li>JSON export</li>
+<li>result summary report</li>
+</ol>
+<h3 id="phase-5-template-memory-and-reuse">Phase 5: Template memory and
+reuse</h3>
+<p>Goal: make the system better with repeated forms.</p>
+<p>Deliverables:</p>
+<ol type="1">
+<li>fingerprint matching</li>
+<li>template auto-apply</li>
+<li>helper correction reuse</li>
+<li>versioning controls</li>
+</ol>
+<h3 id="phase-6-ai-assist-and-surrogate-mode">Phase 6: AI assist and
+surrogate mode</h3>
+<p>Goal: improve difficult forms without overstating certainty.</p>
+<p>Deliverables:</p>
+<ol type="1">
+<li>optional AI suggestion layer</li>
+<li>static visual form assistant mode</li>
+<li>helper review for surrogate mappings</li>
+</ol>
+<h2 id="v1-scope-summary">V1 Scope Summary</h2>
+<p>The first production release should support only:</p>
+<ol type="1">
+<li>AcroForm PDFs with stable widgets</li>
+<li>text fields</li>
+<li>checkboxes</li>
+<li>radio groups</li>
+<li>dropdowns</li>
+<li>helper label and option enrichment</li>
+<li>JSON plus PDF output</li>
+</ol>
+<p>The first production release should not support:</p>
+<ol type="1">
+<li>XFA</li>
+<li>signatures</li>
+<li>heavy JavaScript calculations</li>
+<li>scanned visual-form round-trip</li>
+<li>universal overlay generation for arbitrary static forms</li>
+</ol>
+<h2 id="why-this-is-worth-doing">Why This Is Worth Doing</h2>
+<p>This feature fits GLOW’s existing mission well.</p>
+<p>GLOW already:</p>
+<ol type="1">
+<li>inspects documents for accessibility issues</li>
+<li>reconstructs usable outputs from difficult formats</li>
+<li>provides accessible web workflows around complex document
+processing</li>
+</ol>
+<p>PDF form round-trip extends that model from document accessibility
+into form accessibility and assisted completion.</p>
+<h2 id="open-questions">Open Questions</h2>
+<p>These decisions should be made before implementation starts:</p>
+<ol type="1">
+<li>Should helper-created templates be private by default, or shareable
+within an organization?</li>
+<li>Should saved templates persist only metadata, or optionally also
+keep a sanitized source PDF fingerprint sample?</li>
+<li>Should surrogate mode generate overlay PDFs in v1, or stop at JSON
+plus accessible HTML?</li>
+<li>Should AI suggestions be enabled by default when available, or only
+on explicit request?</li>
+<li>What minimum viewer-compatibility bar is required for claiming
+write-back support?</li>
+</ol>
+<h2 id="recommendation">Recommendation</h2>
+<p>Proceed with a spike and then build the feature in phases.</p>
+<p>The most defensible product promise is:</p>
+<p>“GLOW can inspect supported PDF forms, generate an accessible web
+form, let a helper enrich missing structure, and write answers back into
+the PDF when the source document supports reliable round-trip
+editing.”</p>
+<p>That promise is ambitious, useful, and technically credible.</p>
+</body>
+</html>
