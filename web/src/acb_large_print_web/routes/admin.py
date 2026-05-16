@@ -958,6 +958,10 @@ def admin_flags() -> Any:
         "GLOW_ENABLE_FORCED_COLORS_MODE",
         "GLOW_ENABLE_RULE_CONTRIBUTIONS",
         "GLOW_ENABLE_SITE_AUDIT",
+        "GLOW_ENABLE_WCAG_LANGUAGE_PROCESSING",
+        "GLOW_ENABLE_WCAG_LANGUAGE_STRICT_MODE",
+        "GLOW_ENABLE_PII_GUARDRAILS",
+        "GLOW_ENABLE_PII_GUARDRAILS_STRICT_MODE",
         # Optional tool integrations
         "GLOW_ENABLE_PANDOC",
         "GLOW_ENABLE_WEASYPRINT",
@@ -982,6 +986,8 @@ def admin_flags() -> Any:
             "GLOW_ENABLE_AI_HEADING_FIX",
             "GLOW_ENABLE_AI_ALT_TEXT",
             "GLOW_ENABLE_AI_MARKITDOWN_LLM",
+            "GLOW_ENABLE_PII_GUARDRAILS",
+            "GLOW_ENABLE_PII_GUARDRAILS_STRICT_MODE",
         ],
         "core": [
             "GLOW_ENABLE_AUDIT",
@@ -991,6 +997,8 @@ def admin_flags() -> Any:
             "GLOW_ENABLE_COGNITIVE_PROFILE",
             "GLOW_ENABLE_FORCED_COLORS_MODE",
             "GLOW_ENABLE_RULE_CONTRIBUTIONS",
+            "GLOW_ENABLE_WCAG_LANGUAGE_PROCESSING",
+            "GLOW_ENABLE_WCAG_LANGUAGE_STRICT_MODE",
         ],
         "conversion": [
             "GLOW_ENABLE_CONVERTER",

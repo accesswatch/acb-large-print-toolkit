@@ -33,6 +33,16 @@ Operational notes
 - Defaults are intentionally conservative for AI features: AI flags default to `false`. Non-AI GLOW flags default to `true` so core workflows are available by default.
 - Current release posture: AI features are disabled by default in production and staging. This does not reduce core functionality for audit, fix, export, convert, template generation, standards guidance, or branding profiles.
 
+Async job orchestration tuning (environment variables)
+------------------------------------------------------
+- Unified long-running job behavior (retry budget + deadline) is configured with environment variables, not feature flags.
+- Global defaults:
+	- `GLOW_ASYNC_MAX_ATTEMPTS` (default `2`, min `1`, max `5`)
+	- `GLOW_ASYNC_DEADLINE_SECONDS` (default `1800`, min `60`, max `7200`)
+- Per-workflow overrides:
+	- Convert jobs: `GLOW_ASYNC_CONVERT_MAX_ATTEMPTS`, `GLOW_ASYNC_CONVERT_DEADLINE_SECONDS`
+	- Site Audit background jobs: `GLOW_ASYNC_SITE_AUDIT_MAX_ATTEMPTS`, `GLOW_ASYNC_SITE_AUDIT_DEADLINE_SECONDS`
+
 Seeding and persistence
 -----------------------
 - On first app startup (when `instance/feature_flags.json` does not exist) the application writes a seeded file with canonical defaults. This ensures there is always a persisted source-of-truth for flags and avoids ambiguity between environment-only flags and persisted flags.
@@ -114,6 +124,14 @@ This section documents every `GLOW_ENABLE_*` feature flag the application curren
 - **`GLOW_ENABLE_AI_MARKITDOWN_LLM`** (default: `true`)
 	- Purpose: Enables MarkItDown LLM enhancements and integration points.
 	- Notes: When `false`, any experimental LLM-driven MarkItDown features are turned off. When `true`, the AI Features page still filters out incompatible provider/model bindings.
+
+- **`GLOW_ENABLE_PII_GUARDRAILS`** (default: `true`)
+	- Purpose: Enables pre-AI Presidio redaction for AI-bound text across Document Chat and alt-text suggestion flows.
+	- Notes: Applies to chat question/context payloads and alt-text prompt payloads before model calls.
+
+- **`GLOW_ENABLE_PII_GUARDRAILS_STRICT_MODE`** (default: `true`)
+	- Purpose: Enforces fail-closed behavior for PII guardrails.
+	- Notes: When `true`, AI calls are blocked if Presidio engines are unavailable. When `false`, requests continue without redaction and a warning is logged.
 
 Additional non-AI GLOW flags (defaults: `true`)
 

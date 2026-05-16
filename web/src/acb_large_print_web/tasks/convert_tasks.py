@@ -23,10 +23,10 @@ import json
 import logging
 import os
 import time
-import traceback
 from pathlib import Path
 from typing import Any
 
+from ..async_orchestration import deadline_exceeded, load_policy
 from . import celery_app
 
 log = logging.getLogger(__name__)
@@ -36,6 +36,7 @@ log = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 
 _JOB_DIR_ENV = "GLOW_JOBS_DIR"  # Override instance/jobs with env var
+_JOB_META_NAME = "job-meta.json"
 
 
 def _jobs_root() -> Path:
@@ -67,6 +68,10 @@ def _job_dir(job_id: str, *, create: bool = True) -> Path:
 
 def _status_path(job_id: str, *, create: bool = True) -> Path:
     return _job_dir(job_id, create=create) / "status.json"
+
+
+def _meta_path(job_id: str, *, create: bool = True) -> Path:
+    return _job_dir(job_id, create=create) / _JOB_META_NAME
 
 
 def write_status(job_id: str, **fields) -> None:
@@ -102,8 +107,31 @@ def read_status(job_id: str) -> dict:
         return {"state": "ERROR", "error": "Status file unreadable"}
 
 
-def create_job(job_id: str, op: str, filename: str) -> None:
+def write_job_meta(job_id: str, data: dict[str, Any]) -> None:
+    path = _meta_path(job_id)
+    payload = dict(data or {})
+    payload["updated_at"] = time.time()
+    tmp = path.with_suffix(".tmp")
+    tmp.write_text(json.dumps(payload))
+    tmp.replace(path)
+
+
+def read_job_meta(job_id: str) -> dict[str, Any]:
+    try:
+        path = _meta_path(job_id, create=False)
+    except ValueError:
+        return {}
+    if not path.exists():
+        return {}
+    try:
+        return json.loads(path.read_text())
+    except (ValueError, OSError):
+        return {}
+
+
+def create_job(job_id: str, op: str, filename: str, *, meta: dict[str, Any] | None = None) -> None:
     """Initialise a job status file before dispatching the Celery task."""
+    policy = load_policy("CONVERT")
     write_status(
         job_id,
         state="PENDING",
@@ -113,8 +141,85 @@ def create_job(job_id: str, op: str, filename: str) -> None:
         message="Queued…",
         result_file=None,
         error=None,
+        attempt=0,
+        max_attempts=policy.max_attempts,
+        deadline_at=policy.deadline_at,
+        cancel_requested=False,
+        retryable=True,
         created_at=time.time(),
     )
+    if meta:
+        write_job_meta(job_id, meta)
+
+
+class JobCancelled(RuntimeError):
+    pass
+
+
+class JobDeadlineExceeded(RuntimeError):
+    pass
+
+
+def _assert_job_active(job_id: str) -> None:
+    status = read_status(job_id)
+    if bool(status.get("cancel_requested")):
+        raise JobCancelled("Cancellation requested.")
+    if deadline_exceeded(status.get("deadline_at")):
+        raise JobDeadlineExceeded("Job exceeded deadline.")
+
+
+def request_cancel(job_id: str) -> dict[str, Any]:
+    status = read_status(job_id)
+    if status.get("state") == "MISSING":
+        return {"ok": False, "reason": "missing"}
+    state = str(status.get("state", ""))
+    if state in {"SUCCESS", "FAILURE", "CANCELLED"}:
+        return {"ok": False, "reason": "terminal"}
+    write_status(
+        job_id,
+        cancel_requested=True,
+        state="CANCELLING",
+        message="Cancellation requested…",
+    )
+    return {"ok": True}
+
+
+def can_retry(job_id: str) -> bool:
+    status = read_status(job_id)
+    state = str(status.get("state", ""))
+    if state not in {"FAILURE", "CANCELLED"}:
+        return False
+    attempt = int(status.get("attempt", 0))
+    max_attempts = int(status.get("max_attempts", 1))
+    if attempt >= max_attempts:
+        return False
+    if deadline_exceeded(status.get("deadline_at")):
+        return False
+    return True
+
+
+def retry_convert_job(job_id: str) -> bool:
+    if not can_retry(job_id):
+        return False
+    meta = read_job_meta(job_id)
+    if not meta:
+        return False
+    op = str(meta.get("op", ""))
+    upload_token = str(meta.get("upload_token", ""))
+    input_filename = str(meta.get("input_filename", ""))
+    options = meta.get("options", {})
+    if not op or not upload_token or not input_filename:
+        return False
+    write_status(
+        job_id,
+        state="PENDING",
+        progress=0,
+        message="Queued for retry…",
+        cancel_requested=False,
+        error=None,
+    )
+    run_convert_job.delay(job_id, op, upload_token, input_filename, options)
+    return True
 
 
 # ---------------------------------------------------------------------------
@@ -146,23 +251,76 @@ def run_convert_job(
     options:
         Op-specific options forwarded to the converter functions.
     """
-    write_status(job_id, state="STARTED", progress=2, message="Starting conversion…")
-    try:
-        result_path = _dispatch_conversion(job_id, op, upload_token, input_filename, options)
-        result_name = Path(result_path).name
+    status = read_status(job_id)
+    max_attempts = max(1, int(status.get("max_attempts", 1)))
+    start_attempt = max(1, int(status.get("attempt", 0)) + 1)
+
+    for attempt in range(start_attempt, max_attempts + 1):
         write_status(
             job_id,
-            state="SUCCESS",
-            progress=100,
-            message="Done.",
-            result_file=result_name,
+            state="STARTED",
+            progress=2,
+            message="Starting conversion…",
+            attempt=attempt,
+            error=None,
+            retryable=attempt < max_attempts,
         )
-        return {"state": "SUCCESS", "result_file": result_name}
-    except Exception as exc:
-        err_msg = str(exc) or type(exc).__name__
-        write_status(job_id, state="FAILURE", progress=0, error=err_msg, message="Conversion failed.")
-        log.exception("convert job %s (%s) failed", job_id, op)
-        raise
+        try:
+            _assert_job_active(job_id)
+            result_path = _dispatch_conversion(job_id, op, upload_token, input_filename, options)
+            result_name = Path(result_path).name
+            write_status(
+                job_id,
+                state="SUCCESS",
+                progress=100,
+                message="Done.",
+                result_file=result_name,
+                retryable=False,
+            )
+            return {"state": "SUCCESS", "result_file": result_name}
+        except JobCancelled as exc:
+            write_status(
+                job_id,
+                state="CANCELLED",
+                progress=0,
+                error=str(exc),
+                message="Conversion cancelled.",
+                retryable=attempt < max_attempts and not deadline_exceeded(read_status(job_id).get("deadline_at")),
+            )
+            return {"state": "CANCELLED"}
+        except JobDeadlineExceeded as exc:
+            write_status(
+                job_id,
+                state="FAILURE",
+                progress=0,
+                error=str(exc),
+                message="Conversion timed out.",
+                retryable=False,
+            )
+            return {"state": "FAILURE"}
+        except Exception as exc:
+            err_msg = str(exc) or type(exc).__name__
+            if attempt < max_attempts and not deadline_exceeded(read_status(job_id).get("deadline_at")):
+                write_status(
+                    job_id,
+                    state="RETRYING",
+                    progress=0,
+                    error=err_msg,
+                    message=f"Retrying conversion ({attempt}/{max_attempts})…",
+                    retryable=True,
+                )
+                continue
+            write_status(
+                job_id,
+                state="FAILURE",
+                progress=0,
+                error=err_msg,
+                message="Conversion failed.",
+                retryable=False,
+            )
+            log.exception("convert job %s (%s) failed", job_id, op)
+            raise
+    return {"state": "FAILURE"}
 
 
 # ---------------------------------------------------------------------------
@@ -170,6 +328,7 @@ def run_convert_job(
 # ---------------------------------------------------------------------------
 
 def _progress(job_id: str, pct: int, msg: str) -> None:
+    _assert_job_active(job_id)
     write_status(job_id, state="PROGRESS", progress=pct, message=msg)
 
 
@@ -213,6 +372,8 @@ def _dispatch_conversion(
             source = lo_path
 
     chain_via_markdown = {
+        ".doc",
+        ".ppt",
         ".pptx",
         ".xlsx",
         ".xls",
@@ -411,25 +572,78 @@ def run_speech_job(
     output_format:
         ``"mp3"`` (default) or ``"wav"``.
     """
-    write_status(job_id, state="STARTED", progress=2, message="Starting speech synthesis…")
-    try:
-        result_path = _run_speech(
-            job_id, upload_token, input_filename, voice_id, speed, pitch, output_format
-        )
-        result_name = Path(result_path).name
+    status = read_status(job_id)
+    max_attempts = max(1, int(status.get("max_attempts", 1)))
+    start_attempt = max(1, int(status.get("attempt", 0)) + 1)
+
+    for attempt in range(start_attempt, max_attempts + 1):
         write_status(
             job_id,
-            state="SUCCESS",
-            progress=100,
-            message="Done.",
-            result_file=result_name,
+            state="STARTED",
+            progress=2,
+            message="Starting speech synthesis…",
+            attempt=attempt,
+            error=None,
+            retryable=attempt < max_attempts,
         )
-        return {"state": "SUCCESS", "result_file": result_name}
-    except Exception as exc:
-        err_msg = str(exc) or type(exc).__name__
-        write_status(job_id, state="FAILURE", progress=0, error=err_msg, message="Speech synthesis failed.")
-        log.exception("speech job %s failed", job_id)
-        raise
+        try:
+            _assert_job_active(job_id)
+            result_path = _run_speech(
+                job_id, upload_token, input_filename, voice_id, speed, pitch, output_format
+            )
+            result_name = Path(result_path).name
+            write_status(
+                job_id,
+                state="SUCCESS",
+                progress=100,
+                message="Done.",
+                result_file=result_name,
+                retryable=False,
+            )
+            return {"state": "SUCCESS", "result_file": result_name}
+        except JobCancelled as exc:
+            write_status(
+                job_id,
+                state="CANCELLED",
+                progress=0,
+                error=str(exc),
+                message="Speech synthesis cancelled.",
+                retryable=attempt < max_attempts and not deadline_exceeded(read_status(job_id).get("deadline_at")),
+            )
+            return {"state": "CANCELLED"}
+        except JobDeadlineExceeded as exc:
+            write_status(
+                job_id,
+                state="FAILURE",
+                progress=0,
+                error=str(exc),
+                message="Speech synthesis timed out.",
+                retryable=False,
+            )
+            return {"state": "FAILURE"}
+        except Exception as exc:
+            err_msg = str(exc) or type(exc).__name__
+            if attempt < max_attempts and not deadline_exceeded(read_status(job_id).get("deadline_at")):
+                write_status(
+                    job_id,
+                    state="RETRYING",
+                    progress=0,
+                    error=err_msg,
+                    message=f"Retrying speech synthesis ({attempt}/{max_attempts})…",
+                    retryable=True,
+                )
+                continue
+            write_status(
+                job_id,
+                state="FAILURE",
+                progress=0,
+                error=err_msg,
+                message="Speech synthesis failed.",
+                retryable=False,
+            )
+            log.exception("speech job %s failed", job_id)
+            raise
+    return {"state": "FAILURE"}
 
 
 def _run_speech(

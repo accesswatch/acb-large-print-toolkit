@@ -373,3 +373,40 @@ def test_site_audit_background_job_status(client, monkeypatch: pytest.MonkeyPatc
     assert status.status_code == 200
     payload = status.get_json()
     assert payload["job_id"] == job.job_id
+    assert "attempt" in payload
+    assert "max_attempts" in payload
+
+
+def test_site_audit_background_job_retry(client, monkeypatch: pytest.MonkeyPatch):
+    site_audit_route._jobs.clear()
+    job = site_audit_route._SiteAuditJob(
+        job_id="retry-audit-1",
+        run_id="run-retry-1",
+        status="failed",
+        progress=0,
+        message="failed",
+        error="boom",
+        attempt=1,
+        max_attempts=2,
+        deadline_at=9999999999.0,
+        access_token_hash=site_audit_route._hash_token("token-1"),
+        access_token_value="token-1",
+        sources=("https://example.com",),
+        options=site_audit.SiteAuditOptions(max_pages=10),
+    )
+    site_audit_route._jobs[job.job_id] = job
+
+    started: list[str] = []
+
+    def _fake_start(*, job, sources, options):
+        started.append(job.job_id)
+
+    monkeypatch.setattr(site_audit_route, "_start_site_audit_job", _fake_start)
+
+    res = client.post(
+        f"/site-audit/jobs/{job.job_id}/retry",
+        data={"access": "token-1"},
+    )
+    assert res.status_code == 302
+    assert started == [job.job_id]
+    assert job.status == "queued"

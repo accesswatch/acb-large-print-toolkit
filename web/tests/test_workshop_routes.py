@@ -6,7 +6,7 @@ import pytest
 from flask import Flask
 
 from acb_large_print_web.app import create_app
-from acb_large_print_web.workshop_store import add_feedback, ensure_session, save_submission
+from acb_large_print_web.workshop_store import add_feedback, ensure_session, save_submission, upsert_conference_code
 
 
 @pytest.fixture()
@@ -137,3 +137,132 @@ def test_homepage_surfaces_workshop_follow_through(client):
     assert resp.status_code == 200
     body = resp.get_data(as_text=True)
     assert "Workshop Follow-Through" in body
+    explore_idx = body.find('id="nav-group-explore"')
+    workshop_idx = body.find("Workshop Follow-Through")
+    beta_idx = body.find('id="nav-group-beta"')
+    assert explore_idx != -1 and workshop_idx != -1
+    assert explore_idx < workshop_idx
+    if beta_idx != -1:
+        assert workshop_idx < beta_idx
+
+
+def test_workshop_activity_structured_form_and_save_next(client, app: Flask):
+    with app.app_context():
+        ensure_session("magic75", title="Magical Workshop Session")
+
+    page = client.get("/workshop/session/magic75/activity/journey_check_in")
+    assert page.status_code == 200
+    html = page.get_data(as_text=True)
+    assert "Interactive Activity Form" in html
+    assert "Workshop Progress Passport" in html
+
+    save_next = client.post(
+        "/workshop/session/magic75/activity/journey_check_in",
+        data={
+            "display_name": "Jordan",
+            "work_type": "I coach faculty on course content accessibility.",
+            "partner_blockers": "People do not know where to start with headings and links.",
+            "champion_shift": "Teams would fix issues earlier and reuse checklists.",
+            "bonus_note": "Bring this into onboarding.",
+            "submit_action": "save_next",
+        },
+    )
+    assert save_next.status_code in (302, 303)
+    assert "/workshop/session/magic75/activity/problem_statement" in save_next.headers.get("Location", "")
+
+    gallery = client.get("/workshop/session/magic75/gallery")
+    assert gallery.status_code == 200
+    gallery_html = gallery.get_data(as_text=True)
+    assert "Activity: Accessibility Journey Check-In" in gallery_html
+    assert "Bring this into onboarding." in gallery_html
+
+
+def test_workshop_code_lookup_then_name_join_and_my_content(client, app: Flask):
+    with app.app_context():
+        upsert_conference_code(
+            "AHG2026",
+            session_code="ahg2026",
+            session_title="AHG Workshop Session",
+            event_name="Accessing Higher Ground",
+            active=True,
+        )
+
+    lookup = client.post(
+        "/workshop/",
+        data={"action": "lookup", "access_code": "AHG2026"},
+        follow_redirects=True,
+    )
+    assert lookup.status_code == 200
+    lookup_html = lookup.get_data(as_text=True)
+    assert "Step 2: Confirm participant identity" in lookup_html
+    assert "AHG Workshop Session" in lookup_html
+
+    joined = client.post(
+        "/workshop/",
+        data={"action": "join", "session_code": "ahg2026", "display_name": "Pat"},
+        follow_redirects=False,
+    )
+    assert joined.status_code in (302, 303)
+    assert "/workshop/session/ahg2026/activity/journey_check_in" in joined.headers.get("Location", "")
+    assert "glow_workshop_participant=" in joined.headers.get("Set-Cookie", "")
+
+    start = client.get(joined.headers.get("Location", ""))
+    assert start.status_code == 200
+    start_html = start.get_data(as_text=True)
+    assert "Participant:</strong> Pat" in start_html
+    assert "My content" in start_html
+
+    client.post(
+        "/workshop/session/ahg2026/activity/journey_check_in",
+        data={
+            "display_name": "Pat",
+            "work_type": "Accessibility office support.",
+            "partner_blockers": "Confidence and process gaps.",
+            "champion_shift": "More shared ownership across departments.",
+            "bonus_note": "Need onboarding checklist.",
+            "submit_action": "save",
+        },
+    )
+
+    my_page = client.get("/workshop/session/ahg2026/me")
+    assert my_page.status_code == 200
+    my_html = my_page.get_data(as_text=True)
+    assert "My Workshop Content" in my_html
+    assert "Need onboarding checklist." in my_html
+
+
+def test_workshop_launchpad_tokens_and_samples(client, app: Flask):
+    with app.app_context():
+        ensure_session("launch75", title="Launchpad Session")
+
+    resp = client.get("/workshop/session/launch75/launchpad")
+    assert resp.status_code == 200
+    html = resp.get_data(as_text=True)
+    assert "Magical Exercise Launchpad" in html
+    assert "GLOW:AUDIT" in html
+    assert "workshop_return=" in html
+    assert "/workshop/session/launch75/samples/board-agenda-docx" in html
+
+
+def test_workshop_return_banner_only_for_workshop_participants(client, app: Flask):
+    # Not in workshop: banner should stay hidden even if query params are present.
+    resp = client.get("/?workshop_return=/workshop/session/demo75/launchpad&workshop_label=Return%20to%20Workshop%20(demo75)")
+    assert resp.status_code == 200
+    body = resp.get_data(as_text=True)
+    assert "Workshop flow:" not in body
+
+    # After joining a workshop session, the banner should render.
+    with app.app_context():
+        ensure_session("demo75", title="Demo Session")
+    joined = client.post(
+        "/workshop/",
+        data={"action": "join", "session_code": "demo75", "display_name": "Pat"},
+        follow_redirects=False,
+    )
+    assert joined.status_code in (302, 303)
+
+    resp2 = client.get("/?workshop_return=/workshop/session/demo75/launchpad&workshop_label=Return%20to%20Workshop%20(demo75)")
+    assert resp2.status_code == 200
+    body2 = resp2.get_data(as_text=True)
+    assert "Workshop flow:" in body2
+    assert "Return to Workshop (demo75)" in body2

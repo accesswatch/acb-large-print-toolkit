@@ -40,6 +40,7 @@ If you are deciding whether to turn AI on, here is the short version:
 
 - **AI Playground (Beta)** is a standalone chat surface where you can explore compatible personal-provider models, ask questions, and test model behavior before using AI in real accessibility workflows. It includes streaming responses, regenerate/stop controls, prompt templates, a quota status banner, Markdown export, and delayed screen reader announcements for in-progress and completed long-running replies.
 - **Alt-Text Helper** drafts editable alternative text for images, charts, slide visuals, rendered PDF pages, and other extracted visual items. It uses the alt-text model binding from AI Features and appends file-specific context automatically.
+- **PII guardrails for AI requests** are enabled by default. Before AI calls, GLOW can detect and redact sensitive text (for example emails, phone numbers, and account-style identifiers) in chat prompts and alt-text prompt context.
 
 - **Usage tracking** shows session-level request counts so you can see what you used while you were in GLOW.
 - **Cost preview and rolling session limits** show rough request cost before send and can enforce an admin-configured per-session AI request window with a reset countdown.
@@ -728,6 +729,8 @@ The CMS Fragment direction in Convert is gated by the `GLOW_ENABLE_EXPORT_HTML` 
 
 The Convert page offers conversion directions powered by different engines. Starting in 2.7.0, PowerPoint (.pptx), Excel (.xlsx/.xls), PDF (.pdf), HTML, CSV, JSON, and XML files can be converted directly to accessible HTML, Word, EPUB, and PDF -- no manual intermediate step required. GLOW uses a smart two-stage process: MarkItDown extracts the content to Markdown, then Pandoc applies full ACB Large Print formatting. This happens transparently when you upload one of these file types and choose an output format.
 
+Long-running Convert actions now use a unified job model with live progress plus explicit **Cancel** and **Retry** controls. Jobs also run with a server-side deadline and bounded retry attempts so status behavior is predictable for users and operators.
+
 ### To Markdown (plain text extraction)
 
 **Engine:** Microsoft MarkItDown
@@ -1185,6 +1188,13 @@ Document Chat has 24 callable tools in five groups. GLOW selects and combines th
 
 Conversation history is organized by heading-based turns for screen reader navigation. All controls are keyboard accessible. No JavaScript is required for core chat usage. Sessions use GLOW's AI gateway and follow the same 1-hour retention policy for uploaded documents.
 
+For AI-bound text, GLOW can apply Presidio-based preflight redaction before model calls. This is controlled by feature flags:
+
+- `GLOW_ENABLE_PII_GUARDRAILS` (default: enabled)
+- `GLOW_ENABLE_PII_GUARDRAILS_STRICT_MODE` (default: enabled)
+
+When strict mode is enabled and the guardrail engine is unavailable, the AI request is blocked instead of sending unredacted text.
+
 ---
 
 ## 12. Settings
@@ -1618,7 +1628,9 @@ When **Run in background** is enabled:
 1. GLOW creates a job status page immediately.
 2. The status page updates live with crawl progress and page currently being scanned.
 3. You can click **Cancel crawl** at any time.
-4. When complete, open the result page directly from the job status view.
+4. Failed or cancelled runs can show **Retry crawl** when retry budget remains.
+5. Jobs stop automatically when their configured deadline is reached.
+6. When complete, open the result page directly from the job status view.
 
 ### Protected private runs
 

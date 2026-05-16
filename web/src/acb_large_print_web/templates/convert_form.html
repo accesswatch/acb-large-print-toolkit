@@ -202,7 +202,7 @@
       <li>Feed a document into an AI tool or text analysis pipeline</li>
       <li>Create a starting point for writing accessible Markdown documentation</li>
     </ul>
-    <p><strong>Accepts:</strong> Word (.docx), Excel (.xlsx, .xls), PowerPoint (.pptx), PDF (.pdf), HTML, CSV, JSON, XML, Outlook (.msg), ePub (.epub), ZIP files, common images, and short MP3/WAV audio clips.</p>
+    <p><strong>Accepts:</strong> Word (.docx, .doc), Excel (.xlsx, .xls), PowerPoint (.pptx, .ppt), plain text (.txt), PDF (.pdf), HTML, CSV, JSON, XML, Outlook (.msg), ePub (.epub), ZIP files, common images, and short MP3/WAV audio clips.</p>
     <p><strong>You get back:</strong> a <code>.md</code> (Markdown) file -- plain text with simple formatting marks for headings, lists, and links. Opens in any text editor.</p>
     <p><strong>Powered by:</strong> <a href="https://github.com/microsoft/markitdown">MarkItDown</a> (Microsoft). This tool is optimized for extracting readable text and preserving document structure (headings, lists, tables, links) as lightweight Markdown. It handles the widest range of input formats but produces plain text, not a finished web page. For audio, this path is intentionally limited to short MP3 and WAV files so the web request can complete promptly.</p>
 
@@ -288,12 +288,44 @@
     <p>Another common workflow: convert a Word document to HTML for your website, then also convert the same source to PDF for a print handout and to EPUB for e-reader distribution -- all from the same source file.</p>
   </details>
 
+  {% if wcag_language_processing_enabled %}
   <!-- ============================================================ -->
-  <!-- STEP 3: ACB formatting options                               -->
+  <!-- STEP 3: WCAG language processing                             -->
   <!-- ============================================================ -->
-  <h2 id="convert-step-3">Step 3: Formatting options</h2>
+  <h2 id="convert-step-3">Step 3: WCAG language processing</h2>
   <fieldset>
-    <legend>Step 3: Formatting options</legend>
+    <legend>Step 3: WCAG language processing</legend>
+    <p>Choose when GLOW should run deterministic WCAG language and plain-language checks against your uploaded content.</p>
+
+    <div class="form-group">
+      <label for="wcag-language-stage">When should checks run?</label>
+      <select id="wcag-language-stage" name="wcag_language_stage">
+        <option value="off"{% if wcag_language_stage_default == 'off' %} selected{% endif %}>Do not run language checks</option>
+        <option value="input"{% if wcag_language_stage_default == 'input' %} selected{% endif %}>Before conversion (source upload)</option>
+        <option value="output"{% if wcag_language_stage_default == 'output' %} selected{% endif %}>After conversion (recommended)</option>
+        <option value="both"{% if wcag_language_stage_default == 'both' %} selected{% endif %}>Both before and after conversion</option>
+      </select>
+      <p class="help-text">Checks include language declaration (WCAG 3.1.1), descriptive links (WCAG 2.4.4), and clarity-oriented instruction wording (WCAG 3.3.2).</p>
+    </div>
+
+    {% if wcag_language_strict_enabled %}
+    <div class="form-group">
+      <label for="wcag-language-enforcement">How should findings be handled?</label>
+      <select id="wcag-language-enforcement" name="wcag_language_enforcement">
+        <option value="advisory"{% if wcag_language_enforcement_default == 'advisory' %} selected{% endif %}>Advisory (show findings and continue)</option>
+        <option value="strict"{% if wcag_language_enforcement_default == 'strict' %} selected{% endif %}>Strict (block conversion on WCAG language errors)</option>
+      </select>
+    </div>
+    {% endif %}
+  </fieldset>
+  {% endif %}
+
+  <!-- ============================================================ -->
+  <!-- STEP 4: ACB formatting options                               -->
+  <!-- ============================================================ -->
+  <h2 id="convert-step-4">Step 4: Formatting options</h2>
+  <fieldset>
+    <legend>Step 4: Formatting options</legend>
 
     <p>These options control how your output is formatted. The defaults follow the ACB Large Print Guidelines. Change them only if you have a specific reason.</p>
 
@@ -349,11 +381,11 @@
   </details>
 
   <!-- ============================================================ -->
-  <!-- STEP 4: Optional title                                       -->
+  <!-- STEP 5: Optional title                                       -->
   <!-- ============================================================ -->
-  <h2 id="convert-step-4">Step 4: Document title (optional)</h2>
+  <h2 id="convert-step-5">Step 5: Document title (optional)</h2>
   <fieldset>
-    <legend>Step 4: Document title (optional)</legend>
+    <legend>Step 5: Document title (optional)</legend>
     <div class="form-group">
       <label for="title">Page title</label>
       <input type="text" id="title" name="title" value=""
@@ -368,9 +400,10 @@
     <h3>For plain text (Markdown) output</h3>
     <p>You can convert almost any document format:</p>
     <ul>
-      <li><strong>Word (.docx)</strong> -- full text, headings, lists, tables, and links are preserved</li>
+      <li><strong>Word (.docx, .doc)</strong> -- full text, headings, lists, tables, and links are preserved</li>
       <li><strong>Excel (.xlsx)</strong> -- each sheet becomes a section with its data in table format</li>
-      <li><strong>PowerPoint (.pptx)</strong> -- slide titles, text content, and speaker notes are extracted</li>
+      <li><strong>PowerPoint (.pptx, .ppt)</strong> -- slide titles, text content, and speaker notes are extracted</li>
+      <li><strong>Plain text (.txt)</strong> -- imported as-is for direct conversion into Markdown or downstream formats</li>
       <li><strong>PDF (.pdf)</strong> -- text is extracted from tagged and untagged PDFs (quality depends on the PDF structure)</li>
       <li><strong>HTML (.html)</strong> -- text content extracted from web pages</li>
       <li><strong>ePub (.epub)</strong> -- full text content from e-books</li>

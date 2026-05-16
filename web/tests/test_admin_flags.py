@@ -62,6 +62,10 @@ def test_admin_flags_page_shows_backend_and_flags(client, monkeypatch):
         "GLOW_ENABLE_COGNITIVE_PROFILE",
         "GLOW_ENABLE_FORCED_COLORS_MODE",
         "GLOW_ENABLE_RULE_CONTRIBUTIONS",
+        "GLOW_ENABLE_WCAG_LANGUAGE_PROCESSING",
+        "GLOW_ENABLE_WCAG_LANGUAGE_STRICT_MODE",
+        "GLOW_ENABLE_PII_GUARDRAILS",
+        "GLOW_ENABLE_PII_GUARDRAILS_STRICT_MODE",
     ):
         assert flag in html
         assert_flag_rendered(html, flag)

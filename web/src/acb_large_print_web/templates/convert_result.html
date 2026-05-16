@@ -56,6 +56,37 @@
 </section>
 {% endif %}
 
+{% if language_reports %}
+<section>
+  <h2 id="language-heading">Language and clarity review</h2>
+  <p>GLOW ran WCAG language checks for this conversion.</p>
+  {% for report in language_reports %}
+  <article class="next-step-callout">
+    <h3>{{ report.stage|capitalize }} stage</h3>
+    <p>
+      Findings: <strong>{{ report.total }}</strong>
+      (Errors: {{ report.error_count }}, Warnings: {{ report.warning_count }})
+    </p>
+    {% if report.findings %}
+    <ul>
+      {% for finding in report.findings[:8] %}
+      <li>
+        <strong>{{ finding.rule_id }}</strong> (WCAG {{ finding.wcag }}): {{ finding.message }}
+        {% if finding.snippet %}<br><em>{{ finding.snippet }}</em>{% endif %}
+      </li>
+      {% endfor %}
+      {% if report.total > 8 %}
+      <li>...and {{ report.total - 8 }} more finding(s).</li>
+      {% endif %}
+    </ul>
+    {% else %}
+    <p>No language findings were detected for this stage.</p>
+    {% endif %}
+  </article>
+  {% endfor %}
+</section>
+{% endif %}
+
 <section>
   <h2 id="next-heading">What's Next?</h2>
   {% if feature_audit_enabled and auditable_output %}

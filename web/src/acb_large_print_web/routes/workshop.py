@@ -4,18 +4,26 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from flask import Blueprint, Response, abort, current_app, redirect, render_template_string, request, send_file, url_for
+from flask import Blueprint, Response, abort, current_app, g, make_response, redirect, render_template_string, request, send_file, url_for
+from markupsafe import Markup, escape
 
 from ..feature_flags import get_flag
 from ..workshop_store import (
     add_feedback,
+    bind_participant_login,
+    create_or_update_participant,
     ensure_session,
     export_follow_through_markdown,
     export_session_docx_bytes,
     export_session_html,
     export_session_json,
     export_session_markdown,
+    get_conference_code,
+    get_participant,
     get_session,
+    list_submissions_for_participant,
+    load_conference_codes_from_env,
+    load_conference_codes_from_file,
     list_feedback_for_session,
     list_follow_through_items,
     list_submissions,
@@ -26,6 +34,7 @@ from ..workshop_store import (
 )
 
 workshop_bp = Blueprint("workshop", __name__)
+PARTICIPANT_COOKIE = "glow_workshop_participant"
 
 ACTIVITY_ORDER = [
     "journey_check_in",
@@ -53,6 +62,95 @@ ACTIVITY_PROMPTS = {
     "champion_studio": "Design a reusable workflow that teaches partner ownership and includes explicit human-review safeguards.",
     "capstone_shareout": "Summarize your workflow, who it helps, and how it supports sustained accessibility practice.",
     "action_plan_30_day": "Commit to one workflow, one partner/team, one safeguard, and one concrete next step in 30 days.",
+}
+
+ACTIVITY_META = {
+    "journey_check_in": {"title": "Accessibility Journey Check-In", "time": "20 minutes", "badge": "Journey Mapper"},
+    "problem_statement": {"title": "What Problem Are We Solving?", "time": "35 minutes", "badge": "Problem Framer"},
+    "teach_vs_fix": {"title": "Fix It for Me vs Teach Me to Improve It", "time": "35 minutes", "badge": "Coaching Catalyst"},
+    "ai_boundary_map": {"title": "Helpful, Risky, or Human Required?", "time": "35 minutes", "badge": "Boundary Builder"},
+    "agent_formula": {"title": "Accessibility Agent Formula", "time": "35 minutes", "badge": "Agent Architect"},
+    "lab_accessible_communication": {"title": "GLOW Lab 1: Accessible Communications", "time": "55 minutes", "badge": "Communication Coach"},
+    "lab_alt_text_decision": {"title": "GLOW Lab 2: Alt Text and Human Judgment", "time": "50 minutes", "badge": "Meaning Mapper"},
+    "lab_remediation_plan": {"title": "GLOW Lab 3: Remediation Planning", "time": "50 minutes", "badge": "Remediation Planner"},
+    "champion_studio": {"title": "Accessibility Champion Studio", "time": "45 minutes", "badge": "Champion Designer"},
+    "capstone_shareout": {"title": "Capstone Share-Out", "time": "25 minutes", "badge": "Story Sharer"},
+    "action_plan_30_day": {"title": "30-Day Action Plan", "time": "15 minutes", "badge": "Momentum Builder"},
+}
+
+ACTIVITY_FIELDS = {
+    "journey_check_in": [
+        {"name": "work_type", "label": "What kind of accessibility work do you do?", "rows": 3, "required": True},
+        {"name": "partner_blockers", "label": "Where do partners most often get stuck?", "rows": 3, "required": True},
+        {"name": "champion_shift", "label": "What would change if more people became accessibility champions?", "rows": 3, "required": True},
+    ],
+    "problem_statement": [
+        {"name": "surface_problem", "label": "Surface problem", "rows": 2, "required": True},
+        {"name": "capacity_problem", "label": "Deeper capacity-building problem", "rows": 2, "required": True},
+        {"name": "who_learns", "label": "Who needs to learn or own part of this?", "rows": 2, "required": True},
+        {"name": "repeatable_success", "label": "What does repeatable success look like?", "rows": 2, "required": True},
+    ],
+    "teach_vs_fix": [
+        {"name": "partner_request", "label": "Partner request", "rows": 2, "required": True},
+        {"name": "immediate_need", "label": "Immediate accessibility need", "rows": 2, "required": True},
+        {"name": "partner_learning", "label": "What the partner needs to learn", "rows": 2, "required": True},
+        {"name": "coaching_response", "label": "Supportive coaching response", "rows": 4, "required": True},
+    ],
+    "ai_boundary_map": [
+        {"name": "tasks", "label": "Tasks to classify", "rows": 3, "required": True},
+        {"name": "boundaries", "label": "Helpful for AI, risky, or human-required decisions", "rows": 3, "required": True},
+        {"name": "safeguards", "label": "Safeguards and review checkpoints", "rows": 3, "required": True},
+    ],
+    "agent_formula": [
+        {"name": "role", "label": "Role", "rows": 2, "required": True},
+        {"name": "task", "label": "Task", "rows": 2, "required": True},
+        {"name": "trusted_guidance", "label": "Trusted guidance", "rows": 3, "required": True},
+        {"name": "output_format", "label": "Output format", "rows": 2, "required": True},
+        {"name": "human_review", "label": "Human review safeguard", "rows": 2, "required": True},
+    ],
+    "lab_accessible_communication": [
+        {"name": "communication_type", "label": "Communication type and audience", "rows": 2, "required": True},
+        {"name": "top_issues", "label": "Top clarity or accessibility issues", "rows": 3, "required": True},
+        {"name": "revised_content", "label": "Revised content draft", "rows": 5, "required": True},
+        {"name": "teaching_note", "label": "Teaching note for the content owner", "rows": 3, "required": True},
+        {"name": "review_checklist", "label": "Human-review checklist", "rows": 3, "required": True},
+    ],
+    "lab_alt_text_decision": [
+        {"name": "image_context", "label": "Image context", "rows": 2, "required": True},
+        {"name": "image_purpose", "label": "Purpose of image", "rows": 2, "required": True},
+        {"name": "relevant_info", "label": "Relevant information to include", "rows": 2, "required": True},
+        {"name": "omit_info", "label": "Information to omit", "rows": 2, "required": True},
+        {"name": "draft_alt", "label": "Draft alt text or description guidance", "rows": 3, "required": True},
+        {"name": "verification_questions", "label": "Human verification questions", "rows": 2, "required": True},
+    ],
+    "lab_remediation_plan": [
+        {"name": "content_track", "label": "Content track and audience", "rows": 2, "required": True},
+        {"name": "likely_barriers", "label": "Likely barriers", "rows": 3, "required": True},
+        {"name": "priority_fixes", "label": "Highest-priority fixes", "rows": 3, "required": True},
+        {"name": "owner_questions", "label": "Questions for content owner", "rows": 3, "required": True},
+        {"name": "human_inspection", "label": "What requires human inspection", "rows": 2, "required": True},
+        {"name": "coaching_message", "label": "Coaching message", "rows": 3, "required": True},
+    ],
+    "champion_studio": [
+        {"name": "workflow_name", "label": "Workflow name", "rows": 2, "required": True},
+        {"name": "partner_group", "label": "Who this workflow helps", "rows": 2, "required": True},
+        {"name": "responsibility", "label": "Accessibility responsibility to teach", "rows": 3, "required": True},
+        {"name": "ai_support", "label": "What GLOW or AI should support", "rows": 3, "required": True},
+        {"name": "final_output", "label": "Final output artifact", "rows": 2, "required": True},
+        {"name": "human_safeguard", "label": "Human-review safeguard", "rows": 2, "required": True},
+    ],
+    "capstone_shareout": [
+        {"name": "workflow_summary", "label": "Workflow summary", "rows": 3, "required": True},
+        {"name": "who_it_helps", "label": "Who it helps and what they learn", "rows": 3, "required": True},
+        {"name": "reusability", "label": "How this will be reused", "rows": 2, "required": True},
+        {"name": "safeguard", "label": "Final human-review safeguard", "rows": 2, "required": True},
+    ],
+    "action_plan_30_day": [
+        {"name": "workflow_30", "label": "One workflow to try in the next 30 days", "rows": 2, "required": True},
+        {"name": "partner_team_30", "label": "One partner or team to support", "rows": 2, "required": True},
+        {"name": "safeguard_30", "label": "One safeguard to include every time", "rows": 2, "required": True},
+        {"name": "first_step_30", "label": "First concrete next step", "rows": 2, "required": True},
+    ],
 }
 
 EXERCISE_PACK = [
@@ -118,6 +216,53 @@ RESOURCE_FILES = {
   "utilization": "workshop-frontfacing-utilization.md",
 }
 
+WORKSHOP_ACTION_TOKENS = {
+    "GLOW:AUDIT": ("Audit Workspace", "audit.audit_form"),
+    "GLOW:FIX": ("Fix Workspace", "fix.fix_form"),
+    "GLOW:CONVERT": ("Convert Workspace", "convert.convert_form"),
+    "GLOW:TEMPLATE": ("Template Builder", "template.template_form"),
+    "GLOW:CHAT": ("Document Chat", "chat.chat_form"),
+    "GLOW:ALT_TEXT": ("Alt-Text Helper", "alt_text.alt_text_form"),
+    "GLOW:MAGIC": ("Magic Lab", "magic.magic_home"),
+}
+
+WORKSHOP_SAMPLE_FILES = {
+    "board-agenda-docx": "04 - April 8 2026 BITS Board Meeting Agenda.docx",
+    "board-agenda-md": "04 - April 8 2026 BITS Board Meeting Agenda.md",
+    "board-agenda-html": "04 - April 8 2026 BITS Board Meeting Agenda.html",
+    "glow-test-docx": "GLOW Test 2.docx",
+}
+
+MAGIC_SCENARIOS = [
+    {
+        "id": "communication-refresh",
+        "title": "Accessible Communication Refresh",
+        "goal": "Turn a dense announcement into a plain-language, well-structured communication.",
+        "tokens": ["GLOW:AUDIT", "GLOW:FIX", "GLOW:TEMPLATE"],
+        "sample_slug": "board-agenda-docx",
+        "activity_key": "lab_accessible_communication",
+        "workflow_text": "Run [[GLOW:AUDIT]] to identify barriers, draft improvements in [[GLOW:FIX]], then save a reusable coaching script in [[GLOW:TEMPLATE]].",
+    },
+    {
+        "id": "alt-text-judgment",
+        "title": "Alt Text and Human Judgment",
+        "goal": "Practice purpose-first image decisions with explicit human verification.",
+        "tokens": ["GLOW:ALT_TEXT", "GLOW:CHAT", "GLOW:TEMPLATE"],
+        "sample_slug": "board-agenda-html",
+        "activity_key": "lab_alt_text_decision",
+        "workflow_text": "Use [[GLOW:ALT_TEXT]] for first-draft guidance, pressure-test language in [[GLOW:CHAT]], and package a checklist in [[GLOW:TEMPLATE]].",
+    },
+    {
+        "id": "remediation-prioritization",
+        "title": "Remediation Prioritization Sprint",
+        "goal": "Convert a large remediation problem into a realistic, teachable plan.",
+        "tokens": ["GLOW:AUDIT", "GLOW:CONVERT", "GLOW:MAGIC"],
+        "sample_slug": "glow-test-docx",
+        "activity_key": "lab_remediation_plan",
+        "workflow_text": "Start with [[GLOW:AUDIT]] for evidence, summarize action tracks in [[GLOW:CONVERT]], and use [[GLOW:MAGIC]] for advanced advisory checks.",
+    },
+]
+
 
 def _workshop_enabled() -> bool:
     return bool(get_flag("GLOW_ENABLE_WORKSHOP_MODE", True))
@@ -135,21 +280,186 @@ def _peer_review_enabled() -> bool:
     return bool(get_flag("GLOW_ENABLE_WORKSHOP_PEER_REVIEW", True))
 
 
+def _activity_title(activity_key: str) -> str:
+    return ACTIVITY_META.get(activity_key, {}).get("title", activity_key)
+
+
+def _workshop_return_target(session_code: str, *, activity_key: str | None = None) -> str:
+    key = (activity_key or "").strip()
+    if key and key in ACTIVITY_PROMPTS:
+        return url_for("workshop.workshop_activity", session_code=session_code, activity_key=key)
+    return url_for("workshop.workshop_launchpad", session_code=session_code)
+
+
+def _action_link_for_token(token: str, session_code: str, *, return_to: str) -> tuple[str, str]:
+    label, endpoint = WORKSHOP_ACTION_TOKENS[token]
+    href = url_for(
+        endpoint,
+        workshop_return=return_to,
+        workshop_label=f"Return to Workshop ({session_code})",
+    )
+    return label, href
+
+
+def _render_tokenized_workflow_text(text: str, session_code: str, *, return_to: str) -> Markup:
+    rendered = escape(text or "")
+    for token, (label, endpoint) in WORKSHOP_ACTION_TOKENS.items():
+        pattern = f"[[{token}]]"
+        if pattern in rendered:
+            href = url_for(
+                endpoint,
+                workshop_return=return_to,
+                workshop_label=f"Return to Workshop ({session_code})",
+            )
+            link = f'<a href="{escape(href)}">{escape(label)}</a>'
+            rendered = rendered.replace(pattern, link)
+    return Markup(rendered)
+
+
+def _serialize_activity_submission(activity_key: str, fields: list[dict], values: dict[str, str], bonus_note: str) -> str:
+    lines: list[str] = []
+    lines.append(f"Activity: {_activity_title(activity_key)}")
+    lines.append(f"Activity key: {activity_key}")
+    lines.append("")
+    for field in fields:
+        label = field.get("label", field.get("name", "Field"))
+        value = (values.get(field.get("name", "")) or "").strip()
+        lines.append(f"{label}:")
+        lines.append(value or "(not provided)")
+        lines.append("")
+    if bonus_note.strip():
+        lines.append("Bonus reflection:")
+        lines.append(bonus_note.strip())
+        lines.append("")
+    return "\n".join(lines).strip()
+
+
+def _resolve_session_from_access_code(raw_code: str) -> tuple[str, str, str]:
+    """
+    Resolve user-entered access code to (session_code, session_title, event_name).
+    Supports:
+    - configured conference codes
+    - direct existing session codes
+    - ad-hoc session code creation
+    """
+    value = (raw_code or "").strip()
+    if not value:
+        raise ValueError("Please enter a workshop or conference code.")
+
+    mapped = get_conference_code(value)
+    if mapped:
+        return (
+            str(mapped.get("session_code", "")).strip(),
+            str(mapped.get("session_title", "GLOW Workshop Session")).strip() or "GLOW Workshop Session",
+            str(mapped.get("event_name", "")).strip(),
+        )
+
+    code = normalize_session_code(value)
+    existing = get_session(code)
+    if existing:
+        return (
+            code,
+            str(existing.get("title", "GLOW Workshop Session")).strip() or "GLOW Workshop Session",
+            str(existing.get("event_name", "")).strip(),
+        )
+
+    return (code, "GLOW Workshop Session", "")
+
+
+def _active_login_email() -> str | None:
+    user = getattr(g, "oidc_user_info", {}) if g is not None else {}
+    if isinstance(user, dict):
+        email = (user.get("email") or "").strip()
+        if email:
+            return email
+    return None
+
+
 @workshop_bp.route("/", methods=["GET", "POST"])
 def workshop_home():
     if not _workshop_enabled():
         abort(404)
 
+    # Best-effort code loading for conference events.
+    try:
+        load_conference_codes_from_env()
+        load_conference_codes_from_file()
+    except Exception:
+        pass
+
     error = ""
-    if request.method == "POST":
-        raw_code = (request.form.get("session_code") or "").strip()
-        title = (request.form.get("session_title") or "GLOW Workshop Session").strip() or "GLOW Workshop Session"
+    info = ""
+    session_code = ""
+    session_title = "GLOW Workshop Session"
+    session_event = ""
+    join_mode = False
+    participant_display_name = "Participant"
+    participant_key = (request.cookies.get(PARTICIPANT_COOKIE) or "").strip()
+    participant = get_participant(participant_key) if participant_key else None
+
+    query_code = (request.args.get("code") or "").strip()
+    if query_code:
         try:
-            code = normalize_session_code(raw_code)
-            ensure_session(code, title=title)
-            return redirect(url_for("workshop.workshop_activity", session_code=code, activity_key=ACTIVITY_ORDER[0]))
+            session_code, session_title, session_event = _resolve_session_from_access_code(query_code)
+            ensure_session(session_code, title=session_title, event_name=session_event)
+            join_mode = True
         except ValueError as exc:
             error = str(exc)
+
+    if participant and join_mode and str(participant.get("session_code", "")).strip() == session_code:
+        participant_display_name = str(participant.get("display_name", "Participant")).strip() or "Participant"
+        if _active_login_email():
+            bind_participant_login(str(participant.get("participant_key", "")), _active_login_email() or "")
+            info = "Welcome back. Your personal workshop content is ready."
+
+    if request.method == "POST":
+        action = (request.form.get("action") or "lookup").strip().lower()
+        if action == "lookup":
+            raw_code = (request.form.get("access_code") or "").strip()
+            try:
+                code, title, event_name = _resolve_session_from_access_code(raw_code)
+                ensure_session(code, title=title, event_name=event_name)
+                return redirect(url_for("workshop.workshop_home", code=code))
+            except ValueError as exc:
+                error = str(exc)
+        elif action == "join":
+            code = (request.form.get("session_code") or "").strip()
+            display_name = (request.form.get("display_name") or "Participant").strip() or "Participant"
+            try:
+                normalized_code = normalize_session_code(code)
+                session_meta = get_session(normalized_code)
+                if session_meta is None:
+                    abort(404)
+                session_code = normalized_code
+                session_title = str(session_meta.get("title", "GLOW Workshop Session")).strip() or "GLOW Workshop Session"
+                session_event = str(session_meta.get("event_name", "")).strip()
+                join_mode = True
+                participant_row = create_or_update_participant(
+                    normalized_code,
+                    display_name,
+                    participant_key=participant_key or None,
+                    login_email=_active_login_email(),
+                )
+                resp = make_response(
+                    redirect(
+                        url_for(
+                            "workshop.workshop_activity",
+                            session_code=normalized_code,
+                            activity_key=ACTIVITY_ORDER[0],
+                            pulse=1,
+                        )
+                    )
+                )
+                resp.set_cookie(
+                    PARTICIPANT_COOKIE,
+                    str(participant_row.get("participant_key", "")),
+                    max_age=60 * 60 * 24 * 90,
+                    httponly=True,
+                    samesite="Lax",
+                )
+                return resp
+            except ValueError as exc:
+                error = str(exc)
 
     schedule = [
         {"time": "8:30-8:50", "title": "Welcome and Accessibility Journey Check-In", "mode": "Reflection and group share"},
@@ -210,22 +520,37 @@ def workshop_home():
         <a href=\"{{ url_for('workshop.workshop_guide') }}\">Workshop Guide</a> |
         <a href=\"{{ url_for('workshop.workshop_exercises') }}\">Exercises Pack</a> |
         <a href=\"{{ url_for('workshop.workshop_utilization') }}\">Utilization Guide</a> |
-        <a href=\"{{ url_for('workshop.workshop_follow_through', session_code=session_code) }}\">Follow-Through</a>
+        {% if join_mode %}<a href=\"{{ url_for('workshop.workshop_follow_through', session_code=session_code) }}\">Follow-Through</a>{% endif %}
       </p>
     </section>
 
     <section aria-labelledby=\"join-heading\" class=\"join-box\">
-      <h2 id=\"join-heading\">Start or Join a Workshop Session</h2>
+      <h2 id=\"join-heading\">Join with a Conference or Workshop Code</h2>
       {% if error %}<p class=\"error\" role=\"alert\">{{ error }}</p>{% endif %}
+      {% if info %}<p role="status"><strong>{{ info }}</strong></p>{% endif %}
       <form method=\"post\" action=\"{{ url_for('workshop.workshop_home') }}\">
         <input type=\"hidden\" name=\"csrf_token\" value=\"{{ csrf_token() }}\">
-        <label for=\"session_code\">Session code</label>
-        <input id=\"session_code\" name=\"session_code\" type=\"text\" required aria-describedby=\"session-help\">
-        <p id=\"session-help\">Use 3-64 characters: letters, numbers, dash, or underscore.</p>
-        <label for=\"session_title\">Session title</label>
-        <input id=\"session_title\" name=\"session_title\" type=\"text\" value=\"GLOW Workshop Session\">
-        <p><button type=\"submit\">Enter workshop session</button></p>
+        <input type=\"hidden\" name=\"action\" value=\"lookup\">
+        <label for=\"access_code\">Conference/workshop code</label>
+        <input id=\"access_code\" name=\"access_code\" type=\"text\" required aria-describedby=\"session-help\" value="{{ session_code }}">
+        <p id=\"session-help\">Enter your conference invite code. Existing session codes also work.</p>
+        <p><button type=\"submit\">Look up workshop</button></p>
       </form>
+
+      {% if join_mode %}
+      <hr>
+      <h3>Step 2: Confirm participant identity</h3>
+      <p><strong>Workshop session:</strong> {{ session_code }} — {{ session_title }}{% if session_event %} ({{ session_event }}){% endif %}</p>
+      <p>Use your name once and we will remember your personal content on this device without requiring login.</p>
+      <form method="post" action="{{ url_for('workshop.workshop_home') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="action" value="join">
+        <input type="hidden" name="session_code" value="{{ session_code }}">
+        <label for="display_name">Your display name</label>
+        <input id="display_name" name="display_name" type="text" value="{{ participant_display_name }}" required>
+        <p><button type="submit">Enter workshop</button></p>
+      </form>
+      {% endif %}
     </section>
 
     <section aria-labelledby=\"outcomes-heading\">
@@ -257,6 +582,12 @@ def workshop_home():
         schedule=schedule,
         outcomes=outcomes,
         error=error,
+        info=info,
+        join_mode=join_mode,
+        session_code=session_code,
+        session_title=session_title,
+        session_event=session_event,
+        participant_display_name=participant_display_name,
     )
 
 
@@ -275,33 +606,119 @@ def workshop_activity(session_code: str, activity_key: str):
     if get_session(code) is None:
         ensure_session(code)
 
-    message = ""
+    participant_key = (request.cookies.get(PARTICIPANT_COOKIE) or "").strip()
+    participant = get_participant(participant_key) if participant_key else None
+    participant_name = "Participant"
+    if participant and str(participant.get("session_code", "")).strip() == code:
+        participant_name = str(participant.get("display_name", "Participant")).strip() or "Participant"
+        if _active_login_email():
+            bind_participant_login(str(participant.get("participant_key", "")), _active_login_email() or "")
+
+    activity_fields = ACTIVITY_FIELDS.get(
+        activity_key,
+        [{"name": "response", "label": "Response", "rows": 6, "required": True}],
+    )
+    field_values = {field.get("name", ""): "" for field in activity_fields}
+    bonus_note = ""
+    message = "Your previous activity was saved. Keep the momentum going."
+    if not request.args.get("pulse"):
+        message = ""
     if request.method == "POST":
-        display_name = (request.form.get("display_name") or "Participant").strip() or "Participant"
-        content_text = (request.form.get("content_text") or "").strip()
+        display_name = (request.form.get("display_name") or participant_name).strip() or participant_name
         anonymity_mode = bool(request.form.get("anonymity_mode"))
-        if not content_text:
-            message = "Please enter your response before submitting."
+        submit_action = (request.form.get("submit_action") or "save").strip().lower()
+        for field in activity_fields:
+            key = field.get("name", "")
+            field_values[key] = (request.form.get(key) or "").strip()
+        bonus_note = (request.form.get("bonus_note") or "").strip()
+
+        missing = [
+            field.get("label", field.get("name", "field"))
+            for field in activity_fields
+            if field.get("required", True) and not field_values.get(field.get("name", ""), "").strip()
+        ]
+        if missing:
+            message = "Please complete: " + ", ".join(missing[:3]) + ("..." if len(missing) > 3 else "")
         else:
-            save_submission(code, activity_key, display_name, content_text, anonymity_mode=anonymity_mode)
-            message = "Saved. Continue to the next activity or review the gallery."
+            content_text = _serialize_activity_submission(activity_key, activity_fields, field_values, bonus_note)
+            participant_row = create_or_update_participant(
+                code,
+                display_name,
+                participant_key=(participant.get("participant_key") if participant else participant_key) or None,
+                login_email=_active_login_email(),
+            )
+            participant = participant_row
+            participant_name = str(participant_row.get("display_name", display_name)).strip() or display_name
+            save_submission(
+                code,
+                activity_key,
+                participant_name,
+                content_text,
+                participant_key=str(participant_row.get("participant_key", "")),
+                anonymity_mode=anonymity_mode,
+            )
+            badge = ACTIVITY_META.get(activity_key, {}).get("badge", "Workshop Champion")
+            if submit_action == "save_next":
+                idx = ACTIVITY_ORDER.index(activity_key)
+                next_key = ACTIVITY_ORDER[idx + 1] if idx < len(ACTIVITY_ORDER) - 1 else None
+                if next_key:
+                    resp = make_response(
+                        redirect(
+                            url_for(
+                                "workshop.workshop_activity",
+                                session_code=code,
+                                activity_key=next_key,
+                                pulse=1,
+                            )
+                        )
+                    )
+                    resp.set_cookie(
+                        PARTICIPANT_COOKIE,
+                        str(participant_row.get("participant_key", "")),
+                        max_age=60 * 60 * 24 * 90,
+                        httponly=True,
+                        samesite="Lax",
+                    )
+                    return resp
+            message = f"Saved. Badge unlocked: {badge}. Continue to the next activity or review the gallery."
+
+    return_to = _workshop_return_target(code, activity_key=activity_key)
 
     idx = ACTIVITY_ORDER.index(activity_key)
     prev_key = ACTIVITY_ORDER[idx - 1] if idx > 0 else None
     next_key = ACTIVITY_ORDER[idx + 1] if idx < len(ACTIVITY_ORDER) - 1 else None
     count = len(list_submissions(code, activity_key=activity_key))
+    all_submissions = list_submissions(code)
+    by_activity = {key: 0 for key in ACTIVITY_ORDER}
+    for submission in all_submissions:
+        key = submission.get("activity_key", "")
+        if key in by_activity:
+            by_activity[key] += 1
+    completed_activities = sum(1 for key in ACTIVITY_ORDER if by_activity.get(key, 0) > 0)
+    progress_pct = round((completed_activities / len(ACTIVITY_ORDER)) * 100, 1)
+    activity_meta = ACTIVITY_META.get(
+        activity_key,
+        {"title": activity_key, "time": "Varies", "badge": "Workshop Champion"},
+    )
 
-    return render_template_string(
+    rendered = render_template_string(
         """<!doctype html>
 <html lang=\"en\"><head>
   <meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">
-  <title>{{ activity_key }} | Workshop Session {{ session_code }}</title>
+  <title>{{ activity_title }} | Workshop Session {{ session_code }}</title>
   <style>
-    body { font-family: system-ui, sans-serif; line-height: 1.5; margin: 0; }
+    body { font-family: system-ui, sans-serif; line-height: 1.5; margin: 0; background: #f8fafc; }
     .page { max-width: 72rem; margin: 0 auto; padding: 1rem; }
     .skip-link { position: absolute; left: -9999px; top: auto; }
     .skip-link:focus { left: 1rem; top: 1rem; background: #fff; border: 2px solid #000; padding: .5rem; }
-    textarea { width: min(72rem, 100%); min-height: 14rem; }
+    .panel { background: #fff; border: 1px solid #ccd; border-radius: .5rem; padding: .9rem; margin: .85rem 0; }
+    label { display: block; margin-top: .5rem; font-weight: 600; }
+    textarea { width: min(68rem, 100%); min-height: 5rem; }
+    input[type=text] { width: min(40rem, 100%); }
+    .passport { display: flex; flex-wrap: wrap; gap: .4rem; list-style: none; padding: 0; }
+    .passport li { border: 1px solid #6b7280; border-radius: 999px; padding: .2rem .6rem; background: #fff; }
+    .passport li.complete { background: #e6ffed; border-color: #1f7a36; }
+    progress { width: min(36rem, 100%); height: 1rem; }
     .msg { font-weight: 600; }
     nav a { margin-right: .75rem; }
   </style>
@@ -309,22 +726,54 @@ def workshop_activity(session_code: str, activity_key: str):
 <body>
   <a class=\"skip-link\" href=\"#main\">Skip to main content</a>
   <main id=\"main\" class=\"page\">
-    <h1>Workshop Activity: {{ activity_key }}</h1>
+    <h1>Workshop Activity: {{ activity_title }}</h1>
     <p><strong>Session:</strong> {{ session_code }}</p>
-    <p>{{ prompt_text }}</p>
+    {% if participant_name %}<p><strong>Participant:</strong> {{ participant_name }} (<a href="{{ url_for('workshop.workshop_my_content', session_code=session_code) }}">My content</a>)</p>{% endif %}
+    <section class="panel" aria-labelledby="magic-progress">
+      <h2 id="magic-progress">Workshop Progress Passport</h2>
+      <p>Activity {{ idx + 1 }} of {{ total_activities }} | Time box: {{ activity_time }} | Badge: {{ activity_badge }}</p>
+      <p><progress value="{{ completed_activities }}" max="{{ total_activities }}"></progress> {{ progress_pct }}% complete</p>
+      <ul class="passport" aria-label="Activity completion status">
+      {% for key in activity_order %}
+        <li class="{% if by_activity.get(key, 0) > 0 %}complete{% endif %}">
+          {{ activity_titles[key] }}{% if by_activity.get(key, 0) > 0 %} - complete{% endif %}
+        </li>
+      {% endfor %}
+      </ul>
+    </section>
+    <section class="panel" aria-labelledby="challenge-brief">
+      <h2 id="challenge-brief">Challenge Brief</h2>
+      <p>{{ prompt_text }}</p>
+    </section>
     {% if message %}<p class=\"msg\" role=\"status\">{{ message }}</p>{% endif %}
 
-    <form method=\"post\" action=\"{{ url_for('workshop.workshop_activity', session_code=session_code, activity_key=activity_key) }}\">
-      <input type=\"hidden\" name=\"csrf_token\" value=\"{{ csrf_token() }}\">
-      <label for=\"display_name\">Display name</label>
-      <input id=\"display_name\" name=\"display_name\" type=\"text\" value=\"Participant\">
-      <p><label><input type=\"checkbox\" name=\"anonymity_mode\"> Share anonymously in gallery</label></p>
-      <label for=\"content_text\">Response</label>
-      <textarea id=\"content_text\" name=\"content_text\" required></textarea>
-      <p><button type=\"submit\">Save activity response</button></p>
-    </form>
+    <section class="panel" aria-labelledby="interactive-form">
+      <h2 id="interactive-form">Interactive Activity Form</h2>
+      <form method=\"post\" action=\"{{ url_for('workshop.workshop_activity', session_code=session_code, activity_key=activity_key) }}\">
+        <input type=\"hidden\" name=\"csrf_token\" value=\"{{ csrf_token() }}\">
+        <label for=\"display_name\">Display name</label>
+        <input id=\"display_name\" name=\"display_name\" type=\"text\" value="{{ participant_name }}">
+        <p><label><input type=\"checkbox\" name=\"anonymity_mode\"> Share anonymously in gallery</label></p>
+        {% for field in activity_fields %}
+          <label for="{{ field.name }}">{{ field.label }}</label>
+          <textarea
+            id="{{ field.name }}"
+            name="{{ field.name }}"
+            rows="{{ field.rows or 3 }}"
+            {% if field.required %}required{% endif %}
+          >{{ field_values.get(field.name, "") }}</textarea>
+        {% endfor %}
+        <label for="bonus_note">Bonus reflection (optional)</label>
+        <textarea id="bonus_note" name="bonus_note" rows="3">{{ bonus_note }}</textarea>
+        <p>
+          <button type="submit" name="submit_action" value="save">Save activity response</button>
+          {% if next_key %}<button type="submit" name="submit_action" value="save_next">Save and continue</button>{% endif %}
+        </p>
+      </form>
+    </section>
 
     <p>Total submissions for this activity: {{ count }}</p>
+    <p><a href="{{ url_for('workshop.workshop_launchpad', session_code=session_code, activity=activity_key) }}">Open magical exercise launchpad</a></p>
     <nav aria-label=\"Activity navigation\">
       <a href=\"{{ url_for('workshop.workshop_home') }}\">Workshop home</a>
       {% if prev_key %}<a href=\"{{ url_for('workshop.workshop_activity', session_code=session_code, activity_key=prev_key) }}\">Previous activity</a>{% endif %}
@@ -339,12 +788,213 @@ def workshop_activity(session_code: str, activity_key: str):
 </body></html>""",
         session_code=code,
         activity_key=activity_key,
+        activity_title=activity_meta.get("title", activity_key),
+        activity_time=activity_meta.get("time", "Varies"),
+        activity_badge=activity_meta.get("badge", "Workshop Champion"),
+        activity_fields=activity_fields,
+        field_values=field_values,
+        bonus_note=bonus_note,
         prompt_text=ACTIVITY_PROMPTS[activity_key],
         message=message,
+        idx=idx,
+        total_activities=len(ACTIVITY_ORDER),
+        completed_activities=completed_activities,
+        progress_pct=progress_pct,
+        by_activity=by_activity,
+        activity_order=ACTIVITY_ORDER,
+        activity_titles={key: _activity_title(key) for key in ACTIVITY_ORDER},
         prev_key=prev_key,
         next_key=next_key,
         count=count,
         gallery_enabled=_gallery_enabled(),
+        participant_name=participant_name,
+    )
+    resp = make_response(rendered)
+    if participant and participant.get("participant_key"):
+        resp.set_cookie(
+            PARTICIPANT_COOKIE,
+            str(participant.get("participant_key", "")),
+            max_age=60 * 60 * 24 * 90,
+            httponly=True,
+            samesite="Lax",
+        )
+    return resp
+
+
+@workshop_bp.route("/session/<session_code>/launchpad", methods=["GET"])
+def workshop_launchpad(session_code: str):
+    if not _workshop_enabled() or not _lab_hub_enabled():
+        abort(404)
+    try:
+        code = normalize_session_code(session_code)
+    except ValueError:
+        abort(404)
+    session_meta = get_session(code)
+    if session_meta is None:
+        abort(404)
+
+    activity_key = (request.args.get("activity") or "").strip()
+    if activity_key and activity_key not in ACTIVITY_PROMPTS:
+        activity_key = ""
+    return_to = _workshop_return_target(code, activity_key=activity_key or ACTIVITY_ORDER[0])
+    scenario_cards = []
+    for scenario in MAGIC_SCENARIOS:
+        action_links = []
+        for token in scenario.get("tokens", []):
+            if token in WORKSHOP_ACTION_TOKENS:
+                label, href = _action_link_for_token(token, code, return_to=return_to)
+                action_links.append({"token": token, "label": label, "href": href})
+        scenario_cards.append(
+            {
+                "id": scenario["id"],
+                "title": scenario["title"],
+                "goal": scenario["goal"],
+                "sample_slug": scenario["sample_slug"],
+                "sample_name": WORKSHOP_SAMPLE_FILES.get(scenario["sample_slug"], ""),
+                "activity_key": scenario["activity_key"],
+                "activity_title": _activity_title(str(scenario["activity_key"])),
+                "action_links": action_links,
+                "workflow_html": _render_tokenized_workflow_text(str(scenario.get("workflow_text", "")), code, return_to=return_to),
+            }
+        )
+
+    participant_key = (request.cookies.get(PARTICIPANT_COOKIE) or "").strip()
+    participant = get_participant(participant_key) if participant_key else None
+    participant_name = ""
+    if participant and str(participant.get("session_code", "")).strip() == code:
+        participant_name = str(participant.get("display_name", "")).strip()
+
+    return render_template_string(
+        """<!doctype html>
+<html lang="en"><head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Workshop Launchpad | {{ session_code }}</title>
+  <style>
+    body { font-family: system-ui, sans-serif; line-height: 1.5; margin: 0; background: #f7fafc; }
+    .page { max-width: 72rem; margin: 0 auto; padding: 1rem; }
+    .card { background: #fff; border: 1px solid #ccd; border-radius: .5rem; padding: .9rem; margin: .85rem 0; }
+    .token-list { display: flex; flex-wrap: wrap; list-style: none; padding: 0; gap: .4rem; }
+    .token-list li { border: 1px solid #6b7280; border-radius: 999px; padding: .25rem .65rem; background: #fff; }
+  </style>
+</head><body><main class="page">
+  <h1>Magical Exercise Launchpad</h1>
+  <p><strong>Session:</strong> {{ session_code }} — {{ session_title }}</p>
+  {% if participant_name %}<p><strong>Participant:</strong> {{ participant_name }} (<a href="{{ url_for('workshop.workshop_my_content', session_code=session_code) }}">My content</a>)</p>{% endif %}
+  <p>Each scenario includes sample files, tokenized workflow guidance, and deep links into GLOW tools that preserve your way back.</p>
+
+  {% for card in scenario_cards %}
+  <section class="card" aria-labelledby="scenario-{{ card.id }}">
+    <h2 id="scenario-{{ card.id }}">{{ card.title }}</h2>
+    <p><strong>Goal:</strong> {{ card.goal }}</p>
+    <p><strong>Suggested activity:</strong> <a href="{{ url_for('workshop.workshop_activity', session_code=session_code, activity_key=card.activity_key) }}">{{ card.activity_title }}</a></p>
+    <p><strong>Sample document:</strong> <a href="{{ url_for('workshop.workshop_sample_download', session_code=session_code, slug=card.sample_slug) }}">{{ card.sample_name }}</a></p>
+    <p><strong>Tokenized workflow:</strong> {{ card.workflow_html }}</p>
+    {% if card.action_links %}
+    <ul class="token-list" aria-label="Scenario tool links">
+      {% for action in card.action_links %}
+        <li><a href="{{ action.href }}">{{ action.token }}</a></li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+  </section>
+  {% endfor %}
+
+  <p>
+    <a href="{{ url_for('workshop.workshop_activity', session_code=session_code, activity_key=activity_key or 'journey_check_in') }}">Return to activity</a> |
+    <a href="{{ url_for('workshop.workshop_gallery', session_code=session_code) }}">Open gallery</a> |
+    <a href="{{ url_for('workshop.workshop_follow_through', session_code=session_code) }}">Follow-through</a>
+  </p>
+</main></body></html>""",
+        session_code=code,
+        session_title=session_meta.get("title", "GLOW Workshop Session"),
+        participant_name=participant_name,
+        scenario_cards=scenario_cards,
+        activity_key=activity_key,
+    )
+
+
+@workshop_bp.route("/session/<session_code>/samples/<slug>", methods=["GET"])
+def workshop_sample_download(session_code: str, slug: str):
+    if not _workshop_enabled() or not _lab_hub_enabled():
+        abort(404)
+    try:
+        code = normalize_session_code(session_code)
+    except ValueError:
+        abort(404)
+    if get_session(code) is None:
+        abort(404)
+
+    filename = WORKSHOP_SAMPLE_FILES.get((slug or "").strip().lower())
+    if not filename:
+        abort(404)
+    path = Path(current_app.root_path).parent.parent.parent / "samples" / filename
+    if not path.exists():
+        abort(404)
+    return send_file(str(path), as_attachment=True, download_name=filename)
+
+
+@workshop_bp.route("/session/<session_code>/me", methods=["GET"])
+def workshop_my_content(session_code: str):
+    if not _workshop_enabled() or not _lab_hub_enabled():
+        abort(404)
+    try:
+        code = normalize_session_code(session_code)
+    except ValueError:
+        abort(404)
+    if get_session(code) is None:
+        abort(404)
+
+    participant_key = (request.cookies.get(PARTICIPANT_COOKIE) or "").strip()
+    participant = get_participant(participant_key) if participant_key else None
+    if not participant or str(participant.get("session_code", "")).strip() != code:
+        return render_template_string(
+            """<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>My Workshop Content | {{ session_code }}</title></head>
+<body><main style="max-width:72rem;margin:0 auto;padding:1rem;font-family:system-ui,sans-serif;">
+  <h1>My Workshop Content</h1>
+  <p>We could not find your personal participant token for this session on this device.</p>
+  <p><a href="{{ url_for('workshop.workshop_home', code=session_code) }}">Re-enter with session code</a></p>
+</main></body></html>""",
+            session_code=code,
+        )
+
+    if _active_login_email():
+        bind_participant_login(str(participant.get("participant_key", "")), _active_login_email() or "")
+    submissions = list_submissions_for_participant(code, str(participant.get("participant_key", "")))
+    return render_template_string(
+        """<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>My Workshop Content | {{ session_code }}</title>
+<style>
+  body { font-family: system-ui, sans-serif; line-height: 1.5; margin: 0; background: #f8fafc; }
+  main { max-width: 72rem; margin: 0 auto; padding: 1rem; }
+  article { border: 1px solid #ccd; border-radius: .5rem; background: #fff; padding: .75rem; margin: .75rem 0; }
+  pre { white-space: pre-wrap; }
+</style>
+</head>
+<body><main>
+  <h1>My Workshop Content</h1>
+  <p><strong>Participant:</strong> {{ participant.display_name }} | <strong>Session:</strong> {{ session_code }}</p>
+  {% if not submissions %}
+    <p>No personal submissions yet.</p>
+  {% else %}
+    {% for item in submissions %}
+      <article>
+        <h2>{{ item.activity_key }}</h2>
+        <p><strong>Updated:</strong> {{ item.updated_at_utc }}</p>
+        <pre>{{ item.content_text }}</pre>
+      </article>
+    {% endfor %}
+  {% endif %}
+  <p>
+    <a href="{{ url_for('workshop.workshop_activity', session_code=session_code, activity_key='journey_check_in') }}">Continue workshop</a> |
+    <a href="{{ url_for('workshop.workshop_gallery', session_code=session_code) }}">Open gallery</a>
+  </p>
+</main></body></html>""",
+        session_code=code,
+        participant=participant,
+        submissions=submissions,
     )
 
 

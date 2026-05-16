@@ -29,6 +29,8 @@ def app(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Flask:
     with application.app_context():
         feature_flags.set_flag("GLOW_ENABLE_AI", True)
         feature_flags.set_flag("GLOW_ENABLE_AI_ALT_TEXT", True)
+        feature_flags.set_flag("GLOW_ENABLE_PII_GUARDRAILS", True)
+        feature_flags.set_flag("GLOW_ENABLE_PII_GUARDRAILS_STRICT_MODE", False)
     return application
 
 
@@ -190,3 +192,181 @@ def test_alt_text_suggest_uses_text_only_generation(client, monkeypatch: pytest.
     payload = response.get_json()
     assert payload["ok"] is True
     assert "Quarterly revenue chart" in payload["suggestion"]
+
+
+def test_alt_text_suggest_can_return_multiple_variants(client, monkeypatch: pytest.MonkeyPatch) -> None:
+    from acb_large_print_web import ai_features
+    from acb_large_print_web import upload as upload_mod
+    from acb_large_print_web.routes import alt_text as alt_text_route
+
+    monkeypatch.setattr(ai_features, "ai_alt_text_enabled", lambda: True)
+    token = str(uuid.uuid4())
+    temp_dir = upload_mod.UPLOAD_TEMP_BASE / token
+    temp_dir.mkdir(parents=True, exist_ok=True)
+    (temp_dir / "charts.xlsx").write_bytes(b"PK")
+
+    monkeypatch.setattr(
+        alt_text_route,
+        "extract_visual_items",
+        lambda _path: [
+            {
+                "index": 0,
+                "total_items": 1,
+                "label": "Sheet 1 chart 1",
+                "location": "Sheet 1",
+                "source_type": "xlsx-chart",
+                "mime_type": "",
+                "image_bytes": b"",
+                "preview_data_uri": "",
+                "width": None,
+                "height": None,
+                "current_alt_text": "",
+                "context_lines": ["Chart title: Quarterly revenue", "Series: North, South"],
+                "text_only": True,
+            }
+        ],
+    )
+    monkeypatch.setattr(alt_text_route, "ai_gate", lambda wait_seconds=None: __import__("contextlib").nullcontext())
+    monkeypatch.setattr(
+        alt_text_route,
+        "gateway_chat",
+        lambda **kwargs: (
+            "1. North region revenue rises steadily and stays above South each quarter.\n"
+            "2. Quarterly revenue chart with North leading South and widening the gap midyear.\n"
+            "3. Revenue trends show both regions growing, with North consistently ahead of South.",
+            False,
+        ),
+    )
+
+    response = client.post(
+        "/alt-text/suggest",
+        data={
+            "token": token,
+            "item_index": "0",
+            "variant_count": "3",
+            "variant_style": "concise",
+        },
+    )
+
+    assert response.status_code == 200
+    payload = response.get_json()
+    assert payload["ok"] is True
+    assert payload["variant_count"] == 3
+    assert len(payload["variants"]) == 3
+    assert "North" in payload["suggestion"]
+
+
+def test_alt_text_suggest_sanitizes_prompt_and_system_prompt(client, monkeypatch: pytest.MonkeyPatch) -> None:
+    from acb_large_print_web import ai_features
+    from acb_large_print_web import upload as upload_mod
+    from acb_large_print_web.routes import alt_text as alt_text_route
+
+    monkeypatch.setattr(ai_features, "ai_alt_text_enabled", lambda: True)
+    token = str(uuid.uuid4())
+    temp_dir = upload_mod.UPLOAD_TEMP_BASE / token
+    temp_dir.mkdir(parents=True, exist_ok=True)
+    (temp_dir / "charts.xlsx").write_bytes(b"PK")
+
+    monkeypatch.setattr(
+        alt_text_route,
+        "extract_visual_items",
+        lambda _path: [
+            {
+                "index": 0,
+                "total_items": 1,
+                "label": "Sheet 1 chart 1",
+                "location": "Sheet 1",
+                "source_type": "xlsx-chart",
+                "mime_type": "",
+                "image_bytes": b"",
+                "preview_data_uri": "",
+                "width": None,
+                "height": None,
+                "current_alt_text": "",
+                "context_lines": ["Email owner@contoso.com for details."],
+                "text_only": True,
+            }
+        ],
+    )
+    monkeypatch.setattr(alt_text_route, "ai_gate", lambda wait_seconds=None: __import__("contextlib").nullcontext())
+
+    def fake_sanitize(text: str, *, surface: str, strict=None):
+        return text.replace("owner@contoso.com", "[REDACTED_EMAIL]"), {
+            "enabled": True,
+            "applied": True,
+            "redacted": True,
+            "entity_count": 1,
+        }
+
+    captured: dict[str, str] = {}
+
+    def fake_gateway_chat(**kwargs):
+        captured["question"] = kwargs.get("question", "")
+        captured["system_prompt"] = kwargs.get("system_prompt", "")
+        return "Chart shows trends.", False
+
+    monkeypatch.setattr(alt_text_route, "sanitize_text_for_ai", fake_sanitize)
+    monkeypatch.setattr(alt_text_route, "gateway_chat", fake_gateway_chat)
+
+    response = client.post(
+        "/alt-text/suggest",
+        data={
+            "token": token,
+            "item_index": "0",
+            "extra_instruction": "Include owner@contoso.com exactly.",
+            "system_prompt_addon": "Prefer owner@contoso.com wording.",
+        },
+    )
+
+    assert response.status_code == 200
+    assert "[REDACTED_EMAIL]" in captured["question"]
+    assert "owner@contoso.com" not in captured["question"]
+    assert "[REDACTED_EMAIL]" in captured["system_prompt"]
+
+
+def test_audit_suggest_alt_text_sanitizes_ai_prompt(client, monkeypatch: pytest.MonkeyPatch) -> None:
+    from acb_large_print_web import ai_features
+    from acb_large_print_web import upload as upload_mod
+
+    token = str(uuid.uuid4())
+    temp_dir = upload_mod.UPLOAD_TEMP_BASE / token
+    temp_dir.mkdir(parents=True, exist_ok=True)
+    (temp_dir / "slides.pptx").write_bytes(b"PK")
+
+    monkeypatch.setattr(ai_features, "ai_alt_text_enabled", lambda: True)
+    monkeypatch.setattr(
+        "acb_large_print_web.visual_items.extract_visual_items",
+        lambda _path: [
+            {
+                "index": 0,
+                "total_items": 1,
+                "label": "Slide 1 image",
+                "mime_type": "",
+                "image_bytes": b"",
+                "context_lines": ["Contact owner@contoso.com"],
+                "current_alt_text": "",
+                "text_only": True,
+            }
+        ],
+    )
+    monkeypatch.setattr("acb_large_print_web.gating.ai_gate", lambda wait_seconds=None: __import__("contextlib").nullcontext())
+
+    def fake_sanitize(text: str, *, surface: str, strict=None):
+        return text.replace("owner@contoso.com", "[REDACTED_EMAIL]"), {"enabled": True}
+
+    captured: dict[str, str] = {}
+
+    def fake_gateway_chat(**kwargs):
+        captured["question"] = kwargs.get("question", "")
+        return "A person presenting a quarterly chart.", False
+
+    monkeypatch.setattr("acb_large_print_web.pii_guardrails.sanitize_text_for_ai", fake_sanitize)
+    monkeypatch.setattr("acb_large_print_web.ai_gateway.chat", fake_gateway_chat)
+
+    response = client.post("/audit/suggest-alt-text", data={"token": token, "image_index": "0"})
+
+    assert response.status_code == 200
+    payload = response.get_json()
+    assert payload["suggestion"]
+    assert "[REDACTED_EMAIL]" in captured["question"]
+    assert "owner@contoso.com" not in captured["question"]

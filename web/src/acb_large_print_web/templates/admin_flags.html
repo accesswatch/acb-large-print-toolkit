@@ -55,6 +55,10 @@
         <div id="meta-GLOW_ENABLE_AI_ALT_TEXT" class="field-meta">Last modified: {{ flag_meta.GLOW_ENABLE_AI_ALT_TEXT.updated_at or 'unknown' }}</div>
         <label for="flag-GLOW_ENABLE_AI_MARKITDOWN_LLM"><input id="flag-GLOW_ENABLE_AI_MARKITDOWN_LLM" class="ai-child" type="checkbox" name="GLOW_ENABLE_AI_MARKITDOWN_LLM" {% if flags.GLOW_ENABLE_AI_MARKITDOWN_LLM %}checked{% endif %}> MarkItDown LLM features</label>
         <div id="meta-GLOW_ENABLE_AI_MARKITDOWN_LLM" class="field-meta">Last modified: {{ flag_meta.GLOW_ENABLE_AI_MARKITDOWN_LLM.updated_at or 'unknown' }}</div>
+        <label for="flag-GLOW_ENABLE_PII_GUARDRAILS"><input id="flag-GLOW_ENABLE_PII_GUARDRAILS" class="ai-child" type="checkbox" name="GLOW_ENABLE_PII_GUARDRAILS" {% if flags.GLOW_ENABLE_PII_GUARDRAILS %}checked{% endif %}> Presidio PII guardrails</label>
+        <div id="meta-GLOW_ENABLE_PII_GUARDRAILS" class="field-meta">Last modified: {{ flag_meta.GLOW_ENABLE_PII_GUARDRAILS.updated_at or 'unknown' }}</div>
+        <label for="flag-GLOW_ENABLE_PII_GUARDRAILS_STRICT_MODE"><input id="flag-GLOW_ENABLE_PII_GUARDRAILS_STRICT_MODE" class="ai-child" type="checkbox" name="GLOW_ENABLE_PII_GUARDRAILS_STRICT_MODE" {% if flags.GLOW_ENABLE_PII_GUARDRAILS_STRICT_MODE %}checked{% endif %}> PII guardrails strict mode</label>
+        <div id="meta-GLOW_ENABLE_PII_GUARDRAILS_STRICT_MODE" class="field-meta">Last modified: {{ flag_meta.GLOW_ENABLE_PII_GUARDRAILS_STRICT_MODE.updated_at or 'unknown' }}</div>
       </fieldset>
     </details>
   </section>

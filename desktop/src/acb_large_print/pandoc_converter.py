@@ -6,7 +6,7 @@ Wraps the Pandoc CLI to convert text-oriented document formats into:
 - EPUB 3 e-books with embedded ACB accessibility CSS
 - PDF documents rendered from ACB HTML via WeasyPrint
 
-Supported input: .md, .rst, .odt, .rtf, .docx, .epub.
+Supported input: .md, .rst, .txt, .odt, .rtf, .docx, .epub.
 
 Pandoc is an external dependency -- not a Python package.  The module
 falls back gracefully when it is not installed.  WeasyPrint is an
@@ -30,6 +30,7 @@ log = logging.getLogger("acb_large_print")
 PANDOC_INPUT_EXTENSIONS: set[str] = {
     ".md",  # Markdown (GFM)
     ".rst",  # reStructuredText
+    ".txt",  # Plain text
     ".odt",  # OpenDocument Text
     ".fodt",  # Flat OpenDocument Text
     ".rtf",  # Rich Text Format
@@ -41,6 +42,7 @@ PANDOC_INPUT_EXTENSIONS: set[str] = {
 _INPUT_FORMAT: dict[str, str] = {
     ".md": "gfm",
     ".rst": "rst",
+    ".txt": "markdown",
     ".odt": "odt",
     ".fodt": "odt",
     ".rtf": "rtf",
@@ -822,6 +824,8 @@ def convert_to_pdf(
 
 # LibreOffice-native formats that should be pre-converted before MarkItDown.
 LIBREOFFICE_CONVERSIONS: dict[str, str] = {
+    ".doc": ".docx",
+    ".ppt": ".pptx",
     ".ods": ".xlsx",
     ".fods": ".xlsx",
     ".odp": ".pptx",

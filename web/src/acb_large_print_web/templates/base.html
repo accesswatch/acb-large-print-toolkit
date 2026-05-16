@@ -204,7 +204,7 @@
         {% endif %}
 
         <!-- ── Group 5: Explore and Learn ─────────────────────────── -->
-        <li class="sidebar-group sidebar-group--explore{% if request.blueprint in ['ai', 'chat', 'alt_text', 'guidelines', 'rules_ref', 'guide', 'faq', 'settings'] %} sidebar-group--active{% endif %}">
+        <li class="sidebar-group sidebar-group--explore{% if request.blueprint in ['ai', 'chat', 'alt_text', 'guidelines', 'rules_ref', 'guide', 'faq', 'settings', 'workshop'] %} sidebar-group--active{% endif %}">
           <span class="sidebar-group-label" id="nav-group-explore">Explore and Learn</span>
           <ul aria-labelledby="nav-group-explore" role="list">
             {% if ai_entry_enabled %}
@@ -269,6 +269,16 @@
                 Settings
               </a>
             </li>
+            {% if feature_workshop_mode_enabled %}
+            <li>
+              <a href="{{ url_for('workshop.workshop_home') }}"
+                 class="sidebar-link{% if request.blueprint == 'workshop' %} sidebar-link--active{% endif %}"
+                 {% if request.blueprint == 'workshop' %}aria-current="page"{% endif %}>
+                <svg class="nav-icon" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M2 3h12v10H2z" stroke="currentColor" stroke-width="1.8" fill="none"/><path d="M4 5h8M4 8h5M4 11h3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+                Workshop Follow-Through
+              </a>
+            </li>
+            {% endif %}
           </ul>
         </li>
 
@@ -286,16 +296,6 @@
                  {% if request.blueprint == 'playground' %}aria-current="page"{% endif %}>
                 <svg class="nav-icon" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><circle cx="8" cy="8" r="3" fill="currentColor"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.2 3.2l1.4 1.4M11.4 11.4l1.4 1.4M12.8 3.2l-1.4 1.4M4.6 11.4l-1.4 1.4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
                 AI Playground
-              </a>
-            </li>
-            {% endif %}
-            {% if feature_workshop_mode_enabled %}
-            <li>
-              <a href="{{ url_for('workshop.workshop_home') }}"
-                 class="sidebar-link{% if request.blueprint == 'workshop' %} sidebar-link--active{% endif %}"
-                 {% if request.blueprint == 'workshop' %}aria-current="page"{% endif %}>
-                <svg class="nav-icon" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M2 3h12v10H2z" stroke="currentColor" stroke-width="1.8" fill="none"/><path d="M4 5h8M4 8h5M4 11h3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
-                Workshop Follow-Through
               </a>
             </li>
             {% endif %}
@@ -344,6 +344,14 @@
         </section>
         {% endif %}
         {% endwith %}
+
+        {% set workshop_return = request.args.get('workshop_return', '') %}
+        {% set workshop_participant = request.cookies.get('glow_workshop_participant', '') %}
+        {% if workshop_participant and workshop_return and workshop_return.startswith('/workshop/session/') %}
+        <section class="notice-box" role="note" aria-label="Workshop return">
+          <p><strong>Workshop flow:</strong> <a href="{{ workshop_return }}">{{ request.args.get('workshop_label', 'Return to Workshop') }}</a></p>
+        </section>
+        {% endif %}
 
         {% block content %}{% endblock %}
       </main>

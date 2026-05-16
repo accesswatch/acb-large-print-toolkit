@@ -439,8 +439,9 @@
 <li>
 <p><strong>AI Playground (Beta)</strong> is a standalone chat surface where you can explore compatible personal-provider models, ask questions, and test model behavior before using AI in real accessibility workflows. It includes streaming responses, regenerate/stop controls, prompt templates, a quota status banner, Markdown export, and delayed screen reader announcements for in-progress and completed long-running replies.</p>
 </li>
+<li><strong>Alt-Text Helper</strong> drafts editable alternative text for images, charts, slide visuals, rendered PDF pages, and other extracted visual items. It uses the alt-text model binding from AI Features and appends file-specific context automatically.</li>
 <li>
-<p><strong>Alt-Text Helper</strong> drafts editable alternative text for images, charts, slide visuals, rendered PDF pages, and other extracted visual items. It uses the alt-text model binding from AI Features and appends file-specific context automatically.</p>
+<p><strong>PII guardrails for AI requests</strong> are enabled by default. Before AI calls, GLOW can detect and redact sensitive text (for example emails, phone numbers, and account-style identifiers) in chat prompts and alt-text prompt context.</p>
 </li>
 <li>
 <p><strong>Usage tracking</strong> shows session-level request counts so you can see what you used while you were in GLOW.</p>
@@ -1142,6 +1143,7 @@ acb-lp detect-headings document.docx --ai --ai-prompt prompt.txt --threshold 75
 <hr />
 <h2 id="6-how-to-convert-between-formats">6. How to Convert Between Formats</h2>
 <p>The Convert page offers conversion directions powered by different engines. Starting in 2.7.0, PowerPoint (.pptx), Excel (.xlsx/.xls), PDF (.pdf), HTML, CSV, JSON, and XML files can be converted directly to accessible HTML, Word, EPUB, and PDF -- no manual intermediate step required. GLOW uses a smart two-stage process: MarkItDown extracts the content to Markdown, then Pandoc applies full ACB Large Print formatting. This happens transparently when you upload one of these file types and choose an output format.</p>
+<p>Long-running Convert actions now use a unified job model with live progress plus explicit <strong>Cancel</strong> and <strong>Retry</strong> controls. Jobs also run with a server-side deadline and bounded retry attempts so status behavior is predictable for users and operators.</p>
 <h3 id="to-markdown-plain-text-extraction">To Markdown (plain text extraction)</h3>
 <p><strong>Engine:</strong> Microsoft MarkItDown</p>
 <p>Extracts readable text from any supported file. Good for feeding documents into AI tools, creating editable starting points, or getting content you can clean up and re-convert.</p>
@@ -1559,6 +1561,12 @@ acb-lp detect-headings document.docx --ai --ai-prompt prompt.txt --threshold 75
 </ul>
 <h3 id="accessibility-and-privacy">Accessibility and privacy</h3>
 <p>Conversation history is organized by heading-based turns for screen reader navigation. All controls are keyboard accessible. No JavaScript is required for core chat usage. Sessions use GLOW's AI gateway and follow the same 1-hour retention policy for uploaded documents.</p>
+<p>For AI-bound text, GLOW can apply Presidio-based preflight redaction before model calls. This is controlled by feature flags:</p>
+<ul>
+<li><code>GLOW_ENABLE_PII_GUARDRAILS</code> (default: enabled)</li>
+<li><code>GLOW_ENABLE_PII_GUARDRAILS_STRICT_MODE</code> (default: enabled)</li>
+</ul>
+<p>When strict mode is enabled and the guardrail engine is unavailable, the AI request is blocked instead of sending unredacted text.</p>
 <hr />
 <h2 id="12-settings">12. Settings</h2>
 <p>The <strong>Settings</strong> tab lets you configure default values once and apply them across every workflow.</p>
@@ -1914,6 +1922,8 @@ acb-lp detect-headings document.docx --ai --ai-prompt prompt.txt --threshold 75
 <li>GLOW creates a job status page immediately.</li>
 <li>The status page updates live with crawl progress and page currently being scanned.</li>
 <li>You can click <strong>Cancel crawl</strong> at any time.</li>
+<li>Failed or cancelled runs can show <strong>Retry crawl</strong> when retry budget remains.</li>
+<li>Jobs stop automatically when their configured deadline is reached.</li>
 <li>When complete, open the result page directly from the job status view.</li>
 </ol>
 <h3 id="protected-private-runs">Protected private runs</h3>

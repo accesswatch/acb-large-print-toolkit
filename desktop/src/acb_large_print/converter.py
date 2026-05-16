@@ -1,8 +1,8 @@
 """Convert documents and remote sources to Markdown using MarkItDown.
 
 Wraps Microsoft's MarkItDown library for document-to-markdown conversion.
-Supports: .docx, .xlsx, .xls, .pptx, .pdf, .html, .csv, .json, .xml,
-.epub, .zip, .msg, common image formats, and HTTP(S) sources such as web pages
+Supports: .docx, .doc, .xlsx, .xls, .pptx, .ppt, .txt, .pdf, .html, .csv,
+.json, .xml, .epub, .zip, .msg, common image formats, and HTTP(S) sources such as web pages
 and YouTube transcript URLs.
 
 Audio transcription (.mp3, .wav, .m4a, .ogg, .flac, .aac, .opus) is handled
@@ -46,9 +46,12 @@ MARKITDOWN_AUDIO_EXTENSIONS = {".mp3", ".wav"}
 # File extensions MarkItDown can convert locally.
 CONVERTIBLE_EXTENSIONS = {
     ".docx",
+    ".doc",
     ".xlsx",
     ".xls",
     ".pptx",
+    ".ppt",
+    ".txt",
     ".pdf",
     ".html",
     ".htm",
@@ -468,6 +471,21 @@ def convert_to_markdown(
         output_path = Path(output_path)
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    # Pre-convert legacy binary Office formats to OOXML when LibreOffice is
+    # available. If pre-conversion is unavailable or fails, MarkItDown handles
+    # the original file directly.
+    if ext in {".doc", ".ppt"}:
+        try:
+            from .pandoc_converter import preconvert_via_libreoffice
+        except Exception:
+            preconverted = None
+        else:
+            target_ext = ".docx" if ext == ".doc" else ".pptx"
+            preconverted = preconvert_via_libreoffice(src_path, target_ext, src_path.parent)
+        if preconverted is not None:
+            src_path = preconverted
+            ext = src_path.suffix.lower()
 
     # For PDFs, attempt table-aware extraction via PyMuPDF first.
     # This preserves table structure as Markdown pipe tables so that downstream

@@ -14,6 +14,7 @@
     <tbody>
       <tr><th scope="row">State</th><td><span id="job-state">{{ job.status }}</span></td></tr>
       <tr><th scope="row">Progress</th><td><span id="job-progress">{{ job.progress }}</span>%</td></tr>
+      <tr><th scope="row">Attempt</th><td><span id="job-attempt">{{ job.attempt }}</span> / <span id="job-max-attempts">{{ job.max_attempts }}</span></td></tr>
       <tr><th scope="row">Message</th><td><span id="job-message">{{ job.message }}</span></td></tr>
       {% if job.error %}
       <tr><th scope="row">Error</th><td>{{ job.error }}</td></tr>
@@ -33,7 +34,12 @@
   <form method="post" action="{{ url_for('site_audit.site_audit_job_cancel', job_id=job_id) }}">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <input type="hidden" name="access" value="{{ access }}">
-    <button type="submit" class="btn-secondary">Cancel crawl</button>
+    <button id="job-cancel-btn" type="submit" class="btn-secondary">Cancel crawl</button>
+  </form>
+  <form method="post" action="{{ url_for('site_audit.site_audit_job_retry', job_id=job_id) }}" id="job-retry-form" {% if not job.retryable %}hidden{% endif %}>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input type="hidden" name="access" value="{{ access }}">
+    <button id="job-retry-btn" type="submit" class="btn-primary">Retry crawl</button>
   </form>
   <p><a id="result-link" class="btn-primary" href="{{ url_for('site_audit.site_audit_run', run_id=run_id, access=access) }}">Open run results</a></p>
 </div>
@@ -43,7 +49,11 @@
   var stateEl = document.getElementById('job-state');
   var progressEl = document.getElementById('job-progress');
   var messageEl = document.getElementById('job-message');
+  var attemptEl = document.getElementById('job-attempt');
+  var maxAttemptsEl = document.getElementById('job-max-attempts');
   var statusUrlEl = document.getElementById('job-status-url');
+  var retryForm = document.getElementById('job-retry-form');
+  var cancelBtn = document.getElementById('job-cancel-btn');
   var pollUrl = statusUrlEl ? statusUrlEl.value : '';
 
   function poll() {
@@ -53,6 +63,12 @@
         if (stateEl) stateEl.textContent = data.status || '';
         if (progressEl) progressEl.textContent = String(data.progress || 0);
         if (messageEl) messageEl.textContent = data.message || '';
+        if (attemptEl) attemptEl.textContent = String(data.attempt || 0);
+        if (maxAttemptsEl) maxAttemptsEl.textContent = String(data.max_attempts || 1);
+        if (retryForm) retryForm.hidden = !data.retryable;
+        if (cancelBtn && (data.status === 'complete' || data.status === 'cancelled' || data.status === 'failed')) {
+          cancelBtn.disabled = true;
+        }
         if (data.status === 'complete' || data.status === 'cancelled' || data.status === 'failed') {
           return;
         }

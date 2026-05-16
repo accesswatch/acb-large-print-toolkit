@@ -16,6 +16,7 @@ from typing import Any
 from flask import Blueprint, Response, abort, current_app, jsonify, redirect, render_template, request, send_file, session, url_for
 from werkzeug.security import check_password_hash, generate_password_hash
 
+from ..async_orchestration import deadline_exceeded, load_policy
 from ..feature_flags import get_flag
 from ..site_audit import SiteAuditOptions, get_run_dir, parse_input_urls, run_site_audit
 
@@ -41,6 +42,12 @@ class _SiteAuditJob:
     access_password_hash: str | None = None
     access_expires_at: datetime | None = None
     cancel_event: threading.Event | None = None
+    attempt: int = 0
+    max_attempts: int = 1
+    deadline_at: float | None = None
+    retryable: bool = False
+    sources: tuple[str, ...] = ()
+    options: SiteAuditOptions | None = None
 
 
 _jobs: dict[str, _SiteAuditJob] = {}
@@ -131,45 +138,82 @@ def _enforce_run_access(run_id: str, *, allow_unlock_form: bool = True):
 
 def _start_site_audit_job(*, job: _SiteAuditJob, sources: list[str], options: SiteAuditOptions) -> None:
     def _worker() -> None:
-        with _jobs_lock:
-            job.status = "running"
-            job.message = "Crawl and scan in progress"
-            job.started_at = datetime.now(UTC)
-
-        def _is_cancelled() -> bool:
-            return bool(job.cancel_event and job.cancel_event.is_set())
-
-        def _progress(current: int, total: int, url: str) -> None:
-            pct = int((current / max(total, 1)) * 100)
+        for attempt in range(job.attempt + 1, job.max_attempts + 1):
             with _jobs_lock:
-                job.progress = max(0, min(100, pct))
-                job.message = f"Scanning {current}/{total}: {url}"
+                job.attempt = attempt
+                job.status = "running"
+                job.retryable = attempt < job.max_attempts
+                job.message = "Crawl and scan in progress"
+                job.started_at = datetime.now(UTC)
+                job.error = None
 
-        try:
-            summary = run_site_audit(
-                run_id=job.run_id,
-                base_dir=_runs_root(),
-                sources=sources,
-                options=options,
-                is_cancelled=_is_cancelled,
-                progress_callback=_progress,
-            )
-            with _jobs_lock:
-                job.summary = summary
-                job.cancelled = bool(summary.get("cancelled"))
-                job.status = "cancelled" if job.cancelled else "complete"
-                job.progress = 100
-                job.message = "Scan cancelled" if job.cancelled else "Scan complete"
-                job.completed_at = datetime.now(UTC)
-        except Exception as exc:
-            with _jobs_lock:
-                job.status = "failed"
-                job.error = str(exc)
-                job.message = "Scan failed"
-                job.completed_at = datetime.now(UTC)
+            def _is_cancelled() -> bool:
+                if deadline_exceeded(job.deadline_at):
+                    return True
+                return bool(job.cancel_event and job.cancel_event.is_set())
+
+            def _progress(current: int, total: int, url: str) -> None:
+                if _is_cancelled():
+                    return
+                pct = int((current / max(total, 1)) * 100)
+                with _jobs_lock:
+                    job.progress = max(0, min(100, pct))
+                    job.message = f"Scanning {current}/{total}: {url}"
+
+            if deadline_exceeded(job.deadline_at):
+                with _jobs_lock:
+                    job.status = "failed"
+                    job.retryable = False
+                    job.error = "Job exceeded deadline."
+                    job.message = "Scan timed out"
+                    job.completed_at = datetime.now(UTC)
+                return
+
+            try:
+                summary = run_site_audit(
+                    run_id=job.run_id,
+                    base_dir=_runs_root(),
+                    sources=sources,
+                    options=options,
+                    is_cancelled=_is_cancelled,
+                    progress_callback=_progress,
+                )
+                with _jobs_lock:
+                    job.summary = summary
+                    job.cancelled = bool(summary.get("cancelled"))
+                    job.status = "cancelled" if job.cancelled else "complete"
+                    job.progress = 100
+                    job.retryable = bool(job.cancelled and attempt < job.max_attempts and not deadline_exceeded(job.deadline_at))
+                    job.message = "Scan cancelled" if job.cancelled else "Scan complete"
+                    job.completed_at = datetime.now(UTC)
+                return
+            except Exception as exc:
+                if attempt < job.max_attempts and not deadline_exceeded(job.deadline_at):
+                    with _jobs_lock:
+                        job.status = "retrying"
+                        job.message = f"Retrying scan ({attempt}/{job.max_attempts})"
+                        job.error = str(exc)
+                    continue
+                with _jobs_lock:
+                    job.status = "failed"
+                    job.retryable = False
+                    job.error = str(exc)
+                    job.message = "Scan failed"
+                    job.completed_at = datetime.now(UTC)
+                return
 
     thread = threading.Thread(target=_worker, daemon=True)
     thread.start()
+
+
+def _can_retry(job: _SiteAuditJob) -> bool:
+    if job.status not in {"failed", "cancelled"}:
+        return False
+    if job.attempt >= job.max_attempts:
+        return False
+    if deadline_exceeded(job.deadline_at):
+        return False
+    return True
 
 
 @site_audit_bp.route("/", methods=["GET"])
@@ -260,6 +304,7 @@ def site_audit_submit():
         _write_access_metadata(run_id, access_token_hash, access_password_hash, access_expires_at)
 
     if run_in_background:
+        policy = load_policy("SITE_AUDIT")
         job_id = str(uuid.uuid4())
         job = _SiteAuditJob(
             job_id=job_id,
@@ -270,6 +315,10 @@ def site_audit_submit():
             access_password_hash=access_password_hash,
             access_expires_at=access_expires_at,
             cancel_event=threading.Event(),
+            max_attempts=policy.max_attempts,
+            deadline_at=policy.deadline_at,
+            sources=tuple(urls),
+            options=options,
         )
         with _jobs_lock:
             _jobs[job_id] = job
@@ -341,6 +390,9 @@ def site_audit_job_status(job_id: str):
             "message": job.message,
             "error": job.error,
             "cancelled": job.cancelled,
+            "attempt": job.attempt,
+            "max_attempts": job.max_attempts,
+            "retryable": _can_retry(job),
             "result_url": url_for("site_audit.site_audit_run", run_id=job.run_id, access=token),
         }
     )
@@ -362,10 +414,48 @@ def site_audit_job_cancel(job_id: str):
     if job.cancel_event:
         job.cancel_event.set()
     with _jobs_lock:
-        if job.status in {"queued", "running"}:
+        if job.status in {"queued", "running", "retrying"}:
             job.status = "cancelled"
             job.message = "Cancellation requested"
             job.cancelled = True
+
+    return redirect(url_for("site_audit.site_audit_job", job_id=job_id, access=token))
+
+
+@site_audit_bp.route("/jobs/<job_id>/retry", methods=["POST"])
+def site_audit_job_retry(job_id: str):
+    if not _enabled():
+        abort(404)
+    with _jobs_lock:
+        job = _jobs.get(job_id)
+    if not job:
+        abort(404)
+
+    token = _access_token_from_request()
+    if job.access_token_hash and (not token or not hmac.compare_digest(_hash_token(token), job.access_token_hash)):
+        abort(403)
+
+    if _can_retry(job):
+        with _jobs_lock:
+            job.cancelled = False
+            job.status = "queued"
+            job.progress = 0
+            job.message = "Queued for retry"
+            job.error = None
+            if job.cancel_event:
+                job.cancel_event.clear()
+        summary_path = (_runs_root() / job.run_id) / "summary.json"
+        if summary_path.exists():
+            summary_path.unlink()
+        try:
+            if not job.options or not job.sources:
+                raise RuntimeError("Retry metadata missing")
+            _start_site_audit_job(job=job, sources=list(job.sources), options=job.options)
+        except Exception:
+            with _jobs_lock:
+                job.status = "failed"
+                job.error = "Unable to retry this job."
+                job.message = "Scan failed"
 
     return redirect(url_for("site_audit.site_audit_job", job_id=job_id, access=token))
 

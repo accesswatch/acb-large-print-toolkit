@@ -8,7 +8,9 @@ environments without additional infrastructure.
 from __future__ import annotations
 
 import json
+import os
 import re
+import secrets
 import sqlite3
 from datetime import datetime, timezone
 from html import escape
@@ -53,12 +55,36 @@ def _ensure_schema(conn: sqlite3.Connection) -> None:
         " id INTEGER PRIMARY KEY AUTOINCREMENT,"
         " session_code TEXT NOT NULL,"
         " activity_key TEXT NOT NULL,"
+        " participant_key TEXT,"
         " display_name TEXT NOT NULL,"
         " anonymity_mode INTEGER NOT NULL DEFAULT 0,"
         " content_text TEXT NOT NULL,"
         " created_at_utc TEXT NOT NULL,"
         " updated_at_utc TEXT NOT NULL,"
         " FOREIGN KEY(session_code) REFERENCES workshop_sessions(session_code)"
+        ")"
+    )
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS workshop_participants ("
+        " participant_key TEXT PRIMARY KEY,"
+        " session_code TEXT NOT NULL,"
+        " display_name TEXT NOT NULL,"
+        " login_email TEXT,"
+        " created_at_utc TEXT NOT NULL,"
+        " updated_at_utc TEXT NOT NULL,"
+        " last_seen_at_utc TEXT NOT NULL,"
+        " FOREIGN KEY(session_code) REFERENCES workshop_sessions(session_code)"
+        ")"
+    )
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS workshop_conference_codes ("
+        " access_code TEXT PRIMARY KEY,"
+        " session_code TEXT NOT NULL,"
+        " session_title TEXT NOT NULL,"
+        " event_name TEXT,"
+        " active INTEGER NOT NULL DEFAULT 1,"
+        " created_at_utc TEXT NOT NULL,"
+        " updated_at_utc TEXT NOT NULL"
         ")"
     )
     conn.execute(
@@ -92,6 +118,22 @@ def _ensure_schema(conn: sqlite3.Connection) -> None:
         " FOREIGN KEY(session_code) REFERENCES workshop_sessions(session_code),"
         " FOREIGN KEY(source_submission_id) REFERENCES workshop_submissions(id)"
         ")"
+    )
+    # Schema evolution for existing deployments.
+    cols = [str(r["name"]) for r in conn.execute("PRAGMA table_info(workshop_submissions)").fetchall()]
+    if "participant_key" not in cols:
+        conn.execute("ALTER TABLE workshop_submissions ADD COLUMN participant_key TEXT")
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_workshop_submissions_session_activity "
+        "ON workshop_submissions(session_code, activity_key)"
+    )
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_workshop_submissions_participant "
+        "ON workshop_submissions(session_code, participant_key, updated_at_utc)"
+    )
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_workshop_conference_codes_session "
+        "ON workshop_conference_codes(session_code, active)"
     )
     conn.commit()
 
@@ -131,15 +173,25 @@ def save_submission(
     display_name: str,
     content_text: str,
     *,
+    participant_key: str | None = None,
     anonymity_mode: bool = False,
 ) -> int:
     code = normalize_session_code(session_code)
     now = _utc_now()
     conn = _conn()
     cur = conn.execute(
-        "INSERT INTO workshop_submissions (session_code, activity_key, display_name, anonymity_mode, content_text, created_at_utc, updated_at_utc) "
-        "VALUES (?, ?, ?, ?, ?, ?, ?)",
-        (code, activity_key, (display_name or "Participant").strip() or "Participant", int(bool(anonymity_mode)), content_text, now, now),
+        "INSERT INTO workshop_submissions (session_code, activity_key, participant_key, display_name, anonymity_mode, content_text, created_at_utc, updated_at_utc) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+        (
+            code,
+            activity_key,
+            (participant_key or "").strip() or None,
+            (display_name or "Participant").strip() or "Participant",
+            int(bool(anonymity_mode)),
+            content_text,
+            now,
+            now,
+        ),
     )
     conn.commit()
     new_id = int(cur.lastrowid)
@@ -152,18 +204,224 @@ def list_submissions(session_code: str, *, activity_key: str | None = None) -> l
     conn = _conn()
     if activity_key:
         rows = conn.execute(
-            "SELECT id, session_code, activity_key, display_name, anonymity_mode, content_text, created_at_utc, updated_at_utc "
+            "SELECT id, session_code, activity_key, participant_key, display_name, anonymity_mode, content_text, created_at_utc, updated_at_utc "
             "FROM workshop_submissions WHERE session_code=? AND activity_key=? ORDER BY updated_at_utc DESC",
             (code, activity_key),
         ).fetchall()
     else:
         rows = conn.execute(
-            "SELECT id, session_code, activity_key, display_name, anonymity_mode, content_text, created_at_utc, updated_at_utc "
+            "SELECT id, session_code, activity_key, participant_key, display_name, anonymity_mode, content_text, created_at_utc, updated_at_utc "
             "FROM workshop_submissions WHERE session_code=? ORDER BY updated_at_utc DESC",
             (code,),
         ).fetchall()
     conn.close()
     return [dict(r) for r in rows]
+
+
+def list_submissions_for_participant(session_code: str, participant_key: str) -> list[dict]:
+    code = normalize_session_code(session_code)
+    key = (participant_key or "").strip()
+    if not key:
+        return []
+    conn = _conn()
+    rows = conn.execute(
+        "SELECT id, session_code, activity_key, participant_key, display_name, anonymity_mode, content_text, created_at_utc, updated_at_utc "
+        "FROM workshop_submissions WHERE session_code=? AND participant_key=? ORDER BY updated_at_utc DESC",
+        (code, key),
+    ).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+
+def create_or_update_participant(
+    session_code: str,
+    display_name: str,
+    *,
+    participant_key: str | None = None,
+    login_email: str | None = None,
+) -> dict:
+    code = normalize_session_code(session_code)
+    name = (display_name or "Participant").strip() or "Participant"
+    key = (participant_key or "").strip() or secrets.token_urlsafe(24)
+    now = _utc_now()
+    email = (login_email or "").strip() or None
+    conn = _conn()
+    row = conn.execute(
+        "SELECT participant_key, session_code, display_name, login_email, created_at_utc, updated_at_utc, last_seen_at_utc "
+        "FROM workshop_participants WHERE participant_key=?",
+        (key,),
+    ).fetchone()
+    if row and str(row["session_code"]) == code:
+        conn.execute(
+            "UPDATE workshop_participants SET display_name=?, login_email=COALESCE(?, login_email), updated_at_utc=?, last_seen_at_utc=? "
+            "WHERE participant_key=?",
+            (name, email, now, now, key),
+        )
+    elif row:
+        # Prevent cross-session token reuse; issue new token.
+        key = secrets.token_urlsafe(24)
+        conn.execute(
+            "INSERT INTO workshop_participants (participant_key, session_code, display_name, login_email, created_at_utc, updated_at_utc, last_seen_at_utc) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (key, code, name, email, now, now, now),
+        )
+    else:
+        conn.execute(
+            "INSERT INTO workshop_participants (participant_key, session_code, display_name, login_email, created_at_utc, updated_at_utc, last_seen_at_utc) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (key, code, name, email, now, now, now),
+        )
+    conn.commit()
+    out = conn.execute(
+        "SELECT participant_key, session_code, display_name, login_email, created_at_utc, updated_at_utc, last_seen_at_utc "
+        "FROM workshop_participants WHERE participant_key=?",
+        (key,),
+    ).fetchone()
+    conn.close()
+    return dict(out) if out else {"participant_key": key, "session_code": code, "display_name": name}
+
+
+def get_participant(participant_key: str) -> dict | None:
+    key = (participant_key or "").strip()
+    if not key:
+        return None
+    conn = _conn()
+    row = conn.execute(
+        "SELECT participant_key, session_code, display_name, login_email, created_at_utc, updated_at_utc, last_seen_at_utc "
+        "FROM workshop_participants WHERE participant_key=?",
+        (key,),
+    ).fetchone()
+    if row:
+        conn.execute(
+            "UPDATE workshop_participants SET last_seen_at_utc=?, updated_at_utc=? WHERE participant_key=?",
+            (_utc_now(), _utc_now(), key),
+        )
+        conn.commit()
+    conn.close()
+    return dict(row) if row else None
+
+
+def bind_participant_login(participant_key: str, login_email: str) -> None:
+    key = (participant_key or "").strip()
+    email = (login_email or "").strip()
+    if not key or not email:
+        return
+    conn = _conn()
+    conn.execute(
+        "UPDATE workshop_participants SET login_email=?, updated_at_utc=?, last_seen_at_utc=? WHERE participant_key=?",
+        (email, _utc_now(), _utc_now(), key),
+    )
+    conn.commit()
+    conn.close()
+
+
+def upsert_conference_code(
+    access_code: str,
+    *,
+    session_code: str,
+    session_title: str,
+    event_name: str = "",
+    active: bool = True,
+) -> None:
+    access = (access_code or "").strip().upper()
+    if not access:
+        raise ValueError("Conference access code is required.")
+    code = normalize_session_code(session_code)
+    title = (session_title or "GLOW Workshop Session").strip() or "GLOW Workshop Session"
+    event = (event_name or "").strip()
+    now = _utc_now()
+    ensure_session(code, title=title, event_name=event)
+    conn = _conn()
+    conn.execute(
+        "INSERT INTO workshop_conference_codes (access_code, session_code, session_title, event_name, active, created_at_utc, updated_at_utc) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?) "
+        "ON CONFLICT(access_code) DO UPDATE SET "
+        "session_code=excluded.session_code, session_title=excluded.session_title, event_name=excluded.event_name, active=excluded.active, updated_at_utc=excluded.updated_at_utc",
+        (access, code, title, event, int(bool(active)), now, now),
+    )
+    conn.commit()
+    conn.close()
+
+
+def get_conference_code(access_code: str) -> dict | None:
+    access = (access_code or "").strip().upper()
+    if not access:
+        return None
+    conn = _conn()
+    row = conn.execute(
+        "SELECT access_code, session_code, session_title, event_name, active, created_at_utc, updated_at_utc "
+        "FROM workshop_conference_codes WHERE access_code=? AND active=1",
+        (access,),
+    ).fetchone()
+    conn.close()
+    return dict(row) if row else None
+
+
+def load_conference_codes_from_file() -> int:
+    """Load conference access code mappings from instance/workshop_conference_codes.json."""
+    p = Path(current_app.instance_path) / "workshop_conference_codes.json"
+    if not p.exists():
+        return 0
+    try:
+        payload = json.loads(p.read_text(encoding="utf-8"))
+    except Exception:
+        return 0
+    if not isinstance(payload, list):
+        return 0
+
+    count = 0
+    for item in payload:
+        if not isinstance(item, dict):
+            continue
+        access = (str(item.get("access_code", "")) or "").strip()
+        session_code = (str(item.get("session_code", "")) or "").strip()
+        if not access or not session_code:
+            continue
+        try:
+            upsert_conference_code(
+                access,
+                session_code=session_code,
+                session_title=(str(item.get("session_title", "GLOW Workshop Session")) or "").strip() or "GLOW Workshop Session",
+                event_name=(str(item.get("event_name", "")) or "").strip(),
+                active=bool(item.get("active", True)),
+            )
+            count += 1
+        except Exception:
+            continue
+    return count
+
+
+def load_conference_codes_from_env() -> int:
+    """Load mappings from WORKSHOP_CONFERENCE_CODES_JSON env var (JSON list)."""
+    raw = os.environ.get("WORKSHOP_CONFERENCE_CODES_JSON", "").strip()
+    if not raw:
+        return 0
+    try:
+        payload = json.loads(raw)
+    except Exception:
+        return 0
+    if not isinstance(payload, list):
+        return 0
+    count = 0
+    for item in payload:
+        if not isinstance(item, dict):
+            continue
+        access = (str(item.get("access_code", "")) or "").strip()
+        session_code = (str(item.get("session_code", "")) or "").strip()
+        if not access or not session_code:
+            continue
+        try:
+            upsert_conference_code(
+                access,
+                session_code=session_code,
+                session_title=(str(item.get("session_title", "GLOW Workshop Session")) or "").strip() or "GLOW Workshop Session",
+                event_name=(str(item.get("event_name", "")) or "").strip(),
+                active=bool(item.get("active", True)),
+            )
+            count += 1
+        except Exception:
+            continue
+    return count
 
 
 def add_feedback(

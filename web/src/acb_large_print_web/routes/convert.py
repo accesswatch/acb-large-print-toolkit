@@ -33,6 +33,9 @@ from acb_large_print.converter import (
     MARKITDOWN_AUDIO_EXTENSIONS,
     convert_to_markdown,
 )
+from acb_large_print.wcag_language import (
+    analyze_text_for_wcag_language,
+)
 from acb_large_print.exporter import export_cms_fragment
 from acb_large_print.pandoc_converter import (
     PANDOC_INPUT_EXTENSIONS,
@@ -73,6 +76,9 @@ _MARKITDOWN_AUDIO_MAX_MINUTES = float(os.environ.get("GLOW_MARKITDOWN_AUDIO_MAX_
 # Sentinel path used to signal "skip ACB CSS" to pandoc_converter
 _NO_ACB_CSS_SENTINEL = Path("__no_acb_css__")
 _ASYNC_CONVERT_ENABLED = os.environ.get("GLOW_CONVERT_ASYNC", "1") == "1"
+_WCAG_LANGUAGE_STAGE_VALUES = {"off", "input", "output", "both"}
+_WCAG_LANGUAGE_ENFORCEMENT_VALUES = {"advisory", "strict"}
+_WCAG_LANGUAGE_TEXT_EXTENSIONS = {".md", ".rst", ".txt", ".html", ".htm", ".csv", ".json", ".xml"}
 
 
 def pipeline_available() -> bool:
@@ -147,6 +153,8 @@ def convert_preview(token: str, filename: str):
 # but are worth chaining via Markdown (excludes .zip and image formats).
 # These get a two-stage conversion: MarkItDown → .md → Pandoc.
 _CHAIN_VIA_MARKDOWN: frozenset[str] = frozenset({
+    ".doc",   # Word (legacy binary)
+    ".ppt",   # PowerPoint (legacy binary)
     ".pptx",  # PowerPoint
     ".xlsx",  # Excel
     ".xls",   # Excel (legacy)
@@ -191,6 +199,7 @@ def _convert_result_response(
     preview_type: str,
     original_stem: str,
     cms_content: str | None = None,
+    language_reports: list[dict[str, object]] | None = None,
 ):
     """Render the shared convert_result.html for a finished conversion.
 
@@ -206,7 +215,61 @@ def _convert_result_response(
         original_stem=original_stem,
         cms_content=cms_content,
         auditable_output=_is_auditable_output(download_name),
+        language_reports=language_reports or [],
     )
+
+
+def _coerce_language_stage(raw_value: str | None, *, enabled: bool) -> str:
+    if not enabled:
+        return "off"
+    value = (raw_value or "output").strip().lower()
+    if value not in _WCAG_LANGUAGE_STAGE_VALUES:
+        return "output"
+    return value
+
+
+def _coerce_language_enforcement(raw_value: str | None, *, strict_enabled: bool) -> str:
+    value = (raw_value or "advisory").strip().lower()
+    if value not in _WCAG_LANGUAGE_ENFORCEMENT_VALUES:
+        return "advisory"
+    if value == "strict" and not strict_enabled:
+        return "advisory"
+    return value
+
+
+def _extract_text_for_wcag_language(path: Path, temp_dir: Path) -> str:
+    ext = path.suffix.lower()
+    if ext in _WCAG_LANGUAGE_TEXT_EXTENSIONS:
+        return path.read_text(encoding="utf-8", errors="ignore")
+    extracted_path = temp_dir / f"{path.stem}-wcag-language.md"
+    _md_path, text = convert_to_markdown(path, output_path=extracted_path)
+    return text
+
+
+def _run_wcag_language_stage(stage: str, path: Path, temp_dir: Path) -> dict[str, object]:
+    text = _extract_text_for_wcag_language(path, temp_dir)
+    report = analyze_text_for_wcag_language(text, stage=stage)
+    return report.to_dict()
+
+
+def _format_wcag_language_error(report_dict: dict[str, object]) -> str:
+    findings = report_dict.get("findings")
+    stage = str(report_dict.get("stage") or "output")
+    if not isinstance(findings, list):
+        return f"WCAG language processing ({stage}) found blocking issues."
+    report_text_lines = [f"WCAG language processing ({stage}) found blocking issue(s):"]
+    for item in findings[:4]:
+        if not isinstance(item, dict):
+            continue
+        wcag = str(item.get("wcag") or "").strip()
+        wcag_label = f"WCAG {wcag}" if wcag else "WCAG"
+        report_text_lines.append(
+            f"- {item.get('rule_id', 'WCAG-LANGUAGE')} ({wcag_label}): {item.get('message', 'Issue detected.')}"
+        )
+    remaining = max(0, int(report_dict.get("total", 0)) - 4)
+    if remaining:
+        report_text_lines.append(f"- ...and {remaining} more.")
+    return "\n".join(report_text_lines)
 
 
 def _template_context(**extra):
@@ -220,6 +283,8 @@ def _template_context(**extra):
     convert_to_epub_enabled = bool(all_flags.get("GLOW_ENABLE_CONVERT_TO_EPUB", True))
     convert_to_pdf_enabled = bool(all_flags.get("GLOW_ENABLE_CONVERT_TO_PDF", True))
     convert_to_pipeline_enabled = bool(all_flags.get("GLOW_ENABLE_CONVERT_TO_PIPELINE", True))
+    wcag_language_processing_enabled = bool(all_flags.get("GLOW_ENABLE_WCAG_LANGUAGE_PROCESSING", True))
+    wcag_language_strict_enabled = bool(all_flags.get("GLOW_ENABLE_WCAG_LANGUAGE_STRICT_MODE", True))
 
     pipeline_conversions = (
         get_available_conversions() if convert_to_pipeline_enabled else {}
@@ -241,6 +306,10 @@ def _template_context(**extra):
         convert_to_epub_enabled=convert_to_epub_enabled,
         convert_to_pdf_enabled=convert_to_pdf_enabled,
         convert_to_pipeline_enabled=convert_to_pipeline_enabled,
+        wcag_language_processing_enabled=wcag_language_processing_enabled,
+        wcag_language_strict_enabled=wcag_language_strict_enabled,
+        wcag_language_stage_default="output" if wcag_language_processing_enabled else "off",
+        wcag_language_enforcement_default="advisory",
         speech_enabled=bool(all_flags.get("GLOW_ENABLE_SPEECH", True)),
         export_html_enabled=bool(all_flags.get("GLOW_ENABLE_EXPORT_HTML", True)),
         # Extension sets for JS-driven UI filtering
@@ -364,6 +433,16 @@ def convert_submit():
             )
         ext = saved_path.suffix.lower()
         direction = request.form.get("direction", "to-markdown")
+        language_stage = _coerce_language_stage(
+            request.form.get("wcag_language_stage"),
+            enabled=ctx["wcag_language_processing_enabled"],
+        )
+        language_enforcement = _coerce_language_enforcement(
+            request.form.get("wcag_language_enforcement"),
+            strict_enabled=ctx["wcag_language_strict_enabled"],
+        )
+        ctx["wcag_language_stage_default"] = language_stage
+        ctx["wcag_language_enforcement_default"] = language_enforcement
 
         direction_flags = {
             "to-markdown": ctx["convert_to_markdown_enabled"],
@@ -385,6 +464,18 @@ def convert_submit():
         _record_usage("convert", detail=direction)
 
         temp_dir = get_temp_dir(token)
+        if temp_dir is None:
+            raise UploadError("Upload session expired or not found.")
+        language_reports: list[dict[str, object]] = []
+
+        def _apply_wcag_language_stage(stage_name: str, target_path: Path) -> None:
+            report_dict = _run_wcag_language_stage(stage_name, target_path, temp_dir)
+            language_reports.append(report_dict)
+            if language_enforcement == "strict" and int(report_dict.get("error_count", 0)) > 0:
+                raise UploadError(_format_wcag_language_error(report_dict))
+
+        if language_stage in {"input", "both"} and direction != "to-speech":
+            _apply_wcag_language_stage("input", saved_path)
 
         # Pre-convert LibreOffice-native formats before entering the normal
         # MarkItDown->Pandoc chain. If LibreOffice is missing or conversion
@@ -424,6 +515,7 @@ def convert_submit():
         if (
             _ASYNC_CONVERT_ENABLED
             and not current_app.config.get("TESTING", False)
+            and language_stage == "off"
             and (direction in async_op_map or direction.startswith("pipeline-"))
         ):
             from ..tasks.convert_tasks import create_job, run_convert_job
@@ -453,10 +545,22 @@ def convert_submit():
                 "print_ready": request.form.get("print_ready") == "on",
                 "pipeline_conversion": conversion_key,
                 "llm_description": request.form.get("llm_description") == "on",
+                "wcag_language_stage": language_stage,
+                "wcag_language_enforcement": language_enforcement,
             }
 
             job_id = str(uuid.uuid4())
-            create_job(job_id, op, saved_path.name)
+            create_job(
+                job_id,
+                op,
+                saved_path.name,
+                meta={
+                    "op": op,
+                    "upload_token": token,
+                    "input_filename": saved_path.name,
+                    "options": options,
+                },
+            )
             run_convert_job.delay(
                 job_id,
                 op,
@@ -532,6 +636,8 @@ def convert_submit():
                 output_path.write_text(html_text, encoding="utf-8")
 
             # Preserve the temp dir for the result page download/preview routes.
+            if language_stage in {"output", "both"}:
+                _apply_wcag_language_stage("output", output_path)
             result_token = token
             token = None
             return _convert_result_response(
@@ -539,6 +645,7 @@ def convert_submit():
                 download_name=f"{saved_path.stem}.html",
                 preview_type="html",
                 original_stem=saved_path.stem,
+                language_reports=language_reports,
             )
         elif direction == "to-docx":
             if not pandoc_available():
@@ -574,6 +681,8 @@ def convert_submit():
                 output_path=docx_output,
                 title=title,
             )
+            if language_stage in {"output", "both"}:
+                _apply_wcag_language_stage("output", output_path)
             result_token = token
             token = None
             return _convert_result_response(
@@ -581,6 +690,7 @@ def convert_submit():
                 download_name=output_path.name,
                 preview_type="binary",
                 original_stem=saved_path.stem,
+                language_reports=language_reports,
             )
         elif direction == "to-odt":
             if not pandoc_available():
@@ -615,6 +725,8 @@ def convert_submit():
                 output_path=odt_output,
                 title=title,
             )
+            if language_stage in {"output", "both"}:
+                _apply_wcag_language_stage("output", output_path)
             result_token = token
             token = None
             return _convert_result_response(
@@ -622,6 +734,7 @@ def convert_submit():
                 download_name=output_path.name,
                 preview_type="binary",
                 original_stem=saved_path.stem,
+                language_reports=language_reports,
             )
         elif direction == "to-epub":
             # Pandoc (or MarkItDown->Pandoc): document -> EPUB 3
@@ -663,6 +776,8 @@ def convert_submit():
                 title=title,
                 css_path=css_path,
             )
+            if language_stage in {"output", "both"}:
+                _apply_wcag_language_stage("output", output_path)
             result_token = token
             token = None
             return _convert_result_response(
@@ -670,6 +785,7 @@ def convert_submit():
                 download_name=output_path.name,
                 preview_type="binary",
                 original_stem=saved_path.stem,
+                language_reports=language_reports,
             )
         elif direction == "to-pdf":
             # Pandoc + WeasyPrint (or MarkItDown->Pandoc+WeasyPrint): document -> PDF
@@ -713,6 +829,8 @@ def convert_submit():
                 css_path=css_path,
                 binding_margin=binding_margin,
             )
+            if language_stage in {"output", "both"}:
+                _apply_wcag_language_stage("output", output_path)
             result_token = token
             token = None
             return _convert_result_response(
@@ -720,6 +838,7 @@ def convert_submit():
                 download_name=output_path.name,
                 preview_type="binary",
                 original_stem=saved_path.stem,
+                language_reports=language_reports,
             )
         elif direction == "to-html-cms":
             # Exporter: .docx -> ACB-styled HTML CMS fragment for WordPress/Drupal
@@ -735,6 +854,8 @@ def convert_submit():
             cms_output = temp_dir / f"{saved_path.stem}-cms.html"
             export_cms_fragment(saved_path, cms_output, title=title)
             cms_content = cms_output.read_text(encoding="utf-8")
+            if language_stage in {"output", "both"}:
+                _apply_wcag_language_stage("output", cms_output)
             # Preserve the temp dir for the result page download route.
             result_token = token
             token = None
@@ -744,6 +865,7 @@ def convert_submit():
                 preview_type="cms",
                 original_stem=saved_path.stem,
                 cms_content=cms_content,
+                language_reports=language_reports,
             )
         elif direction == "to-pipeline" or direction.startswith("pipeline-"):
             # DAISY Pipeline conversion
@@ -766,6 +888,8 @@ def convert_submit():
                 conversion_key,
                 output_dir=temp_dir,
             )
+            if language_stage in {"output", "both"} and output_path.is_file():
+                _apply_wcag_language_stage("output", output_path)
             if output_path.is_file():
                 mimetype = (
                     "application/epub+zip"
@@ -808,6 +932,8 @@ def convert_submit():
                 saved_path,
                 output_path=md_output,
             )
+            if language_stage in {"output", "both"}:
+                _apply_wcag_language_stage("output", output_path)
             result_token = token
             token = None
             return _convert_result_response(
@@ -815,6 +941,7 @@ def convert_submit():
                 download_name=output_path.name,
                 preview_type="binary",
                 original_stem=saved_path.stem,
+                language_reports=language_reports,
             )
 
     except UploadError as exc:

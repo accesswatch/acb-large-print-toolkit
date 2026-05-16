@@ -215,9 +215,14 @@ MarkItDown support, the playground, alt-text suggestions, and Whisperer
 from a unified AI Features settings page. The interface filters out
 incompatible choices so vision and audio workflows only expose models
 that can support them.</li>
-<li><strong>Visible AI usage meter</strong> – The sidebar now shows a
-live AI usage summary that refreshes on page load and after AI actions,
-so users can see what they have used during the current session.</li>
+<li><strong>Alt-Text Helper across visual formats</strong> – GLOW can
+now draft alternative text for standalone image files and visual content
+from Word, PowerPoint, Excel, PDF, and EPUB uploads from one shared
+helper surface.</li>
+<li><strong>Visible AI usage meter and cost preview</strong> – The
+sidebar now shows a live AI usage summary, while Document Chat and AI
+Playground can preview rough token/cost estimates before you send a
+request.</li>
 <li><strong>Clearer AI guidance</strong> – The About page and this user
 guide now explain what AI can do in short form even when AI is not yet
 enabled, so users can understand the capability before they turn it
@@ -255,8 +260,19 @@ workflows. It includes streaming responses, regenerate/stop controls,
 prompt templates, a quota status banner, Markdown export, and delayed
 screen reader announcements for in-progress and completed long-running
 replies.</p></li>
+<li><p><strong>Alt-Text Helper</strong> drafts editable alternative text
+for images, charts, slide visuals, rendered PDF pages, and other
+extracted visual items. It uses the alt-text model binding from AI
+Features and appends file-specific context automatically.</p></li>
+<li><p><strong>PII guardrails for AI requests</strong> are enabled by
+default. Before AI calls, GLOW can detect and redact sensitive text (for
+example emails, phone numbers, and account-style identifiers) in chat
+prompts and alt-text prompt context.</p></li>
 <li><p><strong>Usage tracking</strong> shows session-level request
 counts so you can see what you used while you were in GLOW.</p></li>
+<li><p><strong>Cost preview and rolling session limits</strong> show
+rough request cost before send and can enforce an admin-configured
+per-session AI request window with a reset countdown.</p></li>
 <li><p><strong>Whisperer</strong> is separate and only appears when an
 audio-transcription-capable provider path is active.</p></li>
 </ul>
@@ -1411,6 +1427,11 @@ required. GLOW uses a smart two-stage process: MarkItDown extracts the
 content to Markdown, then Pandoc applies full ACB Large Print
 formatting. This happens transparently when you upload one of these file
 types and choose an output format.</p>
+<p>Long-running Convert actions now use a unified job model with live
+progress plus explicit <strong>Cancel</strong> and
+<strong>Retry</strong> controls. Jobs also run with a server-side
+deadline and bounded retry attempts so status behavior is predictable
+for users and operators.</p>
 <h3 id="to-markdown-plain-text-extraction">To Markdown (plain text
 extraction)</h3>
 <p><strong>Engine:</strong> Microsoft MarkItDown</p>
@@ -2093,6 +2114,15 @@ you can share with your team.</li>
 reader navigation. All controls are keyboard accessible. No JavaScript
 is required for core chat usage. Sessions use GLOW’s AI gateway and
 follow the same 1-hour retention policy for uploaded documents.</p>
+<p>For AI-bound text, GLOW can apply Presidio-based preflight redaction
+before model calls. This is controlled by feature flags:</p>
+<ul>
+<li><code>GLOW_ENABLE_PII_GUARDRAILS</code> (default: enabled)</li>
+<li><code>GLOW_ENABLE_PII_GUARDRAILS_STRICT_MODE</code> (default:
+enabled)</li>
+</ul>
+<p>When strict mode is enabled and the guardrail engine is unavailable,
+the AI request is blocked instead of sending unredacted text.</p>
 <hr />
 <h2 id="settings">12. Settings</h2>
 <p>The <strong>Settings</strong> tab lets you configure default values
@@ -2738,6 +2768,10 @@ cancel</h3>
 <li>The status page updates live with crawl progress and page currently
 being scanned.</li>
 <li>You can click <strong>Cancel crawl</strong> at any time.</li>
+<li>Failed or cancelled runs can show <strong>Retry crawl</strong> when
+retry budget remains.</li>
+<li>Jobs stop automatically when their configured deadline is
+reached.</li>
 <li>When complete, open the result page directly from the job status
 view.</li>
 </ol>
@@ -2845,10 +2879,10 @@ issues</a></li>
 <li><strong>Microsoft Accessibility Checker Guide</strong> – <a
 href="https://support.microsoft.com/en-us/office/improve-accessibility-with-the-accessibility-checker-a16f6de0-2f39-4a2b-8bd8-5ad801426c7f">Microsoft’s
 guide to the Office accessibility checker</a></li>
-<li><strong>Project README</strong> – <a
-href="../README.md">README.md</a></li>
+<li><strong>Project overview</strong> – <a href="/about/">About
+GLOW</a></li>
 <li><strong>Deployment and operations notes</strong> – <a
-href="deployment.md">docs/deployment.md</a> # GLOW (Guided Layout &amp;
+href="/deployment/">Deployment Guide</a> # GLOW (Guided Layout &amp;
 Output Workflow) – User Guide</li>
 </ul>
 <p>Everything you need to know to audit, fix, convert, and template your
@@ -4508,11 +4542,11 @@ href="https://acb.org/large-print-guidelines">acb.org/large-print-guidelines</a>
 <li><strong>APH Large Print Guidelines (official source)</strong> – <a
 href="https://www.aph.org/resources/large-print-guidelines/">aph.org/resources/large-print-guidelines</a></li>
 <li><strong>Project overview and release highlights</strong> – <a
-href="../README.md">README.md</a></li>
+href="/about/">About GLOW</a></li>
 <li><strong>Web app operations and deployment notes</strong> – <a
-href="../web/README.md">web/README.md</a></li>
+href="/deployment/">Deployment Guide</a></li>
 <li><strong>Web app product requirements and implementation log</strong>
-– <a href="prd.md">docs/prd.md</a></li>
+– <a href="/prd/">Product Requirements Document</a></li>
 <li><strong>Submit Feedback</strong> – use the Feedback page in the web
 app to report bugs, request features, or share your experience</li>
 <li><strong>About This Project</strong> – mission, organizations,

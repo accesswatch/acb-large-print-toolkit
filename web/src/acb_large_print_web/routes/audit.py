@@ -327,6 +327,7 @@ def suggest_alt_text():
     from ..ai_features import ai_alt_text_enabled
     from ..ai_gateway import chat as gateway_chat, describe_image, make_session_hash
     from ..gating import GatingError, ai_gate, vision_gate
+    from ..pii_guardrails import sanitize_text_for_ai
     from ..upload import ALT_TEXT_SOURCE_EXTENSIONS, get_temp_dir
     from ..user_ai import build_alt_text_prompt
     from ..visual_items import extract_visual_items
@@ -371,13 +372,20 @@ def suggest_alt_text():
         current_alt_text=str(item.get("current_alt_text") or ""),
         surrounding_text=list(item.get("context_lines") or []),
     )
+    system_prompt = "You draft WCAG 2.2 AA-compliant alternative text. Return only the alt text."
 
     try:
+        safe_prompt, _prompt_meta = sanitize_text_for_ai(
+            prompt, surface="audit_alt_text_prompt"
+        )
+        safe_system_prompt, _system_meta = sanitize_text_for_ai(
+            system_prompt, surface="audit_alt_text_system_prompt"
+        )
         if item.get("text_only"):
             with ai_gate(wait_seconds=30):
                 suggestion, _ = gateway_chat(
-                    question=prompt,
-                    system_prompt="You draft WCAG 2.2 AA-compliant alternative text. Return only the alt text.",
+                    question=safe_prompt,
+                    system_prompt=safe_system_prompt,
                     session_hash=session_hash,
                     feature="alt_text",
                 )
@@ -386,7 +394,7 @@ def suggest_alt_text():
                 suggestion = describe_image(
                     bytes(item.get("image_bytes") or b""),
                     str(item.get("mime_type") or "image/png"),
-                    prompt,
+                    safe_prompt,
                     session_hash,
                 )
     except GatingError:

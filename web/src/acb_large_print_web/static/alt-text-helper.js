@@ -4,6 +4,9 @@
   var tokenEl = document.getElementById('alt-text-token');
   var statusEl = document.getElementById('alt-text-status');
   var extraInstructionEl = document.getElementById('extra-instruction');
+  var variantStyleEl = document.getElementById('variant-style');
+  var variantCountEl = document.getElementById('variant-count');
+  var systemPromptAddonEl = document.getElementById('system-prompt-addon');
   var generateButtons = document.querySelectorAll('.alt-text-generate-btn');
   var copyButtons = document.querySelectorAll('.alt-text-copy-btn');
 
@@ -30,6 +33,9 @@
     fd.append('token', tokenEl.value);
     fd.append('item_index', itemIndex);
     fd.append('extra_instruction', extraInstructionEl ? extraInstructionEl.value : '');
+    fd.append('variant_style', variantStyleEl ? variantStyleEl.value : 'balanced');
+    fd.append('variant_count', variantCountEl ? variantCountEl.value : '1');
+    fd.append('system_prompt_addon', systemPromptAddonEl ? systemPromptAddonEl.value : '');
 
     button.disabled = true;
     button.textContent = 'Generating...';
@@ -53,6 +59,7 @@
         if (target) {
           target.value = payload.data.suggestion || '';
         }
+        renderVariants(itemIndex, payload.data.variants || []);
         setStatus('Suggestion ready for ' + (payload.data.label || ('item ' + itemIndex)) + '.');
         document.dispatchEvent(new CustomEvent('ai:request-complete'));
       })
@@ -63,6 +70,48 @@
         button.disabled = false;
         button.textContent = 'Generate suggestion';
       });
+  }
+
+  function renderVariants(itemIndex, variants) {
+    var container = document.getElementById('variant-list-' + itemIndex);
+    var target = document.getElementById('suggestion-' + itemIndex);
+    if (!container) {
+      return;
+    }
+    container.innerHTML = '';
+    if (!variants || variants.length < 2) {
+      return;
+    }
+
+    var heading = document.createElement('p');
+    heading.innerHTML = '<strong>Alternative options</strong>';
+    container.appendChild(heading);
+
+    variants.forEach(function (variant, idx) {
+      if (!variant) {
+        return;
+      }
+      var item = document.createElement('div');
+      item.setAttribute('role', 'listitem');
+
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'btn-secondary';
+      btn.textContent = 'Use option ' + (idx + 1);
+      btn.addEventListener('click', function () {
+        if (target) {
+          target.value = variant;
+          setStatus('Loaded option ' + (idx + 1) + ' into suggestion box.');
+        }
+      });
+
+      var text = document.createElement('p');
+      text.textContent = variant;
+
+      item.appendChild(btn);
+      item.appendChild(text);
+      container.appendChild(item);
+    });
   }
 
   Array.prototype.forEach.call(generateButtons, function (button) {

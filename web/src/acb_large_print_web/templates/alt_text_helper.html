@@ -29,9 +29,34 @@
   <h2 id="alt-text-settings-heading">Model and prompt settings</h2>
   <p class="help-text">Current feature binding: <strong>{{ ai_alt_text_provider or 'not selected' }}</strong>{% if ai_alt_text_model %} using <strong>{{ ai_alt_text_model }}</strong>{% endif %}. You can change the provider/model choice and the base prompt in <a href="{{ url_for('ai.settings_ai_page') }}">AI Features</a>.</p>
   <div class="form-group">
+    <label for="variant-style">Suggestion style</label>
+    <select id="variant-style" aria-describedby="variant-style-hint">
+      <option value="balanced" selected>Balanced (recommended)</option>
+      <option value="concise">Concise</option>
+      <option value="detailed">Detailed</option>
+      <option value="instructional">Instructional</option>
+      <option value="narrative">Narrative</option>
+    </select>
+    <p id="variant-style-hint" class="help-text">Choose the writing style used when generating alt text suggestions.</p>
+  </div>
+  <div class="form-group">
+    <label for="variant-count">How many options?</label>
+    <select id="variant-count" aria-describedby="variant-count-hint">
+      <option value="1" selected>1 option</option>
+      <option value="3">3 options</option>
+      <option value="5">5 options</option>
+    </select>
+    <p id="variant-count-hint" class="help-text">Generate multiple diverse alternatives when you want to compare tones before selecting one.</p>
+  </div>
+  <div class="form-group">
     <label for="extra-instruction">Optional extra instruction for this page</label>
     <textarea id="extra-instruction" rows="3" aria-describedby="extra-instruction-hint" placeholder="Example: Focus on the chart trend rather than the decorative background."></textarea>
     <p id="extra-instruction-hint" class="help-text">This applies only to suggestion requests you trigger on this page. GLOW still adds the file name, image position, existing alt text, and nearby extracted context automatically.</p>
+  </div>
+  <div class="form-group">
+    <label for="system-prompt-addon">System prompt add-on (advanced, optional)</label>
+    <textarea id="system-prompt-addon" rows="2" aria-describedby="system-prompt-addon-hint" placeholder="Example: Prioritize short, action-oriented alt text for faculty emails."></textarea>
+    <p id="system-prompt-addon-hint" class="help-text">Adds extra global guidance for this page only. Keep it short and specific.</p>
   </div>
 </section>
 
@@ -81,6 +106,7 @@
         <textarea id="suggestion-{{ item.index }}" class="alt-text-suggestion" rows="3" readonly aria-describedby="suggestion-help-{{ item.index }}"></textarea>
         <p id="suggestion-help-{{ item.index }}" class="help-text">Review and revise before using. Avoid redundant prefixes, filenames, or visual details that do not matter to understanding.</p>
       </div>
+      <div id="variant-list-{{ item.index }}" class="alt-text-variant-list" role="list" aria-label="Alternative suggestions"></div>
 
       <div class="form-actions">
         <button type="button" class="btn-secondary alt-text-copy-btn" data-target="suggestion-{{ item.index }}">Copy suggestion</button>

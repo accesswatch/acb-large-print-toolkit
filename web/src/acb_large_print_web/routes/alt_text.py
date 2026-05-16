@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 from flask import Blueprint, abort, jsonify, redirect, render_template, request, session, url_for
@@ -11,11 +12,13 @@ from ..ai_gateway import chat as gateway_chat
 from ..ai_gateway import describe_image, make_session_hash
 from ..app import limiter
 from ..gating import GatingError, RETRY_AFTER_SECONDS, ai_gate, vision_gate
+from ..pii_guardrails import sanitize_text_for_ai
 from ..upload import ALT_TEXT_SOURCE_EXTENSIONS, UploadError, get_temp_dir, validate_upload
 from ..user_ai import build_alt_text_prompt, get_user_ai_provider_and_model_for
 from ..visual_items import extract_visual_items
 
 alt_text_bp = Blueprint("alt_text", __name__)
+_ALLOWED_VARIANT_STYLES = {"balanced", "concise", "detailed", "instructional", "narrative"}
 
 
 def _busy_json(operation: str):
@@ -56,6 +59,52 @@ def _sanitize_suggestion(text: str) -> str:
     if suggestion.startswith('"') and suggestion.endswith('"') and len(suggestion) > 1:
         suggestion = suggestion[1:-1].strip()
     return suggestion
+
+
+def _coerce_variant_count(raw: str) -> int:
+    try:
+        value = int(raw or "1")
+    except ValueError:
+        value = 1
+    return max(1, min(5, value))
+
+
+def _variant_style_instruction(style: str) -> str:
+    if style == "concise":
+        return "Keep each option concise (about 8-18 words), centered on the key purpose."
+    if style == "detailed":
+        return "Include meaningful detail needed to understand the image context, without visual clutter."
+    if style == "instructional":
+        return "Use wording that teaches a content owner what matters and what to omit."
+    if style == "narrative":
+        return "Use plain-language narrative flow that reads naturally for screen-reader users."
+    return "Balance brevity and clarity around the image purpose and key takeaway."
+
+
+def _extract_variants(text: str, count: int) -> list[str]:
+    cleaned = str(text or "").strip()
+    if not cleaned:
+        return []
+    if count <= 1:
+        single = _sanitize_suggestion(cleaned)
+        return [single] if single else []
+
+    raw_lines = [line.strip() for line in cleaned.splitlines() if line.strip()]
+    variants: list[str] = []
+    for line in raw_lines:
+        line = re.sub(r"^\s*(?:\d+[\).\:-]|[-*•])\s*", "", line).strip()
+        if line:
+            variants.append(_sanitize_suggestion(line))
+    if len(variants) < count:
+        parts = [p.strip() for p in re.split(r"\s*\|\s*", cleaned) if p.strip()]
+        for part in parts:
+            candidate = _sanitize_suggestion(re.sub(r"^\s*(?:\d+[\).\:-]|[-*•])\s*", "", part))
+            if candidate and candidate not in variants:
+                variants.append(candidate)
+    if not variants:
+        single = _sanitize_suggestion(cleaned)
+        variants = [single] if single else []
+    return variants[:count]
 
 
 def _template_items(items: list[dict]) -> list[dict]:
@@ -135,6 +184,13 @@ def alt_text_suggest():
 
     token = (request.form.get("token") or "").strip()
     extra_instruction = (request.form.get("extra_instruction") or "").strip()
+    variant_style = (request.form.get("variant_style") or "balanced").strip().lower()
+    if variant_style not in _ALLOWED_VARIANT_STYLES:
+        variant_style = "balanced"
+    variant_count = _coerce_variant_count(request.form.get("variant_count") or "1")
+    system_prompt_addon = (request.form.get("system_prompt_addon") or "").strip()
+    if len(system_prompt_addon) > 800:
+        system_prompt_addon = system_prompt_addon[:800]
     try:
         item_index = int(request.form.get("item_index") or "0")
     except ValueError:
@@ -163,19 +219,36 @@ def alt_text_suggest():
         surrounding_text=list(item.get("context_lines") or []),
         extra_instruction=extra_instruction,
     )
+    if variant_count > 1:
+        prompt += (
+            "\n\nReturn exactly "
+            + str(variant_count)
+            + " distinct alt text options as a numbered list (1..N), one per line. "
+            + _variant_style_instruction(variant_style)
+            + " Do not include prefaces or explanations."
+        )
 
     sess_id = session.get("_id", "")
     sess_hash = make_session_hash(sess_id) if sess_id else "anonymous"
 
     try:
+        base_system_prompt = (
+            "You draft WCAG 2.2 AA-conformant alternative text. "
+            "Return only the alt text string requested by the user."
+        )
+        if system_prompt_addon:
+            base_system_prompt = base_system_prompt + " " + system_prompt_addon
+        safe_prompt, _prompt_meta = sanitize_text_for_ai(
+            prompt, surface="alt_text_prompt"
+        )
+        safe_system_prompt, _system_meta = sanitize_text_for_ai(
+            base_system_prompt, surface="alt_text_system_prompt"
+        )
         if item.get("text_only"):
             with ai_gate(wait_seconds=30):
                 suggestion, _ = gateway_chat(
-                    question=prompt,
-                    system_prompt=(
-                        "You draft WCAG 2.2 AA-conformant alternative text. "
-                        "Return only the alt text string requested by the user."
-                    ),
+                    question=safe_prompt,
+                    system_prompt=safe_system_prompt,
                     session_hash=sess_hash,
                     feature="alt_text",
                 )
@@ -184,7 +257,7 @@ def alt_text_suggest():
                 suggestion = describe_image(
                     image_bytes=bytes(item.get("image_bytes") or b""),
                     mime_type=str(item.get("mime_type") or "image/png"),
-                    prompt=prompt,
+                    prompt=safe_prompt,
                     session_hash=sess_hash,
                 )
     except GatingError:
@@ -192,13 +265,17 @@ def alt_text_suggest():
     except RuntimeError as exc:
         return jsonify({"error": str(exc)}), 503
 
-    cleaned = _sanitize_suggestion(suggestion)
+    variants = _extract_variants(suggestion, variant_count)
+    cleaned = variants[0] if variants else _sanitize_suggestion(suggestion)
     return jsonify(
         {
             "ok": True,
             "suggestion": cleaned,
+            "variants": variants or [cleaned],
             "item_index": item_index,
             "label": item.get("label"),
             "source_type": item.get("source_type"),
+            "variant_style": variant_style,
+            "variant_count": variant_count,
         }
     )

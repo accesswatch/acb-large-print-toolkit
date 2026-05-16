@@ -13,8 +13,19 @@
     aria-describedby="job-progress-text"
   ></progress>
   <p id="job-progress-text"><span id="job-progress-value">{{ job_status.progress or 0 }}</span>% complete</p>
+  <p id="job-attempt-text">Attempt <span id="job-attempt">{{ job_status.attempt or 0 }}</span> of <span id="job-max-attempts">{{ job_status.max_attempts or 1 }}</span></p>
   <p id="job-error" class="error-text" role="alert" aria-live="assertive"></p>
   <p id="job-download-wrap" hidden><a id="job-download" href="{{ url_for('jobs.job_result', job_id=job_id) }}">Download result</a></p>
+  <div id="job-actions">
+    <form method="post" action="{{ url_for('jobs.job_cancel', job_id=job_id) }}" id="job-cancel-form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit" id="job-cancel-btn" class="btn-secondary">Cancel job</button>
+    </form>
+    <form method="post" action="{{ url_for('jobs.job_retry', job_id=job_id) }}" id="job-retry-form" hidden>
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit" id="job-retry-btn" class="btn-primary">Retry job</button>
+    </form>
+  </div>
 </section>
 
 <script>
@@ -25,31 +36,59 @@
   var err = document.getElementById('job-error');
   var bar = document.getElementById('job-progress');
   var pctText = document.getElementById('job-progress-value');
+  var attemptText = document.getElementById('job-attempt');
+  var maxAttemptsText = document.getElementById('job-max-attempts');
+  var retryForm = document.getElementById('job-retry-form');
+  var cancelForm = document.getElementById('job-cancel-form');
 
   function applyStatus(s) {
     var pct = Number(s.progress || 0);
     bar.value = pct;
     bar.setAttribute('aria-valuenow', String(pct));
     pctText.textContent = String(pct);
+    attemptText.textContent = String(s.attempt || 0);
+    maxAttemptsText.textContent = String(s.max_attempts || 1);
     msg.textContent = s.message || '';
     if (s.state === 'SUCCESS') {
       downloadWrap.hidden = false;
+      cancelForm.hidden = true;
+      retryForm.hidden = true;
       msg.textContent = 'Done.';
+      return true;
+    }
+    if (s.state === 'CANCELLED') {
+      cancelForm.hidden = true;
+      retryForm.hidden = !s.retryable;
+      err.textContent = s.error || 'Job cancelled.';
       return true;
     }
     if (s.state === 'FAILURE') {
       err.textContent = s.error || 'Job failed.';
+      cancelForm.hidden = true;
+      retryForm.hidden = !s.retryable;
       return true;
     }
+    retryForm.hidden = true;
+    cancelForm.hidden = false;
     return false;
   }
 
   if (state === 'SUCCESS') {
     downloadWrap.hidden = false;
+    cancelForm.hidden = true;
+    retryForm.hidden = true;
     return;
   }
   if (state === 'FAILURE') {
     err.textContent = "{{ job_status.error or 'Job failed.' }}";
+    cancelForm.hidden = true;
+    retryForm.hidden = {{ 'false' if job_status.retryable else 'true' }};
+    return;
+  }
+  if (state === 'CANCELLED') {
+    err.textContent = "{{ job_status.error or 'Job cancelled.' }}";
+    cancelForm.hidden = true;
+    retryForm.hidden = {{ 'false' if job_status.retryable else 'true' }};
     return;
   }
 
@@ -65,6 +104,11 @@
       es.close();
     });
     es.addEventListener('failure', function (e) {
+      var payload = JSON.parse(e.data || '{}');
+      applyStatus(payload);
+      es.close();
+    });
+    es.addEventListener('cancelled', function (e) {
       var payload = JSON.parse(e.data || '{}');
       applyStatus(payload);
       es.close();

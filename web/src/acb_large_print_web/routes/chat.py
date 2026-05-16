@@ -18,6 +18,7 @@ from ..ai_gateway import (
 from ..ai_features import require_ai_feature, AIFeatureDisabled
 from ..chat_handler import ChatSession, DocumentContext, ToolRegistry
 from ..gating import ai_gate, GatingError
+from ..pii_guardrails import sanitize_text_for_ai
 from ..upload import get_temp_dir, UploadError
 
 chat_bp = Blueprint("chat", __name__)
@@ -322,14 +323,42 @@ def chat_submit():
         ]
 
         try:
+            safe_question, _question_meta = sanitize_text_for_ai(
+                question, surface="chat_question"
+            )
+            safe_preflight, _preflight_meta = sanitize_text_for_ai(
+                preflight_analysis, surface="chat_preflight_analysis"
+            )
+            safe_doc_context, _doc_meta = sanitize_text_for_ai(
+                doc_context, surface="chat_document_context"
+            )
+            safe_vision_context, _vision_meta = sanitize_text_for_ai(
+                vision_context, surface="chat_vision_context"
+            )
+            safe_conv_pairs: list[dict[str, str]] = []
+            for pair in conv_pairs:
+                safe_content, _pair_meta = sanitize_text_for_ai(
+                    str(pair.get("content") or ""),
+                    surface=f"chat_history_{pair.get('role', 'unknown')}",
+                )
+                safe_conv_pairs.append(
+                    {"role": str(pair.get("role") or "user"), "content": safe_content}
+                )
+        except RuntimeError as exc:
+            return (
+                render_template("chat_form.html", error=str(exc), token=token, quota=quota),
+                503,
+            )
+
+        try:
             wait_seconds = 90 if len(doc_context) > 6000 else None
             with ai_gate(wait_seconds=wait_seconds):
                 answer, was_escalated = gateway_chat(
-                    question=question,
-                    system_prompt=f"{_CHAT_SYSTEM_PROMPT}\n\n{preflight_analysis}{vision_context}",
+                    question=safe_question,
+                    system_prompt=f"{_CHAT_SYSTEM_PROMPT}\n\n{safe_preflight}{safe_vision_context}",
                     session_hash=sess_hash,
-                    document_text=doc_context,
-                    conversation_history=conv_pairs,
+                    document_text=safe_doc_context,
+                    conversation_history=safe_conv_pairs,
                 )
         except GatingError:
             resp = make_response(

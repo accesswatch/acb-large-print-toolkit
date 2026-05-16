@@ -172,6 +172,9 @@ class TestUploadConstants:
 
     def test_convert_extensions_superset(self):
         assert ALLOWED_EXTENSIONS.issubset(CONVERT_EXTENSIONS)
+        assert ".doc" in CONVERT_EXTENSIONS
+        assert ".ppt" in CONVERT_EXTENSIONS
+        assert ".txt" in CONVERT_EXTENSIONS
         assert ".rst" in CONVERT_EXTENSIONS
         assert ".html" in CONVERT_EXTENSIONS
         assert ".fodt" in CONVERT_EXTENSIONS

@@ -20,12 +20,14 @@ from flask import (
     Blueprint,
     Response,
     abort,
+    redirect,
     render_template,
     request,
     stream_with_context,
+    url_for,
 )
 
-from ..tasks.convert_tasks import read_status, _job_dir
+from ..tasks.convert_tasks import _job_dir, read_status, request_cancel, retry_convert_job
 
 log = logging.getLogger(__name__)
 jobs_bp = Blueprint("jobs", __name__)
@@ -69,6 +71,7 @@ def job_status_stream(job_id: str):
     def _generate():
         deadline = time.monotonic() + _SSE_MAX_SECONDS
         last_progress = -1
+        last_state = ""
 
         while time.monotonic() < deadline:
             status = read_status(job_id)
@@ -76,16 +79,21 @@ def job_status_stream(job_id: str):
             progress = int(status.get("progress", 0))
 
             # Only emit when something changed
-            if progress != last_progress or state in ("SUCCESS", "FAILURE"):
+            if progress != last_progress or state != last_state:
                 last_progress = progress
+                last_state = state
                 payload = json.dumps({
                     "state": state,
                     "progress": progress,
                     "message": status.get("message", ""),
                     "error": status.get("error", ""),
                     "result_file": status.get("result_file", ""),
+                    "attempt": int(status.get("attempt", 0)),
+                    "max_attempts": int(status.get("max_attempts", 1)),
+                    "retryable": bool(status.get("retryable", False)),
+                    "deadline_at": status.get("deadline_at"),
                 })
-                if state in ("SUCCESS", "FAILURE"):
+                if state in ("SUCCESS", "FAILURE", "CANCELLED"):
                     yield f"event: {state.lower()}\ndata: {payload}\n\n"
                     return  # Close stream after terminal event
                 else:
@@ -190,6 +198,24 @@ def job_result(job_id: str):
             "Content-Length": str(file_path.stat().st_size),
         },
     )
+
+
+@jobs_bp.route("/<job_id>/cancel", methods=["POST"])
+def job_cancel(job_id: str):
+    status = read_status(job_id)
+    if status.get("state") == "MISSING":
+        abort(404)
+    request_cancel(job_id)
+    return redirect(url_for("jobs.job_progress", job_id=job_id))
+
+
+@jobs_bp.route("/<job_id>/retry", methods=["POST"])
+def job_retry(job_id: str):
+    status = read_status(job_id)
+    if status.get("state") == "MISSING":
+        abort(404)
+    retry_convert_job(job_id)
+    return redirect(url_for("jobs.job_progress", job_id=job_id))
 
 
 def _stream_file(path: Path, chunk_size: int = 65536):

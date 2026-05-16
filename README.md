@@ -116,8 +116,10 @@ Current rules are intentionally low-noise and focus on:
 - Provides detailed audit reports for Excel, PowerPoint, Markdown, PDF, and ePub with manual fix guidance
 - Generates ACB-compliant Word templates (.dotx) with pre-configured styles
 - Exports Word documents to accessible HTML (standalone or CMS-ready fragments)
-- Converts documents to Markdown via Microsoft MarkItDown (.docx, .xlsx, .pptx, .pdf, .html, .csv, .json, .xml, .epub)
+- Converts documents to Markdown via Microsoft MarkItDown (.docx, .doc, .xlsx, .pptx, .ppt, .txt, .pdf, .html, .csv, .json, .xml, .epub)
 - Converts documents to accessible HTML, Word (.docx), EPUB 3, and PDF via Pandoc (and WeasyPrint for PDF)
+- Runs optional deterministic WCAG language processing during Convert uploads (before conversion, after conversion, or both) with advisory or strict enforcement modes; controlled by feature flags `GLOW_ENABLE_WCAG_LANGUAGE_PROCESSING` and `GLOW_ENABLE_WCAG_LANGUAGE_STRICT_MODE`
+- Runs optional Presidio-based PII redaction before AI requests for uploaded content in Document Chat and alt-text workflows; controlled by feature flags `GLOW_ENABLE_PII_GUARDRAILS` and `GLOW_ENABLE_PII_GUARDRAILS_STRICT_MODE`
 - Converts Markdown to ACB-compliant HTML with proper document structure
 - Produces PowerShell scripts for configuring Word document styles
 - Detects and uses external tools (markdownlint, Pandoc) when available

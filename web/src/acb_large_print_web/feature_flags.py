@@ -151,6 +151,13 @@ _DEFAULTS: dict[str, bool] = {
     # User-facing website accessibility scanner
     "GLOW_ENABLE_SITE_AUDIT": True,
 
+    # WCAG language processing for uploaded content in Convert flows
+    "GLOW_ENABLE_WCAG_LANGUAGE_PROCESSING": True,
+    "GLOW_ENABLE_WCAG_LANGUAGE_STRICT_MODE": True,
+    # Presidio PII guardrails for AI-bound text in chat and alt-text features
+    "GLOW_ENABLE_PII_GUARDRAILS": True,
+    "GLOW_ENABLE_PII_GUARDRAILS_STRICT_MODE": True,
+
     # 7.3 Workshop Mode and Lab Hub foundations
     "GLOW_ENABLE_WORKSHOP_MODE": True,
     "GLOW_ENABLE_WORKSHOP_LAB_HUB": True,

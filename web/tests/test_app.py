@@ -1117,7 +1117,7 @@ class TestConvertPage:
         assert b"No file selected" in resp.data
 
     def test_convert_wrong_extension(self, client):
-        data = {"document": (io.BytesIO(b"text"), "test.txt")}
+        data = {"document": (io.BytesIO(b"text"), "test.exe")}
         resp = client.post("/convert/", data=data, content_type="multipart/form-data")
         assert resp.status_code == 400
         assert b"not supported" in resp.data
@@ -1151,6 +1151,70 @@ class TestConvertPage:
         resp = client.get("/convert/")
         assert resp.status_code == 200
         assert b'value="to-speech"' in resp.data
+
+    def test_convert_form_has_wcag_language_options(self, client):
+        resp = client.get("/convert/")
+        assert resp.status_code == 200
+        assert b'name="wcag_language_stage"' in resp.data
+        assert b'name="wcag_language_enforcement"' in resp.data
+
+    def test_convert_wcag_language_strict_blocks_on_errors(self, client, monkeypatch):
+        monkeypatch.setattr(
+            "acb_large_print_web.routes.convert._run_wcag_language_stage",
+            lambda *_args, **_kwargs: {
+                "stage": "output",
+                "total": 1,
+                "error_count": 1,
+                "warning_count": 0,
+                "findings": [
+                    {
+                        "rule_id": "WCAG-LANG-DECLARATION",
+                        "wcag": "3.1.1",
+                        "message": "Document language is not declared.",
+                        "snippet": "",
+                    }
+                ],
+            },
+        )
+        data = {
+            "document": (_make_fake_docx(), "strict-check.docx"),
+            "direction": "to-markdown",
+            "wcag_language_stage": "output",
+            "wcag_language_enforcement": "strict",
+        }
+        resp = client.post("/convert/", data=data, content_type="multipart/form-data")
+        assert resp.status_code == 400
+        assert b"WCAG language processing" in resp.data
+        assert b"WCAG-LANG-DECLARATION" in resp.data
+
+    def test_convert_wcag_language_advisory_shows_result_section(self, client, monkeypatch):
+        monkeypatch.setattr(
+            "acb_large_print_web.routes.convert._run_wcag_language_stage",
+            lambda *_args, **_kwargs: {
+                "stage": "output",
+                "total": 1,
+                "error_count": 0,
+                "warning_count": 1,
+                "findings": [
+                    {
+                        "rule_id": "WCAG-DESCRIPTIVE-LINK-TEXT",
+                        "wcag": "2.4.4",
+                        "message": "Link text is ambiguous.",
+                        "snippet": "[click here](https://example.com)",
+                    }
+                ],
+            },
+        )
+        data = {
+            "document": (_make_fake_docx(), "advisory-check.docx"),
+            "direction": "to-markdown",
+            "wcag_language_stage": "output",
+            "wcag_language_enforcement": "advisory",
+        }
+        resp = client.post("/convert/", data=data, content_type="multipart/form-data")
+        assert resp.status_code == 200
+        assert b"Language and clarity review" in resp.data
+        assert b"WCAG-DESCRIPTIVE-LINK-TEXT" in resp.data
 
     def test_convert_to_speech_redirects_with_token_handoff(self, client):
         data = {

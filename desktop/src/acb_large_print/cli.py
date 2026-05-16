@@ -529,6 +529,18 @@ def _build_parser() -> argparse.ArgumentParser:
         default=None,
         help="Output .md file path (default: same name with .md extension)",
     )
+    conv_p.add_argument(
+        "--wcag-language",
+        choices=["off", "input", "output", "both"],
+        default="output",
+        help="Run deterministic WCAG language checks (default: output).",
+    )
+    conv_p.add_argument(
+        "--wcag-language-enforcement",
+        choices=["advisory", "strict"],
+        default="advisory",
+        help="Advisory logs findings; strict exits with code 2 on WCAG language errors.",
+    )
 
     # ---- convert-html ----
     convhtml_p = sub.add_parser(
@@ -566,6 +578,18 @@ def _build_parser() -> argparse.ArgumentParser:
         type=str,
         default="en",
         help="BCP-47 language tag for the HTML lang attribute (default: en)",
+    )
+    convhtml_p.add_argument(
+        "--wcag-language",
+        choices=["off", "input", "output", "both"],
+        default="output",
+        help="Run deterministic WCAG language checks (default: output).",
+    )
+    convhtml_p.add_argument(
+        "--wcag-language-enforcement",
+        choices=["advisory", "strict"],
+        default="advisory",
+        help="Advisory logs findings; strict exits with code 2 on WCAG language errors.",
     )
 
     # ---- gui ----
@@ -1205,9 +1229,48 @@ def _cmd_export(args: argparse.Namespace) -> int:
     return 0
 
 
+def _wcag_stage_enabled(selected: str, target: str) -> bool:
+    return selected in {target, "both"}
+
+
+def _analyze_wcag_language_for_path(path: Path, *, stage: str):
+    import tempfile
+    from .converter import convert_to_markdown
+    from .wcag_language import analyze_text_for_wcag_language
+
+    ext = path.suffix.lower()
+    if ext in {".md", ".rst", ".txt", ".html", ".htm", ".csv", ".json", ".xml"}:
+        text = path.read_text(encoding="utf-8", errors="ignore")
+    else:
+        with tempfile.TemporaryDirectory(prefix="glow-wcag-lang-") as td:
+            temp_md = Path(td) / f"{path.stem}.md"
+            _md_path, text = convert_to_markdown(path, output_path=temp_md)
+    return analyze_text_for_wcag_language(text, stage=stage)
+
+
+def _print_wcag_language_report(report) -> None:
+    log.info(
+        "WCAG language (%s): %d finding(s), %d error(s), %d warning(s)",
+        report.stage,
+        report.total,
+        report.error_count,
+        report.warning_count,
+    )
+    for finding in report.findings[:8]:
+        log.info(
+            "  - %s (WCAG %s): %s",
+            finding.rule_id,
+            finding.wcag,
+            finding.message,
+        )
+    if report.total > 8:
+        log.info("  - ...and %d more finding(s).", report.total - 8)
+
+
 def _cmd_convert(args: argparse.Namespace) -> int:
     """Execute the convert command."""
     from .converter import CONVERTIBLE_EXTENSIONS, convert_to_markdown
+    from .wcag_language import analyze_text_for_wcag_language
 
     if not args.file.exists():
         print(f"Error: File not found: {args.file}", file=sys.stderr)
@@ -1222,11 +1285,31 @@ def _cmd_convert(args: argparse.Namespace) -> int:
         )
         return 1
 
+    language_stage = getattr(args, "wcag_language", "output")
+    language_enforcement = getattr(args, "wcag_language_enforcement", "advisory")
+    reports = []
+    if _wcag_stage_enabled(language_stage, "input"):
+        input_report = _analyze_wcag_language_for_path(args.file, stage="input")
+        reports.append(input_report)
+        if language_enforcement == "strict" and input_report.error_count > 0:
+            _print_wcag_language_report(input_report)
+            return 2
+
     try:
         output_path, text = convert_to_markdown(args.file, output_path=args.output)
     except RuntimeError as exc:
         print(f"Error: {exc}", file=sys.stderr)
         return 1
+
+    if _wcag_stage_enabled(language_stage, "output"):
+        output_report = analyze_text_for_wcag_language(text, stage="output")
+        reports.append(output_report)
+        if language_enforcement == "strict" and output_report.error_count > 0:
+            _print_wcag_language_report(output_report)
+            return 2
+
+    for report in reports:
+        _print_wcag_language_report(report)
 
     log.info("Markdown saved to: %s (%d characters)", output_path, len(text))
     return 0
@@ -1235,6 +1318,7 @@ def _cmd_convert(args: argparse.Namespace) -> int:
 def _cmd_convert_html(args: argparse.Namespace) -> int:
     """Execute the convert-html command (Pandoc to ACB HTML)."""
     from .pandoc_converter import PANDOC_INPUT_EXTENSIONS, convert_to_html
+    from .wcag_language import analyze_text_for_wcag_language
 
     if not args.file.exists():
         print(f"Error: File not found: {args.file}", file=sys.stderr)
@@ -1249,6 +1333,16 @@ def _cmd_convert_html(args: argparse.Namespace) -> int:
         )
         return 1
 
+    language_stage = getattr(args, "wcag_language", "output")
+    language_enforcement = getattr(args, "wcag_language_enforcement", "advisory")
+    reports = []
+    if _wcag_stage_enabled(language_stage, "input"):
+        input_report = _analyze_wcag_language_for_path(args.file, stage="input")
+        reports.append(input_report)
+        if language_enforcement == "strict" and input_report.error_count > 0:
+            _print_wcag_language_report(input_report)
+            return 2
+
     try:
         output_path, html_text = convert_to_html(
             args.file,
@@ -1260,6 +1354,16 @@ def _cmd_convert_html(args: argparse.Namespace) -> int:
     except RuntimeError as exc:
         print(f"Error: {exc}", file=sys.stderr)
         return 1
+
+    if _wcag_stage_enabled(language_stage, "output"):
+        output_report = analyze_text_for_wcag_language(html_text, stage="output")
+        reports.append(output_report)
+        if language_enforcement == "strict" and output_report.error_count > 0:
+            _print_wcag_language_report(output_report)
+            return 2
+
+    for report in reports:
+        _print_wcag_language_report(report)
 
     log.info("HTML saved to: %s (%d characters)", output_path, len(html_text))
     return 0

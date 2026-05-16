@@ -6,6 +6,7 @@ from pathlib import Path
 import pytest
 
 from acb_large_print_web.app import create_app
+from acb_large_print_web.tasks import convert_tasks
 
 
 @pytest.fixture()
@@ -114,3 +115,75 @@ def test_job_result_downloads_file_for_success(tmp_path: Path, client):
     assert res.status_code == 200
     assert res.data.decode("utf-8").replace("\r\n", "\n") == "# converted\n"
     assert "attachment; filename=\"source.md\"" in res.headers["Content-Disposition"]
+
+
+def test_job_cancel_marks_job_cancelling(tmp_path: Path, client):
+    jobs_root = tmp_path / "jobs"
+    job_id = "cancel-job-1"
+    _write_status(
+        jobs_root,
+        job_id,
+        {
+            "state": "PROGRESS",
+            "progress": 25,
+            "message": "Working",
+            "result_file": None,
+            "attempt": 1,
+            "max_attempts": 2,
+        },
+    )
+
+    res = client.post(f"/job/{job_id}/cancel")
+    assert res.status_code == 302
+
+    status = json.loads((jobs_root / job_id / "status.json").read_text(encoding="utf-8"))
+    assert status["state"] == "CANCELLING"
+    assert status["cancel_requested"] is True
+
+
+def test_job_retry_requeues_failed_job(tmp_path: Path, client, monkeypatch: pytest.MonkeyPatch):
+    jobs_root = tmp_path / "jobs"
+    job_id = "retry-job-1"
+    _write_status(
+        jobs_root,
+        job_id,
+        {
+            "state": "FAILURE",
+            "progress": 0,
+            "message": "Failed",
+            "error": "boom",
+            "result_file": None,
+            "attempt": 1,
+            "max_attempts": 2,
+            "deadline_at": 9999999999.0,
+            "retryable": True,
+        },
+    )
+    (jobs_root / job_id).mkdir(parents=True, exist_ok=True)
+    (jobs_root / job_id / "job-meta.json").write_text(
+        json.dumps(
+            {
+                "op": "to_markdown",
+                "upload_token": "token-1",
+                "input_filename": "source.docx",
+                "options": {},
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    calls: list[tuple] = []
+
+    def _fake_delay(*args):
+        calls.append(args)
+        return None
+
+    monkeypatch.setattr(convert_tasks.run_convert_job, "delay", _fake_delay)
+
+    res = client.post(f"/job/{job_id}/retry")
+    assert res.status_code == 302
+    assert calls
+
+    status = json.loads((jobs_root / job_id / "status.json").read_text(encoding="utf-8"))
+    assert status["state"] == "PENDING"
+    assert status["cancel_requested"] is False
