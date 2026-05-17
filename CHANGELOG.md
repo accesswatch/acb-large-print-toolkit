@@ -135,6 +135,7 @@ Releases are tagged in the [GitHub repository](https://github.com/Community-Acce
 
 ### Fixed
 
+- **Convert pipeline false-negative failure in CI**: Updated `web/src/acb_large_print_web/routes/convert.py` so WCAG language text extraction fails open when MarkItDown cannot parse a generated output artifact (for example, mocked or malformed EPUB bytes), preventing successful conversions from returning HTTP 500.
 - **Rules Reference accessibility filters:** Removed a stale duplicate Type filter on `/rules/` that reused `id="filter-type"`, resolving axe `duplicate-id-aria` and `form-field-multiple-labels` findings.
 - **Quick Start contrast review noise:** Replaced gradient upload-hero backgrounds with solid high-contrast surfaces and added explicit foreground colors to file/text inputs and textareas so axe can calculate contrast reliably.
 - **Crawl accessibility cleanup:** Removed the remaining public raw Markdown deployment link, replaced decorative workflow banner glyphs, converted symbolic keyboard labels to text, and normalized code/table/textarea surfaces so automated contrast tools can compute foreground/background colors more reliably.
