@@ -242,8 +242,16 @@ def _extract_text_for_wcag_language(path: Path, temp_dir: Path) -> str:
     if ext in _WCAG_LANGUAGE_TEXT_EXTENSIONS:
         return path.read_text(encoding="utf-8", errors="ignore")
     extracted_path = temp_dir / f"{path.stem}-wcag-language.md"
-    _md_path, text = convert_to_markdown(path, output_path=extracted_path)
-    return text
+    try:
+        _md_path, text = convert_to_markdown(path, output_path=extracted_path)
+        return text
+    except Exception as exc:
+        current_app.logger.warning(
+            "WCAG_LANGUAGE text extraction skipped for %s: %s",
+            path,
+            exc,
+        )
+        return ""
 
 
 def _run_wcag_language_stage(stage: str, path: Path, temp_dir: Path) -> dict[str, object]:
