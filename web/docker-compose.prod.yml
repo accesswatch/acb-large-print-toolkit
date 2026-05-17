@@ -167,6 +167,21 @@ services:
       retries: 5
       start_period: 20s
 
+  ggg:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    volumes:
+      - ../ggg/site:/srv:ro
+      - ../ggg/Caddyfile:/etc/caddy/Caddyfile:ro
+    expose:
+      - "80"
+    logging:
+      driver: json-file
+      options:
+        max-size: "5m"
+        max-file: "3"
+        tag: "glow-ggg/{{.Name}}"
+
   caddy:
     image: caddy:2-alpine
     restart: unless-stopped
@@ -184,6 +199,8 @@ services:
         condition: service_healthy
       mcp:
         condition: service_healthy
+      ggg:
+        condition: service_started
     logging:
       driver: json-file
       options:

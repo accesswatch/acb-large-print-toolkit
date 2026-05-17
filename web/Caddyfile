@@ -27,6 +27,10 @@ lp.csedesigns.com, glow.bits-acb.org {
         reverse_proxy mcp:8000
     }
 
+    handle_path /ggg* {
+        reverse_proxy ggg:80
+    }
+
     handle {
         reverse_proxy web:8000
         encode gzip

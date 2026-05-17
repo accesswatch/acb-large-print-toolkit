@@ -63,6 +63,10 @@ CLEANUP_BUILDER_KEEP_STORAGE="${CLEANUP_BUILDER_KEEP_STORAGE:-4GB}"
 DEPLOY_STATUS_FILE="${DEPLOY_STATUS_FILE:-$APP_ROOT/instance/deploy-status.json}"
 WCAG22AA_GATE="${WCAG22AA_GATE:-not-reported}"
 WCAG22AAA_GATE="${WCAG22AAA_GATE:-not-configured}"
+GGG_SYNC_ENABLED="${GGG_SYNC_ENABLED:-1}"
+GGG_SYNC_SOURCE="${GGG_SYNC_SOURCE:-$HOME/ggg}"
+GGG_SYNC_DEST="${GGG_SYNC_DEST:-$APP_ROOT/ggg}"
+GGG_REGENERATE_FEED="${GGG_REGENERATE_FEED:-1}"
 
 
 PRE_DEPLOY_COMMIT=""
@@ -269,6 +273,36 @@ wait_for_health() {
     done
 
     echo "$healthy"
+}
+
+# ---------------------------------------------------------------------------
+# Helper: optional GGG server-local content sync
+# ---------------------------------------------------------------------------
+sync_optional_ggg_content() {
+    if [[ "$GGG_SYNC_ENABLED" != "1" ]]; then
+        log_ts "--- GGG sync: disabled (GGG_SYNC_ENABLED=$GGG_SYNC_ENABLED) ---"
+        return
+    fi
+
+    if [[ ! -d "$GGG_SYNC_SOURCE" ]]; then
+        log_ts "--- GGG sync: source not found ($GGG_SYNC_SOURCE); skipping ---"
+        return
+    fi
+
+    log_ts "--- GGG sync: source=$GGG_SYNC_SOURCE dest=$GGG_SYNC_DEST ---"
+    mkdir -p "$GGG_SYNC_DEST"
+    rsync -av --delete --exclude '.git/' "$GGG_SYNC_SOURCE/" "$GGG_SYNC_DEST/"
+
+    if [[ "$GGG_REGENERATE_FEED" == "1" ]] && [[ -f "$GGG_SYNC_DEST/generator/generate-site.js" ]] && [[ -f "$GGG_SYNC_DEST/generator/validate-feed.js" ]]; then
+        if command -v node >/dev/null 2>&1; then
+            log_ts "--- GGG sync: regenerating and validating feed ---"
+            (cd "$GGG_SYNC_DEST" && node generator/generate-site.js && node generator/validate-feed.js)
+        else
+            log_ts "--- GGG sync: Node.js not found; skipping feed generation ---"
+        fi
+    else
+        log_ts "--- GGG sync: generator files not found or regeneration disabled; skipping feed generation ---"
+    fi
 }
 
 
@@ -515,6 +549,11 @@ if [[ "$ENABLE_PREDEPLOY_BACKUP" == "1" ]]; then
         log_ts "--- Skipping pre-deploy backup (backup-feedback.sh not executable) ---"
     fi
 fi
+
+# ---------------------------------------------------------------------------
+# Optional: sync GGG server-local content before compose rollout
+# ---------------------------------------------------------------------------
+sync_optional_ggg_content
 
 # ---------------------------------------------------------------------------
 # Enable maintenance mode
