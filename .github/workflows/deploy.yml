@@ -10,6 +10,7 @@ on:
       - "desktop/src/**"
       - "desktop/pyproject.toml"
       - "scripts/deploy-app.sh"
+      - "scripts/deploy-ggg-content.sh"
       - "scripts/post-deploy-check.sh"
       - "CHANGELOG.md"
       - ".github/workflows/deploy.yml"
