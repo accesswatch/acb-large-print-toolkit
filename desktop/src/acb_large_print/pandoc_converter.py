@@ -17,6 +17,7 @@ gracefully when it is not installed.
 from __future__ import annotations
 
 import logging
+import re
 import shutil
 import subprocess
 import tempfile
@@ -162,6 +163,30 @@ def pandoc_version() -> str | None:
         return None
 
 
+# Class names Pandoc assigns to paragraphs that came from the docx
+# table-of-contents field. Pandoc flattens the field result, so each TOC
+# entry becomes a paragraph styled "TOC 1".."TOC 9" with class "TOC1"..
+# "TOC9". We also strip the "TOCHeading" paragraph ("Contents" / "Table
+# of Contents"). When we emit a fresh Pandoc-generated TOC, these stale
+# unlinked paragraphs would otherwise appear as a second, broken TOC.
+_DOCX_TOC_PARAGRAPH_RE = re.compile(
+    r'<p\s+class="(?:TOCHeading|TOC\d+)"[^>]*>.*?</p>\s*',
+    flags=re.IGNORECASE | re.DOTALL,
+)
+
+
+def _strip_docx_source_toc(html_text: str) -> str:
+    """Remove paragraphs Pandoc emits for the original docx TOC field.
+
+    Pandoc's docx reader does not preserve the field's hyperlinks; it
+    emits the visible TOC text as paragraphs with classes ``TOC1``..
+    ``TOC9`` (and an optional ``TOCHeading`` line). When we generate a
+    fresh linked TOC via ``--toc``, those stale paragraphs become a
+    duplicate, unlinked TOC. Strip them.
+    """
+    return _DOCX_TOC_PARAGRAPH_RE.sub("", html_text)
+
+
 def convert_to_html(
     src_path: Path,
     output_path: Path | None = None,
@@ -169,6 +194,9 @@ def convert_to_html(
     title: str | None = None,
     css_path: Path | None = None,
     lang: str = "en",
+    generate_toc: bool = False,
+    toc_depth: int = 3,
+    toc_title: str = "Contents",
 ) -> tuple[Path, str]:
     """Convert a document to ACB-compliant standalone HTML via Pandoc.
 
@@ -182,6 +210,13 @@ def convert_to_html(
             its contents are embedded in the HTML ``<head>``.  If omitted,
             the built-in ACB Large Print CSS is used.
         lang: BCP-47 language tag for the ``<html lang>`` attribute.
+        generate_toc: When True, Pandoc emits a fresh ``<nav id="TOC">``
+            with clickable anchor links to every heading in the document.
+            For ``.docx`` sources, the original Word table-of-contents
+            field (which Pandoc otherwise flattens to plain text) is
+            stripped so the new linked TOC does not appear twice.
+        toc_depth: Maximum heading level to include in the generated TOC.
+        toc_title: Heading text shown above the generated TOC.
 
     Returns:
         (output_path, html_text)
@@ -251,10 +286,28 @@ def convert_to_html(
             f"title={title}",
             "--metadata",
             f"lang={lang}",
-            "--output",
-            str(output_path),
-            str(src_path),
         ]
+
+        if generate_toc:
+            # Pandoc generates a fresh <nav id="TOC"> with anchor links
+            # to every heading. Pandoc auto-assigns slug IDs to headings
+            # in --standalone mode, so the anchors resolve correctly.
+            cmd.extend(
+                [
+                    "--toc",
+                    f"--toc-depth={int(toc_depth)}",
+                    "--metadata",
+                    f"toc-title={toc_title}",
+                ]
+            )
+
+        cmd.extend(
+            [
+                "--output",
+                str(output_path),
+                str(src_path),
+            ]
+        )
 
         log.info("Running: %s", " ".join(cmd))
         result = subprocess.run(
@@ -272,6 +325,11 @@ def convert_to_html(
             )
 
         html_text = output_path.read_text(encoding="utf-8")
+
+        if generate_toc and ext == ".docx":
+            html_text = _strip_docx_source_toc(html_text)
+            output_path.write_text(html_text, encoding="utf-8")
+
         log.info(
             "Pandoc conversion complete: %s -> %s (%d characters)",
             src_path.name,

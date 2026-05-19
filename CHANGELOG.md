@@ -25,9 +25,18 @@ Releases are tagged in the [GitHub repository](https://github.com/Community-Acce
 
 ## [Unreleased]
 
-### 7.5.0 (Unreleased)
+## [7.6.0] - 2026-05-19
 
 ### Added
+
+- **Convert: Generate clickable Table of Contents** option on the web Convert form and the desktop `convert-html` CLI (`--toc`, `--toc-depth`, `--toc-title`). Pandoc emits a fresh `<nav id="TOC">` with anchor links to every heading. For `.docx` sources, the original Word auto-generated table of contents (which Pandoc otherwise flattens to unlinked text) is automatically stripped so the new linked TOC does not appear twice. Implemented in `desktop/src/acb_large_print/pandoc_converter.py::convert_to_html` and wired through `web/src/acb_large_print_web/routes/convert.py` and `web/src/acb_large_print_web/templates/convert_form.html`.
+- **Convert: Format-faithful conversion** toggle on the web Convert form. When checked, GLOW skips ACB styling, binding-margin injection, and the print-stylesheet post-processing step so the HTML output reflects the source document as closely as possible. The three existing formatting checkboxes (ACB formatting, binding margin, print stylesheet) are ignored when this option is active.
+- **BITS column draft** at `docs/bits-article-glow-draft.md` (~980 words, plain language, deadline June 15, 2026) introducing GLOW to ACB affiliates and everyday users.
+
+### 7.5.0 changes (rolled into 7.6.0)
+
+### Added
+
 
 - **Comprehensive PDF forms technical blueprint** in `pdf.md` with v1 execution scope, standards constraints, accessibility-first Field Definition Studio design, WCAG 2.2 AA keyboard and error-model requirements, open-source/commercial library evaluation notes, and a full data-storage architecture for documents, templates, submissions, artifacts, retention, and diagnostics. Generated companion HTML artifact at `pdf.html`.
 - **Full ISO inspection framework for PDF forms** in `pdf.md`, including clause-family checkpoints (metadata, structure tree, semantics, forms/annotations, font/text mapping, destinations), multi-validator evidence normalization, mandatory human verification gates, licensed-text conformance-claim checkpointing, and a traceability artifact matrix for auditable technical review.

@@ -353,6 +353,22 @@
           Adds a print-optimized stylesheet so the document prints cleanly on paper. Uses ACB print line spacing (1.15) and hides navigation elements. Good for documents that will be both viewed on screen and printed.
         </span>
       </label>
+
+      <label>
+        <input type="checkbox" name="generate_toc" checked>
+        <span>
+          <strong>Generate clickable Table of Contents</strong><br>
+          Adds a navigation list at the top of the converted document with links to every heading. Recommended for any document longer than one page. For Word documents that already contain an auto-generated table of contents, the unlinked source TOC is replaced with this clickable version. Applies to HTML output.
+        </span>
+      </label>
+
+      <label>
+        <input type="checkbox" name="format_faithful">
+        <span>
+          <strong>Format-faithful conversion (no automatic adjustments)</strong><br>
+          Skips ACB styling, binding margin, and print stylesheet so the output matches the source as closely as possible. Use this when you want a straight conversion and will apply your own formatting later. When this is on, the three options above are ignored.
+        </span>
+      </label>
     </div>
   </fieldset>
 
@@ -378,6 +394,13 @@
 
     <h3>Print stylesheet</h3>
     <p>Adds CSS rules that activate only when the document is printed (using your browser's Print function or Ctrl+P). The print version uses ACB's print-specific line height of 1.15 (tighter than the 1.5 used on screen) and hides screen-only elements like navigation links.</p>
+
+    <h3>Clickable Table of Contents</h3>
+    <p>Pandoc reads every heading in the source document and emits a navigation list at the top of the HTML output. Each entry is a real anchor link, so screen reader users and keyboard users can jump straight to any section. The list is limited to the first three heading levels by default.</p>
+    <p>When the source is a Word document, the original auto-generated table of contents is normally flattened into unlinked text by the conversion process. This option strips that stale text TOC and replaces it with the clickable version.</p>
+
+    <h3>Format-faithful conversion</h3>
+    <p>Turns off all three formatting options above and skips every automatic adjustment GLOW would normally apply (binding margin, print stylesheet stripping, embedded ACB CSS). The output reflects only what the source document contains, plus the heading IDs Pandoc generates so links keep working. Use this when you want the closest possible representation of the source and plan to style it yourself afterward.</p>
   </details>
 
   <!-- ============================================================ -->

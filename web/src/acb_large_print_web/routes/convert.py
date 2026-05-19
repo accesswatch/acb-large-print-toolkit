@@ -609,6 +609,16 @@ def convert_submit():
             acb_format = request.form.get("acb_format") == "on"
             binding_margin = request.form.get("binding_margin") == "on"
             print_ready = request.form.get("print_ready") == "on"
+            generate_toc = request.form.get("generate_toc") == "on"
+            format_faithful = request.form.get("format_faithful") == "on"
+
+            # Format-faithful mode: turn off all ACB styling and post-processing.
+            # User wants the closest representation of the source document with
+            # no automatic adjustments.
+            if format_faithful:
+                acb_format = False
+                binding_margin = False
+                print_ready = False
 
             # Build CSS path: None means use built-in ACB CSS,
             # pass a blank sentinel to skip ACB CSS when unchecked
@@ -621,9 +631,12 @@ def convert_submit():
                 output_path=html_output,
                 title=title,
                 css_path=css_path,
+                generate_toc=generate_toc,
             )
 
             # Post-process: inject binding margin and/or strip print stylesheet
+            # (skipped automatically in format-faithful mode because acb_format
+            # is forced off above).
             if acb_format and (binding_margin or not print_ready):
                 html_text = output_path.read_text(encoding="utf-8")
                 if binding_margin:

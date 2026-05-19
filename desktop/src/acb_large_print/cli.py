@@ -580,6 +580,28 @@ def _build_parser() -> argparse.ArgumentParser:
         help="BCP-47 language tag for the HTML lang attribute (default: en)",
     )
     convhtml_p.add_argument(
+        "--toc",
+        action="store_true",
+        help=(
+            "Generate a clickable Table of Contents at the top of the "
+            "HTML output (Pandoc --toc). For .docx sources, the "
+            "original Word TOC field (which Pandoc otherwise flattens "
+            "to unlinked text) is replaced with this linked version."
+        ),
+    )
+    convhtml_p.add_argument(
+        "--toc-depth",
+        type=int,
+        default=3,
+        help="Maximum heading level to include in the TOC (default: 3).",
+    )
+    convhtml_p.add_argument(
+        "--toc-title",
+        type=str,
+        default="Contents",
+        help='Heading text shown above the generated TOC (default: "Contents").',
+    )
+    convhtml_p.add_argument(
         "--wcag-language",
         choices=["off", "input", "output", "both"],
         default="output",
@@ -1350,6 +1372,9 @@ def _cmd_convert_html(args: argparse.Namespace) -> int:
             title=args.title,
             css_path=args.css,
             lang=args.lang,
+            generate_toc=getattr(args, "toc", False),
+            toc_depth=getattr(args, "toc_depth", 3),
+            toc_title=getattr(args, "toc_title", "Contents"),
         )
     except RuntimeError as exc:
         print(f"Error: {exc}", file=sys.stderr)
