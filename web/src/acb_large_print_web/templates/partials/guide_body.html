@@ -1162,8 +1162,10 @@ acb-lp detect-headings document.docx --ai --ai-prompt prompt.txt --threshold 75
 <li><strong>ACB formatting</strong> (on by default) -- embeds the full ACB Large Print stylesheet</li>
 <li><strong>Binding margin</strong> -- shifts content right 0.5 inches for printed and bound output</li>
 <li><strong>Print stylesheet</strong> -- adds <code>@media print</code> rules for ACB's print line-height (1.15 instead of 1.5)</li>
+<li><strong>Generate clickable Table of Contents</strong> (on by default) -- Pandoc builds a fresh <code>&lt;nav id="TOC"&gt;</code> with anchor links to every heading in the document. For Word (.docx) sources, the original auto-generated TOC field (which Pandoc otherwise flattens to unlinked paragraphs) is detected and removed so the output does not contain a duplicate unlinked TOC.</li>
+<li><strong>Format-faithful conversion</strong> (off by default) -- skips ACB styling, binding-margin injection, and print-stylesheet post-processing so the HTML reflects the source document as closely as possible. When this is on, the three options above (ACB formatting, binding margin, print stylesheet) are ignored.</li>
 </ul>
-<p><strong>When to use:</strong> producing a web page for a browser, for printing from a browser, for email attachment, or for uploading to a website. Markdown input produces the cleanest output.</p>
+<p><strong>When to use:</strong> producing a web page for a browser, for printing from a browser, for email attachment, or for uploading to a website. Markdown input produces the cleanest output. Turn on <strong>Format-faithful conversion</strong> when you want GLOW to act as a pure converter and leave the look and feel of the source alone.</p>
 <h3 id="to-word-document">To Word document</h3>
 <p><strong>Engine:</strong> Pandoc (with MarkItDown pre-processing for some formats)</p>
 <p>Converts a document to a Word file (.docx). Pandoc maps headings, lists, tables, and emphasis into Word's native styles.</p>

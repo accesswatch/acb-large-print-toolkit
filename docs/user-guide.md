@@ -762,8 +762,10 @@ Converts a document to a complete, accessible HTML page with ACB Large Print CSS
 - **ACB formatting** (on by default) -- embeds the full ACB Large Print stylesheet
 - **Binding margin** -- shifts content right 0.5 inches for printed and bound output
 - **Print stylesheet** -- adds `@media print` rules for ACB's print line-height (1.15 instead of 1.5)
+- **Generate clickable Table of Contents** (on by default) -- Pandoc builds a fresh `<nav id="TOC">` with anchor links to every heading in the document. For Word (.docx) sources, the original auto-generated TOC field (which Pandoc otherwise flattens to unlinked paragraphs) is detected and removed so the output does not contain a duplicate unlinked TOC.
+- **Format-faithful conversion** (off by default) -- skips ACB styling, binding-margin injection, and print-stylesheet post-processing so the HTML reflects the source document as closely as possible. When this is on, the three options above (ACB formatting, binding margin, print stylesheet) are ignored.
 
-**When to use:** producing a web page for a browser, for printing from a browser, for email attachment, or for uploading to a website. Markdown input produces the cleanest output.
+**When to use:** producing a web page for a browser, for printing from a browser, for email attachment, or for uploading to a website. Markdown input produces the cleanest output. Turn on **Format-faithful conversion** when you want GLOW to act as a pure converter and leave the look and feel of the source alone.
 
 ### To Word document
 
